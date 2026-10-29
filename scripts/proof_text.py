@@ -104,6 +104,28 @@ def age_is_written(event,text):
     if not isinstance(minimum,(float,int)):return False
     return bool(re.search(r"\b"+str(int(minimum))+r"\s+ans\b",body))
 
+def headline_matches(event_title, heading_text):
+    """Titre dans la balise officielle title/h1, tolérant une courte précision.
+    Par exemple : « Atelier d'éveil musical - Concert du dimanche Classic jazz ».
+    """
+    expected=norm(event_title).split()
+    actual=norm(heading_text).split()
+    if not expected or not actual:return False
+    if " ".join(expected) in " ".join(actual):return True
+    if len(expected)<4:return False
+    for start,word in enumerate(actual):
+        if word != expected[0]:continue
+        i=start
+        found=True
+        for need in expected[1:]:
+            options=actual[i+1:i+5]
+            if need not in options:
+                found=False
+                break
+            i=i+1+options.index(need)
+        if found:return True
+    return False
+
 def verify_event(event,originals):
     # La géolocalisation ne provient jamais de l'IA seule.
     valid_geo,why=verified_location(event)
@@ -113,7 +135,7 @@ def verify_event(event,originals):
     dom=Visible();dom.feed(html)
     heading=norm(" ".join(dom.headers+dom.titles))
     title=norm(event["title"])
-    if title not in heading:
+    if not headline_matches(event["title"],heading):
         return False,"titre non confirmé en en-tête de la fiche officielle"
     text=" ".join(dom.words)
     if not present_date(text,event["date_start"]) or not present_date(text,event["date_end"]):
