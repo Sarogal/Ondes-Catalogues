@@ -1,6 +1,10 @@
 name: Grosses Ondes — audit cloud en lecture seule
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-preview.yml'
   workflow_dispatch:
 
 permissions:
