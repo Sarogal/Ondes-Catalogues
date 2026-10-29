@@ -1,0 +1,56 @@
+name: GitHub Pages — copie de référence (manuelle uniquement)
+
+on:
+  workflow_dispatch:
+    inputs:
+      publier_copie_reference:
+        description: "Confirmer OUI pour publier UNIQUEMENT le catalogue déjà public, sans patch IA"
+        required: true
+        type: choice
+        options: ["NON", "OUI"]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    if: ${{ inputs.publier_copie_reference == 'OUI' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier le catalogue de référence
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          p = pathlib.Path("docs/ptitesondes/sorties.json")
+          assert p.is_file(), "Fichier de référence absent"
+          d = json.loads(p.read_text(encoding="utf-8-sig"))
+          assert d.get("version") == 3, "Version de catalogue inconnue"
+          events = d.get("events")
+          assert isinstance(events, list) and len(events) >= 100, "Catalogue invalide"
+          ids = [e.get("id") for e in events]
+          assert all(isinstance(i, str) and i for i in ids), "Identifiants invalides"
+          assert len(ids) == len(set(ids)), "Identifiants en double"
+          print(f"Référence validée : {len(events)} fiches ; aucun patch IA")
+          PY
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Construire l'artefact Pages avec docs/ seulement
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/
+
+  deploy:
+    if: ${{ inputs.publier_copie_reference == 'OUI' }}
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Déployer uniquement la copie de référence
+        id: deployment
+        uses: actions/deploy-pages@v4
