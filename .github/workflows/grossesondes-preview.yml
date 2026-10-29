@@ -1,0 +1,32 @@
+name: Grosses Ondes — audit cloud en lecture seule
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-audit
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tests de non-regression des deux catalogues
+        run: python -m unittest discover -s tests -v
+      - name: Lire la veille privee et les deux sources officielles
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+        run: python scripts/grossesondes_preview.py
+      - name: Verification de non-publication
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "Prévisualisation seule : aucun commit, aucun déploiement."
