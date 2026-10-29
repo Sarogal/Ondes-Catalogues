@@ -1,0 +1,54 @@
+name: Grosses Ondes — importer le catalogue de reference
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ondes-public-pages-deploy
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Verifier les formats, identifiants et dates sans reseau
+        run: python -m unittest discover -s tests -v
+      - name: Importer le calendrier et les archives depuis Infomaniak
+        run: python scripts/grossesondes_bootstrap.py
+      - name: Conserver les references dans l'historique Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/grossesondes/
+          git diff --cached --quiet && exit 1
+          git commit -m "data(grossesondes): reference initiale 123 editions et 170 archives"
+          git push origin HEAD:main
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/
+
+  deploy:
+    needs: import
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: pages
