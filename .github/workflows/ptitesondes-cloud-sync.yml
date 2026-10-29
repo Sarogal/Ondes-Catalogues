@@ -1,6 +1,12 @@
 name: P'tites Ondes — synchronisation cloud securisee
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/ptitesondes-cloud-sync.yml'
   schedule:
     - cron: '20 10 * * *'
   workflow_dispatch:
@@ -23,7 +29,7 @@ concurrency:
 
 jobs:
   prepare:
-    if: ${{ github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
