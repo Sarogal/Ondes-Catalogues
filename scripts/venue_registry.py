@@ -16,7 +16,7 @@ VENUES = [
         "city": "Bordeaux", "aliases": ["Grand-Théâtre – Foyer rouge"],
         "lat": 44.84258, "lng": -0.57364,
         "official": "https://www.opera-bordeaux.com/famille-sons-dessus-dessous-86131",
-        "geo_source": "catalogue public P'tites Ondes (Boîte à gazouillis, Grand-Théâtre)",
+        "geo_source": "https://mapcarta.com/fr/W79734107",
     },
     {
         "city": "Bordeaux", "aliases": ["Auditorium de Bordeaux",
@@ -35,7 +35,7 @@ VENUES = [
         "city": "Paris", "aliases": ["Philharmonie de Paris – Salle de conférence"],
         "lat": 48.89191, "lng": 2.39419,
         "official": "https://philharmoniedeparis.fr/fr/activite/atelier-concert-pour-les-tout-petits/29704-loiseau-multicolore",
-        "geo_source": "catalogue public P'tites Ondes (plusieurs fiches même salle)",
+        "geo_source": "https://mapcarta.com/fr/W21502894",
     },
 ]
 
