@@ -19,10 +19,10 @@ def validate_roster(original,patch,source_text):
         return None
     year=str(original.get("startDate") or "")[:4]
     doc=normalize(source_text)
-    name=re.sub(r"\\b20\\d{2}\\b","",normalize(original.get("name",""))).strip()
+    name=re.sub(r"\b20\d{2}\b","",normalize(original.get("name",""))).strip()
     if not (year.isdigit() and len(year)==4 and len(name)>=6 and words_present(doc,[name])):
         return None
-    m=re.search(r"(?:programmation|lineup|line up|affiche)\\s+"+re.escape(year)+r"\\b",doc)
+    m=re.search(r"(?:programmation|lineup|line up|affiche)\s+"+re.escape(year)+r"\b",doc)
     if not m:
         return None
     section=doc[m.end():m.end()+1800]
