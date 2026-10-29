@@ -8,6 +8,8 @@ on:
       - 'scripts/grossesondes_cloud_sync.py'
       - 'tests/test_grosses_cloud_sync.py'
       - 'tests/test_grosses_field_proof.py'
+      - 'scripts/grossesondes_generic_roster.py'
+      - 'tests/test_grosses_generic_roster.py'
   schedule:
     - cron: '47 10 * * *'
   workflow_dispatch:
