@@ -3,7 +3,7 @@ from unittest.mock import patch
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from proof_text import verify_event,present_date,visible_time,price_is_written,age_is_written
+from proof_text import verify_event,present_date,visible_time,price_is_written,age_is_written,headline_matches
 from venue_registry import verified_location
 
 YUMI={
@@ -65,6 +65,16 @@ class EvidenceTests(unittest.TestCase):
         a="16 Jan 2027 11H00. 17 Jan 2027 10H00 et 11H30"
         self.assertTrue(visible_time(a,"16/01 : 11:00 ; 17/01 : 10:00 et 11:30"))
         self.assertFalse(visible_time(a,"11:00 ; 10:00 et 12:30"))
+
+    def test_age_maximum_verified(self):
+        baby=dict(YUMI,age_min=0.25,age_max=2)
+        self.assertTrue(age_is_written(baby,"Pour les enfants de 3 mois à 2 ans"))
+        self.assertFalse(age_is_written(baby,"Pour les enfants de 3 mois à 4 ans"))
+
+    def test_official_title_with_context(self):
+        headline="Atelier d'éveil musical - Concert du dimanche Classic jazz"
+        self.assertTrue(headline_matches("Atelier d'éveil musical – Classic Jazz",headline))
+        self.assertFalse(headline_matches("Atelier d'éveil musical – Rock festival",headline))
 
     def test_read_failure_rejected(self):
         with patch("proof_text.read",return_value=(None,"site inaccessible")):
