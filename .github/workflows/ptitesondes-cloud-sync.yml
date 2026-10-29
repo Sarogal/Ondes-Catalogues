@@ -24,13 +24,13 @@ concurrency:
 jobs:
   prepare:
     if: ${{ github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
       deploy: ${{ steps.decision.outputs.deploy }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Tests de conservation et de sécurité
@@ -75,7 +75,7 @@ jobs:
   deploy:
     needs: prepare
     if: ${{ needs.prepare.outputs.deploy == 'true' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
