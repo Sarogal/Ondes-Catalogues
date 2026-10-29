@@ -130,7 +130,14 @@ def audit(calendar,history,patch,production_calendar,production_history):
             touched.add(key)
             require(ch["field"] not in ("slug","name"),
                     "changement d'identité interdit : "+slug)
-            require(ch["field"] in cal[slug],"champ étranger à la fiche : "+ch["field"])
+            known_fields=set().union(*(row.keys() for row in cal.values()))
+            require(ch["field"] in known_fields,
+                    "champ étranger au schema public : "+ch["field"])
+            # Les objets publics omettent certains champs facultatifs.
+            # Une absence n'est équivalente à « null » que si la veille l'indique
+            # explicitement et que le champ existe ailleurs dans le catalogue.
+            require(ch["field"] in cal[slug] or ch["before"] is None,
+                    "champ absent mais valeur précédente non nulle : "+slug+"."+ch["field"])
             require(cal[slug].get(ch["field"])==ch["before"],
                     "ancien champ discordant : "+slug+"."+ch["field"])
             ready_update.append(key)
