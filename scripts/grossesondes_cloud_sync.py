@@ -136,6 +136,23 @@ def main():
         except Exception:
             sources[key]=""
             print(key+": source inaccessible : changement exclu")
+    # Sources enregistrées dans la photographie de production, jamais tirées
+    # des URLs proposées par une veille privée. Le pilote limite le trafic.
+    original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
+    known={"cernunnos-pagan-fest","fantasmagorik-fest-2026",
+           "autfest-2027","festival-metal-vouziers-2026","winter-rising-fest-2026"}
+    checked=set()
+    for update in patch.get("updates",[])[:15]:
+        slug=update.get("slug")
+        item=original.get(slug,{})
+        url=item.get("officialSite")
+        if slug in known or not isinstance(url,str) or url in checked:
+            continue
+        checked.add(url)
+        try:sources["registered:"+slug]=official_text(url,registered=True)
+        except Exception:
+            sources["registered:"+slug]=""
+            print("Site officiel enregistré inaccessible pour "+slug+" : modifications différées.")
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat())
     report["patch"]=path
     report["mode"]=args.mode
