@@ -1,0 +1,106 @@
+name: Grosses Ondes — synchronisation cloud securisee
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-cloud-sync.yml'
+  schedule:
+    - cron: '47 10 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Prévisualisation ou publication
+        type: choice
+        default: preview
+        required: true
+        options:
+          - preview
+          - publish
+
+permissions:
+  contents: write
+
+concurrency:
+  group: grossesondes-cloud-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: ${{ github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      deploy: ${{ steps.decision.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier les tests de conservation et de contrôle documentaire
+        run: python -m unittest discover -s tests -v
+      - name: Préparer le candidat ou la modification contrôlée
+        id: sync
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
+          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+        run: |
+          python scripts/grossesondes_cloud_sync.py --mode "$MODE"
+          if git diff --quiet -- docs/grossesondes/festivals.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Archiver le rapport de contrôle et le catalogue candidat
+        uses: actions/upload-artifact@v4
+        with:
+          name: grossesondes-synchronisation-candidat
+          path: /tmp/grossesondes_cloud/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Déterminer si une publication est explicitement autorisée
+        id: decision
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          GROSSES_ENABLED: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
+          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+        run: |
+          if [ "$CHANGED" = "true" ] && [ "$GROSSES_ENABLED" = "enabled" ] && [ "$MODE" = "publish" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Aucun déploiement : mode preview, catalogue inchangé, ou autorisation absente."
+          fi
+      - name: Archiver uniquement le calendrier officiellement prouvé dans Git
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/grossesondes/festivals.json
+          git diff --cached --quiet && exit 1
+          git commit -m "data(grossesondes): intégrer les éditions officiellement corroborées"
+          git push origin HEAD:main
+      - name: Configurer GitHub Pages
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/configure-pages@v5
+      - name: Construire le site JSON Pages
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/
+
+  deploy:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.published.outputs.page_url }}
+    steps:
+      - name: Déployer les JSON protégés sur GitHub Pages
+        id: published
+        uses: actions/deploy-pages@v4
