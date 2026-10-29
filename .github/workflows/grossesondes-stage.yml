@@ -1,0 +1,43 @@
+name: Grosses Ondes — lot candidat officiel (sans publication)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-stage.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-stage
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tous les tests de conservation et de securite
+        run: python -m unittest discover -s tests -v
+      - name: Construire un lot de rattrapage uniquement a partir de preuves officielles
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+        run: python scripts/grossesondes_stage.py
+      - name: Conserver le lot candidat comme archive Actions
+        uses: actions/upload-artifact@v4
+        with:
+          name: grossesondes-candidat-controle
+          path: /tmp/grossesondes_stage/
+          retention-days: 14
+          if-no-files-found: error
+      - name: Verifier qu'aucun fichier de production n'a ete modifie
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Lot candidat uniquement - aucun commit de données et aucun déploiement."
