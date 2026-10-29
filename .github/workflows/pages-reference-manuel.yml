@@ -15,9 +15,9 @@ permissions:
 jobs:
   build:
     if: ${{ inputs.publier_copie_reference == 'OUI' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Vérifier le catalogue de référence
         run: |
           python - <<'PY'
@@ -43,7 +43,7 @@ jobs:
   deploy:
     if: ${{ inputs.publier_copie_reference == 'OUI' }}
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       pages: write
       id-token: write
