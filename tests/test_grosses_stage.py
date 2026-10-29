@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from grossesondes_stage import can_add_muscadeath,eligible_autfest,eligible_vouziers,stage
+from grossesondes_stage import can_add_muscadeath,eligible_autfest,eligible_vouziers,stage,norm
 from grossesondes_preview import CAL_URL,HIS_URL
 
 def fixtures():
@@ -38,12 +38,12 @@ def fixtures():
 class StageTests(unittest.TestCase):
     def test_muscadeath_2027_confirmed_without_dates(self):
         e=fixtures()[2]["additions"][0]
-        self.assertTrue(can_add_muscadeath(e,"Muscadeath rendez vous en 2027"))
-        self.assertFalse(can_add_muscadeath(dict(e,startDate="2027-09-18"),"Muscadeath rendez vous en 2027"))
-        self.assertFalse(can_add_muscadeath(e,"Muscadeath 2026"))
+        self.assertTrue(can_add_muscadeath(e,norm("Muscadeath rendez vous en 2027")))
+        self.assertFalse(can_add_muscadeath(dict(e,startDate="2027-09-18"),norm("Muscadeath rendez vous en 2027")))
+        self.assertFalse(can_add_muscadeath(e,norm("Muscadeath 2026")))
     def test_muscadeath_cannot_show_unconfirmed_pin(self):
         e=fixtures()[2]["additions"][0]
-        self.assertFalse(can_add_muscadeath(dict(e,showOnMap=True),"muscadeath rendez vous en 2027"))
+        self.assertFalse(can_add_muscadeath(dict(e,showOnMap=True),norm("muscadeath rendez vous en 2027")))
     def test_autfest_requires_five_official_groups(self):
         changes=fixtures()[2]["updates"][0]["changes"]
         body="AUTFEST 2027 LIEVIN Ultra Vomit Septicflesh Tagada Jones Vanaheim Hope as a weapon"
@@ -52,8 +52,8 @@ class StageTests(unittest.TestCase):
     def test_vouziers_requires_both_tariffs_and_date(self):
         changes=[{"field":x} for x in ("notes","sourceConfidence","verificationStatus","auditSources","lastVerified")]
         text="Festival Metal Vouziers 31 octobre 2026 Prévente 50 Sur place 55"
-        self.assertTrue(eligible_vouziers(changes,text.lower()))
-        self.assertFalse(eligible_vouziers(changes,text.lower().replace("31 octobre 2026","31 octobre 2025")))
+        self.assertTrue(eligible_vouziers(changes,norm(text)))
+        self.assertFalse(eligible_vouziers(changes,norm(text).replace("31 octobre 2026","31 octobre 2025")))
     def test_stage_retains_every_existing_record(self):
         c,h,p=fixtures()
         sources={"muscadeath":"muscadeath rendez vous en 2027",
