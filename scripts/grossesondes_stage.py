@@ -105,7 +105,9 @@ def apply_changes(entry,changes,slug,today):
             "(Ultra Vomit, Septicflesh, Tagada Jones, Vanaheim, Hope as a weapon) ; "
             "sixième groupe encore à annoncer. Aucun tarif chiffré vérifié."
         )
-    updated["lastVerified"]=today
+    # Conserver la date de vérification de la source dans le patch ;
+    # ne pas la renouveler artificiellement à chaque exécution quotidienne.
+    updated["lastVerified"]=next((c["after"] for c in changes if c["field"]=="lastVerified"),entry.get("lastVerified",today))
     return updated
 
 def stage(calendar,history,patch,sources,today):
