@@ -7,6 +7,7 @@ on:
       - '.github/workflows/grossesondes-cloud-sync.yml'
       - 'scripts/grossesondes_cloud_sync.py'
       - 'tests/test_grosses_cloud_sync.py'
+      - 'tests/test_grosses_field_proof.py'
   schedule:
     - cron: '47 10 * * *'
   workflow_dispatch:
