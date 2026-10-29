@@ -41,6 +41,25 @@ class TestGrossesPreview(unittest.TestCase):
     def test_wrong_before_blocks(self):
         c,h,p=samples();p["updates"][0]["changes"][0]["before"]="15 €"
         with self.assertRaises(ValueError):audit(c,h,p,c,h)
+    def test_optional_catalogue_field_can_start_as_missing(self):
+        c,h,p=samples()
+        c["festivals"][2]["lineupByDate"]={"2027-02-01":["Groupe connu"]}
+        p["updates"][0]["changes"]=[{
+            "field":"lineupByDate","before":None,
+            "after":{"2027-02-01":["Nouveau groupe"]}
+        }]
+        result=audit(c,h,p,c,h)
+        self.assertEqual(result["fields_to_review"],1)
+
+    def test_missing_field_with_nonnull_before_blocks(self):
+        c,h,p=samples()
+        c["festivals"][2]["lineupByDate"]={"2027-02-01":["Groupe connu"]}
+        p["updates"][0]["changes"]=[{
+            "field":"lineupByDate","before":[],
+            "after":{"2027-02-01":["Nouveau groupe"]}
+        }]
+        with self.assertRaises(ValueError):audit(c,h,p,c,h)
+
     def test_unknown_existing_field_blocks(self):
         c,h,p=samples();p["updates"][0]["changes"][0]["field"]="age"
         with self.assertRaises(ValueError):audit(c,h,p,c,h)
