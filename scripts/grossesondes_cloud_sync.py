@@ -18,6 +18,10 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage
+from grossesondes_field_proof import (
+    CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
+    FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL
+)
 
 MANIFEST=ROOT/"reference-manifest.json"
 SOURCES=[
@@ -121,7 +125,12 @@ def main():
     for key,url in [
        ("muscadeath","https://muscadeath.fr/"),
        ("autfest","https://www.billetweb.fr/autfest-anniversaire"),
-       ("vouziers","https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/")
+       ("vouziers","https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"),
+       ("cernunnos_home",CERNUNNOS_HOME_URL),
+       ("cernunnos_groups",CERNUNNOS_GROUPS_URL),
+       ("cernunnos_info",CERNUNNOS_INFO_URL),
+       ("fantasmagorik_ticket",FANTASMAGORIK_TICKET_URL),
+       ("fantasmagorik_date",FANTASMAGORIK_DATE_URL)
     ]:
         try:sources[key]=official_text(url)
         except Exception:
