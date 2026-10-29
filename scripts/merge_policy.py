@@ -51,6 +51,17 @@ def valid(ev,categories,fields,today):
     except (ValueError,TypeError,KeyError,OverflowError):return False,"champ incorrect"
     return True,"structure conforme"
 
+def safe_published_event(event):
+    """Ne pas recopier un texte descriptif non audité, même si les champs sont prouvés."""
+    public=dict(event)
+    if "description" in public:
+        public["description"]=(
+            "Date, horaires et lieu contrôlés auprès de l'organisateur. "
+            "Consultez la source officielle pour le programme détaillé "
+            "et les conditions de participation."
+        )
+    return public
+
 def merge(ref,public,patch,today,checker=proof):
     originals=byid(ref)
     published=byid(public)
@@ -67,7 +78,7 @@ def merge(ref,public,patch,today,checker=proof):
         guard(eid not in seen,"doublon dans patch : "+eid)
         seen.add(eid)
         if eid in published:
-            guard(published[eid]==ev,"collision avec une fiche déjà publiée : "+eid)
+            guard(published[eid] in (ev,safe_published_event(ev)),"collision avec une fiche déjà publiée : "+eid)
             continue
         signature=(norm(ev.get("title")),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
@@ -75,7 +86,7 @@ def merge(ref,public,patch,today,checker=proof):
         if ok:
             ok,reason=checker(ev,ref["events"])
         if ok:
-            accepted.append(ev);signatures.add(signature)
+            accepted.append(safe_published_event(ev));signatures.add(signature)
         else:
             waiting.append({"id":eid,"raison":reason})
     result=dict(public)
