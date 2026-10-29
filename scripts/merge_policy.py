@@ -4,7 +4,8 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 import json, math, re
 from urllib.parse import urlparse
-from proof import proof, norm
+from proof_text import verify_event as proof
+from proof import norm
 
 REQUIRED={"id","title","category","category_label","date_start","date_end","city","department","region","venue","source_url","source_label","verified_at","geo_verified_at","geo_precision","lat","lng"}
 ORIGIN="https://ptitesondes.fr/config/sorties.json"
