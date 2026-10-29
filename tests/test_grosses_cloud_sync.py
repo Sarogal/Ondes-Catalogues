@@ -11,12 +11,12 @@ class CloudSyncTests(unittest.TestCase):
     def test_initial_change_allowed(self):
         c,h,p=fixtures()
         candidate=dict(c,festivals=[dict(e) for e in c["festivals"]])
-        candidate["festivals"][1]["lineup"]+=["Vanaheim"]
+        candidate["festivals"][1]["lineup"]=candidate["festivals"][1]["lineup"]+["Vanaheim"]
         self.assertTrue(safe_target(c,candidate,c))
     def test_second_run_no_content_change(self):
         c,h,p=fixtures()
         candidate=dict(c,festivals=[dict(e) for e in c["festivals"]])
-        candidate["festivals"][1]["lineup"]+=["Vanaheim"]
+        candidate["festivals"][1]["lineup"]=candidate["festivals"][1]["lineup"]+["Vanaheim"]
         self.assertFalse(safe_target(c,candidate,candidate))
     def test_public_tampering_fails(self):
         c,h,p=fixtures()
