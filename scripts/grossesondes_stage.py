@@ -17,12 +17,19 @@ import unicodedata
 from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
+from grossesondes_field_proof import (
+    cernunnos_update, fantasmagorik_update,
+    CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
+    FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL
+)
 
 OUT=Path("/tmp/grossesondes_stage")
 ALLOWED={
     "https://muscadeath.fr/",
     "https://www.billetweb.fr/autfest-anniversaire",
     "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/",
+    CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
+    FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL,
 }
 
 class TextOnly(HTMLParser):
@@ -130,6 +137,27 @@ def stage(calendar,history,patch,sources,today):
             report["held"].append({"slug":slug,"reason":"preuve indépendante insuffisante"})
     for up in patch["updates"]:
         slug=up["slug"]
+        current=existing[slug]
+        partial=None
+        if slug=="cernunnos-pagan-fest":
+            partial=cernunnos_update(current,up,sources,today)
+        elif slug=="fantasmagorik-fest-2026":
+            partial=fantasmagorik_update(current,up,sources,today)
+        if partial is not None:
+            revised,fields,uncorroborated=partial
+            rows[rows.index(current)]=revised
+            report["accepted_updates"].append({"slug":slug,"fields":fields})
+            report["source_proofs"].extend(
+                [CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
+                if slug=="cernunnos-pagan-fest"
+                else [FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+            )
+            if uncorroborated:
+                report["held"].append({
+                    "slug":slug,"reason":"Noms non présents sur le site officiel",
+                    "pending_names":uncorroborated
+                })
+            continue
         passed=(
             slug=="autfest-2027" and eligible_autfest(up["changes"],sources.get("autfest",""))
             or slug=="festival-metal-vouziers-2026" and eligible_vouziers(up["changes"],sources.get("vouziers",""))
@@ -137,7 +165,6 @@ def stage(calendar,history,patch,sources,today):
         if not passed:
             report["held"].append({"slug":slug,"reason":"changement non entièrement prouvé"})
             continue
-        current=existing[slug]
         revised=apply_changes(current,up["changes"],slug,today)
         rows[rows.index(current)]=revised
         report["accepted_updates"].append({"slug":slug,"fields":[x["field"] for x in up["changes"]]})
@@ -170,6 +197,11 @@ def main():
         ("muscadeath","https://muscadeath.fr/"),
         ("autfest","https://www.billetweb.fr/autfest-anniversaire"),
         ("vouziers","https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"),
+        ("cernunnos_home",CERNUNNOS_HOME_URL),
+        ("cernunnos_groups",CERNUNNOS_GROUPS_URL),
+        ("cernunnos_info",CERNUNNOS_INFO_URL),
+        ("fantasmagorik_ticket",FANTASMAGORIK_TICKET_URL),
+        ("fantasmagorik_date",FANTASMAGORIK_DATE_URL),
     ):
         try:evidence[key]=official_text(url)
         except Exception as error:
