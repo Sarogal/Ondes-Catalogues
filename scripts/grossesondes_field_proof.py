@@ -24,6 +24,7 @@ def words_present(document, required):
                for w in required)
 
 
+CERNUNNOS_HOME_URL="https://www.cernunnospaganfest.fr/"
 CERNUNNOS_GROUPS_URL="https://www.cernunnospaganfest.fr/groupes/"
 CERNUNNOS_INFO_URL="https://www.cernunnospaganfest.fr/infos-pratiques/"
 FANTASMAGORIK_TICKET_URL="https://www.helloasso.com/associations/tout-en-scene/evenements/fantasmagorik-fest"
@@ -41,8 +42,10 @@ def cernunnos_update(original, update, official, today):
         return None
     groups=official.get("cernunnos_groups","")
     info=official.get("cernunnos_info","")
+    home=official.get("cernunnos_home","")
     if not (words_present(groups,["cernunnos2027","lineup"]) and
-            words_present(info,["12","13","14","fevrier","2027","ferme du buisson","noisiel"])):
+            words_present(home,["12","13","14","fevrier 2027","cernunnos pagan fest"]) and
+            words_present(info,["12","13","14","ferme du buisson","noisiel"])):
         return None
     proposed=changes["lineup"]["after"]
     before=original.get("lineup",[])
@@ -90,7 +93,7 @@ def cernunnos_update(original, update, official, today):
     )
     result["sourceConfidence"]="Site officiel : noms des groupes et grille tarifaire ; aucune déduction de programmation par jour."
     result["auditSources"]=list(dict.fromkeys(
-       original.get("auditSources",[])+[CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
+       original.get("auditSources",[])+[CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
     ))
     result["lastVerified"]=changes["lastVerified"]["after"]
     pending=[name for name in proposed if name not in present]
