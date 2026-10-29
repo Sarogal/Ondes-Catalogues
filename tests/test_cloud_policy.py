@@ -3,7 +3,7 @@ from datetime import date
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from merge_policy import merge,validate_patch,valid
+from merge_policy import merge,validate_patch,valid,safe_published_event
 from proof import norm,names,meters,LD,proof
 
 TODAY=date(2026,10,29)
@@ -43,6 +43,23 @@ class TestsCloud(unittest.TestCase):
         b,p=fixture()
         o=dict(b,events=b["events"]+[p["additions"][0]])
         out,r=merge(b,o,p,TODAY,checker=lambda e,ref:(False,"non vérifié"))
+        self.assertEqual(len(out["events"]),101)
+        self.assertEqual(r["ajoutes"],0)
+
+    def test_unchecked_description_is_replaced(self):
+        b,p=fixture()
+        p["additions"][0]["description"]="Promesse non vérifiée."
+        out,r=merge(b,b,p,TODAY,checker=lambda e,ref:(True,"preuve"))
+        self.assertEqual(r["ajoutes"],1)
+        self.assertNotIn("Promesse non vérifiée.",out["events"][-1]["description"])
+        self.assertIn("source officielle",out["events"][-1]["description"])
+
+    def test_sanitized_catalogue_is_idempotent(self):
+        b,p=fixture()
+        p["additions"][0]["description"]="Description non auditée"
+        accepted=safe_published_event(p["additions"][0])
+        published=dict(b,events=b["events"]+[accepted])
+        out,r=merge(b,published,p,TODAY,checker=lambda e,ref:(False,"sans appel"))
         self.assertEqual(len(out["events"]),101)
         self.assertEqual(r["ajoutes"],0)
 
