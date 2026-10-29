@@ -1,0 +1,88 @@
+name: P'tites Ondes — synchronisation cloud securisee
+
+on:
+  schedule:
+    - cron: '20 10 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Choisir previsualisation ou publication
+        type: choice
+        required: true
+        default: preview
+        options:
+          - preview
+          - publish
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ptitesondes-cloud-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      deploy: ${{ steps.decision.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests de conservation et de sécurité
+        run: python -m unittest discover -s tests -v
+      - name: Lire, contrôler et fusionner sans écriture distante
+        id: sync
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        run: python scripts/run_cloud_sync.py
+      - name: Calculer la permission de déploiement
+        id: decision
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          CLOUD_ENABLED: ${{ vars.PTITESONDES_CLOUD_SYNC }}
+          USER_MODE: ${{ inputs.mode }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$USER_MODE" = "publish" ]; }; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Prévisualisation seulement ou aucune fiche indépendante vérifiée."
+          fi
+      - name: Archiver le nouveau catalogue dans Git
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/ptitesondes/sorties.json
+          git diff --cached --quiet && exit 1
+          git commit -m "data(ptitesondes): publier les seuls événements indépendamment vérifiés"
+          git push origin HEAD:main
+      - name: Configurer GitHub Pages
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/configure-pages@v5
+      - name: Construire le site JSON Pages
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: docs/
+
+  deploy:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.deploy == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.published.outputs.page_url }}
+    steps:
+      - name: Déployer le catalogue JSON sur GitHub Pages
+        id: published
+        uses: actions/deploy-pages@v4
