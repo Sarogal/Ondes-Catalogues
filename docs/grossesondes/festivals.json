@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-10-25",
+  "generatedAt": "2026-10-29",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -2249,12 +2249,12 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://www.cd08.fr/evenements/festival-metal-vouziers",
-      "lastVerified": "2026-10-10",
-      "notes": "36e édition le 31 octobre 2026. Sept groupes listés par le Conseil départemental des Ardennes. Tarif 50 € en prévente / 55 € sur place préexistant au V3.15, mais non corroboré sur la fiche départementale : à revérifier auprès de la billetterie.",
+      "lastVerified": "2026-10-29",
+      "notes": "36e édition le 31 octobre 2026. Sept groupes listés par le Conseil départemental des Ardennes. Tarifs de 50 € en prévente et 55 € sur place confirmés par l'Office de tourisme du Sud-Ardennes le 29/10/2026.",
       "lat": 49.4194,
       "lon": 4.7073,
       "geoPrecision": "commune",
-      "verificationStatus": "À recontrôler sur source officielle",
+      "verificationStatus": "Dates, programmation et tarifs 50 €/55 € corroborés par sources institutionnelles.",
       "lineup": [
         "Zara",
         "Time Tripper",
@@ -2265,9 +2265,10 @@
         "Prefabrike"
       ],
       "venue": "Salle des fêtes, rue du Chemin Salé, 08400 Vouziers",
-      "sourceConfidence": "Conseil départemental pour dates/lieu/programmation ; prix hérité non revérifié",
+      "sourceConfidence": "Conseil départemental pour dates/lieu/artistes ; Office de tourisme Sud-Ardennes pour tarifs 2026.",
       "auditSources": [
-        "https://www.cd08.fr/evenements/festival-metal-vouziers"
+        "https://www.cd08.fr/evenements/festival-metal-vouziers",
+        "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"
       ]
     },
     {
@@ -5199,16 +5200,18 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://www.billetweb.fr/autfest-anniversaire",
-      "lastVerified": "2026-10-10",
-      "notes": "Édition anniversaire caritative au profit des familles concernées par l’autisme, samedi 2 octobre 2027 de 15h à 23h55 à l’Arena Stade Couvert de Liévin (chemin des Manufactures). Six groupes prévus, TROIS annoncés à ce stade : Ultra Vomit, Septicflesh et Tagada Jones. Trois autres groupes de folk metal, speed metal et metal alternatif restent à nommer. Billetterie officiellement ouverte mais aucun tarif lisible dans le texte public de la page ; ne pas inventer de montant.",
+      "lastVerified": "2026-10-29",
+      "notes": "Édition anniversaire caritative le 2 octobre 2027 à l'Arena Stade Couvert de Liévin. Cinq groupes nommés sur la billetterie officielle (Ultra Vomit, Septicflesh, Tagada Jones, Vanaheim, Hope as a weapon) ; sixième groupe encore à annoncer. Aucun tarif chiffré vérifié.",
       "lat": 50.4227,
       "lon": 2.7786,
       "geoPrecision": "commune",
-      "verificationStatus": "3/6 groupes annoncés, lieu et horaires vérifiés ; prix non établi",
+      "verificationStatus": "5/6 groupes officiellement nommés ; dernier TBA ; tarif non établi.",
       "lineup": [
         "Ultra Vomit",
         "Septicflesh",
-        "Tagada Jones"
+        "Tagada Jones",
+        "Vanaheim",
+        "Hope as a weapon"
       ],
       "venue": "Arena Stade Couvert de Liévin, chemin des Manufactures, 62800 Liévin",
       "sourceConfidence": "Billetterie AUTFEST officielle",
@@ -5776,6 +5779,36 @@
       "sessionDates": [
         "2027-03-26",
         "2027-03-27"
+      ]
+    },
+    {
+      "slug": "muscadeath-2027",
+      "name": "Muscadeath 2027",
+      "startDate": null,
+      "endDate": null,
+      "city": null,
+      "department": null,
+      "region": null,
+      "styles": "Metal extrême",
+      "bands": null,
+      "days": null,
+      "capacity": null,
+      "price": null,
+      "organizer": null,
+      "officialSite": "https://muscadeath.fr/",
+      "social": null,
+      "status": "Dates à venir",
+      "source": "https://muscadeath.fr/",
+      "lastVerified": "2026-10-29",
+      "notes": "Retour 2027 explicitement annoncé (« Rendez-vous en 2027 »). Dates, lieu futur, commune, artistes, tarifs et organisateur de cette édition non confirmés. Vallet est le lieu historique, pas un lieu 2027 confirmé.",
+      "venue": null,
+      "futureVenueConfirmed": false,
+      "showOnMap": false,
+      "sourceConfidence": "Site officiel : retour 2027 uniquement ; dates et emplacement futur inconnus.",
+      "verificationStatus": "Édition 2027 annoncée sans date ni lieu futur.",
+      "lineup": [],
+      "auditSources": [
+        "https://muscadeath.fr/"
       ]
     }
   ]
