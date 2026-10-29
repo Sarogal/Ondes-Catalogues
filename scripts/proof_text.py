@@ -98,11 +98,20 @@ def price_is_written(event,text):
 
 def age_is_written(event,text):
     minimum=event.get("age_min")
-    if minimum is None:return True
+    maximum=event.get("age_max")
+    if minimum is None:return maximum is None
     body=norm(text)
-    if minimum==0.25:return "3 mois" in body
-    if not isinstance(minimum,(float,int)):return False
-    return bool(re.search(r"\b"+str(int(minimum))+r"\s+ans\b",body))
+    if minimum == 0.25:
+        confirmed="3 mois" in body
+    elif isinstance(minimum,(float,int)) and not isinstance(minimum,bool):
+        confirmed=bool(re.search(r"\b"+str(int(minimum))+r"\s+ans\b",body))
+    else:
+        return False
+    if maximum is not None:
+        if isinstance(maximum,bool) or not isinstance(maximum,(int,float)):
+            return False
+        confirmed=confirmed and bool(re.search(r"\b"+str(int(maximum))+r"\s+ans\b",body))
+    return confirmed
 
 def headline_matches(event_title, heading_text):
     """Titre dans la balise officielle title/h1, tolérant une courte précision.
