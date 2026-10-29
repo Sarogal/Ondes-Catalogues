@@ -1,6 +1,12 @@
 name: Tests du synchroniseur
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/sync-tests.yml'
   workflow_dispatch:
 
 permissions:
