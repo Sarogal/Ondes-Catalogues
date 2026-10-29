@@ -17,6 +17,7 @@ import unicodedata
 from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
+from grossesondes_generic_roster import validate_roster
 from grossesondes_field_proof import (
     cernunnos_update, fantasmagorik_update,
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
@@ -49,8 +50,15 @@ def norm(t):
     s="".join(c for c in s if not unicodedata.combining(c))
     return " ".join(re.sub(r"[^a-z0-9]+"," ",s).split())
 
-def official_text(url):
-    require(url in ALLOWED,"URL non approuvée pour la première vague")
+def official_text(url, registered=False):
+    p=urlparse(url)
+    host=(p.hostname or "").lower()
+    safe_registered=(registered and p.scheme=="https" and p.port is None and
+        p.username is None and p.password is None and p.query=="" and p.fragment=="" and
+        "." in host and not host.endswith((".local",".internal",".localhost")) and
+        all(part.isascii() and part.replace("-","").isalnum() for part in host.split(".")) and
+        not any(part.isdigit() for part in host.split(".")))
+    require(url in ALLOWED or safe_registered,"URL non approuvée")
     p=urlparse(url)
     require(p.scheme=="https" and p.hostname and not p.username and not p.password,
             "URL non sûre")
@@ -143,6 +151,8 @@ def stage(calendar,history,patch,sources,today):
             partial=cernunnos_update(current,up,sources,today)
         elif slug=="fantasmagorik-fest-2026":
             partial=fantasmagorik_update(current,up,sources,today)
+        if partial is None and sources.get("registered:"+slug):
+            partial=validate_roster(current,up,sources["registered:"+slug])
         if partial is not None:
             revised,fields,uncorroborated=partial
             rows[rows.index(current)]=revised
@@ -150,7 +160,9 @@ def stage(calendar,history,patch,sources,today):
             report["source_proofs"].extend(
                 [CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
                 if slug=="cernunnos-pagan-fest"
-                else [FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+                else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+                      if slug=="fantasmagorik-fest-2026"
+                      else [current["officialSite"]])
             )
             if uncorroborated:
                 report["held"].append({
