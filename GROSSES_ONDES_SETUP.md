@@ -29,3 +29,12 @@ Lancer ensuite manuellement le workflow `.github/workflows/grossesondes-preview.
 
 ## Retour arrière
 Les deux fichiers publics de référence restent dans l'historique Git. La production Infomaniak, les archives et la carte n'ont pas été touchées par cet import.
+
+## Contrôles et lot candidat du 29/10/2026
+- Audit réel des patches terminé vert : [run 40960898516](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/40960898516), 50 tests, 1 ajout, 27 champs proposés, 8 points différés.
+- Qualification strictement officielle : [run 40961605030](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/40961605030), **57 tests réussis**, 123 -> **124 fiches candidates** et **170 archives inchangées**. Artefact téléchargeable `grossesondes-candidat-controle`, qui ne modifie aucun fichier de GitHub Pages.
+- Ajout candidat : `muscadeath-2027` (annonce officielle de retour, aucune date/ville/GPS et `showOnMap:false`).
+- Corrections candidates : `autfest-2027` (cinq groupes sur la billetterie officielle, anciennes notes contradictoires remplacées par une description source-confirmée), `festival-metal-vouziers-2026` (tarifs confirmés par l'office de tourisme).
+- Toujours en attente : `winter-rising-fest-2026` (anciens documents tiers montrent Kawir ; remplacement par Aborym à corroborer avant diffusion), `cernunnos-pagan-fest` (20 artistes sur la page officielle, deux supplémentaires dans d'autres annonces, vérifier la source primaire Facebook), `fantasmagorik-fest-2026` (revérifier le détail avant publication).
+- **Pas de publication Grosses Ondes** et pas de modification du code Infomaniak. Aucun workflow de synchronisation quotidien Grosses Ondes activé à ce stade.
+- Prochain préalable technique : obtenir les fichiers **réellement en production** derrière `https://grosses-ondes.fr/festivals/` (HTML et JavaScript associés), puis réaliser le même chargement Pages avec repli Infomaniak que pour P'tites Ondes. Ne jamais déployer depuis l'ancien dossier `website/` du dépôt GitHub privé.
