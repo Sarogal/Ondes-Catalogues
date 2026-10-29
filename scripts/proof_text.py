@@ -6,7 +6,7 @@ from html.parser import HTMLParser
 import re
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
-from proof import proof as jsonld_proof, norm, HOSTS
+from proof import norm, HOSTS
 from venue_registry import verified_location
 
 MONTHS = ("janvier","février","mars","avril","mai","juin","juillet","août",
@@ -56,7 +56,10 @@ def date_forms(iso):
     return {f"{d:02d}/{m:02d}/{y}",
             f"{d} {MONTHS[m-1]} {y}",
             f"{d} {MONTH_SHORT[m-1]} {y}",
-            f"{d} {MONTH_SHORT[m-1]}. {y}"}
+            f"{d} {MONTH_SHORT[m-1]}. {y}",
+            f"{d:02d} {MONTHS[m-1]} {y}",
+            f"{d:02d} {MONTH_SHORT[m-1]} {y}",
+            f"{d:02d} {MONTH_SHORT[m-1]}. {y}"}
 
 def present_date(text,iso):
     normalized=norm(text)
