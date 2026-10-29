@@ -48,6 +48,7 @@ class TestsCloud(unittest.TestCase):
 
     def test_unchecked_description_is_replaced(self):
         b,p=fixture()
+        b["events"][0]["description"]="Description historique"
         p["additions"][0]["description"]="Promesse non vérifiée."
         out,r=merge(b,b,p,TODAY,checker=lambda e,ref:(True,"preuve"))
         self.assertEqual(r["ajoutes"],1)
