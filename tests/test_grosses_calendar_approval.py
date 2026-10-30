@@ -115,6 +115,33 @@ class TrustedPublishedCalendarTests(unittest.TestCase):
                                                 if x["slug"] == "cernunnos-pagan-fest")["price"])
         self.assertEqual(len(result["festivals"]), 124)
 
+    def test_previously_published_muscadeath_keeps_verified_record(self):
+        original, published = calendars()
+        staged = copy.deepcopy(original)
+        older = copy.deepcopy(load_approval()["additions"][0])
+        older["notes"] = "Ancienne formulation issue du patch cumulatif"
+        staged["festivals"].append(older)
+        result = merge_staged_with_approved(original, staged, published)
+        self.assertEqual(result, published)
+
+    def test_published_muscadeath_cannot_gain_unverified_date(self):
+        original, published = calendars()
+        staged = copy.deepcopy(original)
+        older = copy.deepcopy(load_approval()["additions"][0])
+        older["startDate"] = "2027-07-14"
+        staged["festivals"].append(older)
+        with self.assertRaises(ValueError):
+            merge_staged_with_approved(original, staged, published)
+
+    def test_published_muscadeath_cannot_change_official_source(self):
+        original, published = calendars()
+        staged = copy.deepcopy(original)
+        older = copy.deepcopy(load_approval()["additions"][0])
+        older["source"] = "https://example.org/"
+        staged["festivals"].append(older)
+        with self.assertRaises(ValueError):
+            merge_staged_with_approved(original, staged, published)
+
     def test_no_deletion_in_stage_candidate(self):
         original, published = calendars()
         staged = copy.deepcopy(original)
