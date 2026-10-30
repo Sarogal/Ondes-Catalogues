@@ -89,6 +89,7 @@ class TestsCloud(unittest.TestCase):
         patch_version=dict(original,venue="Auditorium de Bordeaux – salle Sauguet",
                            description="Nouveau détail non audité")
         new=dict(original,id="autre-evenement-nouveau",title="Autre événement")
+        new.pop("description",None)
         p["additions"]=[patch_version,new]
         out,report=merge(b,public,p,TODAY,checker=lambda e,ref:(True,"preuve"))
         self.assertEqual(report["ajoutes"],1)
