@@ -35,6 +35,8 @@ def main():
             file.write("changed="+str(changed).lower()+"\n")
     print("Catalogue :",report["initial"],"->",report["final"],
           " | admis :",report["ajoutes"]," | en attente :",len(report["attente"]))
+    for item in report["attente"]:
+        print("DIFFERE:",item["id"],"|",item["raison"])
     print("Aucune suppression ni correction automatique.")
 
 if __name__=="__main__":
