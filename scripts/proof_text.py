@@ -67,12 +67,16 @@ def consecutive_official_dates(text,start_iso,end_iso):
         a,b=date.fromisoformat(start_iso),date.fromisoformat(end_iso)
     except (ValueError,TypeError):
         return False
-    if (a.year,a.month)!=(b.year,b.month) or a>=b or (b-a).days>16:
+    if a.year!=b.year or a>=b or (b-a).days>16:
         return False
     body=norm(text)
     season=any(f"{m} {a.year}" in body for m in
                ("vacances printemps","vacances hiver","vacances toussaint"))
-    expression=rf"\bdu {a.day} au {b.day} {MONTHS[a.month-1]}\b"
+    if a.month==b.month:
+        expression=rf"\bdu {a.day} au {b.day} {MONTHS[a.month-1]}\b"
+    else:
+        expression=(rf"\bdu {a.day} {MONTHS[a.month-1]} "
+                    rf"au {b.day} {MONTHS[b.month-1]}\b")
     return season and bool(re.search(expression,body))
 
 def official_philharmonie_section(event):
