@@ -83,7 +83,7 @@ class TestsCloud(unittest.TestCase):
 
     def test_refinement_plus_new_event_still_publishes_verified_new(self):
         b,p=fixture()
-        original=dict(p["additions"][0],id="atelier-deja-publie",title="Atelier")
+        original=dict(p["additions"][0],id="atelier-deja-publie",title="Atelier",description="Description ancienne")
         old=safe_published_event(original)
         public=dict(b,events=b["events"]+[old])
         patch_version=dict(original,venue="Auditorium de Bordeaux – salle Sauguet",
