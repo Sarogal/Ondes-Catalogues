@@ -14,6 +14,8 @@ from urllib.parse import quote
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
+from grossesondes_history_guard import validate_history_extension
+
 ROOT=Path("docs/grossesondes")
 CAL_URL="https://grosses-ondes.fr/data/festivals.json"
 HIS_URL="https://grosses-ondes.fr/data/festival-history.json"
@@ -76,10 +78,13 @@ def audit(calendar,history,patch,production_calendar,production_history):
     hist=index(history,"knownFestivals",2)
     prod=index(production_calendar,"festivals",1)
     prodhist=index(production_history,"knownFestivals",2)
-    require(all(prod.get(k)==v for k,v in cal.items()),
+    # La production Infomaniak est le cliché immuable. Un miroir qui ajoute
+    # des fiches de calendrier ne doit pas supprimer ou altérer sa base.
+    require(all(prod.get(k)==v for k,v in cal.items()) or
+            all(cal.get(k)==v for k,v in prod.items()),
             "le miroir diffère des fiches de la production ou elle a changé")
-    require(all(prodhist.get(k)==v for k,v in hist.items()),
-            "archives publiques incohérentes avec la production")
+    # L'extension historique est strictement limitée aux fiches approuvées.
+    validate_history_extension(production_history, history)
     require(isinstance(patch,dict) and patch.get("schema")=="grossesondes.patch.v1"
             and patch.get("safe_to_publish") is False,"format ou sécurité du patch incorrect")
     ref=patch.get("source") or {}
