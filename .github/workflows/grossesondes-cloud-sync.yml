@@ -58,7 +58,7 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Archiver le rapport de contrôle et le catalogue candidat
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: grossesondes-synchronisation-candidat
           path: /tmp/grossesondes_cloud/
@@ -88,10 +88,10 @@ jobs:
           git push origin HEAD:main
       - name: Configurer GitHub Pages
         if: ${{ steps.decision.outputs.deploy == 'true' }}
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Construire le site JSON Pages
         if: ${{ steps.decision.outputs.deploy == 'true' }}
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: docs/
 
@@ -108,4 +108,4 @@ jobs:
     steps:
       - name: Déployer les JSON protégés sur GitHub Pages
         id: published
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
