@@ -15,6 +15,7 @@ HOSTS = {
     "mpt.montpellier.fr", "www.opera-bordeaux.com",
     "billetterie.opera-bordeaux.com", "www.paris.fr",
     "philharmoniedeparis.fr", "www.philharmoniedeparis.fr",
+    "www.theatre-jeanne.com",
 }
 
 def norm(s):
