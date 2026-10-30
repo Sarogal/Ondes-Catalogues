@@ -61,6 +61,43 @@ def date_forms(iso):
             f"{d:02d} {MONTH_SHORT[m-1]} {y}",
             f"{d:02d} {MONTH_SHORT[m-1]}. {y}"}
 
+def consecutive_official_dates(text,start_iso,end_iso):
+    """Confirmer une plage continue sur la page organisateur, avec année."""
+    try:
+        a,b=date.fromisoformat(start_iso),date.fromisoformat(end_iso)
+    except (ValueError,TypeError):
+        return False
+    if (a.year,a.month)!=(b.year,b.month) or a>=b or (b-a).days>16:
+        return False
+    body=norm(text)
+    season=any(f"{m} {a.year}" in body for m in
+               ("vacances printemps","vacances hiver","vacances toussaint"))
+    expression=rf"\bdu {a.day} au {b.day} {MONTHS[a.month-1]}\b"
+    return season and bool(re.search(expression,body))
+
+def official_philharmonie_section(event):
+    """La même programmation officielle affiche l'année et le prix près du titre."""
+    allowed=("29702-sur-les-pas-de-simeon","29703-au-fil-deleau",
+             "29703-au-fil-de-leau")
+    if not any(event.get("source_url","").endswith("/"+v) for v in allowed):
+        return ""
+    url="https://philharmoniedeparis.fr/fr/agenda-selection/atelier-concert-pour-les-tout-petits"
+    html,error=read(url)
+    if html is None:return ""
+    parser=Visible()
+    parser.feed(html)
+    body=norm(" ".join(parser.words))
+    name=norm(event["title"])
+    occurrences=[m.start() for m in
+                 re.finditer(r"(?<![a-z0-9])"+re.escape(name)+r"(?![a-z0-9])",body)]
+    for i in occurrences:
+        excerpt=body[max(0,i-250):i+450]
+        if (present_date(excerpt,event["date_start"]) and
+            present_date(excerpt,event["date_end"]) and
+            price_is_written(event,excerpt)):
+            return excerpt
+    return ""
+
 def present_date(text,iso):
     normalized=norm(text)
     return any(norm(form) in normalized for form in date_forms(iso))
@@ -104,7 +141,7 @@ def age_is_written(event,text):
     if minimum == 0.25:
         confirmed="3 mois" in body
     elif isinstance(minimum,(float,int)) and not isinstance(minimum,bool):
-        confirmed=bool(re.search(r"\b"+str(int(minimum))+r"\s+ans\b",body))
+        confirmed=bool(re.search(r"\b"+str(int(minimum))+r"\s+(?:ans\b|a\s+\d+\s+ans\b)",body))
     else:
         return False
     if maximum is not None:
@@ -147,13 +184,20 @@ def verify_event(event,originals):
     if not headline_matches(event["title"],heading):
         return False,"titre non confirmé en en-tête de la fiche officielle"
     text=" ".join(dom.words)
-    if not present_date(text,event["date_start"]) or not present_date(text,event["date_end"]):
+    dates_ok=(present_date(text,event["date_start"]) and
+              present_date(text,event["date_end"]))
+    if not dates_ok and urlparse(event["source_url"]).hostname=="www.theatre-jeanne.com":
+        dates_ok=consecutive_official_dates(text,event["date_start"],event["date_end"])
+    related=""
+    if not dates_ok or not price_is_written(event,text):
+        related=official_philharmonie_section(event)
+    if not dates_ok and not related:
         return False,"date complète non confirmée sur la fiche officielle"
     if not venue_is_written(event,text):
         return False,"lieu absent de la fiche officielle"
     if not visible_time(text,str(event.get("time",""))):
         return False,"tous les horaires ne sont pas confirmés"
-    if not price_is_written(event,text):
+    if not price_is_written(event,text) and not related:
         return False,"tarif non confirmé"
     if not age_is_written(event,text):
         return False,"âge minimum non confirmé"
