@@ -24,6 +24,7 @@ from grossesondes_field_proof import (
 )
 
 from grossesondes_history_guard import validate_history_extension
+from grossesondes_calendar_approval import approved_calendar, merge_staged_with_approved
 
 MANIFEST=ROOT/"reference-manifest.json"
 SOURCES=[
@@ -94,7 +95,7 @@ def safe_target(baseline, candidate, currently_published):
     return currently_published["festivals"]!=candidate["festivals"]
 
 def build_candidate(snapshot, published, patch, official_sources, today):
-    target,report=stage(
+    proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today
     )
@@ -103,9 +104,20 @@ def build_candidate(snapshot, published, patch, official_sources, today):
     validate_history_extension(
         snapshot["festival-history.json"], published["festival-history.json"]
     )
-    changed=safe_target(
-        snapshot["festivals.json"],target,published["festivals.json"]
-    )
+    if published["festivals.json"] == snapshot["festivals.json"]:
+        # Compatibilité avec les tests et le premier bootstrap, avant le lot 124.
+        reference = snapshot["festivals.json"]
+        target = proven
+        report["trusted_calendar_base"] = "production_initiale_123"
+    else:
+        # Les 124 fiches déjà officiellement publiées sont une couche approuvée.
+        # Le patch du jour est construit sur la photographie initiale 123, puis
+        # ses SEULES différences prouvées sont appliquées à cette couche.
+        reference = approved_calendar(snapshot["festivals.json"])
+        target = merge_staged_with_approved(snapshot["festivals.json"], proven, reference)
+        report["trusted_calendar_base"] = "publication_approuvee_124"
+    changed=safe_target(reference,target,published["festivals.json"])
+    report["candidate_total"] = len(target["festivals"])
     if not changed:
         target["generatedAt"]=published["festivals.json"]["generatedAt"]
     report["changed"]=changed
