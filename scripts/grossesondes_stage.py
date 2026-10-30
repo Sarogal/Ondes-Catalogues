@@ -125,8 +125,12 @@ def apply_changes(entry,changes,slug,today):
     updated["lastVerified"]=next((c["after"] for c in changes if c["field"]=="lastVerified"),entry.get("lastVerified",today))
     return updated
 
-def stage(calendar,history,patch,sources,today):
-    audit(calendar,history,patch,calendar,history)
+def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None):
+    # Lors d'une prévisualisation autonome, les JSON publics historiques
+    # restent la référence du patch même après extension du miroir Pages.
+    audit(calendar,history,patch,
+          production_calendar if production_calendar is not None else calendar,
+          production_history if production_history is not None else history)
     existing={e["slug"]:e for e in calendar["festivals"]}
     produced=dict(calendar)
     rows=list(calendar["festivals"])
@@ -203,7 +207,8 @@ def main():
     history=json.loads((ROOT/"festival-history.json").read_text(encoding="utf-8"))
     # Comparer avant tout avec Infomaniak : en cas de divergence bloquer
     # (ne pas réécrire depuis l'ancienne référence).
-    audit(cal,history,patch,fetch_json(CAL_URL),fetch_json(HIS_URL))
+    production_calendar,production_history=fetch_json(CAL_URL),fetch_json(HIS_URL)
+    audit(cal,history,patch,production_calendar,production_history)
     evidence={}
     for key,url in (
         ("muscadeath","https://muscadeath.fr/"),
@@ -219,7 +224,9 @@ def main():
         except Exception as error:
             evidence[key]=""
             print(key+": preuve non disponible ; changement maintenu en attente")
-    out,report=stage(cal,history,patch,evidence,today)
+    out,report=stage(cal,history,patch,evidence,today,
+                     production_calendar=production_calendar,
+                     production_history=production_history)
     report["patch"]=path
     OUT.mkdir(parents=True,exist_ok=True)
     (OUT/"festivals-candidat.json").write_text(
