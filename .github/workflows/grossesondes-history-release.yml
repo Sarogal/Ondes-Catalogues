@@ -52,6 +52,12 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Vérifier le cliché Infomaniak et les seules archives approuvées
         run: python scripts/grossesondes_history_release.py
+      - name: Exécuter les deux workflows Grosses Ondes en prévisualisation réelle
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+        run: |
+          python scripts/grossesondes_stage.py
+          python scripts/grossesondes_cloud_sync.py --mode preview
       - name: Garantir qu'aucun JSON ou code n'a été modifié par la vérification
         run: |
           git diff --exit-code
