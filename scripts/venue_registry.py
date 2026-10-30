@@ -7,6 +7,12 @@ from proof import norm, meters
 
 VENUES = [
     {
+        "city": "Nantes", "aliases": ["Théâtre de Jeanne"],
+        "lat": 47.20457, "lng": -1.57551,
+        "official": "https://www.theatre-jeanne.com/infos-pratiques/",
+        "geo_source": "https://mapcarta.com/fr/N576891555",
+    },
+    {
         "city": "Montpellier", "aliases": ["Maison pour tous Marcel Pagnol"],
         "lat": 43.60149, "lng": 3.85025,
         "official": "https://mpt.montpellier.fr/maisons/marcel-pagnol",
