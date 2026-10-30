@@ -64,6 +64,67 @@ class TestsCloud(unittest.TestCase):
         self.assertEqual(len(out["events"]),101)
         self.assertEqual(r["ajoutes"],0)
 
+    def test_previously_published_event_can_gain_room_without_overwrite(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],description="Texte de la veille")
+        p["additions"]=[original]
+        public_event=safe_published_event(original)
+        public=dict(b,events=b["events"]+[public_event])
+        proposed=dict(original,
+                      venue="Auditorium de Bordeaux – salle Sauguet",
+                      verified_at="2026-10-29",
+                      description="Précision de salle publiée dans la veille")
+        p["additions"]=[proposed]
+        out,report=merge(b,public,p,TODAY,checker=lambda e,ref:(False,"non vérifié"))
+        self.assertEqual(out,public)
+        self.assertEqual(report["ajoutes"],0)
+        self.assertEqual(len(report["attente"]),1)
+        self.assertIn("non appliquée",report["attente"][0]["raison"])
+
+    def test_refinement_plus_new_event_still_publishes_verified_new(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],id="atelier-deja-publie",title="Atelier")
+        old=safe_published_event(original)
+        public=dict(b,events=b["events"]+[old])
+        patch_version=dict(original,venue="Auditorium de Bordeaux – salle Sauguet",
+                           description="Nouveau détail non audité")
+        new=dict(original,id="autre-evenement-nouveau",title="Autre événement")
+        p["additions"]=[patch_version,new]
+        out,report=merge(b,public,p,TODAY,checker=lambda e,ref:(True,"preuve"))
+        self.assertEqual(report["ajoutes"],1)
+        self.assertEqual(len(out["events"]),102)
+        self.assertEqual(out["events"][100],old)
+        self.assertEqual(out["events"][101]["id"],"autre-evenement-nouveau")
+
+    def test_changed_date_on_published_event_still_blocks(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],description="Vieille description")
+        public=dict(b,events=b["events"]+[safe_published_event(original)])
+        p["additions"]=[dict(original,date_start="2027-02-03")]
+        with self.assertRaises(ValueError):merge(b,public,p,TODAY)
+
+    def test_changed_coordinates_on_published_event_still_blocks(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],description="Vieille description")
+        public=dict(b,events=b["events"]+[safe_published_event(original)])
+        p["additions"]=[dict(original,lat=1.5)]
+        with self.assertRaises(ValueError):merge(b,public,p,TODAY)
+
+    def test_unrelated_venue_replacement_still_blocks(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],description="Vieille description")
+        public=dict(b,events=b["events"]+[safe_published_event(original)])
+        p["additions"]=[dict(original,venue="Nouvelle salle inventée")]
+        with self.assertRaises(ValueError):merge(b,public,p,TODAY)
+
+    def test_older_verified_date_still_blocks(self):
+        b,p=fixture()
+        original=dict(p["additions"][0],description="Vieille description")
+        public=dict(b,events=b["events"]+[safe_published_event(original)])
+        p["additions"]=[dict(original,venue="Auditorium de Bordeaux – salle Sauguet",
+                             verified_at="2026-10-28")]
+        with self.assertRaises(ValueError):merge(b,public,p,TODAY)
+
     def test_historical_deletion_blocked(self):
         b,p=fixture()
         o=dict(b,events=b["events"][1:])
