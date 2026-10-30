@@ -62,6 +62,40 @@ def safe_published_event(event):
         )
     return public
 
+def compatible_published_refinement(old, proposed, today):
+    """Compatibilité d'un ajout CUMULATIF déjà publié.
+
+    Le patch privé peut préciser le lieu ou renouveler sa date de contrôle
+    après publication. Aucun de ces changements n'est APPLIQUÉ ici.
+    Tout autre champ divergent reste une collision bloquante.
+    """
+    if not isinstance(old,dict) or not isinstance(proposed,dict):
+        return False
+    if set(old)!=set(proposed):
+        return False
+    allowed={"description","venue","verified_at"}
+    if any(old[k]!=proposed[k] for k in old if k not in allowed):
+        return False
+    sanitized=safe_published_event(proposed)
+    if old.get("description") not in (
+        proposed.get("description"),sanitized.get("description")
+    ):
+        return False
+    if old.get("venue")!=proposed.get("venue"):
+        old_venue=norm(old.get("venue",""))
+        new_venue=norm(proposed.get("venue",""))
+        # Enrichissement strict de l'ancien lieu avec une salle identifiée.
+        if not (old_venue and new_venue.startswith(old_venue+" salle ")):
+            return False
+    try:
+        before=date.fromisoformat(old["verified_at"])
+        after=date.fromisoformat(proposed["verified_at"])
+        if not before<=after<=today:
+            return False
+    except (ValueError,TypeError,KeyError):
+        return False
+    return True
+
 def merge(ref,public,patch,today,checker=proof):
     originals=byid(ref)
     published=byid(public)
@@ -78,7 +112,15 @@ def merge(ref,public,patch,today,checker=proof):
         guard(eid not in seen,"doublon dans patch : "+eid)
         seen.add(eid)
         if eid in published:
-            guard(published[eid] in (ev,safe_published_event(ev)),"collision avec une fiche déjà publiée : "+eid)
+            if published[eid] in (ev,safe_published_event(ev)):
+                continue
+            guard(compatible_published_refinement(published[eid],ev,today),
+                  "collision avec une fiche déjà publiée : "+eid)
+            waiting.append({
+                "id":eid,
+                "raison":"fiche déjà publiée : précision de salle ou nouvelle date de "
+                         "vérification détectée, non appliquée automatiquement"
+            })
             continue
         signature=(norm(ev.get("title")),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
