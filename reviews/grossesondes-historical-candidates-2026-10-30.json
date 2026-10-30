@@ -2,8 +2,8 @@
   "schema": "grossesondes.history.candidates.v1",
   "preparedAt": "2026-10-30",
   "ministrySource": "https://www.data.gouv.fr/datasets/liste-des-festivals-en-france",
-  "status": "reviewed_not_published",
-  "safety": "Proposition séparée du catalogue pour préserver les garde-fous du synchroniseur. Intégration future uniquement avec plan de synchronisation des archives testé.",
+  "status": "approved_for_history_release",
+  "safety": "Les trois références metal/hard rock approuvées sont ajoutées uniquement à l'historique. Festival de la Mer reste candidat non publié car punk/hardcore/rock alternatif. Ne pas créer de dates d'édition 2027.",
   "baseArchives": 170,
   "additions": [
     {
@@ -148,5 +148,14 @@
         "https://landunvez.fr/evenements/concerts-festival-de-la-mer/"
       ]
     }
+  ],
+  "releaseDate": "2026-10-30",
+  "approvedSlugs": [
+    "rock-in-bourlon",
+    "heavy-metal-breizh",
+    "bully-on-rocks"
+  ],
+  "deferredSlugs": [
+    "festival-de-la-mer-landunvez"
   ]
 }
