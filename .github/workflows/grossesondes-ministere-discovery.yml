@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Tester le detecteur de festivals
@@ -22,7 +22,7 @@ jobs:
       - name: Extraire les pistes du ministere (aucune date future publiee)
         run: python scripts/grossesondes_ministere_discovery.py
       - name: Archiver le rapport de recherche
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: grossesondes-decouverte-ministere
           path: /tmp/grossesondes_ministere/rapport.json
