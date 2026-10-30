@@ -1,0 +1,88 @@
+name: Grosses Ondes - archives historiques append-only
+
+on:
+  pull_request:
+    paths:
+      - 'docs/grossesondes/festival-history.json'
+      - 'reviews/grossesondes-historical-candidates-2026-10-30.json'
+      - 'scripts/grossesondes_history_guard.py'
+      - 'scripts/grossesondes_history_release.py'
+      - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_preview.py'
+      - 'scripts/grossesondes_stage.py'
+      - 'tests/test_grosses_history_guard.py'
+      - '.github/workflows/grossesondes-history-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/grossesondes/festival-history.json'
+      - 'reviews/grossesondes-historical-candidates-2026-10-30.json'
+      - 'scripts/grossesondes_history_guard.py'
+      - 'scripts/grossesondes_history_release.py'
+      - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_preview.py'
+      - 'scripts/grossesondes_stage.py'
+      - '.github/workflows/grossesondes-history-release.yml'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Audit seul ou publication contrôlée'
+        type: choice
+        required: true
+        default: preview
+        options: [preview, publish]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-cloud-publication
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Exécuter tous les tests de conservation et de non-régression
+        run: python -m unittest discover -s tests -v
+      - name: Vérifier le cliché Infomaniak et les seules archives approuvées
+        run: python scripts/grossesondes_history_release.py
+      - name: Garantir qu'aucun JSON ou code n'a été modifié par la vérification
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Audit conservateur : aucun fichier modifié."
+
+  publish:
+    needs: verify
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.mode == 'publish') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.release.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Revalider l'intégrité immédiatement avant le déploiement
+        run: python scripts/grossesondes_history_release.py
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v6
+      - name: Construire exclusivement les JSON déjà approuvés
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+      - name: Publier la copie GitHub Pages validée
+        id: release
+        uses: actions/deploy-pages@v5

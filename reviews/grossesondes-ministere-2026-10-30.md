@@ -1,5 +1,14 @@
 # Grosses Ondes — découverte à partir de la base ministérielle (30 octobre 2026)
 
+## Mise en service de l'historique (lot 2, 30 octobre 2026)
+
+- **3 archives métal / hard rock approuvées** : Rock In Bourlon, Heavy Metal Breizh et Bully on Rocks. L'historique GitHub Pages passera de **170 à 173 références** après succès des tests et du déploiement.
+- **1 festival différé** : Festival de la Mer (Landunvez), principalement punk/hardcore/rock alternatif, conservé dans le registre de candidats sans publication.
+- Le calendrier de **124 éditions reste inchangé**.
+- La photographie initiale Infomaniak demeure à **170 archives** et son empreinte SHA-256 est conservée. Seule l'extension autorisée, contrôlée entrée par entrée et en ordre, est admise par la prévisualisation et le synchroniseur.
+- Le nouveau workflow GitHub Actions exécute **tous les tests**, vérifie la photographie publique et ne déploie sur Pages que si l'ensemble est conforme. Il n'écrit jamais sur Infomaniak.
+- Aucun calendrier futur, date 2027 ou point de carte n'est créé à partir des archives.
+
 ## Portée du lot
 
 Source : [Liste des festivals en France — ministère de la Culture](https://www.data.gouv.fr/datasets/liste-des-festivals-en-france), Licence Ouverte 2.0. CSV utilisateur de 7 283 lignes, recensement de référence 2019 ; la mise à jour technique du fichier en septembre 2026 ne valide aucune édition 2026/2027.
@@ -42,10 +51,10 @@ Les **170 entrées existantes** sont conservées **sans aucune modification du J
 
 ## À vérifier avant fusion
 
-1. **Avant intégration des quatre archives** : modifier de manière contrôlée le synchroniseur actuel pour accepter des ajouts historiques append-only audités, sans altérer le cliché Infomaniak ni permettre de suppressions ; tester la prévisualisation et le cloud-sync. Ne pas mettre le JSON historique 174 sur `main` sans cette migration.
+1. **Migration préparée sur une branche isolée** : n'autoriser que les trois archives approuvées en append-only ; ne pas inclure Festival de la Mer sans validation éditoriale distincte.
 2. Exécuter les tests du dépôt et tester le téléchargement depuis GitHub Actions (premier job GitHub Actions `41122527701` passé).
 3. Revoir le lot de 8 archives et les 14 autres pistes incertaines dans le rapport initial.
 4. Vérifier que la fusion n'active pas de modification de `festivals.json` ni de publication implicite : les workflows actuels font des synchronisations distinctes.
-5. Déployer les archives uniquement après revue et validation de la migration de sécurité ; l'activation de la veille mensuelle en lecture seule est indépendante.
+5. Déployer les trois archives historiques sur GitHub Pages uniquement après réussite des tests et du contrôle des deux sources publiques ; ne pas modifier Infomaniak.
 
 **Aucune modification du site en production dans ce lot.**

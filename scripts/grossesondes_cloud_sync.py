@@ -23,6 +23,8 @@ from grossesondes_field_proof import (
     FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL
 )
 
+from grossesondes_history_guard import validate_history_extension
+
 MANIFEST=ROOT/"reference-manifest.json"
 SOURCES=[
     ("festivals.json", CAL_URL, "festivals", 1),
@@ -96,8 +98,11 @@ def build_candidate(snapshot, published, patch, official_sources, today):
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today
     )
-    require(published["festival-history.json"]==snapshot["festival-history.json"],
-            "les archives publiques ont changé : audit manuel obligatoire")
+    # Une seule extension historique approuvée est admissible, sans toucher
+    # à l'empreinte immuable des 170 archives sur Infomaniak.
+    validate_history_extension(
+        snapshot["festival-history.json"], published["festival-history.json"]
+    )
     changed=safe_target(
         snapshot["festivals.json"],target,published["festivals.json"]
     )
