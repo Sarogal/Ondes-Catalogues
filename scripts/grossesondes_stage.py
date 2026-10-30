@@ -18,6 +18,8 @@ from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
 from grossesondes_generic_roster import validate_roster
+from grossesondes_history_guard import validate_history_extension
+from grossesondes_calendar_approval import check_known_calendar, approved_calendar, merge_staged_with_approved
 from grossesondes_field_proof import (
     cernunnos_update, fantasmagorik_update,
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
@@ -208,7 +210,10 @@ def main():
     # Comparer avant tout avec Infomaniak : en cas de divergence bloquer
     # (ne pas réécrire depuis l'ancienne référence).
     production_calendar,production_history=fetch_json(CAL_URL),fetch_json(HIS_URL)
-    audit(cal,history,patch,production_calendar,production_history)
+    check_known_calendar(production_calendar,cal)
+    validate_history_extension(production_history,history)
+    audit(production_calendar,production_history,patch,
+          production_calendar,production_history)
     evidence={}
     for key,url in (
         ("muscadeath","https://muscadeath.fr/"),
@@ -224,9 +229,17 @@ def main():
         except Exception as error:
             evidence[key]=""
             print(key+": preuve non disponible ; changement maintenu en attente")
-    out,report=stage(cal,history,patch,evidence,today,
-                     production_calendar=production_calendar,
-                     production_history=production_history)
+    proven,report=stage(production_calendar,production_history,patch,evidence,today)
+    if cal == production_calendar:
+        out = proven
+        report["trusted_calendar_base"] = "production_initiale_123"
+    else:
+        out = merge_staged_with_approved(
+            production_calendar,proven,approved_calendar(production_calendar)
+        )
+        report["trusted_calendar_base"] = "publication_approuvee_124"
+    report["candidate_total"] = len(out["festivals"])
+    report["current_published_count"] = len(cal["festivals"])
     report["patch"]=path
     OUT.mkdir(parents=True,exist_ok=True)
     (OUT/"festivals-candidat.json").write_text(

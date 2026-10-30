@@ -15,6 +15,7 @@ from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 
 from grossesondes_history_guard import validate_history_extension
+from grossesondes_calendar_approval import check_known_calendar
 
 ROOT=Path("docs/grossesondes")
 CAL_URL="https://grosses-ondes.fr/data/festivals.json"
@@ -160,7 +161,19 @@ def main():
     p,path=load_patch(token,today)
     c=json.loads((ROOT/"festivals.json").read_text(encoding="utf-8"))
     h=json.loads((ROOT/"festival-history.json").read_text(encoding="utf-8"))
-    report=audit(c,h,p,fetch_json(CAL_URL),fetch_json(HIS_URL))
+    production_calendar,production_history=fetch_json(CAL_URL),fetch_json(HIS_URL)
+    check_known_calendar(production_calendar,c)
+    validate_history_extension(production_history,h)
+    # Le patch décrit toujours la photographie publique initiale.
+    # Il ne doit pas réécrire les corrections déjà appliquées sur Pages.
+    report=audit(production_calendar,production_history,p,
+                 production_calendar,production_history)
+    report["current_calendar"]=len(c["festivals"])
+    report["current_history"]=len(h["knownFestivals"])
+    report["already_published_additions"]=sum(
+        1 for x in p["additions"] if x.get("slug") in
+        {e["slug"] for e in c["festivals"]}
+    )
     report["private_patch"]=path
     print(json.dumps(report,ensure_ascii=False,indent=2))
 

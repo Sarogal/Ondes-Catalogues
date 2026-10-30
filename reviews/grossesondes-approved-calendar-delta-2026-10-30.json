@@ -1,0 +1,196 @@
+{
+  "schema": "grossesondes.calendar.approved-delta.v1",
+  "createdAt": "2026-10-30",
+  "baselineReference": {
+    "calendarCount": 123,
+    "generatedAt": "2026-10-25",
+    "sha256": "34eefea6689008eec09e1d2bad57e9a8b2ca270f936fd07f6d669947ecd47898"
+  },
+  "approvedPublic": {
+    "calendarCount": 124,
+    "generatedAt": "2026-10-30",
+    "gitBlobSha": "0fb7230f7b98ab4213294798f15804ba61ef8807"
+  },
+  "safety": "Previously published and source-verified changes. No deletions or unverified future dates.",
+  "changes": [
+    {
+      "slug": "festival-metal-vouziers-2026",
+      "changes": {
+        "lastVerified": {
+          "before": "2026-10-10",
+          "after": "2026-10-29"
+        },
+        "notes": {
+          "before": "36e édition le 31 octobre 2026. Sept groupes listés par le Conseil départemental des Ardennes. Tarif 50 € en prévente / 55 € sur place préexistant au V3.15, mais non corroboré sur la fiche départementale : à revérifier auprès de la billetterie.",
+          "after": "36e édition le 31 octobre 2026. Sept groupes listés par le Conseil départemental des Ardennes. Tarifs de 50 € en prévente et 55 € sur place confirmés par l'Office de tourisme du Sud-Ardennes le 29/10/2026."
+        },
+        "verificationStatus": {
+          "before": "À recontrôler sur source officielle",
+          "after": "Dates, programmation et tarifs 50 €/55 € corroborés par sources institutionnelles."
+        },
+        "sourceConfidence": {
+          "before": "Conseil départemental pour dates/lieu/programmation ; prix hérité non revérifié",
+          "after": "Conseil départemental pour dates/lieu/artistes ; Office de tourisme Sud-Ardennes pour tarifs 2026."
+        },
+        "auditSources": {
+          "before": [
+            "https://www.cd08.fr/evenements/festival-metal-vouziers"
+          ],
+          "after": [
+            "https://www.cd08.fr/evenements/festival-metal-vouziers",
+            "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"
+          ]
+        }
+      }
+    },
+    {
+      "slug": "cernunnos-pagan-fest",
+      "changes": {
+        "bands": {
+          "before": 16,
+          "after": 20
+        },
+        "price": {
+          "before": "Tarifs indicatifs affichés sur pages officielles : 60 € samedi ou dimanche (prévente) ; 95 € pass 2 jours ; 65 € / 100 € sur place. Billetterie indiquée « pas encore ouverte » : tarifs à confirmer à l'ouverture.",
+          "after": "Tarifs affichés sur le site officiel pour 2027 : vendredi 45 €, samedi ou dimanche 60 €, pass 3 jours 130 € en prévente ; sur place, journée samedi/dimanche 65 €, pass 2 jours 100 €. État d'ouverture de la billetterie non établi."
+        },
+        "lastVerified": {
+          "before": "2026-10-10",
+          "after": "2026-10-29"
+        },
+        "notes": {
+          "before": "Édition annoncée du vendredi 12 au dimanche 14 février 2027 à la Ferme du Buisson. Le site officiel affiche maintenant 16 artistes pour la première vague (Adfeilion, Arthuan Rebis Trio, Domhain, Einherjer, Fejd, Firemage, Maruna, Morgarten, Ondfødt, Rhesus, Saor, Svartsot, Trold, Uttern, XIV Dark Centuries et Ydhessä). Répartition des artistes par jour NON publiée. Les billets de concert détaillés par le site couvrent samedi et dimanche ; événement global annoncé du vendredi au dimanche, ne pas déduire un concert le vendredi. Les pages officielles affichent 60 € par jour de concerts et 95 € pass 2 jours (65 €/100 € sur place), mais la page billetterie déclare que la vente n'est pas encore ouverte et des instantanés antérieurs étaient contradictoires. Les tarifs restent indicatifs à revérifier avant vente. Fête médiévale gratuite ; concerts gratuits jusqu'à 13 ans selon la page française (formulation à vérifier à l'ouverture).",
+          "after": "Édition 2027 du 12 au 14 février à la Ferme du Buisson, Noisiel. 20 artistes nommément affichés sur la page officielle des groupes. Répartition par journée non publiée. Les tarifs indiqués sont ceux de la page officielle d'informations pratiques, sans confirmation de disponibilité immédiate des billets."
+        },
+        "sourceConfidence": {
+          "before": "Pages officielles de programmation et informations pratiques (versions de page à surveiller)",
+          "after": "Site officiel : noms des groupes et grille tarifaire ; aucune déduction de programmation par jour."
+        },
+        "auditSources": {
+          "before": [
+            "https://www.cernunnospaganfest.fr/infos-pratiques/",
+            "https://www.cernunnospaganfest.fr/groupes/",
+            "https://www.cernunnospaganfest.fr/en/info/",
+            "https://www.cernunnospaganfest.fr/billetterie/"
+          ],
+          "after": [
+            "https://www.cernunnospaganfest.fr/infos-pratiques/",
+            "https://www.cernunnospaganfest.fr/groupes/",
+            "https://www.cernunnospaganfest.fr/en/info/",
+            "https://www.cernunnospaganfest.fr/billetterie/",
+            "https://www.cernunnospaganfest.fr/"
+          ]
+        },
+        "lineup": {
+          "before": [
+            "Adfeilion",
+            "Arthuan Rebis Trio",
+            "Domhain",
+            "Einherjer",
+            "Fejd",
+            "Firemage",
+            "Maruna",
+            "Morgarten",
+            "Ondfødt",
+            "Rhesus",
+            "Saor",
+            "Svartsot",
+            "Trold",
+            "Uttern",
+            "XIV Dark Centuries",
+            "Ydhessä"
+          ],
+          "after": [
+            "Adfeilion",
+            "Arthuan Rebis Trio",
+            "Domhain",
+            "Einherjer",
+            "Fejd",
+            "Firemage",
+            "Maruna",
+            "Morgarten",
+            "Ondfødt",
+            "Rhesus",
+            "Saor",
+            "Svartsot",
+            "Trold",
+            "Uttern",
+            "XIV Dark Centuries",
+            "Ydhessä",
+            "Glyphe",
+            "Askemåne",
+            "Keltania",
+            "Ruadh"
+          ]
+        },
+        "verificationStatus": {
+          "before": "16 noms annoncés, tarifs officiels affichés sous réserve de vente non encore ouverte ; répartition par jour absente",
+          "after": "20 artistes vérifiés sur le site officiel ; autres annonces et répartition par jour en attente."
+        }
+      }
+    },
+    {
+      "slug": "autfest-2027",
+      "changes": {
+        "lastVerified": {
+          "before": "2026-10-10",
+          "after": "2026-10-29"
+        },
+        "notes": {
+          "before": "Édition anniversaire caritative au profit des familles concernées par l’autisme, samedi 2 octobre 2027 de 15h à 23h55 à l’Arena Stade Couvert de Liévin (chemin des Manufactures). Six groupes prévus, TROIS annoncés à ce stade : Ultra Vomit, Septicflesh et Tagada Jones. Trois autres groupes de folk metal, speed metal et metal alternatif restent à nommer. Billetterie officiellement ouverte mais aucun tarif lisible dans le texte public de la page ; ne pas inventer de montant.",
+          "after": "Édition anniversaire caritative le 2 octobre 2027 à l'Arena Stade Couvert de Liévin. Cinq groupes nommés sur la billetterie officielle (Ultra Vomit, Septicflesh, Tagada Jones, Vanaheim, Hope as a weapon) ; sixième groupe encore à annoncer. Aucun tarif chiffré vérifié."
+        },
+        "verificationStatus": {
+          "before": "3/6 groupes annoncés, lieu et horaires vérifiés ; prix non établi",
+          "after": "5/6 groupes officiellement nommés ; dernier TBA ; tarif non établi."
+        },
+        "lineup": {
+          "before": [
+            "Ultra Vomit",
+            "Septicflesh",
+            "Tagada Jones"
+          ],
+          "after": [
+            "Ultra Vomit",
+            "Septicflesh",
+            "Tagada Jones",
+            "Vanaheim",
+            "Hope as a weapon"
+          ]
+        }
+      }
+    }
+  ],
+  "additions": [
+    {
+      "slug": "muscadeath-2027",
+      "name": "Muscadeath 2027",
+      "startDate": null,
+      "endDate": null,
+      "city": null,
+      "department": null,
+      "region": null,
+      "styles": "Metal extrême",
+      "bands": null,
+      "days": null,
+      "capacity": null,
+      "price": null,
+      "organizer": null,
+      "officialSite": "https://muscadeath.fr/",
+      "social": null,
+      "status": "Dates à venir",
+      "source": "https://muscadeath.fr/",
+      "lastVerified": "2026-10-29",
+      "notes": "Retour 2027 explicitement annoncé (« Rendez-vous en 2027 »). Dates, lieu futur, commune, artistes, tarifs et organisateur de cette édition non confirmés. Vallet est le lieu historique, pas un lieu 2027 confirmé.",
+      "venue": null,
+      "futureVenueConfirmed": false,
+      "showOnMap": false,
+      "sourceConfidence": "Site officiel : retour 2027 uniquement ; dates et emplacement futur inconnus.",
+      "verificationStatus": "Édition 2027 annoncée sans date ni lieu futur.",
+      "lineup": [],
+      "auditSources": [
+        "https://muscadeath.fr/"
+      ]
+    }
+  ]
+}
