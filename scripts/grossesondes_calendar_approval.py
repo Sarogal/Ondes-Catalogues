@@ -143,8 +143,8 @@ def merge_staged_with_approved(original, staged, trusted):
                             "comptage officiel discordant : " + slug)
                     current[field] = len(current["lineup"])
                     continue
-                if field in base and current.get(field) != base.get(field)
-                        and current.get(field) != value:
+                if (field in base and current.get(field) != base.get(field)
+                        and current.get(field) != value):
                     # Deux valeurs nouvelles contradictoires : l'ancienne preuve
                     # prévaut sauf si la nouvelle vérification est strictement
                     # postérieure. Ne pas faire de régression silencieuse.
@@ -153,7 +153,11 @@ def merge_staged_with_approved(original, staged, trusted):
                             and entry["lastVerified"] > current["lastVerified"],
                             "correction plus ancienne ou conflictuelle : " + slug + "." + field)
                 current[field] = deepcopy(value)
-            if isinstance(entry.get("lineup"), list) and isinstance(current.get("bands"), int):
+            if (isinstance(entry.get("lineup"), list)
+                    and entry["lineup"] != base.get("lineup")
+                    and isinstance(base.get("lineup"), list)
+                    and base.get("bands") == len(base["lineup"])
+                    and isinstance(current.get("bands"), int)):
                 current["bands"] = len(current["lineup"])
         elif slug in by_slug:
             require(by_slug[slug] == entry, "édition approuvée contradictoire : " + slug)
