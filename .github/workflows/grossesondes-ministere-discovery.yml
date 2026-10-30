@@ -1,0 +1,35 @@
+name: Grosses Ondes - decouverte ministerielle (lecture seule)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '25 9 1 * *'
+
+permissions:
+  contents: read
+
+jobs:
+  discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester le detecteur de festivals
+        run: python -m unittest discover -s tests -p 'test_grosses_ministere_discovery.py' -v
+      - name: Extraire les pistes du ministere (aucune date future publiee)
+        run: python scripts/grossesondes_ministere_discovery.py
+      - name: Archiver le rapport de recherche
+        uses: actions/upload-artifact@v4
+        with:
+          name: grossesondes-decouverte-ministere
+          path: /tmp/grossesondes_ministere/rapport.json
+          retention-days: 30
+          if-no-files-found: error
+      - name: Interdire toute modification des catalogues
+        run: |
+          git diff --exit-code -- docs/grossesondes/festivals.json docs/grossesondes/festival-history.json
+          git diff --cached --exit-code
+          echo "Audit mensuel uniquement : aucune ecriture ni deploiement."
