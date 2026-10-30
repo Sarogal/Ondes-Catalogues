@@ -6,7 +6,7 @@ Source : [Liste des festivals en France — ministère de la Culture](https://ww
 
 Référence de départ : `docs/grossesondes/festivals.json` (124 éditions, 30/10/2026) et `docs/grossesondes/festival-history.json` (170 références, 22/10/2026).
 
-## Quatre fiches **historiques** proposées dans cette branche
+## Quatre fiches **historiques** conservées dans un lot candidat distinct
 
 | Festival | Dernière édition documentée | Sources | Remarque |
 |---|---|---|---|
@@ -15,7 +15,7 @@ Référence de départ : `docs/grossesondes/festivals.json` (124 éditions, 30/1
 | Bully on Rocks (62) | 29–30 mai 2026 | [Ville de Bully-les-Mines](https://www.bullylesmines.fr/actualite/bully-on-rocks-le-rendez-vous-incontournable-revient-pour-deux-jours/) | Ne pas confondre avec le rendez-vous distinct du 17 octobre |
 | Festival de la Mer (29) | 24–25 juillet 2026 | [Organisateur](https://festivaldelamer.com/), [commune](https://landunvez.fr/evenements/concerts-festival-de-la-mer/) | **Genres voisins** : punk / hardcore / rock alternatif, pas exclusivement métal |
 
-Les **170 entrées existantes** sont conservées. Historique candidat : **174 références**, sans modification du calendrier. Aucune date 2027 n'est inventée. Le festival de la Mer doit être validé éditorialement si la carte se limite aux festivals strictement métal.
+Les **170 entrées existantes** sont conservées **sans aucune modification du JSON public**. Les quatre fiches prêtes à intégrer sont isolées dans `reviews/grossesondes-historical-candidates-2026-10-30.json` : après préparation et avant publication éventuelle, l'historique aurait **174 références**. Cette séparation évite de bloquer le synchroniseur actuel, qui exige encore une concordance immuable des 170 archives avec sa référence Infomaniak. Aucune date 2027 n'est inventée. Le festival de la Mer doit être validé éditorialement si la carte se limite aux festivals strictement métal.
 
 ## Huit autres références documentées — vérification avant toute intégration
 
@@ -42,10 +42,10 @@ Les **170 entrées existantes** sont conservées. Historique candidat : **174 r�
 
 ## À vérifier avant fusion
 
-1. Confirmer le périmètre éditorial du Festival de la Mer (punk/hardcore/rock alternatif).
-2. Exécuter les tests du dépôt et tester le téléchargement depuis GitHub Actions.
+1. **Avant intégration des quatre archives** : modifier de manière contrôlée le synchroniseur actuel pour accepter des ajouts historiques append-only audités, sans altérer le cliché Infomaniak ni permettre de suppressions ; tester la prévisualisation et le cloud-sync. Ne pas mettre le JSON historique 174 sur `main` sans cette migration.
+2. Exécuter les tests du dépôt et tester le téléchargement depuis GitHub Actions (premier job GitHub Actions `41122527701` passé).
 3. Revoir le lot de 8 archives et les 14 autres pistes incertaines dans le rapport initial.
 4. Vérifier que la fusion n'active pas de modification de `festivals.json` ni de publication implicite : les workflows actuels font des synchronisations distinctes.
-5. Déployer les archives seulement après revue et validation explicite.
+5. Déployer les archives uniquement après revue et validation de la migration de sécurité ; l'activation de la veille mensuelle en lecture seule est indépendante.
 
 **Aucune modification du site en production dans ce lot.**
