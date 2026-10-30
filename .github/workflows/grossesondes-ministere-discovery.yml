@@ -1,6 +1,13 @@
 name: Grosses Ondes - decouverte ministerielle (lecture seule)
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-ministere-discovery.yml'
+      - 'scripts/grossesondes_ministere_discovery.py'
+      - 'tests/test_grosses_ministere_discovery.py'
+      - 'docs/grossesondes/festival-history.json'
+      - 'docs/grossesondes/festivals.json'
   workflow_dispatch:
   schedule:
     - cron: '25 9 1 * *'
