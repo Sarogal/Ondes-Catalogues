@@ -107,6 +107,10 @@ class TrustedPublishedCalendarTests(unittest.TestCase):
         result = merge_staged_with_approved(original, staged, published)
         actual = next(x for x in result["festivals"] if x["slug"] == "cernunnos-pagan-fest")
         self.assertEqual(actual["lineup"][-1], "Test uniquement")
+        originally_approved = next(x for x in published["festivals"]
+                                   if x["slug"] == "cernunnos-pagan-fest")
+        self.assertEqual(actual["lineup"][:-1], originally_approved["lineup"])
+        self.assertEqual(actual["bands"], 21)
         self.assertEqual(actual["price"], next(x for x in published["festivals"]
                                                 if x["slug"] == "cernunnos-pagan-fest")["price"])
         self.assertEqual(len(result["festivals"]), 124)
