@@ -110,11 +110,51 @@ def merge_staged_with_approved(original, staged, trusted):
             current = by_slug[slug]
             require(all(field in entry for field in base),
                     "champ source supprimé : " + slug)
+            # Une mise à jour n'a pas le droit de retirer des artistes ou
+            # des sources déjà corroborés dans le cliché approuvé.
             for field, value in entry.items():
-                if field not in base or value != base[field]:
-                    require(field not in ("slug", "name"),
-                            "identité réécrite dans le patch")
-                    current[field] = deepcopy(value)
+                if field in base and value == base[field]:
+                    continue
+                require(field not in ("slug", "name"),
+                        "identité réécrite dans le patch")
+                if field == "lineup":
+                    old_lineup = base.get("lineup")
+                    approved_lineup = current.get("lineup")
+                    require(isinstance(old_lineup, list) and isinstance(value, list)
+                            and isinstance(approved_lineup, list)
+                            and value[:len(old_lineup)] == old_lineup
+                            and approved_lineup[:len(old_lineup)] == old_lineup,
+                            "programmation non additive : " + slug)
+                    for artist in value[len(old_lineup):]:
+                        require(isinstance(artist, str) and artist.strip(),
+                                "nom d'artiste invalide")
+                        if artist not in approved_lineup:
+                            approved_lineup.append(artist)
+                    continue
+                if field == "auditSources":
+                    require(isinstance(value, list) and isinstance(current.get(field), list),
+                            "sources non fusionnables : " + slug)
+                    current[field] = list(dict.fromkeys(current[field] + value))
+                    continue
+                if field == "bands" and isinstance(entry.get("lineup"), list):
+                    # La somme des artistes connus prime sur le chiffre extrait
+                    # d'une ancienne photographie partielle du site officiel.
+                    require(value == len(entry["lineup"]),
+                            "comptage officiel discordant : " + slug)
+                    current[field] = len(current["lineup"])
+                    continue
+                if field in base and current.get(field) != base.get(field)
+                        and current.get(field) != value:
+                    # Deux valeurs nouvelles contradictoires : l'ancienne preuve
+                    # prévaut sauf si la nouvelle vérification est strictement
+                    # postérieure. Ne pas faire de régression silencieuse.
+                    require(isinstance(entry.get("lastVerified"), str)
+                            and isinstance(current.get("lastVerified"), str)
+                            and entry["lastVerified"] > current["lastVerified"],
+                            "correction plus ancienne ou conflictuelle : " + slug + "." + field)
+                current[field] = deepcopy(value)
+            if isinstance(entry.get("lineup"), list) and isinstance(current.get("bands"), int):
+                current["bands"] = len(current["lineup"])
         elif slug in by_slug:
             require(by_slug[slug] == entry, "édition approuvée contradictoire : " + slug)
         else:
