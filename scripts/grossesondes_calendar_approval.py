@@ -160,7 +160,25 @@ def merge_staged_with_approved(original, staged, trusted):
                     and isinstance(current.get("bands"), int)):
                 current["bands"] = len(current["lineup"])
         elif slug in by_slug:
-            require(by_slug[slug] == entry, "édition approuvée contradictoire : " + slug)
+            # Une annonce déjà intégrée et certifiée est idempotente. Le patch
+            # cumulatif peut porter une ancienne formulation des notes : on ne
+            # la réécrit jamais. Son identité, son statut et ses sources restent
+            # néanmoins soumis à contrôle strict avant de l'ignorer.
+            require(slug == "muscadeath-2027"
+                    and by_slug[slug] == load_approval()["additions"][0],
+                    "édition ajoutée inconnue ou modifiée : " + str(slug))
+            require(entry.get("slug") == by_slug[slug]["slug"]
+                    and entry.get("name") == by_slug[slug]["name"]
+                    and entry.get("status") == by_slug[slug]["status"]
+                    and entry.get("source") == by_slug[slug]["source"]
+                    and entry.get("officialSite") == by_slug[slug]["officialSite"]
+                    and entry.get("showOnMap") is False
+                    and all(entry.get(k) is None for k in
+                            ("startDate", "endDate", "city", "department",
+                             "region", "venue", "lat", "lon", "price")),
+                    "ancienne proposition incompatible avec l'édition certifiée")
+            # Préserver intégralement la fiche approuvée, quelle que soit la
+            # rédaction moins récente du patch.
         else:
             require(isinstance(slug, str) and slug and slug not in by_slug,
                     "nouvel identifiant absent ou dupliqué")
