@@ -21,7 +21,8 @@ from grossesondes_generic_roster import validate_roster
 from grossesondes_history_guard import validate_history_extension
 from grossesondes_calendar_approval import check_known_calendar, approved_calendar, merge_staged_with_approved
 from grossesondes_field_proof import (
-    cernunnos_update, fantasmagorik_update,
+    cernunnos_update, fantasmagorik_update, in_your_face_sold_out,
+    IN_YOUR_FACE_TICKET_URL,
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL
 )
@@ -33,6 +34,7 @@ ALLOWED={
     "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/",
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL,
+    IN_YOUR_FACE_TICKET_URL,
 }
 
 class TextOnly(HTMLParser):
@@ -157,6 +159,8 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             partial=cernunnos_update(current,up,sources,today)
         elif slug=="fantasmagorik-fest-2026":
             partial=fantasmagorik_update(current,up,sources,today)
+        elif slug=="in-your-face-6-2026":
+            partial=in_your_face_sold_out(current,up,sources,today)
         if partial is None and sources.get("registered:"+slug):
             partial=validate_roster(current,up,sources["registered:"+slug])
         if partial is not None:
@@ -168,7 +172,9 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
                 if slug=="cernunnos-pagan-fest"
                 else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
                       if slug=="fantasmagorik-fest-2026"
-                      else [current["officialSite"]])
+                      else ([IN_YOUR_FACE_TICKET_URL]
+                            if slug=="in-your-face-6-2026"
+                            else [current["officialSite"]]))
             )
             if uncorroborated:
                 report["held"].append({
@@ -224,6 +230,7 @@ def main():
         ("cernunnos_info",CERNUNNOS_INFO_URL),
         ("fantasmagorik_ticket",FANTASMAGORIK_TICKET_URL),
         ("fantasmagorik_date",FANTASMAGORIK_DATE_URL),
+        ("in_your_face_ticket",IN_YOUR_FACE_TICKET_URL),
     ):
         try:evidence[key]=official_text(url)
         except Exception as error:
