@@ -44,6 +44,19 @@ class DailyProofTests(unittest.TestCase):
     def test_theatre_nantes_registered_geo(self):
         self.assertTrue(verified_location(THEATRE)[0])
         self.assertFalse(verified_location(dict(THEATRE,lat=49.109836,lng=6.167706))[0])
+    def test_new_independently_mapped_venues(self):
+        locations = [
+            ("Montpellier", "Maison pour tous Rosa Parks", 43.63367, 3.83351),
+            ("Montpellier", "Maison pour tous George Sand", 43.61888, 3.89398),
+            ("Montpellier", "Maison pour tous Michel Colucci", 43.5937, 3.84013),
+            ("Le Haillan", "L'Entrepôt", 44.8743, -0.677071),
+            ("Versailles", "Hôtel des Menus-Plaisirs", 48.8005798, 2.1338217),
+        ]
+        for city, venue, lat, lng in locations:
+            e = {"city": city, "venue": venue, "lat": lat, "lng": lng}
+            self.assertTrue(verified_location(e)[0], (city, venue))
+            self.assertFalse(verified_location(dict(e, lat=lat + 0.2))[0])
+
     def test_nantes_same_month_series(self):
         self.assertTrue(consecutive_official_dates(
             "VACANCES PRINTEMPS 2027 DU 17 AU 24 AVRIL",
