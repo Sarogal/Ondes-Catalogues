@@ -1,0 +1,5531 @@
+{
+  "schemaVersion": 1,
+  "edition": "v0.6 - croisement salles + billetteries (lot salles officielles)",
+  "mode": "preview-public-unlisted",
+  "updatedAt": "2026-11-01",
+  "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
+  "artists": [
+    {
+      "id": "kamelot",
+      "name": "Kamelot",
+      "aliases": []
+    },
+    {
+      "id": "exit-eden",
+      "name": "Exit Eden",
+      "aliases": []
+    },
+    {
+      "id": "temperance",
+      "name": "Temperance",
+      "aliases": []
+    },
+    {
+      "id": "accept",
+      "name": "Accept",
+      "aliases": []
+    },
+    {
+      "id": "dynazty",
+      "name": "Dynazty",
+      "aliases": []
+    },
+    {
+      "id": "enforcer",
+      "name": "Enforcer",
+      "aliases": []
+    },
+    {
+      "id": "no-place-for-soul",
+      "name": "No Place For Soul",
+      "aliases": [
+        "No Place for soûl"
+      ]
+    },
+    {
+      "id": "frustration",
+      "name": "Frustration",
+      "aliases": []
+    },
+    {
+      "id": "get-the-shot",
+      "name": "Get The Shot",
+      "aliases": []
+    },
+    {
+      "id": "benighted",
+      "name": "Benighted",
+      "aliases": []
+    },
+    {
+      "id": "glassbone",
+      "name": "Glassbone",
+      "aliases": []
+    },
+    {
+      "id": "enter-shikari",
+      "name": "Enter Shikari",
+      "aliases": []
+    },
+    {
+      "id": "holding-absence",
+      "name": "Holding Absence",
+      "aliases": []
+    },
+    {
+      "id": "the-callous-daoboys",
+      "name": "The Callous Daoboys",
+      "aliases": []
+    },
+    {
+      "id": "mass-hysteria",
+      "name": "Mass Hysteria",
+      "aliases": []
+    },
+    {
+      "id": "michael-schenker-group",
+      "name": "Michael Schenker Group",
+      "aliases": []
+    },
+    {
+      "id": "grey-attack",
+      "name": "Grey Attack",
+      "aliases": []
+    },
+    {
+      "id": "keops",
+      "name": "Keops",
+      "aliases": []
+    },
+    {
+      "id": "converge",
+      "name": "Converge",
+      "aliases": []
+    },
+    {
+      "id": "sanguisugabogg",
+      "name": "Sanguisugabogg",
+      "aliases": []
+    },
+    {
+      "id": "blackbraid",
+      "name": "Blackbraid",
+      "aliases": []
+    },
+    {
+      "id": "pupil-slicer",
+      "name": "Pupil Slicer",
+      "aliases": []
+    },
+    {
+      "id": "arabrot",
+      "name": "Årabrot",
+      "aliases": []
+    },
+    {
+      "id": "bunuel",
+      "name": "Buñuel",
+      "aliases": []
+    },
+    {
+      "id": "intercourse",
+      "name": "Intercourse",
+      "aliases": []
+    },
+    {
+      "id": "kadavar",
+      "name": "Kadavar",
+      "aliases": []
+    },
+    {
+      "id": "scott-hepple-and-the-sun-band",
+      "name": "Scott Hepple and the Sun Band",
+      "aliases": []
+    },
+    {
+      "id": "slift",
+      "name": "Slift",
+      "aliases": []
+    },
+    {
+      "id": "yoo-doo-right",
+      "name": "Yoo Doo Right",
+      "aliases": []
+    },
+    {
+      "id": "no-one-is-innocent",
+      "name": "No One Is Innocent",
+      "aliases": []
+    },
+    {
+      "id": "7weeks",
+      "name": "7Weeks",
+      "aliases": []
+    },
+    {
+      "id": "eluveitie",
+      "name": "Eluveitie",
+      "aliases": []
+    },
+    {
+      "id": "pain",
+      "name": "Pain",
+      "aliases": []
+    },
+    {
+      "id": "wolfheart",
+      "name": "Wolfheart",
+      "aliases": []
+    },
+    {
+      "id": "cabal",
+      "name": "Cabal",
+      "aliases": []
+    },
+    {
+      "id": "employed-to-serve",
+      "name": "Employed To Serve",
+      "aliases": []
+    },
+    {
+      "id": "cold-culture",
+      "name": "Cold Culture",
+      "aliases": []
+    },
+    {
+      "id": "arkona",
+      "name": "Arkona",
+      "aliases": []
+    },
+    {
+      "id": "seth",
+      "name": "Seth",
+      "aliases": []
+    },
+    {
+      "id": "the-great-old-ones",
+      "name": "The Great Old Ones",
+      "aliases": []
+    },
+    {
+      "id": "soen",
+      "name": "Soen",
+      "aliases": []
+    },
+    {
+      "id": "resolve",
+      "name": "Resolve",
+      "aliases": []
+    },
+    {
+      "id": "silent-planet",
+      "name": "Silent Planet",
+      "aliases": []
+    },
+    {
+      "id": "spleen",
+      "name": "Spleen",
+      "aliases": []
+    },
+    {
+      "id": "orden-ogan",
+      "name": "Orden Ogan",
+      "aliases": []
+    },
+    {
+      "id": "ensiferum",
+      "name": "Ensiferum",
+      "aliases": []
+    },
+    {
+      "id": "angus-mcsix",
+      "name": "Angus McSix",
+      "aliases": []
+    },
+    {
+      "id": "the-ocean",
+      "name": "The Ocean",
+      "aliases": []
+    },
+    {
+      "id": "a-a-williams",
+      "name": "A.A. Williams",
+      "aliases": []
+    },
+    {
+      "id": "the-black-dahlia-murder",
+      "name": "The Black Dahlia Murder",
+      "aliases": []
+    },
+    {
+      "id": "fuming-mouth",
+      "name": "Fuming Mouth",
+      "aliases": []
+    },
+    {
+      "id": "cult-of-luna",
+      "name": "Cult of Luna",
+      "aliases": []
+    },
+    {
+      "id": "bruit",
+      "name": "Bruit ≤",
+      "aliases": []
+    },
+    {
+      "id": "youth-code",
+      "name": "Youth Code",
+      "aliases": []
+    },
+    {
+      "id": "alcest",
+      "name": "Alcest",
+      "aliases": []
+    },
+    {
+      "id": "agriculture",
+      "name": "Agriculture",
+      "aliases": []
+    },
+    {
+      "id": "moonspell",
+      "name": "Moonspell",
+      "aliases": []
+    },
+    {
+      "id": "iotunn",
+      "name": "Iotunn",
+      "aliases": []
+    },
+    {
+      "id": "todomal",
+      "name": "Todomal",
+      "aliases": []
+    },
+    {
+      "id": "megadeth",
+      "name": "Megadeth",
+      "aliases": []
+    },
+    {
+      "id": "black-label-society",
+      "name": "Black Label Society",
+      "aliases": []
+    },
+    {
+      "id": "testament",
+      "name": "Testament",
+      "aliases": []
+    },
+    {
+      "id": "imminence",
+      "name": "Imminence",
+      "aliases": []
+    },
+    {
+      "id": "august-burns-red",
+      "name": "August Burns Red",
+      "aliases": []
+    },
+    {
+      "id": "signs-of-the-swarm",
+      "name": "Signs of the Swarm",
+      "aliases": []
+    },
+    {
+      "id": "face-yourself",
+      "name": "Face Yourself",
+      "aliases": []
+    },
+    {
+      "id": "oceans-ate-alaska",
+      "name": "Oceans Ate Alaska",
+      "aliases": []
+    },
+    {
+      "id": "storm-orchestra",
+      "name": "Storm Orchestra",
+      "aliases": []
+    },
+    {
+      "id": "shimmeric",
+      "name": "Shimmeric",
+      "aliases": []
+    },
+    {
+      "id": "dirty-deep",
+      "name": "Dirty Deep",
+      "aliases": []
+    },
+    {
+      "id": "the-s-e-t",
+      "name": "The S.E.T.",
+      "aliases": []
+    },
+    {
+      "id": "who-i-am",
+      "name": "Who I Am",
+      "aliases": []
+    },
+    {
+      "id": "ordem",
+      "name": "Ordem",
+      "aliases": []
+    },
+    {
+      "id": "merville",
+      "name": "Merville",
+      "aliases": []
+    },
+    {
+      "id": "cage-fight",
+      "name": "Cage Fight",
+      "aliases": []
+    },
+    {
+      "id": "soul-splitter",
+      "name": "Soul Splitter",
+      "aliases": []
+    },
+    {
+      "id": "kabbel",
+      "name": "Kabbel",
+      "aliases": []
+    },
+    {
+      "id": "the-vintage-caravan",
+      "name": "The Vintage Caravan",
+      "aliases": []
+    },
+    {
+      "id": "damantra",
+      "name": "Damantra",
+      "aliases": []
+    },
+    {
+      "id": "sunami",
+      "name": "Sunami",
+      "aliases": []
+    },
+    {
+      "id": "desolated",
+      "name": "Desolated",
+      "aliases": []
+    },
+    {
+      "id": "missing-link",
+      "name": "Missing Link",
+      "aliases": []
+    },
+    {
+      "id": "extinguish",
+      "name": "Extinguish",
+      "aliases": []
+    },
+    {
+      "id": "moral-law",
+      "name": "Moral Law",
+      "aliases": []
+    },
+    {
+      "id": "bind",
+      "name": "Bind.",
+      "aliases": []
+    },
+    {
+      "id": "chute-libre",
+      "name": "Chute Libre",
+      "aliases": []
+    },
+    {
+      "id": "lost-in-kyiv",
+      "name": "Lost in Kyiv",
+      "aliases": []
+    },
+    {
+      "id": "revnoir",
+      "name": "Revnoir",
+      "aliases": []
+    },
+    {
+      "id": "ice-sealed-eyes",
+      "name": "Ice Sealed Eyes",
+      "aliases": []
+    },
+    {
+      "id": "primitive-ring",
+      "name": "Primitive Ring",
+      "aliases": []
+    },
+    {
+      "id": "sidilarsen",
+      "name": "Sidilarsen",
+      "aliases": []
+    },
+    {
+      "id": "lafayette",
+      "name": "Lafayette",
+      "aliases": []
+    },
+    {
+      "id": "m-l",
+      "name": "MØL",
+      "aliases": []
+    },
+    {
+      "id": "oceans",
+      "name": "Oceans",
+      "aliases": []
+    },
+    {
+      "id": "kassogtha",
+      "name": "Kassogtha",
+      "aliases": []
+    },
+    {
+      "id": "uuhai",
+      "name": "Uuhai",
+      "aliases": []
+    },
+    {
+      "id": "acyl",
+      "name": "Acyl",
+      "aliases": []
+    },
+    {
+      "id": "scott-hepple-the-sun-band",
+      "name": "Scott Hepple &amp; The Sun Band",
+      "aliases": []
+    },
+    {
+      "id": "ugly-kid-joe",
+      "name": "Ugly Kid Joe",
+      "aliases": []
+    },
+    {
+      "id": "eihwar",
+      "name": "Eihwar",
+      "aliases": []
+    },
+    {
+      "id": "hindarfjall",
+      "name": "Hindarfjäll",
+      "aliases": []
+    },
+    {
+      "id": "krav-boca",
+      "name": "Krav Boca",
+      "aliases": []
+    },
+    {
+      "id": "moscow-death-brigade",
+      "name": "Moscow Death Brigade",
+      "aliases": []
+    },
+    {
+      "id": "the-inspector-cluzo",
+      "name": "The Inspector Cluzo",
+      "aliases": []
+    },
+    {
+      "id": "mira-ceti",
+      "name": "Mira Ceti",
+      "aliases": []
+    },
+    {
+      "id": "slobber",
+      "name": "Slobber",
+      "aliases": []
+    },
+    {
+      "id": "enslaved",
+      "name": "Enslaved",
+      "aliases": []
+    },
+    {
+      "id": "solstafir",
+      "name": "Sólstafir",
+      "aliases": []
+    },
+    {
+      "id": "gaahls-wyrd",
+      "name": "Gaahls Wyrd",
+      "aliases": []
+    },
+    {
+      "id": "eisbrecher",
+      "name": "Eisbrecher",
+      "aliases": []
+    },
+    {
+      "id": "rhapsody-of-fire",
+      "name": "Rhapsody of Fire",
+      "aliases": []
+    },
+    {
+      "id": "serious-black",
+      "name": "Serious Black",
+      "aliases": []
+    },
+    {
+      "id": "submasq",
+      "name": "Submasq",
+      "aliases": []
+    },
+    {
+      "id": "aeon-gods",
+      "name": "Aeon Gods",
+      "aliases": []
+    },
+    {
+      "id": "rock-out",
+      "name": "Rock Out",
+      "aliases": []
+    },
+    {
+      "id": "sanctvs",
+      "name": "Sanctvs",
+      "aliases": []
+    },
+    {
+      "id": "trogne",
+      "name": "Trogne",
+      "aliases": []
+    },
+    {
+      "id": "perseide",
+      "name": "Perseide",
+      "aliases": []
+    },
+    {
+      "id": "ghetto-paradise",
+      "name": "Ghetto Paradise",
+      "aliases": []
+    },
+    {
+      "id": "ianwill",
+      "name": "Ianwill",
+      "aliases": []
+    },
+    {
+      "id": "maze-d",
+      "name": "Maze’D",
+      "aliases": []
+    },
+    {
+      "id": "azken-auzi",
+      "name": "Azken Auzi",
+      "aliases": []
+    },
+    {
+      "id": "deveikuth",
+      "name": "Deveikuth",
+      "aliases": []
+    },
+    {
+      "id": "unleash",
+      "name": "Unleash",
+      "aliases": []
+    },
+    {
+      "id": "corium",
+      "name": "Corium",
+      "aliases": []
+    },
+    {
+      "id": "boom-boom-kid",
+      "name": "Boom Boom Kid",
+      "aliases": []
+    },
+    {
+      "id": "animal-random",
+      "name": "Animal Random",
+      "aliases": []
+    },
+    {
+      "id": "flying-donuts",
+      "name": "Flying Donuts",
+      "aliases": []
+    },
+    {
+      "id": "the-irradiates",
+      "name": "The Irradiates",
+      "aliases": []
+    },
+    {
+      "id": "second-rate",
+      "name": "Second Rate",
+      "aliases": []
+    },
+    {
+      "id": "when-venus-weeps",
+      "name": "When Venus Weeps",
+      "aliases": []
+    },
+    {
+      "id": "lifeboats",
+      "name": "Lifeboats",
+      "aliases": []
+    },
+    {
+      "id": "les-ramoneurs-de-menhir",
+      "name": "Les Ramoneurs de Menhir",
+      "aliases": []
+    },
+    {
+      "id": "les-tardigrades",
+      "name": "Les Tardigrades",
+      "aliases": []
+    },
+    {
+      "id": "emo-prolapse",
+      "name": "Emo Prolapse",
+      "aliases": []
+    },
+    {
+      "id": "les-tambours-du-bronx",
+      "name": "Les Tambours du Bronx",
+      "aliases": []
+    },
+    {
+      "id": "lecks-inc",
+      "name": "Lecks Inc",
+      "aliases": []
+    },
+    {
+      "id": "the-let-s-go-s",
+      "name": "The Let's Go's",
+      "aliases": []
+    },
+    {
+      "id": "supreme-nightclub",
+      "name": "Supreme Nightclub",
+      "aliases": []
+    },
+    {
+      "id": "rats-dont-sink",
+      "name": "Rats Don’t Sink",
+      "aliases": []
+    },
+    {
+      "id": "vodk47",
+      "name": "Vodk47",
+      "aliases": []
+    },
+    {
+      "id": "bad-call",
+      "name": "Bad Call",
+      "aliases": []
+    },
+    {
+      "id": "gvllow",
+      "name": "Gvllow",
+      "aliases": []
+    },
+    {
+      "id": "ohm-sweet-ohm",
+      "name": "Ohm Sweet Ohm",
+      "aliases": []
+    },
+    {
+      "id": "eradikal-insane",
+      "name": "Eradikal Insane",
+      "aliases": []
+    },
+    {
+      "id": "reign",
+      "name": "Reign",
+      "aliases": []
+    },
+    {
+      "id": "vulher",
+      "name": "Vulher",
+      "aliases": []
+    },
+    {
+      "id": "breeding-chaos",
+      "name": "Breeding Chaos",
+      "aliases": []
+    },
+    {
+      "id": "kvark",
+      "name": "Kvårk",
+      "aliases": []
+    },
+    {
+      "id": "clone-shop",
+      "name": "Clone Shop",
+      "aliases": []
+    },
+    {
+      "id": "angel-guts",
+      "name": "Angel Guts",
+      "aliases": []
+    },
+    {
+      "id": "los-fastidios",
+      "name": "Los Fastidios",
+      "aliases": []
+    },
+    {
+      "id": "master-boot-record",
+      "name": "Master Boot Record",
+      "aliases": []
+    },
+    {
+      "id": "fulci",
+      "name": "Fulci",
+      "aliases": []
+    },
+    {
+      "id": "arottenbit",
+      "name": "Arottenbit",
+      "aliases": []
+    },
+    {
+      "id": "ashen",
+      "name": "Ashen",
+      "aliases": []
+    },
+    {
+      "id": "ascend",
+      "name": "Ascend",
+      "aliases": []
+    },
+    {
+      "id": "fleur",
+      "name": "Fleur.",
+      "aliases": []
+    },
+    {
+      "id": "wake-the-dead",
+      "name": "Wake the Dead",
+      "aliases": []
+    },
+    {
+      "id": "imperial-triumphant",
+      "name": "Imperial Triumphant",
+      "aliases": []
+    },
+    {
+      "id": "knoll",
+      "name": "Knoll",
+      "aliases": []
+    },
+    {
+      "id": "akiavel",
+      "name": "Akiavel",
+      "aliases": []
+    },
+    {
+      "id": "tallulah",
+      "name": "Tallulah",
+      "aliases": []
+    },
+    {
+      "id": "horskh",
+      "name": "Horskh",
+      "aliases": []
+    },
+    {
+      "id": "lila-ehja",
+      "name": "Lila Ehjä",
+      "aliases": []
+    },
+    {
+      "id": "sylvian",
+      "name": "Sylvian",
+      "aliases": []
+    },
+    {
+      "id": "goatvermin",
+      "name": "Goatvermin",
+      "aliases": []
+    },
+    {
+      "id": "lunar-tombfields",
+      "name": "Lunar Tombfields",
+      "aliases": []
+    },
+    {
+      "id": "hexecutor",
+      "name": "Hexecutor",
+      "aliases": []
+    },
+    {
+      "id": "belenos",
+      "name": "Belenos",
+      "aliases": []
+    },
+    {
+      "id": "hurakan",
+      "name": "Hurakan",
+      "aliases": []
+    },
+    {
+      "id": "kanine",
+      "name": "Kanine",
+      "aliases": []
+    },
+    {
+      "id": "psykup",
+      "name": "Psykup",
+      "aliases": []
+    },
+    {
+      "id": "la-ruda",
+      "name": "La Ruda",
+      "aliases": []
+    },
+    {
+      "id": "the-mercenaries",
+      "name": "The Mercenaries",
+      "aliases": []
+    },
+    {
+      "id": "parallyx",
+      "name": "Parallyx",
+      "aliases": []
+    },
+    {
+      "id": "luicidal",
+      "name": "Luicidal",
+      "aliases": []
+    },
+    {
+      "id": "shaarghot",
+      "name": "Shaârghot",
+      "aliases": []
+    },
+    {
+      "id": "solitaris",
+      "name": "Solitaris",
+      "aliases": []
+    },
+    {
+      "id": "ghost-dance",
+      "name": "Ghost Dance",
+      "aliases": []
+    },
+    {
+      "id": "poesie-zero",
+      "name": "Poésie Zéro",
+      "aliases": []
+    },
+    {
+      "id": "king-kong-meuf",
+      "name": "King Kong Meuf",
+      "aliases": []
+    },
+    {
+      "id": "vulves-assassines",
+      "name": "Vulves Assassines",
+      "aliases": []
+    },
+    {
+      "id": "doodseskader",
+      "name": "Doodseskader",
+      "aliases": []
+    },
+    {
+      "id": "holeteeth",
+      "name": "Holeteeth",
+      "aliases": []
+    },
+    {
+      "id": "dukkha",
+      "name": "Dukkha",
+      "aliases": []
+    },
+    {
+      "id": "kamikrazy",
+      "name": "KamiKrazy",
+      "aliases": []
+    },
+    {
+      "id": "death-valley-girls",
+      "name": "Death Valley Girls",
+      "aliases": []
+    },
+    {
+      "id": "bella-and-the-bizarre",
+      "name": "Bella and the Bizarre",
+      "aliases": []
+    },
+    {
+      "id": "it-it-anita",
+      "name": "It It Anita",
+      "aliases": []
+    },
+    {
+      "id": "la-jungle",
+      "name": "La Jungle",
+      "aliases": []
+    },
+    {
+      "id": "misanthrope",
+      "name": "Misanthrope",
+      "aliases": []
+    },
+    {
+      "id": "monolithe",
+      "name": "Monolithe",
+      "aliases": []
+    }
+  ],
+  "venues": [
+    {
+      "id": "la-rayonne",
+      "name": "La Rayonne",
+      "address": "7 rue Henri Legay",
+      "postalCode": "69100",
+      "city": "Villeurbanne",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.75695,
+      "longitude": 4.91705,
+      "geoPrecision": "salle (à recontrôler)",
+      "geoSource": "https://larayonne.org/evenement/kamelot-exit-eden-temperance/"
+    },
+    {
+      "id": "le-metronum",
+      "name": "Le Metronum",
+      "address": "2 rond-point Madame de Mondonville",
+      "postalCode": "31200",
+      "city": "Toulouse",
+      "department": "31",
+      "region": "Occitanie",
+      "latitude": 43.641532,
+      "longitude": 1.450607,
+      "geoPrecision": "salle (à recontrôler)",
+      "geoSource": "https://lemetronum.fr/evenement/kamelot-exit-eden-temperance/"
+    },
+    {
+      "id": "olympia-paris",
+      "name": "L’Olympia",
+      "address": "28 boulevard des Capucines",
+      "postalCode": "75009",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.87024,
+      "longitude": 2.32836,
+      "geoPrecision": "salle (à recontrôler)",
+      "geoSource": "https://www.olympiahall.com/agenda/accept/"
+    },
+    {
+      "id": "la-loco-quimperle",
+      "name": "La Loco",
+      "address": "33 boulevard de la Gare",
+      "postalCode": "29300",
+      "city": "Quimperlé",
+      "department": "29",
+      "region": "Bretagne",
+      "latitude": 47.871311,
+      "longitude": -3.5484,
+      "geoPrecision": "salle (à recontrôler)",
+      "geoSource": "https://www.laloco.bzh/concerts/vendredi-18-12-no-place-for-so%C3%BBl-metal-indus-frustration-post-punk-20-%C3%A0-22"
+    },
+    {
+      "id": "la-laiterie-strasbourg",
+      "name": "La Laiterie",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Strasbourg",
+      "department": "67",
+      "region": "Grand Est",
+      "latitude": 48.5839,
+      "longitude": 7.7455,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-gueulard-plus-nilvange",
+      "name": "Le Gueulard Plus",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Nilvange",
+      "department": "57",
+      "region": "Grand Est",
+      "latitude": 49.342,
+      "longitude": 6.05,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-transbordeur-villeurbanne",
+      "name": "Le Transbordeur",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Villeurbanne",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.757,
+      "longitude": 4.917,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "o-totem-live-rillieux",
+      "name": "Ô Totem Live",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Rillieux-la-Pape",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.815,
+      "longitude": 4.898,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-alhambra-paris",
+      "name": "L’Alhambra",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-usine-istres",
+      "name": "L’Usine",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Istres",
+      "department": "13",
+      "region": "Provence-Alpes-Côte d’Azur",
+      "latitude": 43.514,
+      "longitude": 4.99,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-rex-toulouse",
+      "name": "Le Rex",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Toulouse",
+      "department": "31",
+      "region": "Occitanie",
+      "latitude": 43.604,
+      "longitude": 1.444,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-autre-canal-nancy",
+      "name": "L’Autre Canal",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Nancy",
+      "department": "54",
+      "region": "Grand Est",
+      "latitude": 48.692,
+      "longitude": 6.185,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "la-belle-electrique-grenoble",
+      "name": "La Belle Électrique",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Grenoble",
+      "department": "38",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.186,
+      "longitude": 5.729,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "la-cartonnerie-reims",
+      "name": "La Cartonnerie",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Reims",
+      "department": "51",
+      "region": "Grand Est",
+      "latitude": 49.258,
+      "longitude": 4.032,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "espace-john-lennon-limoges",
+      "name": "Espace John Lennon",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Limoges",
+      "department": "87",
+      "region": "Nouvelle-Aquitaine",
+      "latitude": 45.831,
+      "longitude": 1.261,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-rocher-de-palmer-cenon",
+      "name": "Le Rocher de Palmer",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Cenon",
+      "department": "33",
+      "region": "Nouvelle-Aquitaine",
+      "latitude": 44.856,
+      "longitude": -0.518,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "warehouse-nantes",
+      "name": "Warehouse",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Nantes",
+      "department": "44",
+      "region": "Pays de la Loire",
+      "latitude": 47.217,
+      "longitude": -1.554,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "the-black-lab-wasquehal",
+      "name": "The Black Lab",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Wasquehal",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "latitude": 50.67,
+      "longitude": 3.13,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "la-cigale-paris",
+      "name": "La Cigale",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "rockstore-montpellier",
+      "name": "Rockstore",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Montpellier",
+      "department": "34",
+      "region": "Occitanie",
+      "latitude": 43.608,
+      "longitude": 3.878,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "la-machine-du-moulin-rouge-paris",
+      "name": "La Machine du Moulin Rouge",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-ferrailleur-nantes",
+      "name": "Le Ferrailleur",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Nantes",
+      "department": "44",
+      "region": "Pays de la Loire",
+      "latitude": 47.217,
+      "longitude": -1.554,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "la-gespe-tarbes",
+      "name": "La Gespe",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Tarbes",
+      "department": "65",
+      "region": "Occitanie",
+      "latitude": 43.233,
+      "longitude": -0.079,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "victoire-2-saint-jean",
+      "name": "Victoire 2",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Saint-Jean-de-Védas",
+      "department": "34",
+      "region": "Occitanie",
+      "latitude": 43.576,
+      "longitude": 3.829,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-dodu-marseille",
+      "name": "Le Dodu",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Marseille",
+      "department": "13",
+      "region": "Provence-Alpes-Côte d’Azur",
+      "latitude": 43.296,
+      "longitude": 5.37,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "austra-rocks-grenoble",
+      "name": "Austra Rocks",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Grenoble",
+      "department": "38",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.186,
+      "longitude": 5.729,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-grillen-colmar",
+      "name": "Le Grillen",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Colmar",
+      "department": "68",
+      "region": "Grand Est",
+      "latitude": 48.077,
+      "longitude": 7.358,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-grand-mix-tourcoing",
+      "name": "Le Grand Mix",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Tourcoing",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "latitude": 50.724,
+      "longitude": 3.162,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "les-trinitaires-metz",
+      "name": "Les Trinitaires",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Metz",
+      "department": "57",
+      "region": "Grand Est",
+      "latitude": 49.119,
+      "longitude": 6.175,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "petit-bain-paris",
+      "name": "Petit Bain",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-moloco-audincourt",
+      "name": "Le Moloco",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Audincourt",
+      "department": "25",
+      "region": "Bourgogne-Franche-Comté",
+      "latitude": 47.481,
+      "longitude": 6.84,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-bikini-toulouse",
+      "name": "Le Bikini",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Toulouse",
+      "department": "31",
+      "region": "Occitanie",
+      "latitude": 43.604,
+      "longitude": 1.444,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-trianon-paris",
+      "name": "Le Trianon",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-aeronef-lille",
+      "name": "L’Aéronef",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Lille",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "latitude": 50.629,
+      "longitude": 3.057,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-etage-rennes",
+      "name": "L’Étage",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Rennes",
+      "department": "35",
+      "region": "Bretagne",
+      "latitude": 48.113,
+      "longitude": -1.681,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-bascala-bruguieres",
+      "name": "Le Bascala",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Bruguières",
+      "department": "31",
+      "region": "Occitanie",
+      "latitude": 43.725,
+      "longitude": 1.412,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "zenith-paris-la-villette-paris",
+      "name": "Zénith Paris – La Villette",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.866,
+      "longitude": 2.343,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "halle-tony-garnier-lyon",
+      "name": "Halle Tony Garnier",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Lyon",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.764,
+      "longitude": 4.834,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "le-106-rouen",
+      "name": "Le 106",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Rouen",
+      "department": "76",
+      "region": "Normandie",
+      "latitude": 49.443,
+      "longitude": 1.1,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "antipode-rennes",
+      "name": "Antipode",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Rennes",
+      "department": "35",
+      "region": "Bretagne",
+      "latitude": 48.113,
+      "longitude": -1.681,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "l-astrolabe-orleans",
+      "name": "L’Astrolabe",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Orléans",
+      "department": "45",
+      "region": "Centre-Val de Loire",
+      "latitude": 47.903,
+      "longitude": 1.909,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "cold-crash-reze",
+      "name": "Cold Crash",
+      "address": "Adresse exacte à vérifier",
+      "postalCode": "À vérifier",
+      "city": "Rezé",
+      "department": "44",
+      "region": "Pays de la Loire",
+      "latitude": 47.191,
+      "longitude": -1.569,
+      "geoPrecision": "centre de commune (position indicative, pas la salle)",
+      "geoSource": "Géolocalisation indicative par commune"
+    },
+    {
+      "id": "secret-place-saint-jean-de-vedas",
+      "name": "Secret Place",
+      "address": "25 rue Saint-Exupéry, ZI de la Lauze",
+      "postalCode": "34430",
+      "city": "Saint-Jean-de-Védas",
+      "department": "34",
+      "region": "Occitanie",
+      "latitude": 43.5615,
+      "longitude": 3.8424,
+      "geoPrecision": "quartier (coordonnées indicatives, adresse de salle confirmée)",
+      "geoSource": "https://www.toutafond.com/acces"
+    },
+    {
+      "id": "le-molotov-marseille",
+      "name": "Le Molotov",
+      "address": "3 place Paul Cézanne",
+      "postalCode": "13006",
+      "city": "Marseille",
+      "department": "13",
+      "region": "Provence-Alpes-Côte d’Azur",
+      "latitude": 43.292589,
+      "longitude": 5.383082,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.cirkwi.com/fr/point-interet/4684048-le-molotov"
+    },
+    {
+      "id": "la-poudriere-belfort",
+      "name": "La Poudrière",
+      "address": "7 avenue du Général Sarrail",
+      "postalCode": "90000",
+      "city": "Belfort",
+      "department": "90",
+      "region": "Bourgogne-Franche-Comté",
+      "latitude": 47.6363842,
+      "longitude": 6.8618958,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.pro-datas.fr/la-poudriere"
+    },
+    {
+      "id": "echo-system-scey",
+      "name": "Echo System",
+      "address": "ZA de l'Écu",
+      "postalCode": "70360",
+      "city": "Scey-sur-Saône-et-Saint-Albin",
+      "department": "70",
+      "region": "Bourgogne-Franche-Comté",
+      "latitude": 47.66748,
+      "longitude": 5.97283,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://mapcarta.com/W188713045"
+    },
+    {
+      "id": "lempreinte-savigny",
+      "name": "L’Empreinte",
+      "address": "301 avenue de l’Europe",
+      "postalCode": "77176",
+      "city": "Savigny-le-Temple",
+      "department": "77",
+      "region": "Île-de-France",
+      "latitude": 48.5952,
+      "longitude": 2.58521,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://missionfranceguichet.fr/tourisme-culture-patrimoine-commune-savigny-le-temple-77"
+    },
+    {
+      "id": "big-band-cafe-herouville",
+      "name": "Big Band Café",
+      "address": "Avenue du Haut Crépon",
+      "postalCode": "14200",
+      "city": "Hérouville-Saint-Clair",
+      "department": "14",
+      "region": "Normandie",
+      "latitude": 49.211031,
+      "longitude": -0.334039,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.fandefest.com/salle/big-band-cafe-herouville-saint-clair"
+    },
+    {
+      "id": "le-cargo-caen",
+      "name": "Le Cargö",
+      "address": "9 cours Caffarelli",
+      "postalCode": "14000",
+      "city": "Caen",
+      "department": "14",
+      "region": "Normandie",
+      "latitude": 49.181016,
+      "longitude": -0.347539,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.aleou.fr/salle-seminaire/12503-le-cargo"
+    },
+    {
+      "id": "confort-moderne-poitiers",
+      "name": "Le Confort Moderne",
+      "address": "185 rue du Faubourg du Pont-Neuf",
+      "postalCode": "86000",
+      "city": "Poitiers",
+      "department": "86",
+      "region": "Nouvelle-Aquitaine",
+      "latitude": 46.5727105,
+      "longitude": 0.3597298,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.cirkwi.com/fr/point-interet/2105472-le-confort-moderne"
+    },
+    {
+      "id": "le-fil-saint-etienne",
+      "name": "Le Fil",
+      "address": "20 boulevard Thiers",
+      "postalCode": "42000",
+      "city": "Saint-Étienne",
+      "department": "42",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.450781,
+      "longitude": 4.389697,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.cirkwi.com/fr/point-interet/1933926-le-fil"
+    },
+    {
+      "id": "paloma-nimes",
+      "name": "Paloma",
+      "address": "250 chemin de l’Aérodrome",
+      "postalCode": "30000",
+      "city": "Nîmes",
+      "department": "30",
+      "region": "Occitanie",
+      "latitude": 43.855801,
+      "longitude": 4.405894,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://www.cirkwi.com/fr/point-interet/5812061-mix-with-the-ted"
+    },
+    {
+      "id": "le-chabada-angers",
+      "name": "Le Chabada",
+      "address": "56 boulevard du Doyenné",
+      "postalCode": "49100",
+      "city": "Angers",
+      "department": "49",
+      "region": "Pays de la Loire",
+      "latitude": 47.48945,
+      "longitude": -0.5369,
+      "geoPrecision": "emplacement de la salle (source externe)",
+      "geoSource": "https://mapcarta.com/fr/W126923035"
+    }
+  ],
+  "events": [
+    {
+      "id": "go-c-20261105-nantes-storm-orchestra",
+      "title": "Storm Orchestra + Shimmeric",
+      "date": "2026-11-05",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "storm-orchestra",
+        "shimmeric"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Metal alternatif",
+        "Rock"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/storm-orchestra/5194",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261105-marseille-the-let-s-go-s",
+      "title": "The Let's Go's + Supreme Nightclub",
+      "date": "2026-11-05",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "the-let-s-go-s",
+        "supreme-nightclub"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Punk",
+        "Garage Rock"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-marseille-master-boot-record",
+      "title": "Master Boot Record + Fulci + Arottenbit",
+      "date": "2026-11-06",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "master-boot-record",
+        "fulci",
+        "arottenbit"
+      ],
+      "venueId": "le-dodu-marseille",
+      "genres": [
+        "Death Metal",
+        "Metal expérimental"
+      ],
+      "organizer": "Le Dodu",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Dodu - agenda officiel",
+      "locationPrecision": "centre de commune (position indicative, pas la salle)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-secret-place-perseide",
+      "title": "Perseide + Ghetto Paradise + Ianwill + Maze’D",
+      "date": "2026-11-06",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué dans le calendrier de la salle",
+      "artistIds": [
+        "perseide",
+        "ghetto-paradise",
+        "ianwill",
+        "maze-d"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Metalcore",
+        "Metal alternatif"
+      ],
+      "organizer": "VVA Agency",
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/nos-evenements",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-nantes-7weeks",
+      "title": "7Weeks + Dirty Deep",
+      "date": "2026-11-07",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "7weeks",
+        "dirty-deep"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Heavy Rock",
+        "Garage Rock"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/7-weeks-dirty-deep/5207",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-secret-place-azken-auzi",
+      "title": "Azken Auzi + Deveikuth + Unleash",
+      "date": "2026-11-07",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué dans le calendrier de la salle",
+      "artistIds": [
+        "azken-auzi",
+        "deveikuth",
+        "unleash"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Sludge Metal",
+        "Doom Metal"
+      ],
+      "organizer": "La TAF",
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/nos-evenements",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-savigny-le-temple-hurakan",
+      "title": "Hurakan + Spleen + Kanine",
+      "date": "2026-11-07",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "hurakan",
+        "spleen",
+        "kanine"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Deathcore",
+        "Metalcore"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-marseille-ianwill",
+      "title": "Ianwill + Perseide + Maze’D + Ghetto Paradise",
+      "date": "2026-11-07",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "ianwill",
+        "perseide",
+        "maze-d",
+        "ghetto-paradise"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Metalcore",
+        "Metal alternatif"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-la-rayonne-kamelot",
+      "title": "Kamelot + Exit Eden + Temperance",
+      "date": "2026-11-07",
+      "time": "19:00",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "kamelot",
+        "exit-eden",
+        "temperance"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "Metal symphonique"
+      ],
+      "organizer": "Sounds Like Hell Productions",
+      "status": "confirmed",
+      "officialUrl": "https://larayonne.org/evenement/kamelot-exit-eden-temperance/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Contrôle initial de l'annonce et de l'ouverture des portes"
+        }
+      ],
+      "sourceType": "organisateur",
+      "sourceLabel": "Annonce de la salle / de l’organisateur",
+      "locationPrecision": "salle (à confirmer)"
+    },
+    {
+      "id": "go-c-20261108-strasbourg-get-the-shot",
+      "title": "Get The Shot + Benighted + Glassbone",
+      "date": "2026-11-08",
+      "time": "17:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "get-the-shot",
+        "benighted",
+        "glassbone"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Hardcore",
+        "Death Metal"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261110-strasbourg-enter-shikari",
+      "title": "Enter Shikari + Holding Absence + The Callous Daoboys",
+      "date": "2026-11-10",
+      "time": "18:45",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "enter-shikari",
+        "holding-absence",
+        "the-callous-daoboys"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post-hardcore",
+        "Metalcore"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261110-nantes-the-s-e-t",
+      "title": "The S.E.T. + Who I Am + Ordem + Merville",
+      "date": "2026-11-10",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "the-s-e-t",
+        "who-i-am",
+        "ordem",
+        "merville"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Hardcore",
+        "Metalcore"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261111-secret-place-corium",
+      "title": "Corium — autres artistes à préciser",
+      "date": "2026-11-11",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué dans le calendrier de la salle",
+      "artistIds": [
+        "corium"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Hardcore"
+      ],
+      "organizer": "La TAF",
+      "status": "announced",
+      "officialUrl": "https://www.toutafond.com/nos-evenements",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. La programmation officielle mentionne Corium + un autre groupe non lisible ; ne pas inventer de co-plateau."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-nantes-cage-fight",
+      "title": "Cage Fight + Soul Splitter + Kabbel",
+      "date": "2026-11-12",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "cage-fight",
+        "soul-splitter",
+        "kabbel"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Metalcore",
+        "Hardcore",
+        "Metal industriel"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/cage-fight/5357",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-marseille-rats-dont-sink",
+      "title": "Rats Don’t Sink + Vodk47 + Bad Call",
+      "date": "2026-11-12",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "rats-dont-sink",
+        "vodk47",
+        "bad-call"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Punk Hardcore",
+        "Beatdown"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-marseille-ashen",
+      "title": "Ashen + Ascend + Fleur.",
+      "date": "2026-11-13",
+      "time": "19:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "ashen",
+        "ascend",
+        "fleur"
+      ],
+      "venueId": "le-dodu-marseille",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "Le Dodu",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Dodu - agenda officiel",
+      "locationPrecision": "centre de commune (position indicative, pas la salle)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-secret-place-boom-boom-kid",
+      "title": "Boom Boom Kid + Animal Random",
+      "date": "2026-11-13",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué dans le calendrier de la salle",
+      "artistIds": [
+        "boom-boom-kid",
+        "animal-random"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Hardcore",
+        "Rock"
+      ],
+      "organizer": "La TAF",
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/nos-evenements",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-nimes-death-valley-girls",
+      "title": "Death Valley Girls + Bella and the Bizarre",
+      "date": "2026-11-13",
+      "time": null,
+      "timeMeaning": "horaire non précisé",
+      "artistIds": [
+        "death-valley-girls",
+        "bella-and-the-bizarre"
+      ],
+      "venueId": "paloma-nimes",
+      "genres": [
+        "Garage Punk",
+        "Rock"
+      ],
+      "organizer": "Paloma",
+      "status": "confirmed",
+      "officialUrl": "https://paloma-nimes.fr/agenda/2026-11/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Paloma - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-belfort-imperial-triumphant",
+      "title": "Imperial Triumphant + Knoll",
+      "date": "2026-11-13",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "imperial-triumphant",
+        "knoll"
+      ],
+      "venueId": "la-poudriere-belfort",
+      "genres": [
+        "Metal extrême",
+        "Grindcore"
+      ],
+      "organizer": "La Poudrière",
+      "status": "confirmed",
+      "officialUrl": "https://poudriere.com/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "La Poudrière - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-audincourt-krav-boca",
+      "title": "Krav Boca + Moscow Death Brigade",
+      "date": "2026-11-13",
+      "time": "20:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "krav-boca",
+        "moscow-death-brigade"
+      ],
+      "venueId": "le-moloco-audincourt",
+      "genres": [
+        "Punk Hardcore",
+        "Rapcore"
+      ],
+      "organizer": "Le Moloco",
+      "status": "confirmed",
+      "officialUrl": "https://www.lemoloco.com/agenda/krav-boca-moscow-death-brigade/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-strasbourg-mass-hysteria",
+      "title": "Mass Hysteria",
+      "date": "2026-11-13",
+      "time": "19:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "mass-hysteria"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metal industriel"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-caen-psykup",
+      "title": "Psykup + 7Weeks",
+      "date": "2026-11-13",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "psykup",
+        "7weeks"
+      ],
+      "venueId": "le-cargo-caen",
+      "genres": [
+        "Metal alternatif"
+      ],
+      "organizer": "Le Cargö",
+      "status": "confirmed",
+      "officialUrl": "https://lecargo.fr/programmation/concert/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Cargö - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-nantes-the-vintage-caravan",
+      "title": "The Vintage Caravan + Damantra",
+      "date": "2026-11-13",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "the-vintage-caravan",
+        "damantra"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Heavy Rock",
+        "Rock progressif"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-scey-sur-saone-et-saint-albin-horskh",
+      "title": "Horskh + Lila Ehjä",
+      "date": "2026-11-14",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "horskh",
+        "lila-ehja"
+      ],
+      "venueId": "echo-system-scey",
+      "genres": [
+        "Metal industriel"
+      ],
+      "organizer": "Echo System",
+      "status": "confirmed",
+      "officialUrl": "https://echosystem70.fr/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Echo System - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-strasbourg-michael-schenker-group",
+      "title": "Michael Schenker Group + Grey Attack + Keops",
+      "date": "2026-11-14",
+      "time": "18:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "michael-schenker-group",
+        "grey-attack",
+        "keops"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Heavy Metal",
+        "Hard Rock"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-secret-place-moscow-death-brigade",
+      "title": "Moscow Death Brigade",
+      "date": "2026-11-14",
+      "time": null,
+      "timeMeaning": null,
+      "artistIds": [
+        "moscow-death-brigade"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Hardcore",
+        "Rapcore"
+      ],
+      "organizer": "La TAF / Boomerang",
+      "status": "confirmed",
+      "officialUrl": "https://r.shotgun.live/fr/events/vault-of-metal-la-taf-presentent-moscow-death-brigade",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Horaires divergents : billet Shotgun à 18h, descriptif officiel ouverture des portes à 19h ; ne pas afficher une heure non univoque."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-savigny-le-temple-psykup",
+      "title": "Psykup + 7Weeks",
+      "date": "2026-11-14",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "psykup",
+        "7weeks"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Metal alternatif"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261115-strasbourg-converge",
+      "title": "Converge + Sanguisugabogg + Blackbraid + Pupil Slicer",
+      "date": "2026-11-15",
+      "time": "17:00",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "converge",
+        "sanguisugabogg",
+        "blackbraid",
+        "pupil-slicer"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Mathcore",
+        "Death Metal",
+        "Black Metal"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261119-secret-place-flying-donuts",
+      "title": "Flying Donuts + The Irradiates + Second Rate",
+      "date": "2026-11-19",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué dans le calendrier de la salle",
+      "artistIds": [
+        "flying-donuts",
+        "the-irradiates",
+        "second-rate"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Hardcore",
+        "Rock"
+      ],
+      "organizer": "La TAF",
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/nos-evenements",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261120-le-metronum-kamelot",
+      "title": "Kamelot + Exit Eden + Temperance",
+      "date": "2026-11-20",
+      "time": "20:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "kamelot",
+        "exit-eden",
+        "temperance"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Metal symphonique"
+      ],
+      "organizer": "Access Live",
+      "status": "confirmed",
+      "officialUrl": "https://lemetronum.fr/evenement/kamelot-exit-eden-temperance/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Contrôle initial de l'annonce sur le site de la salle"
+        }
+      ],
+      "sourceType": "organisateur",
+      "sourceLabel": "Annonce de la salle / de l’organisateur",
+      "locationPrecision": "salle (à confirmer)"
+    },
+    {
+      "id": "go-c-20261120-scey-sur-saone-et-saint-albin-les-tambours-du-bronx",
+      "title": "Les Tambours du Bronx + Sylvian",
+      "date": "2026-11-20",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "les-tambours-du-bronx",
+        "sylvian"
+      ],
+      "venueId": "echo-system-scey",
+      "genres": [
+        "Percussions industrielles"
+      ],
+      "organizer": "Echo System",
+      "status": "confirmed",
+      "officialUrl": "https://echosystem70.fr/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Echo System - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261120-herouville-saint-clair-shaarghot",
+      "title": "Shaârghot + Solitaris + Ghost Dance",
+      "date": "2026-11-20",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "shaarghot",
+        "solitaris",
+        "ghost-dance"
+      ],
+      "venueId": "big-band-cafe-herouville",
+      "genres": [
+        "Metal industriel",
+        "Metalcore"
+      ],
+      "organizer": "Big Band Café",
+      "status": "confirmed",
+      "officialUrl": "https://bigbandcafe.com/concerts/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Big Band Café - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261120-rennes-slift",
+      "title": "Slift + Slobber",
+      "date": "2026-11-20",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "slift",
+        "slobber"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Stoner Rock",
+        "Rock psychédélique"
+      ],
+      "organizer": "Antipode",
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/slift-2026",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-belfort-akiavel",
+      "title": "Akiavel + Tallulah",
+      "date": "2026-11-21",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "akiavel",
+        "tallulah"
+      ],
+      "venueId": "la-poudriere-belfort",
+      "genres": [
+        "Death Metal"
+      ],
+      "organizer": "La Poudrière",
+      "status": "confirmed",
+      "officialUrl": "https://poudriere.com/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "La Poudrière - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-caen-vulves-assassines",
+      "title": "Vulves Assassines",
+      "date": "2026-11-21",
+      "time": "19:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "vulves-assassines"
+      ],
+      "venueId": "le-cargo-caen",
+      "genres": [
+        "Punk alternatif"
+      ],
+      "organizer": "Le Cargö",
+      "status": "confirmed",
+      "officialUrl": "https://lecargo.fr/programmation/concert/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Cargö - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-nilvange-arabrot",
+      "title": "Årabrot + Buñuel + Intercourse",
+      "date": "2026-11-21",
+      "time": "20:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "arabrot",
+        "bunuel",
+        "intercourse"
+      ],
+      "venueId": "le-gueulard-plus-nilvange",
+      "genres": [
+        "Noise Rock",
+        "Hardcore"
+      ],
+      "organizer": "Le Gueulard Plus",
+      "status": "confirmed",
+      "officialUrl": "https://legueulardplus.fr/agenda/arabrot-bunuel-intercourse",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261122-olympia-accept",
+      "title": "Accept + Dynazty + Enforcer",
+      "date": "2026-11-22",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "accept",
+        "dynazty",
+        "enforcer"
+      ],
+      "venueId": "olympia-paris",
+      "genres": [
+        "Heavy Metal",
+        "Hard Rock"
+      ],
+      "organizer": "Garmonbozia",
+      "status": "confirmed",
+      "officialUrl": "https://www.olympiahall.com/agenda/accept/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Contrôle initial de la date et de la première partie"
+        }
+      ],
+      "sourceType": "organisateur",
+      "sourceLabel": "Annonce de la salle / de l’organisateur",
+      "locationPrecision": "salle (à confirmer)"
+    },
+    {
+      "id": "go-c-20261124-marseille-gvllow",
+      "title": "Gvllow + Ohm Sweet Ohm",
+      "date": "2026-11-24",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "gvllow",
+        "ohm-sweet-ohm"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Post-punk",
+        "Darkwave"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261124-paris-soen",
+      "title": "Soen",
+      "date": "2026-11-24",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "soen"
+      ],
+      "venueId": "l-alhambra-paris",
+      "genres": [
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p208962-soen-en-tournee-francaise-en-2026/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261126-istres-soen",
+      "title": "Soen",
+      "date": "2026-11-26",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "soen"
+      ],
+      "venueId": "l-usine-istres",
+      "genres": [
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p208962-soen-en-tournee-francaise-en-2026/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-marseille-eradikal-insane",
+      "title": "Eradikal Insane + Reign + Vulher",
+      "date": "2026-11-27",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "eradikal-insane",
+        "reign",
+        "vulher"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Deathcore",
+        "Hardcore"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-nantes-sunami",
+      "title": "Sunami + Desolated + Missing Link + Extinguish + Moral Law + Bind. + Chute Libre",
+      "date": "2026-11-27",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "sunami",
+        "desolated",
+        "missing-link",
+        "extinguish",
+        "moral-law",
+        "bind",
+        "chute-libre"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Hardcore",
+        "Metalcore"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-audincourt-the-inspector-cluzo",
+      "title": "The Inspector Cluzo + 7Weeks",
+      "date": "2026-11-28",
+      "time": "20:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-inspector-cluzo",
+        "7weeks"
+      ],
+      "venueId": "le-moloco-audincourt",
+      "genres": [
+        "Hard Rock",
+        "Heavy Rock"
+      ],
+      "organizer": "Le Moloco",
+      "status": "confirmed",
+      "officialUrl": "https://www.lemoloco.com/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261130-strasbourg-kadavar",
+      "title": "Kadavar + Scott Hepple and the Sun Band",
+      "date": "2026-11-30",
+      "time": "19:00",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "kadavar",
+        "scott-hepple-and-the-sun-band"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Stoner",
+        "Heavy Rock"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/kadavar-scott-hepple-and-the-sun-band/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-poitiers-doodseskader",
+      "title": "Doodseskader + Holeteeth",
+      "date": "2026-12-03",
+      "time": null,
+      "timeMeaning": "horaire non précisé",
+      "artistIds": [
+        "doodseskader",
+        "holeteeth"
+      ],
+      "venueId": "confort-moderne-poitiers",
+      "genres": [
+        "Metal alternatif",
+        "Noise Rock"
+      ],
+      "organizer": "Le Confort Moderne",
+      "status": "confirmed",
+      "officialUrl": "https://www.confort-moderne.fr/fr/agenda/details",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Confort Moderne - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-villeurbanne-eluveitie",
+      "title": "Eluveitie + Pain + Wolfheart",
+      "date": "2026-12-03",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "eluveitie",
+        "pain",
+        "wolfheart"
+      ],
+      "venueId": "le-transbordeur-villeurbanne",
+      "genres": [
+        "Folk Metal",
+        "Metal industriel",
+        "Death Metal"
+      ],
+      "organizer": "Le Transbordeur",
+      "status": "confirmed",
+      "officialUrl": "https://slhproductions.fr/agenda/etiquette/concert/liste/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-strasbourg-slift",
+      "title": "Slift + Yoo Doo Right",
+      "date": "2026-12-03",
+      "time": "19:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "slift",
+        "yoo-doo-right"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Stoner",
+        "Doom Metal"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/slift/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-toulouse-soen",
+      "title": "Soen",
+      "date": "2026-12-03",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "soen"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p208962-soen-en-tournee-francaise-en-2026/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-saint-etienne-hurakan",
+      "title": "Hurakan + Dukkha + KamiKrazy",
+      "date": "2026-12-04",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "hurakan",
+        "dukkha",
+        "kamikrazy"
+      ],
+      "venueId": "le-fil-saint-etienne",
+      "genres": [
+        "Metalcore",
+        "Metal"
+      ],
+      "organizer": "Le Fil",
+      "status": "confirmed",
+      "officialUrl": "https://www.le-fil.com/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Fil - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-rouen-kadavar",
+      "title": "Kadavar + Scott Hepple &amp; The Sun Band",
+      "date": "2026-12-04",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "kadavar",
+        "scott-hepple-the-sun-band"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Heavy Rock",
+        "Rock psychédélique"
+      ],
+      "organizer": "Le 106",
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-marseille-krav-boca",
+      "title": "Krav Boca + Wake the Dead",
+      "date": "2026-12-04",
+      "time": "19:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "krav-boca",
+        "wake-the-dead"
+      ],
+      "venueId": "le-dodu-marseille",
+      "genres": [
+        "Punk",
+        "Rap Metal"
+      ],
+      "organizer": "Le Dodu",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Dodu - agenda officiel",
+      "locationPrecision": "centre de commune (position indicative, pas la salle)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-savigny-le-temple-la-ruda",
+      "title": "La Ruda + The Mercenaries",
+      "date": "2026-12-04",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "la-ruda",
+        "the-mercenaries"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Ska Punk"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-strasbourg-no-one-is-innocent",
+      "title": "No One Is Innocent + 7Weeks",
+      "date": "2026-12-04",
+      "time": "19:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "no-one-is-innocent",
+        "7weeks"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metal alternatif",
+        "Hard Rock"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/no-one-is-innocent-coleres-tour/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-nancy-soen",
+      "title": "Soen",
+      "date": "2026-12-04",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "soen"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p208962-soen-en-tournee-francaise-en-2026/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-rillieux-cabal",
+      "title": "Cabal + Employed To Serve + Cold Culture",
+      "date": "2026-12-05",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "cabal",
+        "employed-to-serve",
+        "cold-culture"
+      ],
+      "venueId": "o-totem-live-rillieux",
+      "genres": [
+        "Deathcore",
+        "Metalcore"
+      ],
+      "organizer": "Ô Totem Live",
+      "status": "confirmed",
+      "officialUrl": "https://slhproductions.fr/agenda/etiquette/concert/liste/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-audincourt-eihwar",
+      "title": "Eihwar + Mira Ceti",
+      "date": "2026-12-05",
+      "time": "20:30",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "eihwar",
+        "mira-ceti"
+      ],
+      "venueId": "le-moloco-audincourt",
+      "genres": [
+        "Pagan Folk",
+        "Folk Metal"
+      ],
+      "organizer": "Le Moloco",
+      "status": "confirmed",
+      "officialUrl": "https://www.lemoloco.com/agenda/eihwar-mira-ceti/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-scey-sur-saone-et-saint-albin-goatvermin",
+      "title": "Gaulhammer Night #2 : Goatvermin + Lunar Tombfields + Hexecutor + Belenos",
+      "date": "2026-12-05",
+      "time": "20:30",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "goatvermin",
+        "lunar-tombfields",
+        "hexecutor",
+        "belenos"
+      ],
+      "venueId": "echo-system-scey",
+      "genres": [
+        "Black Metal",
+        "Thrash Metal"
+      ],
+      "organizer": "Echo System",
+      "status": "confirmed",
+      "officialUrl": "https://echosystem70.fr/agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Echo System - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-grenoble-soen",
+      "title": "Soen",
+      "date": "2026-12-05",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "soen"
+      ],
+      "venueId": "la-belle-electrique-grenoble",
+      "genres": [
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p208962-soen-en-tournee-francaise-en-2026/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261210-marseille-breeding-chaos",
+      "title": "Breeding Chaos + Kvårk + Clone Shop + Angel Guts",
+      "date": "2026-12-10",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "breeding-chaos",
+        "kvark",
+        "clone-shop",
+        "angel-guts"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Death Metal",
+        "Groove Metal"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-herouville-saint-clair-poesie-zero",
+      "title": "Poésie Zéro + King Kong Meuf",
+      "date": "2026-12-11",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "poesie-zero",
+        "king-kong-meuf"
+      ],
+      "venueId": "big-band-cafe-herouville",
+      "genres": [
+        "Punk"
+      ],
+      "organizer": "Big Band Café",
+      "status": "confirmed",
+      "officialUrl": "https://bigbandcafe.com/concerts/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Big Band Café - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-nantes-lost-in-kyiv",
+      "title": "Lost in Kyiv",
+      "date": "2026-12-12",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "lost-in-kyiv"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Post-Metal",
+        "Post-Rock"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/lost-in-kyiv/5307",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261216-marseille-los-fastidios",
+      "title": "Los Fastidios",
+      "date": "2026-12-16",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "los-fastidios"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Street Punk"
+      ],
+      "organizer": "Le Molotov",
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/locations/le-molotov/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Molotov - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261217-nilvange-arkona",
+      "title": "Arkona + Seth + The Great Old Ones",
+      "date": "2026-12-17",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "arkona",
+        "seth",
+        "the-great-old-ones"
+      ],
+      "venueId": "le-gueulard-plus-nilvange",
+      "genres": [
+        "Folk Metal",
+        "Black Metal"
+      ],
+      "organizer": "Le Gueulard Plus",
+      "status": "confirmed",
+      "officialUrl": "https://legueulardplus.fr/agenda/arkona-seth-great-old-ones-guest",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261218-loco-npfs",
+      "title": "No Place For Soul + Frustration",
+      "date": "2026-12-18",
+      "time": "20:00",
+      "timeMeaning": "début de l'événement",
+      "artistIds": [
+        "no-place-for-soul",
+        "frustration"
+      ],
+      "venueId": "la-loco-quimperle",
+      "genres": [
+        "Metal industriel",
+        "Post-punk"
+      ],
+      "organizer": "La Loco",
+      "status": "confirmed",
+      "officialUrl": "https://www.laloco.bzh/concerts/vendredi-18-12-no-place-for-so%C3%BBl-metal-indus-frustration-post-punk-20-%C3%A0-22",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Contrôle initial de la programmation officielle"
+        }
+      ],
+      "sourceType": "organisateur",
+      "sourceLabel": "Annonce de la salle / de l’organisateur",
+      "locationPrecision": "salle (à confirmer)"
+    },
+    {
+      "id": "go-c-20261218-secret-place-when-venus-weeps",
+      "title": "When Venus Weeps + Lifeboats",
+      "date": "2026-12-18",
+      "time": "19:00",
+      "timeMeaning": "horaire indiqué sur la billetterie de la salle",
+      "artistIds": [
+        "when-venus-weeps",
+        "lifeboats"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Post-hardcore",
+        "Metalcore"
+      ],
+      "organizer": "VVA Booking",
+      "status": "confirmed",
+      "officialUrl": "https://r.shotgun.live/fr/venues/secret-place",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270116-paris-imminence",
+      "title": "Imminence + August Burns Red",
+      "date": "2027-01-16",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "imminence",
+        "august-burns-red"
+      ],
+      "venueId": "zenith-paris-la-villette-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/183884-imminence-et-august-burns-red-ont-annonce-une",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270120-villeurbanne-orden-ogan",
+      "title": "Orden Ogan + Ensiferum + Angus McSix",
+      "date": "2027-01-20",
+      "time": "18:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "orden-ogan",
+        "ensiferum",
+        "angus-mcsix"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "Power Metal",
+        "Folk Metal"
+      ],
+      "organizer": "La Rayonne",
+      "status": "confirmed",
+      "officialUrl": "https://slhproductions.fr/agenda/ordenogan/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270120-reims-resolve",
+      "title": "Resolve",
+      "date": "2027-01-20",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270121-strasbourg-resolve",
+      "title": "Resolve + Silent Planet + Spleen",
+      "date": "2027-01-21",
+      "time": "19:00",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "resolve",
+        "silent-planet",
+        "spleen"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/evenements/page/2/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-villeurbanne-resolve",
+      "title": "Resolve",
+      "date": "2027-01-22",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "le-transbordeur-villeurbanne",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-toulouse-rhapsody-of-fire",
+      "title": "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out",
+      "date": "2027-01-22",
+      "time": null,
+      "timeMeaning": "horaire non précisé",
+      "artistIds": [
+        "rhapsody-of-fire",
+        "serious-black",
+        "submasq",
+        "aeon-gods",
+        "rock-out"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Power Metal",
+        "Metal symphonique"
+      ],
+      "organizer": "Le Metronum",
+      "status": "confirmed",
+      "officialUrl": "https://lemetronum.fr/evenement/rhapsody-of-fire-serious-black-supports/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "salle (à recontrôler)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270123-angers-it-it-anita",
+      "title": "It It Anita + La Jungle",
+      "date": "2027-01-23",
+      "time": "19:45",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "it-it-anita",
+        "la-jungle"
+      ],
+      "venueId": "le-chabada-angers",
+      "genres": [
+        "Noise Rock",
+        "Punk Rock"
+      ],
+      "organizer": "Le Chabada",
+      "status": "confirmed",
+      "officialUrl": "https://lechabada.com/Agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Chabada - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270123-montpellier-resolve",
+      "title": "Resolve + Silent Planet + Spleen",
+      "date": "2027-01-23",
+      "time": "19:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve",
+        "silent-planet",
+        "spleen"
+      ],
+      "venueId": "rockstore-montpellier",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "Rockstore",
+      "status": "confirmed",
+      "officialUrl": "https://rockstore.fr/resolve-silent-planet-spleen-23-janvier-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270124-limoges-resolve",
+      "title": "Resolve",
+      "date": "2027-01-24",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "espace-john-lennon-limoges",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270126-paris-orden-ogan",
+      "title": "Orden Ogan + Ensiferum + Angus McSix",
+      "date": "2027-01-26",
+      "time": "18:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "orden-ogan",
+        "ensiferum",
+        "angus-mcsix"
+      ],
+      "venueId": "la-machine-du-moulin-rouge-paris",
+      "genres": [
+        "Power Metal",
+        "Folk Metal"
+      ],
+      "organizer": "La Machine du Moulin Rouge",
+      "status": "confirmed",
+      "officialUrl": "https://billetterie.seetickets.fr/index-css5-garmonbozia-pg1.html",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "billetterie",
+      "sourceLabel": "billetterie officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270126-toulouse-resolve",
+      "title": "Resolve",
+      "date": "2027-01-26",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270127-strasbourg-orden-ogan",
+      "title": "Orden Ogan + Ensiferum + Angus McSix",
+      "date": "2027-01-27",
+      "time": "18:15",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "orden-ogan",
+        "ensiferum",
+        "angus-mcsix"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Power Metal",
+        "Folk Metal"
+      ],
+      "organizer": "La Laiterie",
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/orden-ogan-special-guest-tour-of-the-grave/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270127-cenon-resolve",
+      "title": "Resolve",
+      "date": "2027-01-27",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270128-nantes-resolve",
+      "title": "Resolve",
+      "date": "2027-01-28",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "warehouse-nantes",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270128-tourcoing-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-01-28",
+      "time": "20:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "le-grand-mix-tourcoing",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "Le Grand Mix",
+      "status": "confirmed",
+      "officialUrl": "https://legrandmix.com/agenda/ocean-aa-williams",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270129-angers-misanthrope",
+      "title": "Misanthrope + Monolithe",
+      "date": "2027-01-29",
+      "time": "19:45",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "misanthrope",
+        "monolithe"
+      ],
+      "venueId": "le-chabada-angers",
+      "genres": [
+        "Metal",
+        "Doom Metal"
+      ],
+      "organizer": "Le Chabada",
+      "status": "confirmed",
+      "officialUrl": "https://lechabada.com/Agenda/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "Le Chabada - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270129-wasquehal-resolve",
+      "title": "Resolve",
+      "date": "2027-01-29",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270129-reze-sanctvs",
+      "title": "Sanctvs + Trogne",
+      "date": "2027-01-29",
+      "time": null,
+      "timeMeaning": "horaire non précisé",
+      "artistIds": [
+        "sanctvs",
+        "trogne"
+      ],
+      "venueId": "cold-crash-reze",
+      "genres": [
+        "Black Metal"
+      ],
+      "organizer": "Cold Crash",
+      "status": "confirmed",
+      "officialUrl": "https://www.blackspeech.net/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270129-paris-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-01-29",
+      "time": "18:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "la-machine-du-moulin-rouge-paris",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "La Machine du Moulin Rouge",
+      "status": "confirmed",
+      "officialUrl": "https://www.lamachinedumoulinrouge.com/evenement/the-ocean/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270130-paris-resolve",
+      "title": "Resolve",
+      "date": "2027-01-30",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "resolve"
+      ],
+      "venueId": "la-cigale-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/news/13",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270130-nantes-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-01-30",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270131-cenon-the-ocean",
+      "title": "The Ocean + A.A. Williams",
+      "date": "2027-01-31",
+      "time": "20:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean",
+        "a-a-williams"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "Le Rocher de Palmer",
+      "status": "confirmed",
+      "officialUrl": "https://billetterie.seetickets.fr/index-css5-garmonbozia-pg1.html",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "billetterie",
+      "sourceLabel": "billetterie officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270202-paris-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder",
+      "date": "2027-02-02",
+      "time": "18:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder"
+      ],
+      "venueId": "petit-bain-paris",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "Petit Bain",
+      "status": "confirmed",
+      "officialUrl": "https://web.digitick.com/ext/billetterie5/index.php?p=11&amp;site=garmonbozia",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "billetterie",
+      "sourceLabel": "billetterie officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270203-wasquehal-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder",
+      "date": "2027-02-03",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212432-the-black-dahlia-murder-annonce-une-tournee-europeenne-celebrant-nocturnal/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270204-savigny-le-temple-sidilarsen",
+      "title": "Sidilarsen + Parallyx",
+      "date": "2027-02-04",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "sidilarsen",
+        "parallyx"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Metal industriel",
+        "Metal alternatif"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270204-rouen-ugly-kid-joe",
+      "title": "Ugly Kid Joe",
+      "date": "2027-02-04",
+      "time": "19:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "ugly-kid-joe"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Hard Rock"
+      ],
+      "organizer": "Le 106",
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/ugly-kid-joe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270205-tarbes-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-02-05",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "la-gespe-tarbes",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270206-saint-jean-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-02-06",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "victoire-2-saint-jean",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270207-marseille-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-02-07",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "le-dodu-marseille",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270208-nantes-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder",
+      "date": "2027-02-08",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212432-the-black-dahlia-murder-annonce-une-tournee-europeenne-celebrant-nocturnal/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270208-grenoble-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-02-08",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "austra-rocks-grenoble",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270209-toulouse-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder",
+      "date": "2027-02-09",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212432-the-black-dahlia-murder-annonce-une-tournee-europeenne-celebrant-nocturnal/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270211-rennes-enslaved",
+      "title": "Enslaved + Sólstafir + Gaahls Wyrd",
+      "date": "2027-02-11",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "enslaved",
+        "solstafir",
+        "gaahls-wyrd"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Black Metal",
+        "Post-Metal"
+      ],
+      "organizer": "Antipode",
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/enslaved-2026",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270211-nantes-revnoir",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-11",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/revnoir-ice-sealed-eyes/5234",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270212-audincourt-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder + Fuming Mouth",
+      "date": "2027-02-12",
+      "time": "20:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder",
+        "fuming-mouth"
+      ],
+      "venueId": "le-moloco-audincourt",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "Le Moloco",
+      "status": "confirmed",
+      "officialUrl": "https://www.lemoloco.com/programmation/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270213-metz-the-black-dahlia-murder",
+      "title": "The Black Dahlia Murder",
+      "date": "2027-02-13",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-black-dahlia-murder"
+      ],
+      "venueId": "les-trinitaires-metz",
+      "genres": [
+        "Death Metal mélodique"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212432-the-black-dahlia-murder-annonce-une-tournee-europeenne-celebrant-nocturnal/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270217-colmar-the-ocean",
+      "title": "The Ocean",
+      "date": "2027-02-17",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "the-ocean"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Post-metal",
+        "Metal progressif"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216219-the-ocean-vient-presenter-solaris-avec-une-tournee-en-france/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-nantes-primitive-ring",
+      "title": "Primitive Ring",
+      "date": "2027-02-19",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "primitive-ring"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Heavy Psych"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-rouen-revnoir",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-19",
+      "time": "20:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "Le 106",
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270223-paris-signs-of-the-swarm",
+      "title": "Signs of the Swarm + Face Yourself + Oceans Ate Alaska",
+      "date": "2027-02-23",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "signs-of-the-swarm",
+        "face-yourself",
+        "oceans-ate-alaska"
+      ],
+      "venueId": "petit-bain-paris",
+      "genres": [
+        "Deathcore",
+        "Metalcore"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/actu-metal/p214044-signs-of-the-swarm-de-passage-en-france-debut-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270224-rouen-eihwar",
+      "title": "Eihwar + Hindarfjäll",
+      "date": "2027-02-24",
+      "time": "19:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "eihwar",
+        "hindarfjall"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Folk Metal",
+        "Pagan Folk"
+      ],
+      "organizer": "Le 106",
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/eihwar-hindarjfall",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270226-nantes-sidilarsen",
+      "title": "Sidilarsen + Lafayette",
+      "date": "2027-02-26",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "sidilarsen",
+        "lafayette"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Metal alternatif",
+        "Metalcore"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/sidilarsen/5318",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270227-toulouse-cult-of-luna",
+      "title": "Cult of Luna + Bruit ≤ + Youth Code",
+      "date": "2027-02-27",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "cult-of-luna",
+        "bruit",
+        "youth-code"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Post-metal",
+        "Sludge Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/groupe/Cult-Of-Luna/news",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270301-villeurbanne-cult-of-luna",
+      "title": "Cult of Luna + Bruit ≤ + Youth Code",
+      "date": "2027-03-01",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "cult-of-luna",
+        "bruit",
+        "youth-code"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "Post-metal",
+        "Sludge Metal"
+      ],
+      "organizer": "La Rayonne",
+      "status": "confirmed",
+      "officialUrl": "https://larayonne.org/evenement/cult-of-luna_la-rayonne_metal/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270303-paris-cult-of-luna",
+      "title": "Cult of Luna + Bruit ≤ + Youth Code",
+      "date": "2027-03-03",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "cult-of-luna",
+        "bruit",
+        "youth-code"
+      ],
+      "venueId": "le-trianon-paris",
+      "genres": [
+        "Post-metal",
+        "Sludge Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/groupe/Cult-Of-Luna/news",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270304-savigny-le-temple-ml",
+      "title": "MØL",
+      "date": "2027-03-04",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "m-l"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Blackgaze",
+        "Post Metal"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/event/847880-mol",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270305-lille-cult-of-luna",
+      "title": "Cult of Luna + Bruit ≤ + Youth Code",
+      "date": "2027-03-05",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "cult-of-luna",
+        "bruit",
+        "youth-code"
+      ],
+      "venueId": "l-aeronef-lille",
+      "genres": [
+        "Post-metal",
+        "Sludge Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.metalorgie.com/groupe/Cult-Of-Luna/news",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270305-nantes-m-l",
+      "title": "MØL",
+      "date": "2027-03-05",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "m-l"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Post-Black Metal"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/mol/5333",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270310-rennes-moonspell",
+      "title": "Moonspell + Iotunn + Todomal",
+      "date": "2027-03-10",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "moonspell",
+        "iotunn",
+        "todomal"
+      ],
+      "venueId": "l-etage-rennes",
+      "genres": [
+        "Gothic Metal",
+        "Doom Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216741-moonspell-en-tournee-francaise-en-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270311-bruguieres-moonspell",
+      "title": "Moonspell + Iotunn + Todomal",
+      "date": "2027-03-11",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "moonspell",
+        "iotunn",
+        "todomal"
+      ],
+      "venueId": "le-bascala-bruguieres",
+      "genres": [
+        "Gothic Metal",
+        "Doom Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p216741-moonspell-en-tournee-francaise-en-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270314-orleans-alcest",
+      "title": "Alcest + Agriculture",
+      "date": "2027-03-14",
+      "time": "17:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "alcest",
+        "agriculture"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "Black Metal",
+        "Post-Metal"
+      ],
+      "organizer": "L’Astrolabe",
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270316-paris-moonspell",
+      "title": "Moonspell + Iotunn + Todomal",
+      "date": "2027-03-16",
+      "time": "18:30",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "moonspell",
+        "iotunn",
+        "todomal"
+      ],
+      "venueId": "la-machine-du-moulin-rouge-paris",
+      "genres": [
+        "Gothic Metal",
+        "Doom Metal"
+      ],
+      "organizer": "La Machine du Moulin Rouge",
+      "status": "confirmed",
+      "officialUrl": "https://billetterie.seetickets.fr/index-css5-garmonbozia-pg1.html",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "billetterie",
+      "sourceLabel": "billetterie officielle",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270318-savigny-le-temple-luicidal",
+      "title": "Luicidal",
+      "date": "2027-03-18",
+      "time": "20:00",
+      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "artistIds": [
+        "luicidal"
+      ],
+      "venueId": "lempreinte-savigny",
+      "genres": [
+        "Hardcore Punk"
+      ],
+      "organizer": "L’Empreinte",
+      "status": "confirmed",
+      "officialUrl": "https://lempreinte.mapado.com/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
+      "sourceType": "salle_officielle",
+      "sourceLabel": "L’Empreinte - agenda officiel",
+      "locationPrecision": "emplacement de la salle (source externe)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270319-tourcoing-alcest",
+      "title": "Alcest + Agriculture",
+      "date": "2027-03-19",
+      "time": "20:00",
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "alcest",
+        "agriculture"
+      ],
+      "venueId": "le-grand-mix-tourcoing",
+      "genres": [
+        "Blackgaze",
+        "Black Metal"
+      ],
+      "organizer": "Le Grand Mix",
+      "status": "confirmed",
+      "officialUrl": "https://legrandmix.com/agenda/alcest-agriculture",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce officielle consultée",
+      "sourceType": "organisateur",
+      "sourceLabel": "site de la salle / organisateur",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270319-nantes-oceans",
+      "title": "Oceans + Kassogtha",
+      "date": "2027-03-19",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "oceans",
+        "kassogtha"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Metalcore"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.blackspeech.net/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270321-paris-megadeth",
+      "title": "Megadeth + Black Label Society + Testament",
+      "date": "2027-03-21",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "megadeth",
+        "black-label-society",
+        "testament"
+      ],
+      "venueId": "zenith-paris-la-villette-paris",
+      "genres": [
+        "Thrash Metal",
+        "Heavy Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212957-megadeth-tire-sa-reverence-a-paris-et-lyon-en-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270325-nantes-uuhai",
+      "title": "Uuhai + Acyl",
+      "date": "2027-03-25",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "uuhai",
+        "acyl"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Folk Metal",
+        "Metal progressif"
+      ],
+      "organizer": "Le Ferrailleur",
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/uuhai-acyl/5289",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270403-secret-place-uuhai",
+      "title": "UUHAI",
+      "date": "2027-04-03",
+      "time": "19:00",
+      "timeMeaning": "ouverture des portes",
+      "artistIds": [
+        "uuhai"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Folk Metal"
+      ],
+      "organizer": "La TAF / Boomerang",
+      "status": "confirmed",
+      "officialUrl": "https://shotgun.live/fr/events/uuhai",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270408-lyon-megadeth",
+      "title": "Megadeth + Black Label Society + Testament",
+      "date": "2027-04-08",
+      "time": null,
+      "timeMeaning": "horaire annoncé",
+      "artistIds": [
+        "megadeth",
+        "black-label-society",
+        "testament"
+      ],
+      "venueId": "halle-tony-garnier-lyon",
+      "genres": [
+        "Thrash Metal",
+        "Heavy Metal"
+      ],
+      "organizer": "À confirmer",
+      "status": "announced",
+      "officialUrl": "https://www.lagrosseradio.com/webzine-metal/p212957-megadeth-tire-sa-reverence-a-paris-et-lyon-en-2027/",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "annonce documentée par média spécialisé; contrôle salle à approfondir",
+      "sourceType": "presse",
+      "sourceLabel": "presse spécialisée",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après consultation de la source citée; horaire laissé vide si inconnu"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270627-secret-place-les-ramoneurs-de-menhir",
+      "title": "Les Ramoneurs de Menhir + Les Tardigrades + Emo Prolapse",
+      "date": "2027-06-27",
+      "time": null,
+      "timeMeaning": null,
+      "artistIds": [
+        "les-ramoneurs-de-menhir",
+        "les-tardigrades",
+        "emo-prolapse"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Hardcore",
+        "Rock"
+      ],
+      "organizer": "La TAF",
+      "status": "confirmed",
+      "officialUrl": "https://r.shotgun.live/fr/venues/secret-place",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270701-secret-place-les-tambours-du-bronx",
+      "title": "Les Tambours du Bronx + Lecks Inc",
+      "date": "2027-07-01",
+      "time": "19:00",
+      "timeMeaning": "horaire annoncé sur la billetterie de la salle",
+      "artistIds": [
+        "les-tambours-du-bronx",
+        "lecks-inc"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Metal industriel",
+        "Rock"
+      ],
+      "organizer": "La TAF / Vault",
+      "status": "confirmed",
+      "officialUrl": "https://r.shotgun.live/fr/venues/secret-place",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
+      "sourceType": "organisateur",
+      "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
+      "locationPrecision": "adresse exacte confirmée ; coordonnées du marqueur indicatives (quartier)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270915-rennes-eisbrecher",
+      "title": "Eisbrecher",
+      "date": "2027-09-15",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "artistIds": [
+        "eisbrecher"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Metal industriel"
+      ],
+      "organizer": "Antipode",
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/eisbrecher-2027",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
+      "sourceType": "organisateur",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "centre de commune (à préciser)",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    }
+  ],
+  "dataPolicy": {
+    "publicPreview": true,
+    "sourceTransparency": true,
+    "venueCoordinates": "Position indicative par commune lorsque la géolocalisation précise de la salle n’est pas vérifiée.",
+    "selection": "Concerts et dates annoncées, sans revendication d’exhaustivité.",
+    "ticketmaster": "Découverte uniquement par API officielle avec clé sécurisée; aucun événement Ticketmaster importé sans accès API et droit confirmé. Ne pas exposer de clé dans ce catalogue."
+  }
+}
