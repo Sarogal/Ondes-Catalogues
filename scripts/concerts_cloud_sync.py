@@ -176,7 +176,16 @@ def validate_approval(approval, venues, known_artist_ids, today):
                    parsed_url.hostname == "lemolotov.com" and
                    re.fullmatch(r"/events/[^/]+/?", parsed_url.path) and
                    not (approval.get("newArtists") or []))
-        require(bool(rex or molotov) and event.get("sourceType") == "salle",
+        ferrailleur = (
+            venue == FERRAILLEUR_VENUE_ID and
+            parsed_url.hostname in ("www.leferrailleur.fr", "leferrailleur.fr") and
+            re.fullmatch(r"/evenement/[^/?#]+/\\d+/?", parsed_url.path) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.query and not parsed_url.fragment and
+            isinstance(venues[venue], dict) and
+            all(venues[venue].get(k) == v for k,v in FERRAILLEUR_LOCATION_FIX.items())
+        )
+        require(bool(rex or molotov or ferrailleur) and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=7) <= reviewed_at <= today,
@@ -210,6 +219,43 @@ def validate_approval(approval, venues, known_artist_ids, today):
         added[aid] = {"id": aid, "name": name, "aliases": []}
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
+    if reviewer == "automated-official-recheck" and ferrailleur:
+        proof = next((item for item in evidence if isinstance(item,dict)
+                      and item.get("url")==official_url and
+                      item.get("checkedAt")==reviewed_at.isoformat() and
+                      {"artists","date","venue","genre"}.issubset(
+                          set(item.get("checkedFields") or []))), None)
+        require(proof is not None, "Liste officielle d'artistes non vérifiée")
+        names = proof.get("officialArtistNames")
+        require(isinstance(names,list) and len(names)==len(ids) and
+                1<=len(names)<=5 and
+                all(isinstance(n,str) and 3<=len(norm(n))<=100 for n in names) and
+                len({norm(n) for n in names})==len(names),
+                "Liste officielle d'artistes absente ou ambiguë")
+        displayed = re.split(r"\\s+\\+\\s+", event["title"])
+        require(len(displayed)==len(names) and
+                all(norm(a)==norm(b) for a,b in zip(displayed,names)),
+                "Affiche différente de la liste officielle")
+        require(len(added)<=2 and
+                proof.get("verifiedNewArtists")==[x["name"] for x in new_artists],
+                "Artistes nouveaux non documentés exactement")
+        # Each ID has to point to the exact named act, not another known act.
+        for aid,name in zip(ids,names):
+            resolved = added.get(aid) or known_artist_ids.get(aid)
+            require(bool(resolved) and norm(resolved["name"])==norm(name),
+                    "Artiste officiel ne correspond pas à son identifiant")
+        # An artist alias can be a duplicate identity, even when the slug is free.
+        existing = {norm(x["name"]) for x in known_artist_ids.values()}
+        aliases = {norm(alias)
+                   for x in known_artist_ids.values()
+                   for alias in (x.get("aliases") or []) if isinstance(alias,str)}
+        require(all(norm(x["name"]) not in existing|aliases and
+                    x["id"]==norm(x["name"]).replace(" ","-")[:72].strip("-")
+                    for x in new_artists),
+                "Artiste nouveau en conflit avec identité existante")
+        require(any(re.search(r"(?<![a-z0-9])(metal|punk|hardcore|grind|doom|sludge|stoner|hard rock)(?![a-z0-9])",
+                              norm(g)) for g in event.get("genres",[])),
+                "Genre métal ou punk officiel absent")
     require(isinstance(event.get("genres"), list) and
             1 <= len(event["genres"]) <= 10 and
             all(isinstance(x, str) and x for x in event["genres"]),
