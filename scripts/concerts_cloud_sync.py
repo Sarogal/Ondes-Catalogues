@@ -135,12 +135,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     if reviewer == "automated-official-recheck":
-        # An automated recheck is not a human signature: permit only
-        # independently fetched, dated first-party Le Rex detail pages.
-        require(event.get("venueId") == "le-rex-toulouse" and
-                urlsplit(official_url).hostname == "www.lerextoulouse.com" and
-                urlsplit(official_url).path.startswith("/fr/programmation/") and
-                event.get("sourceType") == "salle",
+        # An automated recheck is not a human signature. Only explicitly
+        # allowlisted FIRST-PARTY event detail paths and their exact venue
+        # IDs qualify. Aggregator, generic agenda and Le Dodu cannot pass.
+        venue = event.get("venueId")
+        parsed_url = urlsplit(official_url)
+        rex = (venue == "le-rex-toulouse" and
+               parsed_url.hostname == "www.lerextoulouse.com" and
+               re.fullmatch(r"/fr/programmation/[^/]+/?", parsed_url.path))
+        molotov = (venue == "le-molotov-marseille" and
+                   parsed_url.hostname == "lemolotov.com" and
+                   re.fullmatch(r"/events/[^/]+/?", parsed_url.path) and
+                   not (approval.get("newArtists") or []))
+        require(bool(rex or molotov) and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=7) <= reviewed_at <= today,
