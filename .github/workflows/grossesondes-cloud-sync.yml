@@ -27,7 +27,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: grossesondes-cloud-publication
+  group: ondes-cloud-publication
   cancel-in-progress: false
 
 jobs:
@@ -39,6 +39,8 @@ jobs:
       deploy: ${{ steps.decision.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -49,7 +51,7 @@ jobs:
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
           GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
-          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           python scripts/grossesondes_cloud_sync.py --mode "$MODE"
           if git diff --quiet -- docs/grossesondes/festivals.json; then
@@ -69,7 +71,7 @@ jobs:
         env:
           CHANGED: ${{ steps.sync.outputs.changed }}
           GROSSES_ENABLED: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
-          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           if [ "$CHANGED" = "true" ] && [ "$GROSSES_ENABLED" = "enabled" ] && [ "$MODE" = "publish" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
@@ -82,7 +84,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- docs/grossesondes/festivals.json
+          git add -- docs/grossesondes/festivals.json reviews/grossesondes-published-head.json
           git diff --cached --quiet && exit 1
           git commit -m "data(grossesondes): intégrer les éditions officiellement corroborées"
           git push origin HEAD:main

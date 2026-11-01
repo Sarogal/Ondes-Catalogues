@@ -24,7 +24,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ptitesondes-cloud-publication
+  group: ondes-cloud-publication
   cancel-in-progress: false
 
 jobs:
@@ -36,6 +36,8 @@ jobs:
       deploy: ${{ steps.decision.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -56,7 +58,7 @@ jobs:
           USER_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$USER_MODE" = "publish" ]; }; then
+          if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
