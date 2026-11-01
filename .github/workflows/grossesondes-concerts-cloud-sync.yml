@@ -1,0 +1,120 @@
+name: Grosses Ondes — concerts, synchronisation cloud sécurisée
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        description: Prévisualisation ou publication de concerts approuvés
+        options: [preview, publish]
+        default: preview
+        required: true
+  schedule:
+    - cron: '13 12 * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-concerts-cloud-sync.yml'
+      - 'scripts/concerts_cloud_sync.py'
+      - 'tests/test_concerts_cloud_sync.py'
+      - 'docs/grossesondes/concerts.json'
+      - 'docs/grossesondes/concerts-reference.json'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ondes-catalogues-pages-publication
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    outputs:
+      deploy: ${{ steps.decision.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier les scripts et la conservation des 127 concerts
+        run: python -m unittest discover -s tests -v
+
+      - name: Préparer le catalogue Concerts sans mise à jour forcée
+        id: sync
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+          CLOUD_ENABLED: ${{ vars.GROSSES_ONDES_CONCERTS_CLOUD_SYNC }}
+        run: |
+          if [ "$MODE" = "publish" ] && [ "$CLOUD_ENABLED" != "enabled" ]; then
+            MODE=preview
+          fi
+          python scripts/concerts_cloud_sync.py --mode "$MODE"
+          if git diff --quiet -- docs/grossesondes/concerts.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Archiver le rapport privé de contrôle
+        uses: actions/upload-artifact@v7
+        with:
+          name: grossesondes-concerts-cloud-candidat
+          path: /tmp/grossesondes_concerts/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Déterminer l'autorisation de publication ou d'initialisation Pages
+        id: decision
+        env:
+          CHANGED: ${{ steps.sync.outputs.changed }}
+          EVENT_NAME: ${{ github.event_name }}
+          CLOUD_ENABLED: ${{ vars.GROSSES_ONDES_CONCERTS_CLOUD_SYNC }}
+          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+        run: |
+          if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && [ "$MODE" = "publish" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "push" ] && [ "$CHANGED" = "false" ]; then
+            # Déploiement de la référence publique existante et des autres docs
+            # SANS ajouter de concert ; utile au bootstrap du JSON GitHub Pages.
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "Aucune publication : pas d'approbation, mode preview ou variable absente."
+          fi
+
+      - name: Conserver le nouveau JSON approuvé dans Git
+        if: ${{ steps.sync.outputs.changed == 'true' && steps.decision.outputs.deploy == 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- docs/grossesondes/concerts.json
+          git diff --cached --quiet && exit 1
+          git commit -m "data(concerts): publier uniquement les concerts officiellement approuvés"
+          git push origin HEAD:main
+
+      - name: Préparer GitHub Pages (tous les catalogues existants préservés)
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/configure-pages@v6
+      - name: Construire l'artefact GitHub Pages complet
+        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+
+  deploy:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.published.outputs.page_url }}
+    steps:
+      - name: Déployer le JSON Concerts avec Festivals et P'tites Ondes
+        id: published
+        uses: actions/deploy-pages@v5
