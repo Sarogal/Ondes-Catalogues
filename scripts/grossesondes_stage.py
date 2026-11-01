@@ -19,7 +19,8 @@ from grossesondes_preview import (
 )
 from grossesondes_generic_roster import validate_roster
 from grossesondes_history_guard import validate_history_extension
-from grossesondes_calendar_approval import check_known_calendar, approved_calendar, merge_staged_with_approved
+# The frozen 2026-10-30 certificate remains tested separately; the live
+# preview is reconciled against the integrity-pinned published head.
 from grossesondes_field_proof import (
     cernunnos_update, fantasmagorik_update, in_your_face_sold_out,
     IN_YOUR_FACE_TICKET_URL,
@@ -213,10 +214,17 @@ def main():
     patch,path=load_patch(token,__import__("datetime").date.fromisoformat(today))
     cal=json.loads((ROOT/"festivals.json").read_text(encoding="utf-8"))
     history=json.loads((ROOT/"festival-history.json").read_text(encoding="utf-8"))
-    # Comparer avant tout avec Infomaniak : en cas de divergence bloquer
-    # (ne pas réécrire depuis l'ancienne référence).
-    production_calendar,production_history=fetch_json(CAL_URL),fetch_json(HIS_URL)
-    check_known_calendar(production_calendar,cal)
+    # Reuse the same pinned Infomaniak snapshot and signed published-head
+    # validation as the production cloud synchronizer. The frozen 30/10
+    # certificate alone cannot describe later independently verified releases.
+    # Import within main because cloud_sync imports stage() from this module.
+    from grossesondes_cloud_sync import (
+        MANIFEST, load_production, verify_published_head, build_candidate
+    )
+    snapshot=load_production(json.loads(MANIFEST.read_text(encoding="utf-8")))
+    production_calendar=snapshot["festivals.json"]
+    production_history=snapshot["festival-history.json"]
+    verify_published_head(cal)
     validate_history_extension(production_history,history)
     audit(production_calendar,production_history,patch,
           production_calendar,production_history)
@@ -236,15 +244,13 @@ def main():
         except Exception as error:
             evidence[key]=""
             print(key+": preuve non disponible ; changement maintenu en attente")
-    proven,report=stage(production_calendar,production_history,patch,evidence,today)
-    if cal == production_calendar:
-        out = proven
-        report["trusted_calendar_base"] = "production_initiale_123"
-    else:
-        out = merge_staged_with_approved(
-            production_calendar,proven,approved_calendar(production_calendar)
-        )
-        report["trusted_calendar_base"] = "publication_approuvee_124"
+    # Identical merge, history protection and anti-regression checks to
+    # grossesondes_cloud_sync.py. Preview never writes the public JSON.
+    out,report=build_candidate(
+        snapshot,
+        {"festivals.json":cal, "festival-history.json":history},
+        patch,evidence,today,trusted_published=True
+    )
     report["candidate_total"] = len(out["festivals"])
     report["current_published_count"] = len(cal["festivals"])
     report["patch"]=path
