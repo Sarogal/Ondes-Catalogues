@@ -180,10 +180,18 @@ def merge(reference, current, approvals, today):
     counts = {"newEvents": 0, "newArtists": 0, "alreadyPublished": 0, "held": []}
     for entry in approvals["approvals"][:50]:
         try:
-            evt, new_artists = validate_approval(entry, venues, artists, today)
-            if evt["id"] in ids:
+            incoming = entry.get("event") or {}
+            prior_id = incoming.get("id")
+            if prior_id in ids:
+                previous = next(e for e in result["events"] if e["id"] == prior_id)
+                require(entry.get("reviewDecision") == "approved" and
+                        all(previous.get(k) == incoming.get(k) for k in
+                            ("id", "title", "date", "artistIds", "venueId", "genres",
+                             "status", "officialUrl", "sourceType")),
+                        "Approbation existante ne correspond pas à la fiche publiée")
                 counts["alreadyPublished"] += 1
                 continue
+            evt, new_artists = validate_approval(entry, venues, artists, today)
             # Aucune collision non déclarée sur le même lieu, jour et artiste.
             clash = next((other["id"] for other in result["events"]
                           if other["date"] == evt["date"] and
