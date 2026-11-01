@@ -50,6 +50,11 @@ def verify_published_head(published):
     data=ROOT.joinpath("festivals.json").read_bytes()
     require(record.get("currentBlobSha")==git_blob_sha(data),
             "calendrier Git modifié hors synchroniseur")
+    # The JSON object supplied to the validator must be the EXACT pinned
+    # on-disk publication, not a modified in-memory object with unchanged
+    # schema/count/date metadata.
+    require(published==json.loads(data.decode("utf-8-sig")),
+            "calendrier fourni divergent de sa version Git signée")
     require(record.get("calendarCount")==len(published.get("festivals",[]))
             and record.get("generatedAt")==published.get("generatedAt"),
             "métadonnées du calendrier divergent du registre")
