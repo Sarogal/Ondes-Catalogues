@@ -7,7 +7,7 @@ catalogue issu de cette preuve et de cet instantané.
 """
 import argparse
 from datetime import datetime
-from hashlib import sha256
+from hashlib import sha1, sha256
 import json
 import os
 from pathlib import Path
@@ -28,6 +28,43 @@ from grossesondes_history_guard import validate_history_extension
 from grossesondes_calendar_approval import approved_calendar, merge_staged_with_approved
 
 MANIFEST=ROOT/"reference-manifest.json"
+PUBLISHED_HEAD=Path("reviews/grossesondes-published-head.json")
+GENESIS_BLOB_SHA="7fca36caba870d327ec5aadb504c46c251956c6d"
+
+
+def git_blob_sha(data):
+    return sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+
+
+def verify_published_head(published):
+    """Anchor each public generation to the last successfully committed artifact.
+
+    This prevents accidental drift from passing as approved, while allowing
+    legitimately verified daily changes to survive tomorrow's sync even
+    if the original source is temporarily unavailable.
+    """
+    record=json.loads(PUBLISHED_HEAD.read_text(encoding="utf-8"))
+    require(record.get("schema")=="grossesondes.published-head.v1"
+            and record.get("genesisBlobSha")==GENESIS_BLOB_SHA,
+            "registre de publication manquant ou origine altérée")
+    data=ROOT.joinpath("festivals.json").read_bytes()
+    require(record.get("currentBlobSha")==git_blob_sha(data),
+            "calendrier Git modifié hors synchroniseur")
+    require(record.get("calendarCount")==len(published.get("festivals",[]))
+            and record.get("generatedAt")==published.get("generatedAt"),
+            "métadonnées du calendrier divergent du registre")
+    return record
+
+
+def record_published_head(candidate, previous):
+    data=ROOT.joinpath("festivals.json").read_bytes()
+    record=dict(previous)
+    record["currentBlobSha"]=git_blob_sha(data)
+    record["calendarCount"]=len(candidate["festivals"])
+    record["generatedAt"]=candidate["generatedAt"]
+    PUBLISHED_HEAD.write_text(json.dumps(record,ensure_ascii=False,indent=2)+"\\n",
+                              encoding="utf-8")
+
 SOURCES=[
     ("festivals.json", CAL_URL, "festivals", 1),
     ("festival-history.json", HIS_URL, "knownFestivals", 2),
@@ -95,7 +132,7 @@ def safe_target(baseline, candidate, currently_published):
             "version de schéma différente")
     return currently_published["festivals"]!=candidate["festivals"]
 
-def build_candidate(snapshot, published, patch, official_sources, today):
+def build_candidate(snapshot, published, patch, official_sources, today, trusted_published=False):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today
@@ -105,15 +142,18 @@ def build_candidate(snapshot, published, patch, official_sources, today):
     validate_history_extension(
         snapshot["festival-history.json"], published["festival-history.json"]
     )
-    if published["festivals.json"] == snapshot["festivals.json"]:
-        # Compatibilité avec les tests et le premier bootstrap, avant le lot 124.
+    if trusted_published:
+        # The signed Git blob of the last published calendar was checked by
+        # verify_published_head(). Preserve already validated later changes.
+        # New changes can still enter ONLY through independently proven stage().
+        reference = published["festivals.json"]
+        target = merge_staged_with_approved(snapshot["festivals.json"], proven, reference)
+        report["trusted_calendar_base"] = "publication_precedente_signee"
+    elif published["festivals.json"] == snapshot["festivals.json"]:
         reference = snapshot["festivals.json"]
         target = proven
         report["trusted_calendar_base"] = "production_initiale_123"
     else:
-        # Les 124 fiches déjà officiellement publiées sont une couche approuvée.
-        # Le patch du jour est construit sur la photographie initiale 123, puis
-        # ses SEULES différences prouvées sont appliquées à cette couche.
         reference = approved_calendar(snapshot["festivals.json"])
         target = merge_staged_with_approved(snapshot["festivals.json"], proven, reference)
         report["trusted_calendar_base"] = "publication_approuvee_124"
@@ -138,6 +178,7 @@ def main():
       key:json.loads((ROOT/key).read_text(encoding="utf-8"))
       for key in ("festivals.json","festival-history.json")
     }
+    head=verify_published_head(published["festivals.json"])
     patch,path=load_patch(token,today)
     sources={}
     for key,url in [
@@ -172,7 +213,7 @@ def main():
         except Exception:
             sources["registered:"+slug]=""
             print("Site officiel enregistré inaccessible pour "+slug+" : modifications différées.")
-    out,report=build_candidate(snapshot,published,patch,sources,today.isoformat())
+    out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["mode"]=args.mode
     report["non_deployed_updates"]=len(report["held"])
@@ -186,8 +227,9 @@ def main():
         require(os.environ.get("GROSSES_ONDES_CLOUD_SYNC")=="enabled",
                 "variable GROSSES_ONDES_CLOUD_SYNC différente de enabled")
         ROOT.joinpath("festivals.json").write_text(
-            json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-        print("Fichier public préparé dans le workspace Actions pour commit.")
+            json.dumps(out,ensure_ascii=False,indent=2)+"\\n",encoding="utf-8")
+        record_published_head(out,head)
+        print("Calendrier et registre de publication préparés pour commit atomique.")
     elif args.mode=="preview":
         print("PREVIEW : aucune donnée publique modifiée.")
     else:
