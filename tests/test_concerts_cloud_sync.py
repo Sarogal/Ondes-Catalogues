@@ -205,6 +205,76 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(denied["newEvents"], 0)
                 self.assertTrue(denied["held"])
 
+    def test_ferrailleur_auto_can_add_exact_officially_named_artists(self):
+        from concerts_cloud_sync import FERRAILLEUR_LOCATION_FIX
+        fixed=copy.deepcopy(BASE)
+        next(x for x in fixed["venues"] if x["id"]=="le-ferrailleur-nantes").update(
+            FERRAILLEUR_LOCATION_FIX)
+        artist=BASE["artists"][0]  # Kamelot already identified
+        event=approval("go-c-20270201-nantes-kamelot")
+        event["reviewedBy"]="automated-official-recheck"
+        url="https://www.leferrailleur.fr/evenement/kamelot-and-friends/8753"
+        event["event"].update({
+            "title":artist["name"]+" + Poison Ruïn + Precipice",
+            "venueId":"le-ferrailleur-nantes",
+            "sourceType":"salle",
+            "officialUrl":url,
+            "artistIds":[artist["id"],"poison-ruin","precipice"],
+            "genres":["Punk","Metal"],
+            "time":"20:30"
+        })
+        event["newArtists"]=[
+            {"id":"poison-ruin","name":"Poison Ruïn"},
+            {"id":"precipice","name":"Precipice"}
+        ]
+        event["officialEvidence"][0].update({
+            "url":url,
+            "checkedFields":["artists","date","venue","genre"],
+            "officialArtistNames":[artist["name"],"Poison Ruïn","Precipice"],
+            "verifiedNewArtists":["Poison Ruïn","Precipice"]
+        })
+        result,stats=merge(BASE,fixed,{"schema":"grossesondes.concert.approvals.v1",
+                                       "approvals":[event]},NOW)
+        self.assertEqual(stats["newEvents"],1)
+        self.assertEqual(stats["newArtists"],2)
+        self.assertEqual(result["events"][-1]["venueId"],"le-ferrailleur-nantes")
+        self.assertEqual(len(result["artists"]),195)
+        bad_items=[
+            ("third-new",lambda a:a["newArtists"].append(
+                {"id":"third-group","name":"Third Group"})),
+            ("wrong-lineup",lambda a:a["officialEvidence"][0].update(
+                {"officialArtistNames":["Kamelot","Unknown","Precipice"]})),
+            ("missing-list",lambda a:a["officialEvidence"][0].pop(
+                "officialArtistNames")),
+            ("fake-identity",lambda a:a["event"].update(
+                {"artistIds":["exit-eden","poison-ruin","precipice"]})),
+            ("bad-id",lambda a:a["newArtists"][0].update({"id":"not-poison"})),
+            ("alias-clash",lambda a:a["newArtists"][0].update(
+                {"name":"No Place for soûl","id":"no-place-for-soul"})),
+            ("changed-date",lambda a:a["event"].update({"date":"2026-10-01"})),
+            ("wrong-domain",lambda a:a["event"].update(
+                {"officialUrl":"https://www.example.org/evenement/kamelot/8753"})),
+            ("generic-agenda",lambda a:a["event"].update(
+                {"officialUrl":"https://www.leferrailleur.fr/agenda"}))
+        ]
+        for name,change in bad_items:
+            with self.subTest(name=name):
+                altered=copy.deepcopy(event)
+                change(altered)
+                if name in ("wrong-domain","generic-agenda"):
+                    altered["officialEvidence"][0]["url"]=altered["event"]["officialUrl"]
+                _,denied=merge(BASE,fixed,{
+                    "schema":"grossesondes.concert.approvals.v1","approvals":[altered]
+                },NOW)
+                self.assertEqual(denied["newEvents"],0)
+                self.assertTrue(denied["held"])
+        # Old city-centre position is never acceptable for this new autonomy.
+        _,denied=merge(BASE,BASE,{
+            "schema":"grossesondes.concert.approvals.v1","approvals":[event]
+        },NOW)
+        self.assertEqual(denied["newEvents"],0)
+        self.assertTrue(denied["held"])
+
     def test_event_third_party_only_rejected(self):
         bad=approval()
         bad["event"]["sourceType"]="aggregator"
