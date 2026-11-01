@@ -42,7 +42,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: grossesondes-cloud-publication
+  group: ondes-cloud-publication
   cancel-in-progress: false
 
 jobs:
