@@ -173,6 +173,20 @@ def merge(reference, current, approvals, today):
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
+    # Une modification manuelle d'un concert CLOUD ne peut contourner
+    # la file privée des approbations et les champs documentés.
+    approved_ids = {
+        a.get("event", {}).get("id"): a
+        for a in approvals["approvals"] if a.get("reviewDecision") == "approved"
+    }
+    for existing in current["events"][len(reference["events"]):]:
+        approval = approved_ids.get(existing["id"])
+        require(bool(approval), "Concert cloud publié sans approbation privée")
+        expected = approval["event"]
+        require(all(existing.get(k) == expected.get(k) for k in
+                    ("id", "title", "date", "artistIds", "venueId", "genres",
+                     "status", "officialUrl", "sourceType")),
+                "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
     ids = {x["id"] for x in result["events"]}
     venues = {x["id"]: x for x in result["venues"]}
