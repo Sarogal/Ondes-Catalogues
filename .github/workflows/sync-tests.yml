@@ -1,6 +1,11 @@
 name: Tests du synchroniseur
 
 on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/**'
   push:
     branches: [main]
     paths:
