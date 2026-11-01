@@ -33,7 +33,7 @@ GENESIS_BLOB_SHA="7fca36caba870d327ec5aadb504c46c251956c6d"
 
 
 def git_blob_sha(data):
-    return sha1(b"blob " + str(len(data)).encode() + b"\\0" + data).hexdigest()
+    return sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 
 
 def verify_published_head(published):
@@ -62,7 +62,7 @@ def record_published_head(candidate, previous):
     record["currentBlobSha"]=git_blob_sha(data)
     record["calendarCount"]=len(candidate["festivals"])
     record["generatedAt"]=candidate["generatedAt"]
-    PUBLISHED_HEAD.write_text(json.dumps(record,ensure_ascii=False,indent=2)+"\\n",
+    PUBLISHED_HEAD.write_text(json.dumps(record,ensure_ascii=False,indent=2)+"\n",
                               encoding="utf-8")
 
 SOURCES=[
@@ -227,7 +227,7 @@ def main():
         require(os.environ.get("GROSSES_ONDES_CLOUD_SYNC")=="enabled",
                 "variable GROSSES_ONDES_CLOUD_SYNC différente de enabled")
         ROOT.joinpath("festivals.json").write_text(
-            json.dumps(out,ensure_ascii=False,indent=2)+"\\n",encoding="utf-8")
+            json.dumps(out,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
         record_published_head(out,head)
         print("Calendrier et registre de publication préparés pour commit atomique.")
     elif args.mode=="preview":
