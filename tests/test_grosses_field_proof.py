@@ -145,5 +145,27 @@ class FieldProofTests(unittest.TestCase):
         self.assertEqual(out["festivals"][3],old)
         self.assertEqual(len(report["held"]),1)
 
+
+class SoldOutTicketTests(unittest.TestCase):
+    def test_three_categories_need_explicit_independent_sold_out_proof(self):
+        from grossesondes_field_proof import in_your_face_sold_out, IN_YOUR_FACE_TICKET_URL
+        old = {"slug":"in-your-face-6-2026", "source":IN_YOUR_FACE_TICKET_URL,
+               "notes":"Festival annoncé.", "lastVerified":"2026-10-10"}
+        patch = {"evidence":[IN_YOUR_FACE_TICKET_URL], "verified_at":"2026-11-01",
+                 "changes":[
+                     {"field":"notes", "before":old["notes"],
+                      "after":old["notes"]+" | Billetterie officielle consultée le 01/11/2026 : trois pass épuisés."},
+                     {"field":"lastVerified", "before":"2026-10-10", "after":"2026-11-01"}]}
+        text = ("in your face 6 le zinor novembre 2026 "
+                "pass 2 jours 42 sold out no seats available "
+                "pass vendredi 27 sold out no seats available "
+                "pass samedi 29 sold out no seats available")
+        self.assertIsNotNone(in_your_face_sold_out(
+            old,patch,{"in_your_face_ticket":text},"2026-11-01"))
+        self.assertIsNone(in_your_face_sold_out(
+            old,patch,{"in_your_face_ticket":text.replace("sold out","on sale",1)},"2026-11-01"))
+        self.assertIsNone(in_your_face_sold_out(
+            old,dict(patch,evidence=["https://example.org/"]),{"in_your_face_ticket":text},"2026-11-01"))
+
 if __name__=="__main__":
     unittest.main()
