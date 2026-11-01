@@ -12,7 +12,7 @@ from grossesondes_calendar_approval import (
     load_approval, approved_calendar, check_known_calendar,
     merge_staged_with_approved
 )
-from grossesondes_cloud_sync import build_candidate
+from grossesondes_cloud_sync import build_candidate, verify_published_head
 from grossesondes_preview import CAL_URL, HIS_URL
 
 
@@ -67,6 +67,46 @@ class TrustedPublishedCalendarTests(unittest.TestCase):
         self.assertEqual(len(original["festivals"]), 123)
         self.assertEqual(approved_calendar(original), published)
         self.assertEqual(check_known_calendar(original, published), "copie_approuvee_124")
+
+    def test_signed_current_calendar_does_not_revert_validated_updates(self):
+        # The historic 30 Oct approval must coexist with independently
+        # verified later publications, without requiring a false rebase.
+        original, _ = calendars()
+        _, public_history = archives()
+        current = json.loads(
+            (ROOT / "docs/grossesondes/festivals.json").read_text(encoding="utf-8")
+        )
+        head = verify_published_head(current)
+        self.assertEqual(head["calendarCount"], len(current["festivals"]))
+        self.assertEqual(head["generatedAt"], current["generatedAt"])
+        old_history = copy.deepcopy(public_history)
+        old_history["updatedAt"] = "2026-10-22"
+        old_history["knownFestivals"] = old_history["knownFestivals"][:170]
+        result, report = build_candidate(
+            {"festivals.json": original, "festival-history.json": old_history},
+            {"festivals.json": current, "festival-history.json": public_history},
+            safe_patch(), {}, current["generatedAt"], trusted_published=True
+        )
+        self.assertEqual(result, current)
+        self.assertFalse(report["changed"])
+        self.assertEqual(report["trusted_calendar_base"],
+                         "publication_precedente_signee")
+
+    def test_signed_head_rejects_memory_tampering_with_same_metadata(self):
+        current = json.loads(
+            (ROOT / "docs/grossesondes/festivals.json").read_text(encoding="utf-8")
+        )
+        current["festivals"][0]["name"] = "Faux nom non approuvé"
+        with self.assertRaisesRegex(ValueError, "version Git signée"):
+            verify_published_head(current)
+
+    def test_signed_head_rejects_removed_calendar_entry(self):
+        current = json.loads(
+            (ROOT / "docs/grossesondes/festivals.json").read_text(encoding="utf-8")
+        )
+        current["festivals"].pop()
+        with self.assertRaises(ValueError):
+            verify_published_head(current)
 
     def test_original_123_still_accepted(self):
         original, _ = calendars()
