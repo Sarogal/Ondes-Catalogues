@@ -145,7 +145,11 @@ def age_is_written(event,text):
     if minimum == 0.25:
         confirmed="3 mois" in body
     elif isinstance(minimum,(float,int)) and not isinstance(minimum,bool):
-        confirmed=bool(re.search(r"\b"+str(int(minimum))+r"\s+(?:ans\b|a\s+\d+\s+ans\b)",body))
+        confirmed=bool(re.search(r"\b"+str(int(minimum))+r"\s+(?:ans\b|an\b|a\s+\d+\s+ans\b)",body))
+        # Organizers commonly describe a minimum age of one year as
+        # "à partir de 12 mois". Never infer this for ages other than 1.
+        if minimum == 1:
+            confirmed=confirmed or bool(re.search(r"\b12\s+mois\b",body))
     else:
         return False
     if maximum is not None:

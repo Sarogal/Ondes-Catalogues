@@ -80,6 +80,12 @@ class DailyProofTests(unittest.TestCase):
     def test_nantes_age_range_parsing(self):
         self.assertTrue(age_is_written(THEATRE,"Conseillé de 2 à 8 ans"))
         self.assertFalse(age_is_written(THEATRE,"Conseillé de 4 à 8 ans"))
+    def test_minimum_age_of_one_year_can_be_stated_as_twelve_months(self):
+        e = {"age_min": 1}
+        self.assertTrue(age_is_written(e, "Tout-petits à partir de 12 mois"))
+        self.assertFalse(age_is_written(e, "Tout-petits à partir de 6 mois"))
+        self.assertFalse(age_is_written({"age_min": 2}, "Tout-petits à partir de 12 mois"))
+
     def test_paris_fallback_with_strong_official_agenda(self):
         def page(url):
             return (PARIS_AGENDA if "/agenda-selection/" in url else PARIS_PAGE,"")
