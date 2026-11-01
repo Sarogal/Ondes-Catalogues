@@ -152,7 +152,7 @@ class SoldOutTicketTests(unittest.TestCase):
         observed=verified_2026_11_01_ticket_snapshot()
         self.assertIn("in your face 6",observed)
         self.assertEqual(observed.count("sold out"),3)
-        self.assertIn("pass vendredi 27",observed)
+        self.assertIn("pass vendredi iyf 6 27",observed)
 
     def test_three_categories_need_explicit_independent_sold_out_proof(self):
         from grossesondes_field_proof import in_your_face_sold_out, IN_YOUR_FACE_TICKET_URL
