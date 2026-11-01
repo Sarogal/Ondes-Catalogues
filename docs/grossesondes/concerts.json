@@ -5675,6 +5675,68 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20261109-toulouse-the-vintage-caravan",
+      "title": "The Vintage Caravan",
+      "date": "2026-11-09",
+      "artistIds": [
+        "the-vintage-caravan"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Hard Rock",
+        "Rock Psychédélique",
+        "Stoner"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/the-vintage-caravan/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261108-toulouse-master-boot-record",
+      "title": "Master Boot Record & Fulci & Arottenbit",
+      "date": "2026-11-08",
+      "artistIds": [
+        "master-boot-record",
+        "fulci",
+        "arottenbit"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/master-boot-record-et-fulci-et-arottenbit/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
