@@ -88,6 +88,44 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(len(stats["held"]),1)
         self.assertEqual(x,BASE)
 
+    def test_fresh_automated_official_recheck_is_accepted(self):
+        a=approval("go-c-20270201-toulouse-groupe-essai")
+        a["reviewedBy"]="automated-official-recheck"
+        a["event"]["venueId"]="le-rex-toulouse"
+        a["event"]["sourceType"]="salle"
+        official="https://www.lerextoulouse.com/fr/programmation/groupe-essai/"
+        a["event"]["officialUrl"]=official
+        a["officialEvidence"][0]["url"]=official
+        a["officialEvidence"][0]["checkedFields"]=["artists","date","venue","genre"]
+        out,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
+                                  "approvals":[a]},NOW)
+        self.assertEqual(stats["newEvents"],1)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(out["events"][-1]["venueId"],"le-rex-toulouse")
+
+    def test_automated_recheck_rejects_missing_fields(self):
+        a=approval("go-c-20270201-toulouse-groupe-essai")
+        a["reviewedBy"]="automated-official-recheck"
+        a["event"]["venueId"]="le-rex-toulouse"
+        a["event"]["sourceType"]="salle"
+        official="https://www.lerextoulouse.com/fr/programmation/groupe-essai/"
+        a["event"]["officialUrl"]=official
+        a["officialEvidence"][0]["url"]=official
+        a["officialEvidence"][0]["checkedFields"]=["date","venue"]
+        _,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
+                                 "approvals":[a]},NOW)
+        self.assertEqual(stats["newEvents"],0)
+        self.assertTrue(stats["held"])
+
+    def test_automated_recheck_rejects_non_official_domain(self):
+        a=approval("go-c-20270201-nantes-groupe-essai")
+        a["reviewedBy"]="automated-official-recheck"
+        a["officialEvidence"][0]["checkedFields"]=["artists","date","venue","genre"]
+        _,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
+                                 "approvals":[a]},NOW)
+        self.assertEqual(stats["newEvents"],0)
+        self.assertTrue(stats["held"])
+
     def test_event_third_party_only_rejected(self):
         bad=approval()
         bad["event"]["sourceType"]="aggregator"
