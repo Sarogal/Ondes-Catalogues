@@ -105,7 +105,8 @@ def norm_date(value):
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
-    require(approval.get("reviewedBy") in ("human", "independent-official-verifier"),
+    reviewer = approval.get("reviewedBy")
+    require(reviewer in ("human", "independent-official-verifier", "automated-official-recheck"),
             "Validateur indépendant absent")
     evidence = approval.get("officialEvidence")
     require(isinstance(evidence, list) and evidence,
@@ -133,6 +134,25 @@ def validate_approval(approval, venues, known_artist_ids, today):
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
+    if reviewer == "automated-official-recheck":
+        # An automated recheck is not a human signature: permit only
+        # independently fetched, dated first-party Le Rex detail pages.
+        require(event.get("venueId") == "le-rex-toulouse" and
+                urlsplit(official_url).hostname == "www.lerextoulouse.com" and
+                urlsplit(official_url).path.startswith("/fr/programmation/") and
+                event.get("sourceType") == "salle",
+                "Approbation automatique hors périmètre de salle agréée")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=7) <= reviewed_at <= today,
+                "Preuve automatique trop ancienne ou future")
+        require(any(
+            item.get("url") == official_url and
+            item.get("proofType") == "official-organizer-or-venue" and
+            item.get("checkedAt") == reviewed_at.isoformat() and
+            {"artists", "date", "venue", "genre"}.issubset(
+                set(item.get("checkedFields") or []))
+            for item in evidence if isinstance(item, dict)
+        ), "Revérification automatique sans preuves de champs complètes")
     ids = event.get("artistIds")
     require(isinstance(ids, list) and ids and
             len(ids) == len(set(ids)) and
