@@ -1280,15 +1280,15 @@
     {
       "id": "le-ferrailleur-nantes",
       "name": "Le Ferrailleur",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "Quai des Antilles",
+      "postalCode": "44200",
       "city": "Nantes",
       "department": "44",
       "region": "Pays de la Loire",
-      "latitude": 47.217,
-      "longitude": -1.554,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 47.20058,
+      "longitude": -1.57365,
+      "geoPrecision": "point du lieu (OpenStreetMap node 373218467)",
+      "geoSource": "Adresse officielle https://www.leferrailleur.fr/contact ; point de la salle OpenStreetMap node 373218467"
     },
     {
       "id": "la-gespe-tarbes",

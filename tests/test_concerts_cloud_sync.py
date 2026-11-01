@@ -46,6 +46,40 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(len(BASE["artists"]),193)
         protect_reference(BASE,BASE)
 
+    def test_only_precise_ferrailleur_geocorrection_is_allowed(self):
+        from concerts_cloud_sync import FERRAILLEUR_LOCATION_FIX
+        fixed=copy.deepcopy(BASE)
+        venue=next(v for v in fixed["venues"] if v["id"]=="le-ferrailleur-nantes")
+        venue.update(FERRAILLEUR_LOCATION_FIX)
+        protect_reference(BASE,fixed)
+        self.assertEqual(venue["address"],"Quai des Antilles")
+        self.assertEqual(venue["postalCode"],"44200")
+        self.assertEqual((venue["latitude"],venue["longitude"]),
+                         (47.20058,-1.57365))
+        for tampered in (
+            ("latitude",47.217),("longitude",-1.554),
+            ("postalCode","44000"),("city","Rennes"),
+            ("geoSource","Sans preuve")
+        ):
+            with self.subTest(tampered=tampered):
+                bad=copy.deepcopy(fixed)
+                next(v for v in bad["venues"]
+                     if v["id"]=="le-ferrailleur-nantes")[tampered[0]]=tampered[1]
+                with self.assertRaises(ValueError):
+                    protect_reference(BASE,bad)
+        # A different venue must never piggyback on this exception.
+        bad=copy.deepcopy(fixed)
+        bad["venues"][0]["name"]="Nom de salle altéré"
+        with self.assertRaises(ValueError):
+            protect_reference(BASE,bad)
+
+    def test_current_live_catalogue_retains_every_initial_event(self):
+        live=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        protect_reference(BASE,live)
+        validate_catalogue(live)
+        self.assertGreaterEqual(len(live["events"]),127)
+        self.assertEqual(live["events"][:127],BASE["events"])
+
     def test_approved_addition_only(self):
         new, stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                    "approvals":[approval()]},NOW)

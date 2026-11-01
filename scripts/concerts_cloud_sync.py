@@ -28,6 +28,22 @@ APPROVAL_URL = (
 )
 SCHEMA = "grossesondes.concert.approvals.v1"
 
+# Explicit one-time, source-documented map correction. The original 127-
+# event baseline remains immutable. The precise location is the named
+# OpenStreetMap venue node (not the midpoint of Nantes).
+FERRAILLEUR_LOCATION_FIX = {
+    "address": "Quai des Antilles",
+    "postalCode": "44200",
+    "latitude": 47.20058,
+    "longitude": -1.57365,
+    "geoPrecision": "point du lieu (OpenStreetMap node 373218467)",
+    "geoSource": (
+        "Adresse officielle https://www.leferrailleur.fr/contact ; "
+        "point de la salle OpenStreetMap node 373218467"
+    ),
+}
+FERRAILLEUR_VENUE_ID = "le-ferrailleur-nantes"
+
 
 def require(check, message):
     if not check:
@@ -84,8 +100,21 @@ def protect_reference(reference, current):
     for kind in ("events", "venues", "artists"):
         initial = reference[kind]
         now = current[kind]
-        require(len(now) >= len(initial) and now[:len(initial)] == initial,
+        require(len(now) >= len(initial),
                 "Référence immuable modifiée ou supprimée : " + kind)
+        if kind == "venues":
+            # One georeference was previously recorded as city-centre
+            # approximation. Accept ONLY the exact documented correction;
+            # every other venue and every other field stays immutable.
+            corrected = copy.deepcopy(initial)
+            matches = [v for v in corrected if v["id"] == FERRAILLEUR_VENUE_ID]
+            require(len(matches) == 1, "Lieu Ferrailleur absent de la référence")
+            matches[0].update(FERRAILLEUR_LOCATION_FIX)
+            require(now[:len(initial)] in (initial, corrected),
+                    "Salle initiale modifiée hors correction géographique approuvée")
+        else:
+            require(now[:len(initial)] == initial,
+                    "Référence immuable modifiée ou supprimée : " + kind)
     require(all(current.get(k) == reference.get(k)
                 for k in ("schemaVersion", "mode", "dataPolicy")),
             "Métadonnées de sécurité altérées")
