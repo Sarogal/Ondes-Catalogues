@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "edition": "v0.6 - croisement salles + billetteries (lot salles officielles)",
+  "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
   "updatedAt": "2026-11-01",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
@@ -970,6 +970,36 @@
     {
       "id": "monolithe",
       "name": "Monolithe",
+      "aliases": []
+    },
+    {
+      "id": "the-browning",
+      "name": "The Browning",
+      "aliases": []
+    },
+    {
+      "id": "within-destruction",
+      "name": "Within Destruction",
+      "aliases": []
+    },
+    {
+      "id": "abbie-falls",
+      "name": "Abbie Falls",
+      "aliases": []
+    },
+    {
+      "id": "houle",
+      "name": "Houle",
+      "aliases": []
+    },
+    {
+      "id": "can-bardd",
+      "name": "Cân Bardd",
+      "aliases": []
+    },
+    {
+      "id": "galibot",
+      "name": "Galibot",
       "aliases": []
     }
   ],
@@ -5517,6 +5547,132 @@
         {
           "date": "2026-11-01",
           "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-toulouse-the-browning",
+      "title": "The Browning + Within Destruction + Abbie Falls",
+      "date": "2026-11-06",
+      "artistIds": [
+        "the-browning",
+        "within-destruction",
+        "abbie-falls"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Metal",
+        "Deathcore",
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/the-browning-et-within-destruction-et-abbie-falls/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-toulouse-imperial-triumphant",
+      "title": "Imperial Triumphant + Knoll",
+      "date": "2026-11-27",
+      "artistIds": [
+        "imperial-triumphant",
+        "knoll"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Black Metal",
+        "Experimental",
+        "Grindcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/imperial-triumphant-et-knoll/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270213-toulouse-revnoir",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-13",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/revnoir/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270319-toulouse-houle",
+      "title": "Houle + Cân Bardd + Galibot",
+      "date": "2027-03-19",
+      "artistIds": [
+        "houle",
+        "can-bardd",
+        "galibot"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/houle-can-bardd-galibot/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
         }
       ]
     }
