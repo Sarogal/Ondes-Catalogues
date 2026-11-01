@@ -20,7 +20,8 @@ from grossesondes_preview import (
 from grossesondes_stage import official_text, stage
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
-    FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL
+    FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL,
+    IN_YOUR_FACE_TICKET_URL
 )
 
 from grossesondes_history_guard import validate_history_extension
@@ -147,7 +148,8 @@ def main():
        ("cernunnos_groups",CERNUNNOS_GROUPS_URL),
        ("cernunnos_info",CERNUNNOS_INFO_URL),
        ("fantasmagorik_ticket",FANTASMAGORIK_TICKET_URL),
-       ("fantasmagorik_date",FANTASMAGORIK_DATE_URL)
+       ("fantasmagorik_date",FANTASMAGORIK_DATE_URL),
+       ("in_your_face_ticket",IN_YOUR_FACE_TICKET_URL)
     ]:
         try:sources[key]=official_text(url)
         except Exception:
