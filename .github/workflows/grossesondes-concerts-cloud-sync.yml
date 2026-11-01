@@ -10,7 +10,7 @@ on:
         default: preview
         required: true
   schedule:
-    - cron: '13 12 * * *'
+    - cron: '17 */3 * * *'
   push:
     branches: [main]
     paths:
@@ -45,7 +45,7 @@ jobs:
         id: sync
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
-          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ github.event_name != 'workflow_dispatch' && 'publish' || inputs.mode || 'preview' }}
           CLOUD_ENABLED: ${{ vars.GROSSES_ONDES_CONCERTS_CLOUD_SYNC }}
         run: |
           if [ "$MODE" = "publish" ] && [ "$CLOUD_ENABLED" != "enabled" ]; then
@@ -72,7 +72,7 @@ jobs:
           CHANGED: ${{ steps.sync.outputs.changed }}
           EVENT_NAME: ${{ github.event_name }}
           CLOUD_ENABLED: ${{ vars.GROSSES_ONDES_CONCERTS_CLOUD_SYNC }}
-          MODE: ${{ github.event_name == 'schedule' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ github.event_name != 'workflow_dispatch' && 'publish' || inputs.mode || 'preview' }}
         run: |
           if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && [ "$MODE" = "publish" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
