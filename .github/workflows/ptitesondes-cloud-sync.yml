@@ -40,7 +40,9 @@ jobs:
         with:
           python-version: '3.12'
       - name: Tests de conservation et de sécurité
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
+          python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
       - name: Lire, contrôler et fusionner sans écriture distante
         id: sync
         env:

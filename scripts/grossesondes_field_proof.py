@@ -123,3 +123,50 @@ def fantasmagorik_update(original,update,official,today):
         "par l'organisateur et l'agenda local ; programmation partielle."
     )
     return result,list(expected),[]
+
+
+IN_YOUR_FACE_TICKET_URL = "https://www.helloasso.com/associations/in-your-face/evenements/in-your-face-6"
+
+
+def in_your_face_sold_out(original, update, official, today):
+    """Accept only a precise dated sold-out note, independently corroborated.
+
+    The ticket URL is fixed in the *published* festival record and checked
+    by the runner. A private patch cannot designate an arbitrary web page.
+    """
+    if original.get("slug") != "in-your-face-6-2026":
+        return None
+    if original.get("source") != IN_YOUR_FACE_TICKET_URL:
+        return None
+    changes = update.get("changes", [])
+    if not isinstance(changes, list) or len(changes) != 2:
+        return None
+    fields = {x.get("field"): x for x in changes}
+    if set(fields) != {"notes", "lastVerified"}:
+        return None
+    if any(original.get(k) != v.get("before") for k, v in fields.items()):
+        return None
+    if update.get("evidence") != [IN_YOUR_FACE_TICKET_URL]:
+        return None
+    day = fields["lastVerified"].get("after")
+    if day != update.get("verified_at") or day > today or day < original.get("lastVerified", ""):
+        return None
+    note = fields["notes"].get("after")
+    if (not isinstance(note, str) or
+        not note.startswith(original.get("notes", "") + " | ") or
+        not all(w in normalize(note) for w in
+                ("billetterie officielle", "epuises", "01 11 2026"))):
+        return None
+    ticket = official.get("in_your_face_ticket", "")
+    if not words_present(ticket, ["in your face 6", "le zinor",
+                                  "pass 2 jours", "pass vendredi",
+                                  "pass samedi", "42", "27", "29",
+                                  "novembre 2026"]):
+        return None
+    # Each of the three independently listed categories is marked unavailable.
+    if ticket.count("sold out") < 3 or ticket.count("no seats available") < 3:
+        return None
+    revised = dict(original)
+    revised["notes"] = note
+    revised["lastVerified"] = day
+    return revised, ["notes", "lastVerified"], []

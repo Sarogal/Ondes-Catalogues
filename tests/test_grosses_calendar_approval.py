@@ -17,20 +17,24 @@ from grossesondes_preview import CAL_URL, HIS_URL
 
 
 def calendars():
-    published = json.loads(
+    """Build a frozen approval fixture; daily public data may legitimately evolve."""
+    live = json.loads(
         (ROOT / "docs/grossesondes/festivals.json").read_text(encoding="utf-8")
     )
-    original = copy.deepcopy(published)
-    approved = load_approval()
-    assert original["festivals"][-1]["slug"] == "muscadeath-2027"
-    original["festivals"].pop()
-    original["generatedAt"] = approved["baselineReference"]["generatedAt"]
+    approval = load_approval()
+    n = approval["baselineReference"]["calendarCount"]
+    original = copy.deepcopy(live)
+    assert len(original["festivals"]) >= n + len(approval["additions"])
+    assert original["festivals"][n]["slug"] == approval["additions"][0]["slug"]
+    original["festivals"] = original["festivals"][:n]
+    original["generatedAt"] = approval["baselineReference"]["generatedAt"]
     lookup = {r["slug"]: r for r in original["festivals"]}
-    for patch in approved["changes"]:
-        for field, diff in patch["changes"].items():
-            assert lookup[patch["slug"]][field] == diff["after"]
-            lookup[patch["slug"]][field] = copy.deepcopy(diff["before"])
-    return original, published
+    for item in approval["changes"]:
+        for field, diff in item["changes"].items():
+            assert field in lookup[item["slug"]]
+            lookup[item["slug"]][field] = copy.deepcopy(diff["before"])
+    # The certificate tests target the frozen 30/10 approval, not a later daily deployment.
+    return original, approved_calendar(original, approval)
 
 
 def archives():

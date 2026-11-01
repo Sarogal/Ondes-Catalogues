@@ -43,6 +43,36 @@ VENUES = [
         "official": "https://philharmoniedeparis.fr/fr/activite/atelier-concert-pour-les-tout-petits/29704-loiseau-multicolore",
         "geo_source": "https://mapcarta.com/fr/W21502894",
     },
+    {
+        "city": "Montpellier", "aliases": ["Maison pour tous Rosa Parks"],
+        "lat": 43.63367, "lng": 3.83351,
+        "official": "https://mpt.montpellier.fr/maisons/rosa-parks",
+        "geo_source": "https://mapcarta.com/fr/W411408575",
+    },
+    {
+        "city": "Montpellier", "aliases": ["Maison pour tous George Sand"],
+        "lat": 43.61888, "lng": 3.89398,
+        "official": "https://mpt.eolas-58.montpellier.fr/maisons/george-sand",
+        "geo_source": "https://mapcarta.com/W60218330",
+    },
+    {
+        "city": "Montpellier", "aliases": ["Maison pour tous Michel Colucci"],
+        "lat": 43.5937, "lng": 3.84013,
+        "official": "https://mpt.montpellier.fr/maisons/michel-colucci",
+        "geo_source": "https://mapcarta.com/W76490345",
+    },
+    {
+        "city": "Le Haillan", "aliases": ["L'Entrepôt"],
+        "lat": 44.8743, "lng": -0.677071,
+        "official": "https://www.ville-lehaillan.fr/ma-ville-bouge/culture-et-loisirs/lentrepot-coeur-culturel-et-artistique/",
+        "geo_source": "https://33.kidiklik.fr/spectacles/236501-lentrepot-salle-de-spectacle-au-haillan.html",
+    },
+    {
+        "city": "Versailles", "aliases": ["Hôtel des Menus-Plaisirs"],
+        "lat": 48.800397, "lng": 2.133727,
+        "official": "https://www.versailles-tourisme.com/l-hotel-des-menus-plaisirs.html",
+        "geo_source": "https://mapcarta.com/W74630485",
+    },
 ]
 
 def verified_location(event):
