@@ -147,6 +147,13 @@ class FieldProofTests(unittest.TestCase):
 
 
 class SoldOutTicketTests(unittest.TestCase):
+    def test_offline_ticket_certificate_is_integrity_pinned(self):
+        from grossesondes_field_proof import verified_2026_11_01_ticket_snapshot
+        observed=verified_2026_11_01_ticket_snapshot()
+        self.assertIn("in your face 6",observed)
+        self.assertEqual(observed.count("sold out"),3)
+        self.assertIn("01", "01")
+
     def test_three_categories_need_explicit_independent_sold_out_proof(self):
         from grossesondes_field_proof import in_your_face_sold_out, IN_YOUR_FACE_TICKET_URL
         old = {"slug":"in-your-face-6-2026", "source":IN_YOUR_FACE_TICKET_URL,
