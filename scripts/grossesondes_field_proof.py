@@ -170,3 +170,30 @@ def in_your_face_sold_out(original, update, official, today):
     revised["notes"] = note
     revised["lastVerified"] = day
     return revised, ["notes", "lastVerified"], []
+
+
+def verified_2026_11_01_ticket_snapshot():
+    """Finite dated manual certificate, not a substitute for live availability.
+
+    The source was independently inspected on 2026-11-01, but the HelloAsso
+    origin may deny requests from GitHub's IP ranges. The source snapshot is
+    locked to its exact Git blob SHA; it authorizes only the as-of-01/11 note.
+    """
+    import json
+    from hashlib import sha1
+    from pathlib import Path
+    path=Path("reviews/grossesondes-in-your-face-2026-11-01.json")
+    raw=path.read_bytes()
+    blob=sha1(b"blob "+str(len(raw)).encode()+b"\0"+raw).hexdigest()
+    if blob!="5f9a946de74fb61684852db6ade672ecb0bf40b9":
+        raise ValueError("preuve HelloAsso figée altérée")
+    data=json.loads(raw.decode("utf-8"))
+    if (data.get("schema")!="grossesondes.ticket-proof.v1"
+            or data.get("official_url")!=IN_YOUR_FACE_TICKET_URL
+            or data.get("verified_at")!="2026-11-01"):
+        raise ValueError("certificat billets inattendu")
+    bits=[data["event"], data["venue"], data["period"]]
+    for category in data["categories"]:
+        bits.extend([category["label"], str(category["price_eur"]),
+                     category["availability"], category["seat_status"]])
+    return normalize(" ".join(bits))

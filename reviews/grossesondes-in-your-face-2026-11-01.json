@@ -1,0 +1,29 @@
+{
+  "schema": "grossesondes.ticket-proof.v1",
+  "official_url": "https://www.helloasso.com/associations/in-your-face/evenements/in-your-face-6",
+  "verified_at": "2026-11-01",
+  "event": "IN YOUR FACE #6",
+  "venue": "Le Zinor",
+  "period": "06 au 08 novembre 2026",
+  "categories": [
+    {
+      "label": "PASS 2 JOURS - IYF #6",
+      "price_eur": 42,
+      "availability": "Sold Out",
+      "seat_status": "No seats available"
+    },
+    {
+      "label": "PASS VENDREDI - IYF #6",
+      "price_eur": 27,
+      "availability": "Sold Out",
+      "seat_status": "No seats available"
+    },
+    {
+      "label": "PASS SAMEDI - IYF #6",
+      "price_eur": 29,
+      "availability": "Sold Out",
+      "seat_status": "No seats available"
+    }
+  ],
+  "note": "Constat officiel ponctuel daté. Ne constitue pas un flux temps réel ni une garantie de maintien de l'épuisement des billets."
+}

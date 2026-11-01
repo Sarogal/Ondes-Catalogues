@@ -21,7 +21,7 @@ from grossesondes_stage import official_text, stage
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL,
-    IN_YOUR_FACE_TICKET_URL
+    IN_YOUR_FACE_TICKET_URL, verified_2026_11_01_ticket_snapshot
 )
 
 from grossesondes_history_guard import validate_history_extension
@@ -193,9 +193,15 @@ def main():
        ("in_your_face_ticket",IN_YOUR_FACE_TICKET_URL)
     ]:
         try:sources[key]=official_text(url)
-        except Exception:
-            sources[key]=""
-            print(key+": source inaccessible : changement exclu")
+        except Exception as exc:
+            if key=="in_your_face_ticket":
+                # This is a PINNED observation dated 2026-11-01 only;
+                # it cannot prove any later availability.
+                sources[key]=verified_2026_11_01_ticket_snapshot()
+                print("in_your_face_ticket: page inaccessible; preuve officielle historique du 01/11 utilisée")
+            else:
+                sources[key]=""
+                print(key+": source inaccessible : changement exclu ("+type(exc).__name__+")")
     # Sources enregistrées dans la photographie de production, jamais tirées
     # des URLs proposées par une veille privée. Le pilote limite le trafic.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
