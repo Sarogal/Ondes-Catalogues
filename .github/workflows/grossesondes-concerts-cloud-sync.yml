@@ -24,7 +24,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: ondes-catalogues-pages-publication
+  group: ondes-cloud-publication
   cancel-in-progress: false
 
 jobs:
