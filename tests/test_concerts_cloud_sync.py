@@ -126,6 +126,51 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(stats["newEvents"],0)
         self.assertTrue(stats["held"])
 
+    def test_molotov_auto_evidence_known_artists_only(self):
+        artist = BASE["artists"][0]
+        a = approval("go-c-20270201-marseille-" + artist["id"])
+        official = "https://lemolotov.com/events/" + artist["id"] + "/"
+        a["reviewedBy"] = "automated-official-recheck"
+        a["event"]["venueId"] = "le-molotov-marseille"
+        a["event"]["title"] = artist["name"]
+        a["event"]["artistIds"] = [artist["id"]]
+        a["event"]["officialUrl"] = official
+        a["event"]["sourceType"] = "salle"
+        a["newArtists"] = []
+        a["officialEvidence"][0]["url"] = official
+        a["officialEvidence"][0]["checkedFields"] = [
+            "artists", "date", "venue", "genre"
+        ]
+        out, stats = merge(BASE, BASE, {"schema": "grossesondes.concert.approvals.v1",
+                                        "approvals": [a]}, NOW)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(stats["held"], [])
+        self.assertEqual(out["events"][-1]["venueId"], "le-molotov-marseille")
+
+        from copy import deepcopy
+        for mutant in ("wrong-venue", "wrong-host", "agenda-url", "new-artist",
+                       "missing-proof"):
+            with self.subTest(mutant=mutant):
+                bad = deepcopy(a)
+                if mutant == "wrong-venue":
+                    bad["event"]["venueId"] = "le-ferrailleur-nantes"
+                if mutant == "wrong-host":
+                    bad["event"]["officialUrl"] = "https://example.org/events/malicious/"
+                    bad["officialEvidence"][0]["url"] = bad["event"]["officialUrl"]
+                if mutant == "agenda-url":
+                    bad["event"]["officialUrl"] = "https://lemolotov.com/events/"
+                    bad["officialEvidence"][0]["url"] = bad["event"]["officialUrl"]
+                if mutant == "new-artist":
+                    bad["newArtists"] = [{"id": "unverified-band", "name": "Unverified Band"}]
+                    bad["event"]["artistIds"] = ["unverified-band"]
+                if mutant == "missing-proof":
+                    bad["officialEvidence"][0]["checkedFields"] = ["date", "venue"]
+                _, denied = merge(BASE, BASE, {
+                    "schema": "grossesondes.concert.approvals.v1", "approvals": [bad]
+                }, NOW)
+                self.assertEqual(denied["newEvents"], 0)
+                self.assertTrue(denied["held"])
+
     def test_event_third_party_only_rejected(self):
         bad=approval()
         bad["event"]["sourceType"]="aggregator"
