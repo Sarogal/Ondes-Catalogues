@@ -741,6 +741,8 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         from concerts_cloud_sync import BRIN_ORGANIZER_VERIFIED
         queue=self.pilot_queue(with_events=False)
         for event_id,expected in BRIN_ORGANIZER_VERIFIED.items():
+            if expected.get("partnerProofType"):
+                continue  # Existing four organizer-submitted partner fixture.
             newcomers=[
                 {"id":aid,"name":({
                     "noveria":"Noveria","tarchon-fist":"Tarchon Fist",
@@ -838,6 +840,99 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 out,stats=merge(BASE,BASE,q,checked)
                 self.assertEqual(stats["newEvents"],3)
                 self.assertTrue(stats["held"])
+
+
+    def crosschecked_brin_queue(self):
+        from concerts_cloud_sync import BRIN_ORGANIZER_VERIFIED
+        queue=self.pilot_queue(with_events=False)
+        names={"ghouldozer":"Ghouldozer","xaon":"Xaon","vortex":"Vortex"}
+        for event_id,expected in BRIN_ORGANIZER_VERIFIED.items():
+            if not expected.get("partnerProofType"):
+                continue
+            added=[{"id":key,"name":names[key]}
+                   for key in expected["artistIds"] if key in names]
+            queue["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":expected["ticketUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                },{
+                    "url":expected["partnerUrl"],
+                    "proofType":expected["partnerProofType"],
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":list(expected["partnerCheckedFields"])
+                }],
+                "event":{
+                    "id":event_id,"title":expected["title"],"date":expected["date"],
+                    "time":None,"artistIds":list(expected["artistIds"]),
+                    "venueId":"le-brin-de-zinc-barberaz",
+                    "genres":list(expected["genres"]),"status":"confirmed",
+                    "officialUrl":expected["ticketUrl"],"sourceType":"organisateur",
+                    "organizer":"Le Brin de Zinc","ticketUrl":expected["ticketUrl"]
+                },
+                "newArtists":added
+            })
+        return queue
+
+    def test_brin_two_additional_source_specific_approvals_publish_only_once(self):
+        checked=__import__("datetime").date(2026,11,2)
+        queue=self.crosschecked_brin_queue()
+        out,stats=merge(BASE,BASE,queue,checked)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],3)
+        self.assertEqual(stats["newVenues"],2)
+        self.assertEqual(
+            {e["id"] for e in out["events"][-2:]},
+            {"go-c-20261110-barberaz-wake-the-dead",
+             "go-c-20261206-barberaz-xaon"})
+        self.assertTrue(all(e["time"] is None for e in out["events"][-2:]))
+        self.assertEqual(out["events"][:127],BASE["events"])
+        validate_catalogue(out)
+        again,repeated=merge(BASE,out,queue,checked)
+        self.assertEqual(repeated["newEvents"],0)
+        self.assertEqual(repeated["alreadyPublished"],2)
+        self.assertEqual(again,out)
+
+    def test_brin_new_secondary_evidence_and_ticket_remain_exactly_scoped(self):
+        checked=__import__("datetime").date(2026,11,2)
+        for variant in ("missing-partner","wrong-kind","wrong-partner-url",
+                        "wrong-ticket","wrong-date","unknown-show",
+                        "invented-start","wrong-new-artist","missing-secondary-date"):
+            with self.subTest(variant=variant):
+                q=self.crosschecked_brin_queue()
+                row=q["approvals"][0]
+                e=row["event"]
+                if variant=="missing-partner":
+                    row["officialEvidence"].pop()
+                elif variant=="wrong-kind":
+                    row["officialEvidence"][1]["proofType"]="organizer-submitted-partner"
+                elif variant=="wrong-partner-url":
+                    row["officialEvidence"][1]["url"]="https://example.org/fake"
+                elif variant=="wrong-ticket":
+                    e["officialUrl"]="https://www.billetweb.fr/fake"
+                    e["ticketUrl"]=e["officialUrl"]
+                    row["officialEvidence"][0]["url"]=e["officialUrl"]
+                elif variant=="wrong-date":
+                    e["date"]="2027-12-10"
+                elif variant=="unknown-show":
+                    e["id"]="go-c-20261110-barberaz-unknown"
+                elif variant=="invented-start":
+                    e["time"]="20:30"
+                elif variant=="wrong-new-artist":
+                    row["newArtists"][0]["id"]="other-singer"
+                    e["artistIds"][1]="other-singer"
+                elif variant=="missing-secondary-date":
+                    row["officialEvidence"][1]["checkedFields"]=["artists","venue"]
+                out,stats=merge(BASE,BASE,q,checked)
+                self.assertEqual(stats["newEvents"],1)
+                self.assertEqual(len(stats["held"]),1)
+                self.assertTrue(all(x["id"] != "go-c-20261110-barberaz-wake-the-dead"
+                                    for x in out["events"]))
 
     def test_reference_127_immutable(self):
         self.assertEqual(len(BASE["events"]),127)
