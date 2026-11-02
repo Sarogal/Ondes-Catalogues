@@ -11,6 +11,8 @@ on:
         required: true
   # Réexécution contrôlée après l'approbation privée de six concerts du Rocher
   # de Palmer (PR GrossesOndes #76, 02/11/2026). Les futurs cycles restent
+  # Synchronisation complémentaire : Gwendoline le 07/11, validation signée
+  # GrossesOndes PR #80 ; aucun assouplissement des règles de publication.
   # automatiques toutes les trois heures ; cette annotation ne change aucune règle.
   schedule:
     - cron: '17 */3 * * *'
