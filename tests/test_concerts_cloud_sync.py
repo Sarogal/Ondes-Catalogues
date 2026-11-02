@@ -1646,9 +1646,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 ],
                 "event":{
                     "id":ident,"title":spec["title"],"date":spec["date"],
-                    "time":spec["time"],"artistIds":spec["artistIds"],
+                    "time":spec["time"],"artistIds":list(spec["artistIds"]),
                     "venueId":"secret-place-saint-jean-de-vedas",
-                    "genres":spec["genres"],
+                    "genres":list(spec["genres"]),
                     "status":"confirmed","officialUrl":spec["officialUrl"],
                     "sourceType":"salle","organizer":"TAF / Secret Place",
                 },
