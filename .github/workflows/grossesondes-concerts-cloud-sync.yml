@@ -9,6 +9,9 @@ on:
         options: [preview, publish]
         default: preview
         required: true
+  # Réexécution contrôlée après l'approbation privée de six concerts du Rocher
+  # de Palmer (PR GrossesOndes #76, 02/11/2026). Les futurs cycles restent
+  # automatiques toutes les trois heures ; cette annotation ne change aucune règle.
   schedule:
     - cron: '17 */3 * * *'
   push:
