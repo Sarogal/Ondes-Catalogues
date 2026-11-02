@@ -933,6 +933,87 @@ def validate_venue_approval(row, today):
     return copy.deepcopy(venue)
 
 
+# Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
+# These are reviewed cases, not an open-ended permission for the venue.
+ROCHER_PALMER_VERIFIED = {
+    "go-c-20261121-cenon-tagada-jones": {
+        "title": "Tagada Jones + Les Tambours du Bronx",
+        "date": "2026-11-21",
+        "artistIds": [
+            "tagada-jones",
+            "les-tambours-du-bronx"
+        ],
+        "genres": [
+            "Punk Hardcore",
+            "Metal industriel"
+        ],
+        "time": "20:30",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/tagada-jones-les-tambours-du-bronx"
+    },
+    "go-c-20270117-cenon-rhapsody-of-fire": {
+        "title": "Rhapsody of Fire + Serious Black",
+        "date": "2027-01-17",
+        "artistIds": [
+            "rhapsody-of-fire",
+            "serious-black"
+        ],
+        "genres": [
+            "Metal"
+        ],
+        "time": "19:00",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/rhapsody-fire-serious-black"
+    },
+    "go-c-20270210-cenon-ugly-kid-joe": {
+        "title": "Ugly Kid Joe",
+        "date": "2027-02-10",
+        "artistIds": [
+            "ugly-kid-joe"
+        ],
+        "genres": [
+            "Hard Rock"
+        ],
+        "time": "20:30",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/ugly-kid-joe"
+    },
+    "go-c-20270306-cenon-mol": {
+        "title": "MØL",
+        "date": "2027-03-06",
+        "artistIds": [
+            "m-l"
+        ],
+        "genres": [
+            "Metal"
+        ],
+        "time": "20:30",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/mol"
+    },
+    "go-c-20270324-cenon-die-arzte": {
+        "title": "Die Ärzte",
+        "date": "2027-03-24",
+        "artistIds": [
+            "die-arzte"
+        ],
+        "genres": [
+            "Punk Rock"
+        ],
+        "time": "20:00",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/die-arzte"
+    },
+    "go-c-20270326-cenon-uuhai": {
+        "title": "UUHAI + ACYL",
+        "date": "2027-03-26",
+        "artistIds": [
+            "uuhai",
+            "acyl"
+        ],
+        "genres": [
+            "Folk Metal"
+        ],
+        "time": "19:00",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/uuhai"
+    }
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -1403,6 +1484,42 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(resolved[artist_id]["name"]).replace(" ","-")==artist_id
                         for artist_id in ids),
                 "Salles régionales : artistes inconnus ou identités ambiguës")
+    elif event.get("venueId") == "le-rocher-de-palmer-cenon":
+        # Event-by-event first-party verification. Do NOT allow unreviewed
+        # generic venue agenda listings, third-party tickets or other bills.
+        spec = ROCHER_PALMER_VERIFIED.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(field) == spec[field] for field in
+                        ("title", "date", "artistIds", "genres", "time"))
+                and official_url == spec["officialUrl"],
+                "Rocher de Palmer : affiche non vérifiée ou altérée")
+        parsed = urlsplit(official_url)
+        require(parsed.scheme == "https" and parsed.hostname == "lerocherdepalmer.fr"
+                and re.fullmatch(r"/agenda/[a-z0-9-]+", parsed.path)
+                and not parsed.username and not parsed.password and not parsed.port
+                and not parsed.query and not parsed.fragment,
+                "Rocher de Palmer : lien individuel officiel exact requis")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Rocher de Palmer : vérification ancienne ou future")
+        require(len(evidence) == 1 and all(
+            p.get("url") == official_url
+            and p.get("proofType") == "official-organizer-or-venue"
+            and p.get("checkedAt") == reviewed_at.isoformat()
+            and {"artists", "date", "venue", "genre", "startTime"}.issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence if isinstance(p, dict)),
+            "Rocher de Palmer : preuve primaire nominative complète requise")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved for aid in ids)
+                and all(norm(resolved[aid]["name"]).replace(" ", "-") == aid
+                        or (aid == "m-l" and resolved[aid]["name"] == "MØL")
+                        for aid in ids)
+                and all(norm(a["name"]).replace(" ", "-") == a["id"]
+                        for a in new_artists),
+                "Rocher de Palmer : identité d'artiste incertaine")
     elif event.get("venueId") == "backstage-by-the-mill-paris":
         # For this pilot venue, an independent reviewer must explicitly sign
         # one of the three EXACT official bills and the artist identities.
