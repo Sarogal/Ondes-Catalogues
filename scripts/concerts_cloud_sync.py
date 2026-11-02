@@ -67,6 +67,68 @@ PILOT_VENUES = {
     }
 }
 
+# Only these exact, individually reviewed organizer-controlled tickets are allowed.
+# The venue's generic Billetweb calendar and unrelated organizer tickets remain blocked.
+BRIN_ORGANIZER_VERIFIED = {
+    "go-c-20261105-barberaz-noveria": {
+        "title": "Noveria + Tarchon Fist + Wedingoth",
+        "date": "2026-11-05",
+        "artistIds": [
+            "noveria",
+            "tarchon-fist",
+            "wedingoth"
+        ],
+        "genres": [
+            "Metal progressif",
+            "Power Metal",
+            "Heavy Metal"
+        ],
+        "ticketUrl": "https://www.billetweb.fr/noveria-x-tarchon-fist-x-wedingoth-power-metal-progressif-italie-x-france",
+        "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237029"
+    },
+    "go-c-20261109-barberaz-fvzz-popvli": {
+        "title": "Fvzz Popvli",
+        "date": "2026-11-09",
+        "artistIds": [
+            "fvzz-popvli"
+        ],
+        "genres": [
+            "Stoner Rock",
+            "Garage Punk",
+            "Heavy Psych"
+        ],
+        "ticketUrl": "https://www.billetweb.fr/fvzz-popvli-heavy-psych-garage-punk-stoner-rock-italie",
+        "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237797"
+    },
+    "go-c-20261112-barberaz-ancient-settlers": {
+        "title": "Ancient Settlers",
+        "date": "2026-11-12",
+        "artistIds": [
+            "ancient-settlers"
+        ],
+        "genres": [
+            "Death Metal mélodique",
+            "Metalcore"
+        ],
+        "ticketUrl": "https://www.billetweb.fr/ancient-settlers-death-metal-melodique-metalcore-venezuela-espagne",
+        "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237800"
+    },
+    "go-c-20261115-barberaz-moscow-death-brigade": {
+        "title": "Moscow Death Brigade",
+        "date": "2026-11-15",
+        "artistIds": [
+            "moscow-death-brigade"
+        ],
+        "genres": [
+            "Punk",
+            "Rap",
+            "Electro"
+        ],
+        "ticketUrl": "https://www.billetweb.fr/moscow-death-brigade1",
+        "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237803"
+    }
+}
+
 # Explicit one-time, source-documented map correction. The original 127-
 # event baseline remains immutable. The precise location is the named
 # OpenStreetMap venue node (not the midpoint of Nantes).
@@ -343,11 +405,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Heure non valide")
     require(event.get("sourceType") in ("organisateur", "salle"),
             "Source tierce seule non admise")
-    # This first pilot accepts independently checked Joker's Pub individual
-    # event pages only. It cannot promote Brin de Zinc's ticketing leads,
-    # unknown origins, generic agendas, or fabricated venue/date claims.
-    if event.get("venueId") in PILOT_VENUES:
-        require(event["venueId"] == "jokers-pub-angers"
+    # Two pilot venues: Joker individual first-party detail pages, or four
+    # explicit organizer-controlled Brin ticket pages with a second venue-
+    # submitted listing. Never approve tickets from a generic event calendar.
+    if event.get("venueId") == "jokers-pub-angers":
+        require(reviewer == "independent-official-verifier"
                 and reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle",
                 "Nouvelle salle : validation concert manuelle indépendante requise")
@@ -382,6 +444,56 @@ def validate_approval(approval, venues, known_artist_ids, today):
                               norm(label))
                     for label in event["genres"]),
                 "Genre punk/métal de la nouvelle salle non documenté")
+    elif event.get("venueId") == "le-brin-de-zinc-barberaz":
+        # This is a manual, event-specific exception, not an aggregator rule.
+        # Both channels explicitly attribute their event to BRIN DE ZINC.
+        require(reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "organisateur",
+                "Brin de Zinc : signature de vérification indépendante exigée")
+        expected = BRIN_ORGANIZER_VERIFIED.get(event_id)
+        require(expected is not None and
+                all(event.get(field) == expected[field] for field in
+                    ("title", "date", "artistIds", "genres"))
+                and official_url == expected["ticketUrl"]
+                and event.get("ticketUrl") == official_url,
+                "Brin de Zinc : concert ou billet hors liste blanche vérifiée")
+        parsed = urlsplit(official_url)
+        require(parsed.scheme == "https" and
+                parsed.hostname == "www.billetweb.fr" and not parsed.username
+                and not parsed.password and not parsed.query
+                and not parsed.fragment and parsed.path != "/multi_event.php",
+                "Brin de Zinc : fiche de billetterie individuelle exigée")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Brin de Zinc : recoupement trop ancien")
+        require(event.get("time") is None,
+                "Créneau Billetweb ne prouve pas le début du concert")
+        require(len(evidence) == 2 and
+                {p.get("proofType") for p in evidence if isinstance(p,dict)}
+                == {"official-organizer-or-venue", "organizer-submitted-partner"},
+                "Brin de Zinc : deux annonces attribuées à l'organisateur requises")
+        checks = {
+            "official-organizer-or-venue": expected["ticketUrl"],
+            "organizer-submitted-partner": expected["partnerUrl"],
+        }
+        for proof in evidence:
+            require(isinstance(proof,dict) and
+                    proof.get("url") == checks.get(proof.get("proofType")) and
+                    proof.get("checkedAt") == reviewed_at.isoformat() and
+                    {"artists", "date", "venue", "genre"}.issubset(
+                        set(proof.get("checkedFields") or [])),
+                    "Brin de Zinc : preuve de partenaire incomplète ou substituée")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved for aid in ids)
+                and all(norm(resolved[aid]["name"]).replace(" ","-") == aid
+                        for aid in ids)
+                and all(norm(a["name"]).replace(" ","-") == a["id"]
+                        for a in new_artists),
+                "Brin de Zinc : identités d'artistes incohérentes")
+        require(any(re.search(r"\b(punk|hardcore|metal|doom|stoner)\b",
+                              norm(genre)) for genre in event["genres"]),
+                "Brin de Zinc : genre métal/punk officiel absent")
     return event, added
 
 

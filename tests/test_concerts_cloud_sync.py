@@ -187,6 +187,108 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Salle cloud"):
             merge(BASE,with_venues,{"schema":queue["schema"],"approvals":[]},checked)
 
+    def brin_queue(self):
+        from concerts_cloud_sync import BRIN_ORGANIZER_VERIFIED
+        queue=self.pilot_queue(with_events=False)
+        for event_id,expected in BRIN_ORGANIZER_VERIFIED.items():
+            newcomers=[
+                {"id":aid,"name":({
+                    "noveria":"Noveria","tarchon-fist":"Tarchon Fist",
+                    "wedingoth":"Wedingoth","fvzz-popvli":"Fvzz Popvli",
+                    "ancient-settlers":"Ancient Settlers",
+                })[aid]} for aid in expected["artistIds"]
+                if aid!="moscow-death-brigade"
+            ]
+            queue["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":expected["ticketUrl"],"proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                },{
+                    "url":expected["partnerUrl"],"proofType":"organizer-submitted-partner",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                }],
+                "event":{
+                    "id":event_id,"title":expected["title"],"date":expected["date"],
+                    "time":None,"artistIds":list(expected["artistIds"]),
+                    "venueId":"le-brin-de-zinc-barberaz",
+                    "genres":list(expected["genres"]),"status":"confirmed",
+                    "officialUrl":expected["ticketUrl"],"sourceType":"organisateur",
+                    "organizer":"Le Brin de Zinc","ticketUrl":expected["ticketUrl"]
+                },
+                "newArtists":newcomers
+            })
+        return queue
+
+    def test_brin_four_organizer_crosschecked_concerts_integrate_once(self):
+        checked=__import__("datetime").date(2026,11,2)
+        q=self.brin_queue()
+        out,stats=merge(BASE,BASE,q,checked)
+        self.assertEqual(stats["newVenues"],2)
+        self.assertEqual(stats["newEvents"],4)
+        self.assertEqual(stats["newArtists"],5)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(len(out["events"]),131)
+        self.assertEqual(out["events"][:127],BASE["events"])
+        self.assertEqual(out["venues"][:53],BASE["venues"])
+        self.assertTrue(all(e["time"] is None for e in out["events"][-4:]))
+        self.assertEqual({e["date"] for e in out["events"][-4:]},
+            {"2026-11-05","2026-11-09","2026-11-12","2026-11-15"})
+        validate_catalogue(out)
+        repeated,repeat_stats=merge(BASE,out,q,checked)
+        self.assertEqual(repeat_stats["newEvents"],0)
+        self.assertEqual(repeat_stats["newVenues"],0)
+        self.assertEqual(repeat_stats["alreadyPublished"],4)
+        self.assertEqual(repeated,out)
+
+    def test_brin_unapproved_or_modified_partner_ticket_cannot_publish(self):
+        checked=__import__("datetime").date(2026,11,2)
+        for variant in ("wrong-date","wrong-artist","extra-artist",
+                        "different-ticket","generic-calendar","wrong-partner",
+                        "no-partner","bogus-start-time","other-reviewer",
+                        "aggregator-source","missing-genre","unregistered-event"):
+            with self.subTest(variant=variant):
+                q=self.brin_queue()
+                a=q["approvals"][0]
+                e=a["event"]
+                if variant=="wrong-date":
+                    e["date"]="2026-11-06"
+                elif variant=="wrong-artist":
+                    e["artistIds"][0]="made-up-act"
+                    a["newArtists"][0]["id"]="made-up-act"
+                    a["newArtists"][0]["name"]="Made Up Act"
+                elif variant=="extra-artist":
+                    e["artistIds"].append("moscow-death-brigade")
+                elif variant=="different-ticket":
+                    e["officialUrl"]="https://www.billetweb.fr/some-other-concert"
+                    e["ticketUrl"]=e["officialUrl"]
+                    a["officialEvidence"][0]["url"]=e["officialUrl"]
+                elif variant=="generic-calendar":
+                    e["officialUrl"]="https://www.billetweb.fr/multi_event.php?multi=11236"
+                    e["ticketUrl"]=e["officialUrl"]
+                    a["officialEvidence"][0]["url"]=e["officialUrl"]
+                elif variant=="wrong-partner":
+                    a["officialEvidence"][1]["url"]="https://www.culturesducoeur.org/Home/evenement_look?id_evenement=999"
+                elif variant=="no-partner":
+                    a["officialEvidence"].pop()
+                elif variant=="bogus-start-time":
+                    e["time"]="20:30"
+                elif variant=="other-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                elif variant=="aggregator-source":
+                    e["sourceType"]="aggregator"
+                elif variant=="missing-genre":
+                    e["genres"]=["Pop"]
+                elif variant=="unregistered-event":
+                    e["id"]="go-c-20261105-barberaz-invented"
+                out,stats=merge(BASE,BASE,q,checked)
+                self.assertEqual(stats["newEvents"],3)
+                self.assertTrue(stats["held"])
+
     def test_reference_127_immutable(self):
         self.assertEqual(len(BASE["events"]),127)
         self.assertEqual(len(BASE["venues"]),53)
