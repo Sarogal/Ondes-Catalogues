@@ -203,6 +203,147 @@ class ConcertsCloudSyncTests(unittest.TestCase):
             merge(BASE,baseline,{"schema":source["schema"],"approvals":[],
                                  "venueApprovals":source["venueApprovals"]},day)
 
+    def regional_reviewed_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES, REGIONAL_APPROVED
+        named={
+            "lagrimas":"Lagrimas","the-prestige":"The Prestige",
+            "toxic-shock":"Toxic Shock","sick-lame-lazy":"Sick Lame & Lazy"}
+        venues=[]
+        for venue_id in ("rock-n-eat-lyon","la-maison-bleue-strasbourg"):
+            p=PILOT_VENUES[venue_id]
+            venues.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "venue":copy.deepcopy(p["venue"]),
+                "officialEvidence":[{
+                    "url":p["officialUrl"],"proofType":"official-venue-address",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["name","address","postalCode","city"]
+                },{
+                    "url":p["locationUrl"],"proofType":"openstreetmap-venue-node",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["venueName","coordinates"]
+                }]
+            })
+        rows=[]
+        for ident, spec in REGIONAL_APPROVED.items():
+            rows.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                },{
+                    "url":spec["venueCalendar"],
+                    "proofType":"first-party-venue-calendar",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":(["artists","date","venue"] if
+                                     spec["venueId"]=="rock-n-eat-lyon"
+                                     else ["artists","date","venue","genre"])
+                }],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":None,"artistIds":list(spec["artistIds"]),
+                    "venueId":spec["venueId"],"genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "ticketUrl":spec["officialUrl"],"sourceType":"organisateur",
+                    "organizer":"Independent reviewed venue"
+                },
+                "newArtists":[{"id":x,"name":named[x]}
+                              for x in spec["newArtistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "approvals":rows,"venueApprovals":venues}
+
+    def test_rock_and_maison_precise_venues_and_events_append_only_once(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.regional_reviewed_queue()
+        new,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],2)
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],4)
+        self.assertEqual(len(new["events"]),129)
+        self.assertEqual(len(new["venues"]),55)
+        self.assertEqual(len(new["artists"]),197)
+        self.assertEqual(new["events"][:127],BASE["events"])
+        self.assertEqual(new["venues"][:53],BASE["venues"])
+        self.assertTrue(all(x["time"] is None for x in new["events"][-2:]))
+        self.assertEqual([x["date"] for x in new["events"][-2:]],
+                         ["2026-11-04","2026-11-11"])
+        pins={v["id"]:v for v in new["venues"][-2:]}
+        self.assertEqual(pins["rock-n-eat-lyon"]["geoSource"],
+                         "https://www.openstreetmap.org/api/0.6/node/5973017988")
+        self.assertEqual(pins["la-maison-bleue-strasbourg"]["geoSource"],
+                         "https://www.openstreetmap.org/api/0.6/node/7812445394")
+        protect_reference(BASE,new)
+        validate_catalogue(new)
+        repeated,next_stats=merge(BASE,new,queue,day)
+        self.assertEqual(next_stats["newVenues"],0)
+        self.assertEqual(next_stats["newEvents"],0)
+        self.assertEqual(next_stats["alreadyPublished"],2)
+        self.assertEqual(repeated,new)
+
+    def test_regional_venues_never_accept_unreviewed_event_or_changed_source(self):
+        day=__import__("datetime").date(2026,11,2)
+        base=self.regional_reviewed_queue()
+        for variant in ("wrong-date","wrong-artist","wrong-ticket",
+                        "fake-time","different-genre","other-reviewer",
+                        "wrong-calendar","old-proof","wrong-pin",
+                        "not-named-event","missing-proof",
+                        "ticket-genre-unverified"):
+            with self.subTest(variant=variant):
+                queue=copy.deepcopy(base)
+                row=queue["approvals"][0]
+                e=row["event"]
+                if variant=="wrong-date":
+                    e["date"]="2026-11-05"
+                elif variant=="wrong-artist":
+                    e["artistIds"][0]="invented-artist"
+                elif variant=="wrong-ticket":
+                    e["officialUrl"]="https://shotgun.live/events/other-bill"
+                    e["ticketUrl"]=e["officialUrl"]
+                    row["officialEvidence"][0]["url"]=e["officialUrl"]
+                elif variant=="fake-time":
+                    e["time"]="19:00"
+                elif variant=="different-genre":
+                    e["genres"]=["Pop"]
+                elif variant=="other-reviewer":
+                    row["reviewedBy"]="automated-official-recheck"
+                elif variant=="wrong-calendar":
+                    row["officialEvidence"][1]["url"]="https://example.com/fake"
+                elif variant=="old-proof":
+                    row["reviewedAt"]="2026-10-01"
+                elif variant=="wrong-pin":
+                    queue["venueApprovals"][0]["venue"]["longitude"]+=.01
+                elif variant=="not-named-event":
+                    e["id"]="go-c-20261107-lyon-guessed"
+                elif variant=="missing-proof":
+                    row["officialEvidence"].pop()
+                elif variant=="ticket-genre-unverified":
+                    row["officialEvidence"][0]["checkedFields"].remove("genre")
+                output,stats=merge(BASE,BASE,queue,day)
+                self.assertTrue(stats["held"])
+                self.assertEqual(stats["newEvents"],1)
+                self.assertEqual(output["events"][:127],BASE["events"])
+                if variant=="wrong-pin":
+                    self.assertEqual(stats["newVenues"],1)
+                else:
+                    self.assertEqual(stats["newVenues"],2)
+
+    def test_regional_existing_published_events_need_same_private_approvals(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.regional_reviewed_queue()
+        published,_=merge(BASE,BASE,queue,day)
+        no_longer_allowed=copy.deepcopy(queue)
+        no_longer_allowed["approvals"]=no_longer_allowed["approvals"][1:]
+        with self.assertRaises(ValueError):
+            merge(BASE,published,no_longer_allowed,day)
+
     def test_two_vetted_venues_and_two_joker_events_append_without_damage(self):
         checked=__import__("datetime").date(2026,11,2)
         queue=self.pilot_queue()

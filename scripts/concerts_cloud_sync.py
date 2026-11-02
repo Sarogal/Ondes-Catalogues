@@ -65,6 +65,40 @@ PILOT_VENUES = {
         "officialUrl": "https://www.backstage-btm.com/infos-pratiques/",
         "locationUrl": "https://www.openstreetmap.org/api/0.6/node/4428897899"
     },
+    "rock-n-eat-lyon": {
+        "venue": {
+            "id": "rock-n-eat-lyon",
+            "name": "Rock n' Eat",
+            "address": "32 quai Arloing",
+            "postalCode": "69009",
+            "city": "Lyon",
+            "department": "69",
+            "region": "Auvergne-Rhône-Alpes",
+            "latitude": 45.7709758,
+            "longitude": 4.8114869,
+            "geoPrecision": "point nominatif du lieu (OpenStreetMap node 5973017988)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/node/5973017988"
+        },
+        "officialUrl": "https://www.rockneat.com/Infos",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/node/5973017988"
+    },
+    "la-maison-bleue-strasbourg": {
+        "venue": {
+            "id": "la-maison-bleue-strasbourg",
+            "name": "La Maison Bleue",
+            "address": "3 rue de Guebwiller",
+            "postalCode": "67100",
+            "city": "Strasbourg",
+            "department": "67",
+            "region": "Grand Est",
+            "latitude": 48.5595349,
+            "longitude": 7.7680524,
+            "geoPrecision": "point nominatif du lieu (OpenStreetMap node 7812445394)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/node/7812445394"
+        },
+        "officialUrl": "https://www.lamaisonbleue-stbg.com/contact/",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/node/7812445394"
+    },
     "le-brin-de-zinc-barberaz": {
         "venue": {
             "id": "le-brin-de-zinc-barberaz",
@@ -172,6 +206,32 @@ BACKSTAGE_VERIFIED = {
         "genres": ["Melodic Death Metal"],
         "url": "https://www.backstage-btm.com/agenda/thulcandra-yoth-iria-vorga/",
     },
+}
+
+# Two individually reviewed organizer-controlled tickets paired with exact
+# official venue listings. This is NOT permission to ingest any other event
+# from Shotgun, the ticket office, or the generic venue calendar.
+REGIONAL_APPROVED = {
+    "go-c-20261104-lyon-lagrimas-prestige": {
+        "venueId": "rock-n-eat-lyon",
+        "title": "Lagrimas + The Prestige",
+        "date": "2026-11-04",
+        "artistIds": ["lagrimas", "the-prestige"],
+        "newArtistIds": ["lagrimas", "the-prestige"],
+        "genres": ["Post-hardcore", "Screamo"],
+        "officialUrl": "https://shotgun.live/events/lagrimas-the-prestige",
+        "venueCalendar": "https://www.rockneat.com/Programmation"
+    },
+    "go-c-20261111-strasbourg-wake-the-dead": {
+        "venueId": "la-maison-bleue-strasbourg",
+        "title": "Wake the Dead + Toxic Shock + Sick Lame & Lazy",
+        "date": "2026-11-11",
+        "artistIds": ["wake-the-dead", "toxic-shock", "sick-lame-lazy"],
+        "newArtistIds": ["toxic-shock", "sick-lame-lazy"],
+        "genres": ["Hardcore", "Screamo"],
+        "officialUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
+        "venueCalendar": "https://www.lamaisonbleue-stbg.com/agenda/"
+    }
 }
 
 # Explicit one-time, source-documented map correction. The original 127-
@@ -520,7 +580,60 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "backstage-by-the-mill-paris":
+    if event.get("venueId") in ("rock-n-eat-lyon",
+                                   "la-maison-bleue-strasbourg"):
+        spec = REGIONAL_APPROVED.get(event_id)
+        require(spec is not None
+                and event.get("venueId") == spec["venueId"]
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "organisateur"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "artistIds", "genres"))
+                and official_url == spec["officialUrl"]
+                and event.get("ticketUrl") == spec["officialUrl"]
+                and event.get("time") is None,
+                "Salles régionales : seules les deux affiches vérifiées sont admises")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Salles régionales : recoupement trop ancien")
+        require(len(evidence) == 2
+                and {p.get("proofType") for p in evidence if isinstance(p,dict)}
+                    == {"official-organizer-or-venue","first-party-venue-calendar"},
+                "Salles régionales : billetterie organisateur et agenda officiel requis")
+        expected_proofs = {
+            "official-organizer-or-venue": spec["officialUrl"],
+            "first-party-venue-calendar": spec["venueCalendar"]
+        }
+        require(all(
+            isinstance(p,dict)
+            and p.get("url") == expected_proofs.get(p.get("proofType"))
+            and p.get("checkedAt") == reviewed_at.isoformat()
+            and ({"artists","date","venue","genre"} if
+                 p.get("proofType") == "official-organizer-or-venue" or
+                 event["venueId"] == "la-maison-bleue-strasbourg"
+                 else {"artists","date","venue"}).issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence),
+            "Salles régionales : origine ou contenu de preuve modifiés")
+        target = urlsplit(official_url)
+        allow_rock=(event["venueId"]=="rock-n-eat-lyon"
+                    and target.hostname=="shotgun.live"
+                    and target.path=="/events/lagrimas-the-prestige")
+        allow_maison=(event["venueId"]=="la-maison-bleue-strasbourg"
+                      and target.hostname=="billetterie.lamaisonbleue-stbg.com"
+                      and target.path=="/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY")
+        require(target.scheme=="https" and (allow_rock or allow_maison)
+                and not target.username and not target.password
+                and not target.port and not target.query and not target.fragment,
+                "Salles régionales : lien de preuve exact requis")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and all(artist_id in resolved for artist_id in ids)
+                and all(norm(resolved[artist_id]["name"]).replace(" ","-")==artist_id
+                        for artist_id in ids),
+                "Salles régionales : artistes inconnus ou identités ambiguës")
+    elif event.get("venueId") == "backstage-by-the-mill-paris":
         # For this pilot venue, an independent reviewer must explicitly sign
         # one of the three EXACT official bills and the artist identities.
         spec = BACKSTAGE_VERIFIED.get(event_id)
