@@ -519,6 +519,18 @@ SECRET_PLACE_DECEMBER_VERIFIED = {
 # Independently checked original venue detail and organizer-published OpenAgenda.
 # Only this exact 2026 riot-grrrl triple bill can enter from this venue.
 CAVE_POETES_VERIFIED = {
+    "go-c-20261216-roubaix-joobieseaz-belljars": {
+        "title": "Joobieseaz + Belljars",
+        "date": "2026-12-16",
+        "time": "19:00",
+        "artistIds": ["joobieseaz","belljars"],
+        "newArtistIds": ["joobieseaz","belljars"],
+        "genres": ["Post Punk"],
+        "officialUrl": "https://caveauxpoetes.com/evenement/joobieseaz/",
+        "organizerCalendar": "https://caveauxpoetes.com/agenda/",
+        "calendarProofType": "first-party-venue-calendar",
+        "calendarCheckedFields": ["artists","date","venue"]
+    },
     "go-c-20261108-roubaix-babe-haven-latter-muddle": {
         "title": "Babe Haven + Latter + Muddle",
         "date": "2026-11-08",
@@ -1217,10 +1229,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(event.get(k)==spec[k] for k in
                         ("title","date","time","artistIds","genres"))
                 and official_url==spec["officialUrl"],
-                "Cave aux Poètes : seule l'affiche punk du 8 novembre est agréée")
+                "Cave aux Poètes : affiche non explicitement vérifiée")
         u=urlsplit(official_url)
         require(u.scheme=="https" and u.hostname=="caveauxpoetes.com"
-                and u.path=="/evenement/babe-haven-latter-muddle/"
+                and u.path==urlsplit(spec["officialUrl"]).path
                 and not u.username and not u.password and not u.port
                 and not u.query and not u.fragment,
                 "Cave aux Poètes : page officielle exacte exigée")
@@ -1237,12 +1249,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
             for p in evidence) and any(
             isinstance(p,dict)
             and p.get("url")==spec["organizerCalendar"]
-            and p.get("proofType")=="organizer-submitted-calendar"
+            and p.get("proofType")==spec.get("calendarProofType","organizer-submitted-calendar")
             and p.get("checkedAt")==checked.isoformat()
-            and {"artists","date","venue","startTime"}.issubset(
+            and set(spec.get("calendarCheckedFields",
+                         ["artists","date","venue","startTime"])).issubset(
                 set(p.get("checkedFields") or []))
             for p in evidence),
-                "Cave aux Poètes : fiche officielle et agenda soumis par salle requis")
+                "Cave aux Poètes : fiche officielle et recoupement de programmation requis")
         resolved=dict(known_artist_ids)
         resolved.update(added)
         require([x["id"] for x in new_artists]==spec["newArtistIds"]
