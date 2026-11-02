@@ -608,7 +608,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
             isinstance(p,dict)
             and p.get("url") == expected_proofs.get(p.get("proofType"))
             and p.get("checkedAt") == reviewed_at.isoformat()
-            and {"artists","date","venue","genre"}.issubset(
+            and ({"artists","date","venue","genre"} if
+                 p.get("proofType") == "official-organizer-or-venue" or
+                 event["venueId"] == "la-maison-bleue-strasbourg"
+                 else {"artists","date","venue"}).issubset(
                 set(p.get("checkedFields") or []))
             for p in evidence),
             "Salles régionales : origine ou contenu de preuve modifiés")
