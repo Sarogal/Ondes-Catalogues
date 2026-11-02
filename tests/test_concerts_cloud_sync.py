@@ -228,6 +228,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                "guttural-slug":"Guttural Slug"}
         approvals=[]
         for event_id, spec in GLAZART_VERIFIED.items():
+            if event_id in ("go-c-20261106-paris-lagrimas",
+                            "go-c-20261130-paris-black-sabbitch"):
+                continue  # Existing two-bill Glazart fixture remains stable.
             approvals.append({
                 "reviewDecision":"approved",
                 "reviewedBy":"independent-official-verifier",
@@ -319,6 +322,95 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                                  ("invalid-way","fake-node-type") else 1)
                 self.assertEqual(stats["newEvents"],0 if variant in
                                  ("invalid-way","fake-node-type") else 1)
+
+    def glazart_november_queue(self):
+        from concerts_cloud_sync import GLAZART_VERIFIED
+        queue=self.glazart_queue()
+        queue["approvals"]=[]
+        for ident in ("go-c-20261106-paris-lagrimas",
+                      "go-c-20261130-paris-black-sabbitch"):
+            spec=GLAZART_VERIFIED[ident]
+            queue["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                }],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":None,"artistIds":list(spec["artistIds"]),
+                    "venueId":"glazart-paris","genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle"
+                },
+                "newArtists":([{"id":"black-sabbitch","name":"Black Sabbitch"}]
+                    if ident.endswith("black-sabbitch") else [])
+            })
+        return queue
+
+    def test_glazart_lagrimas_known_and_black_sabbitch_added_no_duplicate(self):
+        today=__import__("datetime").date(2026,11,2)
+        # In the live catalogue, Lagrimas already exists due to Rock n' Eat.
+        # Simulate only that known artist without relaxing the immutable 127.
+        seeded=copy.deepcopy(BASE)
+        seeded["artists"].append({"id":"lagrimas","name":"Lagrimas","aliases":[]})
+        protect_reference(BASE,seeded)
+        queue=self.glazart_november_queue()
+        result,stats=merge(BASE,seeded,queue,today)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],1)
+        self.assertEqual(result["events"][-2]["title"],"Lagrimas")
+        self.assertEqual(result["events"][-1]["title"],"Black Sabbitch")
+        self.assertEqual(result["events"][-2]["genres"],["Hardcore","Screamo"])
+        self.assertEqual(result["events"][-1]["genres"],["Doom"])
+        self.assertTrue(all(e["time"] is None for e in result["events"][-2:]))
+        self.assertEqual(len(result["artists"]),195)
+        self.assertEqual(len([a for a in result["artists"] if a["id"]=="lagrimas"]),1)
+        repeat,second=merge(BASE,result,queue,today)
+        self.assertEqual(repeat,result)
+        self.assertEqual(second["alreadyPublished"],2)
+        self.assertEqual(second["newEvents"],0)
+
+    def test_glazart_november_rejects_unverified_time_genre_and_identity(self):
+        day=__import__("datetime").date(2026,11,2)
+        seed=copy.deepcopy(BASE)
+        seed["artists"].append({"id":"lagrimas","name":"Lagrimas","aliases":[]})
+        for variant in ("unapproved-date","invented-start","wrong-artist",
+                        "wrong-genre","missing-proof","new-show",
+                        "wrong-source","missing-black-sabbitch",
+                        "other-reviewer"):
+            with self.subTest(variant=variant):
+                q=self.glazart_november_queue()
+                item=q["approvals"][1]
+                event=item["event"]
+                if variant=="unapproved-date":
+                    event["date"]="2026-12-01"
+                elif variant=="invented-start":
+                    event["time"]="19:00"
+                elif variant=="wrong-artist":
+                    event["artistIds"]=["invented-artist"]
+                elif variant=="wrong-genre":
+                    event["genres"]=["Pop"]
+                elif variant=="missing-proof":
+                    item["officialEvidence"]=[]
+                elif variant=="new-show":
+                    event["id"]="go-c-20261130-paris-fake"
+                elif variant=="wrong-source":
+                    event["officialUrl"]="https://example.net/not-official"
+                elif variant=="missing-black-sabbitch":
+                    item["newArtists"]=[]
+                elif variant=="other-reviewer":
+                    item["reviewedBy"]="automated-official-recheck"
+                result,stats=merge(BASE,seed,q,day)
+                self.assertEqual(stats["newEvents"],1)
+                self.assertEqual(len(stats["held"]),1)
+                self.assertEqual(result["events"][-1]["title"],"Lagrimas")
 
     def regional_reviewed_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, REGIONAL_APPROVED
