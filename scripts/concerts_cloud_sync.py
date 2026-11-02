@@ -1397,7 +1397,7 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
-    require(len(approvals["approvals"]) <= 50, "Trop d'approbations par lot")
+    require(len(approvals["approvals"]) <= 100, "Trop d'approbations par lot")
     if counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"]:
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"

@@ -1733,6 +1733,20 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
             merge(BASE,BASE,q,day)
 
+    def test_fifty_two_approvals_are_processed_without_silent_limit(self):
+        today=__import__("datetime").date(2026,11,2)
+        # Old sync failed with ValueError at the hidden second 50-item cap.
+        # 52 rejected mock records must be explicitly accounted for,
+        # not silently ignored or cause an all-or-nothing crash.
+        q={"schema":"grossesondes.concert.approvals.v1",
+           "approvals":[{"reviewDecision":"rejected",
+                         "event":{"id":f"go-c-20270101-mock-{i:03d}"}}
+                        for i in range(52)]}
+        result,report=merge(BASE,BASE,q,today)
+        self.assertEqual(result,BASE)
+        self.assertEqual(report["newEvents"],0)
+        self.assertEqual(len(report["held"]),52)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
