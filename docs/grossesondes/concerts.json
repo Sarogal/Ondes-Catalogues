@@ -2291,6 +2291,19 @@
       "longitude": -1.53984,
       "geoPrecision": "coordonnées GPS indicatives publiées par Tourisme 64 pour Atabal (latitude ~11 m, longitude ~1 m de précision numérique)",
       "geoSource": "https://www.tourisme64.com/sur-place/activites/biarritz/LOIAQU064V5BRPFJ-atabal/"
+    },
+    {
+      "id": "hydrophone-lorient",
+      "name": "Hydrophone",
+      "address": "11 rue Honoré d’Estiennes d’Orves",
+      "postalCode": "56100",
+      "city": "Lorient",
+      "department": "56",
+      "region": "Bretagne",
+      "latitude": 47.7308333333,
+      "longitude": -3.3722222222,
+      "geoPrecision": "coordonnées GPS du site fournies par Hydrophone (47°43’51.0 N, 3°22’20.0 W), approximation du site et non seuil exact de la porte Face A",
+      "geoSource": "https://www.hydrophone.fr/-Pratique-.html"
     }
   ],
   "events": [
@@ -8286,6 +8299,36 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Atabal Biarritz",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270210-lorient-revnoir-ice-sealed-eyes",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-10",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "hydrophone-lorient",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://hydrophone.fr/REVNOIR-ICE-SEALED-EYES.html",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Hydrophone",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
