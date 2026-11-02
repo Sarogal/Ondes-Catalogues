@@ -3689,12 +3689,13 @@
     },
     {
       "id": "go-c-20261212-nantes-lost-in-kyiv",
-      "title": "Lost in Kyiv",
+      "title": "Lost in Kyiv + Årabrot",
       "date": "2026-12-12",
       "time": "20:30",
       "timeMeaning": "début du concert",
       "artistIds": [
-        "lost-in-kyiv"
+        "lost-in-kyiv",
+        "arabrot"
       ],
       "venueId": "le-ferrailleur-nantes",
       "genres": [
@@ -3705,7 +3706,7 @@
       "status": "confirmed",
       "officialUrl": "https://www.leferrailleur.fr/evenement/lost-in-kyiv/5307",
       "ticketUrl": null,
-      "lastVerified": "2026-11-01",
+      "lastVerified": "2026-11-02",
       "confidence": "programmation officielle de la salle ou de l’organisateur, consultée le 01/11/2026",
       "sourceType": "organisateur",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
@@ -3714,6 +3715,10 @@
         {
           "date": "2026-11-01",
           "change": "Date, salle et artistes relevés sur la programmation officielle; coordonnées indicatives si nécessaire"
+        },
+        {
+          "date": "2026-11-02",
+          "change": "Årabrot ajouté à l'affiche après relecture du détail officiel Le Ferrailleur"
         }
       ]
     },
