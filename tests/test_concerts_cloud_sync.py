@@ -600,6 +600,85 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(second["alreadyPublished"],3)
         self.assertEqual(again["events"],new["events"])
 
+    def historic_lost_kyiv_approval(self):
+        return {
+            "schema":"grossesondes.concert.approvals.v1",
+            "approvals":[],
+            "referenceCorrections":[{
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "eventId":"go-c-20261212-nantes-lost-in-kyiv",
+                "eventPatch":{
+                    "title":"Lost in Kyiv + Årabrot",
+                    "artistIds":["lost-in-kyiv","arabrot"],
+                    "lastVerified":"2026-11-02"
+                },
+                "officialEvidence":[{
+                    "url":"https://www.leferrailleur.fr/evenement/lost-in-kyiv/5307",
+                    "proofType":"official-venue-detail",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","startTime"]
+                }]
+            }]
+        }
+
+    def test_historic_lost_kyiv_support_act_correction_is_approved_and_idempotent(self):
+        day=__import__("datetime").date(2026,11,2)
+        q=self.historic_lost_kyiv_approval()
+        corrected,stats=merge(BASE,BASE,q,day)
+        self.assertEqual(stats["correctedEvents"],1)
+        self.assertEqual(stats["newEvents"],0)
+        self.assertEqual(len(corrected["events"]),127)
+        self.assertEqual(len(corrected["artists"]),193)
+        original={x["id"]:x for x in BASE["events"]}
+        event=next(e for e in corrected["events"] if e["id"]=="go-c-20261212-nantes-lost-in-kyiv")
+        self.assertEqual(event["artistIds"],["lost-in-kyiv","arabrot"])
+        self.assertEqual(event["title"],"Lost in Kyiv + Årabrot")
+        self.assertEqual(event["time"],"20:30")
+        self.assertEqual(event["date"],"2026-12-12")
+        self.assertEqual(event["venueId"],"le-ferrailleur-nantes")
+        self.assertEqual(event["officialUrl"],original[event["id"]]["officialUrl"])
+        self.assertEqual(len(event["history"]),len(original[event["id"]]["history"])+1)
+        self.assertEqual(
+            [e for e in corrected["events"] if e["id"]!=event["id"]],
+            [e for e in BASE["events"] if e["id"]!=event["id"]])
+        protect_reference(BASE,corrected)
+        validate_catalogue(corrected)
+        repeated,counts=merge(BASE,corrected,q,day)
+        self.assertEqual(counts["correctedEvents"],0)
+        self.assertEqual(repeated,corrected)
+
+    def test_historic_correction_cannot_bypass_private_approval_or_edit_date(self):
+        day=__import__("datetime").date(2026,11,2)
+        valid=self.historic_lost_kyiv_approval()
+        corrected,_=merge(BASE,BASE,valid,day)
+        for variant in ("approval-missing","fake-source","fake-artist",
+                        "wrong-reviewer","modified-date","extra-venue-edit"):
+            with self.subTest(variant=variant):
+                q=copy.deepcopy(valid)
+                current=copy.deepcopy(corrected)
+                if variant=="approval-missing":
+                    q.pop("referenceCorrections")
+                elif variant=="fake-source":
+                    q["referenceCorrections"][0]["officialEvidence"][0]["url"]="https://www.example.org/unverified"
+                elif variant=="fake-artist":
+                    q["referenceCorrections"][0]["eventPatch"]["artistIds"]=["lost-in-kyiv"]
+                elif variant=="wrong-reviewer":
+                    q["referenceCorrections"][0]["reviewedBy"]="automatic-guess"
+                elif variant=="modified-date":
+                    target=next(e for e in current["events"] if e["id"]=="go-c-20261212-nantes-lost-in-kyiv")
+                    target["date"]="2026-12-13"
+                elif variant=="extra-venue-edit":
+                    current["venues"][0]["latitude"]+=1
+                with self.assertRaises(ValueError):
+                    merge(BASE,current,q,day)
+        with self.assertRaises(ValueError):
+            merge(BASE,BASE,{"schema":valid["schema"],
+                             "approvals":[],"referenceCorrections":[{
+                                "reviewDecision":"approved",
+                                "eventId":"invented-event"}]},day)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
