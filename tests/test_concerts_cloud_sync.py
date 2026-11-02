@@ -2147,6 +2147,98 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(report["newEvents"],0)
         self.assertEqual(len(report["held"]),52)
 
+
+    def secret_place_location_approval(self):
+        from concerts_cloud_sync import SECRET_PLACE_LOCATION_FIX
+        return {
+            "schema": "grossesondes.concert.approvals.v1",
+            "approvals": [],
+            "referenceVenueCorrections": [{
+                "reviewDecision": "approved",
+                "reviewedBy": "independent-official-verifier",
+                "reviewedAt": "2026-11-02",
+                "venueId": "secret-place-saint-jean-de-vedas",
+                "venuePatch": copy.deepcopy(SECRET_PLACE_LOCATION_FIX),
+                "officialEvidence": [
+                    {
+                        "url": "https://www.toutafond.com/acces",
+                        "proofType": "official-venue-address",
+                        "checkedAt": "2026-11-02",
+                        "checkedFields": ["name", "address", "postalCode", "city"],
+                    },
+                    {
+                        "url": "https://www.openstreetmap.org/api/0.6/way/382485149",
+                        "proofType": "openstreetmap-venue-way",
+                        "checkedAt": "2026-11-02",
+                        "checkedFields": ["venueName", "coordinates"],
+                    },
+                ],
+            }],
+        }
+
+    def test_secret_place_map_fix_is_signed_precise_idempotent_and_preserves_events(self):
+        from concerts_cloud_sync import (
+            corrected_reference_venues, SECRET_PLACE_LOCATION_FIX
+        )
+        day = __import__("datetime").date(2026, 11, 2)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE)
+        approval = self.secret_place_location_approval()
+        result, counts = merge(BASE, current, approval, day)
+        self.assertEqual(counts["correctedVenues"], 1)
+        self.assertEqual(counts["newEvents"], 0)
+        self.assertEqual(len(result["events"]), 127)
+        self.assertEqual(result["events"], current["events"])
+        self.assertEqual(result["artists"], current["artists"])
+        self.assertEqual(result["venues"][:53], corrected_reference_venues(BASE, secret_place=True))
+        old = next(v for v in BASE["venues"] if v["id"] == "secret-place-saint-jean-de-vedas")
+        fresh = next(v for v in result["venues"] if v["id"] == old["id"])
+        for field in ("id", "name", "address", "city", "postalCode"):
+            self.assertEqual(fresh[field], old[field])
+        for field, value in SECRET_PLACE_LOCATION_FIX.items():
+            self.assertEqual(fresh[field], value)
+        again, stats = merge(BASE, result, approval, day)
+        self.assertEqual(stats["correctedVenues"], 0)
+        self.assertEqual(again, result)
+        protect_reference(BASE, result)
+
+    def test_secret_place_map_fix_rejects_missing_or_forged_evidence(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 2)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE)
+        approval = self.secret_place_location_approval()
+        changed, _ = merge(BASE, current, approval, day)
+        for variant in (
+            "missing-signature", "wrong-osm-url", "missing-address-proof",
+            "fictional-venue", "wrong-coordinates", "wrong-reviewer",
+            "future-reviewed", "altered-address", "modified-other-venue"
+        ):
+            with self.subTest(variant=variant):
+                candidate = copy.deepcopy(approval)
+                published = copy.deepcopy(changed)
+                row = candidate["referenceVenueCorrections"][0]
+                if variant == "missing-signature":
+                    candidate.pop("referenceVenueCorrections")
+                elif variant == "wrong-osm-url":
+                    row["officialEvidence"][1]["url"] = "https://example.org/way"
+                elif variant == "missing-address-proof":
+                    row["officialEvidence"] = row["officialEvidence"][1:]
+                elif variant == "fictional-venue":
+                    row["venueId"] = "other-venue"
+                elif variant == "wrong-coordinates":
+                    row["venuePatch"]["latitude"] += 0.1
+                elif variant == "wrong-reviewer":
+                    row["reviewedBy"] = "automatic-guess"
+                elif variant == "future-reviewed":
+                    row["reviewedAt"] = "2026-11-03"
+                elif variant == "altered-address":
+                    next(v for v in published["venues"] if v["id"] == row["venueId"])["address"] = "adresse falsifiée"
+                elif variant == "modified-other-venue":
+                    published["venues"][0]["latitude"] += 0.1
+                with self.assertRaises((ValueError, KeyError)):
+                    merge(BASE, published, candidate, day)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
