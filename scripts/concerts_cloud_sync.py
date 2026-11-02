@@ -195,6 +195,29 @@ BRIN_ORGANIZER_VERIFIED = {
         ],
         "ticketUrl": "https://www.billetweb.fr/moscow-death-brigade1",
         "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237803"
+    },
+    # Individually verified organizer tickets with narrower, explicitly
+    # documented corroboration. A Bandsintown artist listing and a tour
+    # announcement are NOT represented as organizer-submitted partners.
+    "go-c-20261110-barberaz-wake-the-dead": {
+        "title": "Wake the Dead + Ghouldozer",
+        "date": "2026-11-10",
+        "artistIds": ["wake-the-dead", "ghouldozer"],
+        "genres": ["Hardcore", "Death Metal"],
+        "ticketUrl": "https://www.billetweb.fr/wake-the-dead-ft-ghouldozer-hardcore-death-metal",
+        "partnerUrl": "https://www.bandsintown.com/fr/e/109057220-wake-the-dead-%28hardcore%29-at-le-brin-de-zinc?came_from=253",
+        "partnerProofType": "artist-event-listing",
+        "partnerCheckedFields": ["artists", "date", "venue"],
+    },
+    "go-c-20261206-barberaz-xaon": {
+        "title": "Xaon + Vortex",
+        "date": "2026-12-06",
+        "artistIds": ["xaon", "vortex"],
+        "genres": ["Death Metal symphonique"],
+        "ticketUrl": "https://www.billetweb.fr/xaon-x-vortex-symphonic-death-metal-canada",
+        "partnerUrl": "https://www.metal-rules.com/2026/10/25/quebecs-vortex-announces-eu-tour-dates-w-xaon-symphony-for-the-dead-the-last-symphony-europe-tour/",
+        "partnerProofType": "independent-tour-report",
+        "partnerCheckedFields": ["artists", "date", "venue"],
     }
 }
 
@@ -843,20 +866,24 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Brin de Zinc : recoupement trop ancien")
         require(event.get("time") is None,
                 "Créneau Billetweb ne prouve pas le début du concert")
+        partner_kind = expected.get("partnerProofType", "organizer-submitted-partner")
+        partner_fields = set(expected.get("partnerCheckedFields",
+                                          ["artists", "date", "venue", "genre"]))
         require(len(evidence) == 2 and
                 {p.get("proofType") for p in evidence if isinstance(p,dict)}
-                == {"official-organizer-or-venue", "organizer-submitted-partner"},
-                "Brin de Zinc : deux annonces attribuées à l'organisateur requises")
+                == {"official-organizer-or-venue", partner_kind},
+                "Brin de Zinc : deux preuves individuellement autorisées requises")
         checks = {
-            "official-organizer-or-venue": expected["ticketUrl"],
-            "organizer-submitted-partner": expected["partnerUrl"],
+            "official-organizer-or-venue": (expected["ticketUrl"],
+                                             {"artists", "date", "venue", "genre"}),
+            partner_kind: (expected["partnerUrl"], partner_fields),
         }
         for proof in evidence:
-            require(isinstance(proof,dict) and
-                    proof.get("url") == checks.get(proof.get("proofType")) and
+            spec = checks.get(proof.get("proofType")) if isinstance(proof,dict) else None
+            require(spec is not None and
+                    proof.get("url") == spec[0] and
                     proof.get("checkedAt") == reviewed_at.isoformat() and
-                    {"artists", "date", "venue", "genre"}.issubset(
-                        set(proof.get("checkedFields") or [])),
+                    spec[1].issubset(set(proof.get("checkedFields") or [])),
                     "Brin de Zinc : preuve de partenaire incomplète ou substituée")
         resolved = dict(known_artist_ids)
         resolved.update(added)
