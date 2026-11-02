@@ -1619,6 +1619,120 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(updated["events"],seeded["events"])
                 self.assertEqual(updated["artists"],seeded["artists"])
 
+    def forum_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES, FORUM_VERIFIED
+        pilot=PILOT_VENUES["le-forum-vaureal"]
+        venue={
+            "reviewDecision":"approved",
+            "reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-02",
+            "venue":copy.deepcopy(pilot["venue"]),
+            "officialEvidence":[
+                {"url":pilot["officialUrl"],"proofType":"official-venue-address",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["name","address","postalCode","city"]},
+                {"url":pilot["locationUrl"],"proofType":"openstreetmap-venue-node",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["venueName","coordinates"]}
+            ]
+        }
+        names={"senser":"Senser","wolves-in-the-throne-room":"Wolves in the Throne Room",
+               "worm":"Worm","final-dose":"Final Dose",
+               "harsh":"Harsh","furies":"Furies","charcoal":"Charcoal"}
+        approval=[]
+        for ident,spec in FORUM_VERIFIED.items():
+            check=["artists","date","venue","genre"]
+            if spec["time"] is not None:check.append("startTime")
+            approval.append({
+                "reviewDecision":"approved","reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],"proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02","checkedFields":check}],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":spec["time"],"artistIds":list(spec["artistIds"]),
+                    "venueId":"le-forum-vaureal","genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"Le Forum"},
+                "newArtists":[{"id":aid,"name":names[aid]}
+                              for aid in spec["newArtistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":[venue],"approvals":approval}
+
+    def test_forum_real_named_osm_node_and_five_concerts_append_without_collisions(self):
+        day=__import__("datetime").date(2026,11,2)
+        q=self.forum_queue()
+        out,stats=merge(BASE,BASE,q,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newEvents"],5)
+        self.assertEqual(stats["newArtists"],7)
+        self.assertEqual(len(out["events"]),len(BASE["events"])+5)
+        names={x["title"] for x in out["events"][-5:]}
+        self.assertIn("Senser + Psykup",names)
+        self.assertIn("Wolves in the Throne Room + Worm + Final Dose",names)
+        self.assertIn("Harsh + Furies + Charcoal",names)
+        point=out["venues"][-1]
+        self.assertEqual(point["name"],"Le Forum")
+        self.assertEqual((point["latitude"],point["longitude"]),(49.0313663,2.0218937))
+        self.assertEqual(point["geoSource"],
+             "https://www.openstreetmap.org/api/0.6/node/4742610793")
+        wolves=next(x for x in out["events"]
+                    if x["id"]=="go-c-20261107-vaureal-wolves-throne-room")
+        self.assertIsNone(wolves["time"])
+        self.assertEqual(next(x for x in out["events"]
+                       if x["id"]=="go-c-20261106-vaureal-senser-psykup")["time"],
+                         "20:00")
+        second,again=merge(BASE,out,q,day)
+        self.assertEqual(again["newEvents"],0)
+        self.assertEqual(again["newVenues"],0)
+        self.assertEqual(second,out)
+
+    def test_forum_blocks_unlisted_bad_lineup_or_wrong_official_clock(self):
+        day=__import__("datetime").date(2026,11,2)
+        variants=("wrong-point","fake-way","unknown-event","missing-psykup",
+                  "missing-worm","fake-wolves-time","wrong-date","fake-genre",
+                  "wrong-official-domain","missing-clock-proof",
+                  "wrong-reviewer")
+        for variant in variants:
+            with self.subTest(case=variant):
+                q=self.forum_queue()
+                q["approvals"]=q["approvals"][:2]
+                a=q["approvals"][0]
+                wolf=q["approvals"][1]
+                if variant=="wrong-point":
+                    q["venueApprovals"][0]["venue"]["longitude"]+=.01
+                elif variant=="fake-way":
+                    q["venueApprovals"][0]["officialEvidence"][1]["proofType"]="openstreetmap-venue-way"
+                elif variant=="unknown-event":a["event"]["id"]="go-c-20261212-vaureal-unknown"
+                elif variant=="missing-psykup":a["event"]["artistIds"].remove("psykup")
+                elif variant=="missing-worm":wolf["event"]["artistIds"].remove("worm")
+                elif variant=="fake-wolves-time":wolf["event"]["time"]="18:30"
+                elif variant=="wrong-date":a["event"]["date"]="2026-11-08"
+                elif variant=="fake-genre":a["event"]["genres"]=["Electro"]
+                elif variant=="wrong-official-domain":a["event"]["officialUrl"]="https://example.org/agenda/senser"
+                elif variant=="missing-clock-proof":a["officialEvidence"][0]["checkedFields"].remove("startTime")
+                elif variant=="wrong-reviewer":a["reviewedBy"]="automated-official-recheck"
+                after,stats=merge(BASE,BASE,q,day)
+                self.assertTrue(stats["held"])
+                if variant in ("wrong-point","fake-way"):
+                    self.assertEqual(stats["newVenues"],0)
+                    self.assertEqual(stats["newEvents"],0)
+                else:
+                    self.assertEqual(stats["newVenues"],1)
+                    self.assertEqual(stats["newEvents"],1)
+                self.assertEqual(after["events"][:len(BASE["events"])],
+                                 BASE["events"])
+
+    def test_explicit_approval_limit_rejects_instead_of_silent_truncation(self):
+        day=__import__("datetime").date(2026,11,2)
+        q={"schema":"grossesondes.concert.approvals.v1",
+           "approvals":[{} for _ in range(101)]}
+        with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
+            merge(BASE,BASE,q,day)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
