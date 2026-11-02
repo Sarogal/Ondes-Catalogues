@@ -1231,6 +1231,51 @@
       "id": "whitechapel",
       "name": "Whitechapel",
       "aliases": []
+    },
+    {
+      "id": "frankie-and-the-witch-fingers",
+      "name": "Frankie and the Witch Fingers",
+      "aliases": []
+    },
+    {
+      "id": "iguana-death-cult",
+      "name": "Iguana Death Cult",
+      "aliases": []
+    },
+    {
+      "id": "comeback-kid",
+      "name": "Comeback Kid",
+      "aliases": []
+    },
+    {
+      "id": "black-flag",
+      "name": "Black Flag",
+      "aliases": []
+    },
+    {
+      "id": "allt",
+      "name": "Allt",
+      "aliases": []
+    },
+    {
+      "id": "avralize",
+      "name": "Avralize",
+      "aliases": []
+    },
+    {
+      "id": "bite-down",
+      "name": "Bite Down",
+      "aliases": []
+    },
+    {
+      "id": "we-are-magonia",
+      "name": "We Are Magonia",
+      "aliases": []
+    },
+    {
+      "id": "eiga",
+      "name": "Eiga",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2013,6 +2058,32 @@
       "longitude": 2.39396,
       "geoPrecision": "centre indicatif du bâtiment nommé Le Trabendo (OpenStreetMap way 81704888, coordonnées arrondies)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/way/81704888"
+    },
+    {
+      "id": "la-maroquinerie-paris",
+      "name": "La Maroquinerie",
+      "address": "23 rue Boyer",
+      "postalCode": "75020",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.86853,
+      "longitude": 2.39206,
+      "geoPrecision": "point nominatif du lieu (OpenStreetMap node 1402597553, coordonnées arrondies)",
+      "geoSource": "https://mapcarta.com/fr/N1402597553"
+    },
+    {
+      "id": "la-boule-noire-paris",
+      "name": "La Boule Noire",
+      "address": "120 boulevard de Rochechouart",
+      "postalCode": "75018",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.88234,
+      "longitude": 2.34028,
+      "geoPrecision": "point nominatif de La Boule Noire, distinct de La Cigale (OpenStreetMap node 357916037, coordonnées arrondies)",
+      "geoSource": "https://mapcarta.com/N357916037"
     }
   ],
   "events": [
@@ -7102,6 +7173,216 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Veryshow",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-paris-frankie-witch-fingers",
+      "title": "Frankie and the Witch Fingers + Iguana Death Cult",
+      "date": "2026-11-12",
+      "artistIds": [
+        "frankie-and-the-witch-fingers",
+        "iguana-death-cult"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/frankie-and-the-witch-fingers/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "U-Turn",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-paris-kid-kapichi",
+      "title": "Kid Kapichi + Demob Happy",
+      "date": "2026-11-28",
+      "artistIds": [
+        "kid-kapichi",
+        "demob-happy"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/kid-kapichi/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Radical",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270119-paris-comeback-kid",
+      "title": "Comeback Kid",
+      "date": "2027-01-19",
+      "artistIds": [
+        "comeback-kid"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/comeback-kid/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Base Productions",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270606-paris-black-flag",
+      "title": "Black Flag",
+      "date": "2027-06-06",
+      "artistIds": [
+        "black-flag"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Punk Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/black-flag/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Trabendo & Sanit Mils",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261110-paris-allt",
+      "title": "Allt + Avralize + Bite Down",
+      "date": "2026-11-10",
+      "artistIds": [
+        "allt",
+        "avralize",
+        "bite-down"
+      ],
+      "venueId": "la-maroquinerie-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lamaroquinerie.fr/fr/agenda/view/2212/allt/?of=7",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Veryshow",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-paris-horskh",
+      "title": "Horskh + We Are Magonia",
+      "date": "2026-11-21",
+      "artistIds": [
+        "horskh",
+        "we-are-magonia"
+      ],
+      "venueId": "la-maroquinerie-paris",
+      "genres": [
+        "Metal industriel"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lamaroquinerie.fr/fr/agenda/view/2180/horskh/?of=18",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Base Productions",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261115-paris-ice-sealed-eyes",
+      "title": "Ice Sealed Eyes + Eiga",
+      "date": "2026-11-15",
+      "artistIds": [
+        "ice-sealed-eyes",
+        "eiga"
+      ],
+      "venueId": "la-boule-noire-paris",
+      "genres": [
+        "Newcore",
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://laboule-noire.fr/ice-sealed-eyes/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Base Productions",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
