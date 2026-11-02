@@ -1401,6 +1401,36 @@
       "id": "prisonnier-du-temps",
       "name": "Prisonnier du temps",
       "aliases": []
+    },
+    {
+      "id": "mafia-sofa",
+      "name": "Mafia Sofa",
+      "aliases": []
+    },
+    {
+      "id": "anestesia",
+      "name": "Anestesia",
+      "aliases": []
+    },
+    {
+      "id": "horzdun",
+      "name": "Horzdun",
+      "aliases": []
+    },
+    {
+      "id": "burning-heads",
+      "name": "Burning Heads",
+      "aliases": []
+    },
+    {
+      "id": "not-scientists",
+      "name": "Not Scientists",
+      "aliases": []
+    },
+    {
+      "id": "the-dead-krazukies",
+      "name": "The Dead Krazukies",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2248,6 +2278,19 @@
       "longitude": -4.48195,
       "geoPrecision": "centre du bâtiment La Carène (OpenStreetMap way 42531718, via Mapcarta, coordonnées arrondies)",
       "geoSource": "https://mapcarta.com/W42531718"
+    },
+    {
+      "id": "atabal-biarritz",
+      "name": "Atabal",
+      "address": "37 allée du Moura",
+      "postalCode": "64200",
+      "city": "Biarritz",
+      "department": "64",
+      "region": "Nouvelle-Aquitaine",
+      "latitude": 43.4604,
+      "longitude": -1.53984,
+      "geoPrecision": "coordonnées GPS indicatives publiées par Tourisme 64 pour Atabal (latitude ~11 m, longitude ~1 m de précision numérique)",
+      "geoSource": "https://www.tourisme64.com/sur-place/activites/biarritz/LOIAQU064V5BRPFJ-atabal/"
     }
   ],
   "events": [
@@ -8150,6 +8193,99 @@
       "time": "21:00",
       "timeMeaning": "début du concert",
       "organizer": "La Carène",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-biarritz-frankie-witch-fingers",
+      "title": "Frankie and the Witch Fingers + Iguana Death Cult + Mafia Sofa",
+      "date": "2026-11-28",
+      "artistIds": [
+        "frankie-and-the-witch-fingers",
+        "iguana-death-cult",
+        "mafia-sofa"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/frankie-and-the-witch-fingers-mafia-sofa-samedi-28-novembre-2026/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal Biarritz",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-biarritz-anestesia-horzdun",
+      "title": "Anestesia + Horzdun",
+      "date": "2026-12-11",
+      "artistIds": [
+        "anestesia",
+        "horzdun"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Hardcore",
+        "Sludge Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/anestesia-erantzun-30-urte-horzdun-vendredi-11-decembre-2026/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal Biarritz",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270514-biarritz-burning-heads",
+      "title": "Burning Heads + Not Scientists + The Dead Krazukies",
+      "date": "2027-05-14",
+      "artistIds": [
+        "burning-heads",
+        "not-scientists",
+        "the-dead-krazukies"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/burning-heads-not-scientists-dead-krazukies-vendredi-14-mai-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal Biarritz",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
