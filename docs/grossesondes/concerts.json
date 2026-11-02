@@ -1381,6 +1381,26 @@
       "id": "belljars",
       "name": "Belljars",
       "aliases": []
+    },
+    {
+      "id": "dame-area",
+      "name": "Dame Area",
+      "aliases": []
+    },
+    {
+      "id": "tact",
+      "name": "Tact",
+      "aliases": []
+    },
+    {
+      "id": "mary-bell",
+      "name": "Mary Bell",
+      "aliases": []
+    },
+    {
+      "id": "prisonnier-du-temps",
+      "name": "Prisonnier du temps",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2215,6 +2235,19 @@
       "longitude": 3.1692704,
       "geoPrecision": "point nominatif de La Cave Aux Poètes (OpenStreetMap node 5902484873, nom adresse site et téléphone concordants)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/node/5902484873"
+    },
+    {
+      "id": "la-carene-brest",
+      "name": "La Carène",
+      "address": "30 rue Jean-Marie Le Bris",
+      "postalCode": "29200",
+      "city": "Brest",
+      "department": "29",
+      "region": "Bretagne",
+      "latitude": 48.38479,
+      "longitude": -4.48195,
+      "geoPrecision": "centre du bâtiment La Carène (OpenStreetMap way 42531718, via Mapcarta, coordonnées arrondies)",
+      "geoSource": "https://mapcarta.com/W42531718"
     }
   ],
   "events": [
@@ -8057,6 +8090,66 @@
       "time": "19:00",
       "timeMeaning": "début du concert",
       "organizer": "La Cave aux Poètes",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-brest-dame-area-tact",
+      "title": "Dame Area + Tact",
+      "date": "2026-11-07",
+      "artistIds": [
+        "dame-area",
+        "tact"
+      ],
+      "venueId": "la-carene-brest",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lacarene.fr/dame-area-tact.html",
+      "sourceType": "salle",
+      "time": "21:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Carène",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-brest-mary-bell-prisonnier-du-temps",
+      "title": "Mary Bell + Prisonnier du temps",
+      "date": "2026-11-28",
+      "artistIds": [
+        "mary-bell",
+        "prisonnier-du-temps"
+      ],
+      "venueId": "la-carene-brest",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lacarene.fr/mary-bell-prisonnier-du-temps.html",
+      "sourceType": "salle",
+      "time": "21:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Carène",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
