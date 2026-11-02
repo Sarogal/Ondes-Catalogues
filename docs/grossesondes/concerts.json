@@ -1221,6 +1221,16 @@
       "id": "deafkids",
       "name": "Deafkids",
       "aliases": []
+    },
+    {
+      "id": "wage-war",
+      "name": "Wage War",
+      "aliases": []
+    },
+    {
+      "id": "whitechapel",
+      "name": "Whitechapel",
+      "aliases": []
     }
   ],
   "venues": [
@@ -1990,6 +2000,19 @@
       "longitude": 2.3866102,
       "geoPrecision": "centre du bâtiment nommé Glazart (OpenStreetMap way 64038567, géocodage Nominatim)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/way/64038567"
+    },
+    {
+      "id": "le-trabendo-paris",
+      "name": "Le Trabendo",
+      "address": "211 avenue Jean Jaurès",
+      "postalCode": "75019",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.89265,
+      "longitude": 2.39396,
+      "geoPrecision": "centre indicatif du bâtiment nommé Le Trabendo (OpenStreetMap way 81704888, coordonnées arrondies)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/way/81704888"
     }
   ],
   "events": [
@@ -7021,6 +7044,64 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Glazart",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-paris-wage-war",
+      "title": "Wage War",
+      "date": "2027-01-22",
+      "artistIds": [
+        "wage-war"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/wage-war/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Live Nation",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270203-paris-whitechapel",
+      "title": "Whitechapel",
+      "date": "2027-02-03",
+      "artistIds": [
+        "whitechapel"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/whitechapel/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Veryshow",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
