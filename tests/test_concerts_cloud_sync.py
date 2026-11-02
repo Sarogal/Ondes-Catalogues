@@ -307,6 +307,50 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(stats["newEvents"],0)
         self.assertTrue(stats["held"])
 
+    def test_three_independently_rechecked_rex_shows_preserve_references(self):
+        # Multi-event acceptance: new artists only, separate dates, existing
+        # venue, full official first-party URL, and no inferred start time.
+        batch=[]
+        for date, key, artist_names in (
+                ("2026-11-22","punk-night",["Punk Band"]),
+                ("2027-02-15","guitar-night",["Guitar Band"]),
+                ("2027-04-09","doom-night",["Doom Band","Stoner Band"])):
+            a=approval("go-c-"+date.replace("-","")+"-toulouse-"+key)
+            official="https://www.lerextoulouse.com/fr/programmation/"+key+"/"
+            a["reviewedBy"]="independent-official-verifier"
+            a["event"].update({
+                "title":" + ".join(artist_names),"date":date,
+                "time":None,"venueId":"le-rex-toulouse",
+                "genres":["Hard Rock"],"sourceType":"salle",
+                "officialUrl":official,
+                "artistIds":[s.lower().replace(" ","-") for s in artist_names]
+            })
+            a["newArtists"]=[
+                {"id":s.lower().replace(" ","-"),"name":s}
+                for s in artist_names
+            ]
+            a["officialEvidence"][0].update({
+                "url":official,
+                "checkedFields":["artists","date","venue","genre"]
+            })
+            batch.append(a)
+        queue={"schema":"grossesondes.concert.approvals.v1",
+               "approvals":batch}
+        new,stats=merge(BASE,BASE,queue,NOW)
+        self.assertEqual(stats["newEvents"],3)
+        self.assertEqual(stats["newArtists"],4)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(len(new["venues"]),53)
+        self.assertEqual(len(new["events"]),130)
+        self.assertEqual(new["events"][:127],BASE["events"])
+        self.assertEqual(new["mode"],"preview-public-unlisted")
+        self.assertTrue(all(x["time"] is None for x in new["events"][-3:]))
+        validate_catalogue(new)
+        again,second=merge(BASE,new,queue,NOW)
+        self.assertEqual(second["newEvents"],0)
+        self.assertEqual(second["alreadyPublished"],3)
+        self.assertEqual(again["events"],new["events"])
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
