@@ -14,6 +14,8 @@ on:
   # Synchronisation complémentaire : Gwendoline le 07/11, validation signée
   # GrossesOndes PR #80 ; aucun assouplissement des règles de publication.
   # automatiques toutes les trois heures ; cette annotation ne change aucune règle.
+  # Réexécution de la publication protégée après la revue Joobieseaz + Belljars
+  # du 16 décembre, signée en PR privée GrossesOndes #83 (aucune règle modifiée).
   schedule:
     - cron: '17 */3 * * *'
   push:
