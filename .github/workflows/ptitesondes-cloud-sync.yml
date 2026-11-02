@@ -9,6 +9,8 @@ on:
       - '.github/workflows/ptitesondes-cloud-sync.yml'
   schedule:
     - cron: '20 10 * * *'
+    # Rattrapage en cas de retard, d'incident GitHub ou de preuve temporairement indisponible.
+    - cron: '15 17 * * *'
   workflow_dispatch:
     inputs:
       mode:
