@@ -48,6 +48,23 @@ PILOT_VENUES = {
         "officialUrl": "https://www.jokerspubangers.com/le-pub-jokers-angers.php",
         "locationUrl": "https://mapcarta.com/fr/N4789000416"
     },
+    "backstage-by-the-mill-paris": {
+        "venue": {
+            "id": "backstage-by-the-mill-paris",
+            "name": "Backstage By The Mill",
+            "address": "92 bis boulevard de Clichy",
+            "postalCode": "75018",
+            "city": "Paris",
+            "department": "75",
+            "region": "Île-de-France",
+            "latitude": 48.8842402,
+            "longitude": 2.3321006,
+            "geoPrecision": "point nominatif du théâtre (OpenStreetMap node 4428897899)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/node/4428897899"
+        },
+        "officialUrl": "https://www.backstage-btm.com/infos-pratiques/",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/node/4428897899"
+    },
     "le-brin-de-zinc-barberaz": {
         "venue": {
             "id": "le-brin-de-zinc-barberaz",
@@ -127,6 +144,34 @@ BRIN_ORGANIZER_VERIFIED = {
         "ticketUrl": "https://www.billetweb.fr/moscow-death-brigade1",
         "partnerUrl": "https://www.culturesducoeur.org/Home/evenement_look?id_evenement=237803"
     }
+}
+
+
+# Backstage By The Mill: only three named first-party event detail pages
+# independently reviewed. New generic event URLs do not become publishable
+# just because they share the same domain.
+BACKSTAGE_VERIFIED = {
+    "go-c-20270226-paris-turmion-katilot": {
+        "title": "Turmion Kätilöt",
+        "date": "2027-02-26",
+        "artistIds": ["turmion-katilot"],
+        "genres": ["Industrial Metal"],
+        "url": "https://www.backstage-btm.com/agenda/turmion-katilot/",
+    },
+    "go-c-20270315-paris-despairsray": {
+        "title": "D’ESPAIRSRAY",
+        "date": "2027-03-15",
+        "artistIds": ["despairsray"],
+        "genres": ["Heavy Metal"],
+        "url": "https://www.backstage-btm.com/agenda/despairsray/",
+    },
+    "go-c-20270325-paris-thulcandra": {
+        "title": "Thulcandra + Yoth Iria + Vorga",
+        "date": "2027-03-25",
+        "artistIds": ["thulcandra", "yoth-iria", "vorga"],
+        "genres": ["Melodic Death Metal"],
+        "url": "https://www.backstage-btm.com/agenda/thulcandra-yoth-iria-vorga/",
+    },
 }
 
 # Explicit one-time, source-documented map correction. The original 127-
@@ -475,7 +520,44 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "jokers-pub-angers":
+    if event.get("venueId") == "backstage-by-the-mill-paris":
+        # For this pilot venue, an independent reviewer must explicitly sign
+        # one of the three EXACT official bills and the artist identities.
+        spec = BACKSTAGE_VERIFIED.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "artistIds", "genres"))
+                and official_url == spec["url"] and event.get("time") is None,
+                "Backstage : concert hors liste blanche ou heure non documentée")
+        target = urlsplit(official_url)
+        require(target.scheme == "https" and
+                target.hostname == "www.backstage-btm.com"
+                and not target.username and not target.password
+                and not target.port and not target.query and not target.fragment
+                and re.fullmatch(r"/agenda/[a-z0-9-]+/", target.path),
+                "Backstage : fiche événement individuelle HTTPS obligatoire")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Backstage : relecture trop ancienne ou future")
+        require(any(
+            isinstance(p, dict) and p.get("url") == spec["url"]
+            and p.get("proofType") == "official-organizer-or-venue"
+            and p.get("checkedAt") == reviewed_at.isoformat()
+            and {"artists","date","venue","genre"}.issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence),
+            "Backstage : preuve officielle datée et détaillée manquante")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(len(ids) == len(spec["artistIds"])
+                and all(a in resolved for a in ids)
+                and all(norm(resolved[a]["name"]).replace(" ", "-") == a
+                        for a in ids)
+                and all(norm(a["name"]).replace(" ", "-") == a["id"]
+                        for a in new_artists),
+                "Backstage : artiste absent, identité ou slug incohérents")
+    elif event.get("venueId") == "jokers-pub-angers":
         require(reviewer == "independent-official-verifier"
                 and reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle",
