@@ -1311,6 +1311,11 @@
       "id": "charcoal",
       "name": "Charcoal",
       "aliases": []
+    },
+    {
+      "id": "sortilege",
+      "name": "Sortilège",
+      "aliases": []
     }
   ],
   "venues": [
@@ -7580,6 +7585,68 @@
       "officialUrl": "https://leforum.cergypontoise.fr/agenda/hard-rock-party",
       "sourceType": "salle",
       "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270115-vaureal-motocultor-tour",
+      "title": "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out",
+      "date": "2027-01-15",
+      "artistIds": [
+        "rhapsody-of-fire",
+        "serious-black",
+        "submasq",
+        "aeon-gods",
+        "rock-out"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/motocultor-across-europe-tour-2027",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270423-vaureal-sortilege",
+      "title": "Sortilège",
+      "date": "2027-04-23",
+      "artistIds": [
+        "sortilege"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Heavy Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/sortilege",
+      "sourceType": "salle",
+      "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Forum",
       "ticketUrl": null,
