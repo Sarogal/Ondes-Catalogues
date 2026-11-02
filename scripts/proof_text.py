@@ -99,7 +99,7 @@ def official_openagenda_grouped_day(event, text):
     if day.weekday() != 5:
         return False
     body = norm(text)
-    expected = (rf"\b{MONTHS[day.month-1]}\s+{day.year}"
+    expected = (rf"\b{norm(MONTHS[day.month-1])}\s+{day.year}"
                 rf"\s+samedi\s+{day.day}\b")
     return bool(re.search(expected, body))
 
