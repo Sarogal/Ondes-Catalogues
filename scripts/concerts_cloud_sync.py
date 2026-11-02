@@ -101,6 +101,40 @@ PILOT_VENUES = {
         "locationUrl": "https://www.openstreetmap.org/api/0.6/way/81704888",
         "locationProofType": "openstreetmap-venue-way"
     },
+    "la-maroquinerie-paris": {
+        "venue": {
+            "id": "la-maroquinerie-paris",
+            "name": "La Maroquinerie",
+            "address": "23 rue Boyer",
+            "postalCode": "75020",
+            "city": "Paris",
+            "department": "75",
+            "region": "Île-de-France",
+            "latitude": 48.86853,
+            "longitude": 2.39206,
+            "geoPrecision": "point nominatif du lieu (OpenStreetMap node 1402597553, coordonnées arrondies)",
+            "geoSource": "https://mapcarta.com/fr/N1402597553"
+        },
+        "officialUrl": "https://www.lamaroquinerie.fr/fr/agenda/view/2212/allt/?of=7",
+        "locationUrl": "https://mapcarta.com/fr/N1402597553"
+    },
+    "la-boule-noire-paris": {
+        "venue": {
+            "id": "la-boule-noire-paris",
+            "name": "La Boule Noire",
+            "address": "120 boulevard de Rochechouart",
+            "postalCode": "75018",
+            "city": "Paris",
+            "department": "75",
+            "region": "Île-de-France",
+            "latitude": 48.88234,
+            "longitude": 2.34028,
+            "geoPrecision": "point nominatif de La Boule Noire, distinct de La Cigale (OpenStreetMap node 357916037, coordonnées arrondies)",
+            "geoSource": "https://mapcarta.com/N357916037"
+        },
+        "officialUrl": "https://laboule-noire.fr/",
+        "locationUrl": "https://mapcarta.com/N357916037"
+    },
     "rock-n-eat-lyon": {
         "venue": {
             "id": "rock-n-eat-lyon",
@@ -362,6 +396,59 @@ GLAZART_VERIFIED = {
         "secondaryProofType": "organizer-ticketing-detail",
         "secondaryCheckedFields": ["artists", "date", "venue", "genre"],
     }
+}
+
+# Two Paris concert venues with FIRST-PARTY event-specific programmes.
+# Maroquinerie: the November 2026 official calendar establishes the year
+# when an individual gig description omits it. No later month inference.
+# La Boule Noire: the show-specific page names headliner, support,
+# complete date, metal genres; the separate first-party homepage gives address.
+PARIS_CLUB_VERIFIED = {
+    "go-c-20261110-paris-allt": {
+        "venueId":"la-maroquinerie-paris",
+        "title":"Allt + Avralize + Bite Down",
+        "date":"2026-11-10",
+        "artistIds":["allt","avralize","bite-down"],
+        "newArtistIds":["allt","avralize","bite-down"],
+        "genres":["Metalcore"],
+        "officialUrl":"https://www.lamaroquinerie.fr/fr/agenda/view/2212/allt/?of=7",
+        "proofs":[
+            ("official-organizer-or-venue",
+             "https://www.lamaroquinerie.fr/fr/agenda/view/2212/allt/?of=7",
+             ("artists","date","venue","genre"))
+        ],
+    },
+    "go-c-20261121-paris-horskh": {
+        "venueId":"la-maroquinerie-paris",
+        "title":"Horskh + We Are Magonia",
+        "date":"2026-11-21",
+        "artistIds":["horskh","we-are-magonia"],
+        "newArtistIds":["we-are-magonia"],
+        "genres":["Metal industriel"],
+        "officialUrl":"https://www.lamaroquinerie.fr/fr/agenda/view/2180/horskh/?of=18",
+        "proofs":[
+            ("official-organizer-or-venue",
+             "https://www.lamaroquinerie.fr/fr/agenda/view/2180/horskh/?of=18",
+             ("artists","venue","genre")),
+            ("first-party-venue-calendar",
+             "https://www.lamaroquinerie.fr/fr/agenda/",
+             ("artists","date","venue"))
+        ],
+    },
+    "go-c-20261115-paris-ice-sealed-eyes": {
+        "venueId":"la-boule-noire-paris",
+        "title":"Ice Sealed Eyes + Eiga",
+        "date":"2026-11-15",
+        "artistIds":["ice-sealed-eyes","eiga"],
+        "newArtistIds":["eiga"],
+        "genres":["Newcore","Metalcore"],
+        "officialUrl":"https://laboule-noire.fr/ice-sealed-eyes/",
+        "proofs":[
+            ("official-organizer-or-venue",
+             "https://laboule-noire.fr/ice-sealed-eyes/",
+             ("artists","date","venue","genre"))
+        ],
+    },
 }
 
 # Allowlist of independently reviewed Trabendo official concert pages.
@@ -764,7 +851,46 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "le-trabendo-paris":
+    if event.get("venueId") in ("la-maroquinerie-paris","la-boule-noire-paris"):
+        spec=PARIS_CLUB_VERIFIED.get(event_id)
+        require(spec is not None
+                and spec["venueId"]==event["venueId"]
+                and reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","artistIds","genres"))
+                and event.get("time") is None
+                and official_url==spec["officialUrl"],
+                "Clubs parisiens : programme, date ou heure hors liste blanche")
+        target=urlsplit(official_url)
+        domain=("www.lamaroquinerie.fr" if event["venueId"]=="la-maroquinerie-paris"
+                else "laboule-noire.fr")
+        require(target.scheme=="https" and target.hostname==domain
+                and target.username is None and target.password is None
+                and target.port is None and target.fragment==""
+                and (target.query in ("","of=7","of=18"))
+                and target.path==urlsplit(spec["officialUrl"]).path,
+                "Clubs parisiens : origine et page individuelle non agréées")
+        reviewed_at=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=reviewed_at<=today,
+                "Clubs parisiens : revue humaine trop ancienne")
+        proofs=spec["proofs"]
+        require(len(evidence)==len(proofs), "Nombre de preuves insuffisant")
+        for kind,url,fields in proofs:
+            require(any(isinstance(p,dict)
+                and p.get("proofType")==kind and p.get("url")==url
+                and p.get("checkedAt")==reviewed_at.isoformat()
+                and set(fields).issubset(set(p.get("checkedFields") or []))
+                for p in evidence),
+                "Clubs parisiens : preuve manquante ou champs exagérés")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and all(i in resolved and
+                        norm(resolved[i]["name"]).replace(" ","-")==i
+                        for i in ids),
+                "Clubs parisiens : nouveaux artistes ou identités ambigus")
+    elif event.get("venueId") == "le-trabendo-paris":
         spec = TRABENDO_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer == "independent-official-verifier"
@@ -1081,7 +1207,7 @@ def merge(reference, current, approvals, today):
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
     venue_approvals = approvals.get("venueApprovals", [])
-    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 8,
+    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 10,
             "Liste d'approbations de salles inattendue ou excessive")
     approved_venues = {x["venue"]["id"]: x for x in venue_approvals
                        if isinstance(x,dict) and isinstance(x.get("venue"),dict)
