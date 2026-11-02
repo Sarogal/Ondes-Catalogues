@@ -1136,6 +1136,26 @@
       "id": "vorga",
       "name": "Vorga",
       "aliases": []
+    },
+    {
+      "id": "lagrimas",
+      "name": "Lagrimas",
+      "aliases": []
+    },
+    {
+      "id": "the-prestige",
+      "name": "The Prestige",
+      "aliases": []
+    },
+    {
+      "id": "toxic-shock",
+      "name": "Toxic Shock",
+      "aliases": []
+    },
+    {
+      "id": "sick-lame-lazy",
+      "name": "Sick Lame & Lazy",
+      "aliases": []
     }
   ],
   "venues": [
@@ -1866,6 +1886,32 @@
       "longitude": 2.3321006,
       "geoPrecision": "point nominatif du théâtre (OpenStreetMap node 4428897899)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/node/4428897899"
+    },
+    {
+      "id": "rock-n-eat-lyon",
+      "name": "Rock n' Eat",
+      "address": "32 quai Arloing",
+      "postalCode": "69009",
+      "city": "Lyon",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.7709758,
+      "longitude": 4.8114869,
+      "geoPrecision": "point nominatif du lieu (OpenStreetMap node 5973017988)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/node/5973017988"
+    },
+    {
+      "id": "la-maison-bleue-strasbourg",
+      "name": "La Maison Bleue",
+      "address": "3 rue de Guebwiller",
+      "postalCode": "67100",
+      "city": "Strasbourg",
+      "department": "67",
+      "region": "Grand Est",
+      "latitude": 48.5595349,
+      "longitude": 7.7680524,
+      "geoPrecision": "point nominatif du lieu (OpenStreetMap node 7812445394)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/node/7812445394"
     }
   ],
   "events": [
@@ -6558,6 +6604,69 @@
       "timeMeaning": "non confirmé",
       "organizer": "Garmonbozia",
       "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261104-lyon-lagrimas-prestige",
+      "title": "Lagrimas + The Prestige",
+      "date": "2026-11-04",
+      "artistIds": [
+        "lagrimas",
+        "the-prestige"
+      ],
+      "venueId": "rock-n-eat-lyon",
+      "genres": [
+        "Post-hardcore",
+        "Screamo"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://shotgun.live/events/lagrimas-the-prestige",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rock'n Eat Live",
+      "ticketUrl": "https://shotgun.live/events/lagrimas-the-prestige",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261111-strasbourg-wake-the-dead",
+      "title": "Wake the Dead + Toxic Shock + Sick Lame & Lazy",
+      "date": "2026-11-11",
+      "artistIds": [
+        "wake-the-dead",
+        "toxic-shock",
+        "sick-lame-lazy"
+      ],
+      "venueId": "la-maison-bleue-strasbourg",
+      "genres": [
+        "Hardcore",
+        "Screamo"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Association Dirty8 / La Maison Bleue",
+      "ticketUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
