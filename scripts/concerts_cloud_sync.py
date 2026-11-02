@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "hydrophone-lorient": {
+        "venue": {
+            "id": "hydrophone-lorient",
+            "name": "Hydrophone",
+            "address": "11 rue Honoré d’Estiennes d’Orves",
+            "postalCode": "56100",
+            "city": "Lorient",
+            "department": "56",
+            "region": "Bretagne",
+            "latitude": 47.7308333333,
+            "longitude": -3.3722222222,
+            "geoPrecision": "coordonnées GPS du site fournies par Hydrophone (47°43’51.0 N, 3°22’20.0 W), approximation du site et non seuil exact de la porte Face A",
+            "geoSource": "https://www.hydrophone.fr/-Pratique-.html"
+        },
+        "officialUrl": "https://www.lorient-agglo.bzh/en-actions/hydrophone/",
+        "locationUrl": "https://www.hydrophone.fr/-Pratique-.html",
+        "locationProofType": "official-venue-gps"
+    },
     "atabal-biarritz": {
         "venue": {
             "id": "atabal-biarritz",
@@ -1041,6 +1059,28 @@ ATABAL_VERIFIED = {
     }
 }
 
+# Hydrophone, Lorient: exact first-party metalcore bill, full year independently
+# checked with the authorized ticket distributor; never infer year from SPIP.
+HYDROPHONE_VERIFIED = {
+    "go-c-20270210-lorient-revnoir-ice-sealed-eyes": {
+        "title": "Revnoir + Ice Sealed Eyes",
+        "date": "2027-02-10",
+        "time": "20:00",
+        "artistIds": [
+            "revnoir",
+            "ice-sealed-eyes"
+        ],
+        "newArtistIds": [],
+        "genres": [
+            "Metalcore"
+        ],
+        "venueId": "hydrophone-lorient",
+        "officialUrl": "https://hydrophone.fr/REVNOIR-ICE-SEALED-EYES.html",
+        "secondaryProofType": "authorized-ticket-distributor-full-date",
+        "secondaryUrl": "https://www.fnacspectacles.com/event/revnoir-sometimes-i-feel-you-sometimes-i-dont-tour-hydrophone-lorient-21627359/"
+    }
+}
+
 # La Carène Brest: only these 2 nominal, non-festival first-party concert bills.
 # The official SPIP agenda and first-party detail must both be checked.
 CARENE_VERIFIED = {
@@ -1395,6 +1435,54 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
                         for i in ids),
                 "Atabal : groupes ou nouvelles identités non conformes")
+    elif event.get("venueId") == "hydrophone-lorient":
+        spec=HYDROPHONE_VERIFIED.get(event_id)
+        require(spec is not None and reviewer=="independent-official-verifier"
+                and event.get("venueId")==spec["venueId"]
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","time","artistIds","genres"))
+                and official_url==spec["officialUrl"],
+                "Hydrophone : affiche non homologuée ou festival")
+        u=urlsplit(official_url)
+        ticket=urlsplit(spec["secondaryUrl"])
+        require(u.scheme=="https" and u.hostname=="hydrophone.fr"
+                and u.path=="/REVNOIR-ICE-SEALED-EYES.html"
+                and not u.query and not u.fragment and
+                not u.username and not u.password and not u.port
+                and ticket.scheme=="https"
+                and ticket.hostname=="www.fnacspectacles.com"
+                and ticket.path.endswith(
+                    "/revnoir-sometimes-i-feel-you-sometimes-i-dont-tour-hydrophone-lorient-21627359/"),
+                "Hydrophone : URL individuelle ou justificatif année changé")
+        reviewed=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=reviewed<=today,
+                "Hydrophone : recoupement trop ancien ou futur")
+        require(len(evidence)==2
+                and {p.get("proofType") for p in evidence if isinstance(p,dict)}
+                    == {"official-organizer-or-venue",
+                        spec["secondaryProofType"]},
+                "Hydrophone : deux sources distinctes datées nécessaires")
+        primary=next((p for p in evidence
+            if isinstance(p,dict) and p.get("proofType")==
+            "official-organizer-or-venue"),{})
+        secondary=next((p for p in evidence
+            if isinstance(p,dict) and p.get("proofType")==
+            spec["secondaryProofType"]),{})
+        require(primary.get("url")==spec["officialUrl"]
+                and primary.get("checkedAt")==reviewed.isoformat()
+                and {"artists","day","month","venue","genre","startTime"}.issubset(set(primary.get("checkedFields") or [])),
+                "Hydrophone : preuve première source incomplète")
+        require(secondary.get("url")==spec["secondaryUrl"]
+                and secondary.get("checkedAt")==reviewed.isoformat()
+                and {"artists","date","year","venue","startTime"}.issubset(set(secondary.get("checkedFields") or []))
+                and secondary.get("dateConfirmed")==spec["date"]
+                and secondary.get("startTimeConfirmed")==spec["time"],
+                "Hydrophone : année 2027 et heure non recoupées sur billetterie")
+        require(new_artists==[] and all(i in known_artist_ids for i in ids)
+                and all(norm(known_artist_ids[i]["name"]).replace(" ","-")==i
+                        for i in ids),
+                "Hydrophone : artistes existants ou noms incohérents")
     elif event.get("venueId") == "la-carene-brest":
         spec=CARENE_VERIFIED.get(event_id)
         require(spec is not None
