@@ -101,6 +101,24 @@ PILOT_VENUES = {
         "locationUrl": "https://www.openstreetmap.org/api/0.6/way/81704888",
         "locationProofType": "openstreetmap-venue-way"
     },
+    "le-forum-vaureal": {
+        "venue": {
+            "id": "le-forum-vaureal",
+            "name": "Le Forum",
+            "address": "95 boulevard de l'Oise",
+            "postalCode": "95490",
+            "city": "Vauréal",
+            "department": "95",
+            "region": "Île-de-France",
+            "latitude": 49.0313663,
+            "longitude": 2.0218937,
+            "geoPrecision": "nœud OpenStreetMap nominatif Le Forum (node 4742610793, adresse et site officiel concordants)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/node/4742610793"
+        },
+        "officialUrl": "https://leforum.cergypontoise.fr/infos-pratiques/venir-au-forum",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/node/4742610793",
+        "locationProofType": "openstreetmap-venue-node"
+    },
     "la-maroquinerie-paris": {
         "venue": {
             "id": "la-maroquinerie-paris",
@@ -448,6 +466,58 @@ PARIS_CLUB_VERIFIED = {
              "https://laboule-noire.fr/ice-sealed-eyes/",
              ("artists","date","venue","genre"))
         ],
+    },
+}
+
+# Five exact first-party concert details at the newly verified Forum venue.
+# Venue OSM node is named Le Forum, has official web/address/phone tags.
+# The Wolves in the Throne Room detail contradicts itself on start time
+# (18:30 header / 20:30 body); do not publish an inferred start.
+FORUM_VERIFIED = {
+    "go-c-20261106-vaureal-senser-psykup": {
+        "title": "Senser + Psykup",
+        "date": "2026-11-06",
+        "artistIds": ["senser","psykup"],
+        "newArtistIds": ["senser"],
+        "genres": ["Rap Rock"],
+        "time": "20:00",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/senser"
+    },
+    "go-c-20261107-vaureal-wolves-throne-room": {
+        "title": "Wolves in the Throne Room + Worm + Final Dose",
+        "date": "2026-11-07",
+        "artistIds": ["wolves-in-the-throne-room","worm","final-dose"],
+        "newArtistIds": ["wolves-in-the-throne-room","worm","final-dose"],
+        "genres": ["Black Metal"],
+        "time": None,
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/wolves-throne-room"
+    },
+    "go-c-20261112-vaureal-mass-hysteria": {
+        "title": "Mass Hysteria",
+        "date": "2026-11-12",
+        "artistIds": ["mass-hysteria"],
+        "newArtistIds": [],
+        "genres": ["Metal"],
+        "time": "20:30",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/mass-hysteria"
+    },
+    "go-c-20270317-vaureal-michael-schenker-group": {
+        "title": "Michael Schenker Group",
+        "date": "2027-03-17",
+        "artistIds": ["michael-schenker-group"],
+        "newArtistIds": [],
+        "genres": ["Hard Rock","Metal"],
+        "time": "19:30",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/michael-schenker-group"
+    },
+    "go-c-20270522-vaureal-hard-rock-party": {
+        "title": "Harsh + Furies + Charcoal",
+        "date": "2027-05-22",
+        "artistIds": ["harsh","furies","charcoal"],
+        "newArtistIds": ["harsh","furies","charcoal"],
+        "genres": ["Hard Rock"],
+        "time": "20:00",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/hard-rock-party"
     },
 }
 
@@ -851,7 +921,47 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") in ("la-maroquinerie-paris","la-boule-noire-paris"):
+    if event.get("venueId") == "le-forum-vaureal":
+        spec=FORUM_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","artistIds","genres","time"))
+                and official_url==spec["officialUrl"],
+                "Le Forum : seulement cinq affiches officielles nominatives agréées")
+        u=urlsplit(official_url)
+        require(u.scheme=="https" and u.hostname=="leforum.cergypontoise.fr"
+                and re.fullmatch(r"/agenda/[a-z0-9-]+",u.path)
+                and u.path==urlsplit(spec["officialUrl"]).path
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "Le Forum : fiche individuelle sous domaine officiel obligatoire")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "Le Forum : vérification humaine trop ancienne")
+        fields={"artists","date","venue","genre"}
+        if spec["time"] is not None:
+            fields.add("startTime")
+        require(len(evidence)==1 and any(
+            isinstance(p,dict)
+            and p.get("url")==spec["officialUrl"]
+            and p.get("proofType")=="official-organizer-or-venue"
+            and p.get("checkedAt")==checked.isoformat()
+            and fields.issubset(set(p.get("checkedFields") or []))
+            for p in evidence),
+                "Le Forum : preuve exacte d'affiche et début manquante")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and all(aid in resolved for aid in ids)
+                and all(norm(resolved[aid]["name"]).replace(" ","-")==aid
+                        for aid in ids),
+                "Le Forum : artiste manquant ou identité non fiable")
+        if event_id=="go-c-20261107-vaureal-wolves-throne-room":
+            require(event["time"] is None,
+                    "Le Forum : deux heures contradictoires pour Wolves")
+    elif event.get("venueId") in ("la-maroquinerie-paris","la-boule-noire-paris"):
         spec=PARIS_CLUB_VERIFIED.get(event_id)
         require(spec is not None
                 and spec["venueId"]==event["venueId"]
@@ -1207,7 +1317,7 @@ def merge(reference, current, approvals, today):
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
     venue_approvals = approvals.get("venueApprovals", [])
-    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 10,
+    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 25,
             "Liste d'approbations de salles inattendue ou excessive")
     approved_venues = {x["venue"]["id"]: x for x in venue_approvals
                        if isinstance(x,dict) and isinstance(x.get("venue"),dict)
@@ -1241,7 +1351,8 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("venue", {}).get("id"),
                                    "reason": str(ex)})
-    for entry in approvals["approvals"][:50]:
+    require(len(approvals["approvals"]) <= 100, "Trop d’approbations en un seul lot")
+    for entry in approvals["approvals"]:
         try:
             incoming = entry.get("event") or {}
             prior_id = incoming.get("id")
