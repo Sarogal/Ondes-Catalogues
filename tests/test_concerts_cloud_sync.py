@@ -1734,6 +1734,45 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertTrue(stats["held"])
                 self.assertEqual(result["events"],BASE["events"])
 
+    def test_cave_poetes_secondary_calendar_cannot_impersonate_venue(self):
+        today=__import__("datetime").date(2026,11,2)
+        variants=("wrong-proof-type","wrong-calendar-date","missing-calendar-artist",
+                  "swapped-proof","third-proof","untrusted-reviewer",
+                  "non-first-party-event")
+        for variant in variants:
+            with self.subTest(variant=variant):
+                q=self.cave_poetes_queue()
+                a=q["approvals"][0]
+                proofs=a["officialEvidence"]
+                if variant=="wrong-proof-type":
+                    proofs[1]["proofType"]="independent-official-verifier"
+                elif variant=="wrong-calendar-date":
+                    proofs[1]["checkedAt"]="2026-10-02"
+                elif variant=="missing-calendar-artist":
+                    proofs[1]["checkedFields"].remove("artists")
+                elif variant=="swapped-proof":
+                    proofs[0]["url"]=proofs[1]["url"]
+                    proofs[1]["url"]="https://caveauxpoetes.com/evenement/babe-haven-latter-muddle/"
+                elif variant=="third-proof":
+                    proofs.append(dict(proofs[1]))
+                elif variant=="untrusted-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                elif variant=="non-first-party-event":
+                    a["event"]["officialUrl"]="https://shotgun.live/events/babe-haven"
+                out,stats=merge(BASE,BASE,q,today)
+                self.assertEqual(stats["newEvents"],0)
+                self.assertEqual(out["events"],BASE["events"])
+                self.assertTrue(stats["held"])
+        # A change to the organizer's calendar is a manual alert; it cannot
+        # authorize anything else in the venue without its own exact allowlist.
+        q=self.cave_poetes_queue()
+        a=q["approvals"][0]
+        a["event"]["id"]="go-c-20261109-roubaix-unlisted-even-with-proof"
+        a["event"]["date"]="2026-11-09"
+        out,stats=merge(BASE,BASE,q,today)
+        self.assertEqual(stats["newEvents"],0)
+        self.assertTrue(stats["held"])
+
     def forum_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, FORUM_VERIFIED
         pilot=PILOT_VENUES["le-forum-vaureal"]
