@@ -936,6 +936,18 @@ def validate_venue_approval(row, today):
 # Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
+    "go-c-20261107-cenon-gwendoline": {
+        "title": "Gwendoline",
+        "date": "2026-11-07",
+        "artistIds": [
+            "gwendoline"
+        ],
+        "genres": [
+            "Post Punk"
+        ],
+        "time": "20:30",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/gwendoline"
+    },
     "go-c-20261121-cenon-tagada-jones": {
         "title": "Tagada Jones + Les Tambours du Bronx",
         "date": "2026-11-21",
