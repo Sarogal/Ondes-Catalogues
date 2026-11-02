@@ -1331,6 +1331,31 @@
       "id": "muddle",
       "name": "Muddle",
       "aliases": []
+    },
+    {
+      "id": "the-cracked-heads",
+      "name": "The Cracked Heads",
+      "aliases": []
+    },
+    {
+      "id": "the-psychotic-unicorns",
+      "name": "The Psychotic Unicorns",
+      "aliases": []
+    },
+    {
+      "id": "noble-rot",
+      "name": "Noble Rot",
+      "aliases": []
+    },
+    {
+      "id": "the-spitters",
+      "name": "The Spitters",
+      "aliases": []
+    },
+    {
+      "id": "panic-lights",
+      "name": "Panic Lights",
+      "aliases": []
     }
   ],
   "venues": [
@@ -7709,6 +7734,67 @@
       "time": "18:30",
       "timeMeaning": "début du concert",
       "organizer": "La Cave aux Poètes",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-secret-place-cracked-heads",
+      "title": "The Cracked Heads + The Psychotic Unicorns + Noble Rot",
+      "date": "2026-12-05",
+      "artistIds": [
+        "the-cracked-heads",
+        "the-psychotic-unicorns",
+        "noble-rot"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Garage Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/event-details/the-cracked-heads-the-psychotic-unicorns-noble-rot",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "TAF / Secret Place",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261206-secret-place-the-spitters",
+      "title": "The Spitters + Panic Lights",
+      "date": "2026-12-06",
+      "artistIds": [
+        "the-spitters",
+        "panic-lights"
+      ],
+      "venueId": "secret-place-saint-jean-de-vedas",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.toutafond.com/event-details/la-taf-boomerang-presentent-the-spitters-panic-lights",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "TAF / Secret Place",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
