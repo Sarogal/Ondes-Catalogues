@@ -1191,6 +1191,11 @@
       "id": "guttural-slug",
       "name": "Guttural Slug",
       "aliases": []
+    },
+    {
+      "id": "black-sabbitch",
+      "name": "Black Sabbitch",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6806,6 +6811,65 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://www.glazart.com/24-03-27-concert-party-cannon-x-internal-bleeding/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Garmonbozia",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-paris-lagrimas",
+      "title": "Lagrimas",
+      "date": "2026-11-06",
+      "artistIds": [
+        "lagrimas"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Hardcore",
+        "Screamo"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/06-11-26-concert-lagrimas/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Glazart",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261130-paris-black-sabbitch",
+      "title": "Black Sabbitch",
+      "date": "2026-11-30",
+      "artistIds": [
+        "black-sabbitch"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Doom"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/30-11-26-concert-black-sabbitch/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
