@@ -1641,6 +1641,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                "harsh":"Harsh","furies":"Furies","charcoal":"Charcoal"}
         approval=[]
         for ident,spec in FORUM_VERIFIED.items():
+            if ident in ("go-c-20270115-vaureal-motocultor-tour",
+                         "go-c-20270423-vaureal-sortilege"):
+                continue
             check=["artists","date","venue","genre"]
             if spec["time"] is not None:check.append("startTime")
             approval.append({
@@ -1660,6 +1663,105 @@ class ConcertsCloudSyncTests(unittest.TestCase):
             })
         return {"schema":"grossesondes.concert.approvals.v1",
                 "venueApprovals":[venue],"approvals":approval}
+
+    def forum_two_new_queue(self):
+        from concerts_cloud_sync import FORUM_VERIFIED
+        q=self.forum_queue()
+        q["approvals"]=[]
+        for ident in ("go-c-20270115-vaureal-motocultor-tour",
+                      "go-c-20270423-vaureal-sortilege"):
+            spec=FORUM_VERIFIED[ident]
+            proofs=[
+                {"url":spec["officialUrl"],
+                 "proofType":"official-organizer-or-venue",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["artists","date","venue","genre","startTime"]},
+                {"url":spec["secondaryUrl"],
+                 "proofType":spec["secondaryProofType"],
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["artists","date","venue"]},
+            ]
+            new=([{"id":"sortilege","name":"Sortilège"}] if
+                 ident.endswith("sortilege") else [])
+            q["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":proofs,
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":spec["time"],"artistIds":list(spec["artistIds"]),
+                    "venueId":"le-forum-vaureal","genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"Le Forum"},
+                "newArtists":new
+            })
+        return q
+
+    def test_forum_two_2027_acts_published_with_correct_full_artist_names(self):
+        day=__import__("datetime").date(2026,11,2)
+        q=self.forum_two_new_queue()
+        out,stats=merge(BASE,BASE,q,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],1)
+        e={x["id"]:x for x in out["events"]}
+        mot=e["go-c-20270115-vaureal-motocultor-tour"]
+        self.assertEqual(mot["title"],
+            "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out")
+        self.assertEqual(mot["artistIds"],
+            ["rhapsody-of-fire","serious-black","submasq","aeon-gods","rock-out"])
+        self.assertEqual((mot["date"],mot["time"],mot["genres"]),
+                         ("2027-01-15","19:00",["Metal"]))
+        sor=e["go-c-20270423-vaureal-sortilege"]
+        self.assertEqual((sor["title"],sor["artistIds"],sor["date"],sor["time"],
+                          sor["genres"]),("Sortilège",["sortilege"],"2027-04-23",
+                                          "20:30",["Heavy Metal"]))
+        self.assertEqual([x["name"] for x in out["artists"][-1:]],["Sortilège"])
+        same,stats=merge(BASE,out,q,day)
+        self.assertEqual((stats["newEvents"],stats["newArtists"],
+                          stats["newVenues"]),(0,0,0))
+        self.assertEqual(same,out)
+
+    def test_forum_2027_forged_lineups_secondary_evidence_and_clocks_are_held(self):
+        day=__import__("datetime").date(2026,11,2)
+        for variant in ("submask-typo","missed-rock-out","incorrect-date",
+                        "wrong-clock","no-organizer-proof","fake-promoter-proof",
+                        "missing-artist","wrong-heavy-genre","artist-not-verified",
+                        "false-url","untrusted-reviewer"):
+            with self.subTest(variant=variant):
+                q=self.forum_two_new_queue()
+                a=q["approvals"][0]
+                b=q["approvals"][1]
+                q["approvals"]=[b] if variant in ("wrong-heavy-genre",
+                    "artist-not-verified") else [a]
+                if variant=="submask-typo":
+                    a["event"]["title"]=a["event"]["title"].replace("Submasq","Submask")
+                elif variant=="missed-rock-out":
+                    a["event"]["artistIds"].remove("rock-out")
+                elif variant=="incorrect-date":
+                    a["event"]["date"]="2027-01-16"
+                elif variant=="wrong-clock":
+                    a["event"]["time"]="18:30"
+                elif variant=="no-organizer-proof":
+                    a["officialEvidence"].pop()
+                elif variant=="fake-promoter-proof":
+                    a["officialEvidence"][1]["url"]="https://unknown.example/tour"
+                elif variant=="missing-artist":
+                    a["event"]["artistIds"][2]="submask"
+                elif variant=="wrong-heavy-genre":
+                    b["event"]["genres"]=["Electro"]
+                elif variant=="artist-not-verified":
+                    b["newArtists"]=[{"id":"sortilege","name":"Other Band"}]
+                elif variant=="false-url":
+                    a["event"]["officialUrl"]="https://evil.example/agenda/tour"
+                elif variant=="untrusted-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                out,stats=merge(BASE,BASE,q,day)
+                self.assertEqual(stats["newEvents"],0)
+                self.assertTrue(stats["held"])
+                self.assertEqual(out["events"],BASE["events"])
 
     def test_forum_real_named_osm_node_and_five_concerts_append_without_collisions(self):
         day=__import__("datetime").date(2026,11,2)
