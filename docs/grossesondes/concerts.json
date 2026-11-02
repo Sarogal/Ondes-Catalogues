@@ -1196,6 +1196,21 @@
       "id": "black-sabbitch",
       "name": "Black Sabbitch",
       "aliases": []
+    },
+    {
+      "id": "ghouldozer",
+      "name": "Ghouldozer",
+      "aliases": []
+    },
+    {
+      "id": "xaon",
+      "name": "Xaon",
+      "aliases": []
+    },
+    {
+      "id": "vortex",
+      "name": "Vortex",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6875,6 +6890,67 @@
       "timeMeaning": "non confirmé",
       "organizer": "Garmonbozia",
       "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261110-barberaz-wake-the-dead",
+      "title": "Wake the Dead + Ghouldozer",
+      "date": "2026-11-10",
+      "artistIds": [
+        "wake-the-dead",
+        "ghouldozer"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Hardcore",
+        "Death Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/wake-the-dead-ft-ghouldozer-hardcore-death-metal",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/wake-the-dead-ft-ghouldozer-hardcore-death-metal",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261206-barberaz-xaon",
+      "title": "Xaon + Vortex",
+      "date": "2026-12-06",
+      "artistIds": [
+        "xaon",
+        "vortex"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Death Metal symphonique"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/xaon-x-vortex-symphonic-death-metal-canada",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/xaon-x-vortex-symphonic-death-metal-canada",
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
