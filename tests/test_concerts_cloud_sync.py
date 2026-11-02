@@ -229,8 +229,10 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         approvals=[]
         for event_id, spec in GLAZART_VERIFIED.items():
             if event_id in ("go-c-20261106-paris-lagrimas",
-                            "go-c-20261130-paris-black-sabbitch"):
-                continue  # Existing two-bill Glazart fixture remains stable.
+                            "go-c-20261130-paris-black-sabbitch",
+                            "go-c-20261104-paris-eyehategod",
+                            "go-c-20261114-paris-the-vintage-caravan"):
+                continue  # Earlier two-bill fixture remains stable.
             approvals.append({
                 "reviewDecision":"approved",
                 "reviewedBy":"independent-official-verifier",
@@ -411,6 +413,106 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(stats["newEvents"],1)
                 self.assertEqual(len(stats["held"]),1)
                 self.assertEqual(result["events"][-1]["title"],"Lagrimas")
+
+
+    def glazart_new_lineups_queue(self):
+        from concerts_cloud_sync import GLAZART_VERIFIED
+        queue=self.glazart_queue()
+        queue["approvals"]=[]
+        extra_names={"eyehategod":"Eyehategod","deafkids":"Deafkids"}
+        for ident in ("go-c-20261104-paris-eyehategod",
+                      "go-c-20261114-paris-the-vintage-caravan"):
+            spec=GLAZART_VERIFIED[ident]
+            primary_fields=spec.get("primaryCheckedFields",
+                                     ["artists","date","venue","genre"])
+            queue["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":list(primary_fields)
+                },{
+                    "url":spec["secondaryUrl"],
+                    "proofType":spec["secondaryProofType"],
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":list(spec["secondaryCheckedFields"])
+                }],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":None,"artistIds":list(spec["artistIds"]),
+                    "venueId":"glazart-paris","genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"Glazart"
+                },
+                "newArtists":[{"id":key,"name":extra_names[key]}
+                    for key in spec["newArtistIds"]]
+            })
+        return queue
+
+    def test_glazart_two_documented_lineups_publish_without_guest_artists(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.glazart_new_lineups_queue()
+        result,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],2)
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual([e["title"] for e in result["events"][-2:]],
+                         ["Eyehategod + Deafkids","The Vintage Caravan + Damantra"])
+        self.assertEqual(result["events"][-2]["artistIds"],
+                         ["eyehategod","deafkids"])
+        self.assertTrue(all("guest" not in str(e["artistIds"])
+                            for e in result["events"][-2:]))
+        self.assertTrue(all(e["time"] is None for e in result["events"][-2:]))
+        validate_catalogue(result)
+        self.assertEqual(result["events"][:127],BASE["events"])
+        repeated,second=merge(BASE,result,queue,day)
+        self.assertEqual(repeated,result)
+        self.assertEqual(second["newEvents"],0)
+        self.assertEqual(second["alreadyPublished"],2)
+
+    def test_glazart_vintage_ticket_and_eyehategod_guest_proofs_are_exact(self):
+        day=__import__("datetime").date(2026,11,2)
+        for variant in ("invented-guest","missing-promo","wrong-promo",
+                        "fake-all-artists-on-venue","missing-promo-artists",
+                        "wrong-primary-url","extra-unknown-date",
+                        "fake-start","wrong-second-kind","unknown-event"):
+            with self.subTest(variant=variant):
+                queue=self.glazart_new_lineups_queue()
+                vintage=queue["approvals"][1]
+                e=vintage["event"]
+                if variant=="invented-guest":
+                    e["artistIds"][1]="guest"
+                elif variant=="missing-promo":
+                    vintage["officialEvidence"].pop()
+                elif variant=="wrong-promo":
+                    vintage["officialEvidence"][1]["url"]="https://example.org/fake"
+                elif variant=="fake-all-artists-on-venue":
+                    vintage["officialEvidence"][0]["checkedFields"]=[
+                        "artists","date","venue","genre"]
+                    # Missing the explicit "leadArtist" field is a failure.
+                elif variant=="missing-promo-artists":
+                    vintage["officialEvidence"][1]["checkedFields"]=[
+                        "date","venue","genre"]
+                elif variant=="wrong-primary-url":
+                    e["officialUrl"]="https://evil.test/14-11-26-concert-the-vintage-caravan/"
+                    vintage["officialEvidence"][0]["url"]=e["officialUrl"]
+                elif variant=="extra-unknown-date":
+                    e["date"]="2026-12-14"
+                elif variant=="fake-start":
+                    e["time"]="20:00"
+                elif variant=="wrong-second-kind":
+                    vintage["officialEvidence"][1]["proofType"]="organizer-submitted-partner"
+                elif variant=="unknown-event":
+                    e["id"]="go-c-20261114-paris-fake"
+                result,stats=merge(BASE,BASE,queue,day)
+                self.assertEqual(stats["newEvents"],1)
+                self.assertEqual(len(stats["held"]),1)
+                self.assertFalse(any(e["id"]=="go-c-20261114-paris-the-vintage-caravan"
+                                  for e in result["events"]))
 
     def regional_reviewed_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, REGIONAL_APPROVED
