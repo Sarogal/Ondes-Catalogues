@@ -1071,6 +1071,21 @@
       "id": "witchorious",
       "name": "Witchorious",
       "aliases": []
+    },
+    {
+      "id": "charles-de-goal",
+      "name": "Charles de Goal",
+      "aliases": []
+    },
+    {
+      "id": "aurore",
+      "name": "Aurore",
+      "aliases": []
+    },
+    {
+      "id": "brutaliste",
+      "name": "Brutaliste",
+      "aliases": []
     }
   ],
   "venues": [
@@ -1762,6 +1777,32 @@
       "longitude": -0.5369,
       "geoPrecision": "emplacement de la salle (source externe)",
       "geoSource": "https://mapcarta.com/fr/W126923035"
+    },
+    {
+      "id": "jokers-pub-angers",
+      "name": "Le Joker's Pub",
+      "address": "32 rue Saint-Laud",
+      "postalCode": "49100",
+      "city": "Angers",
+      "department": "49",
+      "region": "Pays de la Loire",
+      "latitude": 47.47219,
+      "longitude": -0.55304,
+      "geoPrecision": "point du lieu (OpenStreetMap node 4789000416)",
+      "geoSource": "https://mapcarta.com/fr/N4789000416"
+    },
+    {
+      "id": "le-brin-de-zinc-barberaz",
+      "name": "Le Brin de Zinc",
+      "address": "3 route de la Peysse",
+      "postalCode": "73000",
+      "city": "Barberaz",
+      "department": "73",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.5613,
+      "longitude": 5.94761,
+      "geoPrecision": "point du lieu (OpenStreetMap node 1979372261)",
+      "geoSource": "https://mapcarta.com/N1979372261"
     }
   ],
   "events": [
@@ -6173,6 +6214,67 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-angers-charles-de-goal",
+      "title": "Charles de Goal",
+      "date": "2026-11-27",
+      "artistIds": [
+        "charles-de-goal"
+      ],
+      "venueId": "jokers-pub-angers",
+      "genres": [
+        "Punk électronique",
+        "Cold Wave"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.jokerspubangers.com/jokers-concert-programmation-charles-goal-1702.html",
+      "sourceType": "salle",
+      "time": "21:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Joker's Pub",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-angers-aurore-brutaliste",
+      "title": "Aurore + Brutaliste",
+      "date": "2026-12-11",
+      "artistIds": [
+        "aurore",
+        "brutaliste"
+      ],
+      "venueId": "jokers-pub-angers",
+      "genres": [
+        "Hardcore mélodique",
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.jokerspubangers.com/jokers-concert-programmation-aurore-+-brutaliste-1668.html",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Joker's Pub",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
