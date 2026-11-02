@@ -22,6 +22,8 @@ on:
   # Atabal Biarritz : relance après la revue signée (GrossesOndes PR #90)
   # et validation publique stricte (Ondes-Catalogues PR #49) du 02/11/2026.
   # Publier uniquement les trois concerts approuvés, sans heure inférée.
+  # Sync après approbation indépendante de Hydrophone Face A et du concert
+  # Revnoir + Ice Sealed Eyes, 2027-02-10 (PR privée #97, publique #51).
   schedule:
     - cron: '17 */3 * * *'
   push:
