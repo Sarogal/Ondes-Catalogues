@@ -214,9 +214,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 }],
                 "event":{
                     "id":event_id,"title":expected["title"],"date":expected["date"],
-                    "time":None,"artistIds":expected["artistIds"],
+                    "time":None,"artistIds":list(expected["artistIds"]),
                     "venueId":"le-brin-de-zinc-barberaz",
-                    "genres":expected["genres"],"status":"confirmed",
+                    "genres":list(expected["genres"]),"status":"confirmed",
                     "officialUrl":expected["ticketUrl"],"sourceType":"organisateur",
                     "organizer":"Le Brin de Zinc","ticketUrl":expected["ticketUrl"]
                 },
