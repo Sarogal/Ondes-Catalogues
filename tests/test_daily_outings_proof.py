@@ -73,6 +73,49 @@ class DailyProofTests(unittest.TestCase):
             "city": "Goussainville", "venue": "Médiathèque municipale François Mauriac",
             "lat": 49.035198, "lng": 2.45797})[0])
 
+
+    def test_openagenda_calendar_dates_under_month_headings(self):
+        from proof_text import official_openagenda_grouped_day
+        common={
+          "source_url":"https://openagenda.com/fr/lecture-publique/events/5049582_eveil-musical-1255167",
+          "date_start":"2026-11-28","date_end":"2026-11-28"}
+        html=("Eveil musical Novembre 2026 Samedi 28 11:00 - 12:00 "
+              "Décembre 2026 Samedi 19 11:00 - 12:00")
+        self.assertTrue(official_openagenda_grouped_day(common,html))
+        self.assertTrue(official_openagenda_grouped_day(
+            dict(common,date_start="2026-12-19",date_end="2026-12-19"),html))
+        self.assertFalse(official_openagenda_grouped_day(
+            dict(common,date_start="2026-11-21",date_end="2026-11-21"),html))
+        self.assertFalse(official_openagenda_grouped_day(
+            common,html.replace("Novembre 2026","Novembre 2025")))
+        self.assertFalse(official_openagenda_grouped_day(
+            dict(common,source_url="https://example.org/"),html))
+
+    def test_openagenda_0_to_6_age_range_verified(self):
+        e = {"age_min":0,"age_max":6}
+        self.assertTrue(age_is_written(e,"Sur inscription, de 0-6 ans, accompagnés de leurs parents."))
+        self.assertFalse(age_is_written(e,"Sur inscription, de 2-6 ans, accompagnés."))
+        self.assertFalse(age_is_written({"age_min":0,"age_max":8},
+                       "Sur inscription, de 0-6 ans, accompagnés."))
+
+    def test_openagenda_recurrence_full_independent_proof(self):
+        from proof_text import verify_event
+        venue={
+          "city":"Goussainville","venue":"Médiathèque municipale François Mauriac",
+          "lat":49.0355,"lng":2.461,"title":"Éveil musical",
+          "source_url":"https://openagenda.com/fr/lecture-publique/events/5049582_eveil-musical-1255167",
+          "time":"11:00–12:00","date_start":"2026-11-28",
+          "date_end":"2026-11-28","age_min":0,"age_max":6}
+        page=("<html><head><title>Éveil musical | Médiathèques de Roissy</title></head>"
+              "<body><h1>Éveil musical</h1><h2>Novembre 2026</h2>"
+              "<p>Samedi 28</p><p>11:00 - 12:00</p>"
+              "<h2>Décembre 2026</h2><p>Samedi 19</p><p>11:00 - 12:00</p>"
+              "<p>Médiathèque municipale François Mauriac, Goussainville</p>"
+              "<p>Sur inscription, de 0-6 ans, accompagnés de leurs parents.</p></body></html>")
+        with patch("proof_text.read",return_value=(page,"")):
+            ok,reason=verify_event(venue,[])
+        self.assertTrue(ok,reason)
+
     def test_nantes_same_month_series(self):
         self.assertTrue(consecutive_official_dates(
             "VACANCES PRINTEMPS 2027 DU 17 AU 24 AVRIL",

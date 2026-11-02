@@ -79,6 +79,31 @@ def consecutive_official_dates(text,start_iso,end_iso):
                     rf"au {b.day} {MONTHS[b.month-1]}\b")
     return season and bool(re.search(expression,body))
 
+def official_openagenda_grouped_day(event, text):
+    """Accept an explicitly dated occurrence inside a month/year heading.
+
+    OpenAgenda sometimes displays "Novembre 2026" followed by "Samedi 28"
+    instead of printing "28 novembre 2026". This exception is deliberately
+    restricted to the verified official recurring-series URL and single-day
+    events; it cannot validate an arbitrary date inferred from a broad range.
+    """
+    if (event.get("source_url") !=
+        "https://openagenda.com/fr/lecture-publique/events/5049582_eveil-musical-1255167"):
+        return False
+    if event.get("date_start") != event.get("date_end"):
+        return False
+    try:
+        day = date.fromisoformat(event["date_start"])
+    except (ValueError, TypeError, KeyError):
+        return False
+    if day.weekday() != 5:
+        return False
+    body = norm(text)
+    expected = (rf"\b{norm(MONTHS[day.month-1])}\s+{day.year}"
+                rf"\s+samedi\s+{day.day}\b")
+    return bool(re.search(expected, body))
+
+
 def official_philharmonie_section(event):
     """La même programmation officielle affiche l'année et le prix près du titre."""
     allowed=("29702-sur-les-pas-de-simeon","29703-au-fil-deleau",
@@ -152,6 +177,11 @@ def age_is_written(event,text):
             confirmed=confirmed or bool(re.search(r"\b12\s+mois\b",body))
     else:
         return False
+    if minimum == 0 and maximum == 6:
+        # The official organizer can write "de 0-6 ans" without repeating
+        # the word "ans" immediately after zero.
+        confirmed = confirmed or bool(
+            re.search(r"\b0\s*[-–—]\s*6\s+ans\b", text, re.IGNORECASE))
     if maximum is not None:
         if isinstance(maximum,bool) or not isinstance(maximum,(int,float)):
             return False
@@ -196,6 +226,8 @@ def verify_event(event,originals):
               present_date(text,event["date_end"]))
     if not dates_ok and urlparse(event["source_url"]).hostname=="www.theatre-jeanne.com":
         dates_ok=consecutive_official_dates(text,event["date_start"],event["date_end"])
+    if not dates_ok:
+        dates_ok=official_openagenda_grouped_day(event,text)
     related=""
     if not dates_ok or not price_is_written(event,text):
         related=official_philharmonie_section(event)
