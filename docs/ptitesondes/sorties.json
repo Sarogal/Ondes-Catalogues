@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-01T20:57:58+01:00",
+  "updated_at": "2026-11-02T12:09:52+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -10809,6 +10809,27 @@
       "age_label": "Dès 12 mois, accompagné d'un adulte",
       "price": "Gratuit (sur inscription, carte MPT obligatoire)",
       "description": "Date, horaires et lieu contrôlés auprès de l'organisateur. Consultez la source officielle pour le programme détaillé et les conditions de participation."
+    },
+    {
+      "id": "cabries-letrange-histoire-de-peter-2027-02-17",
+      "title": "L’étrange histoire de Peter",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2027-02-17",
+      "date_end": "2027-02-17",
+      "time": "17:00",
+      "city": "Cabriès",
+      "department": "Bouches-du-Rhône (13)",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "venue": "Auditorium Pierre Malbosc",
+      "description": "Date, horaires et lieu contrôlés auprès de l'organisateur. Consultez la source officielle pour le programme détaillé et les conditions de participation.",
+      "lat": 43.440834,
+      "lng": 5.381883,
+      "source_url": "https://www.cabries.fr/agenda/conte-musical-jeune-public-letrange-histoire-de-peter/",
+      "source_label": "Commune de Cabriès – agenda officiel",
+      "verified_at": "2026-11-02",
+      "geo_precision": "venue",
+      "geo_verified_at": "2026-11-02"
     }
   ]
 }
