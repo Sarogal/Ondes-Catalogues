@@ -1086,6 +1086,31 @@
       "id": "brutaliste",
       "name": "Brutaliste",
       "aliases": []
+    },
+    {
+      "id": "noveria",
+      "name": "Noveria",
+      "aliases": []
+    },
+    {
+      "id": "tarchon-fist",
+      "name": "Tarchon Fist",
+      "aliases": []
+    },
+    {
+      "id": "wedingoth",
+      "name": "Wedingoth",
+      "aliases": []
+    },
+    {
+      "id": "fvzz-popvli",
+      "name": "Fvzz Popvli",
+      "aliases": []
+    },
+    {
+      "id": "ancient-settlers",
+      "name": "Ancient Settlers",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6276,6 +6301,131 @@
       "timeMeaning": "début du concert",
       "organizer": "Le Joker's Pub",
       "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261105-barberaz-noveria",
+      "title": "Noveria + Tarchon Fist + Wedingoth",
+      "date": "2026-11-05",
+      "artistIds": [
+        "noveria",
+        "tarchon-fist",
+        "wedingoth"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Metal progressif",
+        "Power Metal",
+        "Heavy Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/noveria-x-tarchon-fist-x-wedingoth-power-metal-progressif-italie-x-france",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/noveria-x-tarchon-fist-x-wedingoth-power-metal-progressif-italie-x-france",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261109-barberaz-fvzz-popvli",
+      "title": "Fvzz Popvli",
+      "date": "2026-11-09",
+      "artistIds": [
+        "fvzz-popvli"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Stoner Rock",
+        "Garage Punk",
+        "Heavy Psych"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/fvzz-popvli-heavy-psych-garage-punk-stoner-rock-italie",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/fvzz-popvli-heavy-psych-garage-punk-stoner-rock-italie",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-barberaz-ancient-settlers",
+      "title": "Ancient Settlers",
+      "date": "2026-11-12",
+      "artistIds": [
+        "ancient-settlers"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Death Metal mélodique",
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/ancient-settlers-death-metal-melodique-metalcore-venezuela-espagne",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/ancient-settlers-death-metal-melodique-metalcore-venezuela-espagne",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261115-barberaz-moscow-death-brigade",
+      "title": "Moscow Death Brigade",
+      "date": "2026-11-15",
+      "artistIds": [
+        "moscow-death-brigade"
+      ],
+      "venueId": "le-brin-de-zinc-barberaz",
+      "genres": [
+        "Punk",
+        "Rap",
+        "Electro"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.billetweb.fr/moscow-death-brigade1",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Brin de Zinc",
+      "ticketUrl": "https://www.billetweb.fr/moscow-death-brigade1",
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
