@@ -1371,6 +1371,16 @@
       "id": "gwendoline",
       "name": "Gwendoline",
       "aliases": []
+    },
+    {
+      "id": "joobieseaz",
+      "name": "Joobieseaz",
+      "aliases": []
+    },
+    {
+      "id": "belljars",
+      "name": "Belljars",
+      "aliases": []
     }
   ],
   "venues": [
@@ -8017,6 +8027,36 @@
       "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261216-roubaix-joobieseaz-belljars",
+      "title": "Joobieseaz + Belljars",
+      "date": "2026-12-16",
+      "artistIds": [
+        "joobieseaz",
+        "belljars"
+      ],
+      "venueId": "la-cave-aux-poetes-roubaix",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://caveauxpoetes.com/evenement/joobieseaz/",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Cave aux Poètes",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
