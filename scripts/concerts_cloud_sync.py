@@ -1515,6 +1515,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         resolved.update(added)
         require(all(aid in resolved for aid in ids)
                 and all(norm(resolved[aid]["name"]).replace(" ", "-") == aid
+                        or (aid == "m-l" and resolved[aid]["name"] == "MØL")
                         for aid in ids)
                 and all(norm(a["name"]).replace(" ", "-") == a["id"]
                         for a in new_artists),
