@@ -1366,6 +1366,11 @@
       "id": "die-arzte",
       "name": "Die Ärzte",
       "aliases": []
+    },
+    {
+      "id": "gwendoline",
+      "name": "Gwendoline",
+      "aliases": []
     }
   ],
   "venues": [
@@ -7981,6 +7986,35 @@
       "officialUrl": "https://lerocherdepalmer.fr/agenda/uuhai",
       "sourceType": "salle",
       "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-cenon-gwendoline",
+      "title": "Gwendoline",
+      "date": "2026-11-07",
+      "artistIds": [
+        "gwendoline"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/gwendoline",
+      "sourceType": "salle",
+      "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Rocher de Palmer",
       "ticketUrl": null,
