@@ -1005,7 +1005,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "secret-place-saint-jean-de-vedas" and event_id in SECRET_PLACE_DECEMBER_VERIFIED:
+    if event.get("venueId") == "secret-place-saint-jean-de-vedas":
         spec=SECRET_PLACE_DECEMBER_VERIFIED[event_id]
         require(reviewer=="independent-official-verifier"
                 and event.get("sourceType")=="salle"
