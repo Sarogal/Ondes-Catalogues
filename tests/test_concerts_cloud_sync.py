@@ -241,7 +241,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                     "url":spec["venueCalendar"],
                     "proofType":"first-party-venue-calendar",
                     "checkedAt":"2026-11-02",
-                    "checkedFields":["artists","date","venue","genre"]
+                    "checkedFields":(["artists","date","venue"] if
+                                     spec["venueId"]=="rock-n-eat-lyon"
+                                     else ["artists","date","venue","genre"])
                 }],
                 "event":{
                     "id":ident,"title":spec["title"],"date":spec["date"],
@@ -292,7 +294,8 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         for variant in ("wrong-date","wrong-artist","wrong-ticket",
                         "fake-time","different-genre","other-reviewer",
                         "wrong-calendar","old-proof","wrong-pin",
-                        "not-named-event","missing-proof"):
+                        "not-named-event","missing-proof",
+                        "ticket-genre-unverified"):
             with self.subTest(variant=variant):
                 queue=copy.deepcopy(base)
                 row=queue["approvals"][0]
@@ -321,6 +324,8 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                     e["id"]="go-c-20261107-lyon-guessed"
                 elif variant=="missing-proof":
                     row["officialEvidence"].pop()
+                elif variant=="ticket-genre-unverified":
+                    row["officialEvidence"][0]["checkedFields"].remove("genre")
                 output,stats=merge(BASE,BASE,queue,day)
                 self.assertTrue(stats["held"])
                 self.assertEqual(stats["newEvents"],1)
