@@ -12,6 +12,8 @@ on:
       - 'tests/test_grosses_generic_roster.py'
   schedule:
     - cron: '47 10 * * *'
+    # Deuxième passage quotidien : GitHub peut retarder ou manquer un cron.
+    - cron: '45 17 * * *'
   workflow_dispatch:
     inputs:
       mode:
