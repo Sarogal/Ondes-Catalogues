@@ -1619,6 +1619,116 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(updated["events"],seeded["events"])
                 self.assertEqual(updated["artists"],seeded["artists"])
 
+    def secret_place_december_queue(self):
+        from concerts_cloud_sync import SECRET_PLACE_DECEMBER_VERIFIED
+        names={
+            "the-cracked-heads":"The Cracked Heads",
+            "the-psychotic-unicorns":"The Psychotic Unicorns",
+            "noble-rot":"Noble Rot",
+            "the-spitters":"The Spitters",
+            "panic-lights":"Panic Lights",
+        }
+        rows=[]
+        for ident,spec in SECRET_PLACE_DECEMBER_VERIFIED.items():
+            rows.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[
+                    {"url":spec["officialUrl"],
+                     "proofType":"official-organizer-or-venue",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["artists","date","venue"]},
+                    {"url":spec["genreUrl"],
+                     "proofType":"editorial-genre-context",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["artists","date","venue","genre"]}
+                ],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":spec["time"],"artistIds":list(spec["artistIds"]),
+                    "venueId":"secret-place-saint-jean-de-vedas",
+                    "genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"TAF / Secret Place",
+                },
+                "newArtists":[{"id":aid,"name":names[aid]}
+                               for aid in spec["newArtistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":[],"approvals":rows}
+
+    def test_secret_place_two_punk_bills_verified_without_fake_concert_start(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.secret_place_december_queue()
+        out,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual((stats["newEvents"],stats["newArtists"],
+                          stats["newVenues"]),(2,5,0))
+        self.assertEqual(len(out["events"]),len(BASE["events"])+2)
+        self.assertEqual(out["events"][:len(BASE["events"])],BASE["events"])
+        self.assertEqual(out["venues"],BASE["venues"])
+        new=out["events"][-2:]
+        self.assertEqual([(e["date"],e["title"],e["time"]) for e in new],
+            [("2026-12-05","The Cracked Heads + The Psychotic Unicorns + Noble Rot",None),
+             ("2026-12-06","The Spitters + Panic Lights",None)])
+        self.assertEqual([a["name"] for a in out["artists"][-5:]],
+                         ["The Cracked Heads","The Psychotic Unicorns","Noble Rot",
+                          "The Spitters","Panic Lights"])
+        repeated,again=merge(BASE,out,queue,day)
+        self.assertEqual(again["newEvents"],0)
+        self.assertEqual(again["newArtists"],0)
+        self.assertEqual(repeated,out)
+
+    def test_secret_place_only_exact_punk_events_sources_and_identity_pass(self):
+        day=__import__("datetime").date(2026,11,2)
+        for variant in ("invented-calendar-clock","fake-punk-genre","missing-panic",
+                        "wrong-date","wrong-domain","missing-genre-proof",
+                        "fake-genre-proof-url","wrong-proof-type","primary-pretends-genre",
+                        "primary-pretends-clock","missing-source-date","wrong-reviewer",
+                        "wrong-artist-name","unlisted-event","calendar-only"):
+            for idx in (0,1):
+                with self.subTest(variant=variant,event=idx):
+                    q=self.secret_place_december_queue()
+                    row=q["approvals"][idx]
+                    q["approvals"]=[row]
+                    e=row["event"]
+                    primary,editorial=row["officialEvidence"]
+                    if variant=="invented-calendar-clock":
+                        e["time"]="19:00"
+                    elif variant=="fake-punk-genre":
+                        e["genres"]=["Electro"]
+                    elif variant=="missing-panic":
+                        e["artistIds"].pop()
+                    elif variant=="wrong-date":
+                        e["date"]="2026-12-08"
+                    elif variant=="wrong-domain":
+                        e["officialUrl"]="https://evil.example/event-details/fake"
+                    elif variant=="missing-genre-proof":
+                        row["officialEvidence"]=[primary]
+                    elif variant=="fake-genre-proof-url":
+                        editorial["url"]="https://example.org/artist"
+                    elif variant=="wrong-proof-type":
+                        editorial["proofType"]="official-organizer-or-venue"
+                    elif variant=="primary-pretends-genre":
+                        primary["checkedFields"].append("genre")
+                    elif variant=="primary-pretends-clock":
+                        primary["checkedFields"].append("startTime")
+                    elif variant=="missing-source-date":
+                        primary["checkedFields"].remove("date")
+                    elif variant=="wrong-reviewer":
+                        row["reviewedBy"]="automated-official-recheck"
+                    elif variant=="wrong-artist-name":
+                        row["newArtists"][0]["name"]="Invented Band"
+                    elif variant=="unlisted-event":
+                        e["id"]="go-c-20261224-secret-place-unlisted"
+                    elif variant=="calendar-only":
+                        e["officialUrl"]="https://www.toutafond.com/nos-evenements"
+                    candidate,stats=merge(BASE,BASE,q,day)
+                    self.assertEqual(stats["newEvents"],0)
+                    self.assertEqual(candidate["events"],BASE["events"])
+                    self.assertTrue(stats["held"])
+
     def cave_poetes_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, CAVE_POETES_VERIFIED
         pilot=PILOT_VENUES["la-cave-aux-poetes-roubaix"]

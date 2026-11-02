@@ -487,6 +487,35 @@ PARIS_CLUB_VERIFIED = {
     },
 }
 
+# Exact organizer-controlled Secret Place event details; musical start time
+# unknown (Wix 19:00-23:00 denotes event window, not start of the performance).
+# Genre is independently documented in a *different* editorial source and
+# cannot be attributed to the official Wix event page.
+SECRET_PLACE_DECEMBER_VERIFIED = {
+    "go-c-20261205-secret-place-cracked-heads": {
+        "title": "The Cracked Heads + The Psychotic Unicorns + Noble Rot",
+        "date": "2026-12-05",
+        "time": None,
+        "artistIds": ["the-cracked-heads","the-psychotic-unicorns","noble-rot"],
+        "newArtistIds": ["the-cracked-heads","the-psychotic-unicorns","noble-rot"],
+        "genres": ["Garage Punk"],
+        "officialUrl": "https://www.toutafond.com/event-details/the-cracked-heads-the-psychotic-unicorns-noble-rot",
+        "genreUrl": "https://montpellier.concerts-metal.com/",
+        "genreProofType": "editorial-genre-context",
+    },
+    "go-c-20261206-secret-place-the-spitters": {
+        "title": "The Spitters + Panic Lights",
+        "date": "2026-12-06",
+        "time": None,
+        "artistIds": ["the-spitters","panic-lights"],
+        "newArtistIds": ["the-spitters","panic-lights"],
+        "genres": ["Punk Rock"],
+        "officialUrl": "https://www.toutafond.com/event-details/la-taf-boomerang-presentent-the-spitters-panic-lights",
+        "genreUrl": "https://www.lagazettedenimes.fr/agenda/musiques-2026-12-06-rock-et-punk-secret-place-saint-jean-de-vedas/",
+        "genreProofType": "editorial-genre-context",
+    },
+}
+
 # Independently checked original venue detail and organizer-published OpenAgenda.
 # Only this exact 2026 riot-grrrl triple bill can enter from this venue.
 CAVE_POETES_VERIFIED = {
@@ -976,7 +1005,51 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "la-cave-aux-poetes-roubaix":
+    if event.get("venueId") == "secret-place-saint-jean-de-vedas":
+        spec=SECRET_PLACE_DECEMBER_VERIFIED[event_id]
+        require(reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","artistIds","genres","time"))
+                and official_url==spec["officialUrl"],
+                "Secret Place : seules deux affiches exactement vérifiées sont agréées")
+        target=urlsplit(official_url)
+        require(target.scheme=="https" and target.hostname=="www.toutafond.com"
+                and target.path==urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/event-details/[a-z0-9-]+",target.path)
+                and not target.query and not target.fragment
+                and not target.username and not target.password and not target.port,
+                "Secret Place : URL officielle individuelle obligatoire")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "Secret Place : vérification dépassée")
+        require(len(evidence)==2 and any(
+            isinstance(p,dict)
+            and p.get("url")==spec["officialUrl"]
+            and p.get("proofType")=="official-organizer-or-venue"
+            and p.get("checkedAt")==checked.isoformat()
+            and {"artists","date","venue"}.issubset(set(p.get("checkedFields") or []))
+            and "genre" not in (p.get("checkedFields") or [])
+            and "startTime" not in (p.get("checkedFields") or [])
+            for p in evidence) and any(
+            isinstance(p,dict)
+            and p.get("url")==spec["genreUrl"]
+            and p.get("proofType")==spec["genreProofType"]
+            and p.get("checkedAt")==checked.isoformat()
+            and {"artists","date","venue","genre"}.issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence),
+                "Secret Place : preuve de date/affiche ou genre indépendante insuffisante")
+        require(event.get("time") is None,
+                "Secret Place : créneau du calendrier n'est pas l'heure de début")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([x["id"] for x in new_artists]==spec["newArtistIds"]
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]).replace(" ","-")==aid
+                        for aid in ids),
+                "Secret Place : artiste inventé ou mal orthographié")
+    elif event.get("venueId") == "la-cave-aux-poetes-roubaix":
         spec=CAVE_POETES_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer=="independent-official-verifier"
