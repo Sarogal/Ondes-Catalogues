@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "atabal-biarritz": {
+        "venue": {
+            "id": "atabal-biarritz",
+            "name": "Atabal",
+            "address": "37 allée du Moura",
+            "postalCode": "64200",
+            "city": "Biarritz",
+            "department": "64",
+            "region": "Nouvelle-Aquitaine",
+            "latitude": 43.4604,
+            "longitude": -1.53984,
+            "geoPrecision": "coordonnées GPS indicatives publiées par Tourisme 64 pour Atabal (latitude ~11 m, longitude ~1 m de précision numérique)",
+            "geoSource": "https://www.tourisme64.com/sur-place/activites/biarritz/LOIAQU064V5BRPFJ-atabal/"
+        },
+        "officialUrl": "https://www.atabal-biarritz.fr/infos/venir-a-atabal/",
+        "locationUrl": "https://www.tourisme64.com/sur-place/activites/biarritz/LOIAQU064V5BRPFJ-atabal/",
+        "locationProofType": "official-tourism-geo"
+    },
     "la-carene-brest": {
         "venue": {
             "id": "la-carene-brest",
@@ -963,6 +981,66 @@ def validate_venue_approval(row, today):
     return copy.deepcopy(venue)
 
 
+# Atabal Biarritz: three exact first-party punk/hardcore concert bills.
+# Date and artists verified on individual official pages and official calendar.
+# No start time inferred from the untitled 20H30 header.
+ATABAL_VERIFIED = {
+    "go-c-20261128-biarritz-frankie-witch-fingers": {
+        "title": "Frankie and the Witch Fingers + Iguana Death Cult + Mafia Sofa",
+        "date": "2026-11-28",
+        "time": None,
+        "artistIds": [
+            "frankie-and-the-witch-fingers",
+            "iguana-death-cult",
+            "mafia-sofa"
+        ],
+        "newArtistIds": [
+            "mafia-sofa"
+        ],
+        "genres": [
+            "Punk"
+        ],
+        "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/frankie-and-the-witch-fingers-mafia-sofa-samedi-28-novembre-2026/"
+    },
+    "go-c-20261211-biarritz-anestesia-horzdun": {
+        "title": "Anestesia + Horzdun",
+        "date": "2026-12-11",
+        "time": None,
+        "artistIds": [
+            "anestesia",
+            "horzdun"
+        ],
+        "newArtistIds": [
+            "anestesia",
+            "horzdun"
+        ],
+        "genres": [
+            "Hardcore",
+            "Sludge Metal"
+        ],
+        "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/anestesia-erantzun-30-urte-horzdun-vendredi-11-decembre-2026/"
+    },
+    "go-c-20270514-biarritz-burning-heads": {
+        "title": "Burning Heads + Not Scientists + The Dead Krazukies",
+        "date": "2027-05-14",
+        "time": None,
+        "artistIds": [
+            "burning-heads",
+            "not-scientists",
+            "the-dead-krazukies"
+        ],
+        "newArtistIds": [
+            "burning-heads",
+            "not-scientists",
+            "the-dead-krazukies"
+        ],
+        "genres": [
+            "Punk Rock"
+        ],
+        "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/burning-heads-not-scientists-dead-krazukies-vendredi-14-mai-2027/"
+    }
+}
+
 # La Carène Brest: only these 2 nominal, non-festival first-party concert bills.
 # The official SPIP agenda and first-party detail must both be checked.
 CARENE_VERIFIED = {
@@ -1278,6 +1356,45 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]).replace(" ","-")==aid
                         for aid in ids),
                 "Secret Place : artiste inventé ou mal orthographié")
+    elif event.get("venueId") == "atabal-biarritz":
+        spec=ATABAL_VERIFIED.get(event_id)
+        require(spec is not None and reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","time","artistIds","genres"))
+                and official_url==spec["officialUrl"],
+                "Atabal : affiche non agréée, annulation, doublon ou date modifiée")
+        u=urlsplit(official_url)
+        require(u.scheme=="https" and u.hostname=="www.atabal-biarritz.fr"
+                and re.fullmatch(r"/agenda/concerts/[a-z0-9-]{16,220}/",u.path)
+                and u.path==urlsplit(spec["officialUrl"]).path
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "Atabal : URL officielle individuelle exacte obligatoire")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "Atabal : revue nominative trop ancienne")
+        require(len(evidence)==2 and any(
+                isinstance(p,dict) and p.get("url")==spec["officialUrl"]
+                and p.get("proofType")=="official-organizer-or-venue"
+                and p.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue","genre"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence) and any(
+                isinstance(p,dict) and p.get("url")==
+                    "https://www.atabal-biarritz.fr/agenda/concerts/"
+                and p.get("proofType")=="first-party-venue-calendar"
+                and p.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                "Atabal : fiche individuelle et agenda datés exigés")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
+                        for i in ids),
+                "Atabal : groupes ou nouvelles identités non conformes")
     elif event.get("venueId") == "la-carene-brest":
         spec=CARENE_VERIFIED.get(event_id)
         require(spec is not None
