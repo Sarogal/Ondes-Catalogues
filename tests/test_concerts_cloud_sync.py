@@ -1447,6 +1447,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         }
         approvals=[]
         for ident,entry in TRABENDO_VERIFIED.items():
+            if ident not in ("go-c-20270122-paris-wage-war",
+                             "go-c-20270203-paris-whitechapel"):
+                continue
             approvals.append({
                 "reviewDecision":"approved",
                 "reviewedBy":"independent-official-verifier",
@@ -1515,6 +1518,106 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                                  ("wrong-pin","fake-node") else 1)
                 self.assertEqual(resulting["events"],BASE["events"])
                 self.assertEqual(resulting["artists"],BASE["artists"])
+
+    def trabendo_four_more_queue(self):
+        from concerts_cloud_sync import TRABENDO_VERIFIED
+        queue=self.trabendo_queue()
+        queue["approvals"]=[]
+        names={
+            "frankie-and-the-witch-fingers":"Frankie and the Witch Fingers",
+            "iguana-death-cult":"Iguana Death Cult",
+            "comeback-kid":"Comeback Kid",
+            "black-flag":"Black Flag",
+        }
+        keys=(
+            "go-c-20261112-paris-frankie-witch-fingers",
+            "go-c-20261128-paris-kid-kapichi",
+            "go-c-20270119-paris-comeback-kid",
+            "go-c-20270606-paris-black-flag",
+        )
+        for ident in keys:
+            spec=TRABENDO_VERIFIED[ident]
+            queue["approvals"].append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]}],
+                "event":{
+                    "id":ident,"title":spec["title"],"date":spec["date"],
+                    "time":None,"artistIds":list(spec["artistIds"]),
+                    "venueId":"le-trabendo-paris","genres":list(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"Le Trabendo"},
+                "newArtists":[{"id":x,"name":names[x]}
+                              for x in spec["newArtistIds"]],
+            })
+        return queue
+
+    def test_trabendo_four_more_full_official_bills_and_known_artists(self):
+        day=__import__("datetime").date(2026,11,2)
+        # Kid Kapichi and Demob Happy already exist in current catalogue
+        # from another December show, though not in the immutable baseline.
+        seeded=copy.deepcopy(BASE)
+        seeded["artists"].extend([
+            {"id":"kid-kapichi","name":"Kid Kapichi","aliases":[]},
+            {"id":"demob-happy","name":"Demob Happy","aliases":[]},
+        ])
+        protect_reference(BASE,seeded)
+        queue=self.trabendo_four_more_queue()
+        updated,report=merge(BASE,seeded,queue,day)
+        self.assertEqual(report["held"],[])
+        self.assertEqual(report["newEvents"],4)
+        self.assertEqual(report["newArtists"],4)
+        self.assertEqual(report["newVenues"],1)
+        rows=updated["events"][-4:]
+        self.assertEqual({x["date"] for x in rows},
+                         {"2026-11-12","2026-11-28","2027-01-19","2027-06-06"})
+        self.assertEqual(rows[0]["artistIds"],
+                         ["frankie-and-the-witch-fingers","iguana-death-cult"])
+        self.assertEqual(rows[1]["artistIds"],["kid-kapichi","demob-happy"])
+        self.assertTrue(all(x["time"] is None for x in rows))
+        self.assertTrue(all(x["venueId"]=="le-trabendo-paris" for x in rows))
+        again,second=merge(BASE,updated,queue,day)
+        self.assertEqual(second["newEvents"],0)
+        self.assertEqual(second["newArtists"],0)
+        self.assertEqual(again,updated)
+
+    def test_trabendo_four_more_refuses_dropped_support_or_fake_time(self):
+        day=__import__("datetime").date(2026,11,2)
+        seeded=copy.deepcopy(BASE)
+        seeded["artists"].extend([
+            {"id":"kid-kapichi","name":"Kid Kapichi","aliases":[]},
+            {"id":"demob-happy","name":"Demob Happy","aliases":[]},
+        ])
+        for variant in ("missing-iguana","missing-demob","wrong-genre",
+                        "fake-start","wrong-source","wrong-date"):
+            with self.subTest(variant=variant):
+                queue=self.trabendo_four_more_queue()
+                item=(queue["approvals"][1] if variant=="missing-demob"
+                      else queue["approvals"][0])
+                queue["approvals"]=[item]
+                event=item["event"]
+                if variant=="missing-iguana":
+                    event["artistIds"]=["frankie-and-the-witch-fingers"]
+                elif variant=="missing-demob":
+                    event["artistIds"]=["kid-kapichi"]
+                elif variant=="wrong-genre":
+                    event["genres"]=["Disco"]
+                elif variant=="fake-start":
+                    event["time"]="19:00"
+                elif variant=="wrong-source":
+                    event["officialUrl"]="https://fake.test/programmation/"
+                elif variant=="wrong-date":
+                    event["date"]="2026-11-13"
+                updated,report=merge(BASE,seeded,queue,day)
+                self.assertTrue(report["held"])
+                self.assertEqual(report["newEvents"],0)
+                self.assertEqual(updated["events"],seeded["events"])
+                self.assertEqual(updated["artists"],seeded["artists"])
 
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
