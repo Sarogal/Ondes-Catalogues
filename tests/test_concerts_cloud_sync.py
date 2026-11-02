@@ -93,6 +93,114 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         return {"schema":"grossesondes.concert.approvals.v1",
                 "venueApprovals":records,"approvals":events}
 
+    def backstage_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES, BACKSTAGE_VERIFIED
+        pilot=PILOT_VENUES["backstage-by-the-mill-paris"]
+        venue_approval={
+            "reviewDecision":"approved",
+            "reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-02",
+            "venue":copy.deepcopy(pilot["venue"]),
+            "officialEvidence":[
+                {"url":pilot["officialUrl"],"proofType":"official-venue-address",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["name","address","postalCode","city"]},
+                {"url":pilot["locationUrl"],"proofType":"openstreetmap-venue-node",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["venueName","coordinates"]},
+            ]
+        }
+        names={"turmion-katilot":"Turmion Kätilöt","despairsray":"D’espairsRay",
+               "thulcandra":"Thulcandra","yoth-iria":"Yoth Iria","vorga":"Vorga"}
+        approvals=[]
+        for event_id, spec in BACKSTAGE_VERIFIED.items():
+            approvals.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["url"],"proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]}],
+                "event":{
+                    "id":event_id,"title":spec["title"],"date":spec["date"],
+                    "time":None,"artistIds":copy.deepcopy(spec["artistIds"]),
+                    "venueId":"backstage-by-the-mill-paris",
+                    "genres":copy.deepcopy(spec["genres"]),
+                    "status":"confirmed","officialUrl":spec["url"],"sourceType":"salle"
+                },
+                "newArtists":[{"id":i,"name":names[i]} for i in spec["artistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":[venue_approval],"approvals":approvals}
+
+    def test_backstage_three_events_and_true_theatre_pin(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.backstage_queue()
+        out,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newEvents"],3)
+        self.assertEqual(stats["newArtists"],5)
+        self.assertEqual(len(out["events"]),130)
+        self.assertEqual(len(out["venues"]),54)
+        self.assertEqual(len(out["artists"]),198)
+        self.assertEqual(out["events"][:127],BASE["events"])
+        self.assertEqual(out["venues"][:53],BASE["venues"])
+        venue=out["venues"][-1]
+        self.assertEqual((venue["latitude"],venue["longitude"]),(48.8842402,2.3321006))
+        self.assertEqual(venue["geoSource"],
+                         "https://www.openstreetmap.org/api/0.6/node/4428897899")
+        self.assertTrue(all(e["time"] is None for e in out["events"][-3:]))
+        protect_reference(BASE,out)
+        validate_catalogue(out)
+        repeat,again=merge(BASE,out,queue,day)
+        self.assertEqual(again["newEvents"],0)
+        self.assertEqual(again["alreadyPublished"],3)
+        self.assertEqual(again["alreadyRegisteredVenues"],1)
+        self.assertEqual(repeat,out)
+
+    def test_backstage_requires_independent_specific_approval_every_time(self):
+        day=__import__("datetime").date(2026,11,2)
+        source=self.backstage_queue()
+        baseline,stats=merge(BASE,BASE,source,day)
+        self.assertEqual(stats["held"],[])
+        cases=("wrong-domain","wrong-lineup","unlisted-event","fake-time",
+               "wrong-genre","wrong-reviewer","missing-official-proof",
+               "stale-check","wrong-pin")
+        for case in cases:
+            with self.subTest(case=case):
+                q=copy.deepcopy(source)
+                a=q["approvals"][0]
+                if case=="wrong-domain":
+                    a["event"]["officialUrl"]="https://example.com/agenda/fake/"
+                elif case=="wrong-lineup":
+                    a["event"]["artistIds"]=["nonexisting"]
+                elif case=="unlisted-event":
+                    a["event"]["id"]="go-c-20270227-paris-guess"
+                elif case=="fake-time":
+                    a["event"]["time"]="19:00"
+                elif case=="wrong-genre":
+                    a["event"]["genres"]=["Electro"]
+                elif case=="wrong-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                elif case=="missing-official-proof":
+                    a["officialEvidence"]=[]
+                elif case=="stale-check":
+                    a["reviewedAt"]="2026-10-01"
+                elif case=="wrong-pin":
+                    q["venueApprovals"][0]["venue"]["latitude"]+=0.01
+                result,reports=merge(BASE,BASE,q,day)
+                self.assertTrue(reports["held"])
+                if case=="wrong-pin":
+                    self.assertEqual(reports["newEvents"],0)
+                    self.assertEqual(reports["newVenues"],0)
+                else:
+                    self.assertEqual(reports["newEvents"],2)
+        with self.assertRaises(ValueError):
+            merge(BASE,baseline,{"schema":source["schema"],"approvals":[],
+                                 "venueApprovals":source["venueApprovals"]},day)
+
     def test_two_vetted_venues_and_two_joker_events_append_without_damage(self):
         checked=__import__("datetime").date(2026,11,2)
         queue=self.pilot_queue()
