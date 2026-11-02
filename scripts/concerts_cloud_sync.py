@@ -266,6 +266,22 @@ REGIONAL_APPROVED = {
 # Guttural Slug are in body lineups but not in abbreviated page titles.
 # Never accept generic agendas, ticket sites, or inferred show start hours.
 GLAZART_VERIFIED = {
+    "go-c-20261106-paris-lagrimas": {
+        "title": "Lagrimas",
+        "date": "2026-11-06",
+        "artistIds": ["lagrimas"],
+        "newArtistIds": [],
+        "genres": ["Hardcore","Screamo"],
+        "officialUrl": "https://www.glazart.com/06-11-26-concert-lagrimas/"
+    },
+    "go-c-20261130-paris-black-sabbitch": {
+        "title": "Black Sabbitch",
+        "date": "2026-11-30",
+        "artistIds": ["black-sabbitch"],
+        "newArtistIds": ["black-sabbitch"],
+        "genres": ["Doom"],
+        "officialUrl": "https://www.glazart.com/30-11-26-concert-black-sabbitch/"
+    },
     "go-c-20261128-paris-sunami": {
         "title": "Sunami + Desolated + Missing Link + Extinguish",
         "date": "2026-11-28",
@@ -645,7 +661,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(parsed.scheme=="https" and parsed.hostname=="www.glazart.com"
                 and not parsed.username and not parsed.password
                 and not parsed.port and not parsed.query and not parsed.fragment
-                and re.fullmatch(r"/(?:28-11-26|24-03-27)-concert-[a-z0-9-]+/",
+                and re.fullmatch(r"/(?:06-11-26|30-11-26|28-11-26|24-03-27)-concert-[a-z0-9-]+/",
                                  parsed.path),
                 "Glazart : page individuelle ou domaine non agréés")
         reviewed_at = norm_date(approval.get("reviewedAt"))
