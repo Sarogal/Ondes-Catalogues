@@ -73,6 +73,20 @@ VENUES = [
         "official": "https://www.versailles-tourisme.com/l-hotel-des-menus-plaisirs.html",
         "geo_source": "https://mapcarta.com/W74630485",
     },
+    {
+        "city": "Goussainville",
+        "aliases": ["Médiathèque municipale François Mauriac",
+                    "Médiathèque intercommunale François Mauriac"],
+        "lat": 49.0355, "lng": 2.461,
+        "official": "https://www.ville-goussainville.fr/17070-la-mediatheque-francois-mauriac.htm",
+        "geo_source": "https://mapcarta.com/fr/W27470092",
+    },
+    {
+        "city": "Cabriès", "aliases": ["Auditorium Pierre Malbosc"],
+        "lat": 43.44065, "lng": 5.38173,
+        "official": "https://www.cabries.fr/lieux/auditorium-pierre-malbosc/",
+        "geo_source": "https://mapcarta.com/fr/W67540122",
+    },
 ]
 
 def verified_location(event):

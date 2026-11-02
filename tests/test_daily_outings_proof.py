@@ -57,6 +57,22 @@ class DailyProofTests(unittest.TestCase):
             self.assertTrue(verified_location(e)[0], (city, venue))
             self.assertFalse(verified_location(dict(e, lat=lat + 0.2))[0])
 
+    def test_2026_11_02_venue_points_accept_only_confirmed_coordinates(self):
+        cases = [
+            ("Goussainville", "Médiathèque municipale François Mauriac",
+             49.0355, 2.461),
+            ("Cabriès", "Auditorium Pierre Malbosc",
+             43.440834, 5.381883),
+        ]
+        for city, venue, lat, lng in cases:
+            place = {"city": city, "venue": venue, "lat": lat, "lng": lng}
+            self.assertTrue(verified_location(place)[0], place)
+            self.assertFalse(verified_location(dict(place, lng=lng + 0.01))[0])
+        # The old Goussainville GPS was ~220 m away from the official library.
+        self.assertFalse(verified_location({
+            "city": "Goussainville", "venue": "Médiathèque municipale François Mauriac",
+            "lat": 49.035198, "lng": 2.45797})[0])
+
     def test_nantes_same_month_series(self):
         self.assertTrue(consecutive_official_dates(
             "VACANCES PRINTEMPS 2027 DU 17 AU 24 AVRIL",
