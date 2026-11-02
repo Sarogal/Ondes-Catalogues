@@ -58,6 +58,28 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Expliquer les approbations intégrées ou retenues
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path("/tmp/grossesondes_concerts/rapport.json").read_text(encoding="utf-8"))
+          lines=[
+              "### Concerts — synchronisation des approbations",
+              f"Catalogue : {d['publicEventsBefore']} → {d['publicEventsAfter']} concerts",
+              f"Nouvelles fiches : {d['newEvents']} ; nouveaux artistes : {d['newArtists']}",
+              f"Approbations déjà publiées : {d['alreadyPublished']}",
+              f"Approbations retenues : {len(d['held'])}",
+              f"Flux privé accessible : {'oui' if d['privateApprovalFeedReadable'] else 'non'}",
+          ]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as report:
+              report.write("\n".join(lines)+"\n")
+          if d['held']:
+              print(f"::warning title=Concerts — validations retenues::{len(d['held'])} approbation(s) non publiées : consulter l'artefact du rapport privé.")
+          if not d['privateApprovalFeedReadable']:
+              print("::warning title=Concerts — flux d'approbation absent::Le catalogue est conservé sans nouveaux ajouts.")
+          PY
+
       - name: Archiver le rapport privé de contrôle
         uses: actions/upload-artifact@v7
         with:
