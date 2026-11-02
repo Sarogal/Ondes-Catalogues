@@ -203,6 +203,123 @@ class ConcertsCloudSyncTests(unittest.TestCase):
             merge(BASE,baseline,{"schema":source["schema"],"approvals":[],
                                  "venueApprovals":source["venueApprovals"]},day)
 
+    def glazart_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES, GLAZART_VERIFIED
+        v=PILOT_VENUES["glazart-paris"]
+        venue={
+            "reviewDecision":"approved",
+            "reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-02",
+            "venue":copy.deepcopy(v["venue"]),
+            "officialEvidence":[{
+                "url":v["officialUrl"],
+                "proofType":"official-venue-address",
+                "checkedAt":"2026-11-02",
+                "checkedFields":["name","address","postalCode","city"]
+            },{
+                "url":v["locationUrl"],
+                "proofType":"openstreetmap-venue-way",
+                "checkedAt":"2026-11-02",
+                "checkedFields":["venueName","coordinates"]
+            }]
+        }
+        names={"party-cannon":"Party Cannon",
+               "internal-bleeding":"Internal Bleeding",
+               "guttural-slug":"Guttural Slug"}
+        approvals=[]
+        for event_id, spec in GLAZART_VERIFIED.items():
+            approvals.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":spec["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]
+                }],
+                "event":{
+                    "id":event_id,
+                    "title":spec["title"],
+                    "date":spec["date"],
+                    "time":None,
+                    "artistIds":list(spec["artistIds"]),
+                    "venueId":"glazart-paris",
+                    "genres":list(spec["genres"]),
+                    "status":"confirmed",
+                    "officialUrl":spec["officialUrl"],
+                    "sourceType":"salle",
+                    "organizer":"Glazart"
+                },
+                "newArtists":[{"id":k,"name":names[k]} for k in spec["newArtistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":[venue], "approvals":approvals}
+
+    def test_glazart_named_osm_way_and_two_correct_lineups_publish_once(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.glazart_queue()
+        new,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newArtists"],3)
+        self.assertEqual(len(new["events"]),129)
+        self.assertEqual(len(new["venues"]),54)
+        self.assertEqual(len(new["artists"]),196)
+        self.assertEqual(new["venues"][-1]["geoSource"],
+                         "https://www.openstreetmap.org/api/0.6/way/64038567")
+        self.assertIn("centre du bâtiment",new["venues"][-1]["geoPrecision"])
+        self.assertEqual(new["events"][-2]["artistIds"],
+                         ["sunami","desolated","missing-link","extinguish"])
+        self.assertEqual(new["events"][-1]["artistIds"],
+                         ["party-cannon","internal-bleeding","guttural-slug"])
+        self.assertTrue(all(e["time"] is None for e in new["events"][-2:]))
+        protect_reference(BASE,new)
+        validate_catalogue(new)
+        repeat,again=merge(BASE,new,queue,day)
+        self.assertEqual(repeat,new)
+        self.assertEqual(again["alreadyPublished"],2)
+        self.assertEqual(again["newEvents"],0)
+        self.assertEqual(again["newVenues"],0)
+
+    def test_glazart_blocks_wrong_venue_point_lineup_time_or_official_domain(self):
+        day=__import__("datetime").date(2026,11,2)
+        for variant in ("invalid-way","fake-node-type","unlisted-show",
+                        "missing-desolated","missing-guttural-slug",
+                        "wrong-domain","fake-time","wrong-genre",
+                        "untrusted-reviewer","missing-proof"):
+            with self.subTest(variant=variant):
+                queue=self.glazart_queue()
+                a=queue["approvals"][0]
+                b=queue["approvals"][1]
+                if variant=="invalid-way":
+                    queue["venueApprovals"][0]["venue"]["latitude"]+=.01
+                elif variant=="fake-node-type":
+                    queue["venueApprovals"][0]["officialEvidence"][1]["proofType"]="openstreetmap-venue-node"
+                elif variant=="unlisted-show":
+                    a["event"]["id"]="go-c-20261128-paris-unknown"
+                elif variant=="missing-desolated":
+                    a["event"]["artistIds"].remove("desolated")
+                elif variant=="missing-guttural-slug":
+                    b["event"]["artistIds"].remove("guttural-slug")
+                elif variant=="wrong-domain":
+                    a["event"]["officialUrl"]="https://evil.example/concert"
+                elif variant=="fake-time":
+                    a["event"]["time"]="19:00"
+                elif variant=="wrong-genre":
+                    a["event"]["genres"]=["Pop"]
+                elif variant=="untrusted-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                elif variant=="missing-proof":
+                    a["officialEvidence"].clear()
+                out,stats=merge(BASE,BASE,queue,day)
+                self.assertTrue(stats["held"])
+                self.assertEqual(stats["newVenues"],0 if variant in
+                                 ("invalid-way","fake-node-type") else 1)
+                self.assertEqual(stats["newEvents"],0 if variant in
+                                 ("invalid-way","fake-node-type") else 1)
+
     def regional_reviewed_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, REGIONAL_APPROVED
         named={
