@@ -17,7 +17,7 @@ HOSTS = {
     "philharmoniedeparis.fr", "www.philharmoniedeparis.fr",
     "www.theatre-jeanne.com",
     "mpt.eolas-58.montpellier.fr", "www.lentrepot-lehaillan.com",
-    "openagenda.com",
+    "openagenda.com", "www.cabries.fr",
 }
 
 def norm(s):
