@@ -222,6 +222,16 @@ REGIONAL_APPROVED = {
         "officialUrl": "https://shotgun.live/events/lagrimas-the-prestige",
         "venueCalendar": "https://www.rockneat.com/Programmation"
     },
+    "go-c-20261113-strasbourg-local-heroes": {
+        "venueId": "la-maison-bleue-strasbourg",
+        "title": "Dazzling Bravery + BRDN + Curtains + Foggy Froggies",
+        "date": "2026-11-13",
+        "artistIds": ["dazzling-bravery", "brdn", "curtains", "foggy-froggies"],
+        "newArtistIds": ["dazzling-bravery", "brdn", "curtains", "foggy-froggies"],
+        "genres": ["Metal"],
+        "officialUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/385-Dirty8-Birthday-LOCAL-HEROES-Dazzling-Bravery-BRDN-Curtains-Foggy-Froggies",
+        "venueCalendar": "https://www.lamaisonbleue-stbg.com/agenda/"
+    },
     "go-c-20261111-strasbourg-wake-the-dead": {
         "venueId": "la-maison-bleue-strasbourg",
         "title": "Wake the Dead + Toxic Shock + Sick Lame & Lazy",
@@ -604,14 +614,23 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "official-organizer-or-venue": spec["officialUrl"],
             "first-party-venue-calendar": spec["venueCalendar"]
         }
+        # Local Heroes: the ticket names all four artists but does not tag a
+        # music genre; Maison Bleue's own calendar tags the listing "Métal"
+        # but does not list those four names. Keep provenance separate.
+        def required_fields(proof_type):
+            if event_id == "go-c-20261113-strasbourg-local-heroes":
+                if proof_type == "official-organizer-or-venue":
+                    return {"artists","date","venue"}
+                return {"date","venue","genre"}
+            if (event["venueId"] == "rock-n-eat-lyon" and
+                    proof_type == "first-party-venue-calendar"):
+                return {"artists","date","venue"}
+            return {"artists","date","venue","genre"}
         require(all(
             isinstance(p,dict)
             and p.get("url") == expected_proofs.get(p.get("proofType"))
             and p.get("checkedAt") == reviewed_at.isoformat()
-            and ({"artists","date","venue","genre"} if
-                 p.get("proofType") == "official-organizer-or-venue" or
-                 event["venueId"] == "la-maison-bleue-strasbourg"
-                 else {"artists","date","venue"}).issubset(
+            and required_fields(p.get("proofType")).issubset(
                 set(p.get("checkedFields") or []))
             for p in evidence),
             "Salles régionales : origine ou contenu de preuve modifiés")
@@ -621,7 +640,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and target.path=="/events/lagrimas-the-prestige")
         allow_maison=(event["venueId"]=="la-maison-bleue-strasbourg"
                       and target.hostname=="billetterie.lamaisonbleue-stbg.com"
-                      and target.path=="/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY")
+                      and target.path in (
+                        "/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
+                        "/share/event/385-Dirty8-Birthday-LOCAL-HEROES-Dazzling-Bravery-BRDN-Curtains-Foggy-Froggies"))
         require(target.scheme=="https" and (allow_rock or allow_maison)
                 and not target.username and not target.password
                 and not target.port and not target.query and not target.fragment,
