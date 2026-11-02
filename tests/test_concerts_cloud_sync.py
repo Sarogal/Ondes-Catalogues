@@ -1447,6 +1447,9 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         }
         approvals=[]
         for ident,entry in TRABENDO_VERIFIED.items():
+            if ident not in ("go-c-20270122-paris-wage-war",
+                             "go-c-20270203-paris-whitechapel"):
+                continue
             approvals.append({
                 "reviewDecision":"approved",
                 "reviewedBy":"independent-official-verifier",
