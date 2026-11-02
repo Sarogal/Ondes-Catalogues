@@ -1111,6 +1111,31 @@
       "id": "ancient-settlers",
       "name": "Ancient Settlers",
       "aliases": []
+    },
+    {
+      "id": "turmion-katilot",
+      "name": "Turmion Kätilöt",
+      "aliases": []
+    },
+    {
+      "id": "despairsray",
+      "name": "D’espairsRay",
+      "aliases": []
+    },
+    {
+      "id": "thulcandra",
+      "name": "Thulcandra",
+      "aliases": []
+    },
+    {
+      "id": "yoth-iria",
+      "name": "Yoth Iria",
+      "aliases": []
+    },
+    {
+      "id": "vorga",
+      "name": "Vorga",
+      "aliases": []
     }
   ],
   "venues": [
@@ -1828,6 +1853,19 @@
       "longitude": 5.94761,
       "geoPrecision": "point du lieu (OpenStreetMap node 1979372261)",
       "geoSource": "https://mapcarta.com/N1979372261"
+    },
+    {
+      "id": "backstage-by-the-mill-paris",
+      "name": "Backstage By The Mill",
+      "address": "92 bis boulevard de Clichy",
+      "postalCode": "75018",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.8842402,
+      "longitude": 2.3321006,
+      "geoPrecision": "point nominatif du théâtre (OpenStreetMap node 4428897899)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/node/4428897899"
     }
   ],
   "events": [
@@ -6431,6 +6469,95 @@
       "timeMeaning": "non confirmé",
       "organizer": "Le Brin de Zinc",
       "ticketUrl": "https://www.billetweb.fr/moscow-death-brigade1",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270226-paris-turmion-katilot",
+      "title": "Turmion Kätilöt",
+      "date": "2027-02-26",
+      "artistIds": [
+        "turmion-katilot"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Industrial Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/turmion-katilot/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Garmonbozia",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270315-paris-despairsray",
+      "title": "D’ESPAIRSRAY",
+      "date": "2027-03-15",
+      "artistIds": [
+        "despairsray"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Heavy Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/despairsray/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270325-paris-thulcandra",
+      "title": "Thulcandra + Yoth Iria + Vorga",
+      "date": "2027-03-25",
+      "artistIds": [
+        "thulcandra",
+        "yoth-iria",
+        "vorga"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Melodic Death Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/thulcandra-yoth-iria-vorga/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Garmonbozia",
+      "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
