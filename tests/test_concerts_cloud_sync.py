@@ -1763,6 +1763,40 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertTrue(stats["held"])
                 self.assertEqual(out["events"],BASE["events"])
 
+    def test_forum_2027_secondary_proof_must_be_distinct_current_exact_and_scoped(self):
+        day=__import__("datetime").date(2026,11,2)
+        for which in ("go-c-20270115-vaureal-motocultor-tour",
+                      "go-c-20270423-vaureal-sortilege"):
+            for defect in ("same-as-venue","wrong-kind","missing-venue-field",
+                           "old-review","extra-proof","wrong-artist-field",
+                           "switch-sources"):
+                with self.subTest(which=which,defect=defect):
+                    queue=self.forum_two_new_queue()
+                    row=next(a for a in queue["approvals"]
+                             if a["event"]["id"]==which)
+                    queue["approvals"]=[row]
+                    secondary=row["officialEvidence"][1]
+                    if defect=="same-as-venue":
+                        secondary["url"]=row["officialEvidence"][0]["url"]
+                    elif defect=="wrong-kind":
+                        secondary["proofType"]="official-organizer-or-venue"
+                    elif defect=="missing-venue-field":
+                        secondary["checkedFields"].remove("venue")
+                    elif defect=="old-review":
+                        secondary["checkedAt"]="2025-11-02"
+                    elif defect=="extra-proof":
+                        row["officialEvidence"].append(dict(secondary))
+                    elif defect=="wrong-artist-field":
+                        secondary["checkedFields"].remove("artists")
+                    elif defect=="switch-sources":
+                        row["officialEvidence"][0],row["officialEvidence"][1]=(
+                            row["officialEvidence"][1],row["officialEvidence"][0])
+                        row["officialEvidence"][0]["proofType"]="official-organizer-or-venue"
+                    merged,stats=merge(BASE,BASE,queue,day)
+                    self.assertEqual(stats["newEvents"],0)
+                    self.assertTrue(stats["held"])
+                    self.assertEqual(merged["events"],BASE["events"])
+
     def test_forum_real_named_osm_node_and_five_concerts_append_without_collisions(self):
         day=__import__("datetime").date(2026,11,2)
         q=self.forum_queue()
