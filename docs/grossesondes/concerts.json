@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-01",
+  "updatedAt": "2026-11-02",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -1000,6 +1000,56 @@
     {
       "id": "galibot",
       "name": "Galibot",
+      "aliases": []
+    },
+    {
+      "id": "poison-ruin",
+      "name": "Poison Ruïn",
+      "aliases": []
+    },
+    {
+      "id": "precipice",
+      "name": "Precipice",
+      "aliases": []
+    },
+    {
+      "id": "kid-kapichi",
+      "name": "Kid Kapichi",
+      "aliases": []
+    },
+    {
+      "id": "demob-happy",
+      "name": "Demob Happy",
+      "aliases": []
+    },
+    {
+      "id": "princesse-toucan",
+      "name": "Princesse Toucan",
+      "aliases": []
+    },
+    {
+      "id": "mickle-muckle",
+      "name": "Mickle Muckle",
+      "aliases": []
+    },
+    {
+      "id": "kervegans",
+      "name": "Kervegans",
+      "aliases": []
+    },
+    {
+      "id": "booze-brothers",
+      "name": "Booze Brothers",
+      "aliases": []
+    },
+    {
+      "id": "johnny-mafia",
+      "name": "Johnny Mafia",
+      "aliases": []
+    },
+    {
+      "id": "the-rumpled",
+      "name": "The Rumpled",
       "aliases": []
     }
   ],
@@ -5734,6 +5784,291 @@
       "history": [
         {
           "date": "2026-11-01",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261109-nantes-poison-ruin",
+      "title": "Poison Ruïn + Precipice",
+      "date": "2026-11-09",
+      "artistIds": [
+        "poison-ruin",
+        "precipice"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Punk",
+        "Punk Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/poison-ruin-precipice/5359",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261209-nantes-kid-kapichi",
+      "title": "Kid Kapichi + Demob Happy",
+      "date": "2026-12-09",
+      "artistIds": [
+        "kid-kapichi",
+        "demob-happy"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Indie Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/kid-kapichi/5202",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-nantes-krav-boca",
+      "title": "Krav Boca + Princesse Toucan",
+      "date": "2026-12-11",
+      "artistIds": [
+        "krav-boca",
+        "princesse-toucan"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Electro",
+        "Pop",
+        "Punk",
+        "Rap"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/krav-boca-princesse-toucan/5235",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261219-nantes-arkona",
+      "title": "Arkona + Seth + The Great Old Ones",
+      "date": "2026-12-19",
+      "artistIds": [
+        "arkona",
+        "seth",
+        "the-great-old-ones"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Black Metal",
+        "Folk",
+        "Pagan"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/arkona-seth-the-great-old-ones/5368",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-01",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-nantes-it-it-anita",
+      "title": "It It Anita + Mickle Muckle",
+      "date": "2027-01-22",
+      "artistIds": [
+        "it-it-anita",
+        "mickle-muckle"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Cold Wave",
+        "Noise",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/it-it-anita/5372",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270205-nantes-kervegans",
+      "title": "Kervegans + Booze Brothers",
+      "date": "2027-02-05",
+      "artistIds": [
+        "kervegans",
+        "booze-brothers"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Celtic Punk",
+        "rock celtique"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/kervegans-booze-brothers/5402",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270213-nantes-johnny-mafia",
+      "title": "Johnny Mafia",
+      "date": "2027-02-13",
+      "artistIds": [
+        "johnny-mafia"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Garage",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/johnny-mafia/5332",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270320-nantes-houle",
+      "title": "Houle + CÂN BARDD + Galibot",
+      "date": "2027-03-20",
+      "artistIds": [
+        "houle",
+        "can-bardd",
+        "galibot"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Black Melodique",
+        "Black Metal",
+        "Black Symphonique"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/houle-can-bardd-galibot/5378",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270508-nantes-the-rumpled",
+      "title": "The Rumpled",
+      "date": "2027-05-08",
+      "artistIds": [
+        "the-rumpled"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Folk",
+        "Punk",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/the-rumpled/5398",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
