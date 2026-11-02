@@ -675,6 +675,76 @@ FERRAILLEUR_LOCATION_FIX = {
 FERRAILLEUR_VENUE_ID = "le-ferrailleur-nantes"
 
 
+SECRET_PLACE_VENUE_ID = "secret-place-saint-jean-de-vedas"
+SECRET_PLACE_LOCATION_FIX = {
+    "latitude": 43.5617771,
+    "longitude": 3.8419650,
+    "geoPrecision": "centre du bâtiment nommé Secret Place (OpenStreetMap way 382485149, géocodage Nominatim)",
+    "geoSource": "https://www.openstreetmap.org/api/0.6/way/382485149",
+}
+SECRET_PLACE_LOCATION_OFFICIAL = "https://www.toutafond.com/acces"
+SECRET_PLACE_LOCATION_OSM = "https://www.openstreetmap.org/api/0.6/way/382485149"
+
+
+def corrected_reference_venues(reference, secret_place=False):
+    """Only the exact, source-reviewed geographic corrections are permitted."""
+    venues = copy.deepcopy(reference["venues"])
+    fixes = [(FERRAILLEUR_VENUE_ID, FERRAILLEUR_LOCATION_FIX)]
+    if secret_place:
+        fixes.append((SECRET_PLACE_VENUE_ID, SECRET_PLACE_LOCATION_FIX))
+    for venue_id, patch in fixes:
+        rows = [v for v in venues if v["id"] == venue_id]
+        require(len(rows) == 1, "Salle historique absente : " + venue_id)
+        rows[0].update(copy.deepcopy(patch))
+    return venues
+
+
+def validate_secret_place_location_correction(approvals, reference, today):
+    """Require a signed, persistent, double-source correction for an existing venue."""
+    corrections = approvals.get("referenceVenueCorrections", [])
+    require(isinstance(corrections, list) and len(corrections) <= 1,
+            "Corrections géographiques historiques non conformes")
+    if not corrections:
+        return None
+    row = corrections[0]
+    require(isinstance(row, dict)
+            and row.get("venueId") == SECRET_PLACE_VENUE_ID
+            and row.get("reviewDecision") == "approved"
+            and row.get("reviewedBy") == "independent-official-verifier"
+            and row.get("venuePatch") == SECRET_PLACE_LOCATION_FIX,
+            "Correction géographique non autorisée ou hors liste blanche")
+    checked = norm_date(row.get("reviewedAt"))
+    require(checked <= today and checked == dt.date(2026, 11, 2),
+            "Revue géographique sans date validée")
+    evidence = row.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 2,
+            "Adresse officielle et bâtiment OSM exigés séparément")
+    expected = {
+        "official-venue-address": (
+            SECRET_PLACE_LOCATION_OFFICIAL, {"name", "address", "postalCode", "city"}),
+        "openstreetmap-venue-way": (
+            SECRET_PLACE_LOCATION_OSM, {"venueName", "coordinates"}),
+    }
+    require({p.get("proofType") for p in evidence if isinstance(p, dict)}
+            == set(expected), "Preuves géographiques de nature non indépendante")
+    for item in evidence:
+        require(isinstance(item, dict), "Preuve de localisation mal formée")
+        url, fields = expected[item["proofType"]]
+        require(item.get("url") == url
+                and item.get("checkedAt") == checked.isoformat()
+                and fields.issubset(set(item.get("checkedFields") or [])),
+                "Source officielle ou OSM incomplète ou remplacée")
+    original = next((v for v in reference["venues"]
+                     if v["id"] == SECRET_PLACE_VENUE_ID), None)
+    require(original is not None
+            and original["address"] == "25 rue Saint-Exupéry, ZI de la Lauze"
+            and original["postalCode"] == "34430"
+            and original["latitude"] == 43.5615
+            and original["longitude"] == 3.8424,
+            "L'emplacement initial n'est pas la référence préalablement auditée")
+    return row
+
+
 # Precisely one documented exception for a historic incomplete bill.
 # The 127 original records remain untouched in concerts-reference.json.
 # Årabrot is already among the reference artists.
@@ -800,14 +870,11 @@ def protect_reference(reference, current):
             require(now[:len(initial)] in (initial, legacy_corrected_events(reference)),
                     "Concert historique modifié hors exception de programmation approuvée")
         elif kind == "venues":
-            # One georeference was previously recorded as city-centre
-            # approximation. Accept ONLY the exact documented correction;
-            # every other venue and every other field stays immutable.
-            corrected = copy.deepcopy(initial)
-            matches = [v for v in corrected if v["id"] == FERRAILLEUR_VENUE_ID]
-            require(len(matches) == 1, "Lieu Ferrailleur absent de la référence")
-            matches[0].update(FERRAILLEUR_LOCATION_FIX)
-            require(now[:len(initial)] in (initial, corrected),
+            # Allow only the two exact, documented geographic correction states.
+            # The original 53 venues are never rewritten in the baseline JSON.
+            allowed = (initial, corrected_reference_venues(reference),
+                       corrected_reference_venues(reference, secret_place=True))
+            require(now[:len(initial)] in allowed,
                     "Salle initiale modifiée hors correction géographique approuvée")
         else:
             require(now[:len(initial)] == initial,
@@ -1486,6 +1553,18 @@ def merge(reference, current, approvals, today):
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
+    location_review = validate_secret_place_location_correction(approvals, reference, today)
+    current_venues = current["venues"][:len(reference["venues"])]
+    corrected_venues = corrected_reference_venues(reference, secret_place=True)
+    venue_corrected_count = 0
+    if current_venues == corrected_venues:
+        require(location_review is not None,
+                "Secret Place géolocalisée sans revue privée persistante")
+    elif location_review is not None:
+        require(current_venues == corrected_reference_venues(reference),
+                "Référence des salles inattendue avant correction Secret Place")
+        result["venues"][:len(reference["venues"])] = corrected_venues
+        venue_corrected_count = 1
     correction = validate_legacy_correction(approvals, reference, today)
     current_prefix = current["events"][:len(reference["events"])]
     if current_prefix != reference["events"]:
@@ -1514,7 +1593,7 @@ def merge(reference, current, approvals, today):
         require(approval is not None and prior == validate_venue_approval(approval, today),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     counts = {"newEvents": 0, "newArtists": 0, "newVenues": 0,
-              "correctedEvents": corrected_count,
+              "correctedEvents": corrected_count, "correctedVenues": venue_corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
     for entry in venue_approvals:
         try:
@@ -1581,7 +1660,7 @@ def merge(reference, current, approvals, today):
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
     require(len(approvals["approvals"]) <= 100, "Trop d'approbations par lot")
-    if counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"]:
+    if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
     protect_reference(reference, result)
@@ -1613,7 +1692,7 @@ def main():
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out / "concerts-candidat.json").write_text(
         json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"]):
+    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"] or stats["correctedVenues"]):
         require(bool(token), "Interdiction de publier sans accès aux validations privées")
         CATALOGUE.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
