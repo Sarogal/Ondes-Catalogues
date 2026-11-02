@@ -1276,6 +1276,41 @@
       "id": "eiga",
       "name": "Eiga",
       "aliases": []
+    },
+    {
+      "id": "senser",
+      "name": "Senser",
+      "aliases": []
+    },
+    {
+      "id": "wolves-in-the-throne-room",
+      "name": "Wolves in the Throne Room",
+      "aliases": []
+    },
+    {
+      "id": "worm",
+      "name": "Worm",
+      "aliases": []
+    },
+    {
+      "id": "final-dose",
+      "name": "Final Dose",
+      "aliases": []
+    },
+    {
+      "id": "harsh",
+      "name": "Harsh",
+      "aliases": []
+    },
+    {
+      "id": "furies",
+      "name": "Furies",
+      "aliases": []
+    },
+    {
+      "id": "charcoal",
+      "name": "Charcoal",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2084,6 +2119,19 @@
       "longitude": 2.34028,
       "geoPrecision": "point nominatif de La Boule Noire, distinct de La Cigale (OpenStreetMap node 357916037, coordonnées arrondies)",
       "geoSource": "https://mapcarta.com/N357916037"
+    },
+    {
+      "id": "le-forum-vaureal",
+      "name": "Le Forum",
+      "address": "95 boulevard de l'Oise",
+      "postalCode": "95490",
+      "city": "Vauréal",
+      "department": "95",
+      "region": "Île-de-France",
+      "latitude": 49.0313663,
+      "longitude": 2.0218937,
+      "geoPrecision": "nœud OpenStreetMap nominatif Le Forum (node 4742610793, adresse et site officiel concordants)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/node/4742610793"
     }
   ],
   "events": [
@@ -7383,6 +7431,157 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Base Productions",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-vaureal-senser-psykup",
+      "title": "Senser + Psykup",
+      "date": "2026-11-06",
+      "artistIds": [
+        "senser",
+        "psykup"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Rap Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/senser",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-vaureal-wolves-throne-room",
+      "title": "Wolves in the Throne Room + Worm + Final Dose",
+      "date": "2026-11-07",
+      "artistIds": [
+        "wolves-in-the-throne-room",
+        "worm",
+        "final-dose"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/wolves-throne-room",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-vaureal-mass-hysteria",
+      "title": "Mass Hysteria",
+      "date": "2026-11-12",
+      "artistIds": [
+        "mass-hysteria"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/mass-hysteria",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270317-vaureal-michael-schenker-group",
+      "title": "Michael Schenker Group",
+      "date": "2027-03-17",
+      "artistIds": [
+        "michael-schenker-group"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Hard Rock",
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/michael-schenker-group",
+      "sourceType": "salle",
+      "time": "19:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270522-vaureal-hard-rock-party",
+      "title": "Harsh + Furies + Charcoal",
+      "date": "2027-05-22",
+      "artistIds": [
+        "harsh",
+        "furies",
+        "charcoal"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/hard-rock-party",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
