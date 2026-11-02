@@ -474,6 +474,28 @@ PARIS_CLUB_VERIFIED = {
 # The Wolves in the Throne Room detail contradicts itself on start time
 # (18:30 header / 20:30 body); do not publish an inferred start.
 FORUM_VERIFIED = {
+    "go-c-20270115-vaureal-motocultor-tour": {
+        "title": "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out",
+        "date": "2027-01-15",
+        "artistIds": ["rhapsody-of-fire","serious-black","submasq","aeon-gods","rock-out"],
+        "newArtistIds": [],
+        "genres": ["Metal"],
+        "time": "19:00",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/motocultor-across-europe-tour-2027",
+        "secondaryUrl": "https://www.motocultor-festival.com/motocultor-across-europe-tour-2027/",
+        "secondaryProofType": "official-organizer-tour"
+    },
+    "go-c-20270423-vaureal-sortilege": {
+        "title": "Sortilège",
+        "date": "2027-04-23",
+        "artistIds": ["sortilege"],
+        "newArtistIds": ["sortilege"],
+        "genres": ["Heavy Metal"],
+        "time": "20:30",
+        "officialUrl": "https://leforum.cergypontoise.fr/agenda/sortilege",
+        "secondaryUrl": "https://sortilege.website/concerts/",
+        "secondaryProofType": "official-artist-tour"
+    },
     "go-c-20261106-vaureal-senser-psykup": {
         "title": "Senser + Psykup",
         "date": "2026-11-06",
@@ -929,7 +951,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(event.get(k)==spec[k] for k in
                         ("title","date","artistIds","genres","time"))
                 and official_url==spec["officialUrl"],
-                "Le Forum : seulement cinq affiches officielles nominatives agréées")
+                "Le Forum : seule une affiche officielle nominative agréée est admise")
         u=urlsplit(official_url)
         require(u.scheme=="https" and u.hostname=="leforum.cergypontoise.fr"
                 and re.fullmatch(r"/agenda/[a-z0-9-]+",u.path)
@@ -943,7 +965,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
         fields={"artists","date","venue","genre"}
         if spec["time"] is not None:
             fields.add("startTime")
-        require(len(evidence)==1 and any(
+        secondary_url=spec.get("secondaryUrl")
+        secondary_type=spec.get("secondaryProofType")
+        require(len(evidence)==(2 if secondary_url else 1) and any(
             isinstance(p,dict)
             and p.get("url")==spec["officialUrl"]
             and p.get("proofType")=="official-organizer-or-venue"
@@ -951,6 +975,18 @@ def validate_approval(approval, venues, known_artist_ids, today):
             and fields.issubset(set(p.get("checkedFields") or []))
             for p in evidence),
                 "Le Forum : preuve exacte d'affiche et début manquante")
+        if secondary_url:
+            # Tour/artist source corroborates venue, exact date and every
+            # artist; it must not be mistaken for venue clock verification.
+            require(any(
+                isinstance(p,dict)
+                and p.get("url")==secondary_url
+                and p.get("proofType")==secondary_type
+                and p.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                    "Le Forum : preuve indépendante du festival ou artiste manquante")
         resolved=dict(known_artist_ids)
         resolved.update(added)
         require([a["id"] for a in new_artists]==spec["newArtistIds"]
