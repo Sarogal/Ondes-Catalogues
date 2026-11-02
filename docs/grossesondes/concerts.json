@@ -1156,6 +1156,26 @@
       "id": "sick-lame-lazy",
       "name": "Sick Lame & Lazy",
       "aliases": []
+    },
+    {
+      "id": "dazzling-bravery",
+      "name": "Dazzling Bravery",
+      "aliases": []
+    },
+    {
+      "id": "brdn",
+      "name": "BRDN",
+      "aliases": []
+    },
+    {
+      "id": "curtains",
+      "name": "Curtains",
+      "aliases": []
+    },
+    {
+      "id": "foggy-froggies",
+      "name": "Foggy Froggies",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6667,6 +6687,38 @@
       "timeMeaning": "non confirmé",
       "organizer": "Association Dirty8 / La Maison Bleue",
       "ticketUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-strasbourg-local-heroes",
+      "title": "Dazzling Bravery + BRDN + Curtains + Foggy Froggies",
+      "date": "2026-11-13",
+      "artistIds": [
+        "dazzling-bravery",
+        "brdn",
+        "curtains",
+        "foggy-froggies"
+      ],
+      "venueId": "la-maison-bleue-strasbourg",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/385-Dirty8-Birthday-LOCAL-HEROES-Dazzling-Bravery-BRDN-Curtains-Foggy-Froggies",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Maison Bleue / Dirty8",
+      "ticketUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/385-Dirty8-Birthday-LOCAL-HEROES-Dazzling-Bravery-BRDN-Curtains-Foggy-Froggies",
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
