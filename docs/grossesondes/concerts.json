@@ -1051,6 +1051,26 @@
       "id": "the-rumpled",
       "name": "The Rumpled",
       "aliases": []
+    },
+    {
+      "id": "spike-and-the-gimme-gimmes",
+      "name": "Spike and the Gimme Gimmes",
+      "aliases": []
+    },
+    {
+      "id": "jared-james-nichols",
+      "name": "Jared James Nichols",
+      "aliases": []
+    },
+    {
+      "id": "komodor",
+      "name": "Komodor",
+      "aliases": []
+    },
+    {
+      "id": "witchorious",
+      "name": "Witchorious",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6061,6 +6081,98 @@
       "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261122-toulouse-spike-and-the-gimme-gimmes",
+      "title": "Spike and the Gimme Gimmes",
+      "date": "2026-11-22",
+      "artistIds": [
+        "spike-and-the-gimme-gimmes"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Punk",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/spike-and-the-gimme-gimmes/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270215-toulouse-jared-james-nichols",
+      "title": "Jared James Nichols",
+      "date": "2027-02-15",
+      "artistIds": [
+        "jared-james-nichols"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/jared-james-nichols/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270409-toulouse-komodor",
+      "title": "KOMODOR & WITCHORIOUS",
+      "date": "2027-04-09",
+      "artistIds": [
+        "komodor",
+        "witchorious"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Hard Rock",
+        "Rock",
+        "Doom Metal",
+        "Stoner Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/komodor-et-witchorious/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
