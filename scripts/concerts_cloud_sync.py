@@ -65,6 +65,24 @@ PILOT_VENUES = {
         "officialUrl": "https://www.backstage-btm.com/infos-pratiques/",
         "locationUrl": "https://www.openstreetmap.org/api/0.6/node/4428897899"
     },
+    "glazart-paris": {
+        "venue": {
+            "id": "glazart-paris",
+            "name": "Glazart",
+            "address": "7–15 avenue de la Porte de la Villette",
+            "postalCode": "75019",
+            "city": "Paris",
+            "department": "75",
+            "region": "Île-de-France",
+            "latitude": 48.899283,
+            "longitude": 2.3866102,
+            "geoPrecision": "centre du bâtiment nommé Glazart (OpenStreetMap way 64038567, géocodage Nominatim)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/way/64038567"
+        },
+        "officialUrl": "https://www.glazart.com/infospratiques/",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/way/64038567",
+        "locationProofType": "openstreetmap-venue-way"
+    },
     "rock-n-eat-lyon": {
         "venue": {
             "id": "rock-n-eat-lyon",
@@ -241,6 +259,28 @@ REGIONAL_APPROVED = {
         "genres": ["Hardcore", "Screamo"],
         "officialUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/370-Dirty8-Birthday-WAKE-THE-DEAD-SICK-LAME-LAZY",
         "venueCalendar": "https://www.lamaisonbleue-stbg.com/agenda/"
+    }
+}
+
+# Glazart: two reviewed individual official pages. Desolated and
+# Guttural Slug are in body lineups but not in abbreviated page titles.
+# Never accept generic agendas, ticket sites, or inferred show start hours.
+GLAZART_VERIFIED = {
+    "go-c-20261128-paris-sunami": {
+        "title": "Sunami + Desolated + Missing Link + Extinguish",
+        "date": "2026-11-28",
+        "artistIds": ["sunami","desolated","missing-link","extinguish"],
+        "newArtistIds": [],
+        "genres": ["Hardcore"],
+        "officialUrl": "https://www.glazart.com/28-11-26-concert-sunami-missing-link-extinguish/"
+    },
+    "go-c-20270324-paris-party-cannon": {
+        "title": "Party Cannon + Internal Bleeding + Guttural Slug",
+        "date": "2027-03-24",
+        "artistIds": ["party-cannon","internal-bleeding","guttural-slug"],
+        "newArtistIds": ["party-cannon","internal-bleeding","guttural-slug"],
+        "genres": ["Death Metal","Slam"],
+        "officialUrl": "https://www.glazart.com/24-03-27-concert-party-cannon-x-internal-bleeding/"
     }
 }
 
@@ -436,7 +476,8 @@ def validate_venue_approval(row, today):
                   x.get("proofType") == "official-venue-address"), None)
     geo = next((x for x in evidence if isinstance(x, dict) and
                 x.get("url") == approved["locationUrl"] and
-                x.get("proofType") == "openstreetmap-venue-node"), None)
+                x.get("proofType") == approved.get(
+                    "locationProofType","openstreetmap-venue-node")), None)
     require(first is not None and geo is not None,
             "Source officielle ou repère OpenStreetMap absent")
     for source, fields in ((first, {"name", "address", "postalCode", "city"}),
@@ -590,7 +631,42 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") in ("rock-n-eat-lyon",
+    if event.get("venueId") == "glazart-paris":
+        spec = GLAZART_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title","date","artistIds","genres"))
+                and official_url == spec["officialUrl"]
+                and event.get("time") is None,
+                "Glazart : seules les deux fiches officielles relues sont admises")
+        parsed = urlsplit(official_url)
+        require(parsed.scheme=="https" and parsed.hostname=="www.glazart.com"
+                and not parsed.username and not parsed.password
+                and not parsed.port and not parsed.query and not parsed.fragment
+                and re.fullmatch(r"/(?:28-11-26|24-03-27)-concert-[a-z0-9-]+/",
+                                 parsed.path),
+                "Glazart : page individuelle ou domaine non agréés")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Glazart : validation indépendante trop ancienne")
+        require(any(isinstance(p,dict)
+                and p.get("url")==spec["officialUrl"]
+                and p.get("proofType")=="official-organizer-or-venue"
+                and p.get("checkedAt")==reviewed_at.isoformat()
+                and {"artists","date","venue","genre"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                "Glazart : preuve officielle complète du programme absente")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and all(i in resolved for i in ids)
+                and all(norm(resolved[i]["name"]).replace(" ","-")==i
+                        for i in ids),
+                "Glazart : identité de groupe ou nouvel artiste incohérent")
+    elif event.get("venueId") in ("rock-n-eat-lyon",
                                    "la-maison-bleue-strasbourg"):
         spec = REGIONAL_APPROVED.get(event_id)
         require(spec is not None
