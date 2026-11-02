@@ -1356,6 +1356,16 @@
       "id": "panic-lights",
       "name": "Panic Lights",
       "aliases": []
+    },
+    {
+      "id": "tagada-jones",
+      "name": "Tagada Jones",
+      "aliases": []
+    },
+    {
+      "id": "die-arzte",
+      "name": "Die Ärzte",
+      "aliases": []
     }
   ],
   "venues": [
@@ -7795,6 +7805,184 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "TAF / Secret Place",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-cenon-tagada-jones",
+      "title": "Tagada Jones + Les Tambours du Bronx",
+      "date": "2026-11-21",
+      "artistIds": [
+        "tagada-jones",
+        "les-tambours-du-bronx"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Punk Hardcore",
+        "Metal industriel"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/tagada-jones-les-tambours-du-bronx",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270117-cenon-rhapsody-of-fire",
+      "title": "Rhapsody of Fire + Serious Black",
+      "date": "2027-01-17",
+      "artistIds": [
+        "rhapsody-of-fire",
+        "serious-black"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/rhapsody-fire-serious-black",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270210-cenon-ugly-kid-joe",
+      "title": "Ugly Kid Joe",
+      "date": "2027-02-10",
+      "artistIds": [
+        "ugly-kid-joe"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/ugly-kid-joe",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270306-cenon-mol",
+      "title": "MØL",
+      "date": "2027-03-06",
+      "artistIds": [
+        "m-l"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/mol",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270324-cenon-die-arzte",
+      "title": "Die Ärzte",
+      "date": "2027-03-24",
+      "artistIds": [
+        "die-arzte"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/die-arzte",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270326-cenon-uuhai",
+      "title": "UUHAI + ACYL",
+      "date": "2027-03-26",
+      "artistIds": [
+        "uuhai",
+        "acyl"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Folk Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/uuhai",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
