@@ -320,6 +320,29 @@ GLAZART_VERIFIED = {
         "newArtistIds": ["party-cannon","internal-bleeding","guttural-slug"],
         "genres": ["Death Metal","Slam"],
         "officialUrl": "https://www.glazart.com/24-03-27-concert-party-cannon-x-internal-bleeding/"
+    },
+    "go-c-20261104-paris-eyehategod": {
+        "title": "Eyehategod + Deafkids",
+        "date": "2026-11-04",
+        "artistIds": ["eyehategod", "deafkids"],
+        "newArtistIds": ["eyehategod", "deafkids"],
+        "genres": ["Sludge", "Avant-Punk"],
+        "officialUrl": "https://www.glazart.com/04-11-26-concert-eyehategod-guest/",
+        "secondaryUrl": "https://www.eventim.fr/event/eyehategod-glazart-paris-19-21567768/",
+        "secondaryProofType": "organizer-ticketing-distribution",
+        "secondaryCheckedFields": ["artists", "date", "venue"],
+    },
+    "go-c-20261114-paris-the-vintage-caravan": {
+        "title": "The Vintage Caravan + Damantra",
+        "date": "2026-11-14",
+        "artistIds": ["the-vintage-caravan", "damantra"],
+        "newArtistIds": [],
+        "genres": ["Classic Rock"],
+        "officialUrl": "https://www.glazart.com/14-11-26-concert-the-vintage-caravan/",
+        "primaryCheckedFields": ["leadArtist", "date", "venue", "genre"],
+        "secondaryUrl": "https://billetterie.seetickets.fr/the-vintage-caravan-damantra-concert-glazart-paris-19-14-novembre-2026-css5-garmonbozia-pg101-ri11777349.html",
+        "secondaryProofType": "organizer-ticketing-detail",
+        "secondaryCheckedFields": ["artists", "date", "venue", "genre"],
     }
 }
 
@@ -679,25 +702,41 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         ("title","date","artistIds","genres"))
                 and official_url == spec["officialUrl"]
                 and event.get("time") is None,
-                "Glazart : seules les deux fiches officielles relues sont admises")
+                "Glazart : concert non compris dans les preuves nominatives agréées")
         parsed = urlsplit(official_url)
         require(parsed.scheme=="https" and parsed.hostname=="www.glazart.com"
                 and not parsed.username and not parsed.password
                 and not parsed.port and not parsed.query and not parsed.fragment
-                and re.fullmatch(r"/(?:06-11-26|30-11-26|28-11-26|24-03-27)-concert-[a-z0-9-]+/",
+                and re.fullmatch(r"/(?:04-11-26|06-11-26|14-11-26|30-11-26|28-11-26|24-03-27)-concert-[a-z0-9-]+/",
                                  parsed.path),
                 "Glazart : page individuelle ou domaine non agréés")
         reviewed_at = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=14) <= reviewed_at <= today,
                 "Glazart : validation indépendante trop ancienne")
+        primary_fields=set(spec.get("primaryCheckedFields",
+                                     ["artists","date","venue","genre"]))
         require(any(isinstance(p,dict)
                 and p.get("url")==spec["officialUrl"]
                 and p.get("proofType")=="official-organizer-or-venue"
                 and p.get("checkedAt")==reviewed_at.isoformat()
-                and {"artists","date","venue","genre"}.issubset(
-                    set(p.get("checkedFields") or []))
+                and primary_fields.issubset(set(p.get("checkedFields") or []))
                 for p in evidence),
-                "Glazart : preuve officielle complète du programme absente")
+                "Glazart : preuve officielle du programme manquante ou exagérée")
+        if spec.get("secondaryUrl"):
+            # No source inflation: an abbreviated Glazart headline cannot
+            # prove the named supporting artist. Verify the exact promoter
+            # ticket (specific host, path and named programme) independently.
+            other=[p for p in evidence if isinstance(p,dict) and
+                   p.get("proofType")==spec["secondaryProofType"]]
+            require(len(evidence)==2 and len(other)==1 and
+                    other[0].get("url")==spec["secondaryUrl"] and
+                    other[0].get("checkedAt")==reviewed_at.isoformat() and
+                    set(spec["secondaryCheckedFields"]).issubset(
+                        set(other[0].get("checkedFields") or [])),
+                    "Glazart : billetterie nominative secondaire absente ou remplacée")
+        else:
+            require(len(evidence)==1,
+                    "Glazart : preuves inattendues sur fiche pleinement nominative")
         resolved=dict(known_artist_ids)
         resolved.update(added)
         require([a["id"] for a in new_artists]==spec["newArtistIds"]
