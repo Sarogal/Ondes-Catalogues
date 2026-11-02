@@ -1913,10 +1913,10 @@
       "city": "Saint-Jean-de-Védas",
       "department": "34",
       "region": "Occitanie",
-      "latitude": 43.5615,
-      "longitude": 3.8424,
-      "geoPrecision": "quartier (coordonnées indicatives, adresse de salle confirmée)",
-      "geoSource": "https://www.toutafond.com/acces"
+      "latitude": 43.5617771,
+      "longitude": 3.841965,
+      "geoPrecision": "centre du bâtiment nommé Secret Place (OpenStreetMap way 382485149, géocodage Nominatim)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/way/382485149"
     },
     {
       "id": "le-molotov-marseille",
