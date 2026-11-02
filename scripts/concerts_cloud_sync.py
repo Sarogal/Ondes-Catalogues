@@ -28,6 +28,45 @@ APPROVAL_URL = (
 )
 SCHEMA = "grossesondes.concert.approvals.v1"
 
+# Pilot venues explicitly reviewed (first-party address + named OSM node).
+# Any future venue requires its own signed source review AND a code review.
+PILOT_VENUES = {
+    "jokers-pub-angers": {
+        "venue": {
+            "id": "jokers-pub-angers",
+            "name": "Le Joker's Pub",
+            "address": "32 rue Saint-Laud",
+            "postalCode": "49100",
+            "city": "Angers",
+            "department": "49",
+            "region": "Pays de la Loire",
+            "latitude": 47.47219,
+            "longitude": -0.55304,
+            "geoPrecision": "point du lieu (OpenStreetMap node 4789000416)",
+            "geoSource": "https://mapcarta.com/fr/N4789000416"
+        },
+        "officialUrl": "https://www.jokerspubangers.com/le-pub-jokers-angers.php",
+        "locationUrl": "https://mapcarta.com/fr/N4789000416"
+    },
+    "le-brin-de-zinc-barberaz": {
+        "venue": {
+            "id": "le-brin-de-zinc-barberaz",
+            "name": "Le Brin de Zinc",
+            "address": "3 route de la Peysse",
+            "postalCode": "73000",
+            "city": "Barberaz",
+            "department": "73",
+            "region": "Auvergne-Rhône-Alpes",
+            "latitude": 45.5613,
+            "longitude": 5.94761,
+            "geoPrecision": "point du lieu (OpenStreetMap node 1979372261)",
+            "geoSource": "https://mapcarta.com/N1979372261"
+        },
+        "officialUrl": "https://brindezinc.fr/informations-pratiques/",
+        "locationUrl": "https://mapcarta.com/N1979372261"
+    }
+}
+
 # Explicit one-time, source-documented map correction. The original 127-
 # event baseline remains immutable. The precise location is the named
 # OpenStreetMap venue node (not the midpoint of Nantes).
@@ -129,6 +168,43 @@ def norm_date(value):
             re.fullmatch(r"20\d{2}-\d{2}-\d{2}", value),
             "Date ISO invalide")
     return dt.date.fromisoformat(value)
+
+
+def validate_venue_approval(row, today):
+    """No generic coordinates, no inferred location and no unreviewed venue."""
+    require(isinstance(row, dict) and row.get("reviewDecision") == "approved"
+            and row.get("reviewedBy") == "independent-official-verifier",
+            "Salle non approuvée indépendamment")
+    venue = row.get("venue")
+    require(isinstance(venue, dict) and venue.get("id") in PILOT_VENUES,
+            "Salle non agréée dans la liste blanche")
+    approved = PILOT_VENUES[venue["id"]]
+    expected = approved["venue"]
+    require(venue == expected and set(venue) == set(expected),
+            "Coordonnées, identité ou adresse de salle altérées")
+    checked = norm_date(row.get("reviewedAt"))
+    require(checked <= today, "Vérification de salle datée dans le futur")
+    evidence = row.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 2,
+            "Deux preuves indépendantes exigées pour une nouvelle salle")
+    first = next((x for x in evidence if isinstance(x, dict) and
+                  x.get("url") == approved["officialUrl"] and
+                  x.get("proofType") == "official-venue-address"), None)
+    geo = next((x for x in evidence if isinstance(x, dict) and
+                x.get("url") == approved["locationUrl"] and
+                x.get("proofType") == "openstreetmap-venue-node"), None)
+    require(first is not None and geo is not None,
+            "Source officielle ou repère OpenStreetMap absent")
+    for source, fields in ((first, {"name", "address", "postalCode", "city"}),
+                           (geo, {"venueName", "coordinates"})):
+        require(source.get("checkedAt") == checked.isoformat()
+                and fields.issubset(set(source.get("checkedFields") or [])),
+                "Preuve de salle non datée ou incomplète")
+    require(venue["geoSource"] == approved["locationUrl"]
+            and isinstance(venue["latitude"], (float, int))
+            and isinstance(venue["longitude"], (float, int)),
+            "Position du lieu non sourcée")
+    return copy.deepcopy(venue)
 
 
 def validate_approval(approval, venues, known_artist_ids, today):
@@ -267,6 +343,45 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Heure non valide")
     require(event.get("sourceType") in ("organisateur", "salle"),
             "Source tierce seule non admise")
+    # This first pilot accepts independently checked Joker's Pub individual
+    # event pages only. It cannot promote Brin de Zinc's ticketing leads,
+    # unknown origins, generic agendas, or fabricated venue/date claims.
+    if event.get("venueId") in PILOT_VENUES:
+        require(event["venueId"] == "jokers-pub-angers"
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle",
+                "Nouvelle salle : validation concert manuelle indépendante requise")
+        parsed = urlsplit(official_url)
+        require(parsed.hostname == "www.jokerspubangers.com"
+                and parsed.scheme == "https" and not parsed.username
+                and not parsed.password and not parsed.query and not parsed.fragment
+                and re.fullmatch(
+                    r"/jokers-concert-programmation-[a-z0-9+_.-]+\.html",
+                    parsed.path, flags=re.I),
+                "Page individuelle du Joker's Pub obligatoire")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Validation indépendante du concert trop ancienne")
+        require(any(
+            item.get("url") == official_url and
+            item.get("proofType") == "official-organizer-or-venue" and
+            item.get("checkedAt") == reviewed_at.isoformat() and
+            {"artists", "date", "venue", "genre", "startTime"}.issubset(
+                set(item.get("checkedFields") or []))
+            for item in evidence if isinstance(item, dict)),
+            "Page officielle Joker sans preuve datée des champs nécessaires")
+        require(bool(event.get("time")), "Heure de début officielle non attestée")
+        # A previously known artist must resolve to the exact named act.
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(x in resolved for x in ids)
+                and all(x["id"] == norm(x["name"]).replace(" ", "-")
+                        and x["id"] in ids for x in new_artists),
+                "Identité des artistes de la nouvelle salle non sûre")
+        require(any(re.search(r"\b(punk|hardcore|metal|doom|stoner)\b",
+                              norm(label))
+                    for label in event["genres"]),
+                "Genre punk/métal de la nouvelle salle non documenté")
     return event, added
 
 
@@ -293,7 +408,40 @@ def merge(reference, current, approvals, today):
     ids = {x["id"] for x in result["events"]}
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
-    counts = {"newEvents": 0, "newArtists": 0, "alreadyPublished": 0, "held": []}
+    venue_approvals = approvals.get("venueApprovals", [])
+    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 8,
+            "Liste d'approbations de salles inattendue ou excessive")
+    approved_venues = {x["venue"]["id"]: x for x in venue_approvals
+                       if isinstance(x,dict) and isinstance(x.get("venue"),dict)
+                       and isinstance(x["venue"].get("id"), str)}
+    require(len(approved_venues) == len(venue_approvals),
+            "Doublon ou dossier de salle incomplet")
+    # Every previously appended venue must still match its private approval.
+    # As with events, no ad-hoc catalogue edit can bypass the approval queue.
+    for prior in current["venues"][len(reference["venues"]):]:
+        approval = approved_venues.get(prior["id"])
+        require(approval is not None and prior == validate_venue_approval(approval, today),
+                "Salle cloud ajoutée/modifiée sans approbation privée")
+    counts = {"newEvents": 0, "newArtists": 0, "newVenues": 0,
+              "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
+    for entry in venue_approvals:
+        try:
+            incoming = validate_venue_approval(entry, today)
+            v_id = incoming["id"]
+            if v_id in venues:
+                require(venues[v_id] == incoming, "Conflit de fiche salle déjà présente")
+                counts["alreadyRegisteredVenues"] += 1
+                continue
+            require(not any(norm(v["name"]) == norm(incoming["name"]) and
+                            norm(v["city"]) == norm(incoming["city"])
+                            for v in venues.values()),
+                    "Salle déjà connue sous un autre identifiant")
+            result["venues"].append(incoming)
+            venues[v_id] = incoming
+            counts["newVenues"] += 1
+        except (ValueError, KeyError, TypeError) as ex:
+            counts["held"].append({"candidateId": entry.get("venue", {}).get("id"),
+                                   "reason": str(ex)})
     for entry in approvals["approvals"][:50]:
         try:
             incoming = entry.get("event") or {}
@@ -340,7 +488,7 @@ def merge(reference, current, approvals, today):
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
     require(len(approvals["approvals"]) <= 50, "Trop d'approbations par lot")
-    if counts["newEvents"]:
+    if counts["newEvents"] or counts["newVenues"]:
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
     protect_reference(reference, result)
@@ -372,7 +520,7 @@ def main():
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out / "concerts-candidat.json").write_text(
         json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if args.mode == "publish" and stats["newEvents"]:
+    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"]):
         require(bool(token), "Interdiction de publier sans accès aux validations privées")
         CATALOGUE.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

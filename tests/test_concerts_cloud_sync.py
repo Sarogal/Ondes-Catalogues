@@ -40,6 +40,153 @@ def approval(event_id="go-c-20270201-nantes-groupe-essai"):
 
 
 class ConcertsCloudSyncTests(unittest.TestCase):
+    def pilot_queue(self, with_events=True):
+        from concerts_cloud_sync import PILOT_VENUES
+        records=[]
+        for pilot in PILOT_VENUES.values():
+            records.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[
+                    {"url":pilot["officialUrl"],
+                     "proofType":"official-venue-address",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["name","address","postalCode","city"]},
+                    {"url":pilot["locationUrl"],
+                     "proofType":"openstreetmap-venue-node",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["venueName","coordinates"]}
+                ],
+                "venue":copy.deepcopy(pilot["venue"])
+            })
+        events=[]
+        if with_events:
+            for date,idpart,title,names,time in (
+                ("2026-11-27","charles-de-goal","Charles de Goal",
+                 ["Charles de Goal"],"21:00"),
+                ("2026-12-11","aurore-brutaliste","Aurore + Brutaliste",
+                 ["Aurore","Brutaliste"],"20:30")
+            ):
+                url=("https://www.jokerspubangers.com/"
+                     "jokers-concert-programmation-"+idpart+".html")
+                events.append({
+                    "reviewDecision":"approved",
+                    "reviewedBy":"independent-official-verifier",
+                    "reviewedAt":"2026-11-02",
+                    "officialEvidence":[{
+                        "url":url,
+                        "proofType":"official-organizer-or-venue",
+                        "checkedAt":"2026-11-02",
+                        "checkedFields":["artists","date","venue","genre","startTime"]
+                    }],
+                    "event":{
+                        "id":"go-c-"+date.replace("-","")+"-angers-"+idpart,
+                        "title":title,"date":date,"time":time,
+                        "artistIds":[n.lower().replace(" ","-") for n in names],
+                        "venueId":"jokers-pub-angers","genres":["Hardcore","Punk"],
+                        "status":"confirmed","officialUrl":url,"sourceType":"salle"
+                    },
+                    "newArtists":[{"id":n.lower().replace(" ","-"),"name":n}
+                                  for n in names]
+                })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":records,"approvals":events}
+
+    def test_two_vetted_venues_and_two_joker_events_append_without_damage(self):
+        checked=__import__("datetime").date(2026,11,2)
+        queue=self.pilot_queue()
+        out,stats=merge(BASE,BASE,queue,checked)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],2)
+        self.assertEqual(stats["newEvents"],2)
+        self.assertEqual(stats["newArtists"],3)
+        self.assertEqual(len(out["venues"]),55)
+        self.assertEqual(len(out["events"]),129)
+        self.assertEqual(out["events"][:127],BASE["events"])
+        self.assertEqual(out["venues"][:53],BASE["venues"])
+        self.assertEqual(out["mode"],"preview-public-unlisted")
+        self.assertEqual([e["time"] for e in out["events"][-2:]],["21:00","20:30"])
+        protect_reference(BASE,out)
+        validate_catalogue(out)
+        again,next_stats=merge(BASE,out,queue,checked)
+        self.assertEqual(next_stats["newEvents"],0)
+        self.assertEqual(next_stats["newVenues"],0)
+        self.assertEqual(next_stats["alreadyPublished"],2)
+        self.assertEqual(next_stats["alreadyRegisteredVenues"],2)
+        self.assertEqual(out,again)
+
+    def test_unapproved_or_wrong_geocoded_venue_not_added(self):
+        checked=__import__("datetime").date(2026,11,2)
+        queue=self.pilot_queue(with_events=False)
+        for mutation in ("wrong-lat","wrong-address","wrong-source",
+                         "wrong-reviewer","unknown-id","missing-geo-proof"):
+            with self.subTest(mutation=mutation):
+                altered=copy.deepcopy(queue)
+                entry=altered["venueApprovals"][0]
+                if mutation=="wrong-lat":
+                    entry["venue"]["latitude"]+=.01
+                elif mutation=="wrong-address":
+                    entry["venue"]["address"]="Adresse non vérifiée"
+                elif mutation=="wrong-source":
+                    entry["officialEvidence"][0]["url"]="https://other.example/lieu"
+                elif mutation=="wrong-reviewer":
+                    entry["reviewedBy"]="automated-official-recheck"
+                elif mutation=="unknown-id":
+                    entry["venue"]["id"]="unknown-hall"
+                elif mutation=="missing-geo-proof":
+                    entry["officialEvidence"].pop()
+                out,stats=merge(BASE,BASE,altered,checked)
+                self.assertEqual(stats["newVenues"],1)
+                self.assertTrue(stats["held"])
+                self.assertEqual(out["venues"][0:53],BASE["venues"])
+                self.assertEqual(len(out["venues"]),54)
+        # Without any verified venues a concert in a new location is held.
+        bad=self.pilot_queue()
+        bad["venueApprovals"]=[]
+        out,stats=merge(BASE,BASE,bad,checked)
+        self.assertEqual(stats["newVenues"],0)
+        self.assertEqual(stats["newEvents"],0)
+        self.assertTrue(stats["held"])
+
+    def test_new_venue_event_cannot_use_aggregator_or_brin_ticketing(self):
+        checked=__import__("datetime").date(2026,11,2)
+        base=self.pilot_queue()
+        for variant in ("other-domain","generic-agenda","wrong-reviewer",
+                        "no-start-proof","unapproved-brin"):
+            with self.subTest(variant=variant):
+                q=copy.deepcopy(base)
+                a=q["approvals"][0]
+                if variant=="other-domain":
+                    a["event"]["officialUrl"]="https://evil.example/jokers-concert-programmation-bad.html"
+                    a["officialEvidence"][0]["url"]=a["event"]["officialUrl"]
+                elif variant=="generic-agenda":
+                    a["event"]["officialUrl"]="https://www.jokerspubangers.com/"
+                    a["officialEvidence"][0]["url"]=a["event"]["officialUrl"]
+                elif variant=="wrong-reviewer":
+                    a["reviewedBy"]="automated-official-recheck"
+                elif variant=="no-start-proof":
+                    a["officialEvidence"][0]["checkedFields"]=["date","artists","venue","genre"]
+                elif variant=="unapproved-brin":
+                    a["event"]["venueId"]="le-brin-de-zinc-barberaz"
+                    a["event"]["officialUrl"]="https://www.billetweb.fr/multi_event.php?multi=11236"
+                    a["officialEvidence"][0]["url"]=a["event"]["officialUrl"]
+                out,stats=merge(BASE,BASE,q,checked)
+                self.assertEqual(stats["newEvents"],1)
+                self.assertGreaterEqual(len(stats["held"]),1)
+
+    def test_no_direct_edit_to_post_baseline_venue(self):
+        checked=__import__("datetime").date(2026,11,2)
+        queue=self.pilot_queue(with_events=False)
+        with_venues,_=merge(BASE,BASE,queue,checked)
+        forged=copy.deepcopy(with_venues)
+        forged["venues"][-1]["longitude"]+=.001
+        with self.assertRaisesRegex(ValueError,"Salle cloud"):
+            merge(BASE,forged,queue,checked)
+        # Removing the private approvals cannot silently grandfather a venue.
+        with self.assertRaisesRegex(ValueError,"Salle cloud"):
+            merge(BASE,with_venues,{"schema":queue["schema"],"approvals":[]},checked)
+
     def test_reference_127_immutable(self):
         self.assertEqual(len(BASE["events"]),127)
         self.assertEqual(len(BASE["venues"]),53)
