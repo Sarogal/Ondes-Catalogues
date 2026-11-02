@@ -19,6 +19,9 @@ on:
   # Synchronisation après deux concerts validés à La Carène à Brest et
   # approbation de la salle (PR privée GrossesOndes #87, 02/11/2026).
   # Aucun changement des règles de sécurité ni des autres catalogues.
+  # Atabal Biarritz : relance après la revue signée (GrossesOndes PR #90)
+  # et validation publique stricte (Ondes-Catalogues PR #49) du 02/11/2026.
+  # Publier uniquement les trois concerts approuvés, sans heure inférée.
   schedule:
     - cron: '17 */3 * * *'
   push:
