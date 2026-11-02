@@ -1510,8 +1510,11 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 resulting,report=merge(BASE,BASE,q,day)
                 self.assertTrue(report["held"])
                 self.assertEqual(report["newEvents"],0)
-                self.assertEqual(report["newVenues"],0)
-                self.assertEqual(resulting,BASE)
+                # Venue approval is independent of the rejected concert.
+                self.assertEqual(report["newVenues"],0 if variant in
+                                 ("wrong-pin","fake-node") else 1)
+                self.assertEqual(resulting["events"],BASE["events"])
+                self.assertEqual(resulting["artists"],BASE["artists"])
 
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
