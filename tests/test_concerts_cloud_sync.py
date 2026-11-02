@@ -228,6 +228,8 @@ class ConcertsCloudSyncTests(unittest.TestCase):
             })
         rows=[]
         for ident, spec in REGIONAL_APPROVED.items():
+            if ident=="go-c-20261113-strasbourg-local-heroes":
+                continue  # This two-event fixture retains its original scope.
             rows.append({
                 "reviewDecision":"approved",
                 "reviewedBy":"independent-official-verifier",
@@ -258,6 +260,94 @@ class ConcertsCloudSyncTests(unittest.TestCase):
             })
         return {"schema":"grossesondes.concert.approvals.v1",
                 "approvals":rows,"venueApprovals":venues}
+
+    def local_heroes_approval(self):
+        from concerts_cloud_sync import REGIONAL_APPROVED
+        ident="go-c-20261113-strasbourg-local-heroes"
+        spec=REGIONAL_APPROVED[ident]
+        return {
+            "reviewDecision":"approved",
+            "reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-02",
+            "officialEvidence":[{
+                "url":spec["officialUrl"],
+                "proofType":"official-organizer-or-venue",
+                "checkedAt":"2026-11-02",
+                "checkedFields":["artists","date","venue"]
+            },{
+                "url":spec["venueCalendar"],
+                "proofType":"first-party-venue-calendar",
+                "checkedAt":"2026-11-02",
+                "checkedFields":["date","venue","genre"]
+            }],
+            "event":{
+                "id":ident,"title":spec["title"],"date":spec["date"],
+                "time":None,"artistIds":list(spec["artistIds"]),
+                "venueId":spec["venueId"],"genres":list(spec["genres"]),
+                "status":"confirmed","officialUrl":spec["officialUrl"],
+                "ticketUrl":spec["officialUrl"],"sourceType":"organisateur",
+                "organizer":"La Maison Bleue / Dirty8"
+            },
+            "newArtists":[{"id":"dazzling-bravery","name":"Dazzling Bravery"},
+                          {"id":"brdn","name":"BRDN"},
+                          {"id":"curtains","name":"Curtains"},
+                          {"id":"foggy-froggies","name":"Foggy Froggies"}]
+        }
+
+    def test_local_heroes_first_party_split_provenance_and_idempotence(self):
+        day=__import__("datetime").date(2026,11,2)
+        queue=self.regional_reviewed_queue()
+        queue["approvals"].append(self.local_heroes_approval())
+        out,stats=merge(BASE,BASE,queue,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newEvents"],3)
+        self.assertEqual(stats["newArtists"],8)
+        self.assertEqual(stats["newVenues"],2)
+        self.assertEqual(len(out["events"]),130)
+        self.assertEqual(len(out["artists"]),201)
+        event=out["events"][-1]
+        self.assertEqual(event["date"],"2026-11-13")
+        self.assertEqual(event["artistIds"],
+                         ["dazzling-bravery","brdn","curtains","foggy-froggies"])
+        self.assertEqual(event["genres"],["Metal"])
+        self.assertIsNone(event["time"])
+        repeated,stats2=merge(BASE,out,queue,day)
+        self.assertEqual(stats2["newEvents"],0)
+        self.assertEqual(stats2["alreadyPublished"],3)
+        self.assertEqual(repeated,out)
+
+    def test_local_heroes_requires_four_named_acts_from_ticket_and_genre_from_venue(self):
+        day=__import__("datetime").date(2026,11,2)
+        cases=("unexpected-artist","invented-showtime","fake-ticket","bad-genre",
+               "genre-without-calendar","names-without-ticket",
+               "unapproved-new-artist","unlisted-event","missing-partner-proof")
+        for case in cases:
+            with self.subTest(case=case):
+                queue=self.regional_reviewed_queue()
+                row=self.local_heroes_approval()
+                queue["approvals"].append(row)
+                if case=="unexpected-artist":
+                    row["event"]["artistIds"][0]="new-unsupported-act"
+                elif case=="invented-showtime":
+                    row["event"]["time"]="19:30"
+                elif case=="fake-ticket":
+                    row["event"]["officialUrl"]="https://example.com/not-official"
+                elif case=="bad-genre":
+                    row["event"]["genres"]=["Pop"]
+                elif case=="genre-without-calendar":
+                    row["officialEvidence"][1]["checkedFields"].remove("genre")
+                elif case=="names-without-ticket":
+                    row["officialEvidence"][0]["checkedFields"].remove("artists")
+                elif case=="unapproved-new-artist":
+                    row["newArtists"][0]["name"]="Different Band"
+                elif case=="unlisted-event":
+                    row["event"]["id"]="go-c-20261113-strasbourg-invented"
+                elif case=="missing-partner-proof":
+                    row["officialEvidence"].pop()
+                out,stats=merge(BASE,BASE,queue,day)
+                self.assertTrue(stats["held"])
+                self.assertEqual(stats["newEvents"],2)
+                self.assertEqual(len(out["events"]),129)
 
     def test_rock_and_maison_precise_venues_and_events_append_only_once(self):
         day=__import__("datetime").date(2026,11,2)
