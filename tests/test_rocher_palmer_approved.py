@@ -1,4 +1,4 @@
-"""Strict tests for the six signed Rocher de Palmer event records (no network)."""
+"""Strict tests for the seven signed Rocher de Palmer event records (no network)."""
 import copy
 import datetime as dt
 import unittest
@@ -18,7 +18,8 @@ VENUES = {"le-rocher-de-palmer-cenon": {
     "id":"le-rocher-de-palmer-cenon",
     "name":"Le Rocher de Palmer","city":"Cenon",
 }}
-FRESH = {"tagada-jones":"Tagada Jones","die-arzte":"Die Ärzte"}
+FRESH = {"tagada-jones":"Tagada Jones","die-arzte":"Die Ärzte",
+         "gwendoline":"Gwendoline"}
 
 
 def approval(event_id):
@@ -45,8 +46,8 @@ def approval(event_id):
 
 
 class RocherPalmerValidation(unittest.TestCase):
-    def test_all_six_individual_official_approvals(self):
-        self.assertEqual(len(sync.ROCHER_PALMER_VERIFIED),6)
+    def test_all_seven_individual_official_approvals(self):
+        self.assertEqual(len(sync.ROCHER_PALMER_VERIFIED),7)
         for event_id in sync.ROCHER_PALMER_VERIFIED:
             with self.subTest(event_id=event_id):
                 event,artists=sync.validate_approval(approval(event_id),VENUES,KNOWN,TODAY)
