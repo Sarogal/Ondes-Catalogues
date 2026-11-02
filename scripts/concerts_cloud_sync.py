@@ -101,6 +101,24 @@ PILOT_VENUES = {
         "locationUrl": "https://www.openstreetmap.org/api/0.6/way/81704888",
         "locationProofType": "openstreetmap-venue-way"
     },
+    "la-cave-aux-poetes-roubaix": {
+        "venue": {
+            "id": "la-cave-aux-poetes-roubaix",
+            "name": "La Cave aux Poètes",
+            "address": "16 rue du Grand Chemin",
+            "postalCode": "59100",
+            "city": "Roubaix",
+            "department": "59",
+            "region": "Hauts-de-France",
+            "latitude": 50.6921711,
+            "longitude": 3.1692704,
+            "geoPrecision": "point nominatif de La Cave Aux Poètes (OpenStreetMap node 5902484873, nom adresse site et téléphone concordants)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/node/5902484873"
+        },
+        "officialUrl": "https://caveauxpoetes.com/pratique/",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/node/5902484873",
+        "locationProofType": "openstreetmap-venue-node"
+    },
     "le-forum-vaureal": {
         "venue": {
             "id": "le-forum-vaureal",
@@ -467,6 +485,21 @@ PARIS_CLUB_VERIFIED = {
              ("artists","date","venue","genre"))
         ],
     },
+}
+
+# Independently checked original venue detail and organizer-published OpenAgenda.
+# Only this exact 2026 riot-grrrl triple bill can enter from this venue.
+CAVE_POETES_VERIFIED = {
+    "go-c-20261108-roubaix-babe-haven-latter-muddle": {
+        "title": "Babe Haven + Latter + Muddle",
+        "date": "2026-11-08",
+        "time": "18:30",
+        "artistIds": ["babe-haven","latter","muddle"],
+        "newArtistIds": ["babe-haven","latter","muddle"],
+        "genres": ["Punk","Nu Metal"],
+        "officialUrl": "https://caveauxpoetes.com/evenement/babe-haven-latter-muddle/",
+        "organizerCalendar": "https://openagenda.com/fr/la-cave-aux-poetes/events/32006543_babe-haven-latter-muddle"
+    }
 }
 
 # Five exact first-party concert details at the newly verified Forum venue.
@@ -943,7 +976,48 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "le-forum-vaureal":
+    if event.get("venueId") == "la-cave-aux-poetes-roubaix":
+        spec=CAVE_POETES_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","time","artistIds","genres"))
+                and official_url==spec["officialUrl"],
+                "Cave aux Poètes : seule l'affiche punk du 8 novembre est agréée")
+        u=urlsplit(official_url)
+        require(u.scheme=="https" and u.hostname=="caveauxpoetes.com"
+                and u.path=="/evenement/babe-haven-latter-muddle/"
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "Cave aux Poètes : page officielle exacte exigée")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "Cave aux Poètes : preuve trop ancienne")
+        require(len(evidence)==2 and any(
+            isinstance(p,dict)
+            and p.get("url")==spec["officialUrl"]
+            and p.get("proofType")=="official-organizer-or-venue"
+            and p.get("checkedAt")==checked.isoformat()
+            and {"artists","date","venue","genre","startTime"}.issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence) and any(
+            isinstance(p,dict)
+            and p.get("url")==spec["organizerCalendar"]
+            and p.get("proofType")=="organizer-submitted-calendar"
+            and p.get("checkedAt")==checked.isoformat()
+            and {"artists","date","venue","startTime"}.issubset(
+                set(p.get("checkedFields") or []))
+            for p in evidence),
+                "Cave aux Poètes : fiche officielle et agenda soumis par salle requis")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([x["id"] for x in new_artists]==spec["newArtistIds"]
+                and all(aid in resolved for aid in ids)
+                and all(norm(resolved[aid]["name"]).replace(" ","-")==aid
+                        for aid in ids),
+                "Cave aux Poètes : noms ou identifiants d'artistes non corroborés")
+    elif event.get("venueId") == "le-forum-vaureal":
         spec=FORUM_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer=="independent-official-verifier"
