@@ -1211,6 +1211,16 @@
       "id": "vortex",
       "name": "Vortex",
       "aliases": []
+    },
+    {
+      "id": "eyehategod",
+      "name": "Eyehategod",
+      "aliases": []
+    },
+    {
+      "id": "deafkids",
+      "name": "Deafkids",
+      "aliases": []
     }
   ],
   "venues": [
@@ -6951,6 +6961,67 @@
       "timeMeaning": "non confirmé",
       "organizer": "Le Brin de Zinc",
       "ticketUrl": "https://www.billetweb.fr/xaon-x-vortex-symphonic-death-metal-canada",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261104-paris-eyehategod",
+      "title": "Eyehategod + Deafkids",
+      "date": "2026-11-04",
+      "artistIds": [
+        "eyehategod",
+        "deafkids"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Sludge",
+        "Avant-Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/04-11-26-concert-eyehategod-guest/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Glazart",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-paris-the-vintage-caravan",
+      "title": "The Vintage Caravan + Damantra",
+      "date": "2026-11-14",
+      "artistIds": [
+        "the-vintage-caravan",
+        "damantra"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Classic Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/14-11-26-concert-the-vintage-caravan/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Glazart",
+      "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
