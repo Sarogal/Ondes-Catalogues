@@ -146,6 +146,70 @@ FERRAILLEUR_LOCATION_FIX = {
 FERRAILLEUR_VENUE_ID = "le-ferrailleur-nantes"
 
 
+# Precisely one documented exception for a historic incomplete bill.
+# The 127 original records remain untouched in concerts-reference.json.
+# Årabrot is already among the reference artists.
+LEGACY_LINEUP_ID = "go-c-20261212-nantes-lost-in-kyiv"
+LEGACY_LINEUP_SOURCE = "https://www.leferrailleur.fr/evenement/lost-in-kyiv/5307"
+LEGACY_LINEUP_PATCH = {
+    "title": "Lost in Kyiv + Årabrot",
+    "artistIds": ["lost-in-kyiv", "arabrot"],
+    "lastVerified": "2026-11-02",
+}
+LEGACY_LINEUP_HISTORY = {
+    "date": "2026-11-02",
+    "change": "Årabrot ajouté à l'affiche après relecture du détail officiel Le Ferrailleur",
+}
+
+
+def legacy_corrected_events(reference):
+    events = copy.deepcopy(reference["events"])
+    rows = [x for x in events if x["id"] == LEGACY_LINEUP_ID]
+    require(len(rows) == 1, "Fiche historique Lost in Kyiv absente")
+    original = rows[0]
+    require(original["artistIds"] == ["lost-in-kyiv"]
+            and original["title"] == "Lost in Kyiv"
+            and original["date"] == "2026-12-12"
+            and original["venueId"] == "le-ferrailleur-nantes"
+            and original["officialUrl"] == LEGACY_LINEUP_SOURCE
+            and "arabrot" in {a["id"] for a in reference["artists"]},
+            "La correction ne correspond pas au référentiel immuable")
+    original.update(copy.deepcopy(LEGACY_LINEUP_PATCH))
+    original["history"].append(copy.deepcopy(LEGACY_LINEUP_HISTORY))
+    return events
+
+
+def validate_legacy_correction(approvals, reference, today):
+    corrections = approvals.get("referenceCorrections", [])
+    require(isinstance(corrections, list) and len(corrections) <= 1,
+            "Dossier de correction historique non conforme")
+    if not corrections:
+        return None
+    c = corrections[0]
+    require(isinstance(c, dict) and c.get("eventId") == LEGACY_LINEUP_ID
+            and c.get("reviewDecision") == "approved"
+            and c.get("reviewedBy") == "independent-official-verifier"
+            and c.get("eventPatch") == LEGACY_LINEUP_PATCH,
+            "Modification historique non approuvée ou hors liste blanche")
+    day = norm_date(c.get("reviewedAt"))
+    require(day <= today and day == dt.date(2026, 11, 2),
+            "Vérification du changement historique invalide")
+    evidence = c.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 1,
+            "Preuve officielle unitaire obligatoire")
+    p = evidence[0]
+    require(isinstance(p,dict) and p.get("url") == LEGACY_LINEUP_SOURCE
+            and p.get("proofType") == "official-venue-detail"
+            and p.get("checkedAt") == day.isoformat()
+            and {"artists","date","venue","startTime"}.issubset(
+                set(p.get("checkedFields") or [])),
+            "Fiche officielle non vérifiée pour la correction")
+    legacy_corrected_events(reference)
+    return c
+
+
+
+
 def require(check, message):
     if not check:
         raise ValueError(message)
@@ -203,7 +267,10 @@ def protect_reference(reference, current):
         now = current[kind]
         require(len(now) >= len(initial),
                 "Référence immuable modifiée ou supprimée : " + kind)
-        if kind == "venues":
+        if kind == "events":
+            require(now[:len(initial)] in (initial, legacy_corrected_events(reference)),
+                    "Concert historique modifié hors exception de programmation approuvée")
+        elif kind == "venues":
             # One georeference was previously recorded as city-centre
             # approximation. Accept ONLY the exact documented correction;
             # every other venue and every other field stays immutable.
@@ -517,6 +584,16 @@ def merge(reference, current, approvals, today):
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
+    correction = validate_legacy_correction(approvals, reference, today)
+    current_prefix = current["events"][:len(reference["events"])]
+    if current_prefix != reference["events"]:
+        require(correction is not None
+                and current_prefix == legacy_corrected_events(reference),
+                "Concert historique modifié sans validation privée persistante")
+    corrected_count = 0
+    if correction and current_prefix == reference["events"]:
+        result["events"][:len(reference["events"])] = legacy_corrected_events(reference)
+        corrected_count = 1
     ids = {x["id"] for x in result["events"]}
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
@@ -535,6 +612,7 @@ def merge(reference, current, approvals, today):
         require(approval is not None and prior == validate_venue_approval(approval, today),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     counts = {"newEvents": 0, "newArtists": 0, "newVenues": 0,
+              "correctedEvents": corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
     for entry in venue_approvals:
         try:
@@ -600,7 +678,7 @@ def merge(reference, current, approvals, today):
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
     require(len(approvals["approvals"]) <= 50, "Trop d'approbations par lot")
-    if counts["newEvents"] or counts["newVenues"]:
+    if counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"]:
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
     protect_reference(reference, result)
@@ -632,7 +710,7 @@ def main():
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (out / "concerts-candidat.json").write_text(
         json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"]):
+    if args.mode == "publish" and (stats["newEvents"] or stats["newVenues"] or stats["correctedEvents"]):
         require(bool(token), "Interdiction de publier sans accès aux validations privées")
         CATALOGUE.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
