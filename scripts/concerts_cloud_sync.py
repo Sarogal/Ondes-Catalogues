@@ -1471,13 +1471,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
             spec["secondaryProofType"]),{})
         require(primary.get("url")==spec["officialUrl"]
                 and primary.get("checkedAt")==reviewed.isoformat()
-                and {"artists","day","month","venue","genre","startTime"}.
-                    issubset(set(primary.get("checkedFields") or [])),
+                and {"artists","day","month","venue","genre","startTime"}.issubset(set(primary.get("checkedFields") or [])),
                 "Hydrophone : preuve première source incomplète")
         require(secondary.get("url")==spec["secondaryUrl"]
                 and secondary.get("checkedAt")==reviewed.isoformat()
-                and {"artists","date","year","venue","startTime"}.
-                    issubset(set(secondary.get("checkedFields") or []))
+                and {"artists","date","year","venue","startTime"}.issubset(set(secondary.get("checkedFields") or []))
                 and secondary.get("dateConfirmed")==spec["date"]
                 and secondary.get("startTimeConfirmed")==spec["time"],
                 "Hydrophone : année 2027 et heure non recoupées sur billetterie")
