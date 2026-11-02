@@ -1428,6 +1428,91 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                                 "reviewDecision":"approved",
                                 "eventId":"invented-event"}]},day)
 
+    def trabendo_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES,TRABENDO_VERIFIED
+        v=PILOT_VENUES["le-trabendo-paris"]
+        venue={
+            "reviewDecision":"approved",
+            "reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-02",
+            "venue":copy.deepcopy(v["venue"]),
+            "officialEvidence":[
+                {"url":v["officialUrl"],"proofType":"official-venue-address",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["name","address","postalCode","city"]},
+                {"url":v["locationUrl"],"proofType":"openstreetmap-venue-way",
+                 "checkedAt":"2026-11-02",
+                 "checkedFields":["venueName","coordinates"]}
+            ]
+        }
+        approvals=[]
+        for ident,entry in TRABENDO_VERIFIED.items():
+            approvals.append({
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[{
+                    "url":entry["officialUrl"],
+                    "proofType":"official-organizer-or-venue",
+                    "checkedAt":"2026-11-02",
+                    "checkedFields":["artists","date","venue","genre"]}],
+                "event":{
+                    "id":ident,"title":entry["title"],"date":entry["date"],
+                    "time":None,"artistIds":entry["artistIds"],
+                    "venueId":"le-trabendo-paris",
+                    "genres":entry["genres"],"status":"confirmed",
+                    "officialUrl":entry["officialUrl"],"sourceType":"salle",
+                    "organizer":"Le Trabendo"},
+                "newArtists":[{"id":key,"name":entry["title"]}
+                    for key in entry["newArtistIds"]]
+            })
+        return {"schema":"grossesondes.concert.approvals.v1",
+                "venueApprovals":[venue],"approvals":approvals}
+
+    def test_trabendo_geo_way_and_two_explicit_bills_publish_once(self):
+        day=__import__("datetime").date(2026,11,2)
+        q=self.trabendo_queue()
+        j,report=merge(BASE,BASE,q,day)
+        self.assertEqual(report["held"],[])
+        self.assertEqual(report["newVenues"],1)
+        self.assertEqual(report["newEvents"],2)
+        self.assertEqual(report["newArtists"],2)
+        names=[e["title"] for e in j["events"][-2:]]
+        self.assertEqual(set(names),{"Wage War","Whitechapel"})
+        v=next(v for v in j["venues"] if v["id"]=="le-trabendo-paris")
+        self.assertEqual((v["latitude"],v["longitude"]),(48.89265,2.39396))
+        self.assertIn("indicatif",v["geoPrecision"])
+        again,report=merge(BASE,j,q,day)
+        self.assertEqual(report["newEvents"],0)
+        self.assertEqual(report["newVenues"],0)
+        self.assertEqual(again,j)
+
+    def test_trabendo_refuses_unlisted_event_bad_pin_or_fake_start(self):
+        day=__import__("datetime").date(2026,11,2)
+        for variant in ("new-event","wrong-year","wrong-genre","added-time",
+                        "fake-url","fake-lineup","wrong-reviewer","missing-proof",
+                        "wrong-pin","fake-node"):
+            with self.subTest(variant=variant):
+                q=self.trabendo_queue()
+                q["approvals"]=q["approvals"][:1]
+                a=q["approvals"][0]
+                event=a["event"]
+                if variant=="new-event":event["id"]="go-c-20270206-paris-fake"
+                elif variant=="wrong-year":event["date"]="2026-01-22"
+                elif variant=="wrong-genre":event["genres"]=["Electro"]
+                elif variant=="added-time":event["time"]="19:00"
+                elif variant=="fake-url":event["officialUrl"]="https://evil.test/programmation/wage-war/"
+                elif variant=="fake-lineup":event["artistIds"]=["whitechapel"]
+                elif variant=="wrong-reviewer":a["reviewedBy"]="automatic-guess"
+                elif variant=="missing-proof":a["officialEvidence"]=[]
+                elif variant=="wrong-pin":q["venueApprovals"][0]["venue"]["latitude"]+=.003
+                elif variant=="fake-node":q["venueApprovals"][0]["officialEvidence"][1]["proofType"]="openstreetmap-venue-node"
+                resulting,report=merge(BASE,BASE,q,day)
+                self.assertTrue(report["held"])
+                self.assertEqual(report["newEvents"],0)
+                self.assertEqual(report["newVenues"],0)
+                self.assertEqual(resulting,BASE)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
