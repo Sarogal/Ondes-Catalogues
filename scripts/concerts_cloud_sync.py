@@ -988,7 +988,7 @@ ATABAL_VERIFIED = {
     "go-c-20261128-biarritz-frankie-witch-fingers": {
         "title": "Frankie and the Witch Fingers + Iguana Death Cult + Mafia Sofa",
         "date": "2026-11-28",
-        "time": null,
+        "time": None,
         "artistIds": [
             "frankie-and-the-witch-fingers",
             "iguana-death-cult",
@@ -1005,7 +1005,7 @@ ATABAL_VERIFIED = {
     "go-c-20261211-biarritz-anestesia-horzdun": {
         "title": "Anestesia + Horzdun",
         "date": "2026-12-11",
-        "time": null,
+        "time": None,
         "artistIds": [
             "anestesia",
             "horzdun"
@@ -1023,7 +1023,7 @@ ATABAL_VERIFIED = {
     "go-c-20270514-biarritz-burning-heads": {
         "title": "Burning Heads + Not Scientists + The Dead Krazukies",
         "date": "2027-05-14",
-        "time": null,
+        "time": None,
         "artistIds": [
             "burning-heads",
             "not-scientists",
