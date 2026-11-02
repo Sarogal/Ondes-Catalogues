@@ -83,6 +83,24 @@ PILOT_VENUES = {
         "locationUrl": "https://www.openstreetmap.org/api/0.6/way/64038567",
         "locationProofType": "openstreetmap-venue-way"
     },
+    "le-trabendo-paris": {
+        "venue": {
+            "id": "le-trabendo-paris",
+            "name": "Le Trabendo",
+            "address": "211 avenue Jean Jaurès",
+            "postalCode": "75019",
+            "city": "Paris",
+            "department": "75",
+            "region": "Île-de-France",
+            "latitude": 48.89265,
+            "longitude": 2.39396,
+            "geoPrecision": "centre indicatif du bâtiment nommé Le Trabendo (OpenStreetMap way 81704888, coordonnées arrondies)",
+            "geoSource": "https://www.openstreetmap.org/api/0.6/way/81704888"
+        },
+        "officialUrl": "https://www.letrabendo.net/",
+        "locationUrl": "https://www.openstreetmap.org/api/0.6/way/81704888",
+        "locationProofType": "openstreetmap-venue-way"
+    },
     "rock-n-eat-lyon": {
         "venue": {
             "id": "rock-n-eat-lyon",
@@ -344,6 +362,27 @@ GLAZART_VERIFIED = {
         "secondaryProofType": "organizer-ticketing-detail",
         "secondaryCheckedFields": ["artists", "date", "venue", "genre"],
     }
+}
+
+# Allowlist of two independently reviewed Trabendo official concert pages.
+# The daily discovery genre badges NEVER authorize blanket publishing.
+TRABENDO_VERIFIED = {
+    "go-c-20270122-paris-wage-war": {
+        "title": "Wage War",
+        "date": "2027-01-22",
+        "artistIds": ["wage-war"],
+        "newArtistIds": ["wage-war"],
+        "genres": ["Metalcore"],
+        "officialUrl": "https://www.letrabendo.net/programmation/wage-war/"
+    },
+    "go-c-20270203-paris-whitechapel": {
+        "title": "Whitechapel",
+        "date": "2027-02-03",
+        "artistIds": ["whitechapel"],
+        "newArtistIds": ["whitechapel"],
+        "genres": ["Metalcore"],
+        "officialUrl": "https://www.letrabendo.net/programmation/whitechapel/"
+    },
 }
 
 # Explicit one-time, source-documented map correction. The original 127-
@@ -693,7 +732,43 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "glazart-paris":
+    if event.get("venueId") == "le-trabendo-paris":
+        spec = TRABENDO_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title","date","artistIds","genres"))
+                and event.get("time") is None
+                and official_url == spec["officialUrl"],
+                "Trabendo : seules les deux fiches de concert vérifiées sont admises")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "www.letrabendo.net"
+                and u.path in ("/programmation/wage-war/",
+                               "/programmation/whitechapel/")
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "Trabendo : fiche individuelle de salle exigée")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Trabendo : preuve trop ancienne ou future")
+        require(len(evidence) == 1 and any(
+                isinstance(p,dict)
+                and p.get("url") == official_url
+                and p.get("proofType") == "official-organizer-or-venue"
+                and p.get("checkedAt") == reviewed_at.isoformat()
+                and {"artists","date","venue","genre"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                "Trabendo : preuve nominative officielle incomplète")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists] == spec["newArtistIds"]
+                and all(i in resolved and
+                        norm(resolved[i]["name"]).replace(" ","-") == i
+                        for i in ids),
+                "Trabendo : artistes ou identités non vérifiés")
+    elif event.get("venueId") == "glazart-paris":
         spec = GLAZART_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer == "independent-official-verifier"
