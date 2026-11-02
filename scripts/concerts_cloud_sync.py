@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "la-carene-brest": {
+        "venue": {
+            "id": "la-carene-brest",
+            "name": "La Carène",
+            "address": "30 rue Jean-Marie Le Bris",
+            "postalCode": "29200",
+            "city": "Brest",
+            "department": "29",
+            "region": "Bretagne",
+            "latitude": 48.38479,
+            "longitude": -4.48195,
+            "geoPrecision": "centre du bâtiment La Carène (OpenStreetMap way 42531718, via Mapcarta, coordonnées arrondies)",
+            "geoSource": "https://mapcarta.com/W42531718"
+        },
+        "officialUrl": "https://www.lacarene.fr/-infos-contacts-.html",
+        "locationUrl": "https://mapcarta.com/W42531718",
+        "locationProofType": "openstreetmap-venue-way"
+    },
     "jokers-pub-angers": {
         "venue": {
             "id": "jokers-pub-angers",
@@ -945,6 +963,45 @@ def validate_venue_approval(row, today):
     return copy.deepcopy(venue)
 
 
+# La Carène Brest: only these 2 nominal, non-festival first-party concert bills.
+# The official SPIP agenda and first-party detail must both be checked.
+CARENE_VERIFIED = {
+    "go-c-20261107-brest-dame-area-tact": {
+        "title": "Dame Area + Tact",
+        "date": "2026-11-07",
+        "time": "21:00",
+        "artistIds": [
+            "dame-area",
+            "tact"
+        ],
+        "genres": [
+            "Post Punk"
+        ],
+        "officialUrl": "https://www.lacarene.fr/dame-area-tact.html",
+        "newArtistIds": [
+            "dame-area",
+            "tact"
+        ]
+    },
+    "go-c-20261128-brest-mary-bell-prisonnier-du-temps": {
+        "title": "Mary Bell + Prisonnier du temps",
+        "date": "2026-11-28",
+        "time": "21:00",
+        "artistIds": [
+            "mary-bell",
+            "prisonnier-du-temps"
+        ],
+        "genres": [
+            "Punk"
+        ],
+        "officialUrl": "https://www.lacarene.fr/mary-bell-prisonnier-du-temps.html",
+        "newArtistIds": [
+            "mary-bell",
+            "prisonnier-du-temps"
+        ]
+    }
+}
+
 # Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
@@ -1221,6 +1278,45 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]).replace(" ","-")==aid
                         for aid in ids),
                 "Secret Place : artiste inventé ou mal orthographié")
+    elif event.get("venueId") == "la-carene-brest":
+        spec=CARENE_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer=="independent-official-verifier"
+                and event.get("sourceType")=="salle"
+                and all(event.get(k)==spec[k] for k in
+                        ("title","date","time","artistIds","genres"))
+                and official_url==spec["officialUrl"],
+                "La Carène : seule une affiche hors festival vérifiée est admissible")
+        u=urlsplit(official_url)
+        require(u.scheme=="https" and u.hostname=="www.lacarene.fr"
+                and u.path==urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/[a-z0-9-]+\.html",u.path)
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "La Carène : URL individuelle officielle non conforme")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "La Carène : vérification nominative expirée ou future")
+        require(len(evidence)==2 and any(
+                isinstance(p,dict) and p.get("url")==spec["officialUrl"]
+                and p.get("proofType")=="official-organizer-or-venue"
+                and p.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue","genre","startTime"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence) and any(
+                isinstance(p,dict) and p.get("url")=="https://www.lacarene.fr/-agenda-.html"
+                and p.get("proofType")=="first-party-venue-calendar"
+                and p.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                "La Carène : agenda et fiche individuelle contrôlés à part requis")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([x["id"] for x in new_artists]==spec["newArtistIds"]
+                and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
+                        for i in ids),
+                "La Carène : noms des artistes incompatibles")
     elif event.get("venueId") == "la-cave-aux-poetes-roubaix":
         spec=CAVE_POETES_VERIFIED.get(event_id)
         require(spec is not None
