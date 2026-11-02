@@ -1176,6 +1176,21 @@
       "id": "foggy-froggies",
       "name": "Foggy Froggies",
       "aliases": []
+    },
+    {
+      "id": "party-cannon",
+      "name": "Party Cannon",
+      "aliases": []
+    },
+    {
+      "id": "internal-bleeding",
+      "name": "Internal Bleeding",
+      "aliases": []
+    },
+    {
+      "id": "guttural-slug",
+      "name": "Guttural Slug",
+      "aliases": []
     }
   ],
   "venues": [
@@ -1932,6 +1947,19 @@
       "longitude": 7.7680524,
       "geoPrecision": "point nominatif du lieu (OpenStreetMap node 7812445394)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/node/7812445394"
+    },
+    {
+      "id": "glazart-paris",
+      "name": "Glazart",
+      "address": "7–15 avenue de la Porte de la Villette",
+      "postalCode": "75019",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.899283,
+      "longitude": 2.3866102,
+      "geoPrecision": "centre du bâtiment nommé Glazart (OpenStreetMap way 64038567, géocodage Nominatim)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/way/64038567"
     }
   ],
   "events": [
@@ -6719,6 +6747,70 @@
       "timeMeaning": "non confirmé",
       "organizer": "La Maison Bleue / Dirty8",
       "ticketUrl": "https://billetterie.lamaisonbleue-stbg.com/share/event/385-Dirty8-Birthday-LOCAL-HEROES-Dazzling-Bravery-BRDN-Curtains-Foggy-Froggies",
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-paris-sunami",
+      "title": "Sunami + Desolated + Missing Link + Extinguish",
+      "date": "2026-11-28",
+      "artistIds": [
+        "sunami",
+        "desolated",
+        "missing-link",
+        "extinguish"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/28-11-26-concert-sunami-missing-link-extinguish/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Terrorzone75 / Stronger Bookings",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270324-paris-party-cannon",
+      "title": "Party Cannon + Internal Bleeding + Guttural Slug",
+      "date": "2027-03-24",
+      "artistIds": [
+        "party-cannon",
+        "internal-bleeding",
+        "guttural-slug"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Death Metal",
+        "Slam"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/24-03-27-concert-party-cannon-x-internal-bleeding/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Garmonbozia",
+      "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
