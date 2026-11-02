@@ -1619,6 +1619,121 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(updated["events"],seeded["events"])
                 self.assertEqual(updated["artists"],seeded["artists"])
 
+    def cave_poetes_queue(self):
+        from concerts_cloud_sync import PILOT_VENUES, CAVE_POETES_VERIFIED
+        pilot=PILOT_VENUES["la-cave-aux-poetes-roubaix"]
+        spec=CAVE_POETES_VERIFIED["go-c-20261108-roubaix-babe-haven-latter-muddle"]
+        return {
+            "schema":"grossesondes.concert.approvals.v1",
+            "venueApprovals":[{
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "venue":copy.deepcopy(pilot["venue"]),
+                "officialEvidence":[
+                    {"url":pilot["officialUrl"],
+                     "proofType":"official-venue-address",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["name","address","postalCode","city"]},
+                    {"url":pilot["locationUrl"],
+                     "proofType":"openstreetmap-venue-node",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["venueName","coordinates"]}
+                ]
+            }],
+            "approvals":[{
+                "reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-02",
+                "officialEvidence":[
+                    {"url":spec["officialUrl"],
+                     "proofType":"official-organizer-or-venue",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["artists","date","venue","genre","startTime"]},
+                    {"url":spec["organizerCalendar"],
+                     "proofType":"organizer-submitted-calendar",
+                     "checkedAt":"2026-11-02",
+                     "checkedFields":["artists","date","venue","startTime"]}
+                ],
+                "event":{
+                    "id":"go-c-20261108-roubaix-babe-haven-latter-muddle",
+                    "title":spec["title"],"date":spec["date"],"time":spec["time"],
+                    "artistIds":spec["artistIds"],
+                    "venueId":"la-cave-aux-poetes-roubaix",
+                    "genres":spec["genres"],"status":"confirmed",
+                    "officialUrl":spec["officialUrl"],
+                    "sourceType":"salle","organizer":"La Cave aux Poètes"},
+                "newArtists":[{"id":"babe-haven","name":"Babe Haven"},
+                              {"id":"latter","name":"Latter"},
+                              {"id":"muddle","name":"Muddle"}]
+            }]
+        }
+
+    def test_cave_poetes_punk_exact_venue_three_artists_and_explicit_start(self):
+        day=__import__("datetime").date(2026,11,2)
+        q=self.cave_poetes_queue()
+        result,stats=merge(BASE,BASE,q,day)
+        self.assertEqual(stats["held"],[])
+        self.assertEqual(stats["newVenues"],1)
+        self.assertEqual(stats["newEvents"],1)
+        self.assertEqual(stats["newArtists"],3)
+        v=result["venues"][-1]
+        self.assertEqual((v["id"],v["address"]),
+                         ("la-cave-aux-poetes-roubaix","16 rue du Grand Chemin"))
+        self.assertEqual((v["latitude"],v["longitude"]),(50.6921711,3.1692704))
+        self.assertEqual(v["geoSource"],
+             "https://www.openstreetmap.org/api/0.6/node/5902484873")
+        event=result["events"][-1]
+        self.assertEqual(event["title"],"Babe Haven + Latter + Muddle")
+        self.assertEqual(event["date"],"2026-11-08")
+        self.assertEqual(event["time"],"18:30")
+        self.assertEqual(event["artistIds"],["babe-haven","latter","muddle"])
+        self.assertEqual([a["name"] for a in result["artists"][-3:]],
+                         ["Babe Haven","Latter","Muddle"])
+        same,again=merge(BASE,result,q,day)
+        self.assertEqual((again["newEvents"],again["newArtists"],
+                          again["newVenues"]),(0,0,0))
+        self.assertEqual(same,result)
+
+    def test_cave_poetes_rejects_non_punk_and_forged_evidence(self):
+        day=__import__("datetime").date(2026,11,2)
+        defects=("wrong-osm","false-osm-way","wrong-band","wrong-start",
+                 "wrong-date","wrong-genre","wrong-domain",
+                 "missing-calendar","wrong-calendar","no-start-proof",
+                 "false-artist","unapproved-event")
+        for bad in defects:
+            with self.subTest(defect=bad):
+                q=self.cave_poetes_queue()
+                a=q["approvals"][0]
+                if bad=="wrong-osm":
+                    q["venueApprovals"][0]["venue"]["latitude"]+=.001
+                elif bad=="false-osm-way":
+                    q["venueApprovals"][0]["officialEvidence"][1]["proofType"]="openstreetmap-venue-way"
+                elif bad=="wrong-band":
+                    a["event"]["artistIds"][0]="other-band"
+                elif bad=="wrong-start":
+                    a["event"]["time"]="18:00"
+                elif bad=="wrong-date":
+                    a["event"]["date"]="2026-11-09"
+                elif bad=="wrong-genre":
+                    a["event"]["genres"]=["Electro"]
+                elif bad=="wrong-domain":
+                    a["event"]["officialUrl"]="https://fake.example/concert"
+                elif bad=="missing-calendar":
+                    a["officialEvidence"].pop()
+                elif bad=="wrong-calendar":
+                    a["officialEvidence"][1]["url"]="https://openagenda.com/fr/other"
+                elif bad=="no-start-proof":
+                    a["officialEvidence"][0]["checkedFields"].remove("startTime")
+                elif bad=="false-artist":
+                    a["newArtists"][2]["name"]="Another Group"
+                elif bad=="unapproved-event":
+                    a["event"]["id"]="go-c-20261108-roubaix-unreviewed"
+                result,stats=merge(BASE,BASE,q,day)
+                self.assertEqual(stats["newEvents"],0)
+                self.assertTrue(stats["held"])
+                self.assertEqual(result["events"],BASE["events"])
+
     def forum_queue(self):
         from concerts_cloud_sync import PILOT_VENUES, FORUM_VERIFIED
         pilot=PILOT_VENUES["le-forum-vaureal"]
