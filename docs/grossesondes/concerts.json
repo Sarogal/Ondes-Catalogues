@@ -1316,6 +1316,21 @@
       "id": "sortilege",
       "name": "Sortilège",
       "aliases": []
+    },
+    {
+      "id": "babe-haven",
+      "name": "Babe Haven",
+      "aliases": []
+    },
+    {
+      "id": "latter",
+      "name": "Latter",
+      "aliases": []
+    },
+    {
+      "id": "muddle",
+      "name": "Muddle",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2137,6 +2152,19 @@
       "longitude": 2.0218937,
       "geoPrecision": "nœud OpenStreetMap nominatif Le Forum (node 4742610793, adresse et site officiel concordants)",
       "geoSource": "https://www.openstreetmap.org/api/0.6/node/4742610793"
+    },
+    {
+      "id": "la-cave-aux-poetes-roubaix",
+      "name": "La Cave aux Poètes",
+      "address": "16 rue du Grand Chemin",
+      "postalCode": "59100",
+      "city": "Roubaix",
+      "department": "59",
+      "region": "Hauts-de-France",
+      "latitude": 50.6921711,
+      "longitude": 3.1692704,
+      "geoPrecision": "point nominatif de La Cave Aux Poètes (OpenStreetMap node 5902484873, nom adresse site et téléphone concordants)",
+      "geoSource": "https://www.openstreetmap.org/api/0.6/node/5902484873"
     }
   ],
   "events": [
@@ -7649,6 +7677,38 @@
       "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-02",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-02",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261108-roubaix-babe-haven-latter-muddle",
+      "title": "Babe Haven + Latter + Muddle",
+      "date": "2026-11-08",
+      "artistIds": [
+        "babe-haven",
+        "latter",
+        "muddle"
+      ],
+      "venueId": "la-cave-aux-poetes-roubaix",
+      "genres": [
+        "Punk",
+        "Nu Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://caveauxpoetes.com/evenement/babe-haven-latter-muddle/",
+      "sourceType": "salle",
+      "time": "18:30",
+      "timeMeaning": "début du concert",
+      "organizer": "La Cave aux Poètes",
       "ticketUrl": null,
       "lastVerified": "2026-11-02",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
