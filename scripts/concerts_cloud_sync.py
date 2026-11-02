@@ -364,9 +364,41 @@ GLAZART_VERIFIED = {
     }
 }
 
-# Allowlist of two independently reviewed Trabendo official concert pages.
+# Allowlist of independently reviewed Trabendo official concert pages.
 # The daily discovery genre badges NEVER authorize blanket publishing.
 TRABENDO_VERIFIED = {
+    "go-c-20261112-paris-frankie-witch-fingers": {
+        "title": "Frankie and the Witch Fingers + Iguana Death Cult",
+        "date": "2026-11-12",
+        "artistIds": ["frankie-and-the-witch-fingers","iguana-death-cult"],
+        "newArtistIds": ["frankie-and-the-witch-fingers","iguana-death-cult"],
+        "genres": ["Punk Rock"],
+        "officialUrl": "https://www.letrabendo.net/programmation/frankie-and-the-witch-fingers/"
+    },
+    "go-c-20261128-paris-kid-kapichi": {
+        "title": "Kid Kapichi + Demob Happy",
+        "date": "2026-11-28",
+        "artistIds": ["kid-kapichi","demob-happy"],
+        "newArtistIds": [],
+        "genres": ["Punk Rock"],
+        "officialUrl": "https://www.letrabendo.net/programmation/kid-kapichi/"
+    },
+    "go-c-20270119-paris-comeback-kid": {
+        "title": "Comeback Kid",
+        "date": "2027-01-19",
+        "artistIds": ["comeback-kid"],
+        "newArtistIds": ["comeback-kid"],
+        "genres": ["Punk Rock"],
+        "officialUrl": "https://www.letrabendo.net/programmation/comeback-kid/"
+    },
+    "go-c-20270606-paris-black-flag": {
+        "title": "Black Flag",
+        "date": "2027-06-06",
+        "artistIds": ["black-flag"],
+        "newArtistIds": ["black-flag"],
+        "genres": ["Punk Hardcore"],
+        "officialUrl": "https://www.letrabendo.net/programmation/black-flag/"
+    },
     "go-c-20270122-paris-wage-war": {
         "title": "Wage War",
         "date": "2027-01-22",
@@ -741,11 +773,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         ("title","date","artistIds","genres"))
                 and event.get("time") is None
                 and official_url == spec["officialUrl"],
-                "Trabendo : seules les deux fiches de concert vérifiées sont admises")
+                "Trabendo : seul un concert explicitement inscrit dans la liste blanche est admis")
         u = urlsplit(official_url)
         require(u.scheme == "https" and u.hostname == "www.letrabendo.net"
-                and u.path in ("/programmation/wage-war/",
-                               "/programmation/whitechapel/")
+                and u.path in {
+                    urlsplit(approved["officialUrl"]).path
+                    for approved in TRABENDO_VERIFIED.values()
+                }
                 and not u.username and not u.password and not u.port
                 and not u.query and not u.fragment,
                 "Trabendo : fiche individuelle de salle exigée")
