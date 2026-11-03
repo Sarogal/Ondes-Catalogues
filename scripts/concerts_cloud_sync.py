@@ -2379,6 +2379,44 @@ BBC_NORMANDY_VERIFIED = {
 }
 
 
+ROUEN_ROCK_PAGED_VERIFIED = {
+    # Le 106 official individual pages show artist/genre, while the official
+    # paginated calendar supplies the FULL dates (year included). Printed
+    # times are not proven musical starts. Two sold-out flags are recorded
+    # in proofs, never interpreted as cancellations or invented start times.
+    "go-c-20261210-rouen-the-sheepdogs-steve-hill": {
+        "title":"The Sheepdogs + Steve Hill","date":"2026-12-10",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["the-sheepdogs","steve-hill"],
+        "artistNames":["The Sheepdogs","Steve Hill"],
+        "newArtistIds":["the-sheepdogs","steve-hill"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/sheepdogs",
+        "calendarUrl":"https://le106.com/agenda?page=1",
+    },
+    "go-c-20270121-rouen-skip-the-use-mdns": {
+        "title":"Skip The Use + MDNS","date":"2027-01-21",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["skip-the-use","mdns"],
+        "artistNames":["Skip The Use","MDNS"],
+        "newArtistIds":["skip-the-use","mdns"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/skip-use",
+        "calendarUrl":"https://le106.com/agenda?page=1",
+    },
+    "go-c-20270126-rouen-editors-big-sleep": {
+        "title":"Editors + Big Sleep","date":"2027-01-26",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["editors","big-sleep"],
+        "artistNames":["Editors","Big Sleep"],
+        "newArtistIds":["editors","big-sleep"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/editors",
+        "calendarUrl":"https://le106.com/agenda?page=1",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2420,11 +2458,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
-    reserved_rouen_url = {spec["officialUrl"]: key
-                          for key, spec in ROUEN_DEATH_VALLEY_SIGNED.items()}
+    reserved_rouen_url = {spec["officialUrl"]: key for key, spec in {
+        **ROUEN_DEATH_VALLEY_SIGNED, **ROUEN_ROCK_PAGED_VERIFIED
+    }.items()}
     if official_url in reserved_rouen_url:
         require(event_id == reserved_rouen_url[official_url],
                 "URL individuelle Le 106 réservée à son identifiant signé")
+    if event_id in ROUEN_ROCK_PAGED_VERIFIED:
+        require(event.get("venueId") == "le-106-rouen",
+                "Identifiant de l'affiche Le 106 transféré hors salle")
     reserved_bbc_urls = {spec["officialUrl"]: ident
                          for ident, spec in BBC_NORMANDY_VERIFIED.items()}
     if official_url in reserved_bbc_urls:
@@ -3358,7 +3400,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "independent-local-radio-announcement":
                 "https://www.intensite.net/orleans-45-concert-la-jungle-sodom-sagesse",
         } if venue_id == "l-astrolabe-orleans" else {
-            "first-party-venue-calendar": "https://le106.com/agenda",
+            "first-party-venue-calendar": (
+                "https://le106.com/agenda?page=1"
+                if event_id in ROUEN_ROCK_PAGED_VERIFIED
+                else "https://le106.com/agenda"
+            ),
             "authorized-ticket-distributor":
                 "https://www.eventim.fr/eventseries/cosmic-trip-tour-4197731/",
             "independent-organizer-tour":
@@ -3401,6 +3447,32 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and norm(resolved[ids[1]]["name"]) == "bella and the bizarre",
                     "Le 106 : noms de groupe non conformes aux deux artistes publiés")
 
+        if event_id in ROUEN_ROCK_PAGED_VERIFIED:
+            spec = ROUEN_ROCK_PAGED_VERIFIED[event_id]
+            require(reviewer == "independent-official-verifier"
+                    and event.get("sourceType") == "salle"
+                    and event.get("time") is None
+                    and all(event.get(field) == spec[field] for field in (
+                        "title","date","time","venueId","artistIds","genres"))
+                    and official_url == spec["officialUrl"],
+                    "Le 106 : nouvelle affiche rock hors liste nominative")
+            require(primary.get("url") == spec["officialUrl"]
+                    and primary.get("proofType") == "official-organizer-or-venue"
+                    and {"artists", "date", "venue", "genre"}.issubset(fields)
+                    and secondary.get("url") == spec["calendarUrl"]
+                    and secondary.get("proofType") == "first-party-venue-calendar"
+                    and {"artists", "date", "venue"}.issubset(secondary_fields),
+                    "Le 106 : preuve officielle + page datée de l'agenda exigées")
+            require(new_artists == [
+                {"id":aid,"name":spec["artistNames"][i]}
+                for i,aid in enumerate(spec["artistIds"])
+                if aid in spec["newArtistIds"]],
+                "Le 106 : nouveaux artistes ou têtes d'affiche altérés")
+            require(len(ids) == len(spec["artistNames"]) and all(
+                aid in resolved
+                and norm(resolved[aid]["name"]) == norm(name)
+                for aid,name in zip(ids,spec["artistNames"])),
+                "Le 106 : noms réels des deux groupes non vérifiés")
     elif event.get("venueId") == "le-chatodo-blois":
         # A valid venue pin is NEVER sufficient to approve an unchecked bill.
         # Both venue and three exact event dates were individually signed.
