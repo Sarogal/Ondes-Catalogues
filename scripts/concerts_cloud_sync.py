@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "le-tetris-le-havre": {
+        "venue": {
+            "id": "le-tetris-le-havre",
+            "name": "Le Tetris",
+            "address": "Fort de Tourneville, 33 rue du 329e Régiment d'Infanterie",
+            "postalCode": "76620",
+            "city": "Le Havre",
+            "department": "76",
+            "region": "Normandie",
+            "latitude": 49.5043853,
+            "longitude": 0.1206928,
+            "geoPrecision": "position GPS indicative du site du Tetris transmise par l'Office de Tourisme Le Havre Etretat Normandie via Cirkwi; point du lieu non assimilé à l'entrée des spectateurs. Les fiches individuelles du Tetris renvoient vers un repère Google Maps proche (49.503852, 0.120886).",
+            "geoSource": "https://www.cirkwi.com/fr/point-interet/2508080-le-tetris",
+        },
+        "officialUrl": "https://letetris.fr/infos-pratiques/venir",
+        "locationUrl": "https://www.cirkwi.com/fr/point-interet/2508080-le-tetris",
+        "locationProofType": "independent-tourism-gps",
+    },
     "le-temps-machine-joue-les-tours": {
         "venue": {
             "id": "le-temps-machine-joue-les-tours",
@@ -1384,6 +1402,60 @@ CARENE_VERIFIED = {
             "prisonnier-du-temps"
         ]
     }
+}
+
+TETRIS_VERIFIED = {
+    # Quatre concerts nominativement approuvés dans GrossesOndes #131.
+    # Le Tetris n'affiche pas l'année sur ses fiches individuelles :
+    # chaque millésime est établi par la preuve secondaire exacte.
+    "go-c-20261113-lehavre-edging-zonbi": {
+        "title": "Edging + Zonbi",
+        "date": "2026-11-13",
+        "time": None,
+        "artistIds": ["edging", "zonbi"],
+        "artistNames": ["Edging", "Zonbi"],
+        "newArtistIds": ["edging", "zonbi"],
+        "genres": ["Punk Rock", "Punk Jazz"],
+        "officialUrl": "https://letetris.fr/agenda/edging-zonbi",
+        "secondaryUrl": "https://www.relikto.com/event/edging/",
+        "secondaryProofType": "event-partner-full-date",
+    },
+    "go-c-20261127-lehavre-fff-metro-verlaine": {
+        "title": "FFF + Metro Verlaine",
+        "date": "2026-11-27",
+        "time": None,
+        "artistIds": ["fff", "metro-verlaine"],
+        "artistNames": ["FFF", "Metro Verlaine"],
+        "newArtistIds": ["metro-verlaine"],
+        "genres": ["Funk Rock", "Rock"],
+        "officialUrl": "https://letetris.fr/agenda/fff",
+        "secondaryUrl": "https://www.lehavre-etretat-tourisme.com/fr/fiche/le-havre/concert-fff--metro-verlaine_TFOFMANOR076V529ATF/",
+        "secondaryProofType": "official-tourism-full-date",
+    },
+    "go-c-20261205-lehavre-coffin-belek": {
+        "title": "C.O.F.F.I.N. + Belek",
+        "date": "2026-12-05",
+        "time": None,
+        "artistIds": ["coffin", "belek"],
+        "artistNames": ["C.O.F.F.I.N.", "Belek"],
+        "newArtistIds": ["coffin", "belek"],
+        "genres": ["Rock", "Hardcore"],
+        "officialUrl": "https://letetris.fr/agenda/coffin",
+        "secondaryUrl": "https://www.infoconcert.com/salle/le-tetris-la-halle-fort-de-tourneville-31214/concerts",
+        "secondaryProofType": "independent-concert-calendar-full-date",
+    },
+    "go-c-20261212-lehavre-the-inspector-cluzo-grimskunk": {
+        "title": "The Inspector Cluzo + GrimSkunk",
+        "date": "2026-12-12",
+        "time": None,
+        "artistIds": ["the-inspector-cluzo", "grimskunk"],
+        "artistNames": ["The Inspector Cluzo", "GrimSkunk"],
+        "newArtistIds": ["grimskunk"],
+        "genres": ["Rock", "Punk Rock"],
+        "officialUrl": "https://letetris.fr/agenda/inspector-cluzo",
+        "secondaryUrl": "https://theinspectorcluzo.com/ja/news/french-tour-part-2/",
+        "secondaryProofType": "official-artist-tour-full-date",
+    },
 }
 
 TEMPS_MACHINE_VERIFIED = {
@@ -3206,6 +3278,61 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Le Temps Machine : groupe ou identité non vérifié")
         require(event.get("time") is None,
                 "Le Temps Machine : heure musicale non établie")
+    elif event.get("venueId") == "le-tetris-le-havre":
+        # Precise, dated evidence outside the venue is indispensable:
+        # the official Le Tetris individual pages show day/month WITHOUT year.
+        spec = TETRIS_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("time") is None
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Le Tetris : affiche, artistes ou millésime hors liste signée")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "letetris.fr"
+                and url.path == urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/agenda/[a-z0-9-]+", url.path)
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "Le Tetris : fiche officielle nominative exacte exigée")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Le Tetris : revue périmée ou future")
+        require(len(evidence) == 2
+                and {p.get("proofType") for p in evidence if isinstance(p, dict)}
+                == {"official-organizer-or-venue", spec["secondaryProofType"]},
+                "Le Tetris : deux preuves distinctes de la date obligatoires")
+        fields = {
+            "official-organizer-or-venue": (
+                spec["officialUrl"], {"artists", "venue", "genre", "dayMonth"}),
+            spec["secondaryProofType"]: (
+                spec["secondaryUrl"], {"artists", "venue", "fullDate"}),
+        }
+        for proof in evidence:
+            want = fields.get(proof.get("proofType"))
+            require(want is not None
+                    and proof.get("url") == want[0]
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and want[1].issubset(set(proof.get("checkedFields") or [])),
+                    "Le Tetris : détail et corroboration de l'année invalides")
+            if proof.get("proofType") == "official-organizer-or-venue":
+                require("date" not in (proof.get("checkedFields") or [])
+                        and "fullDate" not in (proof.get("checkedFields") or [])
+                        and "concertStartTime" not in
+                            (proof.get("checkedFields") or []),
+                        "Le Tetris : la fiche ne prouve ni année ni début musical")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists] == spec["newArtistIds"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Le Tetris : identité de groupe altérée")
+        require(event.get("time") is None,
+                "Le Tetris : aucune heure musicale confirmée")
     return event, added
 
 
