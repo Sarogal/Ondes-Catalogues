@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "le-chatodo-blois": {
+        "venue": {
+            "id": "le-chatodo-blois",
+            "name": "Le Chato'do",
+            "address": "113 avenue de Vendôme",
+            "postalCode": "41000",
+            "city": "Blois",
+            "department": "41",
+            "region": "Centre-Val de Loire",
+            "latitude": 47.60562,
+            "longitude": 1.31378,
+            "geoPrecision": "centre indicatif du bâtiment Chato’do (OpenStreetMap way 118748447, coordonnées arrondies à 5 décimales), pas l'emplacement exact de l'entrée concerts rue Alexandre Vezin",
+            "geoSource": "https://mapcarta.com/fr/W118748447"
+        },
+        "officialUrl": "https://chatodo.com/infos/venir/",
+        "locationUrl": "https://mapcarta.com/fr/W118748447",
+        "locationProofType": "openstreetmap-venue-way",
+    },
     "hydrophone-lorient": {
         "venue": {
             "id": "hydrophone-lorient",
@@ -1348,6 +1366,40 @@ CARENE_VERIFIED = {
             "prisonnier-du-temps"
         ]
     }
+}
+
+CHATODO_VERIFIED = {
+    # Fiches signées GrossesOndes #127, 03/11/2026. Aucune extension implicite.
+    "go-c-20261105-blois-the-flying-bones": {
+        "title": "The Flying Bones",
+        "date": "2026-11-05",
+        "time": None,
+        "artistIds": ["the-flying-bones"],
+        "artistNames": ["The Flying Bones"],
+        "newArtistIds": ["the-flying-bones"],
+        "genres": ["Garage Rock", "Psych Rock"],
+        "officialUrl": "https://chatodo.com/agenda/evenement/the-flying-bones/",
+    },
+    "go-c-20261112-blois-wicked-vessel": {
+        "title": "Wicked Vessel + Ultramoderne",
+        "date": "2026-11-12",
+        "time": None,
+        "artistIds": ["wicked-vessel", "ultramoderne"],
+        "artistNames": ["Wicked Vessel", "Ultramoderne"],
+        "newArtistIds": ["wicked-vessel", "ultramoderne"],
+        "genres": ["Post Rock", "Electro Clash"],
+        "officialUrl": "https://chatodo.com/agenda/evenement/wicked-vessel-ultramoderne/",
+    },
+    "go-c-20261203-blois-7weeks": {
+        "title": "7Weeks",
+        "date": "2026-12-03",
+        "time": None,
+        "artistIds": ["7weeks"],
+        "artistNames": ["7Weeks"],
+        "newArtistIds": [],
+        "genres": ["Heavy Rock"],
+        "officialUrl": "https://chatodo.com/agenda/evenement/7-weeks/",
+    },
 }
 
 # Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
@@ -3015,6 +3067,61 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and resolved[aid]["name"] == "YÜ")
             ) for aid in ids),
                 "Astrolabe/106 : identité des groupes non corroborée")
+    elif event.get("venueId") == "le-chatodo-blois":
+        # A valid venue pin is NEVER sufficient to approve an unchecked bill.
+        # Both venue and three exact event dates were individually signed.
+        spec = CHATODO_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("time") is None
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Chato'do : date ou artistes hors liste nominative")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "chatodo.com"
+                and re.fullmatch(r"/agenda/evenement/[a-z0-9-]+/", url.path)
+                and url.path == urlsplit(spec["officialUrl"]).path
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "Chato'do : URL officielle individuelle exacte exigée")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Chato'do : preuve périmée ou future")
+        require(len(evidence) == 2
+                and {p.get("proofType") for p in evidence if isinstance(p, dict)}
+                == {"official-organizer-or-venue", "first-party-venue-calendar"},
+                "Chato'do : détail et agenda officiels distincts requis")
+        checks = {
+            "official-organizer-or-venue": (
+                spec["officialUrl"], {"artists", "date", "venue", "genre"}),
+            "first-party-venue-calendar": (
+                "https://chatodo.com/agenda/",
+                {"leadArtist", "dayMonth", "genre"}),
+        }
+        for proof in evidence:
+            requested = checks.get(proof.get("proofType"))
+            require(requested is not None
+                    and proof.get("url") == requested[0]
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and requested[1].issubset(set(proof.get("checkedFields") or [])),
+                    "Chato'do : preuve de détail ou agenda invalide")
+            if proof.get("proofType") == "first-party-venue-calendar":
+                require("date" not in (proof.get("checkedFields") or [])
+                        and "startTime" not in (proof.get("checkedFields") or []),
+                        "Chato'do : l'agenda sans année ne prouve ni l'année ni l'heure")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require([x["id"] for x in new_artists] == spec["newArtistIds"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) ==
+                        norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Chato'do : identité des groupes incompatible")
+        require(event.get("time") is None,
+                "Chato'do : ne pas transformer le créneau de portes en début")
     return event, added
 
 
