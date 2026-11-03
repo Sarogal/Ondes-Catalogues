@@ -1701,6 +1701,11 @@
       "id": "dj-bluff",
       "name": "DJ Bluff",
       "aliases": []
+    },
+    {
+      "id": "madam",
+      "name": "MADAM",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10169,6 +10174,64 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270205-herouville-ugly-kid-joe",
+      "title": "Ugly Kid Joe",
+      "date": "2027-02-05",
+      "artistIds": [
+        "ugly-kid-joe"
+      ],
+      "venueId": "big-band-cafe-herouville",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bigbandcafe.com/ugly-kid-joe/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Big Band Café",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270402-herouville-madam",
+      "title": "MADAM",
+      "date": "2027-04-02",
+      "artistIds": [
+        "madam"
+      ],
+      "venueId": "big-band-cafe-herouville",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bigbandcafe.com/madam/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Big Band Café",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
