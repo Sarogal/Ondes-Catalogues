@@ -2987,8 +2987,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Astrolabe/106 : deuxième preuve ou liste d'artistes non conforme")
         resolved = dict(known_artist_ids)
         resolved.update(added)
-        require(all(aid in resolved and norm(resolved[aid]["name"]).replace(" ", "-") == aid
-                    for aid in ids),
+        require(all(
+            aid in resolved and (
+                norm(resolved[aid]["name"]).replace(" ", "-") == aid
+                or (venue_id == "le-106-rouen" and aid == "yu-band"
+                    and resolved[aid]["name"] == "YÜ")
+            ) for aid in ids),
                 "Astrolabe/106 : identité des groupes non corroborée")
     return event, added
 
