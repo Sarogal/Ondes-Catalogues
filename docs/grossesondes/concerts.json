@@ -1561,6 +1561,16 @@
       "id": "the-stranglers",
       "name": "The Stranglers",
       "aliases": []
+    },
+    {
+      "id": "colour-haze",
+      "name": "Colour Haze",
+      "aliases": []
+    },
+    {
+      "id": "smokemaster",
+      "name": "Smokemaster",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9249,6 +9259,127 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261119-montpellier-mass-hysteria",
+      "title": "Mass Hysteria",
+      "date": "2026-11-19",
+      "artistIds": [
+        "mass-hysteria"
+      ],
+      "venueId": "rockstore-montpellier",
+      "genres": [
+        "Néo-Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://rockstore.fr/mass-hysteria-19-novembre-2026/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rockstore",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261201-montpellier-shaarghot",
+      "title": "Shaârghot + Solitaris + Ghost Dance",
+      "date": "2026-12-01",
+      "artistIds": [
+        "shaarghot",
+        "solitaris",
+        "ghost-dance"
+      ],
+      "venueId": "rockstore-montpellier",
+      "genres": [
+        "Metal industriel"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://rockstore.fr/shaarghot-solitaris-ghost-dance-01-decembre-2026/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rockstore",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270220-wasquehal-colour-haze",
+      "title": "Colour Haze + Smokemaster",
+      "date": "2027-02-20",
+      "artistIds": [
+        "colour-haze",
+        "smokemaster"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Stoner Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/colour-haze-smokemaster/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270305-wasquehal-houle",
+      "title": "Houle + Cân Bardd + Galibot",
+      "date": "2027-03-05",
+      "artistIds": [
+        "houle",
+        "can-bardd",
+        "galibot"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/houle-can-bardd-galibot/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
