@@ -1285,6 +1285,178 @@ ROCHER_PALMER_VERIFIED = {
     }
 }
 
+# Strict one-by-one set of nine first-party La Laiterie concerts audited 2026-11-03.
+# The public calendar gives door-opening times, NOT a guaranteed concert start.
+# The location remains a venue of the historic catalogue (separate geo audit).
+LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
+  "go-c-20270205-strasbourg-revnoir-ice-sealed-eyes": {
+    "title": "Revnoir + Ice Sealed Eyes",
+    "date": "2027-02-05",
+    "artistIds": [
+      "revnoir",
+      "ice-sealed-eyes"
+    ],
+    "artistNames": [
+      "Revnoir",
+      "Ice Sealed Eyes"
+    ],
+    "genres": [
+      "Metalcore"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/revnoir-ice-sealed-eyes/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270209-strasbourg-enslaved-solstafir": {
+    "title": "Enslaved + Sólstafir + Gaahls Wyrd",
+    "date": "2027-02-09",
+    "artistIds": [
+      "enslaved",
+      "solstafir",
+      "gaahls-wyrd"
+    ],
+    "artistNames": [
+      "Enslaved",
+      "Sólstafir",
+      "Gaahls Wyrd"
+    ],
+    "genres": [
+      "Black Metal",
+      "Metal progressif"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/enslaved-solstafir-gaahls-wyrd/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270214-strasbourg-ugly-kid-joe": {
+    "title": "Ugly Kid Joe",
+    "date": "2027-02-14",
+    "artistIds": [
+      "ugly-kid-joe"
+    ],
+    "artistNames": [
+      "Ugly Kid Joe"
+    ],
+    "genres": [
+      "Hard Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/ugly-kid-joe-2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270216-strasbourg-eihwar-hindarfjall": {
+    "title": "Eihwar + Hindarfjäll",
+    "date": "2027-02-16",
+    "artistIds": [
+      "eihwar",
+      "hindarfjall"
+    ],
+    "artistNames": [
+      "Eihwar",
+      "Hindarfjäll"
+    ],
+    "genres": [
+      "Pagan Folk"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eihwar-hindarfjall/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270306-strasbourg-houle-can-bardd": {
+    "title": "Houle + Cân Bardd + Galibot",
+    "date": "2027-03-06",
+    "artistIds": [
+      "houle",
+      "can-bardd",
+      "galibot"
+    ],
+    "artistNames": [
+      "Houle",
+      "Cân Bardd",
+      "Galibot"
+    ],
+    "genres": [
+      "Black Metal"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/houle-2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270309-strasbourg-cult-of-luna": {
+    "title": "Cult of Luna + Bruit ≤ + Youth Code",
+    "date": "2027-03-09",
+    "artistIds": [
+      "cult-of-luna",
+      "bruit",
+      "youth-code"
+    ],
+    "artistNames": [
+      "Cult of Luna",
+      "Bruit ≤",
+      "Youth Code"
+    ],
+    "genres": [
+      "Post-metal",
+      "Sludge Metal"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/cult-of-luna-bruit-%E2%89%A4-youth-code/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/"
+  },
+  "go-c-20270316-strasbourg-die-arzte": {
+    "title": "Die Ärzte",
+    "date": "2027-03-16",
+    "artistIds": [
+      "die-arzte"
+    ],
+    "artistNames": [
+      "Die Ärzte"
+    ],
+    "genres": [
+      "Punk Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/die-arzte-tour-de-france/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/4/"
+  },
+  "go-c-20270326-strasbourg-tagada-jones": {
+    "title": "Tagada Jones + Les Tambours du Bronx",
+    "date": "2027-03-26",
+    "artistIds": [
+      "tagada-jones",
+      "les-tambours-du-bronx"
+    ],
+    "artistNames": [
+      "Tagada Jones",
+      "Les Tambours du Bronx"
+    ],
+    "genres": [
+      "Punk Hardcore",
+      "Metal"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/tagada-jones-les-tambours-du-bronx2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/4/"
+  },
+  "go-c-20270909-strasbourg-eisbrecher": {
+    "title": "Eisbrecher",
+    "date": "2027-09-09",
+    "artistIds": [
+      "eisbrecher"
+    ],
+    "artistNames": [
+      "Eisbrecher"
+    ],
+    "genres": [
+      "Metal industriel"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eisbrecher-2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/5/"
+  }
+}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -1424,7 +1596,50 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
-    if event.get("venueId") == "secret-place-saint-jean-de-vedas":
+    if event.get("venueId") == "la-laiterie-strasbourg":
+        spec = LAITERIE_OFFICIAL_VERIFIED.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "artistIds", "genres", "time"))
+                and official_url == spec["officialUrl"]
+                and event.get("time") is None,
+                "La Laiterie : affiche hors liste officielle ou horaire des portes abusivement pris pour le concert")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "www.artefact.org"
+                and u.path == urlsplit(spec["officialUrl"]).path
+                and u.path.startswith("/la-laiterie/evenements/")
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "La Laiterie : lien direct officiel de la salle exigé")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "La Laiterie : revue nominative périmée ou datée dans le futur")
+        require(len(evidence) == 2 and
+                {x.get("proofType") for x in evidence if isinstance(x,dict)} ==
+                    {"official-organizer-or-venue", "first-party-venue-calendar"},
+                "La Laiterie : fiche et agenda officiels séparés exigés")
+        expected = {
+            "official-organizer-or-venue": (spec["officialUrl"],
+                {"artists", "date", "venue", "genre"}),
+            "first-party-venue-calendar": (spec["calendarUrl"],
+                {"artists", "date", "venue", "genre"}),
+        }
+        for p in evidence:
+            typ = p.get("proofType") if isinstance(p, dict) else None
+            need = expected.get(typ)
+            require(need is not None and p.get("url") == need[0]
+                    and p.get("checkedAt") == reviewed.isoformat()
+                    and need[1].issubset(set(p.get("checkedFields") or []))
+                    and "startTime" not in (p.get("checkedFields") or []),
+                    "La Laiterie : preuve datée ou champ début non corroboré")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == [] and all(aid in known_artist_ids for aid in ids)
+                and all(norm(resolved[aid]["name"]) == norm(name)
+                        for aid,name in zip(ids,spec["artistNames"])),
+                "La Laiterie : nom officiel ou identité d'artiste discordant")
+    elif event.get("venueId") == "secret-place-saint-jean-de-vedas":
         spec=SECRET_PLACE_DECEMBER_VERIFIED[event_id]
         require(reviewer=="independent-official-verifier"
                 and event.get("sourceType")=="salle"
