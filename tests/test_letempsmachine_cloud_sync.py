@@ -11,7 +11,8 @@ V = "le-temps-machine-joue-les-tours"
 E = "go-c-20261119-joue-les-tours-birdstone-marave"
 CAT = json.loads((Path(__file__).resolve().parents[1]/
     "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
-KNOWN = {x["id"]: x for x in CAT["artists"]}
+KNOWN = {x["id"]: x for x in CAT["artists"]
+         if x["id"] not in {"birdstone", "marave"}}
 NAMES = {"birdstone": "Birdstone", "marave": "Marave"}
 
 
