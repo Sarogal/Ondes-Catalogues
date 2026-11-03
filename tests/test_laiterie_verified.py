@@ -40,21 +40,27 @@ def reviewed(spec_id):
             "status": "confirmed", "officialUrl": spec["officialUrl"],
             "sourceType": "salle", "organizer": "La Laiterie",
         },
-        "newArtists": [],
+        "newArtists": spec.get("newArtists", []),
     }
 
 
 class LaLaiterieApprovalsTests(unittest.TestCase):
     def test_nine_new_distinct_dates_valid_artists_and_door_time_unknown(self):
-        self.assertEqual(len(LAITERIE_OFFICIAL_VERIFIED), 9)
+        self.assertEqual(len(LAITERIE_OFFICIAL_VERIFIED), 14)
         existing_dates = {
             e["date"] for e in CURRENT["events"] if e["venueId"] == "la-laiterie-strasbourg"
         }
         ids = {e["id"] for e in CURRENT["events"]}
         for key,spec in LAITERIE_OFFICIAL_VERIFIED.items():
             with self.subTest(key=key):
-                self.assertNotIn(key,ids)
-                self.assertNotIn(spec["date"],existing_dates)
+                if key in ids:
+                    existing=next(e for e in CURRENT["events"] if e["id"]==key)
+                    self.assertEqual(existing["date"],spec["date"])
+                    self.assertEqual(existing["venueId"],"la-laiterie-strasbourg")
+                    self.assertEqual(existing["artistIds"],spec["artistIds"])
+                    self.assertIsNone(existing["time"])
+                else:
+                    self.assertNotIn(spec["date"],existing_dates)
                 self.assertIsNone(spec["time"])
                 self.assertTrue(spec["officialUrl"].startswith(
                     "https://www.artefact.org/la-laiterie/evenements/"))
@@ -63,7 +69,7 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
                 approval=reviewed(key)
                 event,added=validate_approval(approval,VENUES,ARTISTS,TODAY)
                 self.assertEqual(event,approval["event"])
-                self.assertEqual(added,{})
+                self.assertEqual(set(added),{x["id"] for x in approval["newArtists"]})
 
     def test_wrong_identity_timestamp_or_official_source_must_fail(self):
         key = next(iter(LAITERIE_OFFICIAL_VERIFIED))
@@ -87,6 +93,24 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
                 mutate(item)
                 with self.assertRaises((ValueError, KeyError)):
                     validate_approval(item,VENUES,ARTISTS,TODAY)
+
+    def test_five_new_lineups_are_only_exactly_named_not_guessed_artists(self):
+        new_rows=[
+            (id, x) for id,x in LAITERIE_OFFICIAL_VERIFIED.items()
+            if x.get("newArtists")
+        ]
+        self.assertEqual(len(new_rows),5)
+        self.assertEqual(sum(len(x["newArtists"]) for _,x in new_rows),11)
+        for ident,spec in new_rows:
+            with self.subTest(id=ident):
+                reviewed_row=reviewed(ident)
+                event,added=validate_approval(reviewed_row,VENUES,ARTISTS,TODAY)
+                self.assertIsNone(event["time"])
+                self.assertEqual(set(added),{x["id"] for x in spec["newArtists"]})
+                forged=copy.deepcopy(reviewed_row)
+                forged["newArtists"][0]["name"]="Personne inventée"
+                with self.assertRaises((ValueError,KeyError)):
+                    validate_approval(forged,VENUES,ARTISTS,TODAY)
 
     def test_reference_is_unchanged_by_verification(self):
         baseline=json.loads((ROOT / "docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
