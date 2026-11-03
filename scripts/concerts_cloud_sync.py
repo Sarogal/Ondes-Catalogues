@@ -1803,6 +1803,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Identifiant d'événement invalide")
     require(event.get("venueId") in venues,
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
+    # An exact approved event ID cannot be transplanted to another existing
+    # venue to bypass its venue-specific proof and hostname rules.
+    if event_id in LAITERIE_OFFICIAL_VERIFIED or event_id in LAITERIE_SECOND_WAVE_VERIFIED:
+        require(event.get("venueId") == "la-laiterie-strasbourg",
+                "Identifiant de concert La Laiterie affecté à une autre salle")
+    if event_id in BIKINI_OFFICIAL_VERIFIED:
+        require(event.get("venueId") == "le-bikini-toulouse",
+                "Identifiant de concert Bikini affecté à une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
     require(isinstance(event.get("title"), str) and
