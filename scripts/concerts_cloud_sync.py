@@ -348,6 +348,24 @@ PILOT_VENUES = {
         "locationUrl": "https://acceslibre.beta.gouv.fr/app/22-saint-brieuc/a/salle-de-spectacle/erp/bonjour-minuit/",
         "locationProofType": "government-accessibility-location",
     },
+    "le-jardin-moderne-rennes": {
+        "venue": {
+            "id": "le-jardin-moderne-rennes",
+            "name": "Le Jardin Moderne",
+            "address": "11 rue du Manoir de Servigné",
+            "postalCode": "35000",
+            "city": "Rennes",
+            "department": "35",
+            "region": "Bretagne",
+            "latitude": 48.10164,
+            "longitude": -1.72557,
+            "geoPrecision": "centre indicatif du bâtiment Le Jardin Moderne (OpenStreetMap way 80301709, via Mapcarta, coordonnées arrondies à 5 décimales), non assimilé à l'entrée de la salle",
+            "geoSource": "https://mapcarta.com/fr/W80301709",
+        },
+        "officialUrl": "https://www.jardinmoderne.org/acces-2/",
+        "locationUrl": "https://mapcarta.com/fr/W80301709",
+        "locationProofType": "openstreetmap-venue-way",
+    },
 }
 
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
@@ -2579,6 +2597,25 @@ BONJOUR_MINUIT_VERIFIED = {
     }
 }
 
+# Exact official first-party event — Le Jardin Moderne, Rennes.
+# Displayed "20h > 1h" is a programme interval, NOT a proven music start.
+JARDIN_MODERNE_VERIFIED = {
+    "go-c-20261107-rennes-excellento": {
+        "title": "Excellento + Joey Glüten + Bâtarde",
+        "date": "2026-11-07",
+        "time": None,
+        "venueId": "le-jardin-moderne-rennes",
+        "artistIds": ["excellento", "joey-gluten", "batarde"],
+        "artistNames": ["Excellento", "Joey Glüten", "Bâtarde"],
+        "newArtistIds": ["excellento", "joey-gluten", "batarde"],
+        "genres": ["Rock"],
+        "status": "confirmed",
+        "officialUrl": "https://www.jardinmoderne.org/agenda/excellento-joey-gluten-batarde/",
+        "calendarUrl": "https://www.jardinmoderne.org/agenda/",
+    }
+}
+
+
 
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
@@ -2866,6 +2903,63 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : groupes ou identités non documentés")
         require(event.get("time") is None,
                 "Rockstore/Black Lab : heure de début non confirmée")
+    elif event.get("venueId") == "le-jardin-moderne-rennes":
+        spec = JARDIN_MODERNE_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "venueId", "artistIds",
+                         "genres", "status"))
+                and event.get("organizer") is None
+                and official_url == spec["officialUrl"],
+                "Jardin Moderne : seule l'affiche nominative signée est autorisée")
+        u=urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "www.jardinmoderne.org"
+                and u.path == urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/agenda/[a-z0-9-]+/",u.path)
+                and not u.query and not u.fragment and not u.username
+                and not u.password and not u.port,
+                "Jardin Moderne : URL first-party du concert exacte exigée")
+        checked=norm_date(approval.get("reviewedAt"))
+        require(today-dt.timedelta(days=14)<=checked<=today,
+                "Jardin Moderne : preuve privée trop ancienne ou future")
+        require(isinstance(evidence,list) and len(evidence)==2
+                and all(isinstance(p,dict) for p in evidence),
+                "Jardin Moderne : fiche officielle et agenda séparés obligatoires")
+        detail=next((p for p in evidence
+                     if p.get("proofType")=="official-organizer-or-venue"),None)
+        calendar=next((p for p in evidence
+                       if p.get("proofType")=="first-party-venue-calendar"),None)
+        require(detail is not None and calendar is not None
+                and detail.get("url")==spec["officialUrl"]
+                and calendar.get("url")==spec["calendarUrl"]
+                and detail.get("checkedAt")==checked.isoformat()
+                and calendar.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue","genre"}.issubset(
+                    set(detail.get("checkedFields") or []))
+                and {"artists","date","venue"}.issubset(
+                    set(calendar.get("checkedFields") or []))
+                and not ({"concertStartTime","startTime","doorTime"} &
+                         set(detail.get("checkedFields") or []))
+                and not ({"concertStartTime","startTime","doorTime"} &
+                         set(calendar.get("checkedFields") or [])),
+                "Jardin Moderne : preuves indépendantes ou horaires non fiables")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require(ids==spec["artistIds"]
+                and [x["id"] for x in new_artists]==spec["newArtistIds"]
+                and new_artists==[
+                    {"id":aid,"name":spec["artistNames"][i]}
+                    for i,aid in enumerate(ids) if aid in spec["newArtistIds"]]
+                and len(ids)==len(spec["artistNames"])
+                and all(aid in resolved and
+                        norm(resolved[aid]["name"])==norm(name)
+                        for aid,name in zip(ids,spec["artistNames"]))
+                and all(norm(x["name"]) not in {
+                    norm(y["name"]) for y in known_artist_ids.values()}
+                        for x in new_artists),
+                "Jardin Moderne : groupe nouveau non corroboré ou doublonné")
     elif event.get("venueId") == "bonjour-minuit-saint-brieuc":
         spec = BONJOUR_MINUIT_VERIFIED.get(event_id)
         require(spec is not None
