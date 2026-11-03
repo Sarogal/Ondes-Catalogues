@@ -1641,6 +1641,21 @@
       "id": "les-agamemnonz",
       "name": "Les Agamemnonz",
       "aliases": []
+    },
+    {
+      "id": "the-flying-bones",
+      "name": "The Flying Bones",
+      "aliases": []
+    },
+    {
+      "id": "wicked-vessel",
+      "name": "Wicked Vessel",
+      "aliases": []
+    },
+    {
+      "id": "ultramoderne",
+      "name": "Ultramoderne",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2514,6 +2529,19 @@
       "longitude": -3.3722222222,
       "geoPrecision": "coordonnées GPS du site fournies par Hydrophone (47°43’51.0 N, 3°22’20.0 W), approximation du site et non seuil exact de la porte Face A",
       "geoSource": "https://www.hydrophone.fr/-Pratique-.html"
+    },
+    {
+      "id": "le-chatodo-blois",
+      "name": "Le Chato'do",
+      "address": "113 avenue de Vendôme",
+      "postalCode": "41000",
+      "city": "Blois",
+      "department": "41",
+      "region": "Centre-Val de Loire",
+      "latitude": 47.60562,
+      "longitude": 1.31378,
+      "geoPrecision": "centre indicatif du bâtiment Chato’do (OpenStreetMap way 118748447, coordonnées arrondies à 5 décimales), pas l'emplacement exact de l'entrée concerts rue Alexandre Vezin",
+      "geoSource": "https://mapcarta.com/fr/W118748447"
     }
   ],
   "events": [
@@ -9756,6 +9784,96 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261105-blois-the-flying-bones",
+      "title": "The Flying Bones",
+      "date": "2026-11-05",
+      "artistIds": [
+        "the-flying-bones"
+      ],
+      "venueId": "le-chatodo-blois",
+      "genres": [
+        "Garage Rock",
+        "Psych Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://chatodo.com/agenda/evenement/the-flying-bones/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chato'do",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261112-blois-wicked-vessel",
+      "title": "Wicked Vessel + Ultramoderne",
+      "date": "2026-11-12",
+      "artistIds": [
+        "wicked-vessel",
+        "ultramoderne"
+      ],
+      "venueId": "le-chatodo-blois",
+      "genres": [
+        "Post Rock",
+        "Electro Clash"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://chatodo.com/agenda/evenement/wicked-vessel-ultramoderne/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chato'do",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-blois-7weeks",
+      "title": "7Weeks",
+      "date": "2026-12-03",
+      "artistIds": [
+        "7weeks"
+      ],
+      "venueId": "le-chatodo-blois",
+      "genres": [
+        "Heavy Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://chatodo.com/agenda/evenement/7-weeks/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Chato'do",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
