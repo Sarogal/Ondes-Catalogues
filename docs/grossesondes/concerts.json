@@ -1626,6 +1626,21 @@
       "id": "dj-tony-garagist",
       "name": "DJ Tony Garagist",
       "aliases": []
+    },
+    {
+      "id": "fff",
+      "name": "FFF",
+      "aliases": []
+    },
+    {
+      "id": "les-fatals-picards",
+      "name": "Les Fatals Picards",
+      "aliases": []
+    },
+    {
+      "id": "les-agamemnonz",
+      "name": "Les Agamemnonz",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9614,6 +9629,129 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://le106.com/agenda/dynamite-shakers",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261209-brest-fff-howlin-jaws",
+      "title": "FFF + Howlin’ Jaws",
+      "date": "2026-12-09",
+      "artistIds": [
+        "fff",
+        "howlin-jaws"
+      ],
+      "venueId": "la-carene-brest",
+      "genres": [
+        "Rock",
+        "Funk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lacarene.fr/fff-howlin-jaws.html",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Diogène Productions",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270402-brest-les-fatals-picards",
+      "title": "Les Fatals Picards",
+      "date": "2027-04-02",
+      "artistIds": [
+        "les-fatals-picards"
+      ],
+      "venueId": "la-carene-brest",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lacarene.fr/les-fatals-picards.html",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Arsenal Productions",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-orleans-burning-heads",
+      "title": "Burning Heads + Not Scientists",
+      "date": "2027-02-19",
+      "artistIds": [
+        "burning-heads",
+        "not-scientists"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "Skate Punk",
+        "Punk Rock",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/agenda/burning-heads-not-scientists/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Astrolabe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270212-rouen-johnny-mafia-les-agamemnonz",
+      "title": "Johnny Mafia + Les Agamemnonz",
+      "date": "2027-02-12",
+      "artistIds": [
+        "johnny-mafia",
+        "les-agamemnonz"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock",
+        "Surf Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/johnny-mafia-les-agamemnonz",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
