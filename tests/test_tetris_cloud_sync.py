@@ -10,7 +10,10 @@ TODAY = dt.date(2026, 11, 3)
 V = "le-tetris-le-havre"
 CAT = json.loads((Path(__file__).resolve().parents[1]/
                   "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
-KNOWN = {a["id"]: a for a in CAT["artists"]}
+# Reconstruct pre-approval artists: the live catalogue contains the six
+# Tetris acts added after the signed fixture was originally written.
+SIGNED_NEW = {"edging","zonbi","metro-verlaine","coffin","belek","grimskunk"}
+KNOWN = {a["id"]: a for a in CAT["artists"] if a["id"] not in SIGNED_NEW}
 NAMES = {name.lower().replace(".","").replace(" ","-"): name for name in ()}
 NAMES.update({"edging":"Edging","zonbi":"Zonbi",
               "metro-verlaine":"Metro Verlaine","coffin":"C.O.F.F.I.N.",
