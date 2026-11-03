@@ -1798,15 +1798,15 @@
     {
       "id": "the-black-lab-wasquehal",
       "name": "The Black Lab",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "8 rue des Champs, P.A. de la Pilaterie",
+      "postalCode": "59290",
       "city": "Wasquehal",
       "department": "59",
       "region": "Hauts-de-France",
-      "latitude": 50.67,
-      "longitude": 3.13,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 50.652602,
+      "longitude": 3.122069,
+      "geoPrecision": "GPS officiel du Black Lab (point du lieu, entrée publique au 12 rue de la Ladrie)",
+      "geoSource": "https://theblacklab.fr/adresse/"
     },
     {
       "id": "la-cigale-paris",
@@ -1824,15 +1824,15 @@
     {
       "id": "rockstore-montpellier",
       "name": "Rockstore",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "20 rue de Verdun",
+      "postalCode": "34000",
       "city": "Montpellier",
       "department": "34",
       "region": "Occitanie",
-      "latitude": 43.608,
-      "longitude": 3.878,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 43.60624,
+      "longitude": 3.88137,
+      "geoPrecision": "point OpenStreetMap Rockstore (node 579814541 ; entrée non garantie)",
+      "geoSource": "https://www.openstreetmap.org/node/579814541"
     },
     {
       "id": "la-machine-du-moulin-rouge-paris",
@@ -1980,15 +1980,15 @@
     {
       "id": "le-bikini-toulouse",
       "name": "Le Bikini",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
-      "city": "Toulouse",
+      "address": "Rue Théodore Monod, Parc Technologique du Canal",
+      "postalCode": "31520",
+      "city": "Ramonville-Saint-Agne",
       "department": "31",
       "region": "Occitanie",
-      "latitude": 43.604,
-      "longitude": 1.444,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 43.54795,
+      "longitude": 1.48568,
+      "geoPrecision": "point OpenStreetMap Le Bikini (node 380889428 ; entrée non garantie)",
+      "geoSource": "https://www.openstreetmap.org/node/380889428"
     },
     {
       "id": "le-trianon-paris",
