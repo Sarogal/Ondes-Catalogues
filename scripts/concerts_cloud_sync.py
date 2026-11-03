@@ -330,6 +330,24 @@ PILOT_VENUES = {
         "officialUrl": "https://brindezinc.fr/informations-pratiques/",
         "locationUrl": "https://mapcarta.com/N1979372261"
     }
+    "bonjour-minuit-saint-brieuc": {
+        "venue": {
+            "id": "bonjour-minuit-saint-brieuc",
+            "name": "Bonjour Minuit",
+            "address": "Place Nina Simone",
+            "postalCode": "22000",
+            "city": "Saint-Brieuc",
+            "department": "22",
+            "region": "Bretagne",
+            "latitude": 48.5196,
+            "longitude": -2.7852,
+            "geoPrecision": "point indicatif du lieu sur la fiche gouvernementale Acceslibre, coordonnées arrondies à quatre décimales (~10 m latitude), non assimilées à l'entrée des concerts",
+            "geoSource": "https://acceslibre.beta.gouv.fr/app/22-saint-brieuc/a/salle-de-spectacle/erp/bonjour-minuit/",
+        },
+        "officialUrl": "https://bonjour-minuit.fr/contact/",
+        "locationUrl": "https://acceslibre.beta.gouv.fr/app/22-saint-brieuc/a/salle-de-spectacle/erp/bonjour-minuit/",
+        "locationProofType": "government-accessibility-location",
+    },
 }
 
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
@@ -2536,6 +2554,20 @@ ANTIPODE_RENNES_VERIFIED = {
     },
 }
 
+# Bonjour Minuit, Saint-Brieuc: independent first-party event and calendar
+# review. On 2 December the printed 20:00 is DOORS; 20:30 is explicitly
+# indicative, hence no asserted musical start in the published event.
+BONJOUR_MINUIT_VERIFIED = {
+    "go-c-20261202-saint-brieuc-magma": {
+        "title": "Magma", "date": "2026-12-02", "time": None,
+        "venueId": "bonjour-minuit-saint-brieuc", "artistIds": ["magma"],
+        "artistNames": ["Magma"], "newArtistIds": [],
+        "genres": ["Rock progressif"], "status": "confirmed",
+        "officialUrl": "https://bonjour-minuit.fr/evenement/magma-02dec26/",
+        "calendarUrl": "https://bonjour-minuit.fr/agenda/",
+    }
+}
+
 
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
@@ -2823,6 +2855,52 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : groupes ou identités non documentés")
         require(event.get("time") is None,
                 "Rockstore/Black Lab : heure de début non confirmée")
+    elif event.get("venueId") == "bonjour-minuit-saint-brieuc":
+        spec = BONJOUR_MINUIT_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(key) == spec[key] for key in
+                        ("title", "date", "time", "venueId",
+                         "artistIds", "genres", "status"))
+                and event.get("organizer") is None
+                and official_url == spec["officialUrl"],
+                "Bonjour Minuit : affiche non homologuée, heure ou salle modifiée")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "bonjour-minuit.fr"
+                and u.path == "/evenement/magma-02dec26/"
+                and not u.query and not u.fragment and not u.username
+                and not u.password and not u.port,
+                "Bonjour Minuit : URL individuelle non conforme")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Bonjour Minuit : preuve privée trop ancienne ou future")
+        require(isinstance(evidence, list) and len(evidence) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "Bonjour Minuit : détail et agenda officiels obligatoires")
+        proof = next((p for p in evidence
+                      if p.get("proofType") == "official-organizer-or-venue"), None)
+        calendar = next((p for p in evidence
+                         if p.get("proofType") == "first-party-venue-calendar"), None)
+        require(proof is not None and calendar is not None
+                and proof.get("url") == spec["officialUrl"]
+                and calendar.get("url") == spec["calendarUrl"]
+                and proof.get("checkedAt") == checked.isoformat()
+                and calendar.get("checkedAt") == checked.isoformat()
+                and {"artists", "date", "venue", "genre"}.issubset(
+                    set(proof.get("checkedFields") or []))
+                and {"artists", "date", "venue"}.issubset(
+                    set(calendar.get("checkedFields") or []))
+                and not ({"concertStartTime", "startTime", "doorTime"} &
+                         set(proof.get("checkedFields") or []))
+                and not ({"concertStartTime", "startTime", "doorTime"} &
+                         set(calendar.get("checkedFields") or [])),
+                "Bonjour Minuit : source officielle non recoupée ou horaire inféré")
+        require(not new_artists and len(ids) == 1
+                and ids[0] == "magma"
+                and "magma" in known_artist_ids
+                and norm(known_artist_ids["magma"]["name"]) == "magma",
+                "Bonjour Minuit : artiste existant mal identifié ou doublonné")
     elif event.get("venueId") == "antipode-rennes":
         spec = ANTIPODE_RENNES_VERIFIED.get(event_id)
         require(spec is not None
