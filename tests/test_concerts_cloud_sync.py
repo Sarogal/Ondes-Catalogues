@@ -76,7 +76,7 @@ class ConcertsCloudSyncTests(unittest.TestCase):
              "https://www.lastrolabe.org/agenda/orpheum-black-le-dernier-acte/","Rock","slaptrack",True),
             ("go-c-20261117-rouen-elktrk-skin","le-106-rouen",
              "2026-11-17","ELKTRK SKIN + YÜ + KAASK",
-             ["elktrk-skin","yu","kaask"],["ELKTRK SKIN","YÜ","KAASK"],
+             ["elktrk-skin","yu-band","kaask"],["ELKTRK SKIN","YÜ","KAASK"],
              "https://le106.com/agenda/elktrk-skin-yu-kaask","Punk Rock","rouen-calendar",False),
             ("go-c-20270128-rouen-powersolo","le-106-rouen",
              "2027-01-28","Powersolo + Weird Omen + DJ Tony Garagist",
