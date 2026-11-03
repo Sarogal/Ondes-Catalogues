@@ -2239,6 +2239,109 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 with self.assertRaises((ValueError, KeyError)):
                     merge(BASE, published, candidate, day)
 
+    def rex_location_approval(self):
+        from concerts_cloud_sync import REX_LOCATION_FIX
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-03",
+            "venueId": "le-rex-toulouse",
+            "venuePatch": copy.deepcopy(REX_LOCATION_FIX),
+            "officialEvidence": [
+                {
+                    "url": "https://www.lerextoulouse.com/fr/contact/acces/",
+                    "proofType": "official-venue-gps",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": [
+                        "name", "address", "postalCode", "city", "latitude", "longitude"
+                    ],
+                },
+                {
+                    "url": "https://www.toulouse-tourisme.com/activite/le-rex-de-toulouse/",
+                    "proofType": "tourism-office-address",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["name", "address", "postalCode", "city"],
+                },
+            ],
+        }
+
+    def test_rex_location_correction_preserves_127_events_and_is_idempotent(self):
+        from concerts_cloud_sync import corrected_reference_venues, REX_LOCATION_FIX
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE, secret_place=True)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].append(self.rex_location_approval())
+        changed, stats = merge(BASE, current, approvals, day)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(stats["correctedVenues"], 1)
+        self.assertEqual(changed["events"], current["events"])
+        self.assertEqual(changed["artists"], current["artists"])
+        self.assertEqual(
+            changed["venues"][:53],
+            corrected_reference_venues(BASE, secret_place=True, le_rex=True)
+        )
+        old = next(v for v in current["venues"] if v["id"] == "le-rex-toulouse")
+        new = next(v for v in changed["venues"] if v["id"] == "le-rex-toulouse")
+        for key in ("id", "name", "city", "department", "region"):
+            self.assertEqual(new[key], old[key])
+        for key, value in REX_LOCATION_FIX.items():
+            self.assertEqual(new[key], value)
+        again, second = merge(BASE, changed, approvals, day)
+        self.assertEqual(again, changed)
+        self.assertEqual(second["correctedVenues"], 0)
+        protect_reference(BASE, changed)
+
+    def test_rex_and_secret_place_can_be_reviewed_together_without_baseline_rewrite(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].append(self.rex_location_approval())
+        result, stats = merge(BASE, current, approvals, day)
+        self.assertEqual(stats["correctedVenues"], 2)
+        self.assertEqual(result["events"], current["events"])
+        self.assertEqual(result["venues"][:53],
+                         corrected_reference_venues(BASE, secret_place=True, le_rex=True))
+        protect_reference(BASE, result)
+
+    def test_rex_rejects_fake_gps_signature_or_missing_independent_proof(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE, secret_place=True)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].append(self.rex_location_approval())
+        changed, _ = merge(BASE, current, approvals, day)
+        for variant in (
+            "missing-signed-review", "forged-gps", "forged-source",
+            "missing-tourism", "unapproved-reviewer", "wrong-date",
+            "duplicate-rex", "unrelated-venue-changed"
+        ):
+            with self.subTest(variant=variant):
+                q = copy.deepcopy(approvals)
+                published = copy.deepcopy(changed)
+                rex = q["referenceVenueCorrections"][1]
+                if variant == "missing-signed-review":
+                    q["referenceVenueCorrections"] = q["referenceVenueCorrections"][:1]
+                elif variant == "forged-gps":
+                    rex["venuePatch"]["latitude"] += 0.01
+                elif variant == "forged-source":
+                    rex["officialEvidence"][0]["url"] = "https://example.com/rex"
+                elif variant == "missing-tourism":
+                    rex["officialEvidence"] = rex["officialEvidence"][:1]
+                elif variant == "unapproved-reviewer":
+                    rex["reviewedBy"] = "guess"
+                elif variant == "wrong-date":
+                    rex["reviewedAt"] = "2026-11-04"
+                elif variant == "duplicate-rex":
+                    q["referenceVenueCorrections"].append(copy.deepcopy(rex))
+                elif variant == "unrelated-venue-changed":
+                    published["venues"][0]["latitude"] += 0.01
+                with self.assertRaises((ValueError, KeyError)):
+                    merge(BASE, published, q, day)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
