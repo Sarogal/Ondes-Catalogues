@@ -2349,5 +2349,87 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(stats["newEvents"],0)
 
 
+
+class BikiniIndependentReviewTests(unittest.TestCase):
+    """Freeze exact first-party bills; refuse an invented concert start time."""
+
+    @staticmethod
+    def approved_row(spec, event_id):
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-03",
+            "officialEvidence": [
+                {
+                    "url": spec["officialUrl"],
+                    "proofType": "official-organizer-or-venue",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["artists", "date", "venue", "genre"],
+                },
+                {
+                    "url": "https://lebikini.com/programmation/-/concert",
+                    "proofType": "first-party-venue-calendar",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["artists", "date", "venue", "genre"],
+                },
+            ],
+            "event": {
+                "id": event_id,
+                "title": spec["title"],
+                "date": spec["date"],
+                "time": None,
+                "venueId": "le-bikini-toulouse",
+                "artistIds": copy.deepcopy(spec["artistIds"]),
+                "genres": copy.deepcopy(spec["genres"]),
+                "status": "confirmed",
+                "officialUrl": spec["officialUrl"],
+                "sourceType": "salle",
+            },
+            "newArtists": copy.deepcopy(spec["newArtists"]),
+        }
+
+    def test_three_approved_bikini_bills_and_safety_rejections(self):
+        from concerts_cloud_sync import (
+            BIKINI_OFFICIAL_VERIFIED, validate_approval
+        )
+        day = __import__("datetime").date(2026, 11, 3)
+        venues = {
+            "le-bikini-toulouse": next(
+                v for v in BASE["venues"] if v["id"] == "le-bikini-toulouse")
+        }
+        self.assertEqual(len(BIKINI_OFFICIAL_VERIFIED), 3)
+        for event_id, spec in BIKINI_OFFICIAL_VERIFIED.items():
+            with self.subTest(event_id=event_id):
+                new_ids = {a["id"] for a in spec["newArtists"]}
+                known = {
+                    aid: {"id": aid, "name": name, "aliases": []}
+                    for aid, name in zip(spec["artistIds"], spec["artistNames"])
+                    if aid not in new_ids
+                }
+                row = self.approved_row(spec, event_id)
+                event, artists = validate_approval(row, venues, known, day)
+                self.assertEqual(event["id"], event_id)
+                self.assertIsNone(event["time"])
+                self.assertEqual(set(artists), new_ids)
+                for change in ("doors-as-start", "wrong-host", "other-lineup",
+                               "missing-calendar", "wrong-venue", "fake-genre"):
+                    invalid = copy.deepcopy(row)
+                    if change == "doors-as-start":
+                        invalid["event"]["time"] = "19:30"
+                    elif change == "wrong-host":
+                        invalid["event"]["officialUrl"] = "https://example.com/event"
+                    elif change == "other-lineup":
+                        invalid["event"]["artistIds"] = ["unverified-act"]
+                    elif change == "missing-calendar":
+                        invalid["officialEvidence"].pop()
+                    elif change == "wrong-venue":
+                        invalid["event"]["venueId"] = "le-rex-toulouse"
+                    else:
+                        invalid["event"]["genres"] = ["Unverified"]
+                    with self.assertRaises((ValueError, KeyError)):
+                        validate_approval(invalid, venues, known, day)
+
+
+
 if __name__=="__main__":
     unittest.main()
