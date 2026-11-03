@@ -53,8 +53,14 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
         ids = {e["id"] for e in CURRENT["events"]}
         for key,spec in LAITERIE_OFFICIAL_VERIFIED.items():
             with self.subTest(key=key):
-                self.assertNotIn(key,ids)
-                self.assertNotIn(spec["date"],existing_dates)
+                if key in ids:
+                    existing=next(e for e in CURRENT["events"] if e["id"]==key)
+                    self.assertEqual(existing["date"],spec["date"])
+                    self.assertEqual(existing["venueId"],"la-laiterie-strasbourg")
+                    self.assertEqual(existing["artistIds"],spec["artistIds"])
+                    self.assertIsNone(existing["time"])
+                else:
+                    self.assertNotIn(spec["date"],existing_dates)
                 self.assertIsNone(spec["time"])
                 self.assertTrue(spec["officialUrl"].startswith(
                     "https://www.artefact.org/la-laiterie/evenements/"))
