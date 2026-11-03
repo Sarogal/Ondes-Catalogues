@@ -1642,6 +1642,17 @@ LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
 # Three independently rechecked first-party Bikini concert bills.
 # All times on these listings are DOORS, never concert start times.
 BIKINI_OFFICIAL_VERIFIED = {
+    "go-c-20261111-toulouse-chameleons": {
+        "title": "Chameleons + Agonal Gasps",
+        "date": "2026-11-11",
+        "artistIds": ["chameleons", "agonal-gasps"],
+        "artistNames": ["Chameleons", "Agonal Gasps"],
+        "newArtists": [{"id": "chameleons", "name": "Chameleons"},
+                       {"id": "agonal-gasps", "name": "Agonal Gasps"}],
+        "genres": ["Post-Punk", "Rock alternatif"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/11/chameleons",
+    },
     "go-c-20261113-toulouse-tagada-jones": {
         "title": "Tagada Jones + Les Tambours du Bronx",
         "date": "2026-11-13",
@@ -1881,7 +1892,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Bikini : affiche non agréée ou champs modifiés")
         link = urlsplit(official_url)
         require(link.scheme == "https" and link.hostname == "lebikini.com"
-                and re.fullmatch(r"/2026/11/(13|14|17)/[a-z0-9-]+", link.path)
+                and re.fullmatch(r"/2026/11/(11|13|14|17)/[a-z0-9-]+", link.path)
                 and not link.query and not link.fragment and not link.username
                 and not link.password and not link.port,
                 "Bikini : fiche individuelle officielle HTTPS exigée")

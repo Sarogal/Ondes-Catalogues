@@ -2388,7 +2388,7 @@ class BikiniIndependentReviewTests(unittest.TestCase):
             "newArtists": copy.deepcopy(spec["newArtists"]),
         }
 
-    def test_three_approved_bikini_bills_and_safety_rejections(self):
+    def test_four_approved_bikini_bills_and_safety_rejections(self):
         from concerts_cloud_sync import (
             BIKINI_OFFICIAL_VERIFIED, validate_approval
         )
@@ -2397,7 +2397,7 @@ class BikiniIndependentReviewTests(unittest.TestCase):
             "le-bikini-toulouse": next(
                 v for v in BASE["venues"] if v["id"] == "le-bikini-toulouse")
         }
-        self.assertEqual(len(BIKINI_OFFICIAL_VERIFIED), 3)
+        self.assertEqual(len(BIKINI_OFFICIAL_VERIFIED), 4)
         for event_id, spec in BIKINI_OFFICIAL_VERIFIED.items():
             with self.subTest(event_id=event_id):
                 new_ids = {a["id"] for a in spec["newArtists"]}
