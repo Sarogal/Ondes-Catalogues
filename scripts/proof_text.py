@@ -104,6 +104,27 @@ def official_openagenda_grouped_day(event, text):
     return bool(re.search(expected, body))
 
 
+VERSAILLES_BEBE_BAROQUE_URL = (
+    "https://openagenda.com/fr/culture-versailles/events/"
+    "33026579_bebe-baroque-atelier-musical-pour-les-tout-petits-5079865"
+)
+
+
+def official_versailles_monthly_session(event, text):
+    """Verify a named monthly session in its exact Culture Versailles listing.
+
+    The official OpenAgenda page renders "Décembre 2026" and "Mercredi 16"
+    in separate elements. Never infer all the days of a broad event period.
+    The standard title, venue, time, age, price and geo checks still follow.
+    """
+    if event.get("source_url") != VERSAILLES_BEBE_BAROQUE_URL:
+        return False
+    if (event.get("date_start") != "2026-12-16" or
+            event.get("date_end") != "2026-12-16"):
+        return False
+    return bool(re.search(r"\bdecembre\s+2026\s+mercredi\s+16\b", norm(text)))
+
+
 def official_philharmonie_section(event):
     """La même programmation officielle affiche l'année et le prix près du titre."""
     allowed=("29702-sur-les-pas-de-simeon","29703-au-fil-deleau",
@@ -177,6 +198,11 @@ def age_is_written(event,text):
             confirmed=confirmed or bool(re.search(r"\b12\s+mois\b",body))
     else:
         return False
+    if minimum == 0 and maximum == 3:
+        # Exact phrase published by Culture Versailles: "De 0 à 3 ans".
+        # Do not accept ages 1-3, 0-5, or an undated generic age tag.
+        confirmed = confirmed or bool(
+            re.search(r"\bde\s+0\s+a\s+3\s+ans\b", body))
     if minimum == 0 and maximum == 6:
         # The official organizer can write "de 0-6 ans" without repeating
         # the word "ans" immediately after zero.
@@ -227,7 +253,8 @@ def verify_event(event,originals):
     if not dates_ok and urlparse(event["source_url"]).hostname=="www.theatre-jeanne.com":
         dates_ok=consecutive_official_dates(text,event["date_start"],event["date_end"])
     if not dates_ok:
-        dates_ok=official_openagenda_grouped_day(event,text)
+        dates_ok=(official_openagenda_grouped_day(event,text) or
+                  official_versailles_monthly_session(event,text))
     related=""
     if not dates_ok or not price_is_written(event,text):
         related=official_philharmonie_section(event)

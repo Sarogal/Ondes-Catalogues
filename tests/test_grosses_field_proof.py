@@ -82,6 +82,31 @@ class FieldProofTests(unittest.TestCase):
         self.assertNotIn("billetterie ouverte",result["notes"])
         self.assertNotIn("22 groupes",result["notes"])
         self.assertIn("130 €",result["price"])
+
+    def test_cernunnos_actual_2026_11_03_price_wording_accepted(self):
+        orig,patch=cernunnos()
+        for change in patch["changes"]:
+            if change["field"]=="price":
+                change["after"]=(
+                    "Préventes 2027 : vendredi 45 € ; samedi ou dimanche 60 € ; "
+                    "pass 3 jours 130 €. Sur place selon la page officielle : "
+                    "journée samedi/dimanche 65 € ; pass 2 jours 100 €. "
+                    "Billetterie Wilout 2027 accessible ; la page /billetterie/ reste obsolète."
+                )
+            if change["field"]=="lastVerified":
+                change["after"]="2026-10-30"
+            if change["field"]=="bands":
+                change["after"]=20
+        result=cernunnos_update(orig,patch,GOOD,"2026-11-03")
+        self.assertIsNotNone(result)
+        self.assertEqual(result[0]["bands"],20)
+        self.assertNotIn("Wilout 2027 accessible",result[0]["price"])
+        self.assertEqual(result[0]["lastVerified"],"2026-10-30")
+        for change in patch["changes"]:
+            if change["field"]=="price":
+                change["after"]+=" Invented VIP pass 999 €."
+        self.assertIsNone(cernunnos_update(orig,patch,GOOD,"2026-11-03"))
+
     def test_missing_date_year_rejects(self):
         orig,patch=cernunnos()
         bad=dict(GOOD,cernunnos_home=HOME_TEXT.replace("2027","2026"))

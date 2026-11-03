@@ -68,8 +68,26 @@ def cernunnos_update(original, update, official, today):
         return None
     # Prices explicitly visible, but the site also has a contradictory
     # generic "not yet open" notice. Do NOT claim booking availability.
-    expected="Préventes 2027 : vendredi 45 € ; samedi 60 € ; dimanche 60 € ; pass 3 jours 130 €. Sur place (site officiel) : samedi ou dimanche 65 € ; pass 2 jours 100 € (catégorie à clarifier)."
-    if changes["price"]["after"]!=expected:
+    # The official 2027 price schedule is checked independently above.
+    # The private patch may phrase it differently from an older certificate,
+    # but it may not introduce an extra price or remove an official tier.
+    # Only the fixed, sanitized summary below is ever published.
+    proposal=changes["price"].get("after")
+    if not isinstance(proposal,str):
+        return None
+    proposed_amounts=sorted({int(x) for x in re.findall(r"\b(\d+)\s*€",proposal)})
+    if proposed_amounts!=[45,60,65,100,130]:
+        return None
+    p=normalize(proposal)
+    if not all(w in p for w in ("vendredi","samedi","dimanche","pass 3 jours","pass 2 jours","sur place")):
+        return None
+    verification_date=changes.get("lastVerified",{}).get("after")
+    from datetime import date
+    try:
+        if not (date.fromisoformat(original["lastVerified"]) <=
+                date.fromisoformat(verification_date) <= date.fromisoformat(today)):
+            return None
+    except (TypeError,KeyError,ValueError):
         return None
     result=dict(original)
     result["lineup"]=present
