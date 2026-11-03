@@ -1431,6 +1431,61 @@
       "id": "the-dead-krazukies",
       "name": "The Dead Krazukies",
       "aliases": []
+    },
+    {
+      "id": "lebanon-hanover",
+      "name": "Lebanon Hanover",
+      "aliases": []
+    },
+    {
+      "id": "clan-of-xymox",
+      "name": "Clan of Xymox",
+      "aliases": []
+    },
+    {
+      "id": "kas-product",
+      "name": "Kas Product",
+      "aliases": []
+    },
+    {
+      "id": "magma",
+      "name": "Magma",
+      "aliases": []
+    },
+    {
+      "id": "cachemire",
+      "name": "Cachemire",
+      "aliases": []
+    },
+    {
+      "id": "la-phaze",
+      "name": "La Phaze",
+      "aliases": []
+    },
+    {
+      "id": "bobs-not-dead",
+      "name": "Bob's Not Dead",
+      "aliases": []
+    },
+    {
+      "id": "igorrr",
+      "name": "Igorrr",
+      "aliases": []
+    },
+    {
+      "id": "secret-chiefs-3",
+      "name": "Secret Chiefs 3",
+      "aliases": []
+    },
+    {
+      "id": "fange",
+      "name": "Fange",
+      "aliases": []
+    },
+    {
+      "id": "the-pineapple-thief",
+      "name": "The Pineapple Thief",
+      "aliases": []
     }
   ],
   "venues": [
@@ -8598,6 +8653,157 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eisbrecher-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-strasbourg-lebanon-hanover",
+      "title": "Lebanon Hanover + Clan of Xymox + Kas Product",
+      "date": "2026-12-05",
+      "artistIds": [
+        "lebanon-hanover",
+        "clan-of-xymox",
+        "kas-product"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/lebanon-hanover-clan-of-xymox-guest/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261218-strasbourg-magma",
+      "title": "Magma",
+      "date": "2026-12-18",
+      "artistIds": [
+        "magma"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/magma2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270224-strasbourg-cachemire",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-02-24",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/cachemire-la-phaze-bobs-not-dead/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270404-strasbourg-igorrr",
+      "title": "Igorrr + Secret Chiefs 3 + Fange",
+      "date": "2027-04-04",
+      "artistIds": [
+        "igorrr",
+        "secret-chiefs-3",
+        "fange"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metal expérimental"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/igorrr-secret-chiefs-3-fange/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270422-strasbourg-the-pineapple-thief",
+      "title": "The Pineapple Thief",
+      "date": "2027-04-22",
+      "artistIds": [
+        "the-pineapple-thief"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/the-pineapple-thief-far-and-wide-european-tour-2027/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
