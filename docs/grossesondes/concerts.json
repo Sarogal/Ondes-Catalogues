@@ -1736,6 +1736,26 @@
       "id": "big-sleep",
       "name": "Big Sleep",
       "aliases": []
+    },
+    {
+      "id": "steve-n-seagulls",
+      "name": "Steve'n'Seagulls",
+      "aliases": []
+    },
+    {
+      "id": "peter-hook-and-the-light",
+      "name": "Peter Hook and The Light",
+      "aliases": []
+    },
+    {
+      "id": "maustetytot",
+      "name": "Maustetytöt",
+      "aliases": []
+    },
+    {
+      "id": "francis",
+      "name": "Francis",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10348,6 +10368,123 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://le106.com/agenda/editors",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270311-rouen-steve-n-seagulls",
+      "title": "Steve'n'Seagulls",
+      "date": "2027-03-11",
+      "artistIds": [
+        "steve-n-seagulls"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/stevenseagulls",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270413-rouen-peter-hook-and-the-light",
+      "title": "Peter Hook and The Light",
+      "date": "2027-04-13",
+      "artistIds": [
+        "peter-hook-and-the-light"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/peter-hook-and-light",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270515-rouen-tagada-jones",
+      "title": "Tagada Jones",
+      "date": "2027-05-15",
+      "artistIds": [
+        "tagada-jones"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/tagada-jones",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-rouen-maustetytot-francis",
+      "title": "Maustetytöt + Francis",
+      "date": "2026-12-12",
+      "artistIds": [
+        "maustetytot",
+        "francis"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/maustetytot",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
