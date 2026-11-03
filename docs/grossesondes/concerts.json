@@ -1706,6 +1706,36 @@
       "id": "madam",
       "name": "MADAM",
       "aliases": []
+    },
+    {
+      "id": "the-sheepdogs",
+      "name": "The Sheepdogs",
+      "aliases": []
+    },
+    {
+      "id": "steve-hill",
+      "name": "Steve Hill",
+      "aliases": []
+    },
+    {
+      "id": "skip-the-use",
+      "name": "Skip The Use",
+      "aliases": []
+    },
+    {
+      "id": "mdns",
+      "name": "MDNS",
+      "aliases": []
+    },
+    {
+      "id": "editors",
+      "name": "Editors",
+      "aliases": []
+    },
+    {
+      "id": "big-sleep",
+      "name": "Big Sleep",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10232,6 +10262,96 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Big Band Café",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261210-rouen-the-sheepdogs-steve-hill",
+      "title": "The Sheepdogs + Steve Hill",
+      "date": "2026-12-10",
+      "artistIds": [
+        "the-sheepdogs",
+        "steve-hill"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/sheepdogs",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270121-rouen-skip-the-use-mdns",
+      "title": "Skip The Use + MDNS",
+      "date": "2027-01-21",
+      "artistIds": [
+        "skip-the-use",
+        "mdns"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/skip-use",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270126-rouen-editors-big-sleep",
+      "title": "Editors + Big Sleep",
+      "date": "2027-01-26",
+      "artistIds": [
+        "editors",
+        "big-sleep"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/editors",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
