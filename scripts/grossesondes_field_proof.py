@@ -75,7 +75,7 @@ def cernunnos_update(original, update, official, today):
     proposal=changes["price"].get("after")
     if not isinstance(proposal,str):
         return None
-    proposed_amounts=sorted(int(x) for x in re.findall(r"\b(\d+)\s*€",proposal))
+    proposed_amounts=sorted({int(x) for x in re.findall(r"\b(\d+)\s*€",proposal)})
     if proposed_amounts!=[45,60,65,100,130]:
         return None
     p=normalize(proposal)
