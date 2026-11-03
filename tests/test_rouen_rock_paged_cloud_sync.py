@@ -20,7 +20,7 @@ def approval(event_id):
         "officialEvidence":[
             {"url":s["officialUrl"],"proofType":"official-organizer-or-venue",
              "checkedAt":"2026-11-03",
-             "checkedFields":["artists","date","venue","genre"]},
+             "checkedFields":["artists","venue","genre"]},
             {"url":s["calendarUrl"],"proofType":"first-party-venue-calendar",
              "checkedAt":"2026-11-03",
              "checkedFields":["artists","date","venue"]}
@@ -93,6 +93,10 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
                         x["officialEvidence"][idx][field]=value
                         with self.assertRaises((ValueError,KeyError)):
                             sync.validate_approval(x,venues,artists,DATE)
+            x=approval(id)
+            x["officialEvidence"][0]["checkedFields"].append("date")
+            with self.assertRaises(ValueError):
+                sync.validate_approval(x,venues,artists,DATE)
             x=approval(id)
             x["newArtists"][0]["name"]="Impostor"
             with self.assertRaises((ValueError,KeyError)):
