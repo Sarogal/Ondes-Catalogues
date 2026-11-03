@@ -2342,6 +2342,114 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 with self.assertRaises((ValueError, KeyError)):
                     merge(BASE, published, q, day)
 
+    def laiterie_location_approval(self):
+        from concerts_cloud_sync import LAITERIE_LOCATION_FIX
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-03",
+            "venueId": "la-laiterie-strasbourg",
+            "venuePatch": copy.deepcopy(LAITERIE_LOCATION_FIX),
+            "officialEvidence": [
+                {
+                    "url": "https://www.artefact.org/la-laiterie/infos-pratiques-laiterie/",
+                    "proofType": "official-venue-access-address",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["name", "address", "postalCode", "city"],
+                },
+                {
+                    "url": "https://mapcarta.com/fr/N1694482523",
+                    "proofType": "openstreetmap-grande-salle-node-via-mapcarta",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["venueName", "coordinates"],
+                },
+                {
+                    "url": "https://www.strasbourg.eu/lieu/-/entity/id/685842",
+                    "proofType": "municipal-venue-complex-listing",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["name", "city", "postalCode"],
+                },
+            ],
+        }
+
+    def test_laiterie_corrected_without_touching_127_events(self):
+        from concerts_cloud_sync import corrected_reference_venues, LAITERIE_LOCATION_FIX
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE, secret_place=True, le_rex=True)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].extend([
+            self.rex_location_approval(), self.laiterie_location_approval()
+        ])
+        result, stats = merge(BASE, current, approvals, day)
+        self.assertEqual(stats["correctedVenues"], 1)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(result["events"], current["events"])
+        self.assertEqual(result["artists"], current["artists"])
+        venue = next(v for v in result["venues"] if v["id"] == "la-laiterie-strasbourg")
+        for key, value in LAITERIE_LOCATION_FIX.items():
+            self.assertEqual(venue[key], value)
+        self.assertIn("entrée non confirmée", venue["geoPrecision"])
+        self.assertEqual(
+            result["venues"][:53],
+            corrected_reference_venues(
+                BASE, secret_place=True, le_rex=True, la_laiterie=True)
+        )
+        again, second = merge(BASE, result, approvals, day)
+        self.assertEqual(second["correctedVenues"], 0)
+        self.assertEqual(again, result)
+        protect_reference(BASE, result)
+
+    def test_laiterie_three_geographic_corrections_can_be_signed_together(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].extend([
+            self.rex_location_approval(), self.laiterie_location_approval()
+        ])
+        result, stats = merge(BASE, current, approvals, day)
+        self.assertEqual(stats["correctedVenues"], 3)
+        self.assertEqual(result["events"], current["events"])
+        protect_reference(BASE, result)
+
+    def test_laiterie_geolocation_refuses_forged_source_or_wrong_target(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE, secret_place=True, le_rex=True)
+        approvals = self.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].extend([
+            self.rex_location_approval(), self.laiterie_location_approval()
+        ])
+        result, _ = merge(BASE, current, approvals, day)
+        for variant in ("missing-review","wrong-coordinates","wrong-source",
+                        "missing-municipal","wrong-reviewer","future-date",
+                        "duplicate-approval","changed-other-venue"):
+            with self.subTest(variant=variant):
+                q = copy.deepcopy(approvals)
+                changed = copy.deepcopy(result)
+                correction = q["referenceVenueCorrections"][2]
+                if variant == "missing-review":
+                    q["referenceVenueCorrections"].pop()
+                elif variant == "wrong-coordinates":
+                    correction["venuePatch"]["longitude"] += 0.03
+                elif variant == "wrong-source":
+                    correction["officialEvidence"][1]["url"] = "https://example.com/osm"
+                elif variant == "missing-municipal":
+                    correction["officialEvidence"].pop()
+                elif variant == "wrong-reviewer":
+                    correction["reviewedBy"] = "inferred-automatically"
+                elif variant == "future-date":
+                    correction["reviewedAt"] = "2026-11-04"
+                elif variant == "duplicate-approval":
+                    q["referenceVenueCorrections"].append(copy.deepcopy(correction))
+                elif variant == "changed-other-venue":
+                    changed["venues"][0]["latitude"] += 0.01
+                with self.assertRaises((ValueError, KeyError)):
+                    merge(BASE, changed, q, day)
+
     def test_no_approval_means_exactly_127(self):
         current,stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
                                        "approvals":[]},NOW)
