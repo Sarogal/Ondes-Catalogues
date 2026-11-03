@@ -2515,6 +2515,7 @@ ANTIPODE_RENNES_VERIFIED = {
         "officialUrl": "https://antipode-rennes.fr/agenda/pineapple-thief-2027",
         "calendarUrl": "https://antipode-rennes.fr/agenda",
     },
+}
 
 
 def validate_approval(approval, venues, known_artist_ids, today):
