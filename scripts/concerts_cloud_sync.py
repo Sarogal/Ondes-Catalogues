@@ -1599,6 +1599,42 @@ LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
         "name": "The Pineapple Thief"
       }
     ]
+  },
+  "go-c-20270217-strasbourg-sleeping-with-sirens": {
+    "title": "Sleeping With Sirens + Arm's Length + Like Roses",
+    "date": "2027-02-17",
+    "artistIds": [
+      "sleeping-with-sirens",
+      "arms-length",
+      "like-roses"
+    ],
+    "artistNames": [
+      "Sleeping With Sirens",
+      "Arm's Length",
+      "Like Roses"
+    ],
+    "genres": [
+      "Post-hardcore",
+      "Pop Punk"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/sleeping-with-sirens/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/",
+    "organizerUrl": "https://www.livenation.com/event/intl_1673680/sleeping-with-sirens-an-ending-in-itself-tour",
+    "newArtists": [
+      {
+        "id": "sleeping-with-sirens",
+        "name": "Sleeping With Sirens"
+      },
+      {
+        "id": "arms-length",
+        "name": "Arm's Length"
+      },
+      {
+        "id": "like-roses",
+        "name": "Like Roses"
+      }
+    ]
   }
 }''')
 
@@ -1761,16 +1797,21 @@ def validate_approval(approval, venues, known_artist_ids, today):
         reviewed = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=14) <= reviewed <= today,
                 "La Laiterie : revue nominative périmée ou datée dans le futur")
-        require(len(evidence) == 2 and
-                {x.get("proofType") for x in evidence if isinstance(x,dict)} ==
-                    {"official-organizer-or-venue", "first-party-venue-calendar"},
-                "La Laiterie : fiche et agenda officiels séparés exigés")
         expected = {
             "official-organizer-or-venue": (spec["officialUrl"],
                 {"artists", "date", "venue", "genre"}),
             "first-party-venue-calendar": (spec["calendarUrl"],
                 {"artists", "date", "venue", "genre"}),
         }
+        if spec.get("organizerUrl"):
+            # The venue spells "Arm's Lenght"; Live Nation independently
+            # confirms the canonical band name Arm's Length and full lineup.
+            expected["independent-organizer-confirmation"] = (
+                spec["organizerUrl"], {"artists", "date", "venue"})
+        require(len(evidence) == len(expected)
+                and {x.get("proofType") for x in evidence if isinstance(x,dict)}
+                    == set(expected),
+                "La Laiterie : justificatif officiel ou correctif nom artiste manquant")
         for p in evidence:
             typ = p.get("proofType") if isinstance(p, dict) else None
             need = expected.get(typ)

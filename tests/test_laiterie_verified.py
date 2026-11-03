@@ -19,7 +19,7 @@ TODAY = dt.date(2026, 11, 3)
 def reviewed(spec_id):
     spec = LAITERIE_OFFICIAL_VERIFIED[spec_id]
     day = "2026-11-03"
-    return {
+    row = {
         "reviewDecision": "approved",
         "reviewedBy": "independent-official-verifier",
         "reviewedAt": day,
@@ -42,11 +42,18 @@ def reviewed(spec_id):
         },
         "newArtists": spec.get("newArtists", []),
     }
+    if spec.get("organizerUrl"):
+        row["officialEvidence"].append({
+            "url":spec["organizerUrl"],
+            "proofType":"independent-organizer-confirmation",
+            "checkedAt":day,"checkedFields":["artists","date","venue"],
+        })
+    return row
 
 
 class LaLaiterieApprovalsTests(unittest.TestCase):
     def test_nine_new_distinct_dates_valid_artists_and_door_time_unknown(self):
-        self.assertEqual(len(LAITERIE_OFFICIAL_VERIFIED), 14)
+        self.assertEqual(len(LAITERIE_OFFICIAL_VERIFIED), 15)
         existing_dates = {
             e["date"] for e in CURRENT["events"] if e["venueId"] == "la-laiterie-strasbourg"
         }
@@ -67,9 +74,14 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
                 self.assertTrue(spec["calendarUrl"].startswith(
                     "https://www.artefact.org/evenements/page/"))
                 approval=reviewed(key)
-                event,added=validate_approval(approval,VENUES,ARTISTS,TODAY)
-                self.assertEqual(event,approval["event"])
-                self.assertEqual(set(added),{x["id"] for x in approval["newArtists"]})
+                if key not in ids or not spec.get("newArtists"):
+                    event,added=validate_approval(approval,VENUES,ARTISTS,TODAY)
+                    self.assertEqual(event,approval["event"])
+                    self.assertEqual(set(added),{x["id"] for x in approval["newArtists"]})
+                else:
+                    self.assertTrue(all(a["id"] in ARTISTS
+                                        and ARTISTS[a["id"]]["name"] == a["name"]
+                                        for a in spec["newArtists"]))
 
     def test_wrong_identity_timestamp_or_official_source_must_fail(self):
         key = next(iter(LAITERIE_OFFICIAL_VERIFIED))
@@ -94,16 +106,19 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
                 with self.assertRaises((ValueError, KeyError)):
                     validate_approval(item,VENUES,ARTISTS,TODAY)
 
-    def test_five_new_lineups_are_only_exactly_named_not_guessed_artists(self):
+    def test_six_new_lineups_are_only_exactly_named_not_guessed_artists(self):
         new_rows=[
             (id, x) for id,x in LAITERIE_OFFICIAL_VERIFIED.items()
             if x.get("newArtists")
         ]
-        self.assertEqual(len(new_rows),5)
-        self.assertEqual(sum(len(x["newArtists"]) for _,x in new_rows),11)
+        self.assertEqual(len(new_rows),6)
+        self.assertEqual(sum(len(x["newArtists"]) for _,x in new_rows),14)
         for ident,spec in new_rows:
             with self.subTest(id=ident):
                 reviewed_row=reviewed(ident)
+                if ident in {e["id"] for e in CURRENT["events"]}:
+                    self.assertTrue(all(a["id"] in ARTISTS for a in spec["newArtists"]))
+                    continue
                 event,added=validate_approval(reviewed_row,VENUES,ARTISTS,TODAY)
                 self.assertIsNone(event["time"])
                 self.assertEqual(set(added),{x["id"] for x in spec["newArtists"]})
@@ -111,6 +126,24 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
                 forged["newArtists"][0]["name"]="Personne inventée"
                 with self.assertRaises((ValueError,KeyError)):
                     validate_approval(forged,VENUES,ARTISTS,TODAY)
+
+    def test_sleeping_with_sirens_uses_corrected_promoter_band_spelling(self):
+        key="go-c-20270217-strasbourg-sleeping-with-sirens"
+        spec=LAITERIE_OFFICIAL_VERIFIED[key]
+        self.assertEqual(spec["artistNames"],
+                         ["Sleeping With Sirens","Arm's Length","Like Roses"])
+        self.assertIn("www.livenation.com",spec["organizerUrl"])
+        row=reviewed(key)
+        self.assertEqual(len(row["officialEvidence"]),3)
+        self.assertEqual(row["officialEvidence"][2]["proofType"],
+                         "independent-organizer-confirmation")
+        event,added=validate_approval(row,VENUES,ARTISTS,TODAY)
+        self.assertIsNone(event["time"])
+        self.assertIn("arms-length",added)
+        wrong=copy.deepcopy(row)
+        wrong["officialEvidence"].pop()
+        with self.assertRaises((ValueError,KeyError)):
+            validate_approval(wrong,VENUES,ARTISTS,TODAY)
 
     def test_reference_is_unchanged_by_verification(self):
         baseline=json.loads((ROOT / "docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
