@@ -1177,9 +1177,13 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         protect_reference(BASE,live)
         validate_catalogue(live)
         self.assertGreaterEqual(len(live["events"]),127)
-        from concerts_cloud_sync import legacy_corrected_events
-        self.assertIn(live["events"][:127],
-                      (BASE["events"],legacy_corrected_events(BASE)))
+        from concerts_cloud_sync import corrected_reference_event_state, CARGO_REFERENCE_TIME_FIXES
+        ids=tuple(sorted(CARGO_REFERENCE_TIME_FIXES))
+        self.assertIn(live["events"][:127], tuple(
+            corrected_reference_event_state(
+                BASE, legacy=legacy,
+                cargo_ids=tuple(key for i,key in enumerate(ids) if mask & (1 << i)))
+            for legacy in (False,True) for mask in range(1 << len(ids))))
 
     def test_approved_addition_only(self):
         new, stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
