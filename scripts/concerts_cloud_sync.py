@@ -31,6 +31,24 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "le-temps-machine-joue-les-tours": {
+        "venue": {
+            "id": "le-temps-machine-joue-les-tours",
+            "name": "Le Temps Machine",
+            "address": "45-49 rue des Martyrs, parvis Miles Davis",
+            "postalCode": "37300",
+            "city": "Joué-lès-Tours",
+            "department": "37",
+            "region": "Centre-Val de Loire",
+            "latitude": 47.352189,
+            "longitude": 0.664716,
+            "geoPrecision": "coordonnées géographiques indicatives (lat 47.352189, long 0.664716) publiées par l'annuaire indépendant Aleou; centre approximatif du site, pas repère métrique d'une entrée. Le lien Google Maps officiel de la salle indique un emplacement voisin.",
+            "geoSource": "https://www.aleou.fr/salle-seminaire/26731-le-temps-machine",
+        },
+        "officialUrl": "https://letempsmachine.com/infos-pratiques/contacts",
+        "locationUrl": "https://www.aleou.fr/salle-seminaire/26731-le-temps-machine",
+        "locationProofType": "independent-venue-gps",
+    },
     "le-chatodo-blois": {
         "venue": {
             "id": "le-chatodo-blois",
@@ -1366,6 +1384,20 @@ CARENE_VERIFIED = {
             "prisonnier-du-temps"
         ]
     }
+}
+
+TEMPS_MACHINE_VERIFIED = {
+    # Une seule affiche approuvée indépendamment dans GrossesOndes #130.
+    "go-c-20261119-joue-les-tours-birdstone-marave": {
+        "title": "Birdstone + Marave",
+        "date": "2026-11-19",
+        "time": None,
+        "artistIds": ["birdstone", "marave"],
+        "artistNames": ["Birdstone", "Marave"],
+        "newArtistIds": ["birdstone", "marave"],
+        "genres": ["Progressive Rock", "Punk"],
+        "officialUrl": "https://letempsmachine.com/agenda/release-party-birdstone-marave",
+    },
 }
 
 CHATODO_VERIFIED = {
@@ -3122,6 +3154,58 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Chato'do : identité des groupes incompatible")
         require(event.get("time") is None,
                 "Chato'do : ne pas transformer le créneau de portes en début")
+    elif event.get("venueId") == "le-temps-machine-joue-les-tours":
+        # A calendar card is not an event approval. The official venue
+        # explicitly states that ticket times are DOOR times.
+        spec = TEMPS_MACHINE_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("time") is None
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Le Temps Machine : concert ou programmation hors liste signée")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "letempsmachine.com"
+                and url.path == urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/agenda/[a-z0-9-]+", url.path)
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "Le Temps Machine : fiche individuelle officielle requise")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Le Temps Machine : preuve périmée ou future")
+        require(len(evidence) == 2
+                and {p.get("proofType") for p in evidence if isinstance(p, dict)}
+                == {"official-organizer-or-venue", "first-party-venue-calendar"},
+                "Le Temps Machine : détail et agenda séparés obligatoires")
+        checks = {
+            "official-organizer-or-venue": (
+                spec["officialUrl"], {"artists", "date", "venue", "genre"}),
+            "first-party-venue-calendar": (
+                "https://letempsmachine.com/agenda?category=All&location=All",
+                {"artists", "date", "genre"}),
+        }
+        for proof in evidence:
+            expected = checks.get(proof.get("proofType"))
+            require(expected is not None
+                    and proof.get("url") == expected[0]
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and expected[1].issubset(set(proof.get("checkedFields") or [])),
+                    "Le Temps Machine : preuve absente ou incomplète")
+            require("concertStartTime" not in (proof.get("checkedFields") or []),
+                    "Le Temps Machine : horaire de portes différent du concert")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require([x["id"] for x in new_artists] == spec["newArtistIds"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and
+                        norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Le Temps Machine : groupe ou identité non vérifié")
+        require(event.get("time") is None,
+                "Le Temps Machine : heure musicale non établie")
     return event, added
 
 
