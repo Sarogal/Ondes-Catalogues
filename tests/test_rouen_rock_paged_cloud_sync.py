@@ -56,7 +56,7 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
                 event,added=sync.validate_approval(approval(id),venues,artists,DATE)
                 self.assertEqual(event["date"],s["date"])
                 self.assertEqual(event["artistIds"],s["artistIds"])
-                self.assertEqual(event["genres"],["Rock"])
+                self.assertEqual(event["genres"],s["genres"])
                 self.assertIsNone(event["time"])
                 self.assertEqual(list(added),s["newArtistIds"])
         self.assertEqual(len({x for s in sync.ROUEN_ROCK_PAGED_VERIFIED.values()
@@ -98,9 +98,10 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 sync.validate_approval(x,venues,artists,DATE)
             x=approval(id)
-            x["newArtists"][0]["name"]="Impostor"
-            with self.assertRaises((ValueError,KeyError)):
-                sync.validate_approval(x,venues,artists,DATE)
+            if x["newArtists"]:
+                x["newArtists"][0]["name"]="Impostor"
+                with self.assertRaises((ValueError,KeyError)):
+                    sync.validate_approval(x,venues,artists,DATE)
 
     def test_public_dedupe_and_firstparty_page_one_required(self):
         cat,_,_=self.catalogue()
