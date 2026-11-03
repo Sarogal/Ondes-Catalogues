@@ -2515,6 +2515,16 @@ ANTIPODE_RENNES_VERIFIED = {
         "officialUrl": "https://antipode-rennes.fr/agenda/pineapple-thief-2027",
         "calendarUrl": "https://antipode-rennes.fr/agenda",
     },
+    "go-c-20270602-rennes-diiv": {
+        "title": "DIIV", "date": "2027-06-02",
+        "time": "20:30", "venueId": "antipode-rennes",
+        "artistIds": ["diiv"], "artistNames": ["DIIV"],
+        "newArtistIds": ["diiv"], "genres": ["Rock"],
+        "status": "confirmed", "organizer": None,
+        "soldOut": False,
+        "officialUrl": "https://antipode-rennes.fr/agenda/diiv-2027",
+        "calendarUrl": "https://antipode-rennes.fr/agenda",
+    },
 }
 
 
