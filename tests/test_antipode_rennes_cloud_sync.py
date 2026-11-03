@@ -46,7 +46,7 @@ class AntipodeRennesOfficialTests(unittest.TestCase):
         cls.artists={a["id"]:a for a in cls.cat["artists"] if a["id"] not in new}
 
     def test_three_exact_first_party_shows_with_explicit_start_and_door(self):
-        self.assertEqual(len(IDS),3)
+        self.assertEqual(len(IDS),4)
         discovered=set()
         for ident in IDS:
             with self.subTest(ident=ident):
@@ -61,7 +61,7 @@ class AntipodeRennesOfficialTests(unittest.TestCase):
                 prior=[e for e in self.cat["events"] if e["id"]==ident]
                 self.assertLessEqual(len(prior),1)
         self.assertEqual(discovered,
-            {"girls-in-hawaii","chaton-laveur","altin-gun"})
+            {"girls-in-hawaii","chaton-laveur","altin-gun","diiv"})
         self.assertEqual(sync.ANTIPODE_RENNES_VERIFIED[
             "go-c-20261212-rennes-girls-in-hawaii-chaton-laveur"]["soldOut"],True)
 
