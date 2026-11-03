@@ -2486,7 +2486,7 @@ ROUEN_ROCK_PAGED_VERIFIED = {
 ANTIPODE_RENNES_VERIFIED = {
     "go-c-20261212-rennes-girls-in-hawaii-chaton-laveur": {
         "title": "Girls in Hawaii + Chaton Laveur", "date": "2026-12-12",
-        "time": "20:30", "venueId": "antipode-rennes",
+        "time": "20:30", "doorTime": "20:00", "venueId": "antipode-rennes",
         "artistIds": ["girls-in-hawaii", "chaton-laveur"],
         "artistNames": ["Girls in Hawaii", "Chaton Laveur"],
         "newArtistIds": ["girls-in-hawaii", "chaton-laveur"],
@@ -2497,7 +2497,7 @@ ANTIPODE_RENNES_VERIFIED = {
     },
     "go-c-20270127-rennes-altin-gun": {
         "title": "Altın Gün", "date": "2027-01-27",
-        "time": "20:30", "venueId": "antipode-rennes",
+        "time": "20:30", "doorTime": "20:00", "venueId": "antipode-rennes",
         "artistIds": ["altin-gun"], "artistNames": ["Altın Gün"],
         "newArtistIds": ["altin-gun"], "genres": ["Rock", "Folk Rock"],
         "status": "confirmed", "organizer": "Association Trans Musicales",
@@ -2507,7 +2507,7 @@ ANTIPODE_RENNES_VERIFIED = {
     },
     "go-c-20270309-rennes-the-pineapple-thief": {
         "title": "The Pineapple Thief", "date": "2027-03-09",
-        "time": "20:30", "venueId": "antipode-rennes",
+        "time": "20:30", "doorTime": "20:00", "venueId": "antipode-rennes",
         "artistIds": ["the-pineapple-thief"],
         "artistNames": ["The Pineapple Thief"], "newArtistIds": [],
         "genres": ["Rock progressif"], "status": "confirmed",
@@ -2517,12 +2517,21 @@ ANTIPODE_RENNES_VERIFIED = {
     },
     "go-c-20270602-rennes-diiv": {
         "title": "DIIV", "date": "2027-06-02",
-        "time": "20:30", "venueId": "antipode-rennes",
+        "time": "20:30", "doorTime": "20:00", "venueId": "antipode-rennes",
         "artistIds": ["diiv"], "artistNames": ["DIIV"],
         "newArtistIds": ["diiv"], "genres": ["Rock"],
         "status": "confirmed", "organizer": None,
         "soldOut": False,
         "officialUrl": "https://antipode-rennes.fr/agenda/diiv-2027",
+        "calendarUrl": "https://antipode-rennes.fr/agenda",
+    },
+    "go-c-20261216-rennes-hanry": {
+        "title": "Apéro-concert avec Hanry", "date": "2026-12-16",
+        "time": "19:30", "doorTime": "19:00", "venueId": "antipode-rennes",
+        "artistIds": ["hanry"], "artistNames": ["Hanry"],
+        "newArtistIds": ["hanry"], "genres": ["Rock"],
+        "status": "confirmed", "organizer": "Antipode", "soldOut": False,
+        "officialUrl": "https://antipode-rennes.fr/agenda/hanry-2026",
         "calendarUrl": "https://antipode-rennes.fr/agenda",
     },
 }
@@ -2847,8 +2856,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and detail.get("checkedAt")==checked.isoformat()
                 and {"artists","date","venue","genre","concertStartTime",
                      "doorTime"}.issubset(set(detail.get("checkedFields") or []))
-                and detail.get("concertStartTimeConfirmed")=="20:30"
-                and detail.get("doorTimeConfirmed")=="20:00"
+                and detail.get("concertStartTimeConfirmed")==spec["time"]
+                and detail.get("doorTimeConfirmed")==spec["doorTime"]
                 and detail.get("soldOutOnDetailAtReview") is spec["soldOut"],
                 "Antipode : début musical/portes ou complet non prouvé")
         require(cal.get("url")==spec["calendarUrl"]
