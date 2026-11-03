@@ -329,7 +329,7 @@ PILOT_VENUES = {
         },
         "officialUrl": "https://brindezinc.fr/informations-pratiques/",
         "locationUrl": "https://mapcarta.com/N1979372261"
-    }
+    },
     "bonjour-minuit-saint-brieuc": {
         "venue": {
             "id": "bonjour-minuit-saint-brieuc",
