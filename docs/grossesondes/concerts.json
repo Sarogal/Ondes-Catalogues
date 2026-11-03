@@ -1571,6 +1571,61 @@
       "id": "smokemaster",
       "name": "Smokemaster",
       "aliases": []
+    },
+    {
+      "id": "razorlight",
+      "name": "Razorlight",
+      "aliases": []
+    },
+    {
+      "id": "rubber-legs",
+      "name": "Rubber Legs",
+      "aliases": []
+    },
+    {
+      "id": "sodom-sagesse",
+      "name": "Sodom & Sagesse",
+      "aliases": []
+    },
+    {
+      "id": "orpheum-black",
+      "name": "Orpheum Black",
+      "aliases": []
+    },
+    {
+      "id": "pledge-of-healing",
+      "name": "Pledge of Healing",
+      "aliases": []
+    },
+    {
+      "id": "elktrk-skin",
+      "name": "ELKTRK SKIN",
+      "aliases": []
+    },
+    {
+      "id": "yu-band",
+      "name": "YÜ",
+      "aliases": []
+    },
+    {
+      "id": "kaask",
+      "name": "KAASK",
+      "aliases": []
+    },
+    {
+      "id": "powersolo",
+      "name": "Powersolo",
+      "aliases": []
+    },
+    {
+      "id": "weird-omen",
+      "name": "Weird Omen",
+      "aliases": []
+    },
+    {
+      "id": "dj-tony-garagist",
+      "name": "DJ Tony Garagist",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9380,6 +9435,189 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261119-orleans-razorlight",
+      "title": "Razorlight + Rubber Legs",
+      "date": "2026-11-19",
+      "artistIds": [
+        "razorlight",
+        "rubber-legs"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "Indie Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/agenda/razorlight/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Astrolabe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270121-orleans-la-jungle",
+      "title": "La Jungle + Sodom & Sagesse",
+      "date": "2027-01-21",
+      "artistIds": [
+        "la-jungle",
+        "sodom-sagesse"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "Noise Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/agenda/la-jungle-sodom-sagesse/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Astrolabe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270129-orleans-orpheum-black",
+      "title": "Orpheum Black + Pledge of Healing — Le dernier acte",
+      "date": "2027-01-29",
+      "artistIds": [
+        "orpheum-black",
+        "pledge-of-healing"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/agenda/orpheum-black-le-dernier-acte/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "SLAPTRACK",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261117-rouen-elktrk-skin",
+      "title": "ELKTRK SKIN + YÜ + KAASK",
+      "date": "2026-11-17",
+      "artistIds": [
+        "elktrk-skin",
+        "yu-band",
+        "kaask"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Punk Rock",
+        "Stoner Grunge"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/elktrk-skin-yu-kaask",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270128-rouen-powersolo",
+      "title": "Powersolo + Weird Omen + DJ Tony Garagist",
+      "date": "2027-01-28",
+      "artistIds": [
+        "powersolo",
+        "weird-omen",
+        "dj-tony-garagist"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Garage Rock",
+        "Garage Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/power-solo-weird-omen-dj-tony-garagist",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270313-rouen-dynamite-shakers",
+      "title": "Dynamite Shakers",
+      "date": "2027-03-13",
+      "artistIds": [
+        "dynamite-shakers"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/dynamite-shakers",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
