@@ -1641,6 +1641,104 @@ LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
 
 # Three independently rechecked first-party Bikini concert bills.
 # All times on these listings are DOORS, never concert start times.
+LAITERIE_SECOND_WAVE_VERIFIED = json.loads(r'''{
+  "go-c-20270226-strasbourg-dynamite-shakers": {
+    "title": "Dynamite Shakers + Johnny Mafia",
+    "date": "2027-02-26",
+    "artistIds": [
+      "dynamite-shakers",
+      "johnny-mafia"
+    ],
+    "artistNames": [
+      "Dynamite Shakers",
+      "Johnny Mafia"
+    ],
+    "newArtists": [
+      {
+        "id": "dynamite-shakers",
+        "name": "Dynamite Shakers"
+      }
+    ],
+    "genres": [
+      "Garage Rock",
+      "Indie Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/dynamite-shakers-johnny-mafia/",
+    "calendarUrl": "https://www.artefact.org/la-laiterie/programmation/page/3/"
+  },
+  "go-c-20270428-strasbourg-howlin-jaws": {
+    "title": "Howlin' Jaws + Komodor",
+    "date": "2027-04-28",
+    "artistIds": [
+      "howlin-jaws",
+      "komodor"
+    ],
+    "artistNames": [
+      "Howlin' Jaws",
+      "Komodor"
+    ],
+    "newArtists": [
+      {
+        "id": "howlin-jaws",
+        "name": "Howlin' Jaws"
+      }
+    ],
+    "genres": [
+      "Rock psychédélique",
+      "Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/howlin-jaws-komodor/",
+    "calendarUrl": "https://www.artefact.org/la-laiterie/programmation/page/4/"
+  },
+  "go-c-20270514-strasbourg-didier-super-metal": {
+    "title": "Didier Super Métal",
+    "date": "2027-05-14",
+    "artistIds": [
+      "didier-super-metal"
+    ],
+    "artistNames": [
+      "Didier Super Métal"
+    ],
+    "newArtists": [
+      {
+        "id": "didier-super-metal",
+        "name": "Didier Super Métal"
+      }
+    ],
+    "genres": [
+      "Rock",
+      "Metal"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/didier-super-metal/",
+    "calendarUrl": "https://www.artefact.org/la-laiterie/programmation/page/4/"
+  },
+  "go-c-20271010-strasbourg-europe": {
+    "title": "Europe",
+    "date": "2027-10-10",
+    "artistIds": [
+      "europe"
+    ],
+    "artistNames": [
+      "Europe"
+    ],
+    "newArtists": [
+      {
+        "id": "europe",
+        "name": "Europe"
+      }
+    ],
+    "genres": [
+      "Hard Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/europe-2027/",
+    "calendarUrl": "https://www.artefact.org/la-laiterie/programmation/page/5/"
+  }
+}''')
+
 BIKINI_OFFICIAL_VERIFIED = {
     "go-c-20261111-toulouse-chameleons": {
         "title": "Chameleons + Agonal Gasps",
@@ -1705,6 +1803,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Identifiant d'événement invalide")
     require(event.get("venueId") in venues,
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
+    # An exact approved event ID cannot be transplanted to another existing
+    # venue to bypass its venue-specific proof and hostname rules.
+    if event_id in LAITERIE_OFFICIAL_VERIFIED or event_id in LAITERIE_SECOND_WAVE_VERIFIED:
+        require(event.get("venueId") == "la-laiterie-strasbourg",
+                "Identifiant de concert La Laiterie affecté à une autre salle")
+    if event_id in BIKINI_OFFICIAL_VERIFIED:
+        require(event.get("venueId") == "le-bikini-toulouse",
+                "Identifiant de concert Bikini affecté à une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
     require(isinstance(event.get("title"), str) and
@@ -1829,7 +1935,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
     if event.get("venueId") == "la-laiterie-strasbourg":
-        spec = LAITERIE_OFFICIAL_VERIFIED.get(event_id)
+        spec = (LAITERIE_OFFICIAL_VERIFIED.get(event_id)
+                or LAITERIE_SECOND_WAVE_VERIFIED.get(event_id))
         require(spec is not None and reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle"
                 and all(event.get(k) == spec[k] for k in
