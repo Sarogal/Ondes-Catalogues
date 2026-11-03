@@ -894,13 +894,35 @@ NEW_REFERENCE_GEO_SOURCES = {
             "latitude": 50.67, "longitude": 3.13,
         },
     },
+    "antipode-rennes": {
+        "patch": {
+            "address": "75 avenue Jules Maniez",
+            "postalCode": "35000",
+            "latitude": 48.09823,
+            "longitude": -1.70464,
+            "geoPrecision": "centre du bâtiment nommé Antipode (OpenStreetMap way 943632490), localisation indicative du bâtiment et non de l'entrée spectacles",
+            "geoSource": "https://mapcarta.com/fr/W943632490",
+        },
+        "officialUrl": "https://antipode-rennes.fr/informations-pratiques/acces-et-horaires",
+        "officialProof": "official-venue-address",
+        "officialFields": {"name", "address", "postalCode", "city"},
+        "geoUrl": "https://mapcarta.com/fr/W943632490",
+        "geoProof": "openstreetmap-venue-way",
+        "geoFields": {"venueName", "coordinates"},
+        "expectedOriginal": {
+            "name": "Antipode", "city": "Rennes",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 48.113, "longitude": -1.681,
+        },
+    },
 }
 
 
 def validate_new_reference_geo(approvals, reference, today):
-    """Independently signed, two-source proof for three exact historic pins."""
+    """Independently signed, two-source proof for exact historic pins."""
     rows = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(rows, list) and len(rows) <= 5,
+    require(isinstance(rows, list) and len(rows) <= 6,
             "Trop de corrections historiques de salles")
     allowed = {SECRET_PLACE_VENUE_ID, REX_VENUE_ID} | set(NEW_REFERENCE_GEO_SOURCES)
     ids = [x.get("venueId") if isinstance(x, dict) else None for x in rows]
@@ -966,7 +988,7 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False,
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 5,
+    require(isinstance(corrections, list) and len(corrections) <= 6,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
@@ -1018,7 +1040,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 5,
+    require(isinstance(corrections, list) and len(corrections) <= 6,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
@@ -2458,6 +2480,44 @@ ROUEN_ROCK_PAGED_VERIFIED = {
 }
 
 
+# The 2026-2027 Antipode official individual details explicitly distinguish
+# doors 20:00 from the MUSICAL start 20:30; exact named first-party calendar
+# corroborates the full year/date. Festival rows are never imported here.
+ANTIPODE_RENNES_VERIFIED = {
+    "go-c-20261212-rennes-girls-in-hawaii-chaton-laveur": {
+        "title": "Girls in Hawaii + Chaton Laveur", "date": "2026-12-12",
+        "time": "20:30", "venueId": "antipode-rennes",
+        "artistIds": ["girls-in-hawaii", "chaton-laveur"],
+        "artistNames": ["Girls in Hawaii", "Chaton Laveur"],
+        "newArtistIds": ["girls-in-hawaii", "chaton-laveur"],
+        "genres": ["Rock"], "status": "confirmed",
+        "organizer": "Antipode", "soldOut": True,
+        "officialUrl": "https://antipode-rennes.fr/agenda/girls-hawaii-2026",
+        "calendarUrl": "https://antipode-rennes.fr/agenda",
+    },
+    "go-c-20270127-rennes-altin-gun": {
+        "title": "Altın Gün", "date": "2027-01-27",
+        "time": "20:30", "venueId": "antipode-rennes",
+        "artistIds": ["altin-gun"], "artistNames": ["Altın Gün"],
+        "newArtistIds": ["altin-gun"], "genres": ["Rock", "Folk Rock"],
+        "status": "confirmed", "organizer": "Association Trans Musicales",
+        "soldOut": False,
+        "officialUrl": "https://antipode-rennes.fr/agenda/altin-gun-2027",
+        "calendarUrl": "https://antipode-rennes.fr/agenda",
+    },
+    "go-c-20270309-rennes-the-pineapple-thief": {
+        "title": "The Pineapple Thief", "date": "2027-03-09",
+        "time": "20:30", "venueId": "antipode-rennes",
+        "artistIds": ["the-pineapple-thief"],
+        "artistNames": ["The Pineapple Thief"], "newArtistIds": [],
+        "genres": ["Rock progressif"], "status": "confirmed",
+        "organizer": "Garmonbozia", "soldOut": False,
+        "officialUrl": "https://antipode-rennes.fr/agenda/pineapple-thief-2027",
+        "calendarUrl": "https://antipode-rennes.fr/agenda",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2499,6 +2559,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
+    antipode_urls = {row["officialUrl"]: key for key, row in
+                     ANTIPODE_RENNES_VERIFIED.items()}
+    if official_url in antipode_urls:
+        require(event_id == antipode_urls[official_url],
+                "Antipode : l'URL du concert est réservée à son identifiant")
+    if event_id in ANTIPODE_RENNES_VERIFIED:
+        require(event.get("venueId") == "antipode-rennes",
+                "Antipode : concert transféré vers une autre salle")
     reserved_rouen_url = {spec["officialUrl"]: key for key, spec in {
         **ROUEN_DEATH_VALLEY_SIGNED, **ROUEN_ROCK_PAGED_VERIFIED
     }.items()}
@@ -2736,6 +2804,65 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : groupes ou identités non documentés")
         require(event.get("time") is None,
                 "Rockstore/Black Lab : heure de début non confirmée")
+    elif event.get("venueId") == "antipode-rennes":
+        spec = ANTIPODE_RENNES_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(field) == spec[field] for field in
+                        ("title","date","time","venueId","artistIds",
+                         "genres","status","organizer"))
+                and official_url == spec["officialUrl"],
+                "Antipode : affiche, statut, horaire ou organisateur non agréé")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "antipode-rennes.fr"
+                and u.path == urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/agenda/[a-z0-9-]+", u.path)
+                and not u.query and not u.fragment and not u.username
+                and not u.password and not u.port,
+                "Antipode : fiche officielle individuelle nominative exigée")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Antipode : revue indépendante périmée ou future")
+        require(isinstance(evidence,list) and len(evidence)==2
+                and all(isinstance(p,dict) for p in evidence),
+                "Antipode : fiche et calendrier officiels distincts exigés")
+        by_kind = {p.get("proofType"):p for p in evidence}
+        require(set(by_kind)=={"official-organizer-or-venue",
+                              "first-party-venue-calendar"},
+                "Antipode : provenance des deux preuves non conforme")
+        detail=by_kind["official-organizer-or-venue"]
+        cal=by_kind["first-party-venue-calendar"]
+        require(detail.get("url")==official_url
+                and detail.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue","genre","concertStartTime",
+                     "doorTime"}.issubset(set(detail.get("checkedFields") or []))
+                and detail.get("concertStartTimeConfirmed")=="20:30"
+                and detail.get("doorTimeConfirmed")=="20:00"
+                and detail.get("soldOutOnDetailAtReview") is spec["soldOut"],
+                "Antipode : début musical/portes ou complet non prouvé")
+        require(cal.get("url")==spec["calendarUrl"]
+                and cal.get("checkedAt")==checked.isoformat()
+                and {"artists","date","venue"}.issubset(
+                    set(cal.get("checkedFields") or []))
+                and not ({"concertStartTime","doorTime","startTime"} &
+                         set(cal.get("checkedFields") or [])),
+                "Antipode : agenda nominatif ou année non corroborés")
+        resolved=dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                and new_artists==[
+                    {"id":aid,"name":spec["artistNames"][i]}
+                    for i,aid in enumerate(spec["artistIds"])
+                    if aid in spec["newArtistIds"]]
+                and len(ids)==len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"])==norm(name)
+                        for aid,name in zip(ids,spec["artistNames"]))
+                and all(norm(x["name"]) not in {
+                    norm(y["name"]) for y in known_artist_ids.values()}
+                        for x in new_artists),
+                "Antipode : artistes, doublons ou premières parties invalides")
     elif event.get("venueId") == "le-bikini-toulouse":
         # New bills are only accepted after an independent, date-specific
         # verification against the venue detail AND first-party programme.

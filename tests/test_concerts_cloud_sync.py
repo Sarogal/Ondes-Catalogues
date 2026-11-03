@@ -2739,7 +2739,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             })
         return approvals
 
-    def test_all_three_exact_fixes_preserve_reference_and_are_idempotent(self):
+    def test_all_four_exact_fixes_preserve_reference_and_are_idempotent(self):
         from concerts_cloud_sync import (
             NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
         )
@@ -2749,7 +2749,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             BASE, secret_place=True, le_rex=True)
         signed = self.private_review_fixture()
         corrected, stats = merge(BASE, current, signed, day)
-        self.assertEqual(stats["correctedVenues"], 3)
+        self.assertEqual(stats["correctedVenues"], 4)
         self.assertEqual(stats["newEvents"], 0)
         self.assertEqual(corrected["events"], current["events"])
         self.assertEqual(corrected["artists"], current["artists"])
@@ -2773,7 +2773,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
         protect_reference(BASE, corrected)
         validate_catalogue(corrected)
 
-    def test_three_fixes_can_be_approved_one_by_one_without_reversions(self):
+    def test_four_fixes_can_be_approved_one_by_one_without_reversions(self):
         from concerts_cloud_sync import (
             NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
         )
@@ -2852,7 +2852,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             duplicate["referenceVenueCorrections"][2]["venueId"])
         with self.assertRaises((ValueError, KeyError)):
             merge(BASE, current, duplicate, day)
-        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 3)
+        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 4)
 
 
 
