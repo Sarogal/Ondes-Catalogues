@@ -116,6 +116,50 @@ class DailyProofTests(unittest.TestCase):
             ok,reason=verify_event(venue,[])
         self.assertTrue(ok,reason)
 
+
+    def test_versailles_monthly_session_requires_exact_year_and_day(self):
+        from proof_text import official_versailles_monthly_session, VERSAILLES_BEBE_BAROQUE_URL
+        event={"source_url":VERSAILLES_BEBE_BAROQUE_URL,
+               "date_start":"2026-12-16", "date_end":"2026-12-16"}
+        html=("Bébé baroque Décembre 2026 Mercredi 16 "
+              "09:30 - 10:15 10:30 - 11:15")
+        self.assertTrue(official_versailles_monthly_session(event,html))
+        self.assertFalse(official_versailles_monthly_session(event,html.replace("2026","2025")))
+        self.assertFalse(official_versailles_monthly_session(event,html.replace("16","18")))
+        self.assertFalse(official_versailles_monthly_session(
+            dict(event,source_url="https://openagenda.com/fr/other"),html))
+        self.assertFalse(official_versailles_monthly_session(
+            dict(event,date_start="2026-11-18",date_end="2026-11-18"),html))
+
+    def test_versailles_official_age_phrase(self):
+        self.assertTrue(age_is_written({"age_min":0,"age_max":3},"De 0 à 3 ans"))
+        self.assertFalse(age_is_written({"age_min":0,"age_max":3},"De 1 à 3 ans"))
+        self.assertFalse(age_is_written({"age_min":0,"age_max":4},"De 0 à 3 ans"))
+
+    def test_versailles_full_source_including_prices_and_times(self):
+        from proof_text import VERSAILLES_BEBE_BAROQUE_URL
+        event={
+            "source_url":VERSAILLES_BEBE_BAROQUE_URL,
+            "title":"Bébé baroque : atelier musical pour les tout-petits",
+            "city":"Versailles", "venue":"Hôtel des Menus-Plaisirs",
+            "lat":48.8005798, "lng":2.1338217,
+            "date_start":"2026-12-16", "date_end":"2026-12-16",
+            "time":"09:30 et 10:30 (45 min par séance)",
+            "price":"15 € pour 1 enfant et 1 accompagnateur (tarifs réduits possibles)",
+            "age_min":0,"age_max":3
+        }
+        html=("<html><head><title>Bébé baroque : atelier musical pour les tout-petits</title></head>"
+              "<body><h1>Bébé baroque : atelier musical pour les tout-petits</h1>"
+              "<h2>Décembre 2026</h2><p>Mercredi 16</p>"
+              "<p>09:30 - 10:15</p><p>10:30 - 11:15</p>"
+              "<p>15 € pour 1 enfant + 1 accompagnateur</p>"
+              "<p>De 0 à 3 ans</p><p>Hôtel des Menus-Plaisirs</p></body></html>")
+        with patch("proof_text.read",return_value=(html,"")):
+            ok,reason=verify_event(event,[])
+        self.assertTrue(ok,reason)
+        with patch("proof_text.read",return_value=(html.replace("Décembre 2026","Décembre 2025"),"")):
+            self.assertFalse(verify_event(event,[])[0])
+
     def test_nantes_same_month_series(self):
         self.assertTrue(consecutive_official_dates(
             "VACANCES PRINTEMPS 2027 DU 17 AU 24 AVRIL",
