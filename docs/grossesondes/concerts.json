@@ -1781,6 +1781,26 @@
       "id": "hanry",
       "name": "Hanry",
       "aliases": []
+    },
+    {
+      "id": "sbrbs",
+      "name": "SBRBS",
+      "aliases": []
+    },
+    {
+      "id": "atoem",
+      "name": "Atoem",
+      "aliases": []
+    },
+    {
+      "id": "sarakiniko",
+      "name": "Sarakiniko",
+      "aliases": []
+    },
+    {
+      "id": "dj-cup-of-tea",
+      "name": "DJ Cup of Tea",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10699,6 +10719,38 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://bonjour-minuit.fr/evenement/magma-02dec26/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Bonjour Minuit",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270130-saint-brieuc-sbrbs",
+      "title": "SBRBS + Atoem + Sarakiniko + DJ Cup of Tea",
+      "date": "2027-01-30",
+      "artistIds": [
+        "sbrbs",
+        "atoem",
+        "sarakiniko",
+        "dj-cup-of-tea"
+      ],
+      "venueId": "bonjour-minuit-saint-brieuc",
+      "genres": [
+        "Rock indépendant"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bonjour-minuit.fr/evenement/sbrbs-30janv27/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
