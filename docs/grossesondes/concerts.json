@@ -1521,6 +1521,16 @@
       "id": "heeka",
       "name": "Heeka",
       "aliases": []
+    },
+    {
+      "id": "chameleons",
+      "name": "Chameleons",
+      "aliases": []
+    },
+    {
+      "id": "agonal-gasps",
+      "name": "Agonal Gasps",
+      "aliases": []
     }
   ],
   "venues": [
@@ -8964,6 +8974,37 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://lebikini.com/2026/11/17/slift",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261111-toulouse-chameleons",
+      "title": "Chameleons + Agonal Gasps",
+      "date": "2026-11-11",
+      "artistIds": [
+        "chameleons",
+        "agonal-gasps"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Post-Punk",
+        "Rock alternatif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/11/chameleons",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
