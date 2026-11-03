@@ -1,4 +1,4 @@
-"""Three independent Le 106 rock announcements, official dated page 1."""
+"""Le 106 approved rock announcements, verified against the exact paginated official calendar."""
 import copy
 import datetime as dt
 import json
@@ -48,7 +48,7 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
         known={a["id"]:a for a in j["artists"] if a["id"] not in fresh}
         return j,venues,known
 
-    def test_exact_official_bills_accept_all_six_new_artists_without_time(self):
+    def test_exact_official_bills_accept_all_ten_new_artists_without_time(self):
         _,venues,artists=self.catalogue()
         for id in IDS:
             with self.subTest(id=id):
@@ -56,11 +56,11 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
                 event,added=sync.validate_approval(approval(id),venues,artists,DATE)
                 self.assertEqual(event["date"],s["date"])
                 self.assertEqual(event["artistIds"],s["artistIds"])
-                self.assertEqual(event["genres"],["Rock"])
+                self.assertEqual(event["genres"],s["genres"])
                 self.assertIsNone(event["time"])
                 self.assertEqual(list(added),s["newArtistIds"])
         self.assertEqual(len({x for s in sync.ROUEN_ROCK_PAGED_VERIFIED.values()
-                              for x in s["newArtistIds"]}),6)
+                              for x in s["newArtistIds"]}),10)
 
     def test_venue_id_lineup_date_time_source_cannot_be_transplanted(self):
         _,venues,artists=self.catalogue()
@@ -98,9 +98,10 @@ class RouenThreeRockOfficialTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 sync.validate_approval(x,venues,artists,DATE)
             x=approval(id)
-            x["newArtists"][0]["name"]="Impostor"
-            with self.assertRaises((ValueError,KeyError)):
-                sync.validate_approval(x,venues,artists,DATE)
+            if x["newArtists"]:
+                x["newArtists"][0]["name"]="Impostor"
+                with self.assertRaises((ValueError,KeyError)):
+                    sync.validate_approval(x,venues,artists,DATE)
 
     def test_public_dedupe_and_firstparty_page_one_required(self):
         cat,_,_=self.catalogue()

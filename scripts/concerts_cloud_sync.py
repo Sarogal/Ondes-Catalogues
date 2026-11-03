@@ -2414,6 +2414,47 @@ ROUEN_ROCK_PAGED_VERIFIED = {
         "officialUrl":"https://le106.com/agenda/editors",
         "calendarUrl":"https://le106.com/agenda?page=1",
     },
+    "go-c-20270311-rouen-steve-n-seagulls": {
+        "title":"Steve'n'Seagulls","date":"2027-03-11",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["steve-n-seagulls"],
+        "artistNames":["Steve'n'Seagulls"],
+        "newArtistIds":["steve-n-seagulls"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/stevenseagulls",
+        "calendarUrl":"https://le106.com/agenda?page=2",
+    },
+    "go-c-20270413-rouen-peter-hook-and-the-light": {
+        "title":"Peter Hook and The Light","date":"2027-04-13",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["peter-hook-and-the-light"],
+        "artistNames":["Peter Hook and The Light"],
+        "newArtistIds":["peter-hook-and-the-light"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/peter-hook-and-light",
+        "calendarUrl":"https://le106.com/agenda?page=2",
+    },
+    "go-c-20270515-rouen-tagada-jones": {
+        "title":"Tagada Jones","date":"2027-05-15",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["tagada-jones"],
+        "artistNames":["Tagada Jones"],
+        "newArtistIds":[],
+        "genres":["Punk Rock"],
+        "officialUrl":"https://le106.com/agenda/tagada-jones",
+        "calendarUrl":"https://le106.com/agenda?page=2",
+    },
+    "go-c-20261212-rouen-maustetytot-francis": {
+        "title":"Maustetytöt + Francis","date":"2026-12-12",
+        "time":None,"venueId":"le-106-rouen",
+        "artistIds":["maustetytot","francis"],
+        "artistNames":["Maustetytöt","Francis"],
+        "newArtistIds":["maustetytot","francis"],
+        "genres":["Rock"],
+        "officialUrl":"https://le106.com/agenda/maustetytot",
+        "calendarUrl":"https://le106.com/agenda?page=1",
+    },
+
 }
 
 
@@ -3404,7 +3445,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "https://www.intensite.net/orleans-45-concert-la-jungle-sodom-sagesse",
         } if venue_id == "l-astrolabe-orleans" else {
             "first-party-venue-calendar": (
-                "https://le106.com/agenda?page=1"
+                ROUEN_ROCK_PAGED_VERIFIED[event_id]["calendarUrl"]
                 if event_id in ROUEN_ROCK_PAGED_VERIFIED
                 else "https://le106.com/agenda"
             ),
