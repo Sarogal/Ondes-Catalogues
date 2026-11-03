@@ -766,14 +766,142 @@ REX_LOCATION_FIX = {
 }
 
 
-def corrected_reference_venues(reference, secret_place=False, le_rex=False):
-    """Only the exact, source-reviewed geographic corrections are permitted."""
+
+
+# Three historic venue pins reviewed against the first party and an independent
+# named OpenStreetMap feature. Exact patches and evidence only; never guess an
+# entrance or modify the immutable baseline concerts-reference.json.
+NEW_REFERENCE_GEO_SOURCES = {
+    "le-bikini-toulouse": {
+        "patch": {
+            "address": "Rue Théodore Monod, Parc Technologique du Canal",
+            "postalCode": "31520",
+            "city": "Ramonville-Saint-Agne",
+            "latitude": 43.54795,
+            "longitude": 1.48568,
+            "geoPrecision": "point OpenStreetMap Le Bikini (node 380889428 ; entrée non garantie)",
+            "geoSource": "https://www.openstreetmap.org/node/380889428",
+        },
+        "officialUrl": "https://lebikini.com/section/infos-pratiques/infos-pratiques",
+        "officialProof": "official-venue-address",
+        "officialFields": {"name", "address", "postalCode", "city"},
+        "geoUrl": "https://www.openstreetmap.org/node/380889428",
+        "geoProof": "openstreetmap-venue-node",
+        "geoFields": {"venueName", "coordinates"},
+        "expectedOriginal": {
+            "name": "Le Bikini", "city": "Toulouse",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 43.604, "longitude": 1.444,
+        },
+    },
+    "rockstore-montpellier": {
+        "patch": {
+            "address": "20 rue de Verdun",
+            "postalCode": "34000",
+            "latitude": 43.60624,
+            "longitude": 3.88137,
+            "geoPrecision": "point OpenStreetMap Rockstore (node 579814541 ; entrée non garantie)",
+            "geoSource": "https://www.openstreetmap.org/node/579814541",
+        },
+        "officialUrl": "https://rockstore.fr/infos-pratiques/",
+        "officialProof": "official-venue-address",
+        "officialFields": {"name", "address", "postalCode", "city"},
+        "geoUrl": "https://www.openstreetmap.org/node/579814541",
+        "geoProof": "openstreetmap-venue-node",
+        "geoFields": {"venueName", "coordinates"},
+        "expectedOriginal": {
+            "name": "Rockstore", "city": "Montpellier",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 43.608, "longitude": 3.878,
+        },
+    },
+    "the-black-lab-wasquehal": {
+        "patch": {
+            "address": "8 rue des Champs, P.A. de la Pilaterie",
+            "postalCode": "59290",
+            "latitude": 50.652602,
+            "longitude": 3.122069,
+            "geoPrecision": "GPS officiel du Black Lab (point du lieu, entrée publique au 12 rue de la Ladrie)",
+            "geoSource": "https://theblacklab.fr/adresse/",
+        },
+        "officialUrl": "https://theblacklab.fr/adresse/",
+        "officialProof": "official-venue-gps",
+        "officialFields": {"name", "address", "postalCode", "city",
+                           "latitude", "longitude"},
+        "geoUrl": "https://www.openstreetmap.org/node/9179662650",
+        "geoProof": "openstreetmap-venue-node",
+        "geoFields": {"venueName", "coordinates"},
+        "expectedOriginal": {
+            "name": "The Black Lab", "city": "Wasquehal",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 50.67, "longitude": 3.13,
+        },
+    },
+}
+
+
+def validate_new_reference_geo(approvals, reference, today):
+    """Independently signed, two-source proof for three exact historic pins."""
+    rows = approvals.get("referenceVenueCorrections", [])
+    require(isinstance(rows, list) and len(rows) <= 5,
+            "Trop de corrections historiques de salles")
+    allowed = {SECRET_PLACE_VENUE_ID, REX_VENUE_ID} | set(NEW_REFERENCE_GEO_SOURCES)
+    ids = [x.get("venueId") if isinstance(x, dict) else None for x in rows]
+    require(len(set(ids)) == len(ids) and set(ids).issubset(allowed),
+            "Identifiant de correction inconnu ou en doublon")
+    result = {}
+    for row in rows:
+        venue_id = row["venueId"]
+        if venue_id not in NEW_REFERENCE_GEO_SOURCES:
+            continue
+        spec = NEW_REFERENCE_GEO_SOURCES[venue_id]
+        checked = norm_date(row.get("reviewedAt"))
+        require(row.get("reviewDecision") == "approved"
+                and row.get("reviewedBy") == "independent-official-verifier"
+                and checked == dt.date(2026, 11, 3) and checked <= today
+                and row.get("venuePatch") == spec["patch"],
+                "Adresse ou coordonnées hors liste blanche : " + venue_id)
+        proofs = row.get("officialEvidence")
+        expected = {
+            spec["officialProof"]: (spec["officialUrl"], spec["officialFields"]),
+            spec["geoProof"]: (spec["geoUrl"], spec["geoFields"]),
+        }
+        require(isinstance(proofs, list) and len(proofs) == 2
+                and {p.get("proofType") for p in proofs if isinstance(p, dict)}
+                    == set(expected),
+                "Deux preuves géographiques indépendantes exigées")
+        for p in proofs:
+            require(isinstance(p, dict) and p.get("proofType") in expected,
+                    "Source de localisation mal formée")
+            url, fields = expected[p["proofType"]]
+            require(p.get("url") == url
+                    and p.get("checkedAt") == checked.isoformat()
+                    and fields.issubset(set(p.get("checkedFields") or [])),
+                    "Adresse ou repère cartographique absent/incomplet")
+        initial = [v for v in reference["venues"] if v["id"] == venue_id]
+        require(len(initial) == 1 and
+                all(initial[0].get(k) == value
+                    for k, value in spec["expectedOriginal"].items()),
+                "Référence initiale de salle modifiée : " + venue_id)
+        result[venue_id] = row
+    return result
+
+def corrected_reference_venues(reference, secret_place=False, le_rex=False,
+                               extra_venues=()):
+    """Build only exact, signed historic map states; baseline stays immutable."""
+    require(set(extra_venues).issubset(NEW_REFERENCE_GEO_SOURCES),
+            "Correction géographique supplémentaire non autorisée")
     venues = copy.deepcopy(reference["venues"])
     fixes = [(FERRAILLEUR_VENUE_ID, FERRAILLEUR_LOCATION_FIX)]
     if secret_place:
         fixes.append((SECRET_PLACE_VENUE_ID, SECRET_PLACE_LOCATION_FIX))
     if le_rex:
         fixes.append((REX_VENUE_ID, REX_LOCATION_FIX))
+    fixes.extend((v, NEW_REFERENCE_GEO_SOURCES[v]["patch"])
+                 for v in sorted(set(extra_venues)))
     for venue_id, patch in fixes:
         rows = [v for v in venues if v["id"] == venue_id]
         require(len(rows) == 1, "Salle historique absente : " + venue_id)
@@ -784,12 +912,13 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False):
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 2,
+    require(isinstance(corrections, list) and len(corrections) <= 5,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
             and len(set(ids)) == len(ids)
-            and set(ids).issubset({SECRET_PLACE_VENUE_ID, REX_VENUE_ID}),
+            and set(ids).issubset({SECRET_PLACE_VENUE_ID, REX_VENUE_ID} |
+                                      set(NEW_REFERENCE_GEO_SOURCES)),
             "Corrections géographiques inattendues ou dupliquées")
     row = next((c for c in corrections if c["venueId"] == SECRET_PLACE_VENUE_ID), None)
     if row is None:
@@ -835,7 +964,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 2,
+    require(isinstance(corrections, list) and len(corrections) <= 5,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
@@ -1008,10 +1137,18 @@ def protect_reference(reference, current):
         elif kind == "venues":
             # Allow only the two exact, documented geographic correction states.
             # The original 53 venues are never rewritten in the baseline JSON.
-            allowed = (initial, corrected_reference_venues(reference),
-                       corrected_reference_venues(reference, secret_place=True),
-                       corrected_reference_venues(reference, le_rex=True),
-                       corrected_reference_venues(reference, secret_place=True, le_rex=True))
+            # All and only individually reviewed historic pin combinations are
+            # recognized (five named corrections plus immutable original).
+            extras = tuple(sorted(NEW_REFERENCE_GEO_SOURCES))
+            allowed = [initial]
+            for secret in (False, True):
+                for rex in (False, True):
+                    for mask in range(1 << len(extras)):
+                        active = tuple(v for i, v in enumerate(extras)
+                                       if mask & (1 << i))
+                        allowed.append(corrected_reference_venues(
+                            reference, secret_place=secret, le_rex=rex,
+                            extra_venues=active))
             require(now[:len(initial)] in allowed,
                     "Salle initiale modifiée hors correction géographique approuvée")
         else:
@@ -2819,36 +2956,42 @@ def merge(reference, current, approvals, today):
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
-    location_review = validate_secret_place_location_correction(approvals, reference, today)
+    location_review = validate_secret_place_location_correction(
+        approvals, reference, today)
     rex_review = validate_rex_location_correction(approvals, reference, today)
+    new_geo_review = validate_new_reference_geo(approvals, reference, today)
     current_venues = current["venues"][:len(reference["venues"])]
-    ferr_only = corrected_reference_venues(reference)
-    with_secret = corrected_reference_venues(reference, secret_place=True)
-    with_rex = corrected_reference_venues(reference, le_rex=True)
-    with_both = corrected_reference_venues(reference, secret_place=True, le_rex=True)
-    prior_secret = current_venues in (with_secret, with_both)
-    prior_rex = current_venues in (with_rex, with_both)
-    if prior_secret:
-        require(location_review is not None,
-                "Secret Place déjà corrigée sans approbation privée persistante")
-    if prior_rex:
-        require(rex_review is not None,
-                "Le Rex déjà corrigé sans approbation privée persistante")
-    # Only amend the exact historic states already reviewed. The archive
-    # itself is immutable; an unapproved or unrelated change always fails.
+    reference_by_id = {v["id"]: v for v in reference["venues"]}
     venue_corrected_count = 0
-    if location_review is not None and not prior_secret:
-        require(current_venues in (ferr_only, with_rex),
-                "Référence inattendue avant correction Secret Place")
-        result["venues"][:len(reference["venues"])] = corrected_reference_venues(
-            reference, secret_place=True, le_rex=prior_rex)
-        venue_corrected_count += 1
-    if rex_review is not None and not prior_rex:
-        require(current_venues in (ferr_only, with_secret),
-                "Référence inattendue avant correction Le Rex")
-        result["venues"][:len(reference["venues"])] = corrected_reference_venues(
-            reference, secret_place=bool(location_review), le_rex=True)
-        venue_corrected_count += 1
+    # A correction must never disappear when the approval queue advances.
+    # Only the single approved venue fields may be changed.
+    correction_plan = {
+        SECRET_PLACE_VENUE_ID: (
+            SECRET_PLACE_LOCATION_FIX, location_review),
+        REX_VENUE_ID: (
+            REX_LOCATION_FIX, rex_review),
+    }
+    correction_plan.update({
+        venue_id: (spec["patch"], new_geo_review.get(venue_id))
+        for venue_id, spec in NEW_REFERENCE_GEO_SOURCES.items()
+    })
+    for venue_id, (patch, signed) in correction_plan.items():
+        index = next(
+            (n for n, v in enumerate(reference["venues"])
+             if v["id"] == venue_id), None)
+        require(index is not None, "Salle historique perdue : " + venue_id)
+        original = reference_by_id[venue_id]
+        approved_venue = copy.deepcopy(original)
+        approved_venue.update(copy.deepcopy(patch))
+        current_venue = current_venues[index]
+        require(current_venue in (original, approved_venue),
+                "Salle initiale hors correction nominative : " + venue_id)
+        if current_venue == approved_venue:
+            require(signed is not None,
+                    "Salle déjà corrigée sans approbation persistante : " + venue_id)
+        elif signed is not None:
+            result["venues"][index] = approved_venue
+            venue_corrected_count += 1
     correction = validate_legacy_correction(approvals, reference, today)
     current_prefix = current["events"][:len(reference["events"])]
     if current_prefix != reference["events"]:

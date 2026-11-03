@@ -2602,5 +2602,151 @@ class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
             )
 
 
+class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
+    """Exact source-bound patches, idempotent and historic snapshot protected."""
+
+    @staticmethod
+    def private_review_fixture():
+        from concerts_cloud_sync import NEW_REFERENCE_GEO_SOURCES
+        legacy = ConcertsCloudSyncTests()
+        approvals = legacy.secret_place_location_approval()
+        approvals["referenceVenueCorrections"].append(
+            legacy.rex_location_approval())
+        for venue_id, spec in NEW_REFERENCE_GEO_SOURCES.items():
+            approvals["referenceVenueCorrections"].append({
+                "venueId": venue_id,
+                "reviewDecision": "approved",
+                "reviewedBy": "independent-official-verifier",
+                "reviewedAt": "2026-11-03",
+                "venuePatch": copy.deepcopy(spec["patch"]),
+                "officialEvidence": [
+                    {"url": spec["officialUrl"],
+                     "proofType": spec["officialProof"],
+                     "checkedAt": "2026-11-03",
+                     "checkedFields": sorted(spec["officialFields"])},
+                    {"url": spec["geoUrl"],
+                     "proofType": spec["geoProof"],
+                     "checkedAt": "2026-11-03",
+                     "checkedFields": sorted(spec["geoFields"])},
+                ],
+            })
+        return approvals
+
+    def test_all_three_exact_fixes_preserve_reference_and_are_idempotent(self):
+        from concerts_cloud_sync import (
+            NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
+        )
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(
+            BASE, secret_place=True, le_rex=True)
+        signed = self.private_review_fixture()
+        corrected, stats = merge(BASE, current, signed, day)
+        self.assertEqual(stats["correctedVenues"], 3)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(corrected["events"], current["events"])
+        self.assertEqual(corrected["artists"], current["artists"])
+        self.assertEqual(
+            corrected["venues"][:53],
+            corrected_reference_venues(
+                BASE, secret_place=True, le_rex=True,
+                extra_venues=tuple(NEW_REFERENCE_GEO_SOURCES)))
+        for venue_id, spec in NEW_REFERENCE_GEO_SOURCES.items():
+            old = next(v for v in current["venues"] if v["id"] == venue_id)
+            fixed = next(v for v in corrected["venues"] if v["id"] == venue_id)
+            self.assertEqual(fixed["name"], old["name"])
+            for key, val in spec["patch"].items():
+                self.assertEqual(fixed[key], val)
+        self.assertEqual(next(v for v in corrected["venues"]
+                              if v["id"] == "le-bikini-toulouse")["city"],
+                         "Ramonville-Saint-Agne")
+        again, counts = merge(BASE, corrected, signed, day)
+        self.assertEqual(counts["correctedVenues"], 0)
+        self.assertEqual(again, corrected)
+        protect_reference(BASE, corrected)
+        validate_catalogue(corrected)
+
+    def test_three_fixes_can_be_approved_one_by_one_without_reversions(self):
+        from concerts_cloud_sync import (
+            NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
+        )
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(
+            BASE, secret_place=True, le_rex=True)
+        signatures = self.private_review_fixture()
+        for n, venue_id in enumerate(NEW_REFERENCE_GEO_SOURCES, start=1):
+            subset = copy.deepcopy(signatures)
+            subset["referenceVenueCorrections"] = [
+                x for x in signatures["referenceVenueCorrections"]
+                if x["venueId"] in
+                {"secret-place-saint-jean-de-vedas", "le-rex-toulouse",
+                 *list(NEW_REFERENCE_GEO_SOURCES)[:n]}
+            ]
+            current, result = merge(BASE, current, subset, day)
+            self.assertEqual(result["correctedVenues"], 1)
+            self.assertEqual(len(current["events"]), 127)
+            protect_reference(BASE, current)
+
+    def test_any_missing_or_forged_geo_evidence_is_rejected(self):
+        from concerts_cloud_sync import corrected_reference_venues
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(
+            BASE, secret_place=True, le_rex=True)
+        signed = self.private_review_fixture()
+        corrected, _ = merge(BASE, current, signed, day)
+        for venue_id in ("le-bikini-toulouse", "rockstore-montpellier",
+                         "the-black-lab-wasquehal"):
+            for variant in (
+                "missing-persistent-signature", "wrong-osm-node",
+                "wrong-official-address", "altered-coordinates",
+                "altered-city", "wrong-reviewer", "future-date",
+                "missing-official-proof", "changed-other-venue"):
+                with self.subTest(venue_id=venue_id, variant=variant):
+                    q = copy.deepcopy(signed)
+                    published = copy.deepcopy(corrected)
+                    row = next(x for x in q["referenceVenueCorrections"]
+                               if x["venueId"] == venue_id)
+                    if variant == "missing-persistent-signature":
+                        q["referenceVenueCorrections"].remove(row)
+                    elif variant == "wrong-osm-node":
+                        row["officialEvidence"][1]["url"] = "https://example.org/node"
+                    elif variant == "wrong-official-address":
+                        row["officialEvidence"][0]["url"] = "https://example.org/venue"
+                    elif variant == "altered-coordinates":
+                        row["venuePatch"]["latitude"] += 0.025
+                    elif variant == "altered-city":
+                        row["venuePatch"]["city"] = "Paris"
+                    elif variant == "wrong-reviewer":
+                        row["reviewedBy"] = "automatic-guess"
+                    elif variant == "future-date":
+                        row["reviewedAt"] = "2026-11-04"
+                    elif variant == "missing-official-proof":
+                        row["officialEvidence"].pop(0)
+                    elif variant == "changed-other-venue":
+                        published["venues"][0]["longitude"] += 0.1
+                    with self.assertRaises((ValueError, KeyError)):
+                        merge(BASE, published, q, day)
+
+    def test_extra_venue_ids_and_duplicate_signed_rows_refused(self):
+        from concerts_cloud_sync import (
+            NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues)
+        day = __import__("datetime").date(2026, 11, 3)
+        current = copy.deepcopy(BASE)
+        current["venues"] = corrected_reference_venues(BASE)
+        signed = self.private_review_fixture()
+        fake = copy.deepcopy(signed)
+        fake["referenceVenueCorrections"][2]["venueId"] = "unknown-fake-venue"
+        with self.assertRaises((ValueError, KeyError)):
+            merge(BASE, current, fake, day)
+        duplicate = copy.deepcopy(signed)
+        duplicate["referenceVenueCorrections"][3]["venueId"] = (
+            duplicate["referenceVenueCorrections"][2]["venueId"])
+        with self.assertRaises((ValueError, KeyError)):
+            merge(BASE, current, duplicate, day)
+        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 3)
+
+
 if __name__=="__main__":
     unittest.main()
