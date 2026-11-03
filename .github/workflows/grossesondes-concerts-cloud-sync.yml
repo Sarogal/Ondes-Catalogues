@@ -26,6 +26,9 @@ on:
   # Revnoir + Ice Sealed Eyes, 2027-02-10 (PR privée #97, publique #51).
   # Synchronisation La Laiterie après signature privée de neuf affiches datées
   # (GrossesOndes PR #100, 03/11/2026) ; aucune règle de contrôle assouplie.
+  # Nouvelle synchronisation La Laiterie : 5 concerts / 11 artistes validés
+  # (approbation privée GrossesOndes PR #101, 03/11/2026).
+  # Ni le schéma ni les contrôles de publication ne sont assouplis.
   schedule:
     - cron: '17 */3 * * *'
   push:
