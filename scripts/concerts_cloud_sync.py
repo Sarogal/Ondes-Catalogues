@@ -2185,6 +2185,24 @@ ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED = {
     },
 }
 
+CARGO_VERIFIED = {
+    # Le Cargö Caen: one independently checked official named event, no
+    # extrapolation from the generic listing. Door time 19:30, musical
+    # start explicitly announced as 20:30 on the detailed event page.
+    "go-c-20261128-caen-fff-dj-bluff": {
+        "title": "FFF + DJ Bluff",
+        "date": "2026-11-28",
+        "time": "20:30",
+        "venueId": "le-cargo-caen",
+        "artistIds": ["fff", "dj-bluff"],
+        "artistNames": ["FFF", "DJ Bluff"],
+        "newArtistIds": ["dj-bluff"],
+        "genres": ["Funk Rock"],
+        "officialUrl": "https://lecargo.fr/programmation/concert/fff/",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3333,6 +3351,45 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Le Tetris : identité de groupe altérée")
         require(event.get("time") is None,
                 "Le Tetris : aucune heure musicale confirmée")
+    elif event.get("venueId") == "le-cargo-caen":
+        # Only this exact, documented Cargö event is allowlisted.
+        # Calendar 19:30 = DOORS, never the musical start. The official
+        # individual page explicitly confirms 20:30 as start time.
+        spec = CARGO_VERIFIED.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Le Cargö : événement ou heure hors liste blanche nominative")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "lecargo.fr"
+                and re.fullmatch(r"/programmation/concert/[a-z0-9-]+/", url.path)
+                and not url.query and not url.fragment and not url.username
+                and not url.password and not url.port,
+                "Le Cargö : fiche officielle individuelle exigée")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Le Cargö : contrôle officiel périmé ou futur")
+        require(len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Le Cargö : preuve de fiche nominative absente")
+        proof = evidence[0]
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed.isoformat()
+                and {"artists", "date", "venue", "genre", "concertStartTime",
+                     "doorTime"}.issubset(set(proof.get("checkedFields") or []))
+                and proof.get("doorTimeConfirmed") == "19:30"
+                and proof.get("concertStartTimeConfirmed") == spec["time"],
+                "Le Cargö : distinction ouverture des portes/début non prouvée")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require([a["id"] for a in new_artists] == spec["newArtistIds"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Le Cargö : artiste ou première partie différent de l'officiel")
     return event, added
 
 
