@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-02",
+  "updatedAt": "2026-11-03",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -1567,15 +1567,15 @@
     {
       "id": "le-rex-toulouse",
       "name": "Le Rex",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "15 avenue Honoré Serres",
+      "postalCode": "31000",
       "city": "Toulouse",
       "department": "31",
       "region": "Occitanie",
-      "latitude": 43.604,
-      "longitude": 1.444,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 43.611901,
+      "longitude": 1.438364,
+      "geoPrecision": "GPS publié par Le Rex (localisation de la salle, entrée non garantie)",
+      "geoSource": "https://www.lerextoulouse.com/fr/contact/acces/"
     },
     {
       "id": "l-autre-canal-nancy",
