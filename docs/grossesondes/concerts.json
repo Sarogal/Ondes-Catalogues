@@ -1666,6 +1666,36 @@
       "id": "marave",
       "name": "Marave",
       "aliases": []
+    },
+    {
+      "id": "edging",
+      "name": "Edging",
+      "aliases": []
+    },
+    {
+      "id": "zonbi",
+      "name": "Zonbi",
+      "aliases": []
+    },
+    {
+      "id": "metro-verlaine",
+      "name": "Metro Verlaine",
+      "aliases": []
+    },
+    {
+      "id": "coffin",
+      "name": "C.O.F.F.I.N.",
+      "aliases": []
+    },
+    {
+      "id": "belek",
+      "name": "Belek",
+      "aliases": []
+    },
+    {
+      "id": "grimskunk",
+      "name": "GrimSkunk",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2565,6 +2595,19 @@
       "longitude": 0.664716,
       "geoPrecision": "coordonnées géographiques indicatives (lat 47.352189, long 0.664716) publiées par l'annuaire indépendant Aleou; centre approximatif du site, pas repère métrique d'une entrée. Le lien Google Maps officiel de la salle indique un emplacement voisin.",
       "geoSource": "https://www.aleou.fr/salle-seminaire/26731-le-temps-machine"
+    },
+    {
+      "id": "le-tetris-le-havre",
+      "name": "Le Tetris",
+      "address": "Fort de Tourneville, 33 rue du 329e Régiment d'Infanterie",
+      "postalCode": "76620",
+      "city": "Le Havre",
+      "department": "76",
+      "region": "Normandie",
+      "latitude": 49.5043853,
+      "longitude": 0.1206928,
+      "geoPrecision": "position GPS indicative du site du Tetris transmise par l'Office de Tourisme Le Havre Etretat Normandie via Cirkwi; point du lieu non assimilé à l'entrée des spectateurs. Les fiches individuelles du Tetris renvoient vers un repère Google Maps proche (49.503852, 0.120886).",
+      "geoSource": "https://www.cirkwi.com/fr/point-interet/2508080-le-tetris"
     }
   ],
   "events": [
@@ -9928,6 +9971,130 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Temps Machine",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-lehavre-edging-zonbi",
+      "title": "Edging + Zonbi",
+      "date": "2026-11-13",
+      "artistIds": [
+        "edging",
+        "zonbi"
+      ],
+      "venueId": "le-tetris-le-havre",
+      "genres": [
+        "Punk Rock",
+        "Punk Jazz"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://letetris.fr/agenda/edging-zonbi",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Tetris",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-lehavre-fff-metro-verlaine",
+      "title": "FFF + Metro Verlaine",
+      "date": "2026-11-27",
+      "artistIds": [
+        "fff",
+        "metro-verlaine"
+      ],
+      "venueId": "le-tetris-le-havre",
+      "genres": [
+        "Funk Rock",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://letetris.fr/agenda/fff",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Tetris",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261205-lehavre-coffin-belek",
+      "title": "C.O.F.F.I.N. + Belek",
+      "date": "2026-12-05",
+      "artistIds": [
+        "coffin",
+        "belek"
+      ],
+      "venueId": "le-tetris-le-havre",
+      "genres": [
+        "Rock",
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://letetris.fr/agenda/coffin",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Tetris",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-lehavre-the-inspector-cluzo-grimskunk",
+      "title": "The Inspector Cluzo + GrimSkunk",
+      "date": "2026-12-12",
+      "artistIds": [
+        "the-inspector-cluzo",
+        "grimskunk"
+      ],
+      "venueId": "le-tetris-le-havre",
+      "genres": [
+        "Rock",
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://letetris.fr/agenda/inspector-cluzo",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Tetris",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
