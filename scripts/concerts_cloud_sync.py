@@ -3389,10 +3389,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(primary.get("url") == official_url
                 and primary.get("proofType") == "official-organizer-or-venue"
                 and primary.get("checkedAt") == reviewed.isoformat()
-                and {"date", "venue", "genre"}.issubset(fields)
-                and ("artists" in fields or "leadArtist" in fields)
+                and ({"artists", "venue", "genre"}.issubset(fields)
+                     and "date" not in fields
+                     if event_id in ROUEN_ROCK_PAGED_VERIFIED
+                     else {"date", "venue", "genre"}.issubset(fields)
+                          and ("artists" in fields or "leadArtist" in fields))
                 and "startTime" not in fields,
-                "Astrolabe/106 : fiche individuelle incomplète ou heure non prouvée")
+                "Astrolabe/106 : fiche individuelle ou attribution de date incorrecte")
         allowed_second = ({
             "first-party-venue-calendar": "https://www.lastrolabe.org/agenda/",
             "independent-organizer-confirmation":
@@ -3437,7 +3440,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Le 106 : affiche Death Valley Girls altérée ou non approuvée")
             require(primary.get("url") == spec["officialUrl"]
                     and primary.get("proofType") == "official-organizer-or-venue"
-                    and {"artists", "date", "venue", "genre"}.issubset(fields)
+                    and {"artists", "venue", "genre"}.issubset(fields)
+                    and "date" not in fields
                     and secondary.get("url") == spec["calendarUrl"]
                     and secondary.get("proofType") == "first-party-venue-calendar"
                     and {"artists", "date", "venue"}.issubset(secondary_fields),
