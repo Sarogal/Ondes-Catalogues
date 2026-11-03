@@ -83,6 +83,7 @@ jobs:
               "### Concerts — synchronisation des approbations",
               f"Catalogue : {d['publicEventsBefore']} → {d['publicEventsAfter']} concerts",
               f"Nouvelles fiches : {d['newEvents']} ; nouveaux artistes : {d['newArtists']}",
+              f"Salles géolocalisées après revue : {d.get('correctedVenues', 0)}",
               f"Approbations déjà publiées : {d['alreadyPublished']}",
               f"Approbations retenues : {len(d['held'])}",
               f"Flux privé accessible : {'oui' if d['privateApprovalFeedReadable'] else 'non'}",
