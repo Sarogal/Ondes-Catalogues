@@ -1656,6 +1656,16 @@
       "id": "ultramoderne",
       "name": "Ultramoderne",
       "aliases": []
+    },
+    {
+      "id": "birdstone",
+      "name": "Birdstone",
+      "aliases": []
+    },
+    {
+      "id": "marave",
+      "name": "Marave",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2542,6 +2552,19 @@
       "longitude": 1.31378,
       "geoPrecision": "centre indicatif du bâtiment Chato’do (OpenStreetMap way 118748447, coordonnées arrondies à 5 décimales), pas l'emplacement exact de l'entrée concerts rue Alexandre Vezin",
       "geoSource": "https://mapcarta.com/fr/W118748447"
+    },
+    {
+      "id": "le-temps-machine-joue-les-tours",
+      "name": "Le Temps Machine",
+      "address": "45-49 rue des Martyrs, parvis Miles Davis",
+      "postalCode": "37300",
+      "city": "Joué-lès-Tours",
+      "department": "37",
+      "region": "Centre-Val de Loire",
+      "latitude": 47.352189,
+      "longitude": 0.664716,
+      "geoPrecision": "coordonnées géographiques indicatives (lat 47.352189, long 0.664716) publiées par l'annuaire indépendant Aleou; centre approximatif du site, pas repère métrique d'une entrée. Le lien Google Maps officiel de la salle indique un emplacement voisin.",
+      "geoSource": "https://www.aleou.fr/salle-seminaire/26731-le-temps-machine"
     }
   ],
   "events": [
@@ -9874,6 +9897,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Chato'do",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261119-joue-les-tours-birdstone-marave",
+      "title": "Birdstone + Marave",
+      "date": "2026-11-19",
+      "artistIds": [
+        "birdstone",
+        "marave"
+      ],
+      "venueId": "le-temps-machine-joue-les-tours",
+      "genres": [
+        "Progressive Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://letempsmachine.com/agenda/release-party-birdstone-marave",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Temps Machine",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
