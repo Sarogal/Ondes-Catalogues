@@ -766,7 +766,24 @@ REX_LOCATION_FIX = {
 }
 
 
-def corrected_reference_venues(reference, secret_place=False, le_rex=False):
+
+# Strasbourg venue reopened in April 2026. Artefact now lists 17 rue du
+# Hohwald as the official visitor address; the municipal directory still
+# lists 13. The OSM point represents the *Grande Salle*, not its entrance.
+LAITERIE_VENUE_ID = "la-laiterie-strasbourg"
+LAITERIE_LOCATION_OFFICIAL = "https://www.artefact.org/la-laiterie/infos-pratiques-laiterie/"
+LAITERIE_LOCATION_OSM = "https://mapcarta.com/fr/N1694482523"
+LAITERIE_LOCATION_MUNICIPAL = "https://www.strasbourg.eu/lieu/-/entity/id/685842"
+LAITERIE_LOCATION_FIX = {
+    "address": "17 rue du Hohwald",
+    "postalCode": "67000",
+    "latitude": 48.57595,
+    "longitude": 7.72907,
+    "geoPrecision": "point OpenStreetMap La Laiterie Grande Salle (via Mapcarta, entrée non confirmée)",
+    "geoSource": LAITERIE_LOCATION_OSM,
+}
+
+def corrected_reference_venues(reference, secret_place=False, le_rex=False, la_laiterie=False):
     """Only the exact, source-reviewed geographic corrections are permitted."""
     venues = copy.deepcopy(reference["venues"])
     fixes = [(FERRAILLEUR_VENUE_ID, FERRAILLEUR_LOCATION_FIX)]
@@ -774,6 +791,8 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False):
         fixes.append((SECRET_PLACE_VENUE_ID, SECRET_PLACE_LOCATION_FIX))
     if le_rex:
         fixes.append((REX_VENUE_ID, REX_LOCATION_FIX))
+    if la_laiterie:
+        fixes.append((LAITERIE_VENUE_ID, LAITERIE_LOCATION_FIX))
     for venue_id, patch in fixes:
         rows = [v for v in venues if v["id"] == venue_id]
         require(len(rows) == 1, "Salle historique absente : " + venue_id)
@@ -784,12 +803,12 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False):
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 2,
+    require(isinstance(corrections, list) and len(corrections) <= 3,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
             and len(set(ids)) == len(ids)
-            and set(ids).issubset({SECRET_PLACE_VENUE_ID, REX_VENUE_ID}),
+            and set(ids).issubset({SECRET_PLACE_VENUE_ID, REX_VENUE_ID, LAITERIE_VENUE_ID}),
             "Corrections géographiques inattendues ou dupliquées")
     row = next((c for c in corrections if c["venueId"] == SECRET_PLACE_VENUE_ID), None)
     if row is None:
@@ -835,7 +854,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 2,
+    require(isinstance(corrections, list) and len(corrections) <= 3,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
@@ -878,6 +897,59 @@ def validate_rex_location_correction(approvals, reference, today):
             and original["latitude"] == 43.604
             and original["longitude"] == 1.444,
             "La salle Rex de référence a changé : revue nécessaire")
+    return row
+
+
+def validate_laiterie_location_correction(approvals, reference, today):
+    """Strictly separate the venue's visitor address from the OSM Grande Salle point."""
+    corrections = approvals.get("referenceVenueCorrections", [])
+    require(isinstance(corrections, list) and len(corrections) <= 3,
+            "Liste géographique Laiterie inattendue")
+    rows = [c for c in corrections if isinstance(c, dict)
+            and c.get("venueId") == LAITERIE_VENUE_ID]
+    require(len(rows) <= 1, "Correction La Laiterie en doublon")
+    if not rows:
+        return None
+    row = rows[0]
+    require(row.get("reviewDecision") == "approved"
+            and row.get("reviewedBy") == "independent-official-verifier"
+            and row.get("venuePatch") == LAITERIE_LOCATION_FIX,
+            "Correction La Laiterie non approuvée ou modifiée")
+    checked = norm_date(row.get("reviewedAt"))
+    require(checked == dt.date(2026, 11, 3) and checked <= today,
+            "Revue La Laiterie absente ou postérieure à l'exécution")
+    evidence = row.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 3,
+            "Trois preuves géographiques distinctes requises")
+    expected = {
+        "official-venue-access-address": (
+            LAITERIE_LOCATION_OFFICIAL, {"name", "address", "postalCode", "city"}),
+        "openstreetmap-grande-salle-node-via-mapcarta": (
+            LAITERIE_LOCATION_OSM, {"venueName", "coordinates"}),
+        "municipal-venue-complex-listing": (
+            LAITERIE_LOCATION_MUNICIPAL, {"name", "city", "postalCode"}),
+    }
+    require({p.get("proofType") for p in evidence if isinstance(p, dict)}
+            == set(expected),
+            "Preuves officielles Laiterie ou point de la Grande Salle manquants")
+    for item in evidence:
+        require(isinstance(item, dict) and item.get("proofType") in expected,
+                "Preuve La Laiterie incorrecte")
+        url, fields = expected[item["proofType"]]
+        require(item.get("url") == url
+                and item.get("checkedAt") == checked.isoformat()
+                and fields.issubset(set(item.get("checkedFields") or [])),
+                "Preuve La Laiterie incorrecte, datée ou remplacée")
+    original = next((v for v in reference["venues"]
+                     if v["id"] == LAITERIE_VENUE_ID), None)
+    require(original is not None
+            and original["name"] == "La Laiterie"
+            and original["city"] == "Strasbourg"
+            and original["address"] == "Adresse exacte à vérifier"
+            and original["postalCode"] == "À vérifier"
+            and original["latitude"] == 48.5839
+            and original["longitude"] == 7.7455,
+            "La Laiterie d'origine a changé : revoir le dossier")
     return row
 
 
@@ -1006,12 +1078,15 @@ def protect_reference(reference, current):
             require(now[:len(initial)] in (initial, legacy_corrected_events(reference)),
                     "Concert historique modifié hors exception de programmation approuvée")
         elif kind == "venues":
-            # Allow only the two exact, documented geographic correction states.
+            # Allow only the explicitly reviewed combinations of geographic fixes.
             # The original 53 venues are never rewritten in the baseline JSON.
-            allowed = (initial, corrected_reference_venues(reference),
-                       corrected_reference_venues(reference, secret_place=True),
-                       corrected_reference_venues(reference, le_rex=True),
-                       corrected_reference_venues(reference, secret_place=True, le_rex=True))
+            allowed = [initial] + [
+                corrected_reference_venues(
+                    reference, secret_place=sp, le_rex=rex, la_laiterie=laiterie)
+                for sp in (False, True)
+                for rex in (False, True)
+                for laiterie in (False, True)
+            ]
             require(now[:len(initial)] in allowed,
                     "Salle initiale modifiée hors correction géographique approuvée")
         else:
@@ -2068,36 +2143,42 @@ def merge(reference, current, approvals, today):
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
-    location_review = validate_secret_place_location_correction(approvals, reference, today)
-    rex_review = validate_rex_location_correction(approvals, reference, today)
+    reviews = {
+        "secret_place": validate_secret_place_location_correction(approvals, reference, today),
+        "le_rex": validate_rex_location_correction(approvals, reference, today),
+        "la_laiterie": validate_laiterie_location_correction(approvals, reference, today),
+    }
     current_venues = current["venues"][:len(reference["venues"])]
-    ferr_only = corrected_reference_venues(reference)
-    with_secret = corrected_reference_venues(reference, secret_place=True)
-    with_rex = corrected_reference_venues(reference, le_rex=True)
-    with_both = corrected_reference_venues(reference, secret_place=True, le_rex=True)
-    prior_secret = current_venues in (with_secret, with_both)
-    prior_rex = current_venues in (with_rex, with_both)
-    if prior_secret:
-        require(location_review is not None,
-                "Secret Place déjà corrigée sans approbation privée persistante")
-    if prior_rex:
-        require(rex_review is not None,
-                "Le Rex déjà corrigé sans approbation privée persistante")
-    # Only amend the exact historic states already reviewed. The archive
-    # itself is immutable; an unapproved or unrelated change always fails.
-    venue_corrected_count = 0
-    if location_review is not None and not prior_secret:
-        require(current_venues in (ferr_only, with_rex),
-                "Référence inattendue avant correction Secret Place")
+    # A baseline-only fixture is valid with *no* geographic approvals, but
+    # the real published catalogue must retain the historic Ferrailleur fix.
+    prior = None
+    if current_venues == reference["venues"]:
+        require(not any(reviews.values()),
+                "Le Ferrailleur doit être conservé avant toute correction de salle")
+        prior = {"secret_place": False, "le_rex": False, "la_laiterie": False}
+    else:
+        for sp in (False, True):
+            for rex in (False, True):
+                for laiterie in (False, True):
+                    expected = corrected_reference_venues(
+                        reference, secret_place=sp, le_rex=rex, la_laiterie=laiterie)
+                    if current_venues == expected:
+                        prior = {"secret_place": sp, "le_rex": rex, "la_laiterie": laiterie}
+                        break
+                if prior is not None:
+                    break
+            if prior is not None:
+                break
+    require(prior is not None, "Salles historiques modifiées hors de la liste blanche")
+    for key, present in prior.items():
+        if present:
+            require(reviews[key] is not None,
+                    "Géolocalisation historiquement appliquée sans approbation persistante : " + key)
+    target = {k: prior[k] or bool(reviews[k]) for k in prior}
+    venue_corrected_count = sum(bool(reviews[k]) and not prior[k] for k in prior)
+    if venue_corrected_count:
         result["venues"][:len(reference["venues"])] = corrected_reference_venues(
-            reference, secret_place=True, le_rex=prior_rex)
-        venue_corrected_count += 1
-    if rex_review is not None and not prior_rex:
-        require(current_venues in (ferr_only, with_secret),
-                "Référence inattendue avant correction Le Rex")
-        result["venues"][:len(reference["venues"])] = corrected_reference_venues(
-            reference, secret_place=bool(location_review), le_rex=True)
-        venue_corrected_count += 1
+            reference, **target)
     correction = validate_legacy_correction(approvals, reference, today)
     current_prefix = current["events"][:len(reference["events"])]
     if current_prefix != reference["events"]:
