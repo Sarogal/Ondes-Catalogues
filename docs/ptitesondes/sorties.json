@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-02T12:14:07+01:00",
+  "updated_at": "2026-11-03T21:39:29+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -10878,6 +10878,31 @@
       "verified_at": "2026-11-02",
       "geo_precision": "venue",
       "geo_verified_at": "2026-11-02"
+    },
+    {
+      "id": "versailles-bebe-baroque-2026-12-16",
+      "title": "Bébé baroque : atelier musical pour les tout-petits",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-12-16",
+      "date_end": "2026-12-16",
+      "time": "09:30 et 10:30 (45 min par séance)",
+      "city": "Versailles",
+      "department": "Yvelines (78)",
+      "region": "Île-de-France",
+      "venue": "Hôtel des Menus-Plaisirs",
+      "age_min": 0,
+      "age_max": 3,
+      "age_label": "0–3 ans",
+      "price": "15 € pour 1 enfant et 1 accompagnateur (tarifs réduits possibles)",
+      "description": "Date, horaires et lieu contrôlés auprès de l'organisateur. Consultez la source officielle pour le programme détaillé et les conditions de participation.",
+      "lat": 48.8005798,
+      "lng": 2.1338217,
+      "source_url": "https://openagenda.com/fr/culture-versailles/events/33026579_bebe-baroque-atelier-musical-pour-les-tout-petits-5079865",
+      "source_label": "Culture Versailles / Centre de musique baroque de Versailles",
+      "verified_at": "2026-10-31",
+      "geo_precision": "venue",
+      "geo_verified_at": "2026-10-31"
     }
   ]
 }
