@@ -1486,6 +1486,21 @@
       "id": "the-pineapple-thief",
       "name": "The Pineapple Thief",
       "aliases": []
+    },
+    {
+      "id": "sleeping-with-sirens",
+      "name": "Sleeping With Sirens",
+      "aliases": []
+    },
+    {
+      "id": "arms-length",
+      "name": "Arm's Length",
+      "aliases": []
+    },
+    {
+      "id": "like-roses",
+      "name": "Like Roses",
+      "aliases": []
     }
   ],
   "venues": [
@@ -8804,6 +8819,38 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://www.artefact.org/la-laiterie/evenements/the-pineapple-thief-far-and-wide-european-tour-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270217-strasbourg-sleeping-with-sirens",
+      "title": "Sleeping With Sirens + Arm's Length + Like Roses",
+      "date": "2027-02-17",
+      "artistIds": [
+        "sleeping-with-sirens",
+        "arms-length",
+        "like-roses"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post-hardcore",
+        "Pop Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/sleeping-with-sirens/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
