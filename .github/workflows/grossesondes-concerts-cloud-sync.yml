@@ -29,6 +29,9 @@ on:
   # Nouvelle synchronisation La Laiterie : 5 concerts / 11 artistes validés
   # (approbation privée GrossesOndes PR #101, 03/11/2026).
   # Ni le schéma ni les contrôles de publication ne sont assouplis.
+  # Synchronisation finale 15/15 des concerts La Laiterie avec correction
+  # Arm's Length contrôlée par Live Nation, approbation privée PR #102.
+  # Publier uniquement si toutes les validations habituelles passent.
   schedule:
     - cron: '17 */3 * * *'
   push:
