@@ -2332,6 +2332,23 @@ CARGO_VERIFIED = {
 }
 
 
+ROUEN_DEATH_VALLEY_SIGNED = {
+    # Official Le 106 concert detail + first-party full-year calendar,
+    # both read independently on 03/11/2026. The displayed 20:00 is not
+    # labelled the start of the music, therefore time must remain None.
+    "go-c-20261121-rouen-death-valley-girls-bella-bizarre": {
+        "title": "Death Valley Girls + Bella & the Bizarre",
+        "date": "2026-11-21",
+        "time": None,
+        "venueId": "le-106-rouen",
+        "artistIds": ["death-valley-girls", "bella-and-the-bizarre"],
+        "genres": ["Proto-Punk", "Garage Punk"],
+        "officialUrl": "https://le106.com/agenda/death-valley-girls-bella-bizarre",
+        "calendarUrl": "https://le106.com/agenda",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2350,6 +2367,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
+    if event_id in ROUEN_DEATH_VALLEY_SIGNED:
+        require(event.get("venueId") == "le-106-rouen",
+                "Concert Rouen déplacé vers une autre salle")
     if event_id in LAITERIE_OFFICIAL_VERIFIED or event_id in LAITERIE_SECOND_WAVE_VERIFIED:
         require(event.get("venueId") == "la-laiterie-strasbourg",
                 "Identifiant de concert La Laiterie affecté à une autre salle")
@@ -2370,6 +2390,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
+    reserved_rouen_url = {spec["officialUrl"]: key
+                          for key, spec in ROUEN_DEATH_VALLEY_SIGNED.items()}
+    if official_url in reserved_rouen_url:
+        require(event_id == reserved_rouen_url[official_url],
+                "URL individuelle Le 106 réservée à son identifiant signé")
     require(any(
         item.get("url") == official_url and
         item.get("proofType") == "official-organizer-or-venue" and
@@ -3318,6 +3343,26 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and resolved[aid]["name"] == "YÜ")
             ) for aid in ids),
                 "Astrolabe/106 : identité des groupes non corroborée")
+        if event_id in ROUEN_DEATH_VALLEY_SIGNED:
+            spec = ROUEN_DEATH_VALLEY_SIGNED[event_id]
+            require(all(event.get(field) == spec[field] for field in (
+                    "title", "date", "time", "venueId", "artistIds", "genres"))
+                    and official_url == spec["officialUrl"]
+                    and event.get("sourceType") == "salle"
+                    and new_artists == [],
+                    "Le 106 : affiche Death Valley Girls altérée ou non approuvée")
+            require(primary.get("url") == spec["officialUrl"]
+                    and primary.get("proofType") == "official-organizer-or-venue"
+                    and {"artists", "date", "venue", "genre"}.issubset(fields)
+                    and secondary.get("url") == spec["calendarUrl"]
+                    and secondary.get("proofType") == "first-party-venue-calendar"
+                    and {"artists", "date", "venue"}.issubset(secondary_fields),
+                    "Le 106 : preuves individuelles et agenda nominatif obligatoires")
+            require(len(ids) == 2
+                    and norm(resolved[ids[0]]["name"]) == "death valley girls"
+                    and norm(resolved[ids[1]]["name"]) == "bella and the bizarre",
+                    "Le 106 : noms de groupe non conformes aux deux artistes publiés")
+
     elif event.get("venueId") == "le-chatodo-blois":
         # A valid venue pin is NEVER sufficient to approve an unchecked bill.
         # Both venue and three exact event dates were individually signed.
