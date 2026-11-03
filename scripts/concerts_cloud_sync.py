@@ -2367,11 +2367,6 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
-    reserved_rouen_url = {spec["officialUrl"]: key
-                          for key, spec in ROUEN_DEATH_VALLEY_SIGNED.items()}
-    if official_url in reserved_rouen_url:
-        require(event_id == reserved_rouen_url[official_url],
-                "URL individuelle Le 106 réservée à son identifiant signé")
     if event_id in ROUEN_DEATH_VALLEY_SIGNED:
         require(event.get("venueId") == "le-106-rouen",
                 "Concert Rouen déplacé vers une autre salle")
@@ -2395,6 +2390,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
+    reserved_rouen_url = {spec["officialUrl"]: key
+                          for key, spec in ROUEN_DEATH_VALLEY_SIGNED.items()}
+    if official_url in reserved_rouen_url:
+        require(event_id == reserved_rouen_url[official_url],
+                "URL individuelle Le 106 réservée à son identifiant signé")
     require(any(
         item.get("url") == official_url and
         item.get("proofType") == "official-organizer-or-venue" and
