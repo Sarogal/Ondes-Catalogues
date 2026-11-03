@@ -1501,6 +1501,26 @@
       "id": "like-roses",
       "name": "Like Roses",
       "aliases": []
+    },
+    {
+      "id": "beast-in-black",
+      "name": "Beast in Black",
+      "aliases": []
+    },
+    {
+      "id": "sonata-arctica",
+      "name": "Sonata Arctica",
+      "aliases": []
+    },
+    {
+      "id": "frozen-crown",
+      "name": "Frozen Crown",
+      "aliases": []
+    },
+    {
+      "id": "heeka",
+      "name": "Heeka",
+      "aliases": []
     }
   ],
   "venues": [
@@ -8855,6 +8875,99 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-toulouse-tagada-jones",
+      "title": "Tagada Jones + Les Tambours du Bronx",
+      "date": "2026-11-13",
+      "artistIds": [
+        "tagada-jones",
+        "les-tambours-du-bronx"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Punk",
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/13/tagada-jones-les-tambours-du-bronx",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261114-toulouse-beast-in-black",
+      "title": "Beast in Black + Sonata Arctica + Frozen Crown",
+      "date": "2026-11-14",
+      "artistIds": [
+        "beast-in-black",
+        "sonata-arctica",
+        "frozen-crown"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Heavy Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/14/beast-in-black-sonata-arctica-frozen-crown",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261117-toulouse-slift",
+      "title": "Slift + Heeka",
+      "date": "2026-11-17",
+      "artistIds": [
+        "slift",
+        "heeka"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Post-rock",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/17/slift",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
