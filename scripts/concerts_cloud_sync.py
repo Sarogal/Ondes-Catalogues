@@ -3440,8 +3440,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Le 106 : affiche Death Valley Girls altérée ou non approuvée")
             require(primary.get("url") == spec["officialUrl"]
                     and primary.get("proofType") == "official-organizer-or-venue"
-                    and {"artists", "venue", "genre"}.issubset(fields)
-                    and "date" not in fields
+                    and {"artists", "date", "venue", "genre"}.issubset(fields)
                     and secondary.get("url") == spec["calendarUrl"]
                     and secondary.get("proofType") == "first-party-venue-calendar"
                     and {"artists", "date", "venue"}.issubset(secondary_fields),
@@ -3462,7 +3461,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Le 106 : nouvelle affiche rock hors liste nominative")
             require(primary.get("url") == spec["officialUrl"]
                     and primary.get("proofType") == "official-organizer-or-venue"
-                    and {"artists", "date", "venue", "genre"}.issubset(fields)
+                    and {"artists", "venue", "genre"}.issubset(fields)
+                    and "date" not in fields
                     and secondary.get("url") == spec["calendarUrl"]
                     and secondary.get("proofType") == "first-party-venue-calendar"
                     and {"artists", "date", "venue"}.issubset(secondary_fields),
