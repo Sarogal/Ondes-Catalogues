@@ -3278,8 +3278,8 @@
       "id": "go-c-20261113-caen-psykup",
       "title": "Psykup + 7Weeks",
       "date": "2026-11-13",
-      "time": "20:00",
-      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
       "artistIds": [
         "psykup",
         "7weeks"
@@ -3290,9 +3290,9 @@
       ],
       "organizer": "Le Cargö",
       "status": "confirmed",
-      "officialUrl": "https://lecargo.fr/programmation/concert/",
+      "officialUrl": "https://lecargo.fr/programmation/concert/psykup-7-weeks/",
       "ticketUrl": null,
-      "lastVerified": "2026-11-01",
+      "lastVerified": "2026-11-03",
       "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
       "sourceType": "salle_officielle",
       "sourceLabel": "Le Cargö - agenda officiel",
@@ -3301,6 +3301,10 @@
         {
           "date": "2026-11-01",
           "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        },
+        {
+          "date": "2026-11-03",
+          "change": "Correction officielle Cargö : ouverture des portes 20h00, début des concerts 20h30 ; fiche individuelle vérifiée."
         }
       ]
     },
@@ -3679,8 +3683,8 @@
       "id": "go-c-20261121-caen-vulves-assassines",
       "title": "Vulves Assassines",
       "date": "2026-11-21",
-      "time": "19:30",
-      "timeMeaning": "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
       "artistIds": [
         "vulves-assassines"
       ],
@@ -3690,9 +3694,9 @@
       ],
       "organizer": "Le Cargö",
       "status": "confirmed",
-      "officialUrl": "https://lecargo.fr/programmation/concert/",
+      "officialUrl": "https://lecargo.fr/programmation/concert/vulves-assassines/",
       "ticketUrl": null,
-      "lastVerified": "2026-11-01",
+      "lastVerified": "2026-11-03",
       "confidence": "date, salle et affiche annoncées sur la programmation officielle vérifiée le 01/11/2026",
       "sourceType": "salle_officielle",
       "sourceLabel": "Le Cargö - agenda officiel",
@@ -3701,6 +3705,10 @@
         {
           "date": "2026-11-01",
           "change": "Ajout depuis programmation officielle du lieu; lien source et éventuelle précision horaire à recontrôler avant automation."
+        },
+        {
+          "date": "2026-11-03",
+          "change": "Correction officielle Cargö : ouverture des portes 19h30, début des concerts 20h30 ; fiche individuelle vérifiée."
         }
       ]
     },
