@@ -1756,6 +1756,21 @@
       "id": "francis",
       "name": "Francis",
       "aliases": []
+    },
+    {
+      "id": "girls-in-hawaii",
+      "name": "Girls in Hawaii",
+      "aliases": []
+    },
+    {
+      "id": "chaton-laveur",
+      "name": "Chaton Laveur",
+      "aliases": []
+    },
+    {
+      "id": "altin-gun",
+      "name": "Altın Gün",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2269,15 +2284,15 @@
     {
       "id": "antipode-rennes",
       "name": "Antipode",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "75 avenue Jules Maniez",
+      "postalCode": "35000",
       "city": "Rennes",
       "department": "35",
       "region": "Bretagne",
-      "latitude": 48.113,
-      "longitude": -1.681,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 48.09823,
+      "longitude": -1.70464,
+      "geoPrecision": "centre du bâtiment nommé Antipode (OpenStreetMap way 943632490), localisation indicative du bâtiment et non de l'entrée spectacles",
+      "geoSource": "https://mapcarta.com/fr/W943632490"
     },
     {
       "id": "l-astrolabe-orleans",
@@ -10489,6 +10504,95 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-rennes-girls-in-hawaii-chaton-laveur",
+      "title": "Girls in Hawaii + Chaton Laveur",
+      "date": "2026-12-12",
+      "artistIds": [
+        "girls-in-hawaii",
+        "chaton-laveur"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/girls-hawaii-2026",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Antipode",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270127-rennes-altin-gun",
+      "title": "Altın Gün",
+      "date": "2027-01-27",
+      "artistIds": [
+        "altin-gun"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Rock",
+        "Folk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/altin-gun-2027",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Association Trans Musicales",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270309-rennes-the-pineapple-thief",
+      "title": "The Pineapple Thief",
+      "date": "2027-03-09",
+      "artistIds": [
+        "the-pineapple-thief"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/pineapple-thief-2027",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Garmonbozia",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
