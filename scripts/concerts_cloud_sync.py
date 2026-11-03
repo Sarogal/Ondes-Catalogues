@@ -2565,6 +2565,17 @@ BONJOUR_MINUIT_VERIFIED = {
         "genres": ["Rock progressif"], "status": "confirmed",
         "officialUrl": "https://bonjour-minuit.fr/evenement/magma-02dec26/",
         "calendarUrl": "https://bonjour-minuit.fr/agenda/",
+    },
+    "go-c-20270130-saint-brieuc-sbrbs": {
+        "title": "SBRBS + Atoem + Sarakiniko + DJ Cup of Tea",
+        "date": "2027-01-30", "time": None,
+        "venueId": "bonjour-minuit-saint-brieuc",
+        "artistIds": ["sbrbs", "atoem", "sarakiniko", "dj-cup-of-tea"],
+        "artistNames": ["SBRBS", "Atoem", "Sarakiniko", "DJ Cup of Tea"],
+        "newArtistIds": ["sbrbs", "atoem", "sarakiniko", "dj-cup-of-tea"],
+        "genres": ["Rock indépendant"], "status": "confirmed",
+        "officialUrl": "https://bonjour-minuit.fr/evenement/sbrbs-30janv27/",
+        "calendarUrl": "https://bonjour-minuit.fr/agenda/",
     }
 }
 
@@ -2868,7 +2879,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Bonjour Minuit : affiche non homologuée, heure ou salle modifiée")
         u = urlsplit(official_url)
         require(u.scheme == "https" and u.hostname == "bonjour-minuit.fr"
-                and u.path == "/evenement/magma-02dec26/"
+                and u.path == urlsplit(spec["officialUrl"]).path
                 and not u.query and not u.fragment and not u.username
                 and not u.password and not u.port,
                 "Bonjour Minuit : URL individuelle non conforme")
@@ -2896,11 +2907,25 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and not ({"concertStartTime", "startTime", "doorTime"} &
                          set(calendar.get("checkedFields") or [])),
                 "Bonjour Minuit : source officielle non recoupée ou horaire inféré")
-        require(not new_artists and len(ids) == 1
-                and ids[0] == "magma"
-                and "magma" in known_artist_ids
-                and norm(known_artist_ids["magma"]["name"]) == "magma",
-                "Bonjour Minuit : artiste existant mal identifié ou doublonné")
+        # Only the four *named* artists on the individually signed SBRBS
+        # page (or the already-published Magma) are permitted. Genre badges
+        # and collector candidates alone cannot create artist identities.
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(ids == spec["artistIds"]
+                and [a["id"] for a in new_artists] == spec["newArtistIds"]
+                and new_artists == [
+                    {"id":aid, "name":spec["artistNames"][i]}
+                    for i,aid in enumerate(spec["artistIds"])
+                    if aid in spec["newArtistIds"]]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid,name in zip(ids,spec["artistNames"]))
+                and all(norm(x["name"]) not in {
+                    norm(y["name"]) for y in known_artist_ids.values()}
+                        for x in new_artists),
+                "Bonjour Minuit : artistes, premières parties ou identifiants non prouvés")
     elif event.get("venueId") == "antipode-rennes":
         spec = ANTIPODE_RENNES_VERIFIED.get(event_id)
         require(spec is not None
