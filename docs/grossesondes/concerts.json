@@ -1551,6 +1551,16 @@
       "id": "europe",
       "name": "Europe",
       "aliases": []
+    },
+    {
+      "id": "marillion",
+      "name": "Marillion",
+      "aliases": []
+    },
+    {
+      "id": "the-stranglers",
+      "name": "The Stranglers",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9150,6 +9160,95 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261125-toulouse-marillion",
+      "title": "Marillion",
+      "date": "2026-11-25",
+      "artistIds": [
+        "marillion"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/25/marillion",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261126-toulouse-the-stranglers",
+      "title": "The Stranglers",
+      "date": "2026-11-26",
+      "artistIds": [
+        "the-stranglers"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/26/the-stranglers",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261129-toulouse-accept",
+      "title": "Accept \"50th Anniversary Tour\" + Dynazty + Enforcer",
+      "date": "2026-11-29",
+      "artistIds": [
+        "accept",
+        "dynazty",
+        "enforcer"
+      ],
+      "venueId": "le-bikini-toulouse",
+      "genres": [
+        "Heavy Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lebikini.com/2026/11/29/accept-50th-anniversary-tour-dynazty-tailgunner",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bikini",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
