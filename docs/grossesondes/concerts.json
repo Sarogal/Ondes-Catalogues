@@ -10149,6 +10149,37 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20261121-rouen-death-valley-girls-bella-bizarre",
+      "title": "Death Valley Girls + Bella & the Bizarre",
+      "date": "2026-11-21",
+      "artistIds": [
+        "death-valley-girls",
+        "bella-and-the-bizarre"
+      ],
+      "venueId": "le-106-rouen",
+      "genres": [
+        "Proto-Punk",
+        "Garage Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://le106.com/agenda/death-valley-girls-bella-bizarre",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le 106",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
