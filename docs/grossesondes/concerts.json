@@ -1771,6 +1771,11 @@
       "id": "altin-gun",
       "name": "Altın Gün",
       "aliases": []
+    },
+    {
+      "id": "diiv",
+      "name": "DIIV",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10593,6 +10598,35 @@
       "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Garmonbozia",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270602-rennes-diiv",
+      "title": "DIIV",
+      "date": "2027-06-02",
+      "artistIds": [
+        "diiv"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/diiv-2027",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Antipode",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
