@@ -1785,6 +1785,36 @@ BIKINI_OFFICIAL_VERIFIED = {
         "time": None,
         "officialUrl": "https://lebikini.com/2026/11/17/slift",
     },
+    "go-c-20261125-toulouse-marillion": {
+        "title": "Marillion",
+        "date": "2026-11-25",
+        "artistIds": ["marillion"],
+        "artistNames": ["Marillion"],
+        "newArtists": [{"id": "marillion", "name": "Marillion"}],
+        "genres": ["Rock progressif"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/25/marillion",
+    },
+    "go-c-20261126-toulouse-the-stranglers": {
+        "title": "The Stranglers",
+        "date": "2026-11-26",
+        "artistIds": ["the-stranglers"],
+        "artistNames": ["The Stranglers"],
+        "newArtists": [{"id": "the-stranglers", "name": "The Stranglers"}],
+        "genres": ["Rock"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/26/the-stranglers",
+    },
+    "go-c-20261129-toulouse-accept": {
+        "title": "Accept \"50th Anniversary Tour\" + Dynazty + Enforcer",
+        "date": "2026-11-29",
+        "artistIds": ["accept", "dynazty", "enforcer"],
+        "artistNames": ["Accept", "Dynazty", "Enforcer"],
+        "newArtists": [],
+        "genres": ["Heavy Metal"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/29/accept-50th-anniversary-tour-dynazty-tailgunner",
+    },
 }
 
 def validate_approval(approval, venues, known_artist_ids, today):
@@ -1999,7 +2029,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Bikini : affiche non agréée ou champs modifiés")
         link = urlsplit(official_url)
         require(link.scheme == "https" and link.hostname == "lebikini.com"
-                and re.fullmatch(r"/2026/11/(11|13|14|17)/[a-z0-9-]+", link.path)
+                and re.fullmatch(r"/2026/11/(11|13|14|17|25|26|29)/[a-z0-9-]+", link.path)
                 and not link.query and not link.fragment and not link.username
                 and not link.password and not link.port,
                 "Bikini : fiche individuelle officielle HTTPS exigée")
