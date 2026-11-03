@@ -2397,7 +2397,7 @@ class BikiniIndependentReviewTests(unittest.TestCase):
             "le-bikini-toulouse": next(
                 v for v in BASE["venues"] if v["id"] == "le-bikini-toulouse")
         }
-        self.assertEqual(len(BIKINI_OFFICIAL_VERIFIED), 4)
+        self.assertEqual(len(BIKINI_OFFICIAL_VERIFIED), 7)
         for event_id, spec in BIKINI_OFFICIAL_VERIFIED.items():
             with self.subTest(event_id=event_id):
                 new_ids = {a["id"] for a in spec["newArtists"]}
