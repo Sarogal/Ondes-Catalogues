@@ -8340,6 +8340,279 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270205-strasbourg-revnoir-ice-sealed-eyes",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-05",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/revnoir-ice-sealed-eyes/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270209-strasbourg-enslaved-solstafir",
+      "title": "Enslaved + Sólstafir + Gaahls Wyrd",
+      "date": "2027-02-09",
+      "artistIds": [
+        "enslaved",
+        "solstafir",
+        "gaahls-wyrd"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Black Metal",
+        "Metal progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/enslaved-solstafir-gaahls-wyrd/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270214-strasbourg-ugly-kid-joe",
+      "title": "Ugly Kid Joe",
+      "date": "2027-02-14",
+      "artistIds": [
+        "ugly-kid-joe"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/ugly-kid-joe-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270216-strasbourg-eihwar-hindarfjall",
+      "title": "Eihwar + Hindarfjäll",
+      "date": "2027-02-16",
+      "artistIds": [
+        "eihwar",
+        "hindarfjall"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Pagan Folk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eihwar-hindarfjall/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270306-strasbourg-houle-can-bardd",
+      "title": "Houle + Cân Bardd + Galibot",
+      "date": "2027-03-06",
+      "artistIds": [
+        "houle",
+        "can-bardd",
+        "galibot"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/houle-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270309-strasbourg-cult-of-luna",
+      "title": "Cult of Luna + Bruit ≤ + Youth Code",
+      "date": "2027-03-09",
+      "artistIds": [
+        "cult-of-luna",
+        "bruit",
+        "youth-code"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post-metal",
+        "Sludge Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/cult-of-luna-bruit-%E2%89%A4-youth-code/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270316-strasbourg-die-arzte",
+      "title": "Die Ärzte",
+      "date": "2027-03-16",
+      "artistIds": [
+        "die-arzte"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/die-arzte-tour-de-france/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270326-strasbourg-tagada-jones",
+      "title": "Tagada Jones + Les Tambours du Bronx",
+      "date": "2027-03-26",
+      "artistIds": [
+        "tagada-jones",
+        "les-tambours-du-bronx"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Punk Hardcore",
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/tagada-jones-les-tambours-du-bronx2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270909-strasbourg-eisbrecher",
+      "title": "Eisbrecher",
+      "date": "2027-09-09",
+      "artistIds": [
+        "eisbrecher"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Metal industriel"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eisbrecher-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
