@@ -2349,6 +2349,36 @@ ROUEN_DEATH_VALLEY_SIGNED = {
 }
 
 
+BBC_NORMANDY_VERIFIED = {
+    # Official venue pages + the ticket distributor directly linked by BBC.
+    # Advertised 20:00 is not labelled a concert-start, so time is None.
+    "go-c-20270205-herouville-ugly-kid-joe": {
+        "title": "Ugly Kid Joe",
+        "date": "2027-02-05",
+        "time": None,
+        "venueId": "big-band-cafe-herouville",
+        "artistIds": ["ugly-kid-joe"],
+        "artistNames": ["Ugly Kid Joe"],
+        "newArtistIds": [],
+        "genres": ["Hard Rock"],
+        "officialUrl": "https://bigbandcafe.com/ugly-kid-joe/",
+        "ticketUrl": "https://billetterie.bigbandcafe.com/agenda/118-UGLY-KID-JOE?session=118",
+    },
+    "go-c-20270402-herouville-madam": {
+        "title": "MADAM",
+        "date": "2027-04-02",
+        "time": None,
+        "venueId": "big-band-cafe-herouville",
+        "artistIds": ["madam"],
+        "artistNames": ["MADAM"],
+        "newArtistIds": ["madam"],
+        "genres": ["Rock"],
+        "officialUrl": "https://bigbandcafe.com/madam/",
+        "ticketUrl": "https://billetterie.bigbandcafe.com/agenda/121-MADAM?session=121",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2395,6 +2425,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if official_url in reserved_rouen_url:
         require(event_id == reserved_rouen_url[official_url],
                 "URL individuelle Le 106 réservée à son identifiant signé")
+    reserved_bbc_urls = {spec["officialUrl"]: ident
+                         for ident, spec in BBC_NORMANDY_VERIFIED.items()}
+    if official_url in reserved_bbc_urls:
+        require(event_id == reserved_bbc_urls[official_url],
+                "Big Band Café : cette fiche est réservée à son concert signé")
+    if event_id in BBC_NORMANDY_VERIFIED:
+        require(event.get("venueId") == "big-band-cafe-herouville",
+                "Big Band Café : identifiant réservé à sa salle")
     require(any(
         item.get("url") == official_url and
         item.get("proofType") == "official-organizer-or-venue" and
@@ -3564,6 +3602,58 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Le Cargö : artiste ou première partie différent de l'officiel")
+    elif event.get("venueId") == "big-band-cafe-herouville":
+        # New BBC events require independent exact first-party + official
+        # ticket provenance. No arbitrary band's page can self-approve.
+        spec = BBC_NORMANDY_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and official_url == spec["officialUrl"]
+                and all(event.get(field) == spec[field] for field in (
+                    "title", "date", "time", "venueId", "artistIds", "genres")),
+                "Big Band Café : concert hors liste nominative vérifiée")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "bigbandcafe.com"
+                and re.fullmatch(r"/[a-z0-9-]+/", u.path)
+                and not u.query and not u.fragment
+                and not u.username and not u.password and not u.port,
+                "Big Band Café : URL de fiche officielle incorrecte")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Big Band Café : preuve périmée ou postérieure")
+        require(len(evidence) == 2
+                and all(isinstance(p, dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} ==
+                    {"official-organizer-or-venue",
+                     "authorized-ticket-distributor-full-date"},
+                "Big Band Café : fiche nominative et billetterie requises")
+        proofs_by_kind = {p["proofType"]: p for p in evidence}
+        for kind, url, fields in (
+            ("official-organizer-or-venue", spec["officialUrl"],
+             {"artists", "date", "venue", "genre"}),
+            ("authorized-ticket-distributor-full-date", spec["ticketUrl"],
+             {"artists", "date", "venue"})):
+            p = proofs_by_kind[kind]
+            checked_fields = set(p.get("checkedFields") or [])
+            require(p.get("url") == url
+                    and p.get("checkedAt") == checked.isoformat()
+                    and fields.issubset(checked_fields)
+                    and not ({"startTime", "concertStartTime"} & checked_fields),
+                    "Big Band Café : provenance ou horaire non démontré")
+        require(new_artists == [
+            {"id": artist_id, "name": spec["artistNames"][i]}
+            for i, artist_id in enumerate(spec["artistIds"])
+            if artist_id in spec["newArtistIds"]],
+            "Big Band Café : noms d'artistes ajoutés non vérifiés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(len(ids) == len(spec["artistNames"]) and all(
+            aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+            for aid, name in zip(ids, spec["artistNames"])),
+            "Big Band Café : artiste différent de l'annonce officielle")
+        require(event.get("time") is None,
+                "Big Band Café : 20h affiché ne prouve pas le début musical")
     return event, added
 
 
