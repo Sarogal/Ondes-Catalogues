@@ -1097,6 +1097,125 @@ def legacy_corrected_events(reference):
     return events
 
 
+# Two strictly documented corrections of original reference events.
+# Calendar cards displayed opening-of-doors times, not musical starts.
+CARGO_REFERENCE_TIME_FIXES = {
+    "go-c-20261113-caen-psykup": {
+        "expectedOriginal": {
+            "title": "Psykup + 7Weeks", "date": "2026-11-13",
+            "time": "20:00", "artistIds": ["psykup", "7weeks"],
+            "venueId": "le-cargo-caen",
+            "officialUrl": "https://lecargo.fr/programmation/concert/",
+        },
+        "officialUrl": "https://lecargo.fr/programmation/concert/psykup-7-weeks/",
+        "doorTime": "20:00",
+        "eventPatch": {
+            "time": "20:30", "timeMeaning": "début du concert",
+            "officialUrl": "https://lecargo.fr/programmation/concert/psykup-7-weeks/",
+            "lastVerified": "2026-11-03",
+        },
+        "history": {
+            "date": "2026-11-03",
+            "change": ("Correction officielle Cargö : ouverture des portes 20h00, "
+                       "début des concerts 20h30 ; fiche individuelle vérifiée."),
+        },
+    },
+    "go-c-20261121-caen-vulves-assassines": {
+        "expectedOriginal": {
+            "title": "Vulves Assassines", "date": "2026-11-21",
+            "time": "19:30", "artistIds": ["vulves-assassines"],
+            "venueId": "le-cargo-caen",
+            "officialUrl": "https://lecargo.fr/programmation/concert/",
+        },
+        "officialUrl": "https://lecargo.fr/programmation/concert/vulves-assassines/",
+        "doorTime": "19:30",
+        "eventPatch": {
+            "time": "20:30", "timeMeaning": "début du concert",
+            "officialUrl": "https://lecargo.fr/programmation/concert/vulves-assassines/",
+            "lastVerified": "2026-11-03",
+        },
+        "history": {
+            "date": "2026-11-03",
+            "change": ("Correction officielle Cargö : ouverture des portes 19h30, "
+                       "début des concerts 20h30 ; fiche individuelle vérifiée."),
+        },
+    },
+}
+
+
+def cargo_corrected_reference_events(reference, events, event_ids=()):
+    """Apply only the signed, exact set of historical Cargö time fixes."""
+    ids = set(event_ids)
+    require(ids.issubset(CARGO_REFERENCE_TIME_FIXES),
+            "Correction historique Cargö inconnue")
+    fixed = copy.deepcopy(events)
+    for event_id in sorted(ids):
+        spec = CARGO_REFERENCE_TIME_FIXES[event_id]
+        originals = [e for e in reference["events"] if e.get("id") == event_id]
+        candidates = [e for e in fixed if e.get("id") == event_id]
+        require(len(originals) == 1 and len(candidates) == 1
+                and all(originals[0].get(k) == v for k, v in
+                        spec["expectedOriginal"].items())
+                and originals[0].get("timeMeaning") ==
+                    "horaire affiché sur le calendrier officiel, nature exacte (portes ou début) non précisée",
+                "Référence d'horaire du Cargö modifiée hors contrôle")
+        row = candidates[0]
+        expected_new = {**originals[0], **spec["eventPatch"],
+                        "history": originals[0]["history"] + [spec["history"]]}
+        require(row == originals[0] or row == expected_new,
+                "Fiche Cargö déjà modifiée hors exception nominative")
+        if row == originals[0]:
+            row.update(copy.deepcopy(spec["eventPatch"]))
+            row["history"].append(copy.deepcopy(spec["history"]))
+    return fixed
+
+
+def corrected_reference_event_state(reference, legacy=False, cargo_ids=()):
+    """Generate only allowable combinations; leave the base reference untouched."""
+    events = (legacy_corrected_events(reference) if legacy
+              else copy.deepcopy(reference["events"]))
+    return cargo_corrected_reference_events(reference, events, cargo_ids)
+
+
+def validate_cargo_reference_time_corrections(approvals, reference, today):
+    """Preserve independent, individual official evidence for both corrections."""
+    rows = approvals.get("referenceEventTimeCorrections", [])
+    require(isinstance(rows, list)
+            and len(rows) <= len(CARGO_REFERENCE_TIME_FIXES),
+            "Liste de corrections horaires historiques non conforme")
+    ids = [r.get("eventId") if isinstance(r, dict) else None for r in rows]
+    require(len(set(ids)) == len(ids)
+            and set(ids).issubset(CARGO_REFERENCE_TIME_FIXES),
+            "Doublon ou ID de correction horaire non autorisé")
+    accepted = {}
+    for row in rows:
+        event_id = row["eventId"]
+        spec = CARGO_REFERENCE_TIME_FIXES[event_id]
+        checked = norm_date(row.get("reviewedAt"))
+        require(row.get("reviewDecision") == "approved"
+                and row.get("reviewedBy") == "independent-official-verifier"
+                and checked == dt.date(2026, 11, 3) and checked <= today
+                and row.get("eventPatch") == spec["eventPatch"],
+                "Modification horaire non approuvée ou hors liste blanche")
+        proofs = row.get("officialEvidence")
+        require(isinstance(proofs, list) and len(proofs) == 1
+                and isinstance(proofs[0], dict),
+                "Preuve officielle individuelle Cargö manquante")
+        proof = proofs[0]
+        require(proof.get("url") == spec["officialUrl"]
+                and proof.get("proofType") == "official-venue-detail"
+                and proof.get("checkedAt") == checked.isoformat()
+                and {"artists", "date", "venue", "doorTime",
+                     "concertStartTime"}.issubset(set(
+                         proof.get("checkedFields") or []))
+                and proof.get("doorTimeConfirmed") == spec["doorTime"]
+                and proof.get("concertStartTimeConfirmed") == "20:30",
+                "Preuve horaires portes/début insuffisante ou remplacée")
+        cargo_corrected_reference_events(reference, reference["events"], (event_id,))
+        accepted[event_id] = row
+    return accepted
+
+
 def validate_legacy_correction(approvals, reference, today):
     corrections = approvals.get("referenceCorrections", [])
     require(isinstance(corrections, list) and len(corrections) <= 1,
@@ -1186,8 +1305,18 @@ def protect_reference(reference, current):
         require(len(now) >= len(initial),
                 "Référence immuable modifiée ou supprimée : " + kind)
         if kind == "events":
-            require(now[:len(initial)] in (initial, legacy_corrected_events(reference)),
-                    "Concert historique modifié hors exception de programmation approuvée")
+            # The only allowed states: original / signed Lost in Kyiv bill,
+            # combined independently with either of the two exact time fixes.
+            cargo_ids = tuple(sorted(CARGO_REFERENCE_TIME_FIXES))
+            permitted = []
+            for legacy in (False, True):
+                for mask in range(1 << len(cargo_ids)):
+                    chosen = tuple(event_id for i, event_id in enumerate(cargo_ids)
+                                   if mask & (1 << i))
+                    permitted.append(corrected_reference_event_state(
+                        reference, legacy=legacy, cargo_ids=chosen))
+            require(now[:len(initial)] in permitted,
+                    "Concert historique modifié hors exceptions nominatives vérifiées")
         elif kind == "venues":
             # Allow only the two exact, documented geographic correction states.
             # The original 53 venues are never rewritten in the baseline JSON.
@@ -3450,15 +3579,26 @@ def merge(reference, current, approvals, today):
             result["venues"][index] = approved_venue
             venue_corrected_count += 1
     correction = validate_legacy_correction(approvals, reference, today)
+    cargo_time_corrections = validate_cargo_reference_time_corrections(
+        approvals, reference, today)
     current_prefix = current["events"][:len(reference["events"])]
-    if current_prefix != reference["events"]:
-        require(correction is not None
-                and current_prefix == legacy_corrected_events(reference),
-                "Concert historique modifié sans validation privée persistante")
-    corrected_count = 0
-    if correction and current_prefix == reference["events"]:
-        result["events"][:len(reference["events"])] = legacy_corrected_events(reference)
-        corrected_count = 1
+    # Previously applied changes also need a persistent signed private proof.
+    signed_ids = sorted(cargo_time_corrections)
+    permissible_prior = []
+    for legacy in ((False, True) if correction else (False,)):
+        for mask in range(1 << len(signed_ids)):
+            subset = tuple(event_id for i, event_id in enumerate(signed_ids)
+                           if mask & (1 << i))
+            permissible_prior.append(corrected_reference_event_state(
+                reference, legacy=legacy, cargo_ids=subset))
+    require(current_prefix in permissible_prior,
+            "Concert historique corrigé sans preuve privée persistante")
+    desired = corrected_reference_event_state(
+        reference, legacy=bool(correction), cargo_ids=signed_ids)
+    corrected_count = sum(old != new for old, new
+                          in zip(current_prefix, desired))
+    if corrected_count:
+        result["events"][:len(reference["events"])] = desired
     ids = {x["id"] for x in result["events"]}
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
