@@ -1639,6 +1639,45 @@ LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
 }''')
 
 
+# Three independently rechecked first-party Bikini concert bills.
+# All times on these listings are DOORS, never concert start times.
+BIKINI_OFFICIAL_VERIFIED = {
+    "go-c-20261113-toulouse-tagada-jones": {
+        "title": "Tagada Jones + Les Tambours du Bronx",
+        "date": "2026-11-13",
+        "artistIds": ["tagada-jones", "les-tambours-du-bronx"],
+        "artistNames": ["Tagada Jones", "Les Tambours du Bronx"],
+        "newArtists": [],
+        "genres": ["Punk", "Hardcore"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/13/tagada-jones-les-tambours-du-bronx",
+    },
+    "go-c-20261114-toulouse-beast-in-black": {
+        "title": "Beast in Black + Sonata Arctica + Frozen Crown",
+        "date": "2026-11-14",
+        "artistIds": ["beast-in-black", "sonata-arctica", "frozen-crown"],
+        "artistNames": ["Beast in Black", "Sonata Arctica", "Frozen Crown"],
+        "newArtists": [
+            {"id": "beast-in-black", "name": "Beast in Black"},
+            {"id": "sonata-arctica", "name": "Sonata Arctica"},
+            {"id": "frozen-crown", "name": "Frozen Crown"},
+        ],
+        "genres": ["Heavy Metal"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/14/beast-in-black-sonata-arctica-frozen-crown",
+    },
+    "go-c-20261117-toulouse-slift": {
+        "title": "Slift + Heeka",
+        "date": "2026-11-17",
+        "artistIds": ["slift", "heeka"],
+        "artistNames": ["Slift", "Heeka"],
+        "newArtists": [{"id": "heeka", "name": "Heeka"}],
+        "genres": ["Post-rock", "Rock"],
+        "time": None,
+        "officialUrl": "https://lebikini.com/2026/11/17/slift",
+    },
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -1829,6 +1868,52 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(x["name"]) not in {norm(y["name"]) for y in known_artist_ids.values()}
                         for x in new_artists),
                 "La Laiterie : nouveaux artistes non vérifiés ou identité discordante")
+    elif event.get("venueId") == "le-bikini-toulouse":
+        # New bills are only accepted after an independent, date-specific
+        # verification against the venue detail AND first-party programme.
+        spec = BIKINI_OFFICIAL_VERIFIED.get(event_id)
+        require(spec is not None
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "artistIds", "genres", "time"))
+                and official_url == spec["officialUrl"],
+                "Bikini : affiche non agréée ou champs modifiés")
+        link = urlsplit(official_url)
+        require(link.scheme == "https" and link.hostname == "lebikini.com"
+                and re.fullmatch(r"/2026/11/(13|14|17)/[a-z0-9-]+", link.path)
+                and not link.query and not link.fragment and not link.username
+                and not link.password and not link.port,
+                "Bikini : fiche individuelle officielle HTTPS exigée")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Bikini : signature indépendante trop ancienne ou future")
+        expected = {
+            "official-organizer-or-venue": official_url,
+            "first-party-venue-calendar": "https://lebikini.com/programmation/-/concert",
+        }
+        require(len(evidence) == 2
+                and {p.get("proofType") for p in evidence if isinstance(p, dict)}
+                    == set(expected),
+                "Bikini : fiche et programmation officielles exigées")
+        for proof in evidence:
+            typ = proof.get("proofType") if isinstance(proof, dict) else None
+            require(typ in expected and proof.get("url") == expected[typ]
+                    and proof.get("checkedAt") == checked.isoformat()
+                    and {"artists", "date", "venue", "genre"}.issubset(
+                        set(proof.get("checkedFields") or []))
+                    and "startTime" not in (proof.get("checkedFields") or []),
+                    "Bikini : preuve officielle datée incomplète ou heure inventée")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                    and norm(resolved[aid]["name"]) == norm(name)
+                    for aid, name in zip(ids, spec["artistNames"])),
+                "Bikini : programmation ou identité d'artiste incohérente")
+        require(event.get("time") is None,
+                "Bikini : ouverture des portes ne prouve pas le début")
     elif event.get("venueId") == "secret-place-saint-jean-de-vedas":
         spec=SECRET_PLACE_DECEMBER_VERIFIED[event_id]
         require(reviewer=="independent-official-verifier"
