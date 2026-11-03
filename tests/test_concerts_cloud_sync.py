@@ -2129,7 +2129,7 @@ class ConcertsCloudSyncTests(unittest.TestCase):
     def test_explicit_approval_limit_rejects_instead_of_silent_truncation(self):
         day=__import__("datetime").date(2026,11,2)
         q={"schema":"grossesondes.concert.approvals.v1",
-           "approvals":[{} for _ in range(101)]}
+           "approvals":[{} for _ in range(151)]}
         with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
             merge(BASE,BASE,q,day)
 
@@ -2563,8 +2563,19 @@ class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
         specs = ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED
         approvals = [self.row(spec, event_id)
                      for event_id, spec in specs.items()]
+        # Three artists are already in the live cloud catalogue, but not
+        # in the immutable 193-artist reference. Seed a current-state fixture
+        # with exactly these known identities without rewriting the baseline.
+        current = copy.deepcopy(BASE)
+        catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json")
+                               .read_text(encoding="utf-8"))
+        known = {x["id"] for x in current["artists"]}
+        current["artists"].extend(copy.deepcopy(x)
+                                  for x in catalogue["artists"]
+                                  if x["id"] in {"houle", "can-bardd", "galibot"}
+                                  and x["id"] not in known)
         out, stats = merge(
-            BASE, BASE,
+            BASE, current,
             {"schema": "grossesondes.concert.approvals.v1",
              "approvals": approvals, "venueApprovals": []},
             day,
