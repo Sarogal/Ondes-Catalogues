@@ -2464,5 +2464,132 @@ class BikiniIndependentReviewTests(unittest.TestCase):
 
 
 
+class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
+    """Frozen first-party approvals; never infer show start or artist identity."""
+
+    @staticmethod
+    def row(spec, event_id):
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-03",
+            "officialEvidence": [
+                {"url": spec["officialUrl"],
+                 "proofType": "official-organizer-or-venue",
+                 "checkedAt": "2026-11-03",
+                 "checkedFields": ["artists", "date", "venue", "genre"]},
+                {"url": spec["calendarUrl"],
+                 "proofType": "first-party-venue-calendar",
+                 "checkedAt": "2026-11-03",
+                 "checkedFields": ["artists", "date", "venue"]},
+            ],
+            "event": {
+                "id": event_id,
+                "title": spec["title"],
+                "date": spec["date"],
+                "time": None,
+                "venueId": spec["venueId"],
+                "artistIds": copy.deepcopy(spec["artistIds"]),
+                "genres": copy.deepcopy(spec["genres"]),
+                "status": "confirmed",
+                "officialUrl": spec["officialUrl"],
+                "sourceType": "salle",
+            },
+            "newArtists": copy.deepcopy(spec["newArtists"]),
+        }
+
+    @staticmethod
+    def known(spec):
+        fresh_ids = {a["id"] for a in spec["newArtists"]}
+        return {
+            aid: {"id": aid, "name": name, "aliases": []}
+            for aid, name in zip(spec["artistIds"], spec["artistNames"])
+            if aid not in fresh_ids
+        }
+
+    def test_four_bills_validate_and_reject_six_forms_of_tampering(self):
+        from concerts_cloud_sync import (
+            ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED, validate_approval
+        )
+        day = __import__("datetime").date(2026, 11, 3)
+        venue_ids = ("rockstore-montpellier", "the-black-lab-wasquehal")
+        venues = {v["id"]: v for v in BASE["venues"]
+                  if v["id"] in venue_ids}
+        self.assertEqual(len(ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED), 4)
+        for event_id, spec in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED.items():
+            with self.subTest(event_id=event_id):
+                row = self.row(spec, event_id)
+                evt, artists = validate_approval(
+                    row, venues, self.known(spec), day)
+                self.assertEqual(evt["id"], event_id)
+                self.assertIsNone(evt["time"])
+                self.assertEqual(set(artists),
+                                 {x["id"] for x in spec["newArtists"]})
+                for variant in ("inferred-time", "changed-date",
+                                "changed-genre", "wrong-host",
+                                "missing-calendar", "changed-artist",
+                                "wrong-venue", "forged-review"):
+                    candidate = copy.deepcopy(row)
+                    if variant == "inferred-time":
+                        candidate["event"]["time"] = "19:00"
+                    elif variant == "changed-date":
+                        candidate["event"]["date"] = "2026-12-31"
+                    elif variant == "changed-genre":
+                        candidate["event"]["genres"] = ["Rap"]
+                    elif variant == "wrong-host":
+                        candidate["event"]["officialUrl"] = "https://evil.example/gig"
+                    elif variant == "missing-calendar":
+                        candidate["officialEvidence"].pop()
+                    elif variant == "changed-artist":
+                        candidate["event"]["artistIds"] = ["fake-act"]
+                    elif variant == "wrong-venue":
+                        candidate["event"]["venueId"] = (
+                            "the-black-lab-wasquehal"
+                            if spec["venueId"] == "rockstore-montpellier"
+                            else "rockstore-montpellier"
+                        )
+                    elif variant == "forged-review":
+                        candidate["reviewedBy"] = "automated-official-recheck"
+                    with self.subTest(variant=variant), self.assertRaises(
+                            (ValueError, KeyError)):
+                        validate_approval(
+                            candidate, venues, self.known(spec), day)
+
+    def test_four_first_party_bills_merge_without_touching_reference(self):
+        from concerts_cloud_sync import (
+            ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED,
+        )
+        day = __import__("datetime").date(2026, 11, 3)
+        specs = ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED
+        approvals = [self.row(spec, event_id)
+                     for event_id, spec in specs.items()]
+        out, stats = merge(
+            BASE, BASE,
+            {"schema": "grossesondes.concert.approvals.v1",
+             "approvals": approvals, "venueApprovals": []},
+            day,
+        )
+        self.assertEqual(stats["held"], [])
+        self.assertEqual(stats["newEvents"], 4)
+        self.assertEqual(stats["newArtists"], 2)
+        self.assertEqual(out["events"][:127], BASE["events"])
+        self.assertEqual(out["venues"][:53], BASE["venues"])
+        protect_reference(BASE, out)
+        validate_catalogue(out)
+
+    def test_queue_ceiling_is_still_enforced_at_150(self):
+        from concerts_cloud_sync import ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED
+        event_id, spec = next(iter(
+            ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED.items()))
+        row = self.row(spec, event_id)
+        with self.assertRaisesRegex(ValueError, "Trop d.approbations"):
+            merge(
+                BASE, BASE,
+                {"schema": "grossesondes.concert.approvals.v1",
+                 "approvals": [row] * 151, "venueApprovals": []},
+                __import__("datetime").date(2026, 11, 3),
+            )
+
+
 if __name__=="__main__":
     unittest.main()
