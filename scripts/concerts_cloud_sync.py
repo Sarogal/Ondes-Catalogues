@@ -2933,6 +2933,63 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(any(re.search(r"\b(punk|hardcore|metal|doom|stoner)\b",
                               norm(genre)) for genre in event["genres"]),
                 "Brin de Zinc : genre métal/punk officiel absent")
+    elif event.get("venueId") in ("l-astrolabe-orleans", "le-106-rouen"):
+        # Two regional venues: require a named first-party event and exact
+        # field-level supporting evidence. Neither clock nor generic event
+        # listing is enough to invent a musical start time.
+        venue_id = event["venueId"]
+        host, pattern = (
+            ("www.lastrolabe.org", r"/agenda/[a-z0-9-]+/")
+            if venue_id == "l-astrolabe-orleans"
+            else ("le106.com", r"/agenda/[a-z0-9-]+")
+        )
+        u = urlsplit(official_url)
+        require(reviewer == "independent-official-verifier"
+                and event["sourceType"] == "salle" and event.get("time") is None
+                and u.hostname == host and re.fullmatch(pattern, u.path)
+                and not u.username and not u.password and not u.port
+                and not u.query and not u.fragment,
+                "Astrolabe/106 : vérificateur, fiche officielle ou horaire invalides")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Astrolabe/106 : date de vérification invalide")
+        require(len(evidence) == 2 and all(isinstance(p, dict) for p in evidence),
+                "Astrolabe/106 : deux preuves documentaires distinctes nécessaires")
+        primary, secondary = evidence
+        fields = set(primary.get("checkedFields") or [])
+        require(primary.get("url") == official_url
+                and primary.get("proofType") == "official-organizer-or-venue"
+                and primary.get("checkedAt") == reviewed.isoformat()
+                and {"date", "venue", "genre"}.issubset(fields)
+                and ("artists" in fields or "leadArtist" in fields)
+                and "startTime" not in fields,
+                "Astrolabe/106 : fiche individuelle incomplète ou heure non prouvée")
+        allowed_second = ({
+            "first-party-venue-calendar": "https://www.lastrolabe.org/agenda/",
+            "independent-organizer-confirmation":
+                "https://www.helloasso.com/associations/slaptrack/evenements/final-show-orpheum-black",
+            "independent-local-radio-announcement":
+                "https://www.intensite.net/orleans-45-concert-la-jungle-sodom-sagesse",
+        } if venue_id == "l-astrolabe-orleans" else {
+            "first-party-venue-calendar": "https://le106.com/agenda",
+            "authorized-ticket-distributor":
+                "https://www.eventim.fr/eventseries/cosmic-trip-tour-4197731/",
+            "independent-organizer-tour":
+                "https://www.aegpresents.fr/event/dynamite-shakers/",
+        })
+        secondary_fields = set(secondary.get("checkedFields") or [])
+        require(secondary.get("proofType") in allowed_second
+                and secondary.get("url") == allowed_second.get(secondary.get("proofType"))
+                and secondary.get("url") != official_url
+                and secondary.get("checkedAt") == reviewed.isoformat()
+                and {"artists", "date", "venue"}.issubset(secondary_fields)
+                and "startTime" not in secondary_fields,
+                "Astrolabe/106 : deuxième preuve ou liste d'artistes non conforme")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved and norm(resolved[aid]["name"]).replace(" ", "-") == aid
+                    for aid in ids),
+                "Astrolabe/106 : identité des groupes non corroborée")
     return event, added
 
 
