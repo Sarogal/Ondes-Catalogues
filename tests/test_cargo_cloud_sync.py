@@ -90,9 +90,15 @@ class CargoWhitelistTests(unittest.TestCase):
 
     def test_no_duplicate_festivals_or_published_concert(self):
         data=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
-        self.assertFalse(any(e["id"]==ID for e in data["events"]))
-        self.assertFalse(any(e["date"]=="2026-11-28" and e["venueId"]=="le-cargo-caen"
-                             for e in data["events"]))
+        ids=[e for e in data["events"] if e["id"]==ID]
+        self.assertLessEqual(len(ids),1)
+        if ids:
+            spec=sync.CARGO_VERIFIED[ID]
+            for field in ("title","date","time","venueId","artistIds","genres","officialUrl"):
+                self.assertEqual(ids[0][field],spec[field])
+        clashes=[e for e in data["events"] if e["date"]=="2026-11-28"
+                 and e["venueId"]=="le-cargo-caen" and "fff" in e["artistIds"]]
+        self.assertLessEqual(len(clashes),1)
 
 if __name__=="__main__":
     unittest.main()
