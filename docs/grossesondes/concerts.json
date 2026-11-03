@@ -1776,6 +1776,11 @@
       "id": "diiv",
       "name": "DIIV",
       "aliases": []
+    },
+    {
+      "id": "hanry",
+      "name": "Hanry",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10625,6 +10630,35 @@
       "officialUrl": "https://antipode-rennes.fr/agenda/diiv-2027",
       "sourceType": "salle",
       "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Antipode",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261216-rennes-hanry",
+      "title": "Apéro-concert avec Hanry",
+      "date": "2026-12-16",
+      "artistIds": [
+        "hanry"
+      ],
+      "venueId": "antipode-rennes",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://antipode-rennes.fr/agenda/hanry-2026",
+      "sourceType": "salle",
+      "time": "19:30",
       "timeMeaning": "début du concert",
       "organizer": "Antipode",
       "ticketUrl": null,
