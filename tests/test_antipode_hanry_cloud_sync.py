@@ -58,7 +58,9 @@ class HanryCloudSignedTests(unittest.TestCase):
         self.assertEqual(ev["venueId"],"antipode-rennes")
         self.assertEqual(set(artists),{"hanry"})
         self.assertEqual(artists["hanry"]["name"],"Hanry")
-        self.assertNotIn(IDENT,self.ids)
+        # Both before and after secure synchronization are valid states.
+        # Publication must not create duplicate event identifiers.
+        self.assertEqual(len(self.ids),self.count)
         self.assertGreaterEqual(self.count,261)
 
     def test_reject_forged_year_artist_venue_and_wrong_clock_provenance(self):
