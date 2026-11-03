@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
-from concerts_cloud_sync import merge, protect_reference, validate_catalogue
+from concerts_cloud_sync import merge, protect_reference, validate_catalogue, validate_approval
 
 BASE=json.loads((ROOT/"docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
 NOW=__import__("datetime").date(2026,11,1)
@@ -40,6 +40,109 @@ def approval(event_id="go-c-20270201-nantes-groupe-essai"):
 
 
 class ConcertsCloudSyncTests(unittest.TestCase):
+    def test_regional_orleans_rouen_six_official_approvals_only(self):
+        """Six precise bills, no invented start, secondary proof by its real origin."""
+        import datetime as dt
+        published=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        venues={v["id"]:v for v in published["venues"]}
+        artists={a["id"]:a for a in published["artists"]}
+        secondary={
+            "astro-calendar":("first-party-venue-calendar",
+                              "https://www.lastrolabe.org/agenda/"),
+            "radio":("independent-local-radio-announcement",
+                     "https://www.intensite.net/orleans-45-concert-la-jungle-sodom-sagesse"),
+            "slaptrack":("independent-organizer-confirmation",
+                         "https://www.helloasso.com/associations/slaptrack/evenements/final-show-orpheum-black"),
+            "rouen-calendar":("first-party-venue-calendar","https://le106.com/agenda"),
+            "eventim":("authorized-ticket-distributor",
+                       "https://www.eventim.fr/eventseries/cosmic-trip-tour-4197731/"),
+            "aeg":("independent-organizer-tour",
+                   "https://www.aegpresents.fr/event/dynamite-shakers/"),
+        }
+        # id, venue, date, headline, artistIds, newArtists, official detail, genre,
+        # proof 2, detail-only headliner?
+        cases=[
+            ("go-c-20261119-orleans-razorlight","l-astrolabe-orleans",
+             "2026-11-19","Razorlight + Rubber Legs",
+             ["razorlight","rubber-legs"],["Razorlight","Rubber Legs"],
+             "https://www.lastrolabe.org/agenda/razorlight/","Indie Rock","astro-calendar",True),
+            ("go-c-20270121-orleans-la-jungle","l-astrolabe-orleans",
+             "2027-01-21","La Jungle + Sodom & Sagesse",
+             ["la-jungle","sodom-sagesse"],["Sodom & Sagesse"],
+             "https://www.lastrolabe.org/agenda/la-jungle-sodom-sagesse/","Noise Rock","radio",False),
+            ("go-c-20270129-orleans-orpheum-black","l-astrolabe-orleans",
+             "2027-01-29","Orpheum Black + Pledge of Healing — Le dernier acte",
+             ["orpheum-black","pledge-of-healing"],["Orpheum Black","Pledge of Healing"],
+             "https://www.lastrolabe.org/agenda/orpheum-black-le-dernier-acte/","Rock","slaptrack",True),
+            ("go-c-20261117-rouen-elktrk-skin","le-106-rouen",
+             "2026-11-17","ELKTRK SKIN + YÜ + KAASK",
+             ["elktrk-skin","yu-band","kaask"],["ELKTRK SKIN","YÜ","KAASK"],
+             "https://le106.com/agenda/elktrk-skin-yu-kaask","Punk Rock","rouen-calendar",False),
+            ("go-c-20270128-rouen-powersolo","le-106-rouen",
+             "2027-01-28","Powersolo + Weird Omen + DJ Tony Garagist",
+             ["powersolo","weird-omen","dj-tony-garagist"],
+             ["Powersolo","Weird Omen","DJ Tony Garagist"],
+             "https://le106.com/agenda/power-solo-weird-omen-dj-tony-garagist",
+             "Garage Punk","eventim",False),
+            ("go-c-20270313-rouen-dynamite-shakers","le-106-rouen",
+             "2027-03-13","Dynamite Shakers",
+             ["dynamite-shakers"],[],
+             "https://le106.com/agenda/dynamite-shakers","Punk Rock","aeg",False),
+        ]
+        day=dt.date(2026,11,3)
+        reviewed="2026-11-03"
+        valid=[]
+        for eid,venue,date,title,ids,names,source,genre,key,head_only in cases:
+            typ,url=secondary[key]
+            row={
+                "reviewDecision":"approved","reviewedBy":"independent-official-verifier",
+                "reviewedAt":reviewed,
+                "officialEvidence":[
+                    {"url":source,"proofType":"official-organizer-or-venue",
+                     "checkedAt":reviewed,
+                     "checkedFields":(["leadArtist","date","venue","genre"] if head_only
+                                      else ["artists","date","venue","genre"])},
+                    {"url":url,"proofType":typ,"checkedAt":reviewed,
+                     "checkedFields":["artists","date","venue"]},
+                ],
+                "event":{
+                    "id":eid,"title":title,"date":date,"time":None,
+                    "artistIds":ids,"venueId":venue,"genres":[genre],
+                    "status":"confirmed","officialUrl":source,
+                    "sourceType":"salle",
+                },
+                "newArtists":[
+                    {"id":name_id,"name":name}
+                    for name_id,name in zip(
+                        [i for i in ids if i not in artists], names)
+                ],
+            }
+            with self.subTest(event=eid):
+                parsed,added=validate_approval(row,venues,artists,day)
+                self.assertEqual(parsed["artistIds"],ids)
+                self.assertIsNone(parsed["time"])
+                self.assertTrue(all(x in ids for x in added))
+                valid.append(row)
+        for label in ("wrong-host","invented-start","missing-support-proof",
+                      "wrong-firstparty-fields","unsigned","future-check"):
+            for baseline in (valid[0],valid[3]):
+                row=copy.deepcopy(baseline)
+                if label=="wrong-host":
+                    row["event"]["officialUrl"]="https://wrong.example/agenda/faux"
+                elif label=="invented-start":
+                    row["event"]["time"]="20:00"
+                elif label=="missing-support-proof":
+                    row["officialEvidence"][1]["checkedFields"]=["date","venue"]
+                elif label=="wrong-firstparty-fields":
+                    row["officialEvidence"][0]["checkedFields"]=["date","venue","genre"]
+                elif label=="unsigned":
+                    row["reviewedBy"]="automated-official-recheck"
+                else:
+                    row["reviewedAt"]="2026-11-04"
+                with self.subTest(case=label,venue=baseline["event"]["venueId"]):
+                    with self.assertRaises((ValueError,KeyError)):
+                        validate_approval(row,venues,artists,day)
+
     def pilot_queue(self, with_events=True):
         from concerts_cloud_sync import PILOT_VENUES
         records=[]
