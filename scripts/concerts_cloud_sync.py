@@ -1453,6 +1453,152 @@ LAITERIE_OFFICIAL_VERIFIED = json.loads(r'''{
     "time": null,
     "officialUrl": "https://www.artefact.org/la-laiterie/evenements/eisbrecher-2027/",
     "calendarUrl": "https://www.artefact.org/evenements/page/5/"
+  },
+  "go-c-20261205-strasbourg-lebanon-hanover": {
+    "title": "Lebanon Hanover + Clan of Xymox + Kas Product",
+    "date": "2026-12-05",
+    "artistIds": [
+      "lebanon-hanover",
+      "clan-of-xymox",
+      "kas-product"
+    ],
+    "artistNames": [
+      "Lebanon Hanover",
+      "Clan of Xymox",
+      "Kas Product"
+    ],
+    "genres": [
+      "Post Punk"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/lebanon-hanover-clan-of-xymox-guest/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/2/",
+    "newArtists": [
+      {
+        "id": "lebanon-hanover",
+        "name": "Lebanon Hanover"
+      },
+      {
+        "id": "clan-of-xymox",
+        "name": "Clan of Xymox"
+      },
+      {
+        "id": "kas-product",
+        "name": "Kas Product"
+      }
+    ]
+  },
+  "go-c-20261218-strasbourg-magma": {
+    "title": "Magma",
+    "date": "2026-12-18",
+    "artistIds": [
+      "magma"
+    ],
+    "artistNames": [
+      "Magma"
+    ],
+    "genres": [
+      "Rock progressif"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/magma2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/2/",
+    "newArtists": [
+      {
+        "id": "magma",
+        "name": "Magma"
+      }
+    ]
+  },
+  "go-c-20270224-strasbourg-cachemire": {
+    "title": "Cachemire + La Phaze + Bob's Not Dead",
+    "date": "2027-02-24",
+    "artistIds": [
+      "cachemire",
+      "la-phaze",
+      "bobs-not-dead"
+    ],
+    "artistNames": [
+      "Cachemire",
+      "La Phaze",
+      "Bob's Not Dead"
+    ],
+    "genres": [
+      "Punk Rock"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/cachemire-la-phaze-bobs-not-dead/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/3/",
+    "newArtists": [
+      {
+        "id": "cachemire",
+        "name": "Cachemire"
+      },
+      {
+        "id": "la-phaze",
+        "name": "La Phaze"
+      },
+      {
+        "id": "bobs-not-dead",
+        "name": "Bob's Not Dead"
+      }
+    ]
+  },
+  "go-c-20270404-strasbourg-igorrr": {
+    "title": "Igorrr + Secret Chiefs 3 + Fange",
+    "date": "2027-04-04",
+    "artistIds": [
+      "igorrr",
+      "secret-chiefs-3",
+      "fange"
+    ],
+    "artistNames": [
+      "Igorrr",
+      "Secret Chiefs 3",
+      "Fange"
+    ],
+    "genres": [
+      "Metal expérimental"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/igorrr-secret-chiefs-3-fange/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/4/",
+    "newArtists": [
+      {
+        "id": "igorrr",
+        "name": "Igorrr"
+      },
+      {
+        "id": "secret-chiefs-3",
+        "name": "Secret Chiefs 3"
+      },
+      {
+        "id": "fange",
+        "name": "Fange"
+      }
+    ]
+  },
+  "go-c-20270422-strasbourg-the-pineapple-thief": {
+    "title": "The Pineapple Thief",
+    "date": "2027-04-22",
+    "artistIds": [
+      "the-pineapple-thief"
+    ],
+    "artistNames": [
+      "The Pineapple Thief"
+    ],
+    "genres": [
+      "Rock progressif"
+    ],
+    "time": null,
+    "officialUrl": "https://www.artefact.org/la-laiterie/evenements/the-pineapple-thief-far-and-wide-european-tour-2027/",
+    "calendarUrl": "https://www.artefact.org/evenements/page/4/",
+    "newArtists": [
+      {
+        "id": "the-pineapple-thief",
+        "name": "The Pineapple Thief"
+      }
+    ]
   }
 }''')
 
@@ -1635,10 +1781,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "La Laiterie : preuve datée ou champ début non corroboré")
         resolved = dict(known_artist_ids)
         resolved.update(added)
-        require(new_artists == [] and all(aid in known_artist_ids for aid in ids)
-                and all(norm(resolved[aid]["name"]) == norm(name)
-                        for aid,name in zip(ids,spec["artistNames"])),
-                "La Laiterie : nom officiel ou identité d'artiste discordant")
+        require(new_artists == spec.get("newArtists", [])
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+                        for aid,name in zip(ids,spec["artistNames"]))
+                and all(norm(x["name"]) not in {norm(y["name"]) for y in known_artist_ids.values()}
+                        for x in new_artists),
+                "La Laiterie : nouveaux artistes non vérifiés ou identité discordante")
     elif event.get("venueId") == "secret-place-saint-jean-de-vedas":
         spec=SECRET_PLACE_DECEMBER_VERIFIED[event_id]
         require(reviewer=="independent-official-verifier"
