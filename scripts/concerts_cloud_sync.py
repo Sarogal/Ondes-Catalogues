@@ -1817,6 +1817,60 @@ BIKINI_OFFICIAL_VERIFIED = {
     },
 }
 
+
+# Four first-party gig bills, each verified against both an individual page and
+# the venue's official listing. Old city-center pins are deliberately unchanged.
+# The displayed event clock is not explicitly the live performance start.
+ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED = {
+    "go-c-20261119-montpellier-mass-hysteria": {
+        "title": "Mass Hysteria",
+        "date": "2026-11-19", "time": None,
+        "venueId": "rockstore-montpellier",
+        "artistIds": ["mass-hysteria"],
+        "artistNames": ["Mass Hysteria"],
+        "newArtists": [],
+        "genres": ["Néo-Metal"],
+        "officialUrl": "https://rockstore.fr/mass-hysteria-19-novembre-2026/",
+        "calendarUrl": "https://rockstore.fr/concerts/",
+    },
+    "go-c-20261201-montpellier-shaarghot": {
+        "title": "Shaârghot + Solitaris + Ghost Dance",
+        "date": "2026-12-01", "time": None,
+        "venueId": "rockstore-montpellier",
+        "artistIds": ["shaarghot", "solitaris", "ghost-dance"],
+        "artistNames": ["Shaârghot", "Solitaris", "Ghost Dance"],
+        "newArtists": [],
+        "genres": ["Metal industriel"],
+        "officialUrl": "https://rockstore.fr/shaarghot-solitaris-ghost-dance-01-decembre-2026/",
+        "calendarUrl": "https://rockstore.fr/concerts/",
+    },
+    "go-c-20270220-wasquehal-colour-haze": {
+        "title": "Colour Haze + Smokemaster",
+        "date": "2027-02-20", "time": None,
+        "venueId": "the-black-lab-wasquehal",
+        "artistIds": ["colour-haze", "smokemaster"],
+        "artistNames": ["Colour Haze", "Smokemaster"],
+        "newArtists": [
+            {"id": "colour-haze", "name": "Colour Haze"},
+            {"id": "smokemaster", "name": "Smokemaster"},
+        ],
+        "genres": ["Stoner Rock"],
+        "officialUrl": "https://theblacklab.fr/agenda/colour-haze-smokemaster/",
+        "calendarUrl": "https://theblacklab.fr/agenda/liste/page/2/",
+    },
+    "go-c-20270305-wasquehal-houle": {
+        "title": "Houle + Cân Bardd + Galibot",
+        "date": "2027-03-05", "time": None,
+        "venueId": "the-black-lab-wasquehal",
+        "artistIds": ["houle", "can-bardd", "galibot"],
+        "artistNames": ["Houle", "Cân Bardd", "Galibot"],
+        "newArtists": [],
+        "genres": ["Black Metal"],
+        "officialUrl": "https://theblacklab.fr/agenda/houle-can-bardd-galibot/",
+        "calendarUrl": "https://theblacklab.fr/agenda/liste/page/2/",
+    },
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -1841,6 +1895,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if event_id in BIKINI_OFFICIAL_VERIFIED:
         require(event.get("venueId") == "le-bikini-toulouse",
                 "Identifiant de concert Bikini affecté à une autre salle")
+    if event_id in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED:
+        require(event.get("venueId") ==
+                ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED[event_id]["venueId"],
+                "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
     require(isinstance(event.get("title"), str) and
@@ -2016,6 +2074,61 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(x["name"]) not in {norm(y["name"]) for y in known_artist_ids.values()}
                         for x in new_artists),
                 "La Laiterie : nouveaux artistes non vérifiés ou identité discordante")
+    elif event.get("venueId") in ("rockstore-montpellier",
+                                   "the-black-lab-wasquehal"):
+        # Existing venue IDs may have coarse historic pins, but never reuse
+        # that fact to admit an unchecked lineup, date, start or URL.
+        spec = ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED.get(event_id)
+        require(spec is not None
+                and event.get("venueId") == spec["venueId"]
+                and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "artistIds", "genres", "time"))
+                and official_url == spec["officialUrl"],
+                "Rockstore/Black Lab : affiche non agréée ou détails altérés")
+        uri = urlsplit(official_url)
+        allowed_host = ("rockstore.fr" if spec["venueId"] ==
+                        "rockstore-montpellier" else "theblacklab.fr")
+        require(uri.scheme == "https" and uri.hostname == allowed_host
+                and uri.path == urlsplit(spec["officialUrl"]).path
+                and not uri.username and not uri.password and not uri.port
+                and not uri.query and not uri.fragment,
+                "Rockstore/Black Lab : URL individuelle officielle exacte exigée")
+        reviewed_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                "Rockstore/Black Lab : vérification périmée ou future")
+        requirements = {
+            "official-organizer-or-venue": (
+                spec["officialUrl"], {"artists", "date", "venue", "genre"}),
+            "first-party-venue-calendar": (
+                spec["calendarUrl"], {"artists", "date", "venue"}),
+        }
+        require(len(evidence) == 2 and
+                {e.get("proofType") for e in evidence if isinstance(e, dict)}
+                == set(requirements),
+                "Rockstore/Black Lab : détail et calendrier officiels requis")
+        for proof in evidence:
+            typ = proof.get("proofType") if isinstance(proof, dict) else None
+            req = requirements.get(typ)
+            require(req is not None and proof.get("url") == req[0]
+                    and proof.get("checkedAt") == reviewed_at.isoformat()
+                    and req[1].issubset(set(proof.get("checkedFields") or []))
+                    and "startTime" not in (proof.get("checkedFields") or []),
+                    "Rockstore/Black Lab : preuves ou heure du début invalides")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                    and norm(resolved[aid]["name"]) == norm(name)
+                    for aid, name in zip(ids, spec["artistNames"]))
+                and all(norm(x["name"]) not in
+                        {norm(y["name"]) for y in known_artist_ids.values()}
+                        for x in new_artists),
+                "Rockstore/Black Lab : groupes ou identités non documentés")
+        require(event.get("time") is None,
+                "Rockstore/Black Lab : heure de début non confirmée")
     elif event.get("venueId") == "le-bikini-toulouse":
         # New bills are only accepted after an independent, date-specific
         # verification against the venue detail AND first-party programme.
@@ -2784,7 +2897,7 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("venue", {}).get("id"),
                                    "reason": str(ex)})
-    require(len(approvals["approvals"]) <= 100, "Trop d’approbations en un seul lot")
+    require(len(approvals["approvals"]) <= 150, "Trop d’approbations en un seul lot")
     for entry in approvals["approvals"]:
         try:
             incoming = entry.get("event") or {}
@@ -2830,7 +2943,7 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
-    require(len(approvals["approvals"]) <= 100, "Trop d'approbations par lot")
+    require(len(approvals["approvals"]) <= 150, "Trop d'approbations par lot")
     if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
