@@ -1293,6 +1293,27 @@ HYDROPHONE_VERIFIED = {
 # La Carène Brest: only these 2 nominal, non-festival first-party concert bills.
 # The official SPIP agenda and first-party detail must both be checked.
 CARENE_VERIFIED = {
+    # Approbations privées GrossesOndes #124, revues nominatives 03/11/2026.
+    # Les deux concerts doivent être prouvés séparément par la fiche officielle
+    # et la programmation de La Carène, jamais par une recherche générique.
+    "go-c-20261209-brest-fff-howlin-jaws": {
+        "title": "FFF + Howlin’ Jaws",
+        "date": "2026-12-09",
+        "time": None,
+        "artistIds": ["fff", "howlin-jaws"],
+        "genres": ["Rock", "Funk Rock"],
+        "officialUrl": "https://www.lacarene.fr/fff-howlin-jaws.html",
+        "newArtistIds": ["fff"],
+    },
+    "go-c-20270402-brest-les-fatals-picards": {
+        "title": "Les Fatals Picards",
+        "date": "2027-04-02",
+        "time": None,
+        "artistIds": ["les-fatals-picards"],
+        "genres": ["Rock"],
+        "officialUrl": "https://www.lacarene.fr/les-fatals-picards.html",
+        "newArtistIds": ["les-fatals-picards"],
+    },
     "go-c-20261107-brest-dame-area-tact": {
         "title": "Dame Area + Tact",
         "date": "2026-11-07",

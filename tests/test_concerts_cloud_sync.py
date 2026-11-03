@@ -2851,5 +2851,102 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
         self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 3)
 
 
+
+class BretagneStrictAllowlist20261103Tests(unittest.TestCase):
+    """Deux dates brestoises admises nominativement, jamais les pistes brutes."""
+
+    @staticmethod
+    def row(event_id):
+        from concerts_cloud_sync import CARENE_VERIFIED
+        spec = CARENE_VERIFIED[event_id]
+        new = {
+            "fff": "FFF",
+            "les-fatals-picards": "Les Fatals Picards",
+        }
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-03",
+            "officialEvidence": [
+                {
+                    "url": spec["officialUrl"],
+                    "proofType": "official-organizer-or-venue",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["artists", "date", "venue", "genre", "startTime"],
+                },
+                {
+                    "url": "https://www.lacarene.fr/-agenda-.html",
+                    "proofType": "first-party-venue-calendar",
+                    "checkedAt": "2026-11-03",
+                    "checkedFields": ["artists", "date", "venue"],
+                },
+            ],
+            "event": {
+                "id": event_id,
+                "title": spec["title"],
+                "date": spec["date"],
+                "time": spec["time"],
+                "artistIds": list(spec["artistIds"]),
+                "venueId": "la-carene-brest",
+                "genres": list(spec["genres"]),
+                "status": "confirmed",
+                "officialUrl": spec["officialUrl"],
+                "sourceType": "salle",
+            },
+            "newArtists": [{"id": aid, "name": new[aid]} for aid in spec["newArtistIds"]],
+        }
+
+    @staticmethod
+    def source_data():
+        cat = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        venue = next(v for v in cat["venues"] if v["id"] == "la-carene-brest")
+        # La lecture du catalogue ne réhabilite pas les artistes déjà nouveaux
+        # si une exécution de synchronisation a entre-temps publié les dates.
+        excluded = {"fff", "les-fatals-picards"}
+        artists = {x["id"]: x for x in cat["artists"] if x["id"] not in excluded}
+        return {"la-carene-brest": venue}, artists
+
+    def test_two_named_brest_approvals_pass_with_both_first_party_proofs(self):
+        venues, artists = self.source_data()
+        for event_id in (
+            "go-c-20261209-brest-fff-howlin-jaws",
+            "go-c-20270402-brest-les-fatals-picards",
+        ):
+            with self.subTest(event_id=event_id):
+                row = self.row(event_id)
+                event, added = validate_approval(
+                    row, venues, artists, __import__("datetime").date(2026, 11, 3))
+                self.assertEqual(event["id"], event_id)
+                self.assertIsNone(event["time"])
+                self.assertEqual(list(added), [a["id"] for a in row["newArtists"]])
+
+    def test_no_approval_without_original_official_calendar_or_without_exact_bill(self):
+        venues, artists = self.source_data()
+        for event_id in (
+            "go-c-20261209-brest-fff-howlin-jaws",
+            "go-c-20270402-brest-les-fatals-picards",
+        ):
+            row = self.row(event_id)
+            invalid = []
+            a = copy.deepcopy(row)
+            a["officialEvidence"][1]["url"] = "https://billetterie.example.org/agenda"
+            invalid.append(a)
+            a = copy.deepcopy(row)
+            a["event"]["time"] = "20:00"  # portes ou heure non approuvée
+            invalid.append(a)
+            a = copy.deepcopy(row)
+            a["event"]["date"] = "2027-02-25"
+            invalid.append(a)
+            a = copy.deepcopy(row)
+            a["event"]["id"] += "-autre"
+            invalid.append(a)
+            for payload in invalid:
+                with self.subTest(event_id=event_id, changed=payload["event"]):
+                    with self.assertRaises((ValueError, KeyError)):
+                        validate_approval(
+                            payload, venues, artists,
+                            __import__("datetime").date(2026, 11, 3))
+
+
 if __name__=="__main__":
     unittest.main()

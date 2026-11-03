@@ -45,9 +45,13 @@ class CareneApprovedTests(unittest.TestCase):
         self.assertAlmostEqual(v["latitude"],48.38479)
         self.assertAlmostEqual(v["longitude"],-4.48195)
 
-    def test_both_bills_approved_with_explicit_start_and_all_artists(self):
-        self.assertEqual(len(sync.CARENE_VERIFIED),2)
-        for event_id in sync.CARENE_VERIFIED:
+    def test_both_original_bills_keep_explicit_start_and_all_artists(self):
+        original_ids = (
+            "go-c-20261107-brest-dame-area-tact",
+            "go-c-20261128-brest-mary-bell-prisonnier-du-temps",
+        )
+        self.assertTrue(set(original_ids).issubset(sync.CARENE_VERIFIED))
+        for event_id in original_ids:
             with self.subTest(event_id=event_id):
                 event,added=sync.validate_approval(
                     approval(event_id),{VENUE_ID:PILOT["venue"]},{},TODAY)
