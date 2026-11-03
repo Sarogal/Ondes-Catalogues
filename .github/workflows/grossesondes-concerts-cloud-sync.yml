@@ -24,6 +24,8 @@ on:
   # Publier uniquement les trois concerts approuvés, sans heure inférée.
   # Sync après approbation indépendante de Hydrophone Face A et du concert
   # Revnoir + Ice Sealed Eyes, 2027-02-10 (PR privée #97, publique #51).
+  # Synchronisation La Laiterie après signature privée de neuf affiches datées
+  # (GrossesOndes PR #100, 03/11/2026) ; aucune règle de contrôle assouplie.
   schedule:
     - cron: '17 */3 * * *'
   push:
