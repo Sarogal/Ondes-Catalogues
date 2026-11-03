@@ -2693,6 +2693,19 @@
       "longitude": 0.1206928,
       "geoPrecision": "position GPS indicative du site du Tetris transmise par l'Office de Tourisme Le Havre Etretat Normandie via Cirkwi; point du lieu non assimilé à l'entrée des spectateurs. Les fiches individuelles du Tetris renvoient vers un repère Google Maps proche (49.503852, 0.120886).",
       "geoSource": "https://www.cirkwi.com/fr/point-interet/2508080-le-tetris"
+    },
+    {
+      "id": "bonjour-minuit-saint-brieuc",
+      "name": "Bonjour Minuit",
+      "address": "Place Nina Simone",
+      "postalCode": "22000",
+      "city": "Saint-Brieuc",
+      "department": "22",
+      "region": "Bretagne",
+      "latitude": 48.5196,
+      "longitude": -2.7852,
+      "geoPrecision": "point indicatif du lieu sur la fiche gouvernementale Acceslibre, coordonnées arrondies à quatre décimales (~10 m latitude), non assimilées à l'entrée des concerts",
+      "geoSource": "https://acceslibre.beta.gouv.fr/app/22-saint-brieuc/a/salle-de-spectacle/erp/bonjour-minuit/"
     }
   ],
   "events": [
@@ -10661,6 +10674,35 @@
       "time": "19:30",
       "timeMeaning": "début du concert",
       "organizer": "Antipode",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261202-saint-brieuc-magma",
+      "title": "Magma",
+      "date": "2026-12-02",
+      "artistIds": [
+        "magma"
+      ],
+      "venueId": "bonjour-minuit-saint-brieuc",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bonjour-minuit.fr/evenement/magma-02dec26/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Bonjour Minuit",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
