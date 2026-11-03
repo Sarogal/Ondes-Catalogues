@@ -2430,6 +2430,39 @@ class BikiniIndependentReviewTests(unittest.TestCase):
                         validate_approval(invalid, venues, known, day)
 
 
+    def test_bikini_old_url_slug_does_not_allow_replaced_opening_act(self):
+        """The historic URL says Tailgunner; the live official bill says Enforcer."""
+        from concerts_cloud_sync import BIKINI_OFFICIAL_VERIFIED, validate_approval
+        identifier = "go-c-20261129-toulouse-accept"
+        spec = BIKINI_OFFICIAL_VERIFIED[identifier]
+        self.assertIn("tailgunner", spec["officialUrl"])
+        self.assertEqual(spec["artistNames"], ["Accept", "Dynazty", "Enforcer"])
+        self.assertEqual(spec["genres"], ["Heavy Metal"])
+        row = self.approved_row(spec, identifier)
+        venues = {
+            "le-bikini-toulouse": next(
+                v for v in BASE["venues"] if v["id"] == "le-bikini-toulouse")
+        }
+        known = {
+            aid: {"id": aid, "name": name, "aliases": []}
+            for aid, name in zip(spec["artistIds"], spec["artistNames"])
+        }
+        # Even if the old support act were otherwise a known artist,
+        # the published bill must not take its lineup from the URL slug.
+        known["tailgunner"] = {
+            "id": "tailgunner", "name": "Tailgunner", "aliases": []
+        }
+        valid, _ = validate_approval(row, venues, known, __import__("datetime").date(2026,11,3))
+        self.assertEqual(valid["artistIds"], ["accept","dynazty","enforcer"])
+        forged = copy.deepcopy(row)
+        forged["event"]["artistIds"] = ["accept","dynazty","tailgunner"]
+        forged["event"]["title"] = (
+            'Accept "50th Anniversary Tour" + Dynazty + Tailgunner')
+        with self.assertRaises((ValueError,KeyError)):
+            validate_approval(
+                forged, venues, known, __import__("datetime").date(2026,11,3))
+
+
 
 if __name__=="__main__":
     unittest.main()
