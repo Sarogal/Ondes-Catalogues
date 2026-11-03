@@ -137,13 +137,18 @@ class LaLaiterieApprovalsTests(unittest.TestCase):
         self.assertEqual(len(row["officialEvidence"]),3)
         self.assertEqual(row["officialEvidence"][2]["proofType"],
                          "independent-organizer-confirmation")
-        event,added=validate_approval(row,VENUES,ARTISTS,TODAY)
+        # Recreate the pre-publication identity index. The current catalogue
+        # now contains these artists, so replaying an old approval against
+        # today's full index would correctly fail for duplicate newArtists.
+        just_before={k:v for k,v in ARTISTS.items()
+                     if k not in {a["id"] for a in spec["newArtists"]}}
+        event,added=validate_approval(row,VENUES,just_before,TODAY)
         self.assertIsNone(event["time"])
         self.assertIn("arms-length",added)
         wrong=copy.deepcopy(row)
         wrong["officialEvidence"].pop()
         with self.assertRaises((ValueError,KeyError)):
-            validate_approval(wrong,VENUES,ARTISTS,TODAY)
+            validate_approval(wrong,VENUES,just_before,TODAY)
 
     def test_reference_is_unchanged_by_verification(self):
         baseline=json.loads((ROOT / "docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
