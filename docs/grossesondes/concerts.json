@@ -1531,6 +1531,26 @@
       "id": "agonal-gasps",
       "name": "Agonal Gasps",
       "aliases": []
+    },
+    {
+      "id": "dynamite-shakers",
+      "name": "Dynamite Shakers",
+      "aliases": []
+    },
+    {
+      "id": "howlin-jaws",
+      "name": "Howlin' Jaws",
+      "aliases": []
+    },
+    {
+      "id": "didier-super-metal",
+      "name": "Didier Super Métal",
+      "aliases": []
+    },
+    {
+      "id": "europe",
+      "name": "Europe",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9009,6 +9029,127 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270226-strasbourg-dynamite-shakers",
+      "title": "Dynamite Shakers + Johnny Mafia",
+      "date": "2027-02-26",
+      "artistIds": [
+        "dynamite-shakers",
+        "johnny-mafia"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Garage Rock",
+        "Indie Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/dynamite-shakers-johnny-mafia/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270428-strasbourg-howlin-jaws",
+      "title": "Howlin' Jaws + Komodor",
+      "date": "2027-04-28",
+      "artistIds": [
+        "howlin-jaws",
+        "komodor"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Rock psychédélique",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/howlin-jaws-komodor/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270514-strasbourg-didier-super-metal",
+      "title": "Didier Super Métal",
+      "date": "2027-05-14",
+      "artistIds": [
+        "didier-super-metal"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Rock",
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/didier-super-metal/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20271010-strasbourg-europe",
+      "title": "Europe",
+      "date": "2027-10-10",
+      "artistIds": [
+        "europe"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/europe-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
       "ticketUrl": null,
       "lastVerified": "2026-11-03",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
