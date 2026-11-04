@@ -159,6 +159,38 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertEqual(report["accepted_preflight"], 0)
         self.assertEqual(report["details"][0]["status"], "unverified")
 
+    def test_cross_source_title_prefix_does_not_republish_existing_show(self):
+        reference = base()
+        existing = make_event(lead(), record(), registry_location(lead()), TODAY)
+        official = dict(existing,
+                        id="nantes-un-animal-des-amis-mots-2027-02-10",
+                        title="Un animal, des amis mots",
+                        source_url=("https://www.theatre-jeanne.com/spectacle/"
+                                    "un-animal-des-amis-mots/2027-02-10/"))
+        published = dict(reference, events=reference["events"] + [official])
+        p, report = evaluate([lead()], reference, published, TODAY,
+                             fetch=lambda uid: record(),
+                             verifier=lambda e, originals: (True, "proof"))
+        self.assertEqual(p["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+        self.assertEqual(report["details"][0]["status"], "already_published")
+
+    def test_cross_source_title_does_not_mask_another_session_day(self):
+        reference = base()
+        existing = make_event(lead(), record(), registry_location(lead()), TODAY)
+        official = dict(existing,
+                        id="nantes-un-animal-des-amis-mots-2027-02-10",
+                        title="Un animal, des amis mots",
+                        source_url=("https://www.theatre-jeanne.com/spectacle/"
+                                    "un-animal-des-amis-mots/2027-02-10/"))
+        published = dict(reference, events=reference["events"] + [official])
+        other_day = lead(day="2027-02-14")
+        p, report = evaluate([other_day], reference, published, TODAY,
+                             fetch=lambda uid: record(),
+                             verifier=lambda e, originals: (True, "proof"))
+        self.assertEqual(report["accepted_preflight"], 1)
+        self.assertEqual(p["additions"][0]["date_start"], "2027-02-14")
+
     def test_existing_id_and_semantic_duplication_blocked(self):
         ref = base()
         e = make_event(lead(), record(), registry_location(lead()), TODAY)
