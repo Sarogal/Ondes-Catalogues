@@ -1916,6 +1916,76 @@
       "id": "lazuli",
       "name": "Lazuli",
       "aliases": []
+    },
+    {
+      "id": "michel-cloup-trio",
+      "name": "Michel Cloup Trio",
+      "aliases": []
+    },
+    {
+      "id": "arnaud-fournier",
+      "name": "Arnaud Fournier",
+      "aliases": []
+    },
+    {
+      "id": "deefait",
+      "name": "Dééfait",
+      "aliases": []
+    },
+    {
+      "id": "necroscum",
+      "name": "Necroscum",
+      "aliases": []
+    },
+    {
+      "id": "laibach",
+      "name": "Laibach",
+      "aliases": []
+    },
+    {
+      "id": "maquina",
+      "name": "MAQUINA.",
+      "aliases": []
+    },
+    {
+      "id": "pamela",
+      "name": "PAMELA",
+      "aliases": []
+    },
+    {
+      "id": "the-last-internationale",
+      "name": "The Last Internationale",
+      "aliases": []
+    },
+    {
+      "id": "blyght",
+      "name": "BLYGHT",
+      "aliases": []
+    },
+    {
+      "id": "ayron-jones",
+      "name": "Ayron Jones",
+      "aliases": []
+    },
+    {
+      "id": "rodrigo-y-gabriela",
+      "name": "Rodrigo y Gabriela",
+      "aliases": []
+    },
+    {
+      "id": "midori-jaeger",
+      "name": "midori jaeger",
+      "aliases": []
+    },
+    {
+      "id": "tramhaus",
+      "name": "Tramhaus",
+      "aliases": []
+    },
+    {
+      "id": "chevreuil",
+      "name": "Chevreuil",
+      "aliases": []
     }
   ],
   "venues": [
@@ -11554,6 +11624,462 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Gespe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-nancy-michel-cloup-trio",
+      "title": "Michel Cloup Trio + Arnaud Fournier + Dééfait",
+      "date": "2026-11-13",
+      "artistIds": [
+        "michel-cloup-trio",
+        "arnaud-fournier",
+        "deefait"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Rock",
+        "Noise Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/michel-cloup-trio-arnaud-fournier-deefait",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-nancy-les-fatals-picards",
+      "title": "Les Fatals Picards + Charcoal",
+      "date": "2026-11-21",
+      "artistIds": [
+        "les-fatals-picards",
+        "charcoal"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Rock",
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/les-fatals-picards-charcoal",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-nancy-benighted",
+      "title": "Benighted + Necroscum",
+      "date": "2026-12-12",
+      "artistIds": [
+        "benighted",
+        "necroscum"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/benighted-necroscum",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270205-nancy-skip-the-use",
+      "title": "Skip The Use",
+      "date": "2027-02-05",
+      "artistIds": [
+        "skip-the-use"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/skip-use-1",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270216-nancy-laibach",
+      "title": "Laibach",
+      "date": "2027-02-16",
+      "artistIds": [
+        "laibach"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Industrial"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/laibach",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270224-nancy-maquina",
+      "title": "MAQUINA.",
+      "date": "2027-02-24",
+      "artistIds": [
+        "maquina"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Krautrock",
+        "Industrial Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/maquina",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270206-reims-skip-the-use",
+      "title": "Skip The Use + Imparfait",
+      "date": "2027-02-06",
+      "artistIds": [
+        "skip-the-use",
+        "imparfait"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Pop Rock",
+        "Rock alternatif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/skip-the-use/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270211-reims-pamela",
+      "title": "PAMELA + The Last Internationale",
+      "date": "2027-02-11",
+      "artistIds": [
+        "pamela",
+        "the-last-internationale"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/pamela-the-last-internationale/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270218-reims-revnoir",
+      "title": "Revnoir + Ice Sealed Eyes + BLYGHT",
+      "date": "2027-02-18",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes",
+        "blyght"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Metal",
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/revnoir/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-reims-la-jungle",
+      "title": "La Jungle",
+      "date": "2027-02-19",
+      "artistIds": [
+        "la-jungle"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/la-jungle/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270319-reims-ayron-jones",
+      "title": "Ayron Jones",
+      "date": "2027-03-19",
+      "artistIds": [
+        "ayron-jones"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/ayron-jones/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270403-reims-igorrr",
+      "title": "Igorrr + Secret Chiefs 3 + Fange",
+      "date": "2027-04-03",
+      "artistIds": [
+        "igorrr",
+        "secret-chiefs-3",
+        "fange"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/igorrr-secret-chiefs-3-fange/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270409-reims-rodrigo-y-gabriela",
+      "title": "Rodrigo y Gabriela + midori jaeger",
+      "date": "2027-04-09",
+      "artistIds": [
+        "rodrigo-y-gabriela",
+        "midori-jaeger"
+      ],
+      "venueId": "la-cartonnerie-reims",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cartonnerie.fr/evenement/rodrigo-y-gabriela/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Cartonnerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270312-poitiers-tramhaus",
+      "title": "Tramhaus + Chevreuil",
+      "date": "2027-03-12",
+      "artistIds": [
+        "tramhaus",
+        "chevreuil"
+      ],
+      "venueId": "confort-moderne-poitiers",
+      "genres": [
+        "Post Punk",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.confort-moderne.fr/fr/agenda/event/Tramhaus-Chevreuil/3128",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Confort Moderne",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261115-wasquehal-cage-fight",
+      "title": "Cage Fight + Soul Splitter + Kabbel",
+      "date": "2026-11-15",
+      "artistIds": [
+        "cage-fight",
+        "soul-splitter",
+        "kabbel"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Hardcore",
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/cage-fight-soul-splitter-kabbel/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
       "ticketUrl": null,
       "lastVerified": "2026-11-04",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
