@@ -18,6 +18,7 @@ from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
 from grossesondes_generic_roster import validate_roster
+from grossesondes_structured_roster import PROOF_MODE, validate_structured_roster
 from grossesondes_history_guard import validate_history_extension
 # The frozen 2026-10-30 certificate remains tested separately; the live
 # preview is reconciled against the integrity-pinned published head.
@@ -55,7 +56,7 @@ def norm(t):
     s="".join(c for c in s if not unicodedata.combining(c))
     return " ".join(re.sub(r"[^a-z0-9]+"," ",s).split())
 
-def official_text(url, registered=False):
+def official_text(url, registered=False, raw=False):
     p=urlparse(url)
     host=(p.hostname or "").lower()
     safe_registered=(registered and p.scheme=="https" and p.port is None and
@@ -74,6 +75,8 @@ def official_text(url, registered=False):
         require(urlparse(r.geturl()).hostname==p.hostname,"redirection vers un autre domaine")
         raw=r.read(1_400_001)
     require(len(raw)<=1_400_000,"source trop volumineuse")
+    if raw:
+        return raw.decode("utf-8",errors="replace")
     parser=TextOnly()
     parser.feed(raw.decode("utf-8",errors="replace"))
     return norm(" ".join(parser.parts))
@@ -156,26 +159,35 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         slug=up["slug"]
         current=existing[slug]
         partial=None
-        if slug=="cernunnos-pagan-fest":
-            partial=cernunnos_update(current,up,sources,today)
-        elif slug=="fantasmagorik-fest-2026":
-            partial=fantasmagorik_update(current,up,sources,today)
-        elif slug=="in-your-face-6-2026":
-            partial=in_your_face_sold_out(current,up,sources,today)
-        if partial is None and sources.get("registered:"+slug):
-            partial=validate_roster(current,up,sources["registered:"+slug])
+        proof_mode=up.get("proofMode")
+        if proof_mode == PROOF_MODE:
+            partial=validate_structured_roster(
+                current,up,sources.get("registered-schema:"+slug,""),today)
+        elif proof_mode is not None:
+            report["held"].append({"slug":slug,"reason":"mode de preuve non pris en charge"})
+            continue
+        else:
+            if slug=="cernunnos-pagan-fest":
+                partial=cernunnos_update(current,up,sources,today)
+            elif slug=="fantasmagorik-fest-2026":
+                partial=fantasmagorik_update(current,up,sources,today)
+            elif slug=="in-your-face-6-2026":
+                partial=in_your_face_sold_out(current,up,sources,today)
+            if partial is None and sources.get("registered:"+slug):
+                partial=validate_roster(current,up,sources["registered:"+slug])
         if partial is not None:
             revised,fields,uncorroborated=partial
             rows[rows.index(current)]=revised
             report["accepted_updates"].append({"slug":slug,"fields":fields})
             report["source_proofs"].extend(
-                [CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
-                if slug=="cernunnos-pagan-fest"
-                else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
-                      if slug=="fantasmagorik-fest-2026"
-                      else ([IN_YOUR_FACE_TICKET_URL]
-                            if slug=="in-your-face-6-2026"
-                            else [current["officialSite"]]))
+                [current["officialSite"]] if proof_mode == PROOF_MODE
+                else ([CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
+                      if slug=="cernunnos-pagan-fest"
+                      else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+                            if slug=="fantasmagorik-fest-2026"
+                            else ([IN_YOUR_FACE_TICKET_URL]
+                                  if slug=="in-your-face-6-2026"
+                                  else [current["officialSite"]])))
             )
             if uncorroborated:
                 report["held"].append({
@@ -245,6 +257,22 @@ def main():
         except Exception as error:
             evidence[key]=""
             print(key+": preuve non disponible ; changement maintenu en attente")
+    # Also re-fetch registered official HTML for explicitly typed roster
+    # candidates. Their private source text is never accepted as proof.
+    registered={row["slug"]:row for row in production_calendar["festivals"]}
+    for proposed in patch.get("updates",[])[:15]:
+        if proposed.get("proofMode") != PROOF_MODE:
+            continue
+        slug=proposed.get("slug")
+        url=registered.get(slug,{}).get("officialSite")
+        if not isinstance(url,str):
+            continue
+        try:
+            evidence["registered-schema:"+slug]=official_text(
+                url,registered=True,raw=True)
+        except Exception:
+            evidence["registered-schema:"+slug]=""
+            print("Preuve JSON-LD indisponible pour "+slug+" ; modification différée.")
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(

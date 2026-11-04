@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
-from grossesondes_stage import official_text, stage
+from grossesondes_stage import official_text, stage, PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL,
@@ -222,9 +222,16 @@ def main():
         if slug in known or not isinstance(url,str) or url in checked:
             continue
         checked.add(url)
-        try:sources["registered:"+slug]=official_text(url,registered=True)
+        proof_mode=update.get("proofMode")
+        if proof_mode == PROOF_MODE:
+            key="registered-schema:"+slug
+        else:
+            key="registered:"+slug
+        try:
+            sources[key]=official_text(url,registered=True,
+                                       raw=(proof_mode == PROOF_MODE))
         except Exception:
-            sources["registered:"+slug]=""
+            sources[key]=""
             print("Site officiel enregistré inaccessible pour "+slug+" : modifications différées.")
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
