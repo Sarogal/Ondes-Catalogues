@@ -283,17 +283,19 @@ def verify_event(event,originals):
     html,error=read(event["source_url"])
     if html is None:return False,error
     dom=Visible();dom.feed(html)
-    # Certains agendas OpenAgenda ne rendent que « Loading... » hors navigateur.
-    # Ce n'est pas une preuve de séance ni une date manquante sur l'événement.
-    # Rester fail-closed et distinguer la source dynamique dans les rapports.
     body=norm(" ".join(dom.words))
-    if (urlparse(event.get("source_url", "")).hostname=="openagenda.com"
-            and "loading" in body and len(body)<180
-            and not re.search(r"\b20\d\d\b", body)):
+    # Pour les DEUX correspondances manuellement homologuées, la fiche
+    # organisateur officielle est toujours indispensable, même si la page
+    # OpenAgenda renvoie du HTML non vide ou affiche d'autres dates.
+    # Ce chemin conserve l'arrêt strict sur réseau, changement de date,
+    # heure, lieu, titre, année, âge ou annulation.
+    if urlparse(event.get("source_url", "")).hostname == "openagenda.com":
         from official_organizer_proof import organizer_url, reviewed_schedule
-        other_url = organizer_url(event)
-        if other_url:
-            organizer_html, organizer_error = read(other_url)
+        organizer = organizer_url(event)
+        if organizer:
+            if re.search(r"\b(?:annule|annulee|annules|reporte|reportee|reportes)\b", body):
+                return False, "annulation ou report mentionné dans la fiche OpenAgenda"
+            organizer_html, organizer_error = read(organizer)
             if organizer_html is None:
                 return False, "preuve secondaire inaccessible : " + organizer_error
             organizer_dom = Visible()
@@ -301,7 +303,11 @@ def verify_event(event,originals):
             return reviewed_schedule(
                 event, " ".join(organizer_dom.headers + organizer_dom.titles),
                 " ".join(organizer_dom.words))
-        return False,"page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript"
+    # Les autres pages dynamiques restent en attente, sans exception générale.
+    if (urlparse(event.get("source_url", "")).hostname == "openagenda.com"
+            and "loading" in body and len(body) < 180
+            and not re.search(r"\b20\d\d\b", body)):
+        return False, "page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript"
     heading=norm(" ".join(dom.headers+dom.titles))
     title=norm(event["title"])
     if not headline_matches(event["title"],heading):
