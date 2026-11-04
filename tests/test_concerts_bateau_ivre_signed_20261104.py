@@ -75,7 +75,12 @@ class BateauIvreSignedPublicTests(unittest.TestCase):
     def setUpClass(cls):
         cls.venues = {x["id"]: x for x in PUBLIC["venues"]}
         cls.venues[VENUE_ID] = VENUE_SPEC["venue"]
-        cls.artists = {x["id"]: x for x in PUBLIC["artists"]}
+        # Reconstruct the pre-batch artist registry even after publication.
+        # Signed approval fixtures must remain valid on repeated CI runs.
+        new_ids = {artist for spec in EVENTS.values()
+                   for artist in spec["newArtistIds"]}
+        cls.artists = {x["id"]: x for x in PUBLIC["artists"]
+                       if x["id"] not in new_ids}
 
     def test_independently_reviewed_site_and_not_exact_entrance(self):
         already = {x["id"]: x for x in PUBLIC["venues"]}
