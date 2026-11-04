@@ -1,16 +1,22 @@
-name: Grosses Ondes — publier les ressources de billetterie Pages
+name: Grosses Ondes — publier les widgets billetterie et artistes Pages
 
 on:
   pull_request:
     paths:
       - '.github/workflows/grossesondes-ticket-widget-pages.yml'
       - 'docs/grossesondes/TICKET_WIDGET_INTEGRATION.md'
+      - 'docs/grossesondes/artist-dates.js'
+      - 'docs/grossesondes/artist-dates.css'
+      - 'tests_js/test_grosses_artist_dates.cjs'
   push:
     branches: [main]
     paths:
       - '.github/workflows/grossesondes-ticket-widget-pages.yml'
       - 'docs/grossesondes/ticket-availability.js'
       - 'docs/grossesondes/ticket-availability.css'
+      - 'docs/grossesondes/artist-dates.js'
+      - 'docs/grossesondes/artist-dates.css'
+      - 'tests_js/test_grosses_artist_dates.cjs'
   workflow_dispatch:
 
 permissions:
@@ -30,12 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Tests du widget (données périmées, HTML sûr, catégories)
-        run: node --test tests_js/test_grosses_ticket_widget.cjs
+      - name: Tests des widgets billetterie et pont artistes
+        run: node --test tests_js/test_grosses_ticket_widget.cjs tests_js/test_grosses_artist_dates.cjs
       - name: Vérifier la signature du calendrier publié et les archives
         run: |
           python - <<'PY'
