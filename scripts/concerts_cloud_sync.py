@@ -3331,7 +3331,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Salles historiquement géolocalisées de façon indicative : une nouvelle
     # affiche ne peut passer qu'avec sa propre signature nominative. Aucune
     # approbation générique fondée sur le seul domaine du site.
-    if event.get("venueId") in ("le-grillen-colmar", "espace-john-lennon-limoges"):
+    if (event_id in COLMAR_LIMOGES_VERIFIED_20261104 or
+            event.get("venueId") in ("le-grillen-colmar", "espace-john-lennon-limoges")):
         spec = COLMAR_LIMOGES_VERIFIED_20261104.get(event_id)
         require(spec is not None and reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle"
@@ -3352,7 +3353,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
             require(actual.get("url") == proof["url"]
                     and actual.get("proofType") == proof["proofType"]
                     and actual.get("checkedAt") == checked_at.isoformat()
-                    and got_fields == set(proof["requiredFields"])
+                    and actual.get("checkedFields") == proof["requiredFields"]
+                    and len(got_fields) == len(proof["requiredFields"])
                     and not ({"startTime", "concertStartTime", "doorTime"} & got_fields),
                     "Colmar/Limoges : année, artistes, provenance ou heure surdéclarés")
         require(event.get("time") is None,
