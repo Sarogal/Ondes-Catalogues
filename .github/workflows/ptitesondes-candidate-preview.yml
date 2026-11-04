@@ -1,0 +1,56 @@
+name: P'tites Ondes - controle des candidats prives (preview)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_candidate_promotion.py'
+      - 'tests/test_ptitesondes_candidate_promotion.py'
+      - '.github/workflows/ptitesondes-candidate-preview.yml'
+  schedule:
+    - cron: '40 08 * * *'
+    - cron: '40 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ptitesondes-candidate-preview
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tests offline du contrat de promotion
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+      - name: Previsualiser sans ecrire ni publier
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        run: |
+          python scripts/ptitesondes_candidate_promotion.py \
+            --output-dir /tmp/ptitesondes-candidate-preview \
+            --limit 15
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path('/tmp/ptitesondes-candidate-preview/report.json')
+          report=json.loads(p.read_text(encoding='utf-8'))
+          # Les fiches detaillees privees ne sont ni journalisees ni ajoutees aux artifacts.
+          report.pop('details', None)
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as f:
+              f.write('## Verification des propositions P\'tites Ondes\n')
+              f.write('| Indicateur | Valeur |\n|---|---:|\n')
+              for key in ('backlog_total','eligible_with_reviewed_venue','checked',
+                          'accepted_preflight','deferred_or_duplicates'):
+                  f.write(f'| {key} | {report[key]} |\n')
+              f.write('\n**Mode : lecture seule, aucune publication.**\n')
+          PY
