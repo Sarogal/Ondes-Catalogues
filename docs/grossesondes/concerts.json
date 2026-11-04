@@ -12735,6 +12735,36 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270407-dijon-rodrigo-y-gabriela-midori-jaeger",
+      "title": "Rodrigo y Gabriela + midori jaeger",
+      "date": "2027-04-07",
+      "artistIds": [
+        "rodrigo-y-gabriela",
+        "midori-jaeger"
+      ],
+      "venueId": "la-vapeur-dijon",
+      "genres": [
+        "Rock instrumental"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lavapeur.com/programme/rodrigo-y-gabriela",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Vapeur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
