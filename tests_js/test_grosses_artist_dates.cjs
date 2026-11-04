@@ -1,7 +1,8 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {collectAppearances, artistIdentity, classify, norm, isIso, safeHttps} =
+const {collectAppearances, artistIdentity, classify, isUnavailableStatus,
+  statusLabel, norm, isIso, safeHttps} =
   require('../docs/grossesondes/artist-dates.js');
 const concerts = {
   schemaVersion: 1,
@@ -103,4 +104,76 @@ test('a single supplied artist does not match substrings inside other artist nam
   const a=collectAppearances('Other',festivals,concerts);
   assert.equal(a.concerts.length,0);
   assert.equal(a.festivals.length,0);
+});
+
+test('confirmed and announced statuses appear in French and rescheduling is not upcoming', () => {
+  assert.equal(statusLabel('confirmed'), 'Confirmé');
+  assert.equal(statusLabel('announced'), 'Annoncé');
+  assert.equal(statusLabel('cancelled'), 'Annulé');
+  assert.equal(statusLabel('postponed'), 'Reporté');
+  assert.equal(statusLabel('rescheduled'), 'Reprogrammé');
+  assert.equal(statusLabel('Confirmé'), 'Confirmé');
+  assert.equal(isUnavailableStatus('Reprogrammé'), true);
+  const groups = classify([
+    {key:'c:confirmed',date:'2027-01-01',status:'confirmed'},
+    {key:'c:rescheduled',date:'2027-01-02',status:'rescheduled'}
+  ], '2026-11-04');
+  assert.deepEqual(groups.upcoming.map(row => row.key), ['c:confirmed']);
+  assert.deepEqual(groups.unavailable.map(row => row.key), ['c:rescheduled']);
+});
+
+test('real festival/concert catalogues retain exact bridges without guessed performances', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const f = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/grossesondes/festivals.json'), 'utf8'));
+  const c = JSON.parse(fs.readFileSync(path.join(__dirname, '../docs/grossesondes/concerts.json'), 'utf8'));
+  assert.equal(f.schema, 1);
+  assert.equal(c.schemaVersion, 1);
+  const labels = new Map();
+  for (const row of f.festivals) {
+    for (const name of [...(row.lineup || []),
+      ...Object.values(row.lineupByDate || {}).flat()]) {
+      const key = norm(name);
+      if (key && !labels.has(key)) labels.set(key, name);
+    }
+  }
+  const artistIds = new Set(c.artists.map(artist => artist.id));
+  const byId = new Map(c.artists.map(artist => [artist.id, artist]));
+  let bridged = 0, withoutConcertRegistration = 0, ambiguous = 0;
+  for (const name of labels.values()) {
+    const found = collectAppearances(name, f, c);
+    assert.ok(found.festivals.length > 0, 'Festival appearance lost: ' + name);
+    assert.equal(found.all.length, new Set(found.all.map(row => row.key)).size,
+      'Duplicate appearance: ' + name);
+    const identity = artistIdentity(name, c.artists);
+    if (identity.ambiguous) {
+      ambiguous++;
+      assert.equal(found.concerts.length, 0);
+    } else if (!identity.artist) {
+      withoutConcertRegistration++;
+      assert.equal(found.concerts.length, 0);
+    } else {
+      assert.ok(artistIds.has(identity.artist.id));
+      bridged++;
+      const expected = c.events.filter(event =>
+        event.artistIds.includes(identity.artist.id) &&
+        c.venues.some(venue => venue.id === event.venueId)).length;
+      assert.equal(found.concerts.length, expected,
+        'Concert date dropped or fabricated: ' + name);
+    }
+    for (const appearance of found.festivals) {
+      const edition = f.festivals.find(row => row.slug === appearance.slug);
+      assert.ok(edition, 'Nonexistent festival edition');
+      if (appearance.exact) {
+        assert.ok(edition.lineupByDate &&
+          Object.hasOwn(edition.lineupByDate, appearance.date),
+          'Invented festival performance day: ' + name);
+      } else if (appearance.date) {
+        assert.equal(appearance.date, edition.startDate);
+      }
+    }
+  }
+  console.log('Audit artistes: ' + labels.size + ' noms; ' + bridged +
+    ' ponts Concerts; ' + withoutConcertRegistration +
+    ' noms sans fiche Concerts; ' + ambiguous + ' homonymes bloqués.');
 });
