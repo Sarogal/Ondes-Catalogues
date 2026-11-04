@@ -3381,6 +3381,21 @@ LA_VAPEUR_SKIP_SIGNED_20261104 = {
   "calendarUrl": "https://www.lavapeur.com/programme/"
 }
 
+# Dijon : affiche datée et nominative de la salle, recoupée par sa billetterie.
+# 19h = portes. Le créneau 20h n'est pas automatiquement une heure musicale.
+LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104 = {
+    "id": "go-c-20270407-dijon-rodrigo-y-gabriela-midori-jaeger",
+    "title": "Rodrigo y Gabriela + midori jaeger",
+    "date": "2027-04-07",
+    "time": None,
+    "venueId": "la-vapeur-dijon",
+    "artistIds": ["rodrigo-y-gabriela", "midori-jaeger"],
+    "artistNames": ["Rodrigo y Gabriela", "midori jaeger"],
+    "genres": ["Rock instrumental"],
+    "officialUrl": "https://www.lavapeur.com/programme/rodrigo-y-gabriela",
+    "ticketUrl": "https://billetterie.lavapeur.com/agenda/840-Rodrigo-y-Gabriela?session=840",
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3440,6 +3455,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and event.get("venueId") == "la-vapeur-dijon"
                 and official_url == LA_VAPEUR_SKIP_SIGNED_20261104["officialUrl"],
                 "La Vapeur / Skip : identifiant, URL ou salle réaffectés")
+    if (event_id == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["id"]
+            or official_url == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["officialUrl"]):
+        require(event_id == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["id"]
+                and official_url == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["officialUrl"]
+                and event.get("venueId") == "la-vapeur-dijon",
+                "Dijon/Rodrigo : URL, salle et identifiant signés indissociables")
     # Exact event identity and official first-party URL are reserved
     # together: neither a new ID nor a different venue may reuse this proof.
     # Les quatre URLs officielles du lot Nantes/Toulouse ne sont pas recyclables.
@@ -5279,6 +5300,63 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and norm(known_artist_ids["skip-the-use"]["name"]) == norm("Skip The Use")
                 and event.get("time") is None,
                 "La Vapeur : artistes ajoutés ou horaire musical inventé")
+        return event, added
+    # La Vapeur / Rodrigo y Gabriela : contrôle intégral avant le verrou
+    # historique de Dijon. Seul cet identifiant exact peut utiliser la page
+    # nominative ; toutes les autres affiches restent soumises au verrou ancien.
+    if event_id == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["id"]:
+        spec = LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104
+        require(reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("status") == "confirmed"
+                and all(event.get(field) == spec[field] for field in
+                        ("id", "title", "date", "time", "venueId",
+                         "artistIds", "genres", "officialUrl")),
+                "La Vapeur/Rodrigo : date, artistes ou salle hors signature")
+        source_url = urlsplit(official_url)
+        require(source_url.scheme == "https"
+                and source_url.hostname == "www.lavapeur.com"
+                and source_url.path == "/programme/rodrigo-y-gabriela"
+                and not source_url.query and not source_url.fragment
+                and not source_url.username and not source_url.password
+                and not source_url.port,
+                "La Vapeur/Rodrigo : fiche nominative officielle exacte exigée")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "La Vapeur/Rodrigo : contrôle officiel périmé ou futur")
+        require(len(evidence) == 2 and all(isinstance(p, dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} ==
+                {"official-organizer-or-venue", "official-venue-ticketing-detail"},
+                "La Vapeur/Rodrigo : fiche et billetterie officielles obligatoires")
+        proofs = {p["proofType"]: p for p in evidence}
+        for kind, expected_url, fields in (
+            ("official-organizer-or-venue", spec["officialUrl"],
+             ["artists", "date", "venue", "genre"]),
+            ("official-venue-ticketing-detail", spec["ticketUrl"],
+             ["artists", "date", "venue"]),
+        ):
+            p = proofs[kind]
+            require(p.get("url") == expected_url
+                    and p.get("checkedAt") == checked.isoformat()
+                    and p.get("checkedFields") == fields,
+                    "La Vapeur/Rodrigo : preuve nominative ou date altérée")
+            require(not ({"doorTime", "concertStartTime", "startTime"}
+                         & set(p["checkedFields"])),
+                    "La Vapeur/Rodrigo : horaire non confirmé")
+        p = urlsplit(spec["ticketUrl"])
+        require(p.hostname == "billetterie.lavapeur.com"
+                and p.path == "/agenda/840-Rodrigo-y-Gabriela"
+                and p.query == "session=840",
+                "La Vapeur/Rodrigo : billetterie non associée à cette affiche")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == []
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "La Vapeur/Rodrigo : participants fictifs ou identités remplacées")
+        require(event.get("time") is None,
+                "La Vapeur/Rodrigo : portes transformées en heure musicale")
         return event, added
     if (event_id in VAPEUR_DIJON_SIGNED_20261104
             or event.get("venueId") == "la-vapeur-dijon"
