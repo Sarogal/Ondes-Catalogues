@@ -1,0 +1,30 @@
+name: Grosses Ondes — affichage billetterie (tests isolés)
+on:
+  pull_request:
+    paths:
+      - 'docs/grossesondes/ticket-availability.js'
+      - 'docs/grossesondes/ticket-availability.css'
+      - 'docs/grossesondes/TICKET_WIDGET_INTEGRATION.md'
+      - 'tests_js/test_grosses_ticket_widget.cjs'
+      - '.github/workflows/grossesondes-ticket-widget.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/grossesondes/ticket-availability.js'
+      - 'docs/grossesondes/ticket-availability.css'
+      - 'docs/grossesondes/TICKET_WIDGET_INTEGRATION.md'
+      - 'tests_js/test_grosses_ticket_widget.cjs'
+      - '.github/workflows/grossesondes-ticket-widget.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ticket-widget:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Vérifier le rendu HTML sans réseau et la fraîcheur des preuves
+        run: node --test tests_js/test_grosses_ticket_widget.cjs
