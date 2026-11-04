@@ -28,8 +28,11 @@ on:
 permissions:
   contents: write
 
+# Preserve the common deployment lock AND do not replace older pending jobs.
+# GitHub Actions queue:max allows up to 100 sequential waiting runs.
 concurrency:
   group: ondes-cloud-publication
+  queue: max
   cancel-in-progress: false
 
 jobs:
