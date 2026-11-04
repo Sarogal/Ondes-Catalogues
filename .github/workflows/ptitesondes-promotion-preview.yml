@@ -1,0 +1,39 @@
+name: P'tites Ondes — audit des propositions privees (sans publication)
+
+on:
+  schedule:
+    - cron: '40 08 * * *'
+    - cron: '40 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ptitesondes-promotion-preview
+  cancel-in-progress: false
+
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tests de securite de la promotion
+        run: python -m unittest discover -s tests -p 'test_outings_promotion.py' -v
+      - name: Analyser les propositions privees sans publier
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        run: |
+          python scripts/run_outings_promotion_preview.py
+          {
+            echo '## Audit des pistes P\x27tites Ondes'
+            echo '```json'
+            cat /tmp/ptitesondes-promotion-preview.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
