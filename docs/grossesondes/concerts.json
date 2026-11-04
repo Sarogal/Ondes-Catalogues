@@ -1836,6 +1836,51 @@
       "id": "changeline",
       "name": "Changeline",
       "aliases": []
+    },
+    {
+      "id": "svinkels",
+      "name": "Svinkels",
+      "aliases": []
+    },
+    {
+      "id": "voizins-vigilants",
+      "name": "Voizins Vigilants",
+      "aliases": []
+    },
+    {
+      "id": "carmen-sea",
+      "name": "Carmen Sea",
+      "aliases": []
+    },
+    {
+      "id": "mogwai",
+      "name": "Mogwai",
+      "aliases": []
+    },
+    {
+      "id": "forest-swords",
+      "name": "Forest Swords",
+      "aliases": []
+    },
+    {
+      "id": "lugosi",
+      "name": "LUGOSi",
+      "aliases": []
+    },
+    {
+      "id": "l-idylle",
+      "name": "L’Idylle",
+      "aliases": []
+    },
+    {
+      "id": "chiennes",
+      "name": "Chiennes",
+      "aliases": []
+    },
+    {
+      "id": "melrose-avenue",
+      "name": "Melrose Avenue",
+      "aliases": []
     }
   ],
   "venues": [
@@ -10957,6 +11002,222 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Rex",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270114-wasquehal-rhapsody-of-fire",
+      "title": "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out",
+      "date": "2027-01-14",
+      "artistIds": [
+        "rhapsody-of-fire",
+        "serious-black",
+        "submasq",
+        "aeon-gods",
+        "rock-out"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Power Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/rhapsody-of-fire/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270206-wasquehal-revnoir",
+      "title": "Revnoir + Ice Sealed Eyes",
+      "date": "2027-02-06",
+      "artistIds": [
+        "revnoir",
+        "ice-sealed-eyes"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/revnoir-ice-sealed-eyes/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270115-biarritz-svinkels",
+      "title": "Svinkels + Voizins Vigilants",
+      "date": "2027-01-15",
+      "artistIds": [
+        "svinkels",
+        "voizins-vigilants"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Hip-Hop",
+        "Electro Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/svinkels-family-friends-voizins-vigilants-vendredi-15-janvier-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261126-blois-carmen-sea",
+      "title": "Carmen Sea",
+      "date": "2026-11-26",
+      "artistIds": [
+        "carmen-sea"
+      ],
+      "venueId": "le-chatodo-blois",
+      "genres": [
+        "Electro Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://chatodo.com/agenda/evenement/carmen-sea/",
+      "sourceType": "salle",
+      "time": "19:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Chato'do",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261111-strasbourg-mogwai",
+      "title": "Mogwai + Forest Swords",
+      "date": "2026-11-11",
+      "artistIds": [
+        "mogwai",
+        "forest-swords"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post Rock",
+        "Art Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/mogwai30/",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-paris-lugosi",
+      "title": "LUGOSi + L’Idylle + Chiennes",
+      "date": "2026-11-27",
+      "artistIds": [
+        "lugosi",
+        "l-idylle",
+        "chiennes"
+      ],
+      "venueId": "glazart-paris",
+      "genres": [
+        "Post Hardcore",
+        "Screamo",
+        "Stoner Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.glazart.com/27-11-26-concert-lugosi-lidylle-chiennes/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Glazart",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270209-paris-melrose-avenue",
+      "title": "Melrose Avenue",
+      "date": "2027-02-09",
+      "artistIds": [
+        "melrose-avenue"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/melrose-avenue/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Trabendo",
       "ticketUrl": null,
       "lastVerified": "2026-11-04",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
