@@ -20,8 +20,11 @@ on:
       - '.github/workflows/ptitesondes-evidence-preview.yml'
   workflow_dispatch:
   schedule:
+    # Rapport indépendant après les contrôles privés (UTC).
     - cron: '40 08 * * *'
+    - cron: '40 11 * * *'
     - cron: '40 15 * * *'
+    - cron: '40 19 * * *'
 
 permissions:
   contents: read
