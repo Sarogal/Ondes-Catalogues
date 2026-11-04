@@ -3137,5 +3137,95 @@ class ColmarDecemberJanuarySignedTests(unittest.TestCase):
                         validate_approval(bad, self.venues, self.artists, self.today)
 
 
+class LaVapeurSkipProtectedSyncTests(unittest.TestCase):
+    """These guards run inside the actual protected *publish* workflow.
+
+    The independent promoter proves 2027; the venue's day/month card
+    proves the Rock genre. Neither source proves a musical start hour.
+    The pre-existing Misanthrope event and Dijon venue must survive.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        from concerts_cloud_sync import LA_VAPEUR_SKIP_SIGNED_20261104
+        cls.spec = LA_VAPEUR_SKIP_SIGNED_20261104
+        cls.current = json.loads((ROOT / "docs/grossesondes/concerts.json")
+                                 .read_text(encoding="utf-8"))
+        cls.venues = {v["id"]: v for v in cls.current["venues"]}
+        cls.artists = {a["id"]: a for a in cls.current["artists"]}
+        cls.day = __import__("datetime").date(2026, 11, 4)
+
+    def signed(self):
+        s = self.spec
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-04",
+            "officialEvidence": [
+                {"url": s["officialUrl"],
+                 "proofType": "official-organizer-or-venue",
+                 "checkedAt": "2026-11-04",
+                 "checkedFields": ["artists", "date", "venue"]},
+                {"url": s["calendarUrl"],
+                 "proofType": "first-party-venue-calendar",
+                 "checkedAt": "2026-11-04",
+                 "checkedFields": ["artists", "venue", "genre", "dayMonth"]},
+            ],
+            "event": {
+                "id": s["id"], "title": s["title"], "date": s["date"],
+                "time": None, "artistIds": list(s["artistIds"]),
+                "venueId": s["venueId"], "genres": list(s["genres"]),
+                "officialUrl": s["officialUrl"], "status": "confirmed",
+                "sourceType": "organisateur",
+            },
+            "newArtists": [],
+        }
+
+    def test_skip_exact_and_previous_dijon_catalogue_conserved(self):
+        self.assertIn("la-vapeur-dijon", self.venues)
+        self.assertIn("skip-the-use", self.artists)
+        metal = "go-c-20270123-dijon-misanthrope-obsession-slapdown"
+        self.assertIn(metal, {event["id"] for event in self.current["events"]})
+        event, added = validate_approval(
+            self.signed(), self.venues, self.artists, self.day)
+        self.assertEqual((event["id"], event["date"], event["time"]),
+                         ("go-c-20270211-dijon-skip-the-use", "2027-02-11", None))
+        self.assertEqual((event["title"], event["artistIds"], event["genres"]),
+                         ("Skip The Use", ["skip-the-use"], ["Rock"]))
+        self.assertEqual(added, {})
+        already = {e["id"]: e for e in self.current["events"]}
+        if event["id"] in already:
+            for field in ("title", "date", "time", "artistIds",
+                          "venueId", "genres", "officialUrl", "status"):
+                self.assertEqual(event[field], already[event["id"]][field])
+        self.assertEqual(
+            sum(1 for e in self.current["events"] if e["id"] == metal), 1)
+
+    def test_skip_requires_both_exact_proofs_no_fake_year_or_start(self):
+        cases = (
+            ("date", lambda a: a["event"].update(date="2027-02-12")),
+            ("venue", lambda a: a["event"].update(venueId="le-106-rouen")),
+            ("guest", lambda a: a["event"].update(title="Skip The Use + Guest")),
+            ("start", lambda a: a["event"].update(time="20:00")),
+            ("artist", lambda a: a["event"].update(artistIds=["misanthrope"])),
+            ("official", lambda a: a["officialEvidence"][0].update(
+                url="https://example.org/skip-the-use")),
+            ("calendar", lambda a: a["officialEvidence"][1].update(
+                url="https://example.org/agenda")),
+            ("missing-secondary", lambda a: a["officialEvidence"].pop()),
+            ("invented-calendar-year", lambda a: a["officialEvidence"][1][
+                "checkedFields"].append("date")),
+            ("invented-start-proof", lambda a: a["officialEvidence"][0][
+                "checkedFields"].append("concertStartTime")),
+        )
+        for name, change in cases:
+            with self.subTest(name=name):
+                candidate = self.signed()
+                change(candidate)
+                with self.assertRaises((ValueError, KeyError)):
+                    validate_approval(
+                        candidate, self.venues, self.artists, self.day)
+
+
 if __name__=="__main__":
     unittest.main()
