@@ -27,6 +27,12 @@ APPROVAL_URL = (
     "automation/concerts/approved.json?ref=main"
 )
 SCHEMA = "grossesondes.concert.approvals.v1"
+# Capacity for cumulative, still individually signed records. Limit the delta
+# per workflow run separately to prevent accidental mass publication.
+MAX_CUMULATIVE_EVENT_APPROVALS = 400
+MAX_CUMULATIVE_VENUE_APPROVALS = 100
+MAX_NEW_EVENTS_PER_SYNC = 16
+MAX_NEW_VENUES_PER_SYNC = 6
 
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
@@ -4484,6 +4490,8 @@ def merge(reference, current, approvals, today):
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
+    require(len(approvals["approvals"]) <= MAX_CUMULATIVE_EVENT_APPROVALS,
+            "Trop d’approbations cumulées")
     # Une modification manuelle d'un concert CLOUD ne peut contourner
     # la file privée des approbations et les champs documentés.
     approved_ids = {
@@ -4560,7 +4568,7 @@ def merge(reference, current, approvals, today):
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
     venue_approvals = approvals.get("venueApprovals", [])
-    require(isinstance(venue_approvals, list) and len(venue_approvals) <= 25,
+    require(isinstance(venue_approvals, list) and len(venue_approvals) <= MAX_CUMULATIVE_VENUE_APPROVALS,
             "Liste d'approbations de salles inattendue ou excessive")
     approved_venues = {x["venue"]["id"]: x for x in venue_approvals
                        if isinstance(x,dict) and isinstance(x.get("venue"),dict)
@@ -4594,7 +4602,7 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("venue", {}).get("id"),
                                    "reason": str(ex)})
-    require(len(approvals["approvals"]) <= 150, "Trop d’approbations en un seul lot")
+    # Approved records are cumulative, not a single deployment batch.
     for entry in approvals["approvals"]:
         try:
             incoming = entry.get("event") or {}
@@ -4640,7 +4648,12 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
-    require(len(approvals["approvals"]) <= 150, "Trop d'approbations par lot")
+    # A large first-party intake must be split into reviewed batches.
+    # If the delta is unexpectedly high, stop rather than silently truncate.
+    require(counts["newEvents"] <= MAX_NEW_EVENTS_PER_SYNC,
+            "Trop de nouveaux concerts en une seule synchronisation")
+    require(counts["newVenues"] <= MAX_NEW_VENUES_PER_SYNC,
+            "Trop de nouvelles salles en une seule synchronisation")
     if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
