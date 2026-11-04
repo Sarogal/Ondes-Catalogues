@@ -37,6 +37,24 @@ MAX_NEW_VENUES_PER_SYNC = 6
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "la-vapeur-dijon": {
+        "venue": {
+            "id": "la-vapeur-dijon",
+            "name": "La Vapeur",
+            "address": "42 avenue de Stalingrad",
+            "postalCode": "21000",
+            "city": "Dijon",
+            "department": "21",
+            "region": "Bourgogne-Franche-Comté",
+            "latitude": 47.34569,
+            "longitude": 5.05964,
+            "geoPrecision": "point nominatif de La Vapeur sur OpenStreetMap node 3474725036 via Mapcarta, coordonnées arrondies à 5 décimales ; position indicative de la salle, pas son entrée",
+            "geoSource": "https://mapcarta.com/fr/N3474725036"
+        },
+        "officialUrl": "https://www.lavapeur.com/infos-pratiques/acces",
+        "locationUrl": "https://mapcarta.com/fr/N3474725036",
+        "locationProofType": "openstreetmap-venue-node"
+    },
     "le-bateau-ivre-tours": {
         "venue": {
             "id": "le-bateau-ivre-tours",
@@ -3311,6 +3329,40 @@ BATEAU_IVRE_URL_IDS = {
 }
 
 
+# La Vapeur Dijon, official first-party calendar + organizer's ticketing page
+# linked directly from it. Weezevent event range 19h30-23h != musical start.
+VAPEUR_DIJON_SIGNED_20261104 = {
+    "go-c-20270123-dijon-misanthrope-obsession-slapdown": {
+        "title": "Misanthrope + Obsession + Slapdown",
+        "date": "2027-01-23",
+        "time": None,
+        "venueId": "la-vapeur-dijon",
+        "artistIds": [
+            "misanthrope",
+            "obsession",
+            "slapdown"
+        ],
+        "artistNames": [
+            "Misanthrope",
+            "Obsession",
+            "Slapdown"
+        ],
+        "newArtistIds": [
+            "obsession",
+            "slapdown"
+        ],
+        "genres": [
+            "Metal"
+        ],
+        "officialUrl": "https://my.weezevent.com/thrash-til-death-2-misanthrope-obsession-slapdown",
+        "calendarUrl": "https://www.lavapeur.com/programme/"
+    }
+}
+VAPEUR_DIJON_RESERVED_URLS = {
+    spec["officialUrl"]: ident for ident, spec in VAPEUR_DIJON_SIGNED_20261104.items()
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3358,6 +3410,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if event_id in BATEAU_IVRE_SIGNED_20261104:
         require(event.get("venueId") == "le-bateau-ivre-tours",
                 "Bateau Ivre : identifiant déplacé hors de Tours")
+    if official_url in VAPEUR_DIJON_RESERVED_URLS:
+        require(event_id == VAPEUR_DIJON_RESERVED_URLS[official_url],
+                "La Vapeur : billet nominatif réservé à son concert signé")
+    if event_id in VAPEUR_DIJON_SIGNED_20261104:
+        require(event.get("venueId") == "la-vapeur-dijon",
+                "La Vapeur : identifiant déplacé hors de Dijon")
     # Exact event identity and official first-party URL are reserved
     # together: neither a new ID nor a different venue may reuse this proof.
     # Les quatre URLs officielles du lot Nantes/Toulouse ne sont pas recyclables.
@@ -5150,6 +5208,56 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Bateau Ivre : artistes non identiques à l'affiche")
         require(event.get("time") is None,
                 "Bateau Ivre : heure de début musical non attestée")
+    # Dijon: authorization derives from the venue's exact public listing,
+    # linked to the named organizer booking page bearing the complete year.
+    if (event_id in VAPEUR_DIJON_SIGNED_20261104
+            or event.get("venueId") == "la-vapeur-dijon"
+            or official_url in VAPEUR_DIJON_RESERVED_URLS):
+        spec = VAPEUR_DIJON_SIGNED_20261104.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "organisateur"
+                and event.get("status") == "confirmed"
+                and event.get("venueId") == "la-vapeur-dijon"
+                and official_url == spec["officialUrl"]
+                and all(event.get(k) == spec[k] for k in
+                        ("title","date","time","venueId","artistIds","genres")),
+                "La Vapeur : affiche non signée ou nom/date falsifiés")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "my.weezevent.com"
+                and url.path == "/thrash-til-death-2-misanthrope-obsession-slapdown"
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "La Vapeur : billetterie de l'organisateur nominative requise")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "La Vapeur : preuve ancienne ou future")
+        require(len(evidence) == 2 and all(isinstance(p,dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} ==
+                    {"official-organizer-or-venue","first-party-venue-calendar"},
+                "La Vapeur : billetterie reliée à la salle et programme exigés")
+        ticket = next(p for p in evidence if p["proofType"] == "official-organizer-or-venue")
+        calendar = next(p for p in evidence if p["proofType"] == "first-party-venue-calendar")
+        require(ticket.get("url") == spec["officialUrl"]
+                and ticket.get("checkedAt") == reviewed.isoformat()
+                and ticket.get("checkedFields") == ["artists","date","venue","genre"]
+                and ticket.get("officialOrganizer") == "Association Phoenix Rising",
+                "La Vapeur : autorisation, année ou organisateur Weezevent non attestés")
+        require(calendar.get("url") == spec["calendarUrl"]
+                and calendar.get("checkedAt") == reviewed.isoformat()
+                and calendar.get("checkedFields") == ["artists","dayMonth","venue","genre"]
+                and calendar.get("linkedBookingUrl") == spec["officialUrl"],
+                "La Vapeur : programme officiel ou lien vers la billetterie absent")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == [{"id":aid,"name":spec["artistNames"][i]}
+                for i,aid in enumerate(spec["artistIds"])
+                if aid in spec["newArtistIds"]]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+                        for aid,name in zip(ids,spec["artistNames"])),
+                "La Vapeur : groupe ajouté ou identité remplacée")
+        require(event.get("time") is None,
+                "La Vapeur : 19h30–23h est un créneau de billetterie, pas un début musical")
     return event, added
 
 
