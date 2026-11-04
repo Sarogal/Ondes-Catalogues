@@ -160,6 +160,11 @@ def merge_staged_with_approved(original, staged, trusted):
                     and isinstance(current.get("bands"), int)):
                 current["bands"] = len(current["lineup"])
         elif slug in by_slug:
+            # An identical earlier independently certified addition must not
+            # be published twice or regress on every daily cumulative replay.
+            # The published row itself was checked against the signed head.
+            if entry == by_slug[slug]:
+                continue
             # Une annonce déjà intégrée et certifiée est idempotente. Le patch
             # cumulatif peut porter une ancienne formulation des notes : on ne
             # la réécrit jamais. Son identité, son statut et ses sources restent

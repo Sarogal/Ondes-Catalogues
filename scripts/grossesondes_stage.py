@@ -19,6 +19,10 @@ from grossesondes_preview import (
 )
 from grossesondes_generic_roster import validate_roster
 from grossesondes_structured_roster import PROOF_MODE, validate_structured_roster
+from grossesondes_structured_edition import (
+    PROOF_MODE as EDITION_PROOF_MODE, validate_structured_edition,
+    conflicts_with_existing,
+)
 from grossesondes_history_guard import validate_history_extension
 # The frozen 2026-10-30 certificate remains tested separately; the live
 # preview is reconciled against the integrity-pinned published head.
@@ -133,7 +137,8 @@ def apply_changes(entry,changes,slug,today):
     updated["lastVerified"]=next((c["after"] for c in changes if c["field"]=="lastVerified"),entry.get("lastVerified",today))
     return updated
 
-def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None):
+def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None,
+          published_calendar=None,published_history=None):
     # Lors d'une prévisualisation autonome, les JSON publics historiques
     # restent la référence du patch même après extension du miroir Pages.
     audit(calendar,history,patch,
@@ -147,7 +152,28 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
-        if slug=="muscadeath-2027" and can_add_muscadeath(e,sources.get("muscadeath","")):
+        if e.get("proofMode")==EDITION_PROOF_MODE:
+            parent=existing.get(e.get("originSlug"))
+            known_rows=rows + (
+                published_calendar.get("festivals",[]) if published_calendar else [])
+            known_history=history["knownFestivals"] + (
+                published_history.get("knownFestivals",[]) if published_history else [])
+            if parent is None or conflicts_with_existing(
+                    e,known_rows,known_history):
+                report["held"].append({"slug":slug,"reason":"édition parente absente ou doublon"})
+                continue
+            proposed=validate_structured_edition(
+                e,parent,sources.get("registered-edition:"+slug,""),today)
+            if proposed is None:
+                report["held"].append({"slug":slug,
+                                       "reason":"nouvelle édition sans preuve officielle indépendante"})
+                continue
+            rows.append(proposed)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].append(parent["officialSite"])
+        elif e.get("proofMode") is not None:
+            report["held"].append({"slug":slug,"reason":"mode d'ajout non pris en charge"})
+        elif slug=="muscadeath-2027" and can_add_muscadeath(e,sources.get("muscadeath","")):
             require(slug not in existing and all(x.get("slug")!=slug for x in history["knownFestivals"]),
                     "édition déjà connue")
             rows.append(e)
@@ -232,7 +258,8 @@ def main():
     # certificate alone cannot describe later independently verified releases.
     # Import within main because cloud_sync imports stage() from this module.
     from grossesondes_cloud_sync import (
-        MANIFEST, load_production, verify_published_head, build_candidate
+        MANIFEST, load_production, verify_published_head, build_candidate,
+        collect_registered_edition_sources,
     )
     snapshot=load_production(json.loads(MANIFEST.read_text(encoding="utf-8")))
     production_calendar=snapshot["festivals.json"]
@@ -273,6 +300,9 @@ def main():
         except Exception:
             evidence["registered-schema:"+slug]=""
             print("Preuve JSON-LD indisponible pour "+slug+" ; modification différée.")
+    # The independently fetched parent URL, never the private candidate's
+    # evidence URL, is the only eligible source for a new edition.
+    evidence.update(collect_registered_edition_sources(patch,registered))
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(
