@@ -2952,5 +2952,101 @@ class BretagneStrictAllowlist20261103Tests(unittest.TestCase):
                             __import__("datetime").date(2026, 11, 3))
 
 
+class NationalGapLot20261104Tests(unittest.TestCase):
+    """Quinze fiches autorisées individuellement, sans admission par domaine entier."""
+
+    IDS = (
+        "go-c-20261113-nancy-michel-cloup-trio",
+        "go-c-20261121-nancy-les-fatals-picards",
+        "go-c-20261212-nancy-benighted",
+        "go-c-20270205-nancy-skip-the-use",
+        "go-c-20270216-nancy-laibach",
+        "go-c-20270224-nancy-maquina",
+        "go-c-20270206-reims-skip-the-use",
+        "go-c-20270211-reims-pamela",
+        "go-c-20270218-reims-revnoir",
+        "go-c-20270219-reims-la-jungle",
+        "go-c-20270319-reims-ayron-jones",
+        "go-c-20270403-reims-igorrr",
+        "go-c-20270409-reims-rodrigo-y-gabriela",
+        "go-c-20270312-poitiers-tramhaus",
+        "go-c-20261115-wasquehal-cage-fight",
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        from concerts_cloud_sync import UNDERCOVERED_REGIONS_NOV2026_VERIFIED
+        cls.specs = UNDERCOVERED_REGIONS_NOV2026_VERIFIED
+        cls.catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.venues = {v["id"]: v for v in cls.catalogue["venues"]}
+        cls.artists = {a["id"]: a for a in cls.catalogue["artists"]}
+        cls.today = __import__("datetime").date(2026, 11, 4)
+
+    def row(self, event_id):
+        spec = self.specs[event_id]
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-04",
+            "officialEvidence": [
+                {"url": spec["officialUrl"], "proofType": "official-organizer-or-venue",
+                 "checkedAt": "2026-11-04", "checkedFields": ["artists", "date", "venue", "genre"]},
+                {"url": spec["calendarUrl"], "proofType": "first-party-venue-calendar",
+                 "checkedAt": "2026-11-04", "checkedFields": ["artists", "date", "venue"]},
+            ],
+            "event": {
+                "id": event_id, "title": spec["title"], "date": spec["date"],
+                "time": None, "artistIds": list(spec["artistIds"]),
+                "venueId": spec["venueId"], "genres": list(spec["genres"]),
+                "status": "confirmed", "officialUrl": spec["officialUrl"],
+                "sourceType": "salle",
+            },
+            "newArtists": copy.deepcopy(spec["newArtists"]),
+        }
+
+    def test_fifteen_named_events_have_unique_ids_no_prior_collision_and_valid_signatures(self):
+        from concerts_cloud_sync import validate_approval
+        self.assertEqual(len(self.IDS), 15)
+        self.assertEqual(len(set(self.IDS)), len(self.IDS))
+        existing = {e["id"] for e in self.catalogue["events"]}
+        for event_id in self.IDS:
+            with self.subTest(event_id=event_id):
+                self.assertNotIn(event_id, existing)
+                row = self.row(event_id)
+                event, added = validate_approval(row, self.venues, self.artists, self.today)
+                self.assertEqual(event["id"], event_id)
+                self.assertIsNone(event["time"])
+                self.assertEqual(sorted(added), sorted(a["id"] for a in row["newArtists"]))
+                self.assertEqual(len(row["officialEvidence"]), 2)
+
+    def test_forged_details_or_missing_official_calendar_are_rejected(self):
+        from concerts_cloud_sync import validate_approval
+        for event_id in self.IDS:
+            approved = self.row(event_id)
+            variants = []
+            variant = copy.deepcopy(approved)
+            variant["event"]["title"] += " + Groupe imaginaire"
+            variants.append(variant)
+            variant = copy.deepcopy(approved)
+            variant["event"]["date"] = "2027-10-01"
+            variants.append(variant)
+            variant = copy.deepcopy(approved)
+            variant["event"]["time"] = "20:00"  # portes / créneau, pas début musical
+            variants.append(variant)
+            variant = copy.deepcopy(approved)
+            variant["officialEvidence"] = variant["officialEvidence"][:1]
+            variants.append(variant)
+            variant = copy.deepcopy(approved)
+            variant["event"]["officialUrl"] = "https://invalid.example.org/affiche"
+            variants.append(variant)
+            variant = copy.deepcopy(approved)
+            variant["event"]["venueId"] = "le-molotov-marseille"
+            variants.append(variant)
+            for i, bad in enumerate(variants):
+                with self.subTest(event_id=event_id, mutation=i):
+                    with self.assertRaises((ValueError, KeyError)):
+                        validate_approval(bad, self.venues, self.artists, self.today)
+
+
 if __name__=="__main__":
     unittest.main()
