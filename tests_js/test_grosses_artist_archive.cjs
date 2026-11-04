@@ -21,3 +21,38 @@ test('historical source adds dated festival appearances but not invented concert
   assert.equal(classify(after.all,'2026-11-04').upcoming.filter(f=>f.historical).length,0);
   assert.equal(new Set(after.all.map(f=>f.key)).size,after.all.length);
 });
+
+test('duplicate current edition wins and uncertain historic appearances stay hidden', () => {
+  const artist={schemaVersion:1,artists:[{id:'groupe-a',name:'Groupe A',aliases:[]}],
+    venues:[],events:[]};
+  const live={schema:1,festivals:[{slug:'metal-ancien-2025',
+    name:'Festival Metal Ancien', city:'Albi',startDate:'2025-05-01',
+    endDate:'2025-05-02',lineup:['Groupe A']}]};
+  const h={schema:2,knownFestivals:[
+    {slug:'metal-ancien',name:'Festival Metal Ancien',city:'Albi',
+     startDate:'2025-05-01',endDate:'2025-05-02',lastKnownYear:2025,
+     lineup:['Groupe A'],verificationStatus:'Édition documentée',
+     source:'https://festival.example/archives'},
+    {slug:'metal-nouveau',name:'Festival Metal Nouveau',city:'Toulouse',
+     startDate:'2025-06-01',endDate:'2025-06-03',lastKnownYear:2025,
+     lineup:['Groupe A'],verificationStatus:'Édition documentée',
+     source:'https://festival.example/archives2'},
+    {slug:'metal-douteux',name:'Festival Metal Douteux',city:'Lyon',
+     startDate:'2025-07-01',endDate:'2025-07-03',lastKnownYear:2025,
+     lineup:['Groupe A'],verificationStatus:'Dernière édition à vérifier',
+     source:'https://festival.example/douteux'},
+    {slug:'metal-futur',name:'Festival Metal Futur',city:'Paris',
+     startDate:'2027-08-01',endDate:'2027-08-02',lastKnownYear:2027,
+     lineup:['Groupe A'],verificationStatus:'Édition documentée',
+     source:'https://festival.example/futur'}
+  ]};
+  const result=collectAppearances('Groupe A',live,artist,h,'2026-11-04');
+  assert.equal(result.concerts.length,0);
+  assert.equal(result.festivals.length,2);
+  const old=result.festivals.find(f => f.historical);
+  assert.equal(old.title,'Festival Metal Nouveau');
+  assert.equal(old.exact,false);
+  assert.equal(old.date,'2025-06-01');
+  assert.equal(old.end,'2025-06-03');
+  assert.equal(result.festivals.filter(f => f.title==='Festival Metal Ancien').length,1);
+});
