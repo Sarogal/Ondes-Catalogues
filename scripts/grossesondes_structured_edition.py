@@ -15,6 +15,35 @@ from grossesondes_structured_roster import (
 
 PROOF_MODE = "structured-edition.v1"
 SLUG = re.compile(r"^(.+)-(20[2-4][0-9])$")
+EMBEDDED_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
+
+
+def pinned_parent_identity(parent):
+    """Derive a parent edition year without trusting the private proposal.
+
+    Existing suffixed slugs work as before. For truly yearless slugs only,
+    the frozen Infomaniak parent startDate establishes the reference year.
+    Slugs with embedded years (often multi-city festivals) cannot be stripped.
+    """
+    slug = parent.get("slug")
+    if not isinstance(slug, str) or not slug:
+        return None
+    match = SLUG.fullmatch(slug)
+    if match:
+        return match.group(1), int(match.group(2))
+    if EMBEDDED_YEAR.search(slug):
+        return None
+    start_raw = parent.get("startDate")
+    start = iso_day(start_raw)
+    if not start or start_raw != start.isoformat():
+        return None
+    named_years = EMBEDDED_YEAR.findall(str(parent.get("name", "")))
+    if named_years and (len(set(named_years)) != 1
+                        or named_years[0] != str(start.year)):
+        return None
+    return slug, start.year
+
+
 PRIVATE_NOTES = (
     "Édition annoncée dans les données structurées du site officiel ; "
     "dates de l'événement vérifiables. Lieu, séances, tarifs et "
@@ -44,13 +73,14 @@ def validate_structured_edition(proposal, parent, html, today):
     if proposal.get("proofMode") != PROOF_MODE:
         return None
     old_slug, new_slug = parent.get("slug"), proposal.get("slug")
-    old_match = SLUG.fullmatch(old_slug) if isinstance(old_slug, str) else None
+    parent_identity = pinned_parent_identity(parent)
     new_match = SLUG.fullmatch(new_slug) if isinstance(new_slug, str) else None
-    if not old_match or not new_match:
+    if parent_identity is None or new_match is None:
         return None
-    old_year, year = int(old_match.group(2)), int(new_match.group(2))
+    base_slug, old_year = parent_identity
+    year = int(new_match.group(2))
     if not (year == old_year + 1 and year in (2027, 2028)
-            and old_match.group(1) == new_match.group(1)
+            and base_slug == new_match.group(1)
             and proposal["originSlug"] == old_slug):
         return None
     title = proposal["name"]
