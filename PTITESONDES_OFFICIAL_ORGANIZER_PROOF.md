@@ -46,6 +46,25 @@ tests des dates rejetées, du calendrier exact, des horaires, des reports
 et du comportement en panne réseau. Aucune recherche arbitraire ni
 redirection cross-domain n'est autorisée pendant le contrôle.
 
+## Doublons entre sources
+
+Le catalogue du 4 novembre 2026 contenait déjà cinq des six séances
+prévalidées sur les deux spectacles, sous les titres officiels courts :
+13 et 20 janvier 2027, puis 10, 14 et 17 février 2027.
+
+Le programme OpenAgenda préfixe ces mêmes titres par « Jeune public -
+Concert / Conte musical ». La déduplication classique par titre entier
+ne détectait donc pas les cinq doublons.
+
+Le module `canonical_event_title` n'unifie **que les deux correspondances
+source/organisateur revues explicitement**, en conservant impérativement
+la commune, la salle et la date dans la clé de déduplication. La séance
+supplémentaire du 14 janvier 2027 à 10 h 30 reste distincte.
+
+La même protection est appliquée au précontrôle et au synchroniseur final.
+Toute tentative de patch qui créerait un doublon est bloquée, même si son
+UID et son URL diffèrent de la fiche déjà publiée.
+
 ## Tests
 
 `python -m unittest discover -s tests -p 'test_official_organizer_proof.py' -v`

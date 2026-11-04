@@ -18,6 +18,7 @@ from urllib.request import Request, urlopen
 
 from merge_policy import ORIGIN, byid, valid, safe_published_event
 from private_intake import BRANCH, PATH, github
+from official_organizer_proof import canonical_event_title
 from proof import norm, meters
 from proof_text import verify_event
 from venue_registry import VENUES
@@ -232,7 +233,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         raise ValueError("Catalogue historique différent du public")
     fields = set().union(*(set(ev) for ev in baseline["events"]))
     categories = {x["category"] for x in baseline["events"]}
-    signatures = {(norm(e.get("title")), norm(e.get("city")),
+    signatures = {(canonical_event_title(e), norm(e.get("city")),
                    norm(e.get("venue")), e.get("date_start"))
                   for e in published["events"]}
     urls = {(e.get("source_url"), e.get("date_start"))
@@ -248,7 +249,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         try:
             record = fetch(lead["external_id"])
             event = make_event(lead, record, registry_location(lead), today)
-            signature = (norm(event["title"]), norm(event["city"]),
+            signature = (canonical_event_title(event), norm(event["city"]),
                          norm(event["venue"]), event["date_start"])
             if event["id"] in existing or signature in signatures or (
                     event["source_url"], event["date_start"]) in urls:
