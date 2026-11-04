@@ -2233,10 +2233,10 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(after["events"][:len(BASE["events"])],
                                  BASE["events"])
 
-    def test_explicit_approval_limit_rejects_instead_of_silent_truncation(self):
+    def test_cumulative_approval_limit_rejects_instead_of_silent_truncation(self):
         day=__import__("datetime").date(2026,11,2)
         q={"schema":"grossesondes.concert.approvals.v1",
-           "approvals":[{} for _ in range(151)]}
+           "approvals":[{} for _ in range(401)]}
         with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
             merge(BASE,BASE,q,day)
 
@@ -2695,7 +2695,7 @@ class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
         protect_reference(BASE, out)
         validate_catalogue(out)
 
-    def test_queue_ceiling_is_still_enforced_at_150(self):
+    def test_queue_ceiling_is_still_enforced_at_400(self):
         from concerts_cloud_sync import ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED
         event_id, spec = next(iter(
             ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED.items()))
@@ -2704,7 +2704,7 @@ class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
             merge(
                 BASE, BASE,
                 {"schema": "grossesondes.concert.approvals.v1",
-                 "approvals": [row] * 151, "venueApprovals": []},
+                 "approvals": [row] * 401, "venueApprovals": []},
                 __import__("datetime").date(2026, 11, 3),
             )
 
