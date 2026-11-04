@@ -138,7 +138,7 @@ def audit(calendar,history,patch,production_calendar,production_history):
             require(ch["field"] not in ("slug","name"),
                     "changement d'identité interdit : "+slug)
             known_fields=set().union(*(row.keys() for row in cal.values()))
-            require(ch["field"] in known_fields,
+            require(ch["field"] in known_fields or (upd.get("proofMode") == "structured-tickets.v1" and ch["field"] == "ticketAvailability"),
                     "champ étranger au schema public : "+ch["field"])
             # Les objets publics omettent certains champs facultatifs.
             # Une absence n'est équivalente à « null » que si la veille l'indique

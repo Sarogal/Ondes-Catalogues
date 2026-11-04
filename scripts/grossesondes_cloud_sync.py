@@ -19,6 +19,7 @@ from grossesondes_preview import (
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE
 from grossesondes_structured_edition import PROOF_MODE as EDITION_PROOF_MODE
+from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL,
@@ -195,6 +196,8 @@ def collect_registered_update_sources(patch, original, fetcher=official_text):
         mode=update.get("proofMode")
         if mode == PROOF_MODE:
             key,raw="registered-schema:"+slug,True
+        elif mode == TICKET_PROOF_MODE:
+            key,raw="registered-ticket:"+slug,True
         elif mode is None and slug not in known_legacy:
             key,raw="registered:"+slug,False
         else:

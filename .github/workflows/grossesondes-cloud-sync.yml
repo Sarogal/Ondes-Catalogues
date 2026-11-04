@@ -6,6 +6,11 @@ on:
     paths:
       - '.github/workflows/grossesondes-cloud-sync.yml'
       - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_stage.py'
+      - 'scripts/grossesondes_preview.py'
+      - 'scripts/grossesondes_calendar_approval.py'
+      - 'scripts/grossesondes_structured_tickets.py'
+      - 'tests/test_grosses_structured_tickets.py'
       - 'tests/test_grosses_cloud_sync.py'
       - 'tests/test_grosses_field_proof.py'
       - 'scripts/grossesondes_generic_roster.py'
