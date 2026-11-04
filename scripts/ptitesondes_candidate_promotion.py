@@ -279,7 +279,11 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
                    "no_production_changes": True},
         "additions": accepted, "updates": [], "deferred": [],
     }
+    from collections import Counter
+    reasons = Counter(x.get("status", "unknown") + ": " +
+                      str(x.get("reason", ""))[:110] for x in rejected)
     report = {
+        "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
         "backlog_total": len(leads), "eligible_with_reviewed_venue": len(candidates),
         "checked": assessed, "accepted_preflight": len(accepted),
