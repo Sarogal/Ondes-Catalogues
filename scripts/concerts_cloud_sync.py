@@ -2658,6 +2658,16 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
+    # Exact event identity and official first-party URL are reserved
+    # together: neither a new ID nor a different venue may reuse this proof.
+    jardin_by_url={spec["officialUrl"]: ident
+                   for ident,spec in JARDIN_MODERNE_VERIFIED.items()}
+    if official_url in jardin_by_url:
+        require(event_id==jardin_by_url[official_url],
+                "Jardin Moderne : URL officielle déjà réservée à cette affiche")
+    if event_id in JARDIN_MODERNE_VERIFIED:
+        require(event.get("venueId")=="le-jardin-moderne-rennes",
+                "Jardin Moderne : identifiant déplacé hors de la salle")
     antipode_urls = {row["officialUrl"]: key for key, row in
                      ANTIPODE_RENNES_VERIFIED.items()}
     if official_url in antipode_urls:
