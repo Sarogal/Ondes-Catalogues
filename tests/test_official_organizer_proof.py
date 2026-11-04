@@ -82,6 +82,29 @@ class ApprovedOrganizerTests(unittest.TestCase):
                     ok, why = verify_event(event(day, time, feb=True), [])
                     self.assertTrue(ok, why)
 
+    def test_approved_source_with_long_dynamic_html_still_checks_organizer(self):
+        long_html = ('<html><title>OpenAgenda</title><body>'
+                     'Aide Français Loading... Agenda culturel Evénements à venir '
+                     + 'Informations sur les propositions publiques ' * 15
+                     + '</body></html>')
+        def response(url):
+            if url == JAN_URL:
+                return long_html, ""
+            return evidence(url)
+        with patch("proof_text.read", side_effect=response) as fetch:
+            ok, why = verify_event(event("2027-01-13", "14:30"), [])
+            self.assertTrue(ok, why)
+            self.assertEqual(fetch.call_count, 2)
+
+    def test_approved_openagenda_explicit_cancellation_blocks_fallback(self):
+        cancelled = ('<html><title>OpenAgenda</title><body>'
+                     'Cet événement est annulé.</body></html>')
+        with patch("proof_text.read", return_value=(cancelled, "")) as fetch:
+            ok, why = verify_event(event(), [])
+            self.assertFalse(ok)
+            self.assertIn("annulation", why)
+            fetch.assert_called_once()
+
     def test_reject_unknown_dates_and_incorrect_hours(self):
         with patch("proof_text.read", side_effect=evidence):
             for ev in [event("2027-01-15", "14:30"),
