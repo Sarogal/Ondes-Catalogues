@@ -56,7 +56,7 @@ def norm(t):
     s="".join(c for c in s if not unicodedata.combining(c))
     return " ".join(re.sub(r"[^a-z0-9]+"," ",s).split())
 
-def official_text(url, registered=False):
+def official_text(url, registered=False, raw=False):
     p=urlparse(url)
     host=(p.hostname or "").lower()
     safe_registered=(registered and p.scheme=="https" and p.port is None and
@@ -75,6 +75,8 @@ def official_text(url, registered=False):
         require(urlparse(r.geturl()).hostname==p.hostname,"redirection vers un autre domaine")
         raw=r.read(1_400_001)
     require(len(raw)<=1_400_000,"source trop volumineuse")
+    if raw:
+        return raw.decode("utf-8",errors="replace")
     parser=TextOnly()
     parser.feed(raw.decode("utf-8",errors="replace"))
     return norm(" ".join(parser.parts))
@@ -255,6 +257,22 @@ def main():
         except Exception as error:
             evidence[key]=""
             print(key+": preuve non disponible ; changement maintenu en attente")
+    # Also re-fetch registered official HTML for explicitly typed roster
+    # candidates. Their private source text is never accepted as proof.
+    registered={row["slug"]:row for row in production_calendar["festivals"]}
+    for proposed in patch.get("updates",[])[:15]:
+        if proposed.get("proofMode") != PROOF_MODE:
+            continue
+        slug=proposed.get("slug")
+        url=registered.get(slug,{}).get("officialSite")
+        if not isinstance(url,str):
+            continue
+        try:
+            evidence["registered-schema:"+slug]=official_text(
+                url,registered=True,raw=True)
+        except Exception:
+            evidence["registered-schema:"+slug]=""
+            print("Preuve JSON-LD indisponible pour "+slug+" ; modification différée.")
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(
