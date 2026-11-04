@@ -3056,5 +3056,82 @@ class NationalGapLot20261104Tests(unittest.TestCase):
                         validate_approval(bad, self.venues, self.artists, self.today)
 
 
+class ColmarDecemberJanuarySignedTests(unittest.TestCase):
+    """Only exact named bills can use the existing indicative Grillen pin."""
+
+    IDS = ("go-c-20261211-colmar-wake-the-dead",
+           "go-c-20270130-colmar-easy-cure")
+
+    @classmethod
+    def setUpClass(cls):
+        from concerts_cloud_sync import COLMAR_LIMOGES_VERIFIED_20261104
+        cls.specs = COLMAR_LIMOGES_VERIFIED_20261104
+        cls.catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json")
+                                   .read_text(encoding="utf-8"))
+        cls.venues = {row["id"]: row for row in cls.catalogue["venues"]}
+        new_ids = {a["id"] for event_id in cls.IDS
+                   for a in cls.specs[event_id]["newArtists"]}
+        cls.artists = {row["id"]: row for row in cls.catalogue["artists"]
+                       if row["id"] not in new_ids}
+        cls.today = __import__("datetime").date(2026, 11, 4)
+
+    def approval(self, ident):
+        spec = self.specs[ident]
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-04",
+            "officialEvidence": [
+                {"url": p["url"], "proofType": p["proofType"],
+                 "checkedAt": "2026-11-04", "checkedFields": list(p["requiredFields"])}
+                for p in spec["proofs"]
+            ],
+            "event": {
+                "id": ident, "title": spec["title"], "date": spec["date"],
+                "time": spec["time"], "venueId": spec["venueId"],
+                "artistIds": list(spec["artistIds"]), "genres": list(spec["genres"]),
+                "officialUrl": spec["officialUrl"], "sourceType": "salle",
+                "status": "confirmed",
+            },
+            "newArtists": copy.deepcopy(spec["newArtists"]),
+        }
+
+    def test_two_exact_official_bills_with_independent_year_are_accepted(self):
+        self.assertEqual(len(self.IDS), 2)
+        existing = {row["id"]: row for row in self.catalogue["events"]}
+        from concerts_cloud_sync import validate_approval
+        for ident in self.IDS:
+            with self.subTest(ident=ident):
+                self.assertNotIn(ident, existing)
+                spec = self.specs[ident]
+                self.assertEqual({p["proofType"] for p in spec["proofs"]},
+                    {"official-organizer-or-venue", "independent-event-listing"})
+                event, added = validate_approval(
+                    self.approval(ident), self.venues, self.artists, self.today)
+                self.assertEqual(event["id"], ident)
+                self.assertIsNone(event["time"])
+                self.assertEqual(set(added), {x["id"] for x in spec["newArtists"]})
+
+    def test_no_inferred_times_moved_venue_or_invented_artists(self):
+        from concerts_cloud_sync import validate_approval
+        for ident in self.IDS:
+            base = self.approval(ident)
+            for label, mutate in (
+                ("time", lambda v: v["event"].update(time="20:00")),
+                ("title", lambda v: v["event"].update(title="Groupes inventés")),
+                ("date", lambda v: v["event"].update(date="2027-09-10")),
+                ("venue", lambda v: v["event"].update(venueId="le-rex-toulouse")),
+                ("url", lambda v: v["event"].update(officialUrl="https://fake.example/a")),
+                ("missing-proof", lambda v: v["officialEvidence"].pop()),
+                ("fake-field", lambda v: v["officialEvidence"][0]["checkedFields"].append("startTime")),
+                ("fake-artist", lambda v: v["newArtists"][0].update(name="Other Artist")),
+            ):
+                bad = copy.deepcopy(base)
+                mutate(bad)
+                with self.subTest(ident=ident,mutation=label):
+                    with self.assertRaises((ValueError, KeyError)):
+                        validate_approval(bad, self.venues, self.artists, self.today)
+
+
 if __name__=="__main__":
     unittest.main()
