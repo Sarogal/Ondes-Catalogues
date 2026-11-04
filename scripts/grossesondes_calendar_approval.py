@@ -143,6 +143,22 @@ def merge_staged_with_approved(original, staged, trusted):
                             "comptage officiel discordant : " + slug)
                     current[field] = len(current["lineup"])
                     continue
+                if field == "ticketAvailability":
+                    # Per-category statuses are time-stamped snapshots.
+                    # An old cumulative private patch cannot downgrade a
+                    # newer independently certified ticket observation.
+                    existing = current.get(field)
+                    if existing is not None:
+                        require(isinstance(existing, dict)
+                                and isinstance(value, dict)
+                                and isinstance(existing.get("verifiedAt"), str)
+                                and isinstance(value.get("verifiedAt"), str),
+                                "billetterie déjà publiée incompatible : " + slug)
+                        if existing["verifiedAt"] > value["verifiedAt"]:
+                            continue
+                        require(existing["verifiedAt"] != value["verifiedAt"]
+                                or existing == value,
+                                "deux preuves de billets contradictoires le même jour : " + slug)
                 if (field in base and current.get(field) != base.get(field)
                         and current.get(field) != value):
                     # Deux valeurs nouvelles contradictoires : l'ancienne preuve
