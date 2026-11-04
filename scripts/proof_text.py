@@ -290,6 +290,17 @@ def verify_event(event,originals):
     if (urlparse(event.get("source_url", "")).hostname=="openagenda.com"
             and "loading" in body and len(body)<180
             and not re.search(r"\b20\d\d\b", body)):
+        from official_organizer_proof import organizer_url, reviewed_schedule
+        other_url = organizer_url(event)
+        if other_url:
+            organizer_html, organizer_error = read(other_url)
+            if organizer_html is None:
+                return False, "preuve secondaire inaccessible : " + organizer_error
+            organizer_dom = Visible()
+            organizer_dom.feed(organizer_html)
+            return reviewed_schedule(
+                event, " ".join(organizer_dom.headers + organizer_dom.titles),
+                " ".join(organizer_dom.words))
         return False,"page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript"
     heading=norm(" ".join(dom.headers+dom.titles))
     title=norm(event["title"])
