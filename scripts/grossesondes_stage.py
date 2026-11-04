@@ -18,6 +18,7 @@ from grossesondes_preview import (
     ROOT,CAL_URL,HIS_URL,fetch_json,load_patch,audit,require
 )
 from grossesondes_generic_roster import validate_roster
+from grossesondes_structured_roster import PROOF_MODE, validate_structured_roster
 from grossesondes_history_guard import validate_history_extension
 # The frozen 2026-10-30 certificate remains tested separately; the live
 # preview is reconciled against the integrity-pinned published head.
@@ -156,26 +157,35 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         slug=up["slug"]
         current=existing[slug]
         partial=None
-        if slug=="cernunnos-pagan-fest":
-            partial=cernunnos_update(current,up,sources,today)
-        elif slug=="fantasmagorik-fest-2026":
-            partial=fantasmagorik_update(current,up,sources,today)
-        elif slug=="in-your-face-6-2026":
-            partial=in_your_face_sold_out(current,up,sources,today)
-        if partial is None and sources.get("registered:"+slug):
-            partial=validate_roster(current,up,sources["registered:"+slug])
+        proof_mode=up.get("proofMode")
+        if proof_mode == PROOF_MODE:
+            partial=validate_structured_roster(
+                current,up,sources.get("registered-schema:"+slug,""),today)
+        elif proof_mode is not None:
+            report["held"].append({"slug":slug,"reason":"mode de preuve non pris en charge"})
+            continue
+        else:
+            if slug=="cernunnos-pagan-fest":
+                partial=cernunnos_update(current,up,sources,today)
+            elif slug=="fantasmagorik-fest-2026":
+                partial=fantasmagorik_update(current,up,sources,today)
+            elif slug=="in-your-face-6-2026":
+                partial=in_your_face_sold_out(current,up,sources,today)
+            if partial is None and sources.get("registered:"+slug):
+                partial=validate_roster(current,up,sources["registered:"+slug])
         if partial is not None:
             revised,fields,uncorroborated=partial
             rows[rows.index(current)]=revised
             report["accepted_updates"].append({"slug":slug,"fields":fields})
             report["source_proofs"].extend(
-                [CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
-                if slug=="cernunnos-pagan-fest"
-                else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
-                      if slug=="fantasmagorik-fest-2026"
-                      else ([IN_YOUR_FACE_TICKET_URL]
-                            if slug=="in-your-face-6-2026"
-                            else [current["officialSite"]]))
+                [current["officialSite"]] if proof_mode == PROOF_MODE
+                else ([CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
+                      if slug=="cernunnos-pagan-fest"
+                      else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+                            if slug=="fantasmagorik-fest-2026"
+                            else ([IN_YOUR_FACE_TICKET_URL]
+                                  if slug=="in-your-face-6-2026"
+                                  else [current["officialSite"]])))
             )
             if uncorroborated:
                 report["held"].append({
