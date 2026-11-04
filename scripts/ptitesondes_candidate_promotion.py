@@ -11,6 +11,7 @@ import json
 import math
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo
 import re
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
@@ -297,16 +298,31 @@ def main():
     ap.add_argument("--output-dir", type=Path,
                     default=Path("/tmp/ptitesondes-promotion"))
     ap.add_argument("--limit", type=int, default=MAX_FETCH)
+    ap.add_argument("--backlog-file", type=Path)
+    ap.add_argument("--reference-file", type=Path)
+    ap.add_argument("--catalogue-file", type=Path,
+                    default=Path("docs/ptitesondes/sorties.json"))
+    ap.add_argument("--date", type=date.fromisoformat)
     args = ap.parse_args()
     if not 1 <= args.limit <= MAX_FETCH:
         raise ValueError("Taille de lot hors limite")
-    token = os.environ.get("PRIVATE_INTAKE_READ_TOKEN", "")
-    today = date.today()
-    leads = official_leads(token)
-    request = Request(ORIGIN, headers={"User-Agent": "OndesPublicDataAudit/1.0"})
-    with urlopen(request, timeout=30) as response:
-        baseline = json.loads(response.read(1_000_001))
-    published = json.loads(Path("docs/ptitesondes/sorties.json").read_text())
+    today = args.date or datetime.now(ZoneInfo("Europe/Paris")).date()
+    if args.backlog_file is not None:
+        leads = json.loads(args.backlog_file.read_text(encoding="utf-8"))
+        if not isinstance(leads, list) or len(leads) > 4000:
+            raise ValueError("Backlog local malformé")
+    else:
+        leads = official_leads(os.environ.get("PRIVATE_INTAKE_READ_TOKEN", ""))
+    if args.reference_file is not None:
+        baseline = json.loads(args.reference_file.read_text(encoding="utf-8"))
+    else:
+        request = Request(ORIGIN, headers={"User-Agent": "OndesPublicDataAudit/1.0"})
+        with urlopen(request, timeout=30) as response:
+            raw = response.read(1_000_001)
+        if len(raw) > 1_000_000:
+            raise ValueError("Référence historique trop volumineuse")
+        baseline = json.loads(raw)
+    published = json.loads(args.catalogue_file.read_text(encoding="utf-8"))
     patch, report = evaluate(leads, baseline, published, today, limit=args.limit)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "preview-patch.json").write_text(
