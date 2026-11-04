@@ -1,6 +1,13 @@
 name: P'tites Ondes — audit des propositions privees (sans publication)
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/outings_promotion.py'
+      - 'scripts/run_outings_promotion_preview.py'
+      - 'tests/test_outings_promotion.py'
+      - '.github/workflows/ptitesondes-promotion-preview.yml'
   schedule:
     - cron: '40 08 * * *'
     - cron: '40 15 * * *'
@@ -32,7 +39,7 @@ jobs:
         run: |
           python scripts/run_outings_promotion_preview.py
           {
-            echo '## Audit des pistes P\x27tites Ondes'
+            echo '## Audit des pistes familiales'
             echo '```json'
             cat /tmp/ptitesondes-promotion-preview.json
             echo '```'
