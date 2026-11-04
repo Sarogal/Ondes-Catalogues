@@ -293,7 +293,7 @@ def verify_event(event,originals):
         from official_organizer_proof import organizer_url, reviewed_schedule
         organizer = organizer_url(event)
         if organizer:
-            if re.search(r"\b(?:annule|annulee|annules|reporte|reportee|reportes)\\b", body):
+            if re.search(r"\b(?:annule|annulee|annules|reporte|reportee|reportes)\b", body):
                 return False, "annulation ou report mentionné dans la fiche OpenAgenda"
             organizer_html, organizer_error = read(organizer)
             if organizer_html is None:
@@ -306,7 +306,7 @@ def verify_event(event,originals):
     # Les autres pages dynamiques restent en attente, sans exception générale.
     if (urlparse(event.get("source_url", "")).hostname == "openagenda.com"
             and "loading" in body and len(body) < 180
-            and not re.search(r"\b20\d\d\\b", body)):
+            and not re.search(r"\b20\d\d\b", body)):
         return False, "page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript"
     heading=norm(" ".join(dom.headers+dom.titles))
     title=norm(event["title"])
