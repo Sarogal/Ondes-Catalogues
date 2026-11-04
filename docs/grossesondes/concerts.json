@@ -2091,6 +2091,16 @@
       "id": "trainfantome",
       "name": "Trainfantome",
       "aliases": []
+    },
+    {
+      "id": "obsession",
+      "name": "Obsession",
+      "aliases": []
+    },
+    {
+      "id": "slapdown",
+      "name": "Slapdown",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3055,6 +3065,19 @@
       "longitude": 0.7013784,
       "geoPrecision": "point indicatif associé à un événement organisé au Bateau Ivre, publié par l'ADT 37 via DATAtourisme; recoupé avec l'adresse officielle 146 rue Édouard Vaillant; ne représente pas l'entrée exacte",
       "geoSource": "https://www.loisirs-divertissements.com/sortir-en-france/sortir-visiter-indre-et-loire-37/jam-7880"
+    },
+    {
+      "id": "la-vapeur-dijon",
+      "name": "La Vapeur",
+      "address": "42 avenue de Stalingrad",
+      "postalCode": "21000",
+      "city": "Dijon",
+      "department": "21",
+      "region": "Bourgogne-Franche-Comté",
+      "latitude": 47.34569,
+      "longitude": 5.05964,
+      "geoPrecision": "point nominatif de La Vapeur sur OpenStreetMap node 3474725036 via Mapcarta, coordonnées arrondies à 5 décimales ; position indicative de la salle, pas son entrée",
+      "geoSource": "https://mapcarta.com/fr/N3474725036"
     }
   ],
   "events": [
@@ -12641,6 +12664,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270123-dijon-misanthrope-obsession-slapdown",
+      "title": "Misanthrope + Obsession + Slapdown",
+      "date": "2027-01-23",
+      "artistIds": [
+        "misanthrope",
+        "obsession",
+        "slapdown"
+      ],
+      "venueId": "la-vapeur-dijon",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://my.weezevent.com/thrash-til-death-2-misanthrope-obsession-slapdown",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Vapeur",
       "ticketUrl": null,
       "lastVerified": "2026-11-04",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
