@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-03",
+  "updatedAt": "2026-11-04",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -1801,6 +1801,21 @@
       "id": "dj-cup-of-tea",
       "name": "DJ Cup of Tea",
       "aliases": []
+    },
+    {
+      "id": "excellento",
+      "name": "Excellento",
+      "aliases": []
+    },
+    {
+      "id": "joey-gluten",
+      "name": "Joey Glüten",
+      "aliases": []
+    },
+    {
+      "id": "batarde",
+      "name": "Bâtarde",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2726,6 +2741,19 @@
       "longitude": -2.7852,
       "geoPrecision": "point indicatif du lieu sur la fiche gouvernementale Acceslibre, coordonnées arrondies à quatre décimales (~10 m latitude), non assimilées à l'entrée des concerts",
       "geoSource": "https://acceslibre.beta.gouv.fr/app/22-saint-brieuc/a/salle-de-spectacle/erp/bonjour-minuit/"
+    },
+    {
+      "id": "le-jardin-moderne-rennes",
+      "name": "Le Jardin Moderne",
+      "address": "11 rue du Manoir de Servigné",
+      "postalCode": "35000",
+      "city": "Rennes",
+      "department": "35",
+      "region": "Bretagne",
+      "latitude": 48.10164,
+      "longitude": -1.72557,
+      "geoPrecision": "centre indicatif du bâtiment Le Jardin Moderne (OpenStreetMap way 80301709, via Mapcarta, coordonnées arrondies à 5 décimales), non assimilé à l'entrée de la salle",
+      "geoSource": "https://mapcarta.com/fr/W80301709"
     }
   ],
   "events": [
@@ -10763,6 +10791,37 @@
       "history": [
         {
           "date": "2026-11-03",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-rennes-excellento",
+      "title": "Excellento + Joey Glüten + Bâtarde",
+      "date": "2026-11-07",
+      "artistIds": [
+        "excellento",
+        "joey-gluten",
+        "batarde"
+      ],
+      "venueId": "le-jardin-moderne-rennes",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.jardinmoderne.org/agenda/excellento-joey-gluten-batarde/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Jardin Moderne",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-03",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
