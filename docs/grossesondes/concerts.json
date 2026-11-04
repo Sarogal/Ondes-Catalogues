@@ -1986,6 +1986,51 @@
       "id": "chevreuil",
       "name": "Chevreuil",
       "aliases": []
+    },
+    {
+      "id": "darvaza",
+      "name": "Darvaza",
+      "aliases": []
+    },
+    {
+      "id": "merrimack",
+      "name": "Merrimack",
+      "aliases": []
+    },
+    {
+      "id": "helleruin",
+      "name": "Helleruin",
+      "aliases": []
+    },
+    {
+      "id": "detresse",
+      "name": "Détresse",
+      "aliases": []
+    },
+    {
+      "id": "8-6-crew",
+      "name": "8'6 Crew",
+      "aliases": []
+    },
+    {
+      "id": "wunderbach",
+      "name": "Wunderbach",
+      "aliases": []
+    },
+    {
+      "id": "hors-controle",
+      "name": "Hors Contrôle",
+      "aliases": []
+    },
+    {
+      "id": "earth-inc",
+      "name": "Earth Inc.",
+      "aliases": []
+    },
+    {
+      "id": "jessica93",
+      "name": "Jessica93",
+      "aliases": []
     }
   ],
   "venues": [
@@ -12080,6 +12125,133 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261209-colmar-darvaza",
+      "title": "Darvaza + Merrimack + Helleruin + Détresse",
+      "date": "2026-12-09",
+      "artistIds": [
+        "darvaza",
+        "merrimack",
+        "helleruin",
+        "detresse"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.headbang.eu/events/concert-black-metal-darvaza-merrimack-helleruin-grillen-colmar-decembre-2026/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Grillen",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270213-colmar-8-6-crew",
+      "title": "8'6 Crew + Wunderbach + Hors Contrôle",
+      "date": "2027-02-13",
+      "artistIds": [
+        "8-6-crew",
+        "wunderbach",
+        "hors-controle"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Punk Rock",
+        "Ska"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://agenda.colmar.fr/86-crew-wunderbach-hors-controle",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Grillen",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-limoges-7weeks",
+      "title": "7Weeks + Dirty Deep + Earth Inc.",
+      "date": "2026-11-06",
+      "artistIds": [
+        "7weeks",
+        "dirty-deep",
+        "earth-inc"
+      ],
+      "venueId": "espace-john-lennon-limoges",
+      "genres": [
+        "Heavy Rock",
+        "Heavy Blues"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://centresculturels.limoges.fr/agenda/release-party-7-weeks-dirty-deep-earth-inc",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Espace John Lennon",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261127-limoges-gwendoline",
+      "title": "Gwendoline + Jessica93",
+      "date": "2026-11-27",
+      "artistIds": [
+        "gwendoline",
+        "jessica93"
+      ],
+      "venueId": "espace-john-lennon-limoges",
+      "genres": [
+        "Rock",
+        "Cold Wave"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://centresculturels.limoges.fr/agenda/gwendoline-jessica93",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Espace John Lennon",
       "ticketUrl": null,
       "lastVerified": "2026-11-04",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
