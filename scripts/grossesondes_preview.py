@@ -52,7 +52,7 @@ def index(doc,key,expected_schema):
                     "période inversée : "+e["slug"])
     return result
 
-def load_patch(token,today):
+def load_patch(token,today,*,allow_stale_for_reproof=False):
     require(bool(token),"secret GROSSES_ONDES_INTAKE_READ_TOKEN absent")
     suffix="?ref="+quote(BRANCH,safe="")
     contents=fetch_json(PRIVATE+FOLDER+suffix,token)
@@ -65,7 +65,8 @@ def load_patch(token,today):
             if day<=today:items.append((day,file["path"]))
     require(items,"aucun patch quotidien encore disponible")
     day,path=max(items)
-    require((today-day).days<=7,"lot de plus de 7 jours")
+    if not allow_stale_for_reproof:
+        require((today-day).days<=7,"lot de plus de 7 jours")
     entry=fetch_json(PRIVATE+quote(path,safe="/")+suffix,token)
     require(entry.get("encoding")=="base64","encodage patch non reconnu")
     raw=base64.b64decode(entry["content"])
