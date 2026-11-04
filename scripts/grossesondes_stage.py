@@ -211,7 +211,8 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
 def main():
     today=datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
     token=__import__("os").environ.get("GROSSES_ONDES_INTAKE_READ_TOKEN","")
-    patch,path=load_patch(token,__import__("datetime").date.fromisoformat(today))
+    patch,path=load_patch(token,__import__("datetime").date.fromisoformat(today),
+                          allow_stale_for_reproof=True)
     cal=json.loads((ROOT/"festivals.json").read_text(encoding="utf-8"))
     history=json.loads((ROOT/"festival-history.json").read_text(encoding="utf-8"))
     # Reuse the same pinned Infomaniak snapshot and signed published-head
