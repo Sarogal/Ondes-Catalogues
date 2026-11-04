@@ -1,10 +1,11 @@
 # Vérification automatique des candidats P'tites Ondes
 
-Workflow `.github/workflows/ptitesondes-candidate-preview.yml`.
+Workflow `.github/workflows/ptitesondes-evidence-preview.yml`.
 
-Deux vérifications quotidiennes en lecture seule à 08 h 40 et 15 h 40 UTC,
-après les collectes privées de 07 h 05 et 14 h 05 UTC, avec déclenchement
-manuel possible et prévisualisation immédiate lors d'un changement du moteur.
+La tâche existante de prévalidation indépendante est conservée comme **unique**
+contrôleur de promotion, avec deux vérifications en lecture seule à 08 h 40
+et 15 h 40 UTC, après les collectes privées de 07 h 05 et 14 h 05 UTC,
+un déclenchement manuel et un contrôle dès qu'un patch modifie le moteur.
 
 Le contrôleur **existant**
 `scripts/ptitesondes_candidate_promotion.py` est réutilisé (pas de second moteur).
