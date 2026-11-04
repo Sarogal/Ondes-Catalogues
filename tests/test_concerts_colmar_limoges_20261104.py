@@ -18,6 +18,7 @@ IDS = (
     "go-c-20270213-colmar-8-6-crew",
     "go-c-20261106-limoges-7weeks",
     "go-c-20261127-limoges-gwendoline",
+    "go-c-20270219-colmar-colour-haze",
 )
 
 def signed(ident):
@@ -50,7 +51,7 @@ def check(approval):
 
 
 class ColmarLimogesSignatures(unittest.TestCase):
-    def test_four_exact_first_party_programmes(self):
+    def test_five_exact_first_party_programmes(self):
         specs = sync.COLMAR_LIMOGES_VERIFIED_20261104
         self.assertEqual(set(specs), set(IDS))
         existing = {e["id"]: e for e in CATALOGUE["events"]}
