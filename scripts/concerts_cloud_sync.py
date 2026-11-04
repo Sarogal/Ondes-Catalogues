@@ -2662,6 +2662,200 @@ NANTES_TOULOUSE_NOV2026_VERIFIED = {
 }
 
 
+
+# Lot signé sur fiches officielles le 4 novembre : sept affiches exactes, sans publication brute.
+SEVEN_OFFICIAL_NOV2026_VERIFIED = {
+    "go-c-20270114-wasquehal-rhapsody-of-fire": {
+        "title": "Rhapsody of Fire + Serious Black + Submasq + Aeon Gods + Rock Out",
+        "date": "2027-01-14",
+        "time": None,
+        "venueId": "the-black-lab-wasquehal",
+        "artistIds": [
+            "rhapsody-of-fire",
+            "serious-black",
+            "submasq",
+            "aeon-gods",
+            "rock-out"
+        ],
+        "artistNames": [
+            "Rhapsody of Fire",
+            "Serious Black",
+            "Submasq",
+            "Aeon Gods",
+            "Rock Out"
+        ],
+        "genres": [
+            "Power Metal"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://theblacklab.fr/agenda/rhapsody-of-fire/",
+        "calendarUrl": "https://theblacklab.fr/agenda/liste/"
+    },
+    "go-c-20270206-wasquehal-revnoir": {
+        "title": "Revnoir + Ice Sealed Eyes",
+        "date": "2027-02-06",
+        "time": None,
+        "venueId": "the-black-lab-wasquehal",
+        "artistIds": [
+            "revnoir",
+            "ice-sealed-eyes"
+        ],
+        "artistNames": [
+            "Revnoir",
+            "Ice Sealed Eyes"
+        ],
+        "genres": [
+            "Metalcore"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://theblacklab.fr/agenda/revnoir-ice-sealed-eyes/",
+        "calendarUrl": "https://theblacklab.fr/agenda/liste/page/2/"
+    },
+    "go-c-20270115-biarritz-svinkels": {
+        "title": "Svinkels + Voizins Vigilants",
+        "date": "2027-01-15",
+        "time": None,
+        "venueId": "atabal-biarritz",
+        "artistIds": [
+            "svinkels",
+            "voizins-vigilants"
+        ],
+        "artistNames": [
+            "Svinkels",
+            "Voizins Vigilants"
+        ],
+        "genres": [
+            "Hip-Hop",
+            "Electro Punk"
+        ],
+        "newArtists": [
+            {
+                "id": "svinkels",
+                "name": "Svinkels"
+            },
+            {
+                "id": "voizins-vigilants",
+                "name": "Voizins Vigilants"
+            }
+        ],
+        "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/svinkels-family-friends-voizins-vigilants-vendredi-15-janvier-2027/",
+        "calendarUrl": "https://www.atabal-biarritz.fr/agenda/"
+    },
+    "go-c-20261126-blois-carmen-sea": {
+        "title": "Carmen Sea",
+        "date": "2026-11-26",
+        "time": "19:30",
+        "venueId": "le-chatodo-blois",
+        "artistIds": [
+            "carmen-sea"
+        ],
+        "artistNames": [
+            "Carmen Sea"
+        ],
+        "genres": [
+            "Electro Rock"
+        ],
+        "newArtists": [
+            {
+                "id": "carmen-sea",
+                "name": "Carmen Sea"
+            }
+        ],
+        "officialUrl": "https://chatodo.com/agenda/evenement/carmen-sea/",
+        "calendarUrl": "https://chatodo.com/agenda/"
+    },
+    "go-c-20261111-strasbourg-mogwai": {
+        "title": "Mogwai + Forest Swords",
+        "date": "2026-11-11",
+        "time": "20:00",
+        "venueId": "la-laiterie-strasbourg",
+        "artistIds": [
+            "mogwai",
+            "forest-swords"
+        ],
+        "artistNames": [
+            "Mogwai",
+            "Forest Swords"
+        ],
+        "genres": [
+            "Post Rock",
+            "Art Rock"
+        ],
+        "newArtists": [
+            {
+                "id": "mogwai",
+                "name": "Mogwai"
+            },
+            {
+                "id": "forest-swords",
+                "name": "Forest Swords"
+            }
+        ],
+        "officialUrl": "https://www.artefact.org/la-laiterie/evenements/mogwai30/",
+        "calendarUrl": "https://www.artefact.org/la-laiterie/"
+    },
+    "go-c-20261127-paris-lugosi": {
+        "title": "LUGOSi + L’Idylle + Chiennes",
+        "date": "2026-11-27",
+        "time": None,
+        "venueId": "glazart-paris",
+        "artistIds": [
+            "lugosi",
+            "l-idylle",
+            "chiennes"
+        ],
+        "artistNames": [
+            "LUGOSi",
+            "L’Idylle",
+            "Chiennes"
+        ],
+        "genres": [
+            "Post Hardcore",
+            "Screamo",
+            "Stoner Rock"
+        ],
+        "newArtists": [
+            {
+                "id": "lugosi",
+                "name": "LUGOSi"
+            },
+            {
+                "id": "l-idylle",
+                "name": "L’Idylle"
+            },
+            {
+                "id": "chiennes",
+                "name": "Chiennes"
+            }
+        ],
+        "officialUrl": "https://www.glazart.com/27-11-26-concert-lugosi-lidylle-chiennes/",
+        "calendarUrl": None
+    },
+    "go-c-20270209-paris-melrose-avenue": {
+        "title": "Melrose Avenue",
+        "date": "2027-02-09",
+        "time": None,
+        "venueId": "le-trabendo-paris",
+        "artistIds": [
+            "melrose-avenue"
+        ],
+        "artistNames": [
+            "Melrose Avenue"
+        ],
+        "genres": [
+            "Metalcore"
+        ],
+        "newArtists": [
+            {
+                "id": "melrose-avenue",
+                "name": "Melrose Avenue"
+            }
+        ],
+        "officialUrl": "https://www.letrabendo.net/programmation/melrose-avenue/",
+        "calendarUrl": "https://www.letrabendo.net/programmation/"
+    }
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2717,6 +2911,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(event.get("venueId") ==
                 NANTES_TOULOUSE_NOV2026_VERIFIED[event_id]["venueId"],
                 "Nantes/Toulouse : identifiant transféré dans une autre salle")
+    seven_by_url = {spec["officialUrl"]: ident
+                    for ident, spec in SEVEN_OFFICIAL_NOV2026_VERIFIED.items()}
+    if official_url in seven_by_url:
+        require(event_id == seven_by_url[official_url],
+                "Lot national : URL officielle réservée à son concert signé")
+    if event_id in SEVEN_OFFICIAL_NOV2026_VERIFIED:
+        require(event.get("venueId") ==
+                SEVEN_OFFICIAL_NOV2026_VERIFIED[event_id]["venueId"],
+                "Lot national : identifiant déplacé vers une autre salle")
     jardin_by_url={spec["officialUrl"]: ident
                    for ident,spec in JARDIN_MODERNE_VERIFIED.items()}
     if official_url in jardin_by_url:
@@ -2896,7 +3099,66 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Nantes/Toulouse : groupe inventé ou identité incohérente")
-    if event.get("venueId") == "la-laiterie-strasbourg":
+    # Ces sept entrées franchissent uniquement leur revue nominative signée.
+    # Les règles fermées des salles pour les autres concerts restent inchangées.
+    if event_id in SEVEN_OFFICIAL_NOV2026_VERIFIED:
+        spec = SEVEN_OFFICIAL_NOV2026_VERIFIED[event_id]
+        require(reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("status") == "confirmed"
+                and all(event.get(key) == spec[key] for key in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Lot national : affiche non identique à la preuve signée")
+        uri = urlsplit(official_url)
+        expected_url = urlsplit(spec["officialUrl"])
+        require(uri.scheme == "https" and uri.hostname == expected_url.hostname
+                and uri.path == expected_url.path
+                and not uri.username and not uri.password and not uri.port
+                and not uri.query and not uri.fragment,
+                "Lot national : fiche officielle individuelle HTTPS exigée")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Lot national : preuve trop ancienne ou datée dans le futur")
+        required = {
+            "official-organizer-or-venue": (
+                spec["officialUrl"], {"artists", "date", "venue", "genre"})
+        }
+        if spec["calendarUrl"]:
+            required["first-party-venue-calendar"] = (
+                spec["calendarUrl"], {"artists", "date", "venue"})
+        require(len(evidence) == len(required)
+                and all(isinstance(p, dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} == set(required),
+                "Lot national : mauvais nombre ou type de preuves")
+        for proof in evidence:
+            kind = proof.get("proofType")
+            path, fields = required[kind]
+            observed = set(proof.get("checkedFields") or [])
+            require(proof.get("url") == path
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and fields.issubset(observed)
+                    and "startTime" not in observed
+                    and (kind != "official-organizer-or-venue"
+                         or (("concertStartTime" in observed) == (spec["time"] is not None)))
+                    and (kind != "first-party-venue-calendar"
+                         or "concertStartTime" not in observed),
+                    "Lot national : preuve de champ ou horaire non démontré")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and
+                        norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Lot national : identité ou première partie non vérifiée")
+        aliases = {norm(a) for artist in known_artist_ids.values()
+                   for a in (artist.get("aliases") or [])
+                   if isinstance(a, str)}
+        require(all(norm(a["name"]) not in aliases
+                    for a in new_artists),
+                "Lot national : nouveau groupe possiblement déjà référencé")
+    elif event.get("venueId") == "la-laiterie-strasbourg":
         spec = (LAITERIE_OFFICIAL_VERIFIED.get(event_id)
                 or LAITERIE_SECOND_WAVE_VERIFIED.get(event_id))
         require(spec is not None and reviewer == "independent-official-verifier"
