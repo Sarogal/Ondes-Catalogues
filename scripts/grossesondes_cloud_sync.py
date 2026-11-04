@@ -170,6 +170,45 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
     report["publication"]="PREVIEW" if not changed else "EN ATTENTE AUTORISATION"
     return target,report
 
+def collect_registered_update_sources(patch, original, fetcher=official_text):
+    """Re-fetch original officialSite, never the private patch's evidence URLs.
+
+    Legacy festival-specific validations keep their existing dedicated sources.
+    Typed JSON-LD proposals require an independent HTML fetch even for those
+    festivals. Cache per (URL, representation) so editions sharing a site each
+    receive the same re-fetched proof, without making redundant requests.
+    """
+    known_legacy={"cernunnos-pagan-fest","fantasmagorik-fest-2026",
+                  "autfest-2027","festival-metal-vouziers-2026",
+                  "winter-rising-fest-2026"}
+    sources={}
+    fetched={}
+    for update in patch.get("updates",[])[:15]:
+        slug=update.get("slug")
+        item=original.get(slug,{})
+        url=item.get("officialSite")
+        if not isinstance(url,str):
+            continue
+        mode=update.get("proofMode")
+        if mode == PROOF_MODE:
+            key,raw="registered-schema:"+slug,True
+        elif mode is None and slug not in known_legacy:
+            key,raw="registered:"+slug,False
+        else:
+            # Unsupported proof modes may not trigger arbitrary network reads.
+            continue
+        cache_key=(url,raw)
+        if cache_key not in fetched:
+            try:
+                fetched[cache_key]=fetcher(url,registered=True,raw=raw)
+            except Exception:
+                fetched[cache_key]=""
+                print("Site officiel enregistré inaccessible pour "+slug+
+                      " : modifications différées.")
+        sources[key]=fetched[cache_key]
+    return sources
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--mode",choices=("preview","publish"),required=True)
@@ -209,30 +248,9 @@ def main():
             else:
                 sources[key]=""
                 print(key+": source inaccessible : changement exclu ("+type(exc).__name__+")")
-    # Sources enregistrées dans la photographie de production, jamais tirées
-    # des URLs proposées par une veille privée. Le pilote limite le trafic.
+    # Only re-fetch registered officialSite URLs from the immutable production.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
-    known={"cernunnos-pagan-fest","fantasmagorik-fest-2026",
-           "autfest-2027","festival-metal-vouziers-2026","winter-rising-fest-2026"}
-    checked=set()
-    for update in patch.get("updates",[])[:15]:
-        slug=update.get("slug")
-        item=original.get(slug,{})
-        url=item.get("officialSite")
-        if slug in known or not isinstance(url,str) or url in checked:
-            continue
-        checked.add(url)
-        proof_mode=update.get("proofMode")
-        if proof_mode == PROOF_MODE:
-            key="registered-schema:"+slug
-        else:
-            key="registered:"+slug
-        try:
-            sources[key]=official_text(url,registered=True,
-                                       raw=(proof_mode == PROOF_MODE))
-        except Exception:
-            sources[key]=""
-            print("Site officiel enregistré inaccessible pour "+slug+" : modifications différées.")
+    sources.update(collect_registered_update_sources(patch,original))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
