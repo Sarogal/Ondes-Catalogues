@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-03T21:39:29+01:00",
+  "updated_at": "2026-11-04T09:57:54+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -10903,6 +10903,26 @@
       "verified_at": "2026-10-31",
       "geo_precision": "venue",
       "geo_verified_at": "2026-10-31"
+    },
+    {
+      "id": "openagenda-25603859-2027-01-14",
+      "title": "Jeune public - Concert - \"Quand le chat n'est pas là...ça part en live !\"",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2027-01-14",
+      "date_end": "2027-01-14",
+      "time": "10:30",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Théâtre de Jeanne",
+      "source_url": "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/jeune-public-concert-quand-le-chat-nest-pas-laca-part-en-live",
+      "source_label": "Contributions événements culturels Nantes et métropole nantaise",
+      "verified_at": "2026-11-04",
+      "geo_verified_at": "2026-11-04",
+      "geo_precision": "venue",
+      "lat": 47.20457,
+      "lng": -1.57551
     }
   ]
 }
