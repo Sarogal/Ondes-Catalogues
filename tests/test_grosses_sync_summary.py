@@ -31,7 +31,7 @@ class FestivalSyncSummaryTests(unittest.TestCase):
         result=render(report(changed=True), deploy_decision=False)
         self.assertIn("catalogue candidat seulement", result)
         self.assertIn("confirmation de GitHub Pages", render(report(True), True))
-        self.assertNotIn("a été publiée", result)
+        self.assertIn("ne signifie pas qu'une nouvelle annonce a été publiée", result)
 
     def test_malformed_reports_fail_closed(self):
         data=report()
