@@ -283,6 +283,14 @@ def verify_event(event,originals):
     html,error=read(event["source_url"])
     if html is None:return False,error
     dom=Visible();dom.feed(html)
+    # Certains agendas OpenAgenda ne rendent que « Loading... » hors navigateur.
+    # Ce n'est pas une preuve de séance ni une date manquante sur l'événement.
+    # Rester fail-closed et distinguer la source dynamique dans les rapports.
+    body=norm(" ".join(dom.words))
+    if (urlparse(event.get("source_url", "")).hostname=="openagenda.com"
+            and "loading" in body and len(body)<180
+            and not re.search(r"\b20\d\d\b", body)):
+        return False,"page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript"
     heading=norm(" ".join(dom.headers+dom.titles))
     title=norm(event["title"])
     if not headline_matches(event["title"],heading):

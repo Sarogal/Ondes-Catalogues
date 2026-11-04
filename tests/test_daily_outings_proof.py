@@ -253,6 +253,41 @@ class DailyProofTests(unittest.TestCase):
             return PARIS_PAGE,""
         with patch("proof_text.read",side_effect=page):
             self.assertFalse(verify_event(dict(PARIS),[])[0])
+    def test_js_only_openagenda_is_explicitly_deferred(self):
+        event = {
+            "title": "Éveil musical", "city": "Goussainville",
+            "venue": "Médiathèque municipale François Mauriac",
+            "lat": 49.0355, "lng": 2.461,
+            "source_url": "https://openagenda.com/fr/lecture-publique/events/5049582_eveil-musical-1255167",
+            "date_start": "2026-11-28", "date_end": "2026-11-28",
+            "time": "11:00"
+        }
+        html = ('<html><title>Éveil musical | OpenAgenda</title>'
+                '<body><main><p>Loading...</p></main></body></html>')
+        with patch("proof_text.read", return_value=(html, "")):
+            ok, reason = verify_event(event, [])
+        self.assertFalse(ok)
+        self.assertIn("dynamique", reason)
+        self.assertIn("JavaScript", reason)
+
+    def test_real_official_openagenda_session_not_rejected_as_loading(self):
+        event = {
+            "title": "Éveil musical", "city": "Goussainville",
+            "venue": "Médiathèque municipale François Mauriac",
+            "lat": 49.0355, "lng": 2.461,
+            "source_url": "https://openagenda.com/fr/lecture-publique/events/5049582_eveil-musical-1255167",
+            "date_start": "2026-11-28", "date_end": "2026-11-28",
+            "time": "11:00"
+        }
+        html = ('<html><title>Éveil musical | OpenAgenda</title>'
+                '<h1>Éveil musical</h1><p>Novembre 2026 Samedi 28</p>'
+                '<p>11:00 - 12:00</p>'
+                '<p>Médiathèque municipale François Mauriac à Goussainville</p>'
+                '<p>Some loading placeholder follows later.</p></html>')
+        with patch("proof_text.read", return_value=(html, "")):
+            ok, reason = verify_event(event, [])
+        self.assertTrue(ok, reason)
+
     def test_nantes_missing_times_rejected(self):
         with patch("proof_text.read",return_value=(PAGE.replace("14h30","15h30"),"")):
             self.assertFalse(verify_event(dict(THEATRE),[])[0])
