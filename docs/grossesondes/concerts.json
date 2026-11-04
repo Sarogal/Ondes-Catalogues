@@ -2031,6 +2031,21 @@
       "id": "jessica93",
       "name": "Jessica93",
       "aliases": []
+    },
+    {
+      "id": "wrecked-culture",
+      "name": "Wrecked Culture",
+      "aliases": []
+    },
+    {
+      "id": "lueur",
+      "name": "Lueur",
+      "aliases": []
+    },
+    {
+      "id": "easy-cure",
+      "name": "Easy Cure",
+      "aliases": []
     }
   ],
   "venues": [
@@ -12278,6 +12293,66 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://grillen.colmar.fr/programmation/colour-haze-smokemaster",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Grillen",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-colmar-wake-the-dead",
+      "title": "Wake the Dead + Wrecked Culture + Lueur",
+      "date": "2026-12-11",
+      "artistIds": [
+        "wake-the-dead",
+        "wrecked-culture",
+        "lueur"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://grillen.colmar.fr/programmation/wake-the-dead-wrecked-culture-lueur",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Grillen",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270130-colmar-easy-cure",
+      "title": "EASY CURE The CURE Tribute since 1996",
+      "date": "2027-01-30",
+      "artistIds": [
+        "easy-cure"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://grillen.colmar.fr/programmation/easy-cure-the-cure-tribute-since-1996",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
