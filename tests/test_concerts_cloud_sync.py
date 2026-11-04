@@ -3227,5 +3227,125 @@ class LaVapeurSkipProtectedSyncTests(unittest.TestCase):
                         candidate, self.venues, self.artists, self.day)
 
 
+class LaVapeurRodrigoMidoriSignedTests(unittest.TestCase):
+    """Two first-party, individually dated proofs, without extrapolated start."""
+
+    @classmethod
+    def setUpClass(cls):
+        from concerts_cloud_sync import LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104
+        cls.spec = LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104
+        cls.catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json")
+                                   .read_text(encoding="utf-8"))
+        cls.venues = {v["id"]: v for v in cls.catalogue["venues"]}
+        cls.artists = {a["id"]: a for a in cls.catalogue["artists"]}
+        cls.today = __import__("datetime").date(2026, 11, 4)
+
+    def signed(self):
+        s = self.spec
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-04",
+            "officialEvidence": [
+                {
+                    "url": s["officialUrl"],
+                    "proofType": "official-organizer-or-venue",
+                    "checkedAt": "2026-11-04",
+                    "checkedFields": ["artists", "date", "venue", "genre"],
+                },
+                {
+                    "url": s["ticketUrl"],
+                    "proofType": "official-venue-ticketing-detail",
+                    "checkedAt": "2026-11-04",
+                    "checkedFields": ["artists", "date", "venue"],
+                },
+            ],
+            "event": {
+                "id": s["id"], "title": s["title"], "date": s["date"],
+                "time": None, "artistIds": list(s["artistIds"]),
+                "venueId": s["venueId"], "genres": list(s["genres"]),
+                "officialUrl": s["officialUrl"], "sourceType": "salle",
+                "status": "confirmed",
+            },
+            "newArtists": [],
+        }
+
+    def test_exact_nominative_bill_retained_after_publication(self):
+        s = self.spec
+        self.assertIn("la-vapeur-dijon", self.venues)
+        self.assertEqual(
+            {s["artistIds"][0]: self.artists[s["artistIds"][0]]["name"],
+             s["artistIds"][1]: self.artists[s["artistIds"][1]]["name"]},
+            {"rodrigo-y-gabriela": "Rodrigo y Gabriela",
+             "midori-jaeger": "midori jaeger"})
+        already = {e["id"]: e for e in self.catalogue["events"]}
+        for historic_id in (
+            "go-c-20270123-dijon-misanthrope-obsession-slapdown",
+            "go-c-20270211-dijon-skip-the-use",
+        ):
+            self.assertIn(historic_id, already)
+        event, added = validate_approval(
+            self.signed(), self.venues, self.artists, self.today)
+        self.assertEqual(event["id"],
+                         "go-c-20270407-dijon-rodrigo-y-gabriela-midori-jaeger")
+        self.assertEqual(event["date"], "2027-04-07")
+        self.assertEqual(event["venueId"], "la-vapeur-dijon")
+        self.assertEqual(event["genres"], ["Rock instrumental"])
+        self.assertIsNone(event["time"])
+        self.assertEqual(added, {})
+        for e in self.catalogue["events"]:
+            if e["id"] == event["id"]:
+                self.assertTrue(all(e[field] == event[field] for field in
+                    ("id", "date", "title", "venueId", "artistIds",
+                     "genres", "status", "officialUrl", "time")))
+        duplicates = [
+            other["id"] for other in self.catalogue["events"]
+            if other["id"] != event["id"] and
+            other["venueId"] == event["venueId"] and
+            other["date"] == event["date"] and
+            set(other["artistIds"]) & set(event["artistIds"])
+        ]
+        self.assertEqual(duplicates, [])
+
+    def test_fabricated_year_lineup_venue_status_and_hour_fail(self):
+        cases = (
+            ("changed-year", lambda a: a["event"].update(date="2026-04-07")),
+            ("changed-day", lambda a: a["event"].update(date="2027-04-08")),
+            ("fake-door-as-start", lambda a: a["event"].update(time="19:00")),
+            ("unproven-concert-time", lambda a: a["event"].update(time="20:00")),
+            ("renamed-first-part", lambda a: a["event"].update(
+                title="Rodrigo y Gabriela + groupe inconnu")),
+            ("dropped-support", lambda a: a["event"].update(
+                artistIds=["rodrigo-y-gabriela"])),
+            ("fake-artist", lambda a: a["newArtists"].append(
+                {"id": "fake-group", "name": "Fake Group"})),
+            ("different-room", lambda a: a["event"].update(
+                venueId="la-cartonnerie-reims")),
+            ("changed-official", lambda a: a["event"].update(
+                officialUrl="https://www.lavapeur.com/programme/another-event")),
+            ("cancelled", lambda a: a["event"].update(status="cancelled")),
+            ("different-genre", lambda a: a["event"].update(genres=["Metal"])),
+            ("no-ticket", lambda a: a["officialEvidence"].pop()),
+            ("made-up-start", lambda a: a["officialEvidence"][0][
+                "checkedFields"].append("concertStartTime")),
+            ("false-url", lambda a: a["officialEvidence"][1].update(
+                url="https://example.org/non-official-tickets")),
+            ("unapproved", lambda a: a.update(reviewDecision="candidate")),
+        )
+        for label, mutate in cases:
+            with self.subTest(mutation=label):
+                candidate = self.signed()
+                mutate(candidate)
+                with self.assertRaises((ValueError, KeyError)):
+                    validate_approval(
+                        candidate, self.venues, self.artists, self.today)
+
+    def test_url_is_reserved_even_for_another_signed_looking_id(self):
+        bad = self.signed()
+        bad["event"]["id"] = "go-c-20270407-dijon-copy-rodrigo-midori"
+        with self.assertRaises((ValueError, KeyError)):
+            validate_approval(bad, self.venues, self.artists, self.today)
+
+
 if __name__=="__main__":
     unittest.main()
