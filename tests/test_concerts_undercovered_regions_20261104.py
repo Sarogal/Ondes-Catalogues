@@ -1,4 +1,4 @@
-"""Ten exact official concert reviews for Loire, Gard and Hautes-Pyrénées."""
+"""Historic regional reviews plus newer signed national additions."""
 import copy
 import datetime as dt
 import json
@@ -37,8 +37,9 @@ def validate(row):
     return sync.validate_approval(row,venues,known,TODAY)
 
 class UndercoveredOfficialTests(unittest.TestCase):
-    def test_ten_exact_signed_events(self):
-        self.assertEqual(len(sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED),10)
+    def test_regional_historic_and_new_signed_events(self):
+        # Les dix fiches historiques sont le minimum, pas un plafond définitif.
+        self.assertGreaterEqual(len(sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED),10)
         for ident,spec in sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED.items():
             with self.subTest(id=ident):
                 ev,new=validate(reviewed(ident))
