@@ -141,7 +141,9 @@ def safe_target(baseline, candidate, currently_published):
 def build_candidate(snapshot, published, patch, official_sources, today, trusted_published=False):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
-        patch,official_sources,today
+        patch,official_sources,today,
+        published_calendar=published["festivals.json"],
+        published_history=published["festival-history.json"],
     )
     # Une seule extension historique approuvée est admissible, sans toucher
     # à l'empreinte immuable des 170 archives sur Infomaniak.
