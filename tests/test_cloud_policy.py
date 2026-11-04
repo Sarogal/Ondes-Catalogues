@@ -141,6 +141,58 @@ class TestsCloud(unittest.TestCase):
         o=dict(b,events=b["events"]+[dict(p["additions"][0],title="Autre")])
         with self.assertRaises(ValueError):merge(b,o,p,TODAY)
 
+    def test_approved_openagenda_alias_cannot_duplicate_official_venue_listing(self):
+        b, p = fixture()
+        existing = dict(p["additions"][0],
+                        id="nantes-quand-le-chat-2027-01-13",
+                        title="Quand le chat n’est pas là… ça part en LIVE !",
+                        category="concert", category_label="Concert",
+                        city="Nantes", department="Loire-Atlantique",
+                        region="Pays de la Loire", venue="Théâtre de Jeanne",
+                        date_start="2027-01-13", date_end="2027-01-13",
+                        source_url=("https://www.theatre-jeanne.com/spectacle/"
+                                    "quand-le-chat-nest-pas-laca-part-en-live/2027-01-13/"),
+                        lat=47.20457, lng=-1.57551)
+        candidate = dict(existing,
+                         id="openagenda-25603859-2027-01-13",
+                         title=('Jeune public - Concert - "Quand le chat '
+                                'n\'est pas là...ça part en live !"'),
+                         source_url=("https://openagenda.com/"
+                                     "contributions-evenements-culturels-nantes-et-metropole-nantaise/"
+                                     "events/jeune-public-concert-quand-le-chat-nest-pas-laca-part-en-live"))
+        p["additions"] = [candidate]
+        public = dict(b, events=b["events"] + [existing])
+        with self.assertRaisesRegex(ValueError, "doublon sémantique"):
+            merge(b, public, p, TODAY, checker=lambda ev, old: (True, "proof"))
+        self.assertEqual(len(public["events"]), 101)
+
+    def test_verified_alias_same_show_on_new_day_remains_distinct(self):
+        b, p = fixture()
+        existing = dict(p["additions"][0],
+                        id="nantes-quand-le-chat-2027-01-13",
+                        title="Quand le chat n’est pas là… ça part en LIVE !",
+                        category="concert", category_label="Concert",
+                        city="Nantes", department="Loire-Atlantique",
+                        region="Pays de la Loire", venue="Théâtre de Jeanne",
+                        date_start="2027-01-13", date_end="2027-01-13",
+                        source_url=("https://www.theatre-jeanne.com/spectacle/"
+                                    "quand-le-chat-nest-pas-laca-part-en-live/2027-01-13/"),
+                        lat=47.20457, lng=-1.57551)
+        candidate = dict(existing,
+                         id="openagenda-25603859-2027-01-14",
+                         title=('Jeune public - Concert - "Quand le chat '
+                                'n\'est pas là...ça part en live !"'),
+                         date_start="2027-01-14", date_end="2027-01-14",
+                         source_url=("https://openagenda.com/"
+                                     "contributions-evenements-culturels-nantes-et-metropole-nantaise/"
+                                     "events/jeune-public-concert-quand-le-chat-nest-pas-laca-part-en-live"))
+        p["additions"] = [candidate]
+        public = dict(b, events=b["events"] + [existing])
+        out, report = merge(b, public, p, TODAY,
+                            checker=lambda ev, old: (True, "proof"))
+        self.assertEqual(report["ajoutes"], 1)
+        self.assertEqual(out["events"][-1]["date_start"], "2027-01-14")
+
     def test_duplicate_patch_blocked(self):
         b,p=fixture()
         p["additions"]*=2
