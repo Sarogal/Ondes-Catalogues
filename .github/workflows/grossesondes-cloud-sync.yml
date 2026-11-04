@@ -84,6 +84,14 @@ jobs:
             echo "deploy=false" >> "$GITHUB_OUTPUT"
             echo "Aucun déploiement : mode preview, catalogue inchangé, ou autorisation absente."
           fi
+      - name: Résumé des preuves et des publications réellement admissibles
+        if: success()
+        env:
+          DEPLOY: ${{ steps.decision.outputs.deploy }}
+        run: |
+          python scripts/grossesondes_sync_summary.py \
+            --report /tmp/grossesondes_cloud/report.json \
+            --deploy "$DEPLOY" >> "$GITHUB_STEP_SUMMARY"
       - name: Archiver uniquement le calendrier officiellement prouvé dans Git
         if: ${{ steps.decision.outputs.deploy == 'true' }}
         run: |
