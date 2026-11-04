@@ -1,4 +1,4 @@
-"""Quatre affiches Colmar/Limoges : preuves par champ et sécurité anti-falsification."""
+"""Sept affiches Colmar/Limoges : preuves par champ et sécurité anti-falsification."""
 from __future__ import annotations
 
 import copy
@@ -19,6 +19,8 @@ IDS = (
     "go-c-20261106-limoges-7weeks",
     "go-c-20261127-limoges-gwendoline",
     "go-c-20270219-colmar-colour-haze",
+    "go-c-20261211-colmar-wake-the-dead",
+    "go-c-20270130-colmar-easy-cure",
 )
 
 def signed(ident):
@@ -51,7 +53,7 @@ def check(approval):
 
 
 class ColmarLimogesSignatures(unittest.TestCase):
-    def test_five_exact_first_party_programmes(self):
+    def test_seven_exact_first_party_programmes(self):
         specs = sync.COLMAR_LIMOGES_VERIFIED_20261104
         self.assertEqual(set(specs), set(IDS))
         existing = {e["id"]: e for e in CATALOGUE["events"]}
@@ -73,6 +75,8 @@ class ColmarLimogesSignatures(unittest.TestCase):
             "go-c-20270213-colmar-8-6-crew": ({"artists", "dayMonth", "venue", "genre"}, 1),
             "go-c-20261106-limoges-7weeks": ({"artists", "dayMonth", "venue", "genre"}, 0),
             "go-c-20261127-limoges-gwendoline": ({"artists", "dayMonth", "venue", "genre"}, 0),
+            "go-c-20261211-colmar-wake-the-dead": ({"artists", "dayMonth", "venue", "genre"}, 0),
+            "go-c-20270130-colmar-easy-cure": ({"artists", "dayMonth", "venue", "genre"}, 0),
         }
         for ident, (fields, index) in expected.items():
             row = signed(ident)
