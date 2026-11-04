@@ -3,9 +3,11 @@
 Workflow `.github/workflows/ptitesondes-evidence-preview.yml`.
 
 La tâche existante de prévalidation indépendante est conservée comme **unique**
-contrôleur de promotion, avec deux vérifications en lecture seule à 08 h 40
-et 15 h 40 UTC, après les collectes privées de 07 h 05 et 14 h 05 UTC,
-un déclenchement manuel et un contrôle dès qu'un patch modifie le moteur.
+contrôleur de promotion, avec **quatre vérifications en lecture seule** à
+08 h 40, 11 h 40, 15 h 40 et 19 h 40 UTC, après les quatre collectes privées
+à 07 h 05, 10 h 05, 14 h 05 et 18 h 05 UTC. Le synchroniseur de la carte
+contrôle ensuite à 09 h 20, 12 h 20, 16 h 20 et 20 h 20 UTC.
+Le déclenchement manuel et le contrôle sur changement du moteur restent disponibles.
 
 Le contrôleur **existant**
 `scripts/ptitesondes_candidate_promotion.py` est réutilisé (pas de second moteur).
