@@ -8,6 +8,7 @@ on:
       - 'docs/grossesondes/artist-dates.js'
       - 'docs/grossesondes/artist-dates.css'
       - 'tests_js/test_grosses_artist_dates.cjs'
+      - 'tests_js/test_grosses_artist_archive.cjs'
   push:
     branches: [main]
     paths:
@@ -17,6 +18,7 @@ on:
       - 'docs/grossesondes/artist-dates.js'
       - 'docs/grossesondes/artist-dates.css'
       - 'tests_js/test_grosses_artist_dates.cjs'
+      - 'tests_js/test_grosses_artist_archive.cjs'
   workflow_dispatch:
 
 permissions:
@@ -41,7 +43,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Tests des widgets billetterie et pont artistes
-        run: node --test tests_js/test_grosses_ticket_widget.cjs tests_js/test_grosses_artist_dates.cjs
+        run: node --test tests_js/test_grosses_ticket_widget.cjs tests_js/test_grosses_artist_dates.cjs tests_js/test_grosses_artist_archive.cjs
       - name: Vérifier la signature du calendrier publié et les archives
         run: |
           python - <<'PY'

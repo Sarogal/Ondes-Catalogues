@@ -23,7 +23,29 @@
     return {artist: found[0], ambiguous: false,
       aliases: unique([name, found[0].name, ...(found[0].aliases || [])])};
   }
-  function collectAppearances(name, festivalDoc, concertDoc) {
+  const HISTORY = BASE + 'festival-history.json';
+  const archiveTitle = f => norm(f.name).replace(/^festival /, '')
+    .replace(/\b20[2-4][0-9]\b/g, '').replace(/ (?:i|ii|iii|iv|v|vi|vii|viii|ix|x|[0-9]+)$/, '').trim();
+  function documentedArchive(f, today) {
+    if (!f || !Array.isArray(f.lineup) || !f.lineup.length ||
+        !isIso(f.startDate) || !isIso(f.endDate) || f.startDate > f.endDate ||
+        f.endDate >= today || Number(f.startDate.slice(0, 4)) !== f.lastKnownYear) return false;
+    const proof = norm(f.verificationStatus || '');
+    const confirmed = /document|controle|confirm|officiel|attest|edition tenue|reellement tenue|effectivement tenue|compte rendu/.test(proof);
+    const caution = /non confirm|non recoup|a recoup|a corrobor|non prouv|a verifier|non attest|incertain|hypothetique|annul|non certifi|a etablir|non audite/.test(proof);
+    return confirmed && !caution && Boolean(safeHttps(f.source) || safeHttps(f.officialSite));
+  }
+  function identicalEdition(history, live) {
+    if (history.startDate !== live.startDate || history.endDate !== live.endDate ||
+        norm(history.city) !== norm(live.city)) return false;
+    const slug = String(history.slug || '');
+    const sameSlug = Boolean(slug && (live.slug === slug || String(live.slug || '').startsWith(slug + '-')));
+    const source = safeHttps(history.source || history.officialSite);
+    const liveSource = safeHttps(live.source || live.officialSite);
+    return sameSlug || archiveTitle(history) === archiveTitle(live) ||
+      Boolean(source && source === liveSource);
+  }
+  function collectAppearances(name, festivalDoc, concertDoc, historyDoc, asOf) {
     const artists = concertDoc && Array.isArray(concertDoc.artists) ? concertDoc.artists : [];
     const id = artistIdentity(name, artists);
     const keys = new Set((id.aliases.length ? id.aliases : [name]).map(norm));
@@ -70,6 +92,31 @@
           slug: f.slug, lastVerified: f.lastVerified || ''
         });
       }
+    }
+    const historyRows = historyDoc && historyDoc.schema === 2 &&
+      Array.isArray(historyDoc.knownFestivals) ? historyDoc.knownFestivals : [];
+    const referenceDay = isIso(asOf) ? asOf : parisDay();
+    const published = festivalDoc && Array.isArray(festivalDoc.festivals) ? festivalDoc.festivals : [];
+    for (const h of historyRows) {
+      if (!documentedArchive(h, referenceDay) ||
+          !h.lineup.some(n => keys.has(norm(n))) ||
+          published.some(f => identicalEdition(h, f))) continue;
+      const source = safeHttps(h.source) || safeHttps(h.officialSite);
+      const dates = h.lineupByDate && typeof h.lineupByDate === 'object' &&
+        !Array.isArray(h.lineupByDate) ?
+        Object.keys(h.lineupByDate).filter(date => isIso(date) &&
+          date >= h.startDate && date <= h.endDate &&
+          Array.isArray(h.lineupByDate[date]) &&
+          h.lineupByDate[date].some(n => keys.has(norm(n)))) : [];
+      const validDays = dates.length ? unique(dates) : [null];
+      for (const day of validDays) festivals.push({
+        type: 'festival', historical: true,
+        key: 'h:' + (h.slug || norm(h.name)) + ':' + h.startDate + (day ? ':' + day : ''),
+        title: h.name, date: day || h.startDate, end: day || h.endDate,
+        exact: Boolean(day), city: h.city || '', place: h.city || '',
+        status: 'Archive documentée', source, slug: h.slug,
+        lastVerified: h.lastVerified || ''
+      });
     }
     const sort = (a, b) => (a.date || '9999').localeCompare(b.date || '9999') ||
       a.type.localeCompare(b.type) || a.title.localeCompare(b.title, 'fr');
@@ -136,7 +183,8 @@
   }
   function rowNode(row) {
     const item = node('li', 'go-artist-dates__item');
-    const meta = node('div', 'go-artist-dates__type', row.type === 'concert' ? 'CONCERT' : 'FESTIVAL');
+    const meta = node('div', 'go-artist-dates__type', row.type === 'concert' ? 'CONCERT' :
+      (row.historical ? 'FESTIVAL · ARCHIVE' : 'FESTIVAL'));
     const title = node('strong', '', row.title || 'Événement');
     const date = node('p', 'go-artist-dates__date', presentDate(row));
     const place = node('p', 'go-artist-dates__place', row.place || 'Lieu à préciser');
@@ -146,7 +194,8 @@
         'go-artist-dates__warning' : 'go-artist-dates__status',
         'Statut : ' + statusLabel(row.status)));
     }
-    const official = link('Vérifier la source officielle', row.source);
+    const official = link(row.historical ? 'Consulter la source de l’archive' :
+      'Vérifier la source officielle', row.source);
     if (official) item.append(official);
     return item;
   }
@@ -220,7 +269,8 @@
       const results = await Promise.allSettled([
         load(FESTIVALS, x => x && x.schema === 1 && Array.isArray(x.festivals) && x.festivals.length > 0),
         load(CONCERTS, x => x && x.schemaVersion === 1 &&
-          Array.isArray(x.events) && Array.isArray(x.artists) && Array.isArray(x.venues))
+          Array.isArray(x.events) && Array.isArray(x.artists) && Array.isArray(x.venues)),
+        load(HISTORY, x => x && x.schema === 2 && Array.isArray(x.knownFestivals))
       ]);
       if (closed) return;
       const festivalOk = results[0].status === 'fulfilled';
@@ -228,14 +278,17 @@
       const fallback = Array.isArray(fallbackFestivals) ? fallbackFestivals : [];
       const f = festivalOk ? results[0].value : {festivals: fallback};
       const c = concertOk ? results[1].value : {artists: [], venues: [], events: []};
-      const found = collectAppearances(label, f, c);
+      const historyOk = results[2].status === 'fulfilled';
+      const h = historyOk ? results[2].value : {knownFestivals: []};
+      const found = collectAppearances(label, f, c, h, parisDay());
       const grouped = classify(found.all, parisDay());
       loading.remove();
-      if (!festivalOk || !concertOk) {
+      if (!festivalOk || !concertOk || !historyOk) {
         body.append(node('p', 'go-artist-dates__warning',
           'Résultats partiels : ' + [
             !festivalOk ? 'catalogue Festivals indisponible' : '',
-            !concertOk ? 'catalogue Concerts indisponible' : ''
+            !concertOk ? 'catalogue Concerts indisponible' : '',
+            !historyOk ? 'archives Festivals indisponibles' : ''
           ].filter(Boolean).join(' ; ') + '.'));
       }
       if (found.ambiguous) body.append(node('p', 'go-artist-dates__warning',
@@ -245,7 +298,8 @@
         ' apparition(s) en festival référencés.'));
       body.append(section('Dates à venir ou à préciser', grouped.upcoming));
       if (grouped.unavailable.length) body.append(section('Dates annulées ou reportées', grouped.unavailable));
-      if (grouped.past.length) body.append(section('Dates passées — archives', grouped.past));
+      if (grouped.past.length) body.append(section('Dates passées — archives',
+        [...grouped.past].sort((a, b) => (b.date || '').localeCompare(a.date || ''))));
       if (!found.all.length && festivalOk && concertOk) body.append(node('p', '',
         'Aucune autre date nominative répertoriée à ce jour.'));
     })().catch(() => {
