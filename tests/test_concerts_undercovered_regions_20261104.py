@@ -1,4 +1,4 @@
-"""Ten exact official concert reviews for Loire, Gard and Hautes-Pyrénées."""
+"""Historic regional reviews plus newer signed national additions."""
 import copy
 import datetime as dt
 import json
@@ -9,9 +9,6 @@ from scripts import concerts_cloud_sync as sync
 ROOT=Path(__file__).resolve().parents[1]
 CAT=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
 TODAY=dt.date(2026,11,4)
-NEW_IDS={a["id"] for spec in sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED.values()
-         for a in spec["newArtists"]}
-
 def reviewed(ident):
     spec=sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED[ident]
     return {
@@ -32,13 +29,16 @@ def reviewed(ident):
 
 def validate(row):
     venues={v["id"]:v for v in CAT["venues"]}
-    # Keep the same test once the seven new artists are published.
-    known={a["id"]:a for a in CAT["artists"] if a["id"] not in NEW_IDS}
+    # Isoler uniquement les artistes nouveaux de CETTE approbation :
+    # ne pas exclure un artiste déjà connu utilisé dans une autre affiche.
+    new_ids={a["id"] for a in row.get("newArtists", [])}
+    known={a["id"]:a for a in CAT["artists"] if a["id"] not in new_ids}
     return sync.validate_approval(row,venues,known,TODAY)
 
 class UndercoveredOfficialTests(unittest.TestCase):
-    def test_ten_exact_signed_events(self):
-        self.assertEqual(len(sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED),10)
+    def test_regional_historic_and_new_signed_events(self):
+        # Les dix fiches historiques sont le minimum, pas un plafond définitif.
+        self.assertGreaterEqual(len(sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED),10)
         for ident,spec in sync.UNDERCOVERED_REGIONS_NOV2026_VERIFIED.items():
             with self.subTest(id=ident):
                 ev,new=validate(reviewed(ident))
