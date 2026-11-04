@@ -44,6 +44,18 @@ def organizer_url(event):
     return info["organizer_url"]
 
 
+
+def canonical_event_title(event):
+    """Canonicalize only preapproved organizer matches, not arbitrary fuzzy titles.
+
+    OpenAgenda often prefixes an original show title with "Jeune public - Concert".
+    The reviewed organizer title is used solely for cross-source deduplication.
+    """
+    approved = PROGRAMS.get(event.get("source_url"))
+    if approved and organizer_url(event) is not None:
+        return norm(approved["official_title"])
+    return norm(event.get("title"))
+
 def reviewed_schedule(event, heading, text):
     """Verify exact organizer schedule; do not extrapolate undisclosed dates."""
     info = PROGRAMS.get(event.get("source_url"))
