@@ -95,7 +95,9 @@ class VapeurSignedTests(unittest.TestCase):
         self.assertEqual(set(added),{"obsession","slapdown"})
         self.assertIsNone(event["time"])
         for previous in DOC["events"]:
-            if previous["date"] == event["date"] and previous["venueId"] == VENUE:
+            if (previous["id"] != event["id"] and
+                    previous["date"] == event["date"] and
+                    previous["venueId"] == VENUE):
                 self.assertFalse(set(previous["artistIds"]) & set(event["artistIds"]))
 
     def test_refuses_fake_venue_location_and_unverified_event(self):
