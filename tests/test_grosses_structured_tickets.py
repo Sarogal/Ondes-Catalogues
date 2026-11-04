@@ -51,6 +51,20 @@ class TicketTests(unittest.TestCase):
         self.assertIsNone(validate_structured_tickets(
             ROW,proposed(),"<p>Sold out</p>",DAY))
 
+    def test_generic_schema_event_requires_exact_official_edition(self):
+        # Generic Event is accepted only for a unique name, year and date match.
+        generic = event(**{"@type": "Event"})
+        self.assertEqual(official_ticket_categories(page(generic), ROW), [
+            {"name": "Pass dimanche", "status": "in_stock"},
+            {"name": "Pass samedi", "status": "sold_out"},
+        ])
+        self.assertIsNone(official_ticket_categories(
+            page(event(**{"@type": "Event", "name": "Metal Fest"})), ROW))
+        self.assertIsNone(official_ticket_categories(
+            page(event(**{"@type": "Event", "startDate": "2027-08-14"})), ROW))
+        self.assertIsNone(official_ticket_categories(
+            page(event(**{"@type": "OtherEvent"})), ROW))
+
     def test_dates_year_status_or_conflicting_events_rejected(self):
         for altered in (
             event(name="Metal Fest"),

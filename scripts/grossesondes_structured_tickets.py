@@ -12,7 +12,7 @@ from grossesondes_structured_roster import JsonLD, walk, edition_name, iso_day, 
 
 PROOF_MODE = "structured-tickets.v1"
 FIELD = "ticketAvailability"
-EVENT_TYPES = {"festival", "musicfestival", "musicevent"}
+EVENT_TYPES = {"festival", "musicfestival", "musicevent", "event"}
 SENSITIVE = {"EventCancelled", "EventPostponed", "EventRescheduled"}
 STATES = {
     "SoldOut": "sold_out",
