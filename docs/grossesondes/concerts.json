@@ -2061,6 +2061,36 @@
       "id": "systemize",
       "name": "Systemize",
       "aliases": []
+    },
+    {
+      "id": "les-sheriff",
+      "name": "Les Sheriff",
+      "aliases": []
+    },
+    {
+      "id": "auxiliaire",
+      "name": "Auxiliaire",
+      "aliases": []
+    },
+    {
+      "id": "lofofora",
+      "name": "Lofofora",
+      "aliases": []
+    },
+    {
+      "id": "gravity",
+      "name": "Gravity",
+      "aliases": []
+    },
+    {
+      "id": "feldup-the-showerheads",
+      "name": "Feldup & The Showerheads",
+      "aliases": []
+    },
+    {
+      "id": "trainfantome",
+      "name": "Trainfantome",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3012,6 +3042,19 @@
       "longitude": -2.74379,
       "geoPrecision": "point indicatif du site L'Echonova d'après Fandefest (coordonnées initiales 47.67468064,-2.7437943027), cohérent avec la localisation générale du lieu; non assimilé à l'entrée publique",
       "geoSource": "https://www.fandefest.com/salle/l-echonova-saint-ave"
+    },
+    {
+      "id": "le-bateau-ivre-tours",
+      "name": "Le Bateau Ivre",
+      "address": "146 rue Édouard Vaillant",
+      "postalCode": "37000",
+      "city": "Tours",
+      "department": "37",
+      "region": "Centre-Val de Loire",
+      "latitude": 47.3844669,
+      "longitude": 0.7013784,
+      "geoPrecision": "point indicatif associé à un événement organisé au Bateau Ivre, publié par l'ADT 37 via DATAtourisme; recoupé avec l'adresse officielle 146 rue Édouard Vaillant; ne représente pas l'entrée exacte",
+      "geoSource": "https://www.loisirs-divertissements.com/sortir-en-france/sortir-visiter-indre-et-loire-37/jam-7880"
     }
   ],
   "events": [
@@ -12444,6 +12487,160 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "L'Echonova",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261106-tours-les-sheriff-auxiliaire",
+      "title": "Les Sheriff + Auxiliaire",
+      "date": "2026-11-06",
+      "artistIds": [
+        "les-sheriff",
+        "auxiliaire"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/les-sheriff/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261107-tours-lofofora-akiavel-gravity",
+      "title": "Lofofora + Akiavel + Gravity",
+      "date": "2026-11-07",
+      "artistIds": [
+        "lofofora",
+        "akiavel",
+        "gravity"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/lofofora-akiavel-gravity/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261113-tours-inspector-cluzo-grant-haua",
+      "title": "The Inspector Cluzo + Grant Haua",
+      "date": "2026-11-13",
+      "artistIds": [
+        "the-inspector-cluzo",
+        "grant-haua"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/the-inspector-cluzo/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261126-tours-feldup-trainfantome",
+      "title": "Feldup & The Showerheads + Trainfantome",
+      "date": "2026-11-26",
+      "artistIds": [
+        "feldup-the-showerheads",
+        "trainfantome"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "Rock",
+        "Shoegaze"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/feldup-the-showerheads-trainfantome/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270128-tours-cachemire-la-phaze-bobs-not-dead",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-01-28",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/cachemire-la-phaze-bobs-not-dead/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
       "ticketUrl": null,
       "lastVerified": "2026-11-04",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
