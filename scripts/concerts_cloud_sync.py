@@ -2617,6 +2617,51 @@ JARDIN_MODERNE_VERIFIED = {
 
 
 
+
+# Quatre affiches vérifiées le 04/11/2026 sur fiches nominatives officielles.
+# Ces preuves ne peuvent pas être réutilisées sous un autre ID ou une autre salle.
+NANTES_TOULOUSE_NOV2026_VERIFIED = {
+    "go-c-20270220-nantes-hipskor": {
+        "title": "Hipskör + Lifeboats + Polybius",
+        "date": "2027-02-20", "time": "20:30",
+        "venueId": "le-ferrailleur-nantes",
+        "artistIds": ["hipskor", "lifeboats", "polybius"],
+        "artistNames": ["Hipskör", "Lifeboats", "Polybius"],
+        "genres": ["Metalcore", "Punk Hardcore", "Darkwave"],
+        "newArtists": [{"id": "hipskor", "name": "Hipskör"},
+                       {"id": "polybius", "name": "Polybius"}],
+        "officialUrl": "https://www.leferrailleur.fr/evenement/hipskor-lifeboats-polybius/5375",
+    },
+    "go-c-20270408-nantes-antimatter": {
+        "title": "Antimatter",
+        "date": "2027-04-08", "time": "20:30",
+        "venueId": "le-ferrailleur-nantes",
+        "artistIds": ["antimatter"], "artistNames": ["Antimatter"],
+        "genres": ["Doom", "Goth Rock"],
+        "newArtists": [{"id": "antimatter", "name": "Antimatter"}],
+        "officialUrl": "https://www.leferrailleur.fr/evenement/antimatter/5404",
+    },
+    "go-c-20261205-toulouse-changeline": {
+        "title": "Changeline",
+        "date": "2026-12-05", "time": None,
+        "venueId": "le-rex-toulouse",
+        "artistIds": ["changeline"], "artistNames": ["Changeline"],
+        "genres": ["Metal", "Trap Metal"],
+        "newArtists": [{"id": "changeline", "name": "Changeline"}],
+        "officialUrl": "https://www.lerextoulouse.com/fr/programmation/changeline/",
+    },
+    "go-c-20270307-toulouse-mol": {
+        "title": "MØL & Guest",
+        "date": "2027-03-07", "time": None,
+        "venueId": "le-rex-toulouse",
+        "artistIds": ["m-l"], "artistNames": ["MØL"],
+        "genres": ["Metal", "Blackgaze"],
+        "newArtists": [],
+        "officialUrl": "https://www.lerextoulouse.com/fr/programmation/mol-et-guest/",
+    },
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2660,6 +2705,18 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Lien officiel HTTPS absent")
     # Exact event identity and official first-party URL are reserved
     # together: neither a new ID nor a different venue may reuse this proof.
+    # Les quatre URLs officielles du lot Nantes/Toulouse ne sont pas recyclables.
+    nantes_toulouse_by_url = {
+        spec["officialUrl"]: ident
+        for ident, spec in NANTES_TOULOUSE_NOV2026_VERIFIED.items()
+    }
+    if official_url in nantes_toulouse_by_url:
+        require(event_id == nantes_toulouse_by_url[official_url],
+                "Nantes/Toulouse : URL officielle réaffectée à un autre concert")
+    if event_id in NANTES_TOULOUSE_NOV2026_VERIFIED:
+        require(event.get("venueId") ==
+                NANTES_TOULOUSE_NOV2026_VERIFIED[event_id]["venueId"],
+                "Nantes/Toulouse : identifiant transféré dans une autre salle")
     jardin_by_url={spec["officialUrl"]: ident
                    for ident,spec in JARDIN_MODERNE_VERIFIED.items()}
     if official_url in jardin_by_url:
@@ -2806,6 +2863,39 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Two pilot venues: Joker individual first-party detail pages, or four
     # explicit organizer-controlled Brin ticket pages with a second venue-
     # submitted listing. Never approve tickets from a generic event calendar.
+    # Lot revu indépendamment : identité, artistes, temps et preuve exacte figés.
+    if event_id in NANTES_TOULOUSE_NOV2026_VERIFIED:
+        spec = NANTES_TOULOUSE_NOV2026_VERIFIED[event_id]
+        require(reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(key) == spec[key] for key in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and event.get("status") == "confirmed"
+                and official_url == spec["officialUrl"],
+                "Nantes/Toulouse : affiche ou salle hors dossier approuvé")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Nantes/Toulouse : vérification officielle périmée")
+        require(len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Nantes/Toulouse : fiche officielle nominative exigée")
+        proof = evidence[0]
+        fields = set(proof.get("checkedFields") or [])
+        require(proof.get("url") == spec["officialUrl"]
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == checked.isoformat()
+                and {"artists", "date", "venue", "genre"}.issubset(fields)
+                and (("concertStartTime" in fields) == (spec["time"] is not None))
+                and "startTime" not in fields
+                and "doorTime" not in fields,
+                "Nantes/Toulouse : preuves ou horaires non corroborés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Nantes/Toulouse : groupe inventé ou identité incohérente")
     if event.get("venueId") == "la-laiterie-strasbourg":
         spec = (LAITERIE_OFFICIAL_VERIFIED.get(event_id)
                 or LAITERIE_SECOND_WAVE_VERIFIED.get(event_id))
