@@ -184,7 +184,9 @@ def main():
       for key in ("festivals.json","festival-history.json")
     }
     head=verify_published_head(published["festivals.json"])
-    patch,path=load_patch(token,today)
+    # Un patch ancien reste une proposition : chaque champ est reverifie
+    # dans stage() avec des sources officielles telechargees aujourd'hui.
+    patch,path=load_patch(token,today,allow_stale_for_reproof=True)
     sources={}
     for key,url in [
        ("muscadeath","https://muscadeath.fr/"),
@@ -226,6 +228,8 @@ def main():
             print("Site officiel enregistré inaccessible pour "+slug+" : modifications différées.")
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
+    report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
+    report["stale_patch_reproved_live"]=report["patch_age_days"]>7
     report["mode"]=args.mode
     report["non_deployed_updates"]=len(report["held"])
     Path("/tmp/grossesondes_cloud").mkdir(exist_ok=True)
