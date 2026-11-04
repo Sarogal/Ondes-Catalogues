@@ -1,0 +1,316 @@
+"""Fail-closed preflight: private outings leads -> strictly verified proposed additions.
+
+Never edits the public catalogue, nor private backlog. Independently checks
+OpenDataSoft's session metadata against the official OpenAgenda page, existing
+venue registry, immutable historic catalogue and the live public catalogue.
+"""
+import argparse
+import base64
+from datetime import date, datetime
+import json
+import math
+import os
+from pathlib import Path
+import re
+from urllib.parse import urlencode, urlparse
+from urllib.request import Request, urlopen
+
+from merge_policy import ORIGIN, byid, valid, safe_published_event
+from private_intake import BRANCH, PATH, github
+from proof import norm, meters
+from proof_text import verify_event
+from venue_registry import VENUES
+
+API = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
+FIELDS = ("uid,title_fr,description_fr,canonicalurl,timings,status,"
+          "location_city,location_name,location_department,location_region,"
+          "location_countrycode,location_coordinates,originagenda_title,"
+          "age_min,age_max,conditions_fr")
+MAX_ROWS = 10
+MAX_FETCH = 15
+
+
+def official_leads(token):
+    """Read private GitHub backlog, respecting its branch and access token."""
+    if not token:
+        raise ValueError("PRIVATE_INTAKE_READ_TOKEN absent")
+    from urllib.parse import quote
+    result = github(PATH + "/backlog.json?ref=" + quote(BRANCH, safe=""), token)
+    if result.get("encoding") != "base64":
+        raise ValueError("Backlog privé GitHub non encodé en base64")
+    blob = base64.b64decode(result["content"], validate=False)
+    if len(blob) > 1_000_000:
+        raise ValueError("Backlog privé trop volumineux")
+    entries = json.loads(blob)
+    if not isinstance(entries, list) or len(entries) > 4000:
+        raise ValueError("Backlog privé malformé ou trop volumineux")
+    return entries
+
+
+def registry_location(lead):
+    city = norm(lead.get("city"))
+    venue = norm(lead.get("venue"))
+    matches = [v for v in VENUES if norm(v["city"]) == city
+               and venue in {norm(a) for a in v["aliases"]}]
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
+def permitted(lead, today):
+    if not isinstance(lead, dict) or lead.get("collector") != "opendatasoft-index":
+        return False
+    uid = lead.get("external_id")
+    if not isinstance(uid, str) or not re.fullmatch(r"[0-9]{1,12}", uid):
+        return False
+    src = lead.get("source_url")
+    if not isinstance(src, str):
+        return False
+    url = urlparse(src)
+    if (url.scheme != "https" or url.hostname != "openagenda.com" or
+            url.username or url.password or not url.path.startswith("/") or
+            url.query or url.fragment):
+        return False
+    try:
+        d = date.fromisoformat(lead["date_start"])
+        if not today <= d <= date.fromordinal(today.toordinal() + 184):
+            return False
+        if lead.get("date_end") != d.isoformat():
+            return False
+    except (ValueError, TypeError, KeyError):
+        return False
+    return bool(lead.get("title") and lead.get("city") and
+                registry_location(lead) is not None)
+
+
+def api_record(uid, get=None):
+    """Retrieve by immutable OpenAgenda UID; never trust an unbounded title search."""
+    if not re.fullmatch(r"[0-9]{1,12}", str(uid)):
+        raise ValueError("UID de proposition invalide")
+    args = urlencode({"limit": MAX_ROWS, "select": FIELDS,
+                      "where": "uid='" + str(uid) + "'"})
+    url = API + "?" + args
+    if get is not None:
+        doc = get(url)
+    else:
+        request = Request(url, headers={
+            "Accept": "application/json",
+            "User-Agent": "PtitesOndesIndependentEvidence/1.0",
+        })
+        with urlopen(request, timeout=18) as response:
+            if urlparse(response.geturl()).hostname != urlparse(API).hostname:
+                raise ValueError("Redirection ODS non autorisée")
+            data = response.read(250_001)
+        if len(data) > 250_000:
+            raise ValueError("Réponse ODS trop volumineuse")
+        doc = json.loads(data)
+    if not isinstance(doc, dict) or not isinstance(doc.get("results"), list):
+        raise ValueError("Réponse ODS malformée")
+    rows = [r for r in doc["results"] if str(r.get("uid", "")) == str(uid)]
+    if len(rows) != 1:
+        raise ValueError("UID absent ou non unique dans l'index")
+    return rows[0]
+
+
+def category_for(title, description):
+    """Explicit family-music categories only; reject adult events by default."""
+    name = norm(title)
+    body = norm(title + " " + description)
+    if "conte musical" in name:
+        return "conte-musical", "Conte musical"
+    if "eveil musical" in name:
+        return "eveil-musical", "Éveil musical"
+    if "atelier musical" in name or "atelier d eveil" in name:
+        return "atelier-musical", "Atelier musical"
+    if "spectacle musical" in name and any(x in body for x in ("enfant","jeune public","famill","tout petit","bebe")):
+        return "spectacle-musical", "Spectacle musical"
+    if "cine concert" in name and any(x in body for x in ("enfant","jeune public","famill","tout petit","bebe")):
+        return "cine-concert", "Ciné-concert"
+    if "concert" in name and any(x in name for x in ("enfant","jeune public","famill","tout petit","bebe")):
+        return "concert", "Concert"
+    return None
+
+
+def confirmed_session(timings, day):
+    if isinstance(timings, str):
+        timings = json.loads(timings)
+    if not isinstance(timings, list):
+        raise ValueError("Séances détaillées absentes")
+    times = []
+    for x in timings:
+        if not isinstance(x, dict):
+            continue
+        begin = x.get("begin")
+        if not isinstance(begin, str):
+            continue
+        try:
+            stamp = datetime.fromisoformat(begin)
+        except ValueError:
+            continue
+        if stamp.tzinfo is None:
+            continue
+        if stamp.date().isoformat() == day:
+            times.append(stamp.strftime("%H:%M"))
+    if not times:
+        raise ValueError("Séance datée et horodatée absente")
+    if len(set(times)) > 4:
+        raise ValueError("Trop de séances le même jour")
+    return ", ".join(sorted(set(times)))
+
+
+def scheduled(row):
+    status = row.get("status")
+    if isinstance(status, str):
+        try:
+            status = json.loads(status)
+        except ValueError:
+            return False
+    return isinstance(status, dict) and status.get("id") == 1
+
+
+def make_event(lead, row, location, today):
+    """Build only from exact dated first-party fields and reviewed venue coords."""
+    if str(row.get("uid")) != lead["external_id"]:
+        raise ValueError("UID source différent")
+    if row.get("canonicalurl") != lead["source_url"]:
+        raise ValueError("URL canonique différente")
+    if norm(row.get("title_fr")) != norm(lead["title"]):
+        raise ValueError("Titre différent")
+    if norm(row.get("location_city")) != norm(lead["city"]):
+        raise ValueError("Ville différente")
+    if norm(row.get("location_name")) != norm(lead["venue"]):
+        raise ValueError("Lieu différent")
+    if row.get("location_countrycode") not in ("FR",):
+        raise ValueError("Pays non validé")
+    if not scheduled(row):
+        raise ValueError("Statut différent de programmé")
+    coords = row.get("location_coordinates")
+    if not isinstance(coords, dict):
+        raise ValueError("Position source absente")
+    try:
+        lat, lng = float(coords["lat"]), float(coords["lon"])
+    except (ValueError, TypeError, KeyError):
+        raise ValueError("Position source non numérique")
+    if not math.isfinite(lat) or not math.isfinite(lng) or meters(
+            (lat, lng), (location["lat"], location["lng"])) > 65:
+        raise ValueError("Position source incompatible avec le registre vérifié")
+    category = category_for(row["title_fr"], row.get("description_fr") or "")
+    if not category:
+        raise ValueError("Destination familiale musicale insuffisamment explicite")
+    department = row.get("location_department")
+    region = row.get("location_region")
+    source = row.get("originagenda_title")
+    if not all(isinstance(v, str) and v.strip() for v in (department, region, source)):
+        raise ValueError("Département, région ou auteur manquant")
+    day = lead["date_start"]
+    e = {
+        "id": "openagenda-" + lead["external_id"] + "-" + day,
+        "title": row["title_fr"].strip(),
+        "category": category[0], "category_label": category[1],
+        "date_start": day, "date_end": day,
+        "time": confirmed_session(row.get("timings"), day),
+        "city": row["location_city"], "department": department,
+        "region": region, "venue": row["location_name"],
+        "source_url": row["canonicalurl"],
+        "source_label": source,
+        "verified_at": today.isoformat(), "geo_verified_at": today.isoformat(),
+        "geo_precision": "venue",
+        # Use independently documented venue registry point, never blind ODS coords.
+        "lat": location["lat"], "lng": location["lng"],
+    }
+    # Omit age and price if unverified; they are NEVER inferred from a title.
+    # The public policy checker independently reconfirms source, sessions, GPS.
+    return e
+
+
+def evaluate(leads, baseline, published, today, fetch=api_record,
+             verifier=verify_event, limit=MAX_FETCH):
+    historic = byid(baseline)
+    existing = byid(published)
+    if any(k not in existing or existing[k] != v for k, v in historic.items()):
+        raise ValueError("Catalogue historique différent du public")
+    fields = set().union(*(set(ev) for ev in baseline["events"]))
+    categories = {x["category"] for x in baseline["events"]}
+    signatures = {(norm(e.get("title")), norm(e.get("city")),
+                   norm(e.get("venue")), e.get("date_start"))
+                  for e in published["events"]}
+    urls = {(e.get("source_url"), e.get("date_start"))
+            for e in published["events"]}
+    candidates = sorted((x for x in leads if permitted(x, today)),
+                        key=lambda x: (x["date_start"], x["source_url"]))
+    accepted, rejected, assessed = [], [], 0
+    for lead in candidates:
+        if assessed >= limit:
+            break
+        assessed += 1
+        evidence = {"source_url": lead["source_url"], "date": lead["date_start"]}
+        try:
+            record = fetch(lead["external_id"])
+            event = make_event(lead, record, registry_location(lead), today)
+            signature = (norm(event["title"]), norm(event["city"]),
+                         norm(event["venue"]), event["date_start"])
+            if event["id"] in existing or signature in signatures or (
+                    event["source_url"], event["date_start"]) in urls:
+                rejected.append(dict(evidence, status="already_published"))
+                continue
+            structural, reason = valid(event, categories, fields, today)
+            if not structural:
+                rejected.append(dict(evidence, status="rejected_schema", reason=reason))
+                continue
+            checked, reason = verifier(event, baseline["events"])
+            if not checked:
+                rejected.append(dict(evidence, status="unverified", reason=reason))
+                continue
+            accepted.append(event)
+            signatures.add(signature)
+            urls.add((event["source_url"], event["date_start"]))
+        except (ValueError, TypeError, KeyError, OSError) as exc:
+            rejected.append(dict(evidence, status="deferred",
+                                 reason=str(exc)[:250]))
+    if len(accepted) > 100:
+        raise ValueError("Limite de 100 fiches par patch dépassée")
+    patch = {
+        "schema": "ptitesondes.patch.v1", "generated_at": str(today),
+        "safe_to_publish": False,
+        "source": {"url": ORIGIN, "version": 3,
+                   "updated_at": baseline["updated_at"],
+                   "events_count": len(baseline["events"])},
+        "checks": {"ids_unique": True, "official_sources_verified": True,
+                   "no_production_changes": True},
+        "additions": accepted, "updates": [], "deferred": [],
+    }
+    report = {
+        "date": str(today), "mode": "preview_no_public_write",
+        "backlog_total": len(leads), "eligible_with_reviewed_venue": len(candidates),
+        "checked": assessed, "accepted_preflight": len(accepted),
+        "deferred_or_duplicates": len(rejected), "details": rejected,
+    }
+    return patch, report
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--output-dir", type=Path,
+                    default=Path("/tmp/ptitesondes-promotion"))
+    ap.add_argument("--limit", type=int, default=MAX_FETCH)
+    args = ap.parse_args()
+    if not 1 <= args.limit <= MAX_FETCH:
+        raise ValueError("Taille de lot hors limite")
+    token = os.environ.get("PRIVATE_INTAKE_READ_TOKEN", "")
+    today = date.today()
+    leads = official_leads(token)
+    request = Request(ORIGIN, headers={"User-Agent": "OndesPublicDataAudit/1.0"})
+    with urlopen(request, timeout=30) as response:
+        baseline = json.loads(response.read(1_000_001))
+    published = json.loads(Path("docs/ptitesondes/sorties.json").read_text())
+    patch, report = evaluate(leads, baseline, published, today, limit=args.limit)
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    (args.output_dir / "preview-patch.json").write_text(
+        json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (args.output_dir / "report.json").write_text(
+        json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(json.dumps(report, indent=2, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
