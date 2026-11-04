@@ -19,6 +19,9 @@ from grossesondes_preview import (
 )
 from grossesondes_generic_roster import validate_roster
 from grossesondes_structured_roster import PROOF_MODE, validate_structured_roster
+from grossesondes_structured_tickets import (
+    PROOF_MODE as TICKET_PROOF_MODE, validate_structured_tickets,
+)
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, validate_structured_edition,
     conflicts_with_existing,
@@ -189,6 +192,9 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         if proof_mode == PROOF_MODE:
             partial=validate_structured_roster(
                 current,up,sources.get("registered-schema:"+slug,""),today)
+        elif proof_mode == TICKET_PROOF_MODE:
+            partial=validate_structured_tickets(
+                current,up,sources.get("registered-ticket:"+slug,""),today)
         elif proof_mode is not None:
             report["held"].append({"slug":slug,"reason":"mode de preuve non pris en charge"})
             continue
@@ -206,7 +212,7 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             rows[rows.index(current)]=revised
             report["accepted_updates"].append({"slug":slug,"fields":fields})
             report["source_proofs"].extend(
-                [current["officialSite"]] if proof_mode == PROOF_MODE
+                [current["officialSite"]] if proof_mode in (PROOF_MODE, TICKET_PROOF_MODE)
                 else ([CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
                       if slug=="cernunnos-pagan-fest"
                       else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
