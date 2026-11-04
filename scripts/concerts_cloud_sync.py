@@ -3363,6 +3363,24 @@ VAPEUR_DIJON_RESERVED_URLS = {
 }
 
 
+# Dijon / Skip The Use : fiche organisateur nominative et agenda salle rock,
+# sans début musical prouvé. La salle est déjà agréée (Thrash 'til Death 2).
+LA_VAPEUR_SKIP_SIGNED_20261104 = {
+  "id": "go-c-20270211-dijon-skip-the-use",
+  "title": "Skip The Use",
+  "date": "2027-02-11",
+  "time": None,
+  "venueId": "la-vapeur-dijon",
+  "artistIds": [
+    "skip-the-use"
+  ],
+  "genres": [
+    "Rock"
+  ],
+  "officialUrl": "https://www.livenation.fr/event/skip-the-use-love-and-anxiety-dijon-tickets-edp1674591",
+  "calendarUrl": "https://www.lavapeur.com/programme/"
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3416,6 +3434,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if event_id in VAPEUR_DIJON_SIGNED_20261104:
         require(event.get("venueId") == "la-vapeur-dijon",
                 "La Vapeur : identifiant déplacé hors de Dijon")
+    if (event_id == LA_VAPEUR_SKIP_SIGNED_20261104["id"]
+            or official_url == LA_VAPEUR_SKIP_SIGNED_20261104["officialUrl"]):
+        require(event_id == LA_VAPEUR_SKIP_SIGNED_20261104["id"]
+                and event.get("venueId") == "la-vapeur-dijon"
+                and official_url == LA_VAPEUR_SKIP_SIGNED_20261104["officialUrl"],
+                "La Vapeur / Skip : identifiant, URL ou salle réaffectés")
     # Exact event identity and official first-party URL are reserved
     # together: neither a new ID nor a different venue may reuse this proof.
     # Les quatre URLs officielles du lot Nantes/Toulouse ne sont pas recyclables.
@@ -5210,6 +5234,52 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Bateau Ivre : heure de début musical non attestée")
     # Dijon: authorization derives from the venue's exact public listing,
     # linked to the named organizer booking page bearing the complete year.
+    # Dijon / La Vapeur: official organizer event page proves 11 Feb 2027,
+    # the venue programme independently proves genre. Both are necessary.
+    # Generic cards, moved events, an unnamed guest or door-time fail closed.
+    if (event.get("venueId") == "la-vapeur-dijon"
+            and event_id == LA_VAPEUR_SKIP_SIGNED_20261104["id"]):
+        spec = LA_VAPEUR_SKIP_SIGNED_20261104
+        require(event_id == spec["id"] and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "organisateur"
+                and event.get("status") == "confirmed"
+                and all(event.get(field) == spec[field] for field in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "La Vapeur : affiche non incluse dans la signature de Dijon")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "www.livenation.fr"
+                and u.path == "/event/skip-the-use-love-and-anxiety-dijon-tickets-edp1674591"
+                and not u.query and not u.fragment and not u.username
+                and not u.password and not u.port,
+                "La Vapeur : fiche nominative organisateur exacte requise")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "La Vapeur : preuve périmée ou future")
+        require(len(evidence) == 2 and all(isinstance(p,dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} ==
+                    {"official-organizer-or-venue", "first-party-venue-calendar"},
+                "La Vapeur : deux preuves de provenance indépendante exigées")
+        proofs = {p["proofType"]: p for p in evidence}
+        for kind, url, fields in (
+            ("official-organizer-or-venue",spec["officialUrl"],
+             ["artists","date","venue"]),
+            ("first-party-venue-calendar",spec["calendarUrl"],
+             ["artists","venue","genre","dayMonth"]),
+        ):
+            proof = proofs[kind]
+            require(proof.get("url") == url
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and proof.get("checkedFields") == fields,
+                    "La Vapeur : date, genre ou URL de preuve surdéclarés")
+            require(not ({"startTime", "concertStartTime", "doorTime"}
+                         & set(proof["checkedFields"])),
+                    "La Vapeur : aucune heure musicale officiellement prouvée")
+        require(new_artists == [] and ids == ["skip-the-use"]
+                and norm(known_artist_ids["skip-the-use"]["name"]) == norm("Skip The Use")
+                and event.get("time") is None,
+                "La Vapeur : artistes ajoutés ou horaire musical inventé")
+        return event, added
     if (event_id in VAPEUR_DIJON_SIGNED_20261104
             or event.get("venueId") == "la-vapeur-dijon"
             or official_url in VAPEUR_DIJON_RESERVED_URLS):
