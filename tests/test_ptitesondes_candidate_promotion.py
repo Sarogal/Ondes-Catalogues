@@ -1,5 +1,7 @@
 """No-network guards for prospective outings promotions; no production writes."""
 from datetime import date, timedelta
+import json
+import tempfile
 from pathlib import Path
 import sys
 import unittest
@@ -7,7 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from ptitesondes_candidate_promotion import (
-    api_record, category_for, confirmed_session, evaluate, make_event,
+    api_record, category_for, confirmed_session, evaluate, main, make_event,
     permitted, registry_location, scheduled,
 )
 from merge_policy import ORIGIN, merge
@@ -58,6 +60,30 @@ def base():
 
 
 class CandidatePromotionTests(unittest.TestCase):
+    def test_cli_can_consume_only_local_private_files_without_github_token(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            backlog_file = root / "backlog.json"
+            ref_file = root / "reference.json"
+            catalogue_file = root / "catalogue.json"
+            output = root / "output"
+            backlog_file.write_text("[]", encoding="utf-8")
+            ref_file.write_text(json.dumps(base()), encoding="utf-8")
+            catalogue_file.write_text(json.dumps(base()), encoding="utf-8")
+            argv = ["candidate_promotion.py", "--backlog-file", str(backlog_file),
+                    "--reference-file", str(ref_file),
+                    "--catalogue-file", str(catalogue_file),
+                    "--output-dir", str(output), "--date", str(TODAY)]
+            with patch.object(sys, "argv", argv):
+                with patch.dict("os.environ", {"PRIVATE_INTAKE_READ_TOKEN": ""}):
+                    main()
+            candidate = json.loads((output / "preview-patch.json").read_text())
+            report = json.loads((output / "report.json").read_text())
+            self.assertEqual(candidate["additions"], [])
+            self.assertEqual(candidate["generated_at"], str(TODAY))
+            self.assertFalse(candidate["safe_to_publish"])
+            self.assertEqual(report["backlog_total"], 0)
+
     def test_exact_registry_alias_required(self):
         self.assertEqual(registry_location(lead())["city"], "Nantes")
         self.assertIsNone(registry_location(lead(venue="Théâtre de Jeanne imaginaire")))
