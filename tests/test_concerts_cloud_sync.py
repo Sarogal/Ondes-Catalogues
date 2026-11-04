@@ -2979,7 +2979,12 @@ class NationalGapLot20261104Tests(unittest.TestCase):
         cls.specs = UNDERCOVERED_REGIONS_NOV2026_VERIFIED
         cls.catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
         cls.venues = {v["id"]: v for v in cls.catalogue["venues"]}
-        cls.artists = {a["id"]: a for a in cls.catalogue["artists"]}
+        # Retirer les nouveaux noms de la photographie de base pour conserver
+        # le même test d'approbation une fois les quinze concerts publiés.
+        new_ids = {a["id"] for event_id in cls.IDS
+                   for a in cls.specs[event_id]["newArtists"]}
+        cls.artists = {a["id"]: a for a in cls.catalogue["artists"]
+                       if a["id"] not in new_ids}
         cls.today = __import__("datetime").date(2026, 11, 4)
 
     def row(self, event_id):
@@ -3004,20 +3009,23 @@ class NationalGapLot20261104Tests(unittest.TestCase):
             "newArtists": copy.deepcopy(spec["newArtists"]),
         }
 
-    def test_fifteen_named_events_have_unique_ids_no_prior_collision_and_valid_signatures(self):
+    def test_fifteen_named_events_are_valid_before_and_after_publication(self):
         from concerts_cloud_sync import validate_approval
         self.assertEqual(len(self.IDS), 15)
         self.assertEqual(len(set(self.IDS)), len(self.IDS))
-        existing = {e["id"] for e in self.catalogue["events"]}
+        existing = {e["id"]: e for e in self.catalogue["events"]}
         for event_id in self.IDS:
             with self.subTest(event_id=event_id):
-                self.assertNotIn(event_id, existing)
                 row = self.row(event_id)
                 event, added = validate_approval(row, self.venues, self.artists, self.today)
                 self.assertEqual(event["id"], event_id)
                 self.assertIsNone(event["time"])
                 self.assertEqual(sorted(added), sorted(a["id"] for a in row["newArtists"]))
                 self.assertEqual(len(row["officialEvidence"]), 2)
+                if event_id in existing:
+                    for key in ("id", "title", "date", "artistIds", "venueId",
+                                "genres", "officialUrl", "status"):
+                        self.assertEqual(existing[event_id][key], event[key])
 
     def test_forged_details_or_missing_official_calendar_are_rejected(self):
         from concerts_cloud_sync import validate_approval
