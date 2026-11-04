@@ -137,7 +137,8 @@ def apply_changes(entry,changes,slug,today):
     updated["lastVerified"]=next((c["after"] for c in changes if c["field"]=="lastVerified"),entry.get("lastVerified",today))
     return updated
 
-def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None):
+def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None,
+          published_calendar=None,published_history=None):
     # Lors d'une prévisualisation autonome, les JSON publics historiques
     # restent la référence du patch même après extension du miroir Pages.
     audit(calendar,history,patch,
@@ -153,8 +154,12 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         slug=e["slug"]
         if e.get("proofMode")==EDITION_PROOF_MODE:
             parent=existing.get(e.get("originSlug"))
+            known_rows=rows + (
+                published_calendar.get("festivals",[]) if published_calendar else [])
+            known_history=history["knownFestivals"] + (
+                published_history.get("knownFestivals",[]) if published_history else [])
             if parent is None or conflicts_with_existing(
-                    e,calendar["festivals"],history["knownFestivals"]):
+                    e,known_rows,known_history):
                 report["held"].append({"slug":slug,"reason":"édition parente absente ou doublon"})
                 continue
             proposed=validate_structured_edition(
