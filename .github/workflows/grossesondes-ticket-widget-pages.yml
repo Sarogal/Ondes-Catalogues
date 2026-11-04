@@ -1,6 +1,10 @@
 name: Grosses Ondes — publier les ressources de billetterie Pages
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-ticket-widget-pages.yml'
+      - 'docs/grossesondes/TICKET_WIDGET_INTEGRATION.md'
   push:
     branches: [main]
     paths:
@@ -68,6 +72,7 @@ jobs:
 
   deploy:
     needs: check
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
