@@ -51,6 +51,7 @@
 }
 .go-artist-dates__date, .go-artist-dates__place { margin: 0; font-size: .92rem; }
 .go-artist-dates__place, .go-artist-dates__empty { color: #c0c7c9; }
+.go-artist-dates__status { margin: 0; font-size: .83rem; color: #c0c7c9; }
 .go-artist-dates__source { color: #f0c46c; text-underline-offset: 2px; font-size: .9rem; }
 .go-artist-dates__warning {
   padding: 8px 10px; background: #332c24; color: #f5d2a2;

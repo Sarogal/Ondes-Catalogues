@@ -84,10 +84,18 @@
     const get = k => parts.find(x => x.type === k).value;
     return get('year') + '-' + get('month') + '-' + get('day');
   }
+  const isUnavailableStatus = status =>
+    /annul|report|cancel|postpon|reprogram|reschedul/i.test(String(status || ''));
+  function statusLabel(raw) {
+    const value = String(raw || '').trim();
+    const labels = {confirmed: 'Confirmé', announced: 'Annoncé',
+      cancelled: 'Annulé', postponed: 'Reporté', rescheduled: 'Reprogrammé'};
+    return labels[value.toLowerCase()] || value;
+  }
   function classify(rows, today) {
     const upcoming = [], past = [], unavailable = [];
     for (const row of rows) {
-      if (/annul|report|cancel|postpon/i.test(row.status)) unavailable.push(row);
+      if (isUnavailableStatus(row.status)) unavailable.push(row);
       else if (!row.date || (row.end || row.date) >= today) upcoming.push(row);
       else past.push(row);
     }
@@ -133,8 +141,10 @@
     const date = node('p', 'go-artist-dates__date', presentDate(row));
     const place = node('p', 'go-artist-dates__place', row.place || 'Lieu à préciser');
     item.append(meta, title, date, place);
-    if (/annul|report|cancel|postpon/i.test(row.status)) {
-      item.append(node('p', 'go-artist-dates__warning', 'Statut : ' + row.status));
+    if (row.status) {
+      item.append(node('p', isUnavailableStatus(row.status) ?
+        'go-artist-dates__warning' : 'go-artist-dates__status',
+        'Statut : ' + statusLabel(row.status)));
     }
     const official = link('Vérifier la source officielle', row.source);
     if (official) item.append(official);
@@ -242,7 +252,8 @@
       if (!closed) loading.textContent = 'Impossible de charger les dates actuellement. Réessayez plus tard.';
     });
   }
-  const api = Object.freeze({open, collectAppearances, artistIdentity, classify, norm, isIso, safeHttps});
+  const api = Object.freeze({open, collectAppearances, artistIdentity,
+    classify, isUnavailableStatus, statusLabel, norm, isIso, safeHttps});
   if (typeof module === 'object' && module.exports) module.exports = api;
   root.GrossesOndesArtists = api;
 }(typeof window === 'object' ? window : globalThis));
