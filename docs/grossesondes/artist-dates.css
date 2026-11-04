@@ -1,0 +1,64 @@
+/* Isolé de la carte, des radios et des styles de la page Festivals. */
+.go-artist-link {
+  padding: 0; margin: 0; border: 0; border-radius: 0;
+  background: transparent; color: #f0c46c;
+  text-decoration: underline; text-underline-offset: 3px;
+  text-decoration-thickness: 1px; font: inherit; cursor: pointer;
+}
+.go-artist-link:hover { color: #fff1c5; }
+.go-artist-link:focus-visible { outline: 2px solid #f0c46c; outline-offset: 3px; }
+.go-artist-dates__backdrop {
+  position: fixed; z-index: 10000; inset: 0;
+  display: flex; justify-content: center; align-items: center;
+  padding: 14px; background: rgba(0, 0, 0, .86);
+}
+.go-artist-dates__dialog {
+  width: min(740px, 100%); max-height: min(90vh, 900px);
+  display: flex; flex-direction: column; border-radius: 14px;
+  background: #151b1e; color: #f3f3f3;
+  border: 1px solid #455056; box-shadow: 0 24px 90px #000a;
+  font-family: inherit; line-height: 1.5;
+}
+.go-artist-dates__header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; padding: 20px 22px 14px;
+  border-bottom: 1px solid #343f44;
+}
+.go-artist-dates__header h2 { margin: 0; font-size: clamp(1.2rem, 3vw, 1.7rem); line-height: 1.2; }
+.go-artist-dates__close {
+  flex: none; color: #fff; background: #323c40;
+  border: 1px solid #59676c; border-radius: 7px;
+  padding: 7px 10px; font: inherit; cursor: pointer;
+}
+.go-artist-dates__close:hover, .go-artist-dates__close:focus-visible {
+  border-color: #f0c46c; outline: 1px solid #f0c46c;
+}
+.go-artist-dates__body { overflow: auto; padding: 16px 22px 24px; }
+.go-artist-dates__body > p { margin: 0 0 15px; }
+.go-artist-dates__section { margin: 20px 0 0; }
+.go-artist-dates__section h3 {
+  margin: 0 0 12px; padding-bottom: 6px;
+  border-bottom: 1px solid #3b4448; font-size: 1.06rem;
+}
+.go-artist-dates__list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.go-artist-dates__item {
+  display: grid; gap: 4px; border: 1px solid #313b3f;
+  border-radius: 10px; padding: 12px 14px; background: #1c2529;
+}
+.go-artist-dates__item strong { font-size: 1.02rem; overflow-wrap: anywhere; }
+.go-artist-dates__type {
+  color: #f0c46c; font-size: .73rem; font-weight: 750; letter-spacing: .07em;
+}
+.go-artist-dates__date, .go-artist-dates__place { margin: 0; font-size: .92rem; }
+.go-artist-dates__place, .go-artist-dates__empty { color: #c0c7c9; }
+.go-artist-dates__source { color: #f0c46c; text-underline-offset: 2px; font-size: .9rem; }
+.go-artist-dates__warning {
+  padding: 8px 10px; background: #332c24; color: #f5d2a2;
+  border-left: 3px solid #f0c46c; border-radius: 3px;
+}
+.go-artist-dates__count { font-weight: 700; }
+@media (max-width: 550px) {
+  .go-artist-dates__header { padding: 14px; }
+  .go-artist-dates__body { padding: 14px; }
+  .go-artist-dates__close { font-size: .85rem; }
+}
