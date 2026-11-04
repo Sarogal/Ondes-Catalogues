@@ -37,6 +37,24 @@ MAX_NEW_VENUES_PER_SYNC = 6
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "le-bateau-ivre-tours": {
+        "venue": {
+            "id": "le-bateau-ivre-tours",
+            "name": "Le Bateau Ivre",
+            "address": "146 rue Édouard Vaillant",
+            "postalCode": "37000",
+            "city": "Tours",
+            "department": "37",
+            "region": "Centre-Val de Loire",
+            "latitude": 47.3844669,
+            "longitude": 0.7013784,
+            "geoPrecision": "point indicatif associé à un événement organisé au Bateau Ivre, publié par l'ADT 37 via DATAtourisme; recoupé avec l'adresse officielle 146 rue Édouard Vaillant; ne représente pas l'entrée exacte",
+            "geoSource": "https://www.loisirs-divertissements.com/sortir-en-france/sortir-visiter-indre-et-loire-37/jam-7880"
+        },
+        "officialUrl": "https://www.bateauivre.coop/contact/",
+        "locationUrl": "https://www.loisirs-divertissements.com/sortir-en-france/sortir-visiter-indre-et-loire-37/jam-7880",
+        "locationProofType": "independent-tourism-event-gps"
+    },
     "l-echonova-saint-ave": {
         "venue": {"id":"l-echonova-saint-ave","name":"L'Echonova","address":"1 rue Léon Griffon","postalCode":"56890","city":"Saint-Avé","department":"56","region":"Bretagne","latitude":47.67468,"longitude":-2.74379,"geoPrecision":"point indicatif du site L'Echonova d'après Fandefest (coordonnées initiales 47.67468064,-2.7437943027), cohérent avec la localisation générale du lieu; non assimilé à l'entrée publique","geoSource":"https://www.fandefest.com/salle/l-echonova-saint-ave"},
         "officialUrl": "https://lechonova.com/infos-pratiques/",
@@ -3142,6 +3160,157 @@ ECHONOVA_SIGNED_20261104 = {
     "go-c-20270206-saint-ave-meteora-systemize": {"title":"Meteora + Systemize","date":"2027-02-06","time":None,"venueId":"l-echonova-saint-ave","artistIds":["meteora-tribute","systemize"],"artistNames":["Meteora","Systemize"],"genres":["Metal"],"newArtists":[{"id":"meteora-tribute","name":"Meteora"},{"id":"systemize","name":"Systemize"}],"officialUrl":"https://lechonova.com/evenement/meteora-linkin-park-tribute/","ticketingUrl":"https://www.fnacspectacles.com/venue/lechonova-81096/","firstPartyFields":["artists","date","venue","genre"],"ticketingFields":["artists","date","venue"]},
 }
 
+# Tours: five individual dated first-party bills plus their official programme.
+# Site times are DOOR times (per venue contact page), never concert starts.
+BATEAU_IVRE_SIGNED_20261104 = {
+    "go-c-20261106-tours-les-sheriff-auxiliaire": {
+        "title": "Les Sheriff + Auxiliaire",
+        "date": "2026-11-06",
+        "time": None,
+        "venueId": "le-bateau-ivre-tours",
+        "artistIds": [
+            "les-sheriff",
+            "auxiliaire"
+        ],
+        "artistNames": [
+            "Les Sheriff",
+            "Auxiliaire"
+        ],
+        "newArtistIds": [
+            "les-sheriff",
+            "auxiliaire"
+        ],
+        "genres": [
+            "Punk Rock"
+        ],
+        "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/les-sheriff/",
+        "calendarUrl": "https://www.bateauivre.coop/agenda-2/",
+        "calendarFields": [
+            "leadArtist",
+            "date",
+            "venue"
+        ]
+    },
+    "go-c-20261107-tours-lofofora-akiavel-gravity": {
+        "title": "Lofofora + Akiavel + Gravity",
+        "date": "2026-11-07",
+        "time": None,
+        "venueId": "le-bateau-ivre-tours",
+        "artistIds": [
+            "lofofora",
+            "akiavel",
+            "gravity"
+        ],
+        "artistNames": [
+            "Lofofora",
+            "Akiavel",
+            "Gravity"
+        ],
+        "newArtistIds": [
+            "lofofora",
+            "gravity"
+        ],
+        "genres": [
+            "Metal"
+        ],
+        "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/lofofora-akiavel-gravity/",
+        "calendarUrl": "https://www.bateauivre.coop/agenda-2/",
+        "calendarFields": [
+            "leadArtist",
+            "date",
+            "venue"
+        ]
+    },
+    "go-c-20261113-tours-inspector-cluzo-grant-haua": {
+        "title": "The Inspector Cluzo + Grant Haua",
+        "date": "2026-11-13",
+        "time": None,
+        "venueId": "le-bateau-ivre-tours",
+        "artistIds": [
+            "the-inspector-cluzo",
+            "grant-haua"
+        ],
+        "artistNames": [
+            "The Inspector Cluzo",
+            "Grant Haua"
+        ],
+        "newArtistIds": [],
+        "genres": [
+            "Rock"
+        ],
+        "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/the-inspector-cluzo/",
+        "calendarUrl": "https://www.bateauivre.coop/agenda-2/",
+        "calendarFields": [
+            "leadArtist",
+            "date",
+            "venue"
+        ]
+    },
+    "go-c-20261126-tours-feldup-trainfantome": {
+        "title": "Feldup & The Showerheads + Trainfantome",
+        "date": "2026-11-26",
+        "time": None,
+        "venueId": "le-bateau-ivre-tours",
+        "artistIds": [
+            "feldup-the-showerheads",
+            "trainfantome"
+        ],
+        "artistNames": [
+            "Feldup & The Showerheads",
+            "Trainfantome"
+        ],
+        "newArtistIds": [
+            "feldup-the-showerheads",
+            "trainfantome"
+        ],
+        "genres": [
+            "Rock",
+            "Shoegaze"
+        ],
+        "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/feldup-the-showerheads-trainfantome/",
+        "calendarUrl": "https://www.bateauivre.coop/agenda-2/",
+        "calendarFields": [
+            "leadArtist",
+            "date",
+            "venue"
+        ]
+    },
+    "go-c-20270128-tours-cachemire-la-phaze-bobs-not-dead": {
+        "title": "Cachemire + La Phaze + Bob's Not Dead",
+        "date": "2027-01-28",
+        "time": None,
+        "venueId": "le-bateau-ivre-tours",
+        "artistIds": [
+            "cachemire",
+            "la-phaze",
+            "bobs-not-dead"
+        ],
+        "artistNames": [
+            "Cachemire",
+            "La Phaze",
+            "Bob's Not Dead"
+        ],
+        "newArtistIds": [],
+        "genres": [
+            "Rock",
+            "Punk"
+        ],
+        "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/cachemire-la-phaze-bobs-not-dead/",
+        "calendarUrl": "https://www.bateauivre.coop/2027/?post_type=events",
+        "calendarFields": [
+            "leadArtist",
+            "dayMonth",
+            "yearIndex",
+            "venue"
+        ]
+    }
+}
+
+BATEAU_IVRE_URL_IDS = {
+    spec["officialUrl"]: ident for ident, spec in BATEAU_IVRE_SIGNED_20261104.items()
+}
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3183,6 +3352,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
             urlsplit(official_url).scheme == "https" and
             bool(urlsplit(official_url).hostname),
             "Lien officiel HTTPS absent")
+    if official_url in BATEAU_IVRE_URL_IDS:
+        require(event_id == BATEAU_IVRE_URL_IDS[official_url],
+                "Bateau Ivre : URL de concert réservée à son identifiant exact")
+    if event_id in BATEAU_IVRE_SIGNED_20261104:
+        require(event.get("venueId") == "le-bateau-ivre-tours",
+                "Bateau Ivre : identifiant déplacé hors de Tours")
     # Exact event identity and official first-party URL are reserved
     # together: neither a new ID nor a different venue may reuse this proof.
     # Les quatre URLs officielles du lot Nantes/Toulouse ne sont pas recyclables.
@@ -4919,6 +5094,62 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Big Band Café : artiste différent de l'annonce officielle")
         require(event.get("time") is None,
                 "Big Band Café : 20h affiché ne prouve pas le début musical")
+    # Tours: a named official page AND the year-aware first-party index.
+    # The 19h30/20h printed by the venue is DOOR time, never music start.
+    if (event_id in BATEAU_IVRE_SIGNED_20261104
+            or event.get("venueId") == "le-bateau-ivre-tours"
+            or official_url in BATEAU_IVRE_URL_IDS):
+        spec = BATEAU_IVRE_SIGNED_20261104.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("venueId") == "le-bateau-ivre-tours"
+                and event.get("sourceType") == "salle"
+                and event.get("status") == "confirmed"
+                and all(event.get(field) == spec[field] for field in
+                        ("title","date","time","venueId","artistIds","genres"))
+                and official_url == spec["officialUrl"],
+                "Bateau Ivre : affiche hors liste nominative examinée")
+        url = urlsplit(official_url)
+        require(url.scheme == "https" and url.hostname == "www.bateauivre.coop"
+                and re.fullmatch(r"/%C3%A9v%C3%A8nements/[a-z0-9-]+/",url.path)
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "Bateau Ivre : fiche individuelle de la salle obligatoire")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Bateau Ivre : preuve ancienne ou postérieure")
+        require(len(evidence) == 2 and all(isinstance(p,dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} ==
+                    {"official-organizer-or-venue","first-party-venue-calendar"},
+                "Bateau Ivre : détail officiel et index daté exigés")
+        proofs = {p["proofType"]: p for p in evidence}
+        expected_proofs = (
+            ("official-organizer-or-venue",spec["officialUrl"],
+             ["artists","date","venue","genre"]),
+            ("first-party-venue-calendar",spec["calendarUrl"],
+             spec["calendarFields"]),
+        )
+        for kind, expected_url, fields in expected_proofs:
+            proof = proofs[kind]
+            require(proof.get("url") == expected_url
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and proof.get("checkedFields") == fields,
+                    "Bateau Ivre : source officielle, année ou champs altérés")
+            require(not ({"startTime","concertStartTime","doorTime"} &
+                         set(proof["checkedFields"])),
+                    "Bateau Ivre : horaire d'ouverture surdéclaré")
+        require(new_artists == [
+            {"id": aid, "name": spec["artistNames"][i]}
+            for i,aid in enumerate(spec["artistIds"])
+            if aid in spec["newArtistIds"]],
+            "Bateau Ivre : nouveaux artistes non conformes")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(len(ids) == len(spec["artistNames"]) and all(
+            aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+            for aid,name in zip(ids,spec["artistNames"])),
+            "Bateau Ivre : artistes non identiques à l'affiche")
+        require(event.get("time") is None,
+                "Bateau Ivre : heure de début musical non attestée")
     return event, added
 
 
