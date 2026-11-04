@@ -9,6 +9,9 @@ on:
         options: [preview, publish]
         default: preview
         required: true
+  # Synchronisation après validation Tours (PR publique #119, privée #193).
+  # Les cinq affiches du Bateau Ivre disposent de preuves nominatives signées.
+  # Cette annotation déclenche le workflow existant sans modifier sa sécurité.
   # Réexécution contrôlée après l'approbation privée de six concerts du Rocher
   # de Palmer (PR GrossesOndes #76, 02/11/2026). Les futurs cycles restent
   # Synchronisation complémentaire : Gwendoline le 07/11, validation signée
