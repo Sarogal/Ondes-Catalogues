@@ -54,10 +54,9 @@ jobs:
         env:
           PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
         run: |
+          set -euo pipefail
           python scripts/ptitesondes_candidate_promotion.py --limit 15
           {
             echo "## Contrôle indépendant — aucune publication"
-            echo "```json"
             python -c 'import json; r=json.load(open("/tmp/ptitesondes-promotion/report.json")); print(json.dumps({k:v for k,v in r.items() if k != "details"},ensure_ascii=False,indent=2))'
-            echo "```"
           } >> "$GITHUB_STEP_SUMMARY"
