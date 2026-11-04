@@ -12263,6 +12263,36 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270219-colmar-colour-haze",
+      "title": "Colour Haze + Smokemaster",
+      "date": "2027-02-19",
+      "artistIds": [
+        "colour-haze",
+        "smokemaster"
+      ],
+      "venueId": "le-grillen-colmar",
+      "genres": [
+        "Stoner Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://grillen.colmar.fr/programmation/colour-haze-smokemaster",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Grillen",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-04",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-04",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
