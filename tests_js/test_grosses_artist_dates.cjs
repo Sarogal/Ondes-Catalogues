@@ -82,7 +82,7 @@ test('duplicate artist identity is ambiguous, no cross-association of concert ID
   const result=collectAppearances('T.G.O.O.',festivals,double);
   assert.equal(result.ambiguous,true);
   assert.equal(result.concerts.length,0);
-  assert.equal(result.festivals.length,1);
+  assert.equal(result.festivals.length,2);
 });
 test('cancelled and postponed dates are not represented as upcoming shows', () => {
   const result=collectAppearances('The Great Old Ones',festivals,concerts);
