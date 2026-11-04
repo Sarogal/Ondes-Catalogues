@@ -25,7 +25,7 @@
   }
   const HISTORY = BASE + 'festival-history.json';
   const archiveTitle = f => norm(f.name).replace(/^festival /, '')
-    .replace(/\\b20[2-4][0-9]\\b/g, '').replace(/ (?:i|ii|iii|iv|v|vi|vii|viii|ix|x|[0-9]+)$/, '').trim();
+    .replace(/\b20[2-4][0-9]\b/g, '').replace(/ (?:i|ii|iii|iv|v|vi|vii|viii|ix|x|[0-9]+)$/, '').trim();
   function documentedArchive(f, today) {
     if (!f || !Array.isArray(f.lineup) || !f.lineup.length ||
         !isIso(f.startDate) || !isIso(f.endDate) || f.startDate > f.endDate ||
