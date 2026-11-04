@@ -18,6 +18,7 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE
+from grossesondes_structured_edition import PROOF_MODE as EDITION_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL,
@@ -209,6 +210,32 @@ def collect_registered_update_sources(patch, original, fetcher=official_text):
     return sources
 
 
+def collect_registered_edition_sources(patch, original, fetcher=official_text):
+    """Fetch official parent sites independently for new edition candidates.
+
+    No URL supplied by the private patch is fetched. The parent is looked up
+    ONLY in the immutable Infomaniak snapshot; failed fetches fail closed.
+    """
+    sources={}
+    cached={}
+    for proposed in patch.get("additions",[])[:10]:
+        if proposed.get("proofMode") != EDITION_PROOF_MODE:
+            continue
+        slug=proposed.get("slug")
+        parent=original.get(proposed.get("originSlug"),{})
+        url=parent.get("officialSite")
+        if not isinstance(url,str):
+            continue
+        if url not in cached:
+            try:
+                cached[url]=fetcher(url,registered=True,raw=True)
+            except Exception:
+                cached[url]=""
+                print("Preuve officielle de nouvelle édition indisponible pour "+str(slug))
+        sources["registered-edition:"+str(slug)]=cached[url]
+    return sources
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--mode",choices=("preview","publish"),required=True)
@@ -251,6 +278,7 @@ def main():
     # Only re-fetch registered officialSite URLs from the immutable production.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
     sources.update(collect_registered_update_sources(patch,original))
+    sources.update(collect_registered_edition_sources(patch,original))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
