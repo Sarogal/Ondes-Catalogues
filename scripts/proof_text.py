@@ -109,6 +109,10 @@ def official_openagenda_explicit_month_day(event, text):
     for occurrence in re.finditer(anchor, body):
         # Adjacent sessions in a multi-date listing are never interchangeable.
         window = body[occurrence.end():occurrence.end() + 90]
+        # An adjacent session cannot supply the time for this date.
+        weekday_anchor = '|'.join(weekdays)
+        next_session = '(?:' + weekday_anchor + ') [0-9]{1,2}'
+        window = re.split(next_session, window, maxsplit=1)[0]
         if all(re.search(r"\b0?" + str(int(v.split(":")[0])) + r"\s+" + v.split(":")[1] +
                          r"\b", window) for v in start_times):
             return True
