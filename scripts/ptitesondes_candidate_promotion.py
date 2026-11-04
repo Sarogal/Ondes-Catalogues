@@ -309,7 +309,8 @@ def main():
         json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (args.output_dir / "report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps(report, indent=2, ensure_ascii=False))
+    print(json.dumps({k: v for k, v in report.items() if k != "details"},
+                     indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
