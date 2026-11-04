@@ -2862,6 +2862,241 @@ SEVEN_OFFICIAL_NOV2026_VERIFIED = {
     }
 }
 
+# Dix fiches nominatives, explicitement revues dans trois départements sous-couverts.
+UNDERCOVERED_REGIONS_NOV2026_VERIFIED = {
+    "go-c-20261120-saint-etienne-inspector-cluzo": {
+        "title": "The Inspector Cluzo + Grant Haua",
+        "date": "2026-11-20",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "the-inspector-cluzo",
+            "grant-haua"
+        ],
+        "artistNames": [
+            "The Inspector Cluzo",
+            "Grant Haua"
+        ],
+        "genres": [
+            "Rock",
+            "Blues"
+        ],
+        "newArtists": [
+            {
+                "id": "grant-haua",
+                "name": "Grant Haua"
+            }
+        ],
+        "officialUrl": "https://www.le-fil.com/evenement/the-inspector-cluzo/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20261211-saint-etienne-guadal-tejaz": {
+        "title": "Guadal Tejaz + 111",
+        "date": "2026-12-11",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "guadal-tejaz",
+            "111"
+        ],
+        "artistNames": [
+            "Guadal Tejaz",
+            "111"
+        ],
+        "genres": [
+            "Post Punk",
+            "Noise Rock"
+        ],
+        "newArtists": [
+            {
+                "id": "guadal-tejaz",
+                "name": "Guadal Tejaz"
+            },
+            {
+                "id": "111",
+                "name": "111"
+            }
+        ],
+        "officialUrl": "https://www.le-fil.com/evenement/guadal-tejaz/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20270129-saint-etienne-skip-the-use": {
+        "title": "Skip The Use + Imparfait",
+        "date": "2027-01-29",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "skip-the-use",
+            "imparfait"
+        ],
+        "artistNames": [
+            "Skip The Use",
+            "Imparfait"
+        ],
+        "genres": [
+            "Rock",
+            "Rock alternatif"
+        ],
+        "newArtists": [
+            {
+                "id": "imparfait",
+                "name": "Imparfait"
+            }
+        ],
+        "officialUrl": "https://www.le-fil.com/evenement/skip-the-use/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20270130-saint-etienne-ultra-vomit": {
+        "title": "Ultra Vomit",
+        "date": "2027-01-30",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "ultra-vomit"
+        ],
+        "artistNames": [
+            "Ultra Vomit"
+        ],
+        "genres": [
+            "Metal"
+        ],
+        "newArtists": [
+            {
+                "id": "ultra-vomit",
+                "name": "Ultra Vomit"
+            }
+        ],
+        "officialUrl": "https://www.le-fil.com/evenement/ultra-vomit/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20270227-saint-etienne-vulves-assassines": {
+        "title": "Vulves Assassines",
+        "date": "2027-02-27",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "vulves-assassines"
+        ],
+        "artistNames": [
+            "Vulves Assassines"
+        ],
+        "genres": [
+            "Punk"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://www.le-fil.com/evenement/vulves-assassines/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20270401-saint-etienne-howlin-jaws": {
+        "title": "Howlin' Jaws",
+        "date": "2027-04-01",
+        "time": "20:30",
+        "venueId": "le-fil-saint-etienne",
+        "artistIds": [
+            "howlin-jaws"
+        ],
+        "artistNames": [
+            "Howlin' Jaws"
+        ],
+        "genres": [
+            "Rock"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://www.le-fil.com/evenement/howlin-jaws/",
+        "calendarUrl": "https://www.le-fil.com/agenda/"
+    },
+    "go-c-20261118-nimes-fff": {
+        "title": "FFF + Bleu Satellite",
+        "date": "2026-11-18",
+        "time": None,
+        "venueId": "paloma-nimes",
+        "artistIds": [
+            "fff",
+            "bleu-satellite"
+        ],
+        "artistNames": [
+            "FFF",
+            "Bleu Satellite"
+        ],
+        "genres": [
+            "Rock",
+            "Funk"
+        ],
+        "newArtists": [
+            {
+                "id": "bleu-satellite",
+                "name": "Bleu Satellite"
+            }
+        ],
+        "officialUrl": "https://paloma-nimes.fr/agenda/fff-2-event-36412/",
+        "calendarUrl": "https://paloma-nimes.fr/agenda/2026-11/"
+    },
+    "go-c-20261124-nimes-marillion": {
+        "title": "Marillion + Lazuli",
+        "date": "2026-11-24",
+        "time": None,
+        "venueId": "paloma-nimes",
+        "artistIds": [
+            "marillion",
+            "lazuli"
+        ],
+        "artistNames": [
+            "Marillion",
+            "Lazuli"
+        ],
+        "genres": [
+            "Rock progressif"
+        ],
+        "newArtists": [
+            {
+                "id": "lazuli",
+                "name": "Lazuli"
+            }
+        ],
+        "officialUrl": "https://paloma-nimes.fr/agenda/marillion-event-36582/",
+        "calendarUrl": "https://paloma-nimes.fr/agenda/2026-11/"
+    },
+    "go-c-20270312-nimes-skip-the-use": {
+        "title": "Skip The Use + Supreme Nightclub",
+        "date": "2027-03-12",
+        "time": None,
+        "venueId": "paloma-nimes",
+        "artistIds": [
+            "skip-the-use",
+            "supreme-nightclub"
+        ],
+        "artistNames": [
+            "Skip The Use",
+            "Supreme Nightclub"
+        ],
+        "genres": [
+            "Rock",
+            "Indie Rock"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://paloma-nimes.fr/agenda/skip-the-use-4-event-37167/",
+        "calendarUrl": "https://paloma-nimes.fr/agenda/2027-03/"
+    },
+    "go-c-20261204-tarbes-inspector-cluzo": {
+        "title": "The Inspector Cluzo",
+        "date": "2026-12-04",
+        "time": None,
+        "venueId": "la-gespe-tarbes",
+        "artistIds": [
+            "the-inspector-cluzo"
+        ],
+        "artistNames": [
+            "The Inspector Cluzo"
+        ],
+        "genres": [
+            "Rock"
+        ],
+        "newArtists": [],
+        "officialUrl": "https://www.lagespe.com/p23-concert-c588-the-inspector-cluzo.html",
+        "calendarUrl": "https://www.lagespe.com/?q=4"
+    }
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -2917,6 +3152,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(event.get("venueId") ==
                 NANTES_TOULOUSE_NOV2026_VERIFIED[event_id]["venueId"],
                 "Nantes/Toulouse : identifiant transféré dans une autre salle")
+    regional_by_url = {spec["officialUrl"]: ident
+                       for ident, spec in UNDERCOVERED_REGIONS_NOV2026_VERIFIED.items()}
+    if official_url in regional_by_url:
+        require(event_id == regional_by_url[official_url],
+                "Lot régional : URL officielle réservée à son concert signé")
+    if event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
+        require(event.get("venueId") ==
+                UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]["venueId"],
+                "Lot régional : identifiant déplacé hors de la salle")
     seven_by_url = {spec["officialUrl"]: ident
                     for ident, spec in SEVEN_OFFICIAL_NOV2026_VERIFIED.items()}
     if official_url in seven_by_url:
@@ -3107,7 +3351,66 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Nantes/Toulouse : groupe inventé ou identité incohérente")
     # Ces sept entrées franchissent uniquement leur revue nominative signée.
     # Les règles fermées des salles pour les autres concerts restent inchangées.
-    if event_id in SEVEN_OFFICIAL_NOV2026_VERIFIED:
+    # Les autres concerts des trois salles restent hors de ce lot signé.
+    if event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
+        spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]
+        require(reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and event.get("status") == "confirmed"
+                and all(event.get(key) == spec[key] for key in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Lot régional : identité, salle, jour ou genre altéré")
+        url = urlsplit(official_url)
+        approved_url = urlsplit(spec["officialUrl"])
+        require(url.scheme == "https"
+                and url.hostname == approved_url.hostname
+                and url.path == approved_url.path
+                and not url.username and not url.password and not url.port
+                and not url.query and not url.fragment,
+                "Lot régional : fiche officielle individuelle HTTPS exigée")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Lot régional : revue trop ancienne ou future")
+        required = {
+            "official-organizer-or-venue":
+                (spec["officialUrl"], {"artists","date","venue","genre"}),
+            "first-party-venue-calendar":
+                (spec["calendarUrl"], {"artists","date","venue"}),
+        }
+        require(isinstance(evidence,list) and len(evidence) == 2
+                and all(isinstance(p,dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} == set(required),
+                "Lot régional : deux preuves officielles indépendantes requises")
+        for p in evidence:
+            kind = p["proofType"]
+            expected_url, checked = required[kind]
+            fields = set(p.get("checkedFields") or [])
+            require(p.get("url") == expected_url
+                    and p.get("checkedAt") == reviewed.isoformat()
+                    and checked.issubset(fields)
+                    and "startTime" not in fields
+                    and (kind != "official-organizer-or-venue"
+                         or (("concertStartTime" in fields) ==
+                             (spec["time"] is not None)))
+                    and (kind != "first-party-venue-calendar"
+                         or "concertStartTime" not in fields),
+                    "Lot régional : preuve officielle ou heure de scène absente")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid,name in zip(ids,spec["artistNames"])),
+                "Lot régional : groupe ou première partie non vérifiés")
+        existing_aliases = {norm(alias) for artist in known_artist_ids.values()
+                            for alias in (artist.get("aliases") or [])
+                            if isinstance(alias,str)}
+        require(all(norm(artist["name"]) not in existing_aliases
+                    for artist in new_artists),
+                "Lot régional : alias d'artiste potentiellement déjà référencé")
+    elif event_id in SEVEN_OFFICIAL_NOV2026_VERIFIED:
         spec = SEVEN_OFFICIAL_NOV2026_VERIFIED[event_id]
         require(reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle"
