@@ -41,6 +41,50 @@ PARIS_AGENDA=("<html><h1>Atelier-concert pour les tout-petits</h1>"
  "<p>Salle de conférence - Philharmonie</p><p>12 € Enfant | 16 € Adulte</p></html>")
 
 class DailyProofTests(unittest.TestCase):
+    def test_openagenda_explicit_session_under_month_heading(self):
+        from proof_text import official_openagenda_explicit_month_day
+        event = {
+            "source_url": "https://openagenda.com/nantesmetropole/events/77081258_jeune-public",
+            "date_start": "2027-02-10", "date_end": "2027-02-10",
+            "time": "14:30",
+        }
+        page = "Février 2027 Mercredi 10 14:30 - 15:20 Dimanche 14 15:00 - 15:50"
+        self.assertTrue(official_openagenda_explicit_month_day(event, page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, date_start="2027-02-11", date_end="2027-02-11"), page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, time="15:00"), page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, source_url="https://example.net/foo"), page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, page.replace("Février 2027", "Février 2026")))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, date_end="2027-02-14"), page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, page.replace("Mercredi 10", "Jeudi 10")))
+
+    def test_exact_openagenda_month_day_with_independent_venue(self):
+        event = {
+            "source_url": "https://openagenda.com/nantesmetropole/events/77081258_jeune-public",
+            "title": "Un animal, des amis mots",
+            "date_start": "2027-02-10", "date_end": "2027-02-10",
+            "time": "14:30", "city": "Nantes", "venue": "Théâtre de Jeanne",
+            "lat": 47.20457, "lng": -1.57551,
+        }
+        source = ("<html><head><title>Un animal, des amis mots</title></head>"
+                  "<body><h1>Un animal, des amis mots</h1>"
+                  "<p>Théâtre de Jeanne, Nantes</p>"
+                  "<h2>Février 2027</h2><p>Mercredi 10</p>"
+                  "<p>14:30 - 15:20</p><p>Dimanche 14</p>"
+                  "<p>15:00 - 15:50</p></body></html>")
+        with patch("proof_text.read", return_value=(source, "")):
+            ok, reason = verify_event(event, [])
+        self.assertTrue(ok, reason)
+        with patch("proof_text.read", return_value=(source.replace("14:30", "16:30"), "")):
+            self.assertFalse(verify_event(event, [])[0])
+        with patch("proof_text.read", return_value=(source.replace("Mercredi 10", "Mercredi 11"), "")):
+            self.assertFalse(verify_event(event, [])[0])
+
     def test_theatre_nantes_registered_geo(self):
         self.assertTrue(verified_location(THEATRE)[0])
         self.assertFalse(verified_location(dict(THEATRE,lat=49.109836,lng=6.167706))[0])

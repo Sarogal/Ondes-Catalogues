@@ -79,6 +79,46 @@ def consecutive_official_dates(text,start_iso,end_iso):
                     rf"au {b.day} {MONTHS[b.month-1]}\b")
     return season and bool(re.search(expression,body))
 
+def official_openagenda_explicit_month_day(event, text):
+    """An event page may show a *real occurrence* as 'Février 2027 / Mercredi 10'.
+
+    Require the exact month/year + correct weekday/day + that session's actual
+    start time nearby. Never infer an entire period from a first/last date.
+    This complements, but does not replace, the venue, title and GPS checks.
+    """
+    parsed = urlparse(event.get("source_url", ""))
+    if parsed.scheme != "https" or parsed.hostname != "openagenda.com":
+        return False
+    if event.get("date_start") != event.get("date_end"):
+        return False
+    try:
+        day = date.fromisoformat(event["date_start"])
+    except (ValueError, TypeError, KeyError):
+        return False
+    start_times = set(re.findall(
+        r"\b(?:[01]?\d|2[0-3]):[0-5]\d\b", str(event.get("time", ""))))
+    if not start_times or len(start_times) > 4:
+        return False
+    weekdays = ("lundi", "mardi", "mercredi", "jeudi", "vendredi",
+                "samedi", "dimanche")
+    body = norm(text)
+    anchor = (r"\b" + re.escape(norm(MONTHS[day.month - 1])) +
+              r"\s+" + str(day.year) + r"\s+" +
+              r"(?:[a-z]+\s+){0,4}" + weekdays[day.weekday()] +
+              r"\s+" + str(day.day) + r"\b")
+    for occurrence in re.finditer(anchor, body):
+        # Adjacent sessions in a multi-date listing are never interchangeable.
+        window = body[occurrence.end():occurrence.end() + 90]
+        # An adjacent session cannot supply the time for this date.
+        weekday_anchor = '|'.join(weekdays)
+        next_session = '(?:' + weekday_anchor + ') [0-9]{1,2}'
+        window = re.split(next_session, window, maxsplit=1)[0]
+        if all(re.search(r"\b0?" + str(int(v.split(":")[0])) + r"\s+" + v.split(":")[1] +
+                         r"\b", window) for v in start_times):
+            return True
+    return False
+
+
 def official_openagenda_grouped_day(event, text):
     """Accept an explicitly dated occurrence inside a month/year heading.
 
@@ -253,7 +293,8 @@ def verify_event(event,originals):
     if not dates_ok and urlparse(event["source_url"]).hostname=="www.theatre-jeanne.com":
         dates_ok=consecutive_official_dates(text,event["date_start"],event["date_end"])
     if not dates_ok:
-        dates_ok=(official_openagenda_grouped_day(event,text) or
+        dates_ok=(official_openagenda_explicit_month_day(event,text) or
+                  official_openagenda_grouped_day(event,text) or
                   official_versailles_monthly_session(event,text))
     related=""
     if not dates_ok or not price_is_written(event,text):
