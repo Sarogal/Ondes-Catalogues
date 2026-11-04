@@ -78,7 +78,9 @@ class BateauIvreSignedPublicTests(unittest.TestCase):
         cls.artists = {x["id"]: x for x in PUBLIC["artists"]}
 
     def test_independently_reviewed_site_and_not_exact_entrance(self):
-        self.assertNotIn(VENUE_ID, {x["id"] for x in PUBLIC["venues"]})
+        already = {x["id"]: x for x in PUBLIC["venues"]}
+        if VENUE_ID in already:
+            self.assertEqual(already[VENUE_ID], VENUE_SPEC["venue"])
         venue = validate_venue_approval(venue_approval(), DAY)
         self.assertEqual(venue["city"], "Tours")
         self.assertEqual((venue["latitude"],venue["longitude"]),
@@ -90,7 +92,14 @@ class BateauIvreSignedPublicTests(unittest.TestCase):
     def test_five_real_bills_are_individually_restricted(self):
         self.assertEqual(len(EVENTS), 5)
         current_ids = {x["id"] for x in PUBLIC["events"]}
-        self.assertFalse(current_ids & set(EVENTS))
+        already = {x["id"]: x for x in PUBLIC["events"]}
+        for ident in current_ids & set(EVENTS):
+            spec = EVENTS[ident]
+            self.assertTrue(all(already[ident][field] == spec[field]
+                                for field in ("title", "date", "time",
+                                              "venueId", "artistIds", "genres",
+                                              "officialUrl")))
+        # Signed events may already be published when the workflow reruns.
         self.assertEqual(len({x["officialUrl"] for x in EVENTS.values()}), 5)
         for ident, spec in EVENTS.items():
             with self.subTest(ident=ident):
