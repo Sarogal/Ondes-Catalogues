@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import json, math, re
 from urllib.parse import urlparse
 from proof_text import verify_event as proof
+from official_organizer_proof import canonical_event_title
 from proof import norm
 
 REQUIRED={"id","title","category","category_label","date_start","date_end","city","department","region","venue","source_url","source_label","verified_at","geo_verified_at","geo_precision","lat","lng"}
@@ -104,7 +105,7 @@ def merge(ref,public,patch,today,checker=proof):
         guard(key in published and published[key]==e,"fiche historique supprimée ou modifiée : "+key)
     fields=set().union(*(set(e) for e in ref["events"]))
     categories={e["category"] for e in ref["events"]}
-    signatures={(norm(e.get("title")),norm(e.get("city")),norm(e.get("venue")),e.get("date_start")) for e in public["events"]}
+    signatures={(canonical_event_title(e),norm(e.get("city")),norm(e.get("venue")),e.get("date_start")) for e in public["events"]}
     seen=set();accepted=[];waiting=[]
     for ev in patch["additions"]:
         guard(isinstance(ev,dict) and isinstance(ev.get("id"),str),"ajout malformé")
@@ -122,7 +123,7 @@ def merge(ref,public,patch,today,checker=proof):
                          "vérification détectée, non appliquée automatiquement"
             })
             continue
-        signature=(norm(ev.get("title")),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
+        signature=(canonical_event_title(ev),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
         ok,reason=valid(ev,categories,fields,today)
         if ok:
