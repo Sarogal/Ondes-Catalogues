@@ -41,8 +41,9 @@ Tous les titres et noms de billets sont ajoutés avec `textContent`, sans HTML d
 ## Vérification de publication
 
 1. Vérifier que le workflow `Grosses Ondes — affichage billetterie (tests isolés)` est vert.
-2. Vérifier que les deux fichiers statiques sont accessibles sur Pages ; ils ne seront pas injectés automatiquement dans Infomaniak.
-3. Contrôler sur une fixture de festival qu'une catégorie « Épuisé » ne masque pas les autres catégories disponibles, et que la preuve disparaît le troisième jour.
-4. Avant déploiement du raccordement dans le **vrai site**, obtenir les fichiers `app.js` et `festivals/index.html` depuis la production (pas la copie `website/`). Conserver une sauvegarde et tester la carte et la liste après intégration.
+2. La fusion d'une ressource lance le workflow `Grosses Ondes — publier les ressources de billetterie Pages`, qui verrouille les autres déploiements, contrôle l'intégrité du calendrier signé et copie `docs/` sans écrire de données. **La présence sur GitHub ne garantit pas la disponibilité Pages avant la fin de ce workflow.**
+3. Vérifier que les deux fichiers statiques sont accessibles sur Pages ; ils ne seront pas injectés automatiquement dans Infomaniak.
+4. Contrôler sur une fixture de festival qu'une catégorie « Épuisé » ne masque pas les autres catégories disponibles, et que la preuve disparaît le troisième jour.
+5. Avant déploiement du raccordement dans le **vrai site**, obtenir les fichiers `app.js` et `festivals/index.html` depuis la production (pas la copie `website/`). Conserver une sauvegarde et tester la carte et la liste après intégration.
 
 Ce module est une amélioration de présentation, **pas un système de vérification autonome** et pas une confirmation que les billets sont encore disponibles au moment de l'ouverture de la page.
