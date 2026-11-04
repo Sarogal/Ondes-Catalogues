@@ -1,0 +1,69 @@
+name: P'tites Ondes — prévalidation indépendante des sorties
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_candidate_promotion.py'
+      - 'tests/test_ptitesondes_candidate_promotion.py'
+      - '.github/workflows/ptitesondes-evidence-preview.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_candidate_promotion.py'
+      - 'tests/test_ptitesondes_candidate_promotion.py'
+      - '.github/workflows/ptitesondes-evidence-preview.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '15 09 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ptitesondes-independent-evidence-preview
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Non-regression promotion et protection de production
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
+          python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
+
+  preview:
+    needs: tests
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Preview candidat officiel + lieu documenté
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        run: |
+          python scripts/ptitesondes_candidate_promotion.py --limit 15
+          {
+            echo "## Contrôle indépendant — aucune publication"
+            echo "```json"
+            cat /tmp/ptitesondes-promotion/report.json
+            echo "```"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Archiver les preuves et patch candidat en artifact privé de workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: ptitesondes-promotion-preview
+          path: /tmp/ptitesondes-promotion/
+          retention-days: 7
