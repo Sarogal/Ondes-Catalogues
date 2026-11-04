@@ -37,6 +37,12 @@ MAX_NEW_VENUES_PER_SYNC = 6
 # Pilot venues explicitly reviewed (first-party address + named OSM node).
 # Any future venue requires its own signed source review AND a code review.
 PILOT_VENUES = {
+    "l-echonova-saint-ave": {
+        "venue": {"id":"l-echonova-saint-ave","name":"L'Echonova","address":"1 rue Léon Griffon","postalCode":"56890","city":"Saint-Avé","department":"56","region":"Bretagne","latitude":47.67468,"longitude":-2.74379,"geoPrecision":"point indicatif du site L'Echonova d'après Fandefest (coordonnées initiales 47.67468064,-2.7437943027), cohérent avec la localisation générale du lieu; non assimilé à l'entrée publique","geoSource":"https://www.fandefest.com/salle/l-echonova-saint-ave"},
+        "officialUrl": "https://lechonova.com/infos-pratiques/",
+        "locationUrl": "https://www.fandefest.com/salle/l-echonova-saint-ave",
+        "locationProofType": "independent-venue-coordinate-listing",
+    },
     "le-tetris-le-havre": {
         "venue": {
             "id": "le-tetris-le-havre",
@@ -3128,6 +3134,14 @@ COLMAR_LIMOGES_VERIFIED_20261104 = {
     "go-c-20270219-colmar-colour-haze": {"title": "Colour Haze + Smokemaster", "date": "2027-02-19", "time": None, "venueId": "le-grillen-colmar", "artistIds": ["colour-haze", "smokemaster"], "artistNames": ["Colour Haze", "Smokemaster"], "genres": ["Stoner Rock"], "newArtists": [], "officialUrl": "https://grillen.colmar.fr/programmation/colour-haze-smokemaster", "proofs": [{"url": "https://grillen.colmar.fr/programmation/colour-haze-smokemaster", "proofType": "official-organizer-or-venue", "requiredFields": ["artists", "date", "venue", "genre"]}, {"url": "https://www.soundofliberation.com/artists/colour-haze", "proofType": "independent-tour-agent", "requiredFields": ["artists", "date", "venue"]}]},
 }
 
+# Exactly two independently reviewed first-party bills at a newly located
+# Morbihan venue. Fnac lists their dates and acts; ONLY Eiffel has an explicit
+# named musical start on the official detail page. Unnamed guests are omitted.
+ECHONOVA_SIGNED_20261104 = {
+    "go-c-20261203-saint-ave-eiffel": {"title":"Eiffel","date":"2026-12-03","time":"20:30","venueId":"l-echonova-saint-ave","artistIds":["eiffel"],"artistNames":["Eiffel"],"genres":["Rock"],"newArtists":[{"id":"eiffel","name":"Eiffel"}],"officialUrl":"https://lechonova.com/evenement/eiffel-premiere-partie/","ticketingUrl":"https://www.fnacspectacles.com/venue/lechonova-81096/","firstPartyFields":["artists","date","venue","genre","concertStartTime"],"ticketingFields":["artists","date","venue"]},
+    "go-c-20270206-saint-ave-meteora-systemize": {"title":"Meteora + Systemize","date":"2027-02-06","time":None,"venueId":"l-echonova-saint-ave","artistIds":["meteora-tribute","systemize"],"artistNames":["Meteora","Systemize"],"genres":["Metal"],"newArtists":[{"id":"meteora-tribute","name":"Meteora"},{"id":"systemize","name":"Systemize"}],"officialUrl":"https://lechonova.com/evenement/meteora-linkin-park-tribute/","ticketingUrl":"https://www.fnacspectacles.com/venue/lechonova-81096/","firstPartyFields":["artists","date","venue","genre"],"ticketingFields":["artists","date","venue"]},
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3372,6 +3386,56 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Colmar/Limoges : groupes différents des affiches officielles")
+    # New Morbihan venue: only the two signed first-party concert pages.
+    # A generic programme, a different date or a renamed artist cannot pass.
+    if (event_id in ECHONOVA_SIGNED_20261104
+            or event.get("venueId") == "l-echonova-saint-ave"):
+        spec = ECHONOVA_SIGNED_20261104.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("venueId") == "l-echonova-saint-ave"
+                and event.get("sourceType") == "salle"
+                and event.get("status") == "confirmed"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and official_url == spec["officialUrl"],
+                "Echonova : fiche hors signature nominative exacte")
+        u = urlsplit(official_url)
+        require(u.scheme == "https" and u.hostname == "lechonova.com"
+                and u.path == urlsplit(spec["officialUrl"]).path
+                and re.fullmatch(r"/evenement/[a-z0-9-]+/",u.path)
+                and not u.query and not u.fragment
+                and not u.username and not u.password and not u.port,
+                "Echonova : fiche first-party individuelle requise")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Echonova : preuve d'événement périmée ou future")
+        required = {
+            "official-organizer-or-venue":
+                (spec["officialUrl"], spec["firstPartyFields"]),
+            "independent-ticketing-venue-list":
+                (spec["ticketingUrl"], spec["ticketingFields"]),
+        }
+        require(len(evidence) == 2 and all(isinstance(p,dict) for p in evidence)
+                and {p.get("proofType") for p in evidence} == set(required),
+                "Echonova : deux sources indépendantes obligatoires")
+        for p in evidence:
+            expected_url, fields = required[p["proofType"]]
+            require(p.get("url") == expected_url
+                    and p.get("checkedAt") == reviewed.isoformat()
+                    and p.get("checkedFields") == fields
+                    and "startTime" not in fields and "doorTime" not in fields,
+                    "Echonova : date, artistes, origine ou heure exagérés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(new_artists == spec["newArtists"]
+                and len(ids) == len(spec["artistNames"])
+                and all(aid in resolved
+                        and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Echonova : nouveaux artistes fictifs ou mauvais homonymes")
+        if spec["time"] is None:
+            require(event.get("time") is None,
+                    "Echonova : début musical non confirmé (Meteora)")
     require(isinstance(event.get("genres"), list) and
             1 <= len(event["genres"]) <= 10 and
             all(isinstance(x, str) and x for x in event["genres"]),

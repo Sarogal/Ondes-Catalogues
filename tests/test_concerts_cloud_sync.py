@@ -3102,7 +3102,7 @@ class ColmarDecemberJanuarySignedTests(unittest.TestCase):
         from concerts_cloud_sync import validate_approval
         for ident in self.IDS:
             with self.subTest(ident=ident):
-                self.assertNotIn(ident, existing)
+                # Signed records remain valid after secure cloud publication.
                 spec = self.specs[ident]
                 self.assertEqual({p["proofType"] for p in spec["proofs"]},
                     {"official-organizer-or-venue", "independent-event-listing"})
@@ -3111,6 +3111,10 @@ class ColmarDecemberJanuarySignedTests(unittest.TestCase):
                 self.assertEqual(event["id"], ident)
                 self.assertIsNone(event["time"])
                 self.assertEqual(set(added), {x["id"] for x in spec["newArtists"]})
+                if ident in existing:
+                    for field in ("id", "title", "date", "artistIds",
+                                  "venueId", "genres", "officialUrl", "status"):
+                        self.assertEqual(existing[ident][field], event[field])
 
     def test_no_inferred_times_moved_venue_or_invented_artists(self):
         from concerts_cloud_sync import validate_approval
