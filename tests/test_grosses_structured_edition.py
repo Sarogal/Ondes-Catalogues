@@ -133,6 +133,46 @@ class StructuredEditionValidationTests(unittest.TestCase):
                 self.assertIsNone(validate_structured_edition(
                     ENTRY, PARENT, source, TODAY))
 
+    def test_yearless_parent_is_revalidated_from_pinned_official_dates(self):
+        parent = dict(PARENT, slug="cernunnos-pagan-fest",
+                      name="Cernunnos Pagan Fest", startDate="2027-02-12",
+                      endDate="2027-02-14")
+        proposed = copied(slug="cernunnos-pagan-fest-2028",
+                          name="Cernunnos Pagan Fest 2028",
+                          originSlug="cernunnos-pagan-fest",
+                          startDate="2028-02-11", endDate="2028-02-13")
+        proof = html(event(name="Cernunnos Pagan Fest 2028",
+                           startDate="2028-02-11", endDate="2028-02-13"))
+        verified = validate_structured_edition(proposed, parent, proof, TODAY)
+        self.assertIsNotNone(verified)
+        self.assertEqual(verified["slug"], "cernunnos-pagan-fest-2028")
+        self.assertIs(verified["showOnMap"], False)
+        self.assertEqual(verified["lineup"], [])
+        self.assertIsNone(verified["price"])
+        self.assertIsNone(verified["lat"])
+        self.assertNotIn("proofMode", verified)
+        self.assertIsNone(validate_structured_edition(
+            proposed, dict(parent, startDate=None), proof, TODAY))
+        self.assertIsNone(validate_structured_edition(
+            proposed, dict(parent, startDate="2026-02-12"), proof, TODAY))
+        self.assertIsNone(validate_structured_edition(
+            proposed, dict(parent, name="Cernunnos Pagan Fest 2026"), proof, TODAY))
+        self.assertIsNone(validate_structured_edition(
+            copied(**{**proposed, "slug": "cernunnos-pagan-fest-2027"}),
+            parent, proof, TODAY))
+
+    def test_middle_year_multi_city_slug_does_not_allow_silent_rollover(self):
+        parent = dict(PARENT, slug="shred-fest-2027-montpellier",
+                      name="Shred Fest 2027 — Montpellier",
+                      startDate="2027-02-04", endDate="2027-02-04")
+        proposed = copied(slug="shred-fest-2027-montpellier-2028",
+                          name="Shred Fest 2028 — Montpellier",
+                          originSlug=parent["slug"],
+                          startDate="2028-02-04", endDate="2028-02-04")
+        proof = html(event(name="Shred Fest 2028 — Montpellier",
+                           startDate="2028-02-04", endDate="2028-02-04"))
+        self.assertIsNone(validate_structured_edition(proposed, parent, proof, TODAY))
+
     def test_duplicate_semantics_even_with_other_slug_or_archives(self):
         self.assertFalse(conflicts_with_existing(
             ENTRY, [PARENT], [{"slug": "past-2024", "name": "Old Fest 2024"}]))
@@ -167,6 +207,28 @@ class StructuredEditionStageTests(unittest.TestCase):
         no_source, held = stage(calendar, history, patch, {}, TODAY)
         self.assertEqual(no_source["festivals"], calendar["festivals"])
         self.assertEqual(held["accepted_additions"], [])
+
+    def test_yearless_parent_reaches_stage_only_with_independent_html(self):
+        c, history, patch = self.dataset()
+        c["festivals"][3] = dict(PARENT, slug="cernunnos-pagan-fest",
+                                 name="Cernunnos Pagan Fest",
+                                 startDate="2027-02-12", endDate="2027-02-14")
+        new = copied(slug="cernunnos-pagan-fest-2028",
+                     name="Cernunnos Pagan Fest 2028",
+                     originSlug="cernunnos-pagan-fest",
+                     startDate="2028-02-11", endDate="2028-02-13")
+        patch["additions"] = [new]
+        proof = html(event(name="Cernunnos Pagan Fest 2028",
+                           startDate="2028-02-11", endDate="2028-02-13"))
+        sources = collect_registered_edition_sources(
+            patch, {c["festivals"][3]["slug"]: c["festivals"][3]},
+            lambda url, *, registered, raw: proof)
+        output, result = stage(c, history, patch, sources, TODAY)
+        self.assertEqual(result["accepted_additions"], ["cernunnos-pagan-fest-2028"])
+        self.assertIs(output["festivals"][-1]["showOnMap"], False)
+        output, result = stage(c, history, patch, {}, TODAY)
+        self.assertEqual(result["accepted_additions"], [])
+        self.assertEqual(len(output["festivals"]), len(c["festivals"]))
 
     def test_published_archive_conflict_blocks_new_addition(self):
         calendar, history, patch = self.dataset()
