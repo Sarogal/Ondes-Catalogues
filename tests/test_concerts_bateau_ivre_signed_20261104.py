@@ -115,6 +115,7 @@ class BateauIvreSignedPublicTests(unittest.TestCase):
                 self.assertEqual(event["venueId"], VENUE_ID)
                 self.assertEqual(set(added),set(spec["newArtistIds"]))
                 self.assertFalse(any(
+                    existing["id"] != event["id"] and
                     existing["date"] == event["date"] and
                     existing["venueId"] == event["venueId"] and
                     set(existing["artistIds"]) & set(event["artistIds"])
