@@ -37,7 +37,13 @@ def signed(spec):
 
 def validate(row):
     venues = {v["id"]: v for v in CURRENT["venues"]}
-    artists = {a["id"]: a for a in CURRENT["artists"]}
+    # The fixture must remain valid after GitHub Pages has published the new artists.
+    # They are added by validate_approval, not pre-registered for this test.
+    incoming_artist_ids = {artist["id"]
+                           for spec in sync.NANTES_TOULOUSE_NOV2026_VERIFIED.values()
+                           for artist in spec["newArtists"]}
+    artists = {a["id"]: a for a in CURRENT["artists"]
+               if a["id"] not in incoming_artist_ids}
     return sync.validate_approval(row, venues, artists, DATE)
 
 class NantesToulouseOfficialSignedTests(unittest.TestCase):
@@ -92,9 +98,14 @@ class NantesToulouseOfficialSignedTests(unittest.TestCase):
         self.assertEqual(CURRENT["mode"], "preview-public-unlisted")
         self.assertGreaterEqual(len(CURRENT["events"]), 265)
         self.assertEqual(len({e["id"] for e in CURRENT["events"]}), len(CURRENT["events"]))
-        existing_urls = {e["officialUrl"] for e in CURRENT["events"]}
-        for spec in sync.NANTES_TOULOUSE_NOV2026_VERIFIED.values():
-            self.assertNotIn(spec["officialUrl"], existing_urls)
+        # This test must also pass once the protected workflow publishes the lot.
+        existing_by_url = {e["officialUrl"]: e for e in CURRENT["events"]}
+        for ident, spec in sync.NANTES_TOULOUSE_NOV2026_VERIFIED.items():
+            published = existing_by_url.get(spec["officialUrl"])
+            if published is not None:
+                self.assertEqual(published["id"], ident)
+                self.assertEqual(published["date"], spec["date"])
+                self.assertEqual(published["venueId"], spec["venueId"])
 
 if __name__ == "__main__":
     unittest.main()
