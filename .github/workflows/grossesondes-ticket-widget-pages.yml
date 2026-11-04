@@ -1,0 +1,82 @@
+name: Grosses Ondes — publier les ressources de billetterie Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-ticket-widget-pages.yml'
+      - 'docs/grossesondes/ticket-availability.js'
+      - 'docs/grossesondes/ticket-availability.css'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Le déploiement Pages est atomique et partagé avec les synchroniseurs de
+# catalogues ; ne jamais publier une ancienne copie par-dessus leur travail.
+concurrency:
+  group: ondes-cloud-publication
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tests du widget (données périmées, HTML sûr, catégories)
+        run: node --test tests_js/test_grosses_ticket_widget.cjs
+      - name: Vérifier la signature du calendrier publié et les archives
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+          import sys
+          sys.path.insert(0, "scripts")
+          from grossesondes_cloud_sync import verify_published_head
+          from grossesondes_history_guard import validate_history_extension
+          from grossesondes_calendar_approval import approved_calendar
+          from grossesondes_cloud_sync import load_production
+          root=pathlib.Path("docs/grossesondes")
+          calendar=json.loads((root/"festivals.json").read_text(encoding="utf-8-sig"))
+          signed=verify_published_head(calendar)
+          assert calendar["schema"] == 1
+          assert signed["calendarCount"] == len(calendar["festivals"])
+          history=json.loads((root/"festival-history.json").read_text(encoding="utf-8-sig"))
+          assert history["schema"] == 2
+          slugs=[e["slug"] for e in calendar["festivals"]]
+          assert len(slugs)==len(set(slugs)), "Festivals dupliqués"
+          history_slugs=[e["slug"] for e in history["knownFestivals"]]
+          assert len(history_slugs)==len(set(history_slugs)), "Archives dupliquées"
+          pt=json.loads(pathlib.Path("docs/ptitesondes/sorties.json").read_text(encoding="utf-8-sig"))
+          assert pt.get("version")==3 and isinstance(pt.get("events"),list)
+          assert len(pt["events"])>=100, "Catalogue P'tites Ondes incomplet"
+          print("Catalogue signé, archives et sorties contrôlés ; aucune écriture.")
+          PY
+      - name: Configurer GitHub Pages
+        uses: actions/configure-pages@v6
+      - name: Construire une copie du répertoire public actuel
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - name: Republier les ressources sans toucher aux catalogues Git
+        id: pages
+        uses: actions/deploy-pages@v5
