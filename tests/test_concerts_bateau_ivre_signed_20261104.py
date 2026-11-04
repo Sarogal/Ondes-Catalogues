@@ -53,7 +53,7 @@ def event_approval(ident):
              "checkedFields": ["artists", "date", "venue", "genre"]},
             {"url": spec["calendarUrl"], "proofType": "first-party-venue-calendar",
              "checkedAt": "2026-11-04",
-             "checkedFields": spec["calendarFields"]},
+             "checkedFields": list(spec["calendarFields"])},
         ],
         "event": {
             "id": ident, "title": spec["title"], "date": spec["date"],
