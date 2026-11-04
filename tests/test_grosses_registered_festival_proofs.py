@@ -9,7 +9,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from grossesondes_cloud_sync import collect_registered_update_sources
+from grossesondes_cloud_sync import collect_registered_update_sources, build_candidate
 from grossesondes_stage import stage
 from test_grosses_stage import fixtures
 
@@ -78,6 +78,20 @@ class RegisteredFestivalProofTests(unittest.TestCase):
         self.assertEqual(len(out["festivals"]), len(c["festivals"]))
         self.assertEqual(c["festivals"][3]["lineup"], ["Old Band"])
         self.assertFalse(report["automatic_publication"])
+
+        # Continue through protected candidate merge without writing a file.
+        snapshot = {"festivals.json": c, "festival-history.json": h}
+        candidate, first = build_candidate(
+            snapshot, snapshot, patch, source, TODAY, trusted_published=True)
+        self.assertTrue(first["changed"])
+        self.assertEqual(candidate["festivals"][3]["lineup"],
+                         ["Old Band", "New Band"])
+        again, second = build_candidate(
+            snapshot, {"festivals.json": candidate,
+                       "festival-history.json": h},
+            patch, source, TODAY, trusted_published=True)
+        self.assertFalse(second["changed"])
+        self.assertEqual(again["festivals"], candidate["festivals"])
 
     def test_private_patch_cannot_redirect_official_fetch(self):
         modified = typed_update()
