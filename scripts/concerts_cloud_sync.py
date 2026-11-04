@@ -3113,6 +3113,16 @@ UNDERCOVERED_REGIONS_NOV2026_VERIFIED = {
     }
 }
 
+# Quatre affiches Colmar/Limoges du 04/11/2026 : aucune autre URL, concert,
+# date ou salle n'est admise via ces justificatifs. Le type dayMonth N'ATTESTE
+# PAS l'année : elle provient de la preuve calendrier datée séparément.
+COLMAR_LIMOGES_VERIFIED_20261104 = {
+    "go-c-20261209-colmar-darvaza": {"title": "Darvaza + Merrimack + Helleruin + Détresse", "date": "2026-12-09", "time": None, "venueId": "le-grillen-colmar", "artistIds": ["darvaza", "merrimack", "helleruin", "detresse"], "artistNames": ["Darvaza", "Merrimack", "Helleruin", "Détresse"], "genres": ["Black Metal"], "newArtists": [{"id": "darvaza", "name": "Darvaza"}, {"id": "merrimack", "name": "Merrimack"}, {"id": "helleruin", "name": "Helleruin"}, {"id": "detresse", "name": "Détresse"}], "officialUrl": "https://www.headbang.eu/events/concert-black-metal-darvaza-merrimack-helleruin-grillen-colmar-decembre-2026/", "proofs": [{"url": "https://www.headbang.eu/events/concert-black-metal-darvaza-merrimack-helleruin-grillen-colmar-decembre-2026/", "proofType": "official-organizer-or-venue", "requiredFields": ["artists", "date", "venue", "genre"]}, {"url": "https://grillen.colmar.fr/programmation/darvaza-merrimack-helleruin-detresse", "proofType": "first-party-venue-calendar", "requiredFields": ["artists", "date", "venue", "genre"]}]},
+    "go-c-20270213-colmar-8-6-crew": {"title": "8'6 Crew + Wunderbach + Hors Contrôle", "date": "2027-02-13", "time": None, "venueId": "le-grillen-colmar", "artistIds": ["8-6-crew", "wunderbach", "hors-controle"], "artistNames": ["8'6 Crew", "Wunderbach", "Hors Contrôle"], "genres": ["Punk Rock", "Ska"], "newArtists": [{"id": "8-6-crew", "name": "8'6 Crew"}, {"id": "wunderbach", "name": "Wunderbach"}, {"id": "hors-controle", "name": "Hors Contrôle"}], "officialUrl": "https://agenda.colmar.fr/86-crew-wunderbach-hors-controle", "proofs": [{"url": "https://agenda.colmar.fr/86-crew-wunderbach-hors-controle", "proofType": "official-organizer-or-venue", "requiredFields": ["artists", "date", "venue", "genre"]}, {"url": "https://grillen.colmar.fr/programmation/86-crew-wunderbach-hors-controle", "proofType": "first-party-venue-calendar", "requiredFields": ["artists", "dayMonth", "venue", "genre"]}]},
+    "go-c-20261106-limoges-7weeks": {"title": "7Weeks + Dirty Deep + Earth Inc.", "date": "2026-11-06", "time": None, "venueId": "espace-john-lennon-limoges", "artistIds": ["7weeks", "dirty-deep", "earth-inc"], "artistNames": ["7Weeks", "Dirty Deep", "Earth Inc."], "genres": ["Heavy Rock", "Heavy Blues"], "newArtists": [{"id": "earth-inc", "name": "Earth Inc."}], "officialUrl": "https://centresculturels.limoges.fr/agenda/release-party-7-weeks-dirty-deep-earth-inc", "proofs": [{"url": "https://centresculturels.limoges.fr/agenda/release-party-7-weeks-dirty-deep-earth-inc", "proofType": "official-organizer-or-venue", "requiredFields": ["artists", "dayMonth", "venue", "genre"]}, {"url": "https://centresculturels.limoges.fr/agenda?keys=hiero", "proofType": "first-party-venue-calendar", "requiredFields": ["artists", "date", "venue"]}]},
+    "go-c-20261127-limoges-gwendoline": {"title": "Gwendoline + Jessica93", "date": "2026-11-27", "time": None, "venueId": "espace-john-lennon-limoges", "artistIds": ["gwendoline", "jessica93"], "artistNames": ["Gwendoline", "Jessica93"], "genres": ["Rock", "Cold Wave"], "newArtists": [{"id": "jessica93", "name": "Jessica93"}], "officialUrl": "https://centresculturels.limoges.fr/agenda/gwendoline-jessica93", "proofs": [{"url": "https://centresculturels.limoges.fr/agenda/gwendoline-jessica93", "proofType": "official-organizer-or-venue", "requiredFields": ["artists", "dayMonth", "venue", "genre"]}, {"url": "https://centresculturels.limoges.fr/agenda?keys=hiero", "proofType": "first-party-venue-calendar", "requiredFields": ["artists", "date", "venue"]}]},
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3318,6 +3328,43 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(any(re.search(r"(?<![a-z0-9])(metal|punk|hardcore|grind|doom|sludge|stoner|hard rock)(?![a-z0-9])",
                               norm(g)) for g in event.get("genres",[])),
                 "Genre métal ou punk officiel absent")
+    # Salles historiquement géolocalisées de façon indicative : une nouvelle
+    # affiche ne peut passer qu'avec sa propre signature nominative. Aucune
+    # approbation générique fondée sur le seul domaine du site.
+    if event.get("venueId") in ("le-grillen-colmar", "espace-john-lennon-limoges"):
+        spec = COLMAR_LIMOGES_VERIFIED_20261104.get(event_id)
+        require(spec is not None and reviewer == "independent-official-verifier"
+                and event.get("sourceType") == "salle"
+                and all(event.get(k) == spec[k] for k in
+                        ("title", "date", "time", "venueId", "artistIds", "genres"))
+                and event.get("status") == "confirmed"
+                and official_url == spec["officialUrl"],
+                "Colmar/Limoges : affiche hors liste officielle signée")
+        checked_at = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked_at <= today,
+                "Colmar/Limoges : preuve expirée ou future")
+        expected = spec["proofs"]
+        require(len(evidence) == len(expected) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "Colmar/Limoges : deux sources officielles nominatives obligatoires")
+        for actual, proof in zip(evidence, expected):
+            got_fields = set(actual.get("checkedFields") or [])
+            require(actual.get("url") == proof["url"]
+                    and actual.get("proofType") == proof["proofType"]
+                    and actual.get("checkedAt") == checked_at.isoformat()
+                    and got_fields == set(proof["requiredFields"])
+                    and not ({"startTime", "concertStartTime", "doorTime"} & got_fields),
+                    "Colmar/Limoges : année, artistes, provenance ou heure surdéclarés")
+        require(event.get("time") is None,
+                "Colmar/Limoges : horaire musical non confirmé")
+        require(new_artists == spec["newArtists"],
+                "Colmar/Limoges : artistes nouveaux altérés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(len(ids) == len(spec["artistNames"])
+                and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, spec["artistNames"])),
+                "Colmar/Limoges : groupes différents des affiches officielles")
     require(isinstance(event.get("genres"), list) and
             1 <= len(event["genres"]) <= 10 and
             all(isinstance(x, str) and x for x in event["genres"]),
