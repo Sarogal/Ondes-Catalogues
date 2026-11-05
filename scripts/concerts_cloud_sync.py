@@ -3535,6 +3535,9 @@ NATIONAL_MARILLION_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261121-paris-ma
 MEM_RENNES_MARILLION_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20261118-rennes-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-18","time":null,"artistIds":["marillion","lazuli"],"venueId":"le-mem-rennes","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://www.lemem.fr/programmation/marillion/","sourceType":"salle"},"proofs":[{"url":"https://www.lemem.fr/programmation/marillion/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["leadArtist","date","venue","genre"],"confirmedArtists":["Marillion"],"notes":"Fiche 2026 du MeM, 18/11/2026, Le Magic Mirrors, 20h00 affiché et portes à 19h00. Page ne cite que Marillion ; aucune inférence sur la première partie ou sur une heure de début musical garantie."},{"url":"https://lazuli-music.com/tour/","proofType":"independent-official-support-tour","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["Marillion","Lazuli"],"notes":"Tournée officielle Lazuli : 18.11.2026 Le Mem Rennes, Lazuli special guest with Marillion ; cette source indépendante prouve Lazuli."},{"url":"https://www.marillion.com/tour/","proofType":"official-artist-tour-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","tourSupport"],"confirmedArtists":["Marillion","Lazuli"],"notes":"Marillion - Live In France 2026, section Support - Lazuli : Wednesday 18 November 2026, Le Mem, Rennes, France."},{"url":"https://www.aegpresents.fr/event/marillion/","proofType":"independent-official-organizer-tour","checkedAt":"2026-11-05","checkedFields":["leadArtist","date","venue"],"confirmedArtists":["Marillion"],"notes":"Organisateur AEG Presents France : Marillion 18 novembre au MeM Rennes, vérification de l'annonce sans attribution d'heure musicale."}]}''')
 
 
+FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261210-rennes-fff-howlin-jaws":{"event":{"id":"go-c-20261210-rennes-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-10","time":null,"artistIds":["fff","howlin-jaws"],"venueId":"le-mem-rennes","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.lemem.fr/programmation/fff/","sourceType":"salle"},"proofs":[{"url":"https://www.lemem.fr/programmation/fff/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Fiche officielle du Magic Mirrors : FFF + Howlin' Jaws, jeudi 10 décembre 2026, rock, première partie citée explicitement ; 20h avec portes à 19h non déclaré début musical."},{"url":"https://diogene.fr/artistes/fff/","proofType":"independent-official-promoter","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Diogène Productions : jeudi 10 décembre 2026 Rennes Le MeM, première partie Howlin' Jaws nommée."},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Tour officiel Howlin' Jaws/Radical Production : 10 déc. 2026 Rennes, MeM, en première partie de FFF."}]},"go-c-20261211-angers-fff-howlin-jaws":{"event":{"id":"go-c-20261211-angers-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-11","time":"20:30","artistIds":["fff","howlin-jaws"],"venueId":"le-chabada-angers","genres":["Funk Rock"],"status":"confirmed","officialUrl":"https://lechabada.com/evenement/fff/","sourceType":"salle"},"proofs":[{"url":"https://lechabada.com/evenement/fff/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre","concertStartTime"],"confirmedArtists":["FFF","Howlin' Jaws"],"concertStartTimeConfirmed":"20:30","notes":"Fiche salle Chabada vendredi 11 décembre 2026 : F.F.F. + Howlin' Jaws, rock/funk, ouverture des portes 19h45 et *Début des concerts : 20h30* explicitement."},{"url":"https://billetterie.lechabada.com/agenda/947-F-F-F?session=947","proofType":"official-venue-ticketing","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","concertStartTime"],"confirmedArtists":["FFF","Howlin' Jaws"],"concertStartTimeConfirmed":"20:30","notes":"Billetterie nominative du Chabada : F.F.F. + Howlin' Jaws, ouverture 19h45, début concerts 20h30. Horaire attesté explicitement."},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Tourneur Howlin' Jaws annonce vendredi 11 décembre 2026 Angers, Chabada, en première partie de FFF."}]}}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3634,6 +3637,17 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and official_url == mem_signed["officialUrl"]
                 and event.get("venueId") == "le-mem-rennes",
                 "Le MeM : identifiant, salle ou URL de concert réaffectés")
+    # FFF/Howlin' Jaws : chaque URL officielle prouve une seule affiche.
+    reserved_fff_urls = {x["event"]["officialUrl"]: k
+                         for k,x in FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105.items()}
+    if official_url in reserved_fff_urls:
+        require(event_id == reserved_fff_urls[official_url],
+                "FFF/Howlin' Jaws : URL officielle réutilisée")
+    if event_id in FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105:
+        pinned = FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105[event_id]["event"]
+        require(event.get("venueId") == pinned["venueId"]
+                and official_url == pinned["officialUrl"],
+                "FFF/Howlin' Jaws : identité de salle, titre ou source détournés")
     # Une URL de tournée nominative ne peut servir à publier une autre affiche.
     tour_signed_by_url = {v["event"]["officialUrl"]: k
                           for k, v in TOUR_FIVE_SIGNED_20261105.items()}
@@ -4026,6 +4040,45 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and norm(known_artist_ids["marillion"]["name"]) == "marillion"
                 and norm(known_artist_ids["lazuli"]["name"]) == "lazuli",
                 "Le MeM/Marillion : première partie inventée ou artiste inconnu")
+    # FFF + Howlin' Jaws, Rennes / Angers : horaires distincts documentés.
+    if event_id in FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105:
+        spec = FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105[event_id]
+        require(reviewer == "independent-official-verifier"
+                and event == spec["event"] and new_artists == []
+                and ids == ["fff", "howlin-jaws"]
+                and all(aid in known_artist_ids for aid in ids)
+                and norm(known_artist_ids["fff"]["name"]) == "fff"
+                and norm(known_artist_ids["howlin-jaws"]["name"]) == "howlin jaws",
+                "FFF : affiche, groupe, jour, horaire ou lieu non signé")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(reviewed == dt.date(2026, 11, 5)
+                and reviewed <= today and today - reviewed <= dt.timedelta(days=14),
+                "FFF : preuve non datée ou périmée")
+        require(isinstance(evidence,list) and len(evidence) == 3
+                and all(isinstance(p, dict) for p in evidence),
+                "FFF : trois preuves nominatives officielles exigées")
+        for actual, pin in zip(evidence, spec["proofs"]):
+            require(all(actual.get(field) == pin[field] for field in
+                        ("url","proofType","checkedAt",
+                         "checkedFields","confirmedArtists"))
+                    and actual.get("checkedAt") == reviewed.isoformat()
+                    and actual.get("confirmedArtists") == ["FFF","Howlin' Jaws"],
+                    "FFF : source, première partie ou date modifiée")
+        if event_id == "go-c-20261210-rennes-fff-howlin-jaws":
+            require(event["time"] is None
+                    and all(not ({"startTime","doorTime","concertStartTime"} &
+                                set(p["checkedFields"])) for p in evidence)
+                    and all("concertStartTimeConfirmed" not in p
+                            for p in evidence),
+                    "FFF Rennes : 20h00 ne prouve pas le début musical")
+        else:
+            require(event["time"] == "20:30"
+                    and evidence[0].get("concertStartTimeConfirmed") == "20:30"
+                    and evidence[1].get("concertStartTimeConfirmed") == "20:30"
+                    and all("concertStartTime" in p["checkedFields"]
+                            for p in evidence[:2])
+                    and "concertStartTime" not in evidence[2]["checkedFields"],
+                    "FFF Angers : début à 20h30 non attesté par salle et billetterie")
     # Cinq affiches recoupées, signatures exactes et non réutilisables.
     if event_id in TOUR_FIVE_SIGNED_20261105:
         spec = TOUR_FIVE_SIGNED_20261105[event_id]
@@ -4106,7 +4159,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
             or event_id in TOUR_THREE_VERIFIED_20261105
             or event_id == AERONEF_LILLE_MARILLION_SIGNED_20261105["event"]["id"]
             or event_id in NATIONAL_MARILLION_TWO_SIGNED_20261105
-            or event_id == MEM_RENNES_MARILLION_SIGNED_20261105["event"]["id"]):
+            or event_id == MEM_RENNES_MARILLION_SIGNED_20261105["event"]["id"]
+            or event_id in FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105):
         pass
     elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]
