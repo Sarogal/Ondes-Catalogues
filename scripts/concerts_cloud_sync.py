@@ -3605,6 +3605,12 @@ PILOT_VENUES["le-sew-morlaix"] = json.loads(r'''{"venue":{"id":"le-sew-morlaix",
 TOURNEE_DU_COEUR_MOLOCO_SEW_SIGNED_20261105 = json.loads(r'''{"go-c-20270225-audincourt-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270225-audincourt-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-25","time":null,"artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"le-moloco-audincourt","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://www.lemoloco.com/agenda/cachemire-la-phaze-bobs-not-dead/","sourceType":"salle","organizer":"Le Moloco"},"newArtists":[],"proofs":[{"url":"https://www.lemoloco.com/agenda/cachemire-la-phaze-bobs-not-dead/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"]},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]},"go-c-20270211-morlaix-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270211-morlaix-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-11","time":"20:00","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"le-sew-morlaix","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://sew-morlaix.com/evenements/la-tournee-du-coeur","sourceType":"salle","organizer":"WART / Le SEW"},"newArtists":[],"proofs":[{"url":"https://sew-morlaix.com/evenements/la-tournee-du-coeur","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"20:00"},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]}}''')
 
 
+# Éditions nominatives du 4 et 5 février 2027 : deux salles et deux fiches exactes.
+TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_VENUES_20261105 = json.loads(r'''{"la-manufacture-saint-quentin":{"venue":{"id":"la-manufacture-saint-quentin","name":"La Manufacture","address":"8 rue Paul Codos","postalCode":"02100","city":"Saint-Quentin","department":"02","region":"Hauts-de-France","latitude":49.85444,"longitude":3.27029,"geoPrecision":"Point nominatif indicatif de la Manufacture sur ToFromFrance (49.85444, 3.27029), cohérent avec une fiche événement 49.8544659, 3.2701279 ; entrée exacte non garantie","geoSource":"https://tofromfrance.com/lieu/le-concert-des-deux-pianos-a-la-manufacture"},"officialUrl":"https://www.saint-quentin.fr/1674-la-manufacture.htm","locationUrl":"https://tofromfrance.com/lieu/le-concert-des-deux-pianos-a-la-manufacture","locationProofType":"independent-named-venue-geolocation"},"l-orange-bleue-vitry-le-francois":{"venue":{"id":"l-orange-bleue-vitry-le-francois","name":"L'Orange Bleue","address":"4 rue Auguste Choisy","postalCode":"51300","city":"Vitry-le-François","department":"51","region":"Grand Est","latitude":48.72668,"longitude":4.57955,"geoPrecision":"Point indicatif de la salle L'Orange Bleue publié par MusiTree (48.72668, 4.57955), à proximité du GPS de la fiche technique L'Orange Bleue (48.7264026, 4.5791939) ; entrée exacte non garantie","geoSource":"https://musitree.fr/concerts/salles/bords-2-scenes-lorange-bleue-vitry-le-francois/"},"officialUrl":"https://bords2scenes.fr/infos-pratiques/accueil-billetterie","locationUrl":"https://musitree.fr/concerts/salles/bords-2-scenes-lorange-bleue-vitry-le-francois/","locationProofType":"independent-named-venue-geolocation"}}''')
+PILOT_VENUES.update(TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_VENUES_20261105)
+TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_SIGNED_20261105 = json.loads(r'''{"go-c-20270204-saint-quentin-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270204-saint-quentin-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-04","time":null,"artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"la-manufacture-saint-quentin","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://billetterie-saint-quentin.mapado.com/en/event/756872-la-tournee-du-coeur","sourceType":"salle","organizer":"Rage Tour / Ville de Saint-Quentin"},"newArtists":[],"proofs":[{"url":"https://billetterie-saint-quentin.mapado.com/en/event/756872-la-tournee-du-coeur","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","ticketTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"]},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]},"go-c-20270205-vitry-le-francois-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270205-vitry-le-francois-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-05","time":"21:00","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"l-orange-bleue-vitry-le-francois","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://bords2scenes.fr/agenda/la-tournee-du-coeur-3","sourceType":"salle","organizer":"Bords 2 Scènes"},"newArtists":[],"proofs":[{"url":"https://bords2scenes.fr/agenda/la-tournee-du-coeur-3","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"21:00"},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]}}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3619,6 +3625,42 @@ def validate_approval(approval, venues, known_artist_ids, today):
     event_id = event.get("id", "")
     require(isinstance(event_id, str) and re.fullmatch(r"go-c-[a-z0-9-]{7,150}", event_id),
             "Identifiant d'événement invalide")
+    # 04/02 Saint-Quentin et 05/02 Vitry : aucune autre affiche
+    # autorisée dans ces deux salles avant une approbation nominative.
+    signed = TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_SIGNED_20261105
+    protected_urls = {r["event"]["officialUrl"] for r in signed.values()}
+    protected_venues = set(TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_VENUES_20261105)
+    if (event_id in signed or event.get("venueId") in protected_venues
+            or event.get("officialUrl") in protected_urls):
+        expected = signed.get(event_id)
+        require(expected is not None
+                and event == expected["event"]
+                and approval.get("newArtists", []) == expected["newArtists"]
+                and reviewer == "independent-official-verifier",
+                "Saint-Quentin/Vitry : affiche non signée ou modifiée")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Saint-Quentin/Vitry : date de vérification ancienne/future")
+        proofset = expected["proofs"]
+        require(isinstance(evidence, list)
+                and len(evidence) == len(proofset) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "Saint-Quentin/Vitry : deux preuves indépendantes requises")
+        for proof, target in zip(evidence, proofset):
+            require(proof.get("url") == target["url"]
+                    and proof.get("proofType") == target["proofType"]
+                    and proof.get("checkedAt") == checked.isoformat()
+                    and proof.get("checkedFields") == target["checkedFields"]
+                    and proof.get("confirmedArtists") == target.get("confirmedArtists")
+                    and proof.get("concertStartTimeConfirmed")
+                        == target.get("concertStartTimeConfirmed"),
+                    "Saint-Quentin/Vitry : source, affiche ou heure altérée")
+        first_fields = set(evidence[0].get("checkedFields") or [])
+        require("startTime" not in first_fields
+                and (("concertStartTime" in first_fields)
+                     == (event.get("time") is not None)),
+                "Saint-Quentin/Vitry : horaire de billetterie confondu avec début musical")
+
     # Une seule affiche officielle Cachemire/La Phaze/Bob's Not Dead
     # acceptée, et uniquement après revue récente avec deux sources.
     coeur = TOURNEE_DU_COEUR_GRENOBLE_SIGNED_20261105
