@@ -17,17 +17,11 @@ on:
       - '.github/workflows/grossesondes-history-release.yml'
   push:
     branches: [main]
+    # A code-only synchronization change MUST NOT trigger a historical
+    # full-site redeploy using the push event's older commit snapshot.
     paths:
       - 'docs/grossesondes/festival-history.json'
       - 'reviews/grossesondes-historical-candidates-2026-10-30.json'
-      - 'scripts/grossesondes_history_guard.py'
-      - 'scripts/grossesondes_history_release.py'
-      - 'scripts/grossesondes_cloud_sync.py'
-      - 'scripts/grossesondes_calendar_approval.py'
-      - 'reviews/grossesondes-approved-calendar-delta-2026-10-30.json'
-      - 'tests/test_grosses_calendar_approval.py'
-      - 'scripts/grossesondes_preview.py'
-      - 'scripts/grossesondes_stage.py'
       - '.github/workflows/grossesondes-history-release.yml'
   workflow_dispatch:
     inputs:
@@ -86,18 +80,46 @@ jobs:
       name: github-pages
       url: ${{ steps.release.outputs.page_url }}
     steps:
+      # IMPORTANT: workflow run may wait behind a cloud sync which commits
+      # a newer festivals.json. Do not check out github.sha (the push event).
       - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 1
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - name: Revalider l'intégrité immédiatement avant le déploiement
-        run: python scripts/grossesondes_history_release.py
+      - name: Refuser tout retour vers une ancienne version Git
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+            echo "::error::main a évolué ; ne pas déployer un calendrier périmé"
+            exit 1
+          fi
+      - name: Revalider archives et registre de publication du calendrier
+        run: |
+          python scripts/grossesondes_history_release.py
+          PYTHONPATH=scripts python - <<'PY'
+          import json
+          from pathlib import Path
+          from grossesondes_cloud_sync import verify_published_head
+          published = json.loads(Path("docs/grossesondes/festivals.json").read_text(encoding="utf-8"))
+          verify_published_head(published)
+          print("Calendrier courant signé et archives conservées.")
+          PY
       - name: Configurer GitHub Pages
         uses: actions/configure-pages@v6
-      - name: Construire exclusivement les JSON déjà approuvés
+      - name: Construire le site complet avec les JSON actuellement signés
         uses: actions/upload-pages-artifact@v5
         with:
           path: docs/
+      - name: Contrôler à nouveau main avant de publier l'artefact
+        run: |
+          git fetch --no-tags --depth=1 origin main
+          if [ "$(git rev-parse HEAD)" != "$(git rev-parse FETCH_HEAD)" ]; then
+            echo "::error::un nouvel état Git est arrivé après l'archivage ; déploiement refusé"
+            exit 1
+          fi
       - name: Publier la copie GitHub Pages validée
         id: release
         uses: actions/deploy-pages@v5
