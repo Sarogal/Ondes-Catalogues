@@ -72,18 +72,26 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
                         validate_approval(row,venues,artists,TODAY)
 
     def test_merge_isolated_from_immutable_reference(self):
-        # A truncated fixture cannot attest the 200+ prior cloud approvals.
-        # Merge this exact four-record batch against the unmodified reference.
-        # The real workflow checks the full cumulative private approval feed.
-        result,counts=merge(REFERENCE,REFERENCE,FIXTURE,TODAY)
+        # A shortened batch cannot attest the previous 200+ approvals.
+        # Seed this *isolated test reference* with the two artists already
+        # public but absent from the immutable 127-event historical reference.
+        # The actual cloud deployment reads the full private approval ledger.
+        isolated = copy.deepcopy(REFERENCE)
+        known = {x["id"] for x in isolated["artists"]}
+        for aid in ("fff", "howlin-jaws"):
+            if aid not in known:
+                artist = next(x for x in PUBLIC["artists"] if x["id"] == aid)
+                isolated["artists"].append(copy.deepcopy(artist))
+                known.add(aid)
+        result,counts=merge(isolated,isolated,FIXTURE,TODAY)
         self.assertEqual(counts["newVenues"],2)
         self.assertEqual(counts["newEvents"],2)
         self.assertEqual(counts["newArtists"],1)
         self.assertEqual(counts["held"],[])
-        self.assertEqual(len(result["venues"]),len(REFERENCE["venues"])+2)
-        self.assertEqual(len(result["events"]),len(REFERENCE["events"])+2)
-        self.assertEqual(len(result["artists"]),len(REFERENCE["artists"])+1)
-        old_events={x["id"]:x for x in REFERENCE["events"]}
+        self.assertEqual(len(result["venues"]),len(isolated["venues"])+2)
+        self.assertEqual(len(result["events"]),len(isolated["events"])+2)
+        self.assertEqual(len(result["artists"]),len(isolated["artists"])+1)
+        old_events={x["id"]:x for x in isolated["events"]}
         self.assertTrue(all(x in {e["id"]:e for e in result["events"]}
                             and next(e for e in result["events"] if e["id"]==x)==v
                             for x,v in old_events.items()))
