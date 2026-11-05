@@ -3503,5 +3503,131 @@ class AeronefMarillionSigned20261105Tests(unittest.TestCase):
                 with self.assertRaises((ValueError, KeyError, TypeError)):
                     validate_approval(obj, self.venues, self.artists, self.today)
 
+
+class MarillionNationalTwoVenues20261105Tests(unittest.TestCase):
+    """Salles nouvelles : double preuve GPS + concerts multi-artistes signés."""
+
+    @classmethod
+    def setUpClass(cls):
+        from datetime import date
+        from concerts_cloud_sync import PILOT_VENUES, NATIONAL_MARILLION_TWO_SIGNED_20261105
+        cls.pilots = {ident: PILOT_VENUES[ident] for ident in (
+            "casino-de-paris", "radiant-bellevue-caluire", "cepac-silo-marseille")}
+        cls.signed = NATIONAL_MARILLION_TWO_SIGNED_20261105
+        cls.today = date(2026,11,5)
+        cls.live = json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.known = {a["id"]: a for a in cls.live["artists"]}
+        cls.venues = {v["id"]:v for v in cls.live["venues"]}
+        cls.venues.update({ident: spec["venue"] for ident,spec in cls.pilots.items()})
+        cls.source_urls = {
+            "casino-de-paris": "https://www.casinodeparis.fr/fr/infos-pratiques",
+            "radiant-bellevue-caluire": "https://radiant-bellevue.fr/contact-acces/",
+            "cepac-silo-marseille": "https://www.cepacsilo-marseille.fr/infos-pratiques/"
+        }
+
+    def venue_approval(self, ident):
+        import datetime as dt
+        from concerts_cloud_sync import validate_venue_approval
+        pilot = self.pilots[ident]
+        return {
+            "reviewDecision": "approved", "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-05",
+            "venue": copy.deepcopy(pilot["venue"]),
+            "officialEvidence": [
+                {"url": pilot["officialUrl"], "proofType": "official-venue-address",
+                 "checkedAt":"2026-11-05", "checkedFields":["name","address","postalCode","city"]},
+                {"url": pilot["locationUrl"], "proofType":pilot["locationProofType"],
+                 "checkedAt":"2026-11-05", "checkedFields":["venueName","coordinates"]},
+            ],
+        }
+
+    def test_three_venues_approved_and_coordinates_tied_to_original_sources(self):
+        from concerts_cloud_sync import validate_venue_approval
+        for ident in self.pilots:
+            with self.subTest(venue=ident):
+                row = self.venue_approval(ident)
+                self.assertEqual(row["officialEvidence"][0]["url"], self.source_urls[ident])
+                got = validate_venue_approval(row, self.today)
+                self.assertEqual(got, self.pilots[ident]["venue"])
+                self.assertEqual(got["geoSource"],row["officialEvidence"][1]["url"])
+                self.assertFalse("entrée" == got["geoPrecision"])
+                existing = next((v for v in self.live["venues"] if v["id"] == ident), None)
+                if existing is not None:
+                    self.assertEqual(existing, got)
+
+    def test_location_mutations_fail_without_relaxing_venue_whitelist(self):
+        from concerts_cloud_sync import validate_venue_approval
+        mutations = (
+            lambda a: a["venue"].update(latitude=a["venue"]["latitude"] + 0.01),
+            lambda a: a["venue"].update(city="Lyon"),
+            lambda a: a["venue"].update(address="Adresse inventée"),
+            lambda a: a["venue"].update(geoSource="https://example.org/map"),
+            lambda a: a["officialEvidence"][0].update(url="https://example.org"),
+            lambda a: a["officialEvidence"][1].update(url="https://example.org"),
+            lambda a: a["officialEvidence"][1].update(checkedFields=["venueName"]),
+            lambda a: a["officialEvidence"][1].update(proofType="official-venue-address"),
+            lambda a: a.update(reviewedBy="automated-official-recheck"),
+        )
+        for ident in self.pilots:
+            for i, mutation in enumerate(mutations):
+                with self.subTest(venue=ident, case=i):
+                    row = self.venue_approval(ident)
+                    mutation(row)
+                    with self.assertRaises((ValueError, KeyError, TypeError)):
+                        validate_venue_approval(row, self.today)
+
+    def event_approval(self, ident):
+        signed = copy.deepcopy(self.signed[ident])
+        return {"reviewDecision":"approved","reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-05","officialEvidence":signed["proofs"],
+                "event":signed["event"],"newArtists":[]}
+
+    def test_two_exact_bills_and_publication_idempotence(self):
+        for ident, spec in self.signed.items():
+            with self.subTest(ident=ident):
+                row=self.event_approval(ident)
+                event, new = validate_approval(row,self.venues,self.known,self.today)
+                self.assertEqual(event,spec["event"])
+                self.assertEqual(new,{})
+                self.assertIsNone(event["time"])
+                present=[x for x in self.live["events"] if x["id"]==ident]
+                self.assertLessEqual(len(present),1)
+                if present:
+                    for field in ("id","title","date","artistIds","venueId",
+                                  "genres","status","officialUrl","sourceType","time"):
+                        self.assertEqual(present[0][field],event[field])
+                collision=[x for x in self.live["events"]
+                           if x["date"]==event["date"]
+                           and x["venueId"]==event["venueId"]
+                           and set(x["artistIds"]) & set(event["artistIds"])]
+                self.assertLessEqual(len(collision),1)
+
+    def test_two_bills_reject_gps_swap_artist_url_hour_and_fake_support(self):
+        mutations=(
+            lambda a: a["event"].update(date="2026-11-30"),
+            lambda a: a["event"].update(venueId="le-metronum"),
+            lambda a: a["event"].update(title="Marillion tout seul"),
+            lambda a: a["event"].update(artistIds=["marillion"]),
+            lambda a: a["event"].update(time="19:00"),
+            lambda a: a["event"].update(officialUrl="https://example.org/faux"),
+            lambda a: a["event"].update(status="cancelled"),
+            lambda a: a["officialEvidence"].pop(),
+            lambda a: a["officialEvidence"][0].update(url="https://example.org/faux"),
+            lambda a: a["officialEvidence"][1].update(officialConfirmedArtists=["Marillion"]),
+            lambda a: a["officialEvidence"][2].update(officialConfirmedArtists=["Lazuli"]),
+            lambda a: a["officialEvidence"][1]["checkedFields"].append("concertStartTime"),
+            lambda a: a.update(reviewedAt="2026-01-01"),
+            lambda a: a.update(reviewedBy="automated-official-recheck"),
+            lambda a: a["newArtists"].append({"id":"faux","name":"Faux"}),
+            lambda a: a["event"].update(id="go-c-20261121-faux-marillion"),
+        )
+        for ident in self.signed:
+            for i,mutation in enumerate(mutations):
+                with self.subTest(ident=ident,case=i):
+                    bad=self.event_approval(ident)
+                    mutation(bad)
+                    with self.assertRaises((ValueError,KeyError,TypeError)):
+                        validate_approval(bad,self.venues,self.known,self.today)
+
 if __name__=="__main__":
     unittest.main()
