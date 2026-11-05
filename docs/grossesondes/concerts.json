@@ -13188,6 +13188,66 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20261210-rennes-fff-howlin-jaws",
+      "title": "FFF + Howlin’ Jaws",
+      "date": "2026-12-10",
+      "artistIds": [
+        "fff",
+        "howlin-jaws"
+      ],
+      "venueId": "le-mem-rennes",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lemem.fr/programmation/fff/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le MeM",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261211-angers-fff-howlin-jaws",
+      "title": "FFF + Howlin’ Jaws",
+      "date": "2026-12-11",
+      "artistIds": [
+        "fff",
+        "howlin-jaws"
+      ],
+      "venueId": "le-chabada-angers",
+      "genres": [
+        "Funk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lechabada.com/evenement/fff/",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Chabada",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
