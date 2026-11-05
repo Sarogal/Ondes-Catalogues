@@ -3359,7 +3359,17 @@ class ConcertsTourThreeNovember5Tests(unittest.TestCase):
         cls.today = dt.date(2026, 11, 5)
         catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
         cls.venues = {v["id"]: v for v in catalogue["venues"]}
-        cls.artists = {a["id"]: a for a in catalogue["artists"]}
+        # Les fiches signées ont été publiées après la création des tests.
+        # Le validateur de nouvelles approbations reçoit l'état des artistes
+        # *avant* le lot ; une fiche déjà publiée est vérifiée séparément.
+        batch_new_ids = {
+            a["id"] for signed in cls.signed_set.values()
+            for a in signed["newArtists"]
+        }
+        cls.artists = {
+            a["id"]: a for a in catalogue["artists"]
+            if a["id"] not in batch_new_ids
+        }
         cls.published = catalogue["events"]
 
     def item(self, key):
@@ -3382,9 +3392,20 @@ class ConcertsTourThreeNovember5Tests(unittest.TestCase):
                 self.assertEqual(event, signed["event"])
                 self.assertIsNone(event["time"])
                 self.assertEqual(set(artists), {x["id"] for x in signed["newArtists"]})
-                self.assertFalse(any(
-                    a["date"] == event["date"] and a["venueId"] == event["venueId"]
-                    for a in self.published))
+                # Avant publication : aucune collision. Après publication :
+                # exactement la fiche approuvée, sans duplication ni retouche.
+                collision = [
+                    a for a in self.published
+                    if a["date"] == event["date"]
+                    and a["venueId"] == event["venueId"]
+                    and set(a["artistIds"]) & set(event["artistIds"])
+                ]
+                self.assertLessEqual(len(collision), 1)
+                if collision:
+                    for field in ("id", "title", "date", "artistIds", "venueId",
+                                  "genres", "status", "officialUrl", "sourceType",
+                                  "time"):
+                        self.assertEqual(collision[0][field], event[field])
 
     def test_altered_date_artists_venue_url_proofs_and_hour_rejected(self):
         mutations = (
@@ -3439,9 +3460,18 @@ class AeronefMarillionSigned20261105Tests(unittest.TestCase):
 
     def test_exact_bill_and_no_venue_or_artist_creation(self):
         obj = self.approval()
-        self.assertFalse(any(
-            e["date"] == "2026-11-19" and e["venueId"] == "l-aeronef-lille"
-            for e in self.catalogue["events"]))
+        existing = [
+            e for e in self.catalogue["events"]
+            if e["date"] == "2026-11-19"
+            and e["venueId"] == "l-aeronef-lille"
+            and "marillion" in e["artistIds"]
+        ]
+        self.assertLessEqual(len(existing), 1)
+        if existing:
+            for field in ("id", "title", "date", "artistIds", "venueId",
+                          "genres", "status", "officialUrl", "sourceType",
+                          "time"):
+                self.assertEqual(existing[0][field], self.signed["event"][field])
         event, newly = validate_approval(obj, self.venues, self.artists, self.today)
         self.assertEqual(event, self.signed["event"])
         self.assertEqual(newly, {})
