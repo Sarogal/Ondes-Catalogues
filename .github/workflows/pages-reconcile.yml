@@ -1,0 +1,71 @@
+name: Ondes — réconciliation des catalogues GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/ptitesondes/sorties.json'
+      - 'docs/grossesondes/festivals.json'
+      - 'docs/grossesondes/concerts.json'
+      - 'scripts/pages_reconcile.py'
+      - 'tests/test_pages_reconcile.py'
+      - '.github/workflows/pages-reconcile.yml'
+  schedule:
+    # Rattrapage lorsque Pages est resté sur une copie antérieure.
+    - cron: '37 05 * * *'
+    - cron: '37 17 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Même verrou que les synchroniseurs existants: publication sérialisée.
+concurrency:
+  group: ondes-cloud-publication
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    outputs:
+      deploy: ${{ steps.compare.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier les barrières de protection hors réseau
+        run: python -m unittest discover -s tests -p 'test_pages_reconcile.py' -v
+      - name: Comparer les trois copies Pages au contenu validé de main
+        id: compare
+        run: python scripts/pages_reconcile.py --github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Préparer GitHub Pages sans modifier les catalogues
+        if: ${{ steps.compare.outputs.deploy == 'true' }}
+        uses: actions/configure-pages@v6
+      - name: Archiver les trois catalogues existants depuis docs
+        if: ${{ steps.compare.outputs.deploy == 'true' }}
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-${{ github.run_attempt }}
+          path: docs/
+
+  deploy:
+    needs: verify
+    if: ${{ needs.verify.outputs.deploy == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.published.outputs.page_url }}
+    steps:
+      - name: Publier uniquement le snapshot déjà validé dans main
+        id: published
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
