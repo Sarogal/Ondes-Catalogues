@@ -285,7 +285,8 @@ class CandidatePromotionTests(unittest.TestCase):
 
     def test_oa_v2_url_alias_requires_uid_and_agenda(self):
         alias = dict(lead(), collector="openagenda-v2",
-                     source_url="https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_generated-path")
+                     source_url=("https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/"
+                                 "77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots"))
         self.assertEqual(reconciled_openagenda_url(alias, record()), URL)
         item = make_event(alias, record(), registry_location(alias), TODAY)
         self.assertEqual(item["source_url"], URL)
