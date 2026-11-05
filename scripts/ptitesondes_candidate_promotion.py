@@ -60,7 +60,7 @@ def registry_location(lead):
 
 
 def permitted(lead, today):
-    if not isinstance(lead, dict) or lead.get("collector") != "opendatasoft-index":
+    if not isinstance(lead, dict) or lead.get("collector") not in ("opendatasoft-index", "openagenda-v2"):
         return False
     uid = lead.get("external_id")
     if not isinstance(uid, str) or not re.fullmatch(r"[0-9]{1,12}", uid):
