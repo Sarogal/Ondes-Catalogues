@@ -3629,5 +3629,116 @@ class MarillionNationalTwoVenues20261105Tests(unittest.TestCase):
                     with self.assertRaises((ValueError,KeyError,TypeError)):
                         validate_approval(bad,self.venues,self.known,self.today)
 
+
+class MemRennes2026MarillionSignedTests(unittest.TestCase):
+    """Nouvelle implantation Rennes 2026 : photo datée + page officielle + affiche."""
+
+    @classmethod
+    def setUpClass(cls):
+        from datetime import date
+        from concerts_cloud_sync import PILOT_VENUES, MEM_RENNES_MARILLION_SIGNED_20261105
+        cls.pilot = PILOT_VENUES["le-mem-rennes"]
+        cls.signed = MEM_RENNES_MARILLION_SIGNED_20261105
+        cls.today = date(2026, 11, 5)
+        cls.live = json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.artists = {a["id"]:a for a in cls.live["artists"]}
+        cls.venues = {v["id"]:v for v in cls.live["venues"]}
+        cls.venues["le-mem-rennes"] = cls.pilot["venue"]
+
+    def venue_approval(self):
+        return {
+            "reviewDecision":"approved","reviewedBy":"independent-official-verifier",
+            "reviewedAt":"2026-11-05","venue":copy.deepcopy(self.pilot["venue"]),
+            "officialEvidence":[
+                {"url":self.pilot["officialUrl"],"proofType":"official-venue-address",
+                 "checkedAt":"2026-11-05","checkedFields":["name","address","postalCode","city"]},
+                {"url":self.pilot["locationUrl"],"proofType":"first-party-venue-map",
+                 "checkedAt":"2026-11-05","checkedFields":["venueName","coordinates"]},
+                {"url":"https://commons.wikimedia.org/wiki/File:Le_MeM_Rennes_-_Vue_de_l%27entr%C3%A9e_principale.jpg",
+                 "proofType":"independent-geotagged-photo-2026","checkedAt":"2026-11-05",
+                 "checkedFields":["venueName","photoDate","geotaggedSite"],
+                 "photoDate":"2026-10-18","photoLat":48.10283,"photoLon":-1.718835},
+            ],
+        }
+
+    def event_approval(self):
+        return {"reviewDecision":"approved","reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-05",
+                "officialEvidence":copy.deepcopy(self.signed["proofs"]),
+                "event":copy.deepcopy(self.signed["event"]), "newArtists":[]}
+
+    def test_gps_2026_location_and_concert_without_inferred_time(self):
+        from concerts_cloud_sync import validate_venue_approval
+        place=validate_venue_approval(self.venue_approval(),self.today)
+        self.assertEqual(place,self.pilot["venue"])
+        self.assertEqual(place["city"],"Rennes")
+        self.assertIn("indicatif",place["geoPrecision"])
+        self.assertIn("Magic+Mirror",place["geoSource"])
+        approved,artists=validate_approval(
+            self.event_approval(),self.venues,self.artists,self.today)
+        self.assertEqual(approved,self.signed["event"])
+        self.assertEqual(artists,{})
+        self.assertIsNone(approved["time"])
+        prior=[x for x in self.live["events"] if x["id"]==approved["id"]]
+        self.assertLessEqual(len(prior),1)
+        if prior:
+            for field in ("id","title","date","artistIds","venueId",
+                          "genres","status","officialUrl","sourceType","time"):
+                self.assertEqual(prior[0][field],approved[field])
+        same=[x for x in self.live["events"] if x["date"]==approved["date"]
+              and x["venueId"]=="le-mem-rennes"
+              and "marillion" in x["artistIds"]]
+        self.assertLessEqual(len(same),1)
+
+    def test_gps_modifications_and_old_venue_evidence_rejected(self):
+        from concerts_cloud_sync import validate_venue_approval
+        changes=(
+            lambda row:row["venue"].update(longitude=-1.71954),
+            lambda row:row["venue"].update(latitude=48.0995101),
+            lambda row:row["venue"].update(address="Adresse inventée"),
+            lambda row:row["venue"].update(city="Saint-Jacques-de-la-Lande"),
+            lambda row:row["venue"].update(geoSource="https://example.org/map"),
+            lambda row:row["officialEvidence"][1].update(url="https://example.org"),
+            lambda row:row["officialEvidence"][1].update(proofType="openstreetmap-venue-node"),
+            lambda row:row["officialEvidence"].pop(),
+            lambda row:row["officialEvidence"][2].update(photoDate="2021-10-18"),
+            lambda row:row["officialEvidence"][2].update(photoLat=48.09000),
+            lambda row:row["officialEvidence"][2].update(url="https://example.org/photo"),
+            lambda row:row.update(reviewedBy="automated-official-recheck"),
+        )
+        for index,change in enumerate(changes):
+            with self.subTest(case=index):
+                row=self.venue_approval()
+                change(row)
+                with self.assertRaises((ValueError,KeyError,TypeError)):
+                    validate_venue_approval(row,self.today)
+
+    def test_ticket_support_hour_and_official_evidence_mutations_rejected(self):
+        changes=(
+            lambda row:row["event"].update(date="2026-11-20"),
+            lambda row:row["event"].update(venueId="le-jardin-moderne-rennes"),
+            lambda row:row["event"].update(artistIds=["marillion"]),
+            lambda row:row["event"].update(title="Marillion solo"),
+            lambda row:row["event"].update(time="20:00"),
+            lambda row:row["event"].update(officialUrl="https://example.org/marillion"),
+            lambda row:row["event"].update(id="go-c-20261118-rennes-faux"),
+            lambda row:row["event"].update(status="cancelled"),
+            lambda row:row["officialEvidence"].pop(),
+            lambda row:row["officialEvidence"][0].update(confirmedArtists=["Marillion","Lazuli"]),
+            lambda row:row["officialEvidence"][1].update(confirmedArtists=["Marillion"]),
+            lambda row:row["officialEvidence"][2].update(url="https://example.org/faux"),
+            lambda row:row["officialEvidence"][3].update(checkedAt="2026-11-03"),
+            lambda row:row["officialEvidence"][0]["checkedFields"].append("concertStartTime"),
+            lambda row:row.update(reviewedAt="2026-01-01"),
+            lambda row:row.update(reviewedBy="automated-official-recheck"),
+            lambda row:row["newArtists"].append({"id":"fake","name":"Fake"}),
+        )
+        for index,change in enumerate(changes):
+            with self.subTest(case=index):
+                row=self.event_approval()
+                change(row)
+                with self.assertRaises((ValueError,KeyError,TypeError)):
+                    validate_approval(row,self.venues,self.artists,self.today)
+
 if __name__=="__main__":
     unittest.main()
