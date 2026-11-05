@@ -436,6 +436,12 @@ HOWLIN_TWO_VENUES = {"stereolux-nantes", "6mic-aix-en-provence"}
 PILOT_VENUES["salle-cap-caval-penmarch"] = json.loads(r'''{"venue":{"id":"salle-cap-caval-penmarch","name":"Salle Cap Caval","address":"Avenue de Skibbereen","postalCode":"29760","city":"Penmarc’h","department":"29","region":"Bretagne","latitude":47.81333,"longitude":-4.33766,"geoPrecision":"centre arrondi du bâtiment Salle Cap Caval désigné nominativement sur OpenStreetMap way 66608817 (amenity=music_venue, building=yes) via Mapcarta ; pas son entrée exacte ni un parking Cap Caval voisin","geoSource":"https://mapcarta.com/W66608817"},"officialUrl":"https://www.cap-caval.fr/infos-pratiques/","locationUrl":"https://mapcarta.com/W66608817","locationProofType":"openstreetmap-venue-way"}''')
 CAP_CAVAL_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20270227-penmarch-howlin-jaws-komodor","title":"Howlin’ Jaws + Komodor","date":"2027-02-27","time":null,"artistIds":["howlin-jaws","komodor"],"venueId":"salle-cap-caval-penmarch","genres":["Psych Rock","Hard Rock"],"status":"confirmed","officialUrl":"https://www.cap-caval.fr/evenements/howlin-jaws-komodor/","sourceType":"salle","organizer":"Salle Cap Caval"},"newArtists":[],"proofs":[{"url":"https://www.cap-caval.fr/evenements/howlin-jaws-komodor/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","eventStartTime"],"confirmedArtists":["Howlin’ Jaws","Komodor"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-artist-agent","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["Howlin’ Jaws","Komodor"]}]}''')
 
+# Marché Gare Lyon : unique salle nominative, et non le parking LPA.
+PILOT_VENUES["marche-gare-lyon"] = json.loads(r'''{"venue":{"id":"marche-gare-lyon","name":"Marché Gare","address":"4–6 place Hubert Mounier","postalCode":"69002","city":"Lyon","department":"69","region":"Auvergne-Rhône-Alpes","latitude":45.74135,"longitude":4.82265,"geoPrecision":"centre indicatif du bâtiment Marché Gare (OpenStreetMap way 82189851 via Mapcarta), bâtiment arts_centre et building=yes avec site marchegare.fr ; la fiche OSM conserve l'ancienne adresse rue Casimir Périer, tandis que le site officiel 2026 indique l'accès actuel 4–6 place Hubert Mounier ; ni entrée précise ni parking LPA","geoSource":"https://mapcarta.com/W82189851"},"officialUrl":"https://marchegare.fr/infos-pratiques/acces-accessibilite","locationUrl":"https://mapcarta.com/W82189851","locationProofType":"openstreetmap-venue-way"}''')
+
+# Dernières quatre dates FR Howlin’ Jaws, fiches et preuves bornées.
+HOWLIN_FINAL_FOUR_SIGNED_20261105 = json.loads(r'''{"go-c-20261110-roubaix-howlin-jaws-moundrag":{"event":{"id":"go-c-20261110-roubaix-howlin-jaws-moundrag","title":"Howlin’ Jaws + Moundrag","date":"2026-11-10","time":"20:00","artistIds":["howlin-jaws","moundrag"],"venueId":"la-cave-aux-poetes-roubaix","genres":["Psych Rock"],"status":"confirmed","officialUrl":"https://caveauxpoetes.com/evenement/howlinjaws-moundrag/","sourceType":"salle","organizer":"La Cave aux Poètes"},"newArtists":[{"id":"moundrag","name":"Moundrag"}],"proofs":[{"url":"https://caveauxpoetes.com/evenement/howlinjaws-moundrag/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","startTime"],"confirmedArtists":["Howlin' Jaws","Moundrag"]},{"url":"https://caveauxpoetes.com/agenda/","proofType":"first-party-venue-calendar","checkedFields":["artists","date","venue"],"confirmedArtists":null}]},"go-c-20261118-paris-howlin-jaws-theo-charaf":{"event":{"id":"go-c-20261118-paris-howlin-jaws-theo-charaf","title":"Howlin’ Jaws + Théo Charaf","date":"2026-11-18","time":null,"artistIds":["howlin-jaws","theo-charaf"],"venueId":"le-trabendo-paris","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.letrabendo.net/programmation/howlin-jaws/","sourceType":"salle","organizer":"Radical Production"},"newArtists":[{"id":"theo-charaf","name":"Théo Charaf"}],"proofs":[{"url":"https://www.letrabendo.net/programmation/howlin-jaws/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime"],"confirmedArtists":["Howlin' Jaws","Théo Charaf"]}]},"go-c-20261121-lyon-howlin-jaws-hayko":{"event":{"id":"go-c-20261121-lyon-howlin-jaws-hayko","title":"Howlin’ Jaws + Hayko","date":"2026-11-21","time":"20:00","artistIds":["howlin-jaws","hayko"],"venueId":"marche-gare-lyon","genres":["Rock","Indie Rock"],"status":"confirmed","officialUrl":"https://marchegare.fr/agenda/howlin-jaws","sourceType":"salle","organizer":"Marché Gare"},"newArtists":[{"id":"hayko","name":"Hayko"}],"proofs":[{"url":"https://marchegare.fr/agenda/howlin-jaws","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","concertStartTime"],"confirmedArtists":["Howlin' Jaws","Hayko"]},{"url":"https://www.fnacspectacles.com/event/howlin-jaws-le-marche-gare-lyon-02-21848689/","proofType":"authorized-ticket-distributor-full-date","checkedFields":["artists","date","venue"],"confirmedArtists":["Howlin' Jaws","Hayko"]}]},"go-c-20270429-nancy-howlin-jaws-komodor":{"event":{"id":"go-c-20270429-nancy-howlin-jaws-komodor","title":"Howlin’ Jaws + Komodor","date":"2027-04-29","time":null,"artistIds":["howlin-jaws","komodor"],"venueId":"l-autre-canal-nancy","genres":["Psych Rock","Rock"],"status":"confirmed","officialUrl":"https://lautrecanalnancy.fr/agenda/howlin-jaws-komodor","sourceType":"salle","organizer":"L’Autre Canal"},"newArtists":[],"proofs":[{"url":"https://lautrecanalnancy.fr/agenda/howlin-jaws-komodor","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","eventTime"],"confirmedArtists":["Howlin' Jaws","Komodor"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-artist-agent","checkedFields":["artists","date","venue","coHeadline"],"confirmedArtists":["Howlin' Jaws","Komodor"]}]}}''')
+
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
 # The venue's generic Billetweb calendar and unrelated organizer tickets remain blocked.
 BRIN_ORGANIZER_VERIFIED = {
@@ -755,6 +761,9 @@ CAVE_POETES_VERIFIED = {
     }
 }
 
+# Salle Cave aux Poètes : concert nominatif du 10/11, calendrier officiel distinct.
+CAVE_POETES_VERIFIED.update(json.loads(r'''{"go-c-20261110-roubaix-howlin-jaws-moundrag":{"title":"Howlin’ Jaws + Moundrag","date":"2026-11-10","time":"20:00","artistIds":["howlin-jaws","moundrag"],"newArtistIds":["moundrag"],"genres":["Psych Rock"],"officialUrl":"https://caveauxpoetes.com/evenement/howlinjaws-moundrag/","organizerCalendar":"https://caveauxpoetes.com/agenda/","calendarProofType":"first-party-venue-calendar","calendarCheckedFields":["artists","date","venue"]}}'''))
+
 # Five exact first-party concert details at the newly verified Forum venue.
 # Venue OSM node is named Le Forum, has official web/address/phone tags.
 # The Wolves in the Throne Room detail contradicts itself on start time
@@ -881,6 +890,9 @@ TRABENDO_VERIFIED = {
         "officialUrl": "https://www.letrabendo.net/programmation/whitechapel/"
     },
 }
+
+# Le Trabendo nomme explicitement Howlin’ Jaws + Théo Charaf : détail officiel.
+TRABENDO_VERIFIED.update(json.loads(r'''{"go-c-20261118-paris-howlin-jaws-theo-charaf":{"title":"Howlin’ Jaws + Théo Charaf","date":"2026-11-18","artistIds":["howlin-jaws","theo-charaf"],"newArtistIds":["theo-charaf"],"genres":["Rock"],"officialUrl":"https://www.letrabendo.net/programmation/howlin-jaws/"}}'''))
 
 # Explicit one-time, source-documented map correction. The original 127-
 # event baseline remains immutable. The precise location is the named
@@ -1121,11 +1133,15 @@ NEW_REFERENCE_GEO_SOURCES = {
     },
 }
 
+# L'Autre Canal : remplacement du centre de Nancy par le GPS officiel.
+# Source indépendante : bâtiment OSM way 115010861. Référence immuable préservée.
+NEW_REFERENCE_GEO_SOURCES["l-autre-canal-nancy"] = json.loads(r'''{"patch":{"address":"45 boulevard d'Austrasie","postalCode":"54000","latitude":48.694175,"longitude":6.198269,"geoPrecision":"coordonnées GPS publiées par L'Autre Canal dans son dossier technique de 2023 (48.694175, 6.198269), concordant avec le bâtiment OSM way 115010861 à proximité; localisation indicative du site, pas une entrée garantie","geoSource":"https://lautrecanalnancy.fr/sites/default/files/lautrecanal/fichiers/dossier_technique_2023_fr.pdf"},"officialUrl":"https://lautrecanalnancy.fr/sites/default/files/lautrecanal/fichiers/dossier_technique_2023_fr.pdf","officialProof":"official-venue-gps","officialFields":["name","address","postalCode","city","latitude","longitude"],"geoUrl":"https://mapcarta.com/W115010861","geoProof":"openstreetmap-venue-way","geoFields":["venueName","coordinates"],"expectedOriginal":{"name":"L’Autre Canal","city":"Nancy","address":"Adresse exacte à vérifier","postalCode":"À vérifier","latitude":48.692,"longitude":6.185},"checkedAt":"2026-11-05"}''')
+
 
 def validate_new_reference_geo(approvals, reference, today):
     """Independently signed, two-source proof for exact historic pins."""
     rows = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(rows, list) and len(rows) <= 9,
+    require(isinstance(rows, list) and len(rows) <= 10,
             "Trop de corrections historiques de salles")
     allowed = {SECRET_PLACE_VENUE_ID, REX_VENUE_ID} | set(NEW_REFERENCE_GEO_SOURCES)
     ids = [x.get("venueId") if isinstance(x, dict) else None for x in rows]
@@ -1191,7 +1207,7 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False,
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 9,
+    require(isinstance(corrections, list) and len(corrections) <= 10,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
@@ -1243,7 +1259,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 9,
+    require(isinstance(corrections, list) and len(corrections) <= 10,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
@@ -3623,6 +3639,38 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(event.get("time") is None,
                 "Cap Caval : heure musicale non attestée explicitement")
 
+    # Quatre tournées Howlin’ Jaws terminent la couverture officielle.
+    # Toute réutilisation d'ID, de source, d'une nouvelle salle ou changement de
+    # plateau, horaire, genre, preuve bloque la publication.
+    howlin_four_urls = {p["event"]["officialUrl"]: eid
+                        for eid,p in HOWLIN_FINAL_FOUR_SIGNED_20261105.items()}
+    if (event_id in HOWLIN_FINAL_FOUR_SIGNED_20261105 or
+            event.get("officialUrl") in howlin_four_urls or
+            event.get("venueId") == "marche-gare-lyon"):
+        spec = HOWLIN_FINAL_FOUR_SIGNED_20261105.get(event_id)
+        require(spec is not None
+                and event == spec["event"]
+                and approval.get("newArtists", []) == spec["newArtists"]
+                and reviewer == "independent-official-verifier",
+                "Howlin’ Jaws final : fiche, salle, artiste ou URL altérés")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Howlin’ Jaws final : preuve trop ancienne ou future")
+        proofs = spec["proofs"]
+        require(len(evidence) == len(proofs) and
+                all(isinstance(x, dict) for x in evidence),
+                "Howlin’ Jaws final : preuves nominatives non complètes")
+        for p,q in zip(evidence,proofs):
+            require(p.get("url") == q["url"]
+                    and p.get("proofType") == q["proofType"]
+                    and p.get("checkedAt") == checked.isoformat()
+                    and p.get("checkedFields") == q["checkedFields"]
+                    and p.get("confirmedArtists") == q["confirmedArtists"],
+                    "Howlin’ Jaws final : preuve, provenance ou artistes altérés")
+        if event_id in ("go-c-20261118-paris-howlin-jaws-theo-charaf",
+                        "go-c-20270429-nancy-howlin-jaws-komodor"):
+            require(event.get("time") is None,
+                    "Howlin’ Jaws final : heure musicale inférée")
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
     if event_id in ROUEN_DEATH_VALLEY_SIGNED:
