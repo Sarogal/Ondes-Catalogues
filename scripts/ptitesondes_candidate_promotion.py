@@ -247,9 +247,17 @@ def reconciled_openagenda_url(lead, row):
         raise ValueError("URL canonique non autorisée")
     if original == canonical:
         return canonical
+    # Verified real-world syndication of the Bordeaux opera programme:
+    # OpenAgenda v2 links an UID-prefixed event under operanationalbordeaux,
+    # while the ODS mirror uses its UID-free slug under ville-de-bordeaux.
+    # Never infer arbitrary cross-agenda aliases from similar titles.
+    pinned_pairs = {("operanationalbordeaux", "ville-de-bordeaux")}
+    same_agenda = source_parts[0] == target_parts[0]
+    reviewed_syndication = (source_parts[0], target_parts[0]) in pinned_pairs
+    expected_source_slug = lead["external_id"] + "_" + target_parts[1]
     if (lead.get("collector") != "openagenda-v2" or
-            source_parts[0] != target_parts[0] or
-            not source_parts[1].startswith(lead["external_id"] + "_")):
+            not (same_agenda or reviewed_syndication) or
+            source_parts[1] != expected_source_slug):
         raise ValueError("URL canonique différente")
     return canonical
 

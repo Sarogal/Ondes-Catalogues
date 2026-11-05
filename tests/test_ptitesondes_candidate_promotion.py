@@ -285,7 +285,8 @@ class CandidatePromotionTests(unittest.TestCase):
 
     def test_oa_v2_url_alias_requires_uid_and_agenda(self):
         alias = dict(lead(), collector="openagenda-v2",
-                     source_url="https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_generated-path")
+                     source_url=("https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/"
+                                 "77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots"))
         self.assertEqual(reconciled_openagenda_url(alias, record()), URL)
         item = make_event(alias, record(), registry_location(alias), TODAY)
         self.assertEqual(item["source_url"], URL)
@@ -319,6 +320,47 @@ class CandidatePromotionTests(unittest.TestCase):
             with self.subTest(target=target):
                 with self.assertRaises(ValueError):
                     reconciled_openagenda_url(alias, dict(record(), canonicalurl=target))
+
+    def test_reviewed_bordeaux_syndication_requires_exact_slug_and_uid(self):
+        # Public ODS mirror records inspected on 2026-11-05: the three
+        # immutable UIDs are identical, while syndication changes the agenda.
+        pairs = (
+            ("54065371", "momo-lenfant-peche-3216479"),
+            ("66367832", "les-droles-de-petites-betes-8323158"),
+            ("30568209", "ici-la-bas-5324637"),
+        )
+        for uid, slug in pairs:
+            private = dict(lead(),
+                           collector="openagenda-v2",
+                           external_id=uid,
+                           source_url=("https://openagenda.com/operanationalbordeaux/events/"
+                                       + uid + "_" + slug))
+            ods = dict(record(), uid=uid,
+                       canonicalurl="https://openagenda.com/ville-de-bordeaux/events/" + slug)
+            with self.subTest(uid=uid):
+                self.assertEqual(reconciled_openagenda_url(private, ods),
+                                 ods["canonicalurl"])
+                # Even an accepted alias does not bypass first-party proof.
+                clone = dict(ods, title_fr=private["title"])
+                public, report = evaluate([private], base(), base(), TODAY,
+                                          fetch=lambda _: clone,
+                                          verifier=lambda ev, old: (False, "organizer proof absent"))
+                self.assertEqual(public["additions"], [])
+                # Venue and family category checks remain in place.
+                self.assertGreaterEqual(report["deferred_or_duplicates"], 1)
+                for changed in (
+                    dict(private, external_id="99999"),
+                    dict(private, source_url=private["source_url"].replace(
+                         uid + "_", uid + "_different-")),
+                    dict(private, source_url=private["source_url"].replace(
+                         "operanationalbordeaux", "untrusted-agenda")),
+                    dict(private, collector="opendatasoft-index"),
+                ):
+                    with self.assertRaises(ValueError):
+                        reconciled_openagenda_url(changed, ods)
+                with self.assertRaises(ValueError):
+                    reconciled_openagenda_url(private, dict(ods,
+                        canonicalurl=ods["canonicalurl"].replace(slug, "another-title")))
 
     def test_ods_retry_transient_reset_and_bounded_permanent_timeout(self):
         calls = []
