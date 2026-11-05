@@ -81,10 +81,16 @@ def validate(doc):
             raise ValueError("Code postal invalide")
         if not norm(p["city"]) in norm(p["address"]):
             raise ValueError("Adresse et ville incompatibles")
-        if type(p["age_min"]) not in (int, float) or type(p["age_max"]) not in (int, float):
-            raise ValueError("Age invalide")
-        if not 0 <= p["age_min"] <= p["age_max"] <= 18:
-            raise ValueError("Age hors plage")
+        # Explicitly unknown ages are permitted as a pair of JSON nulls,
+        # never inferred as 0-18. Existing numeric records remain unchanged.
+        age_min, age_max = p["age_min"], p["age_max"]
+        if (age_min is None) != (age_max is None):
+            raise ValueError("Age inconnu partiel")
+        if age_min is not None:
+            if type(age_min) not in (int, float) or type(age_max) not in (int, float):
+                raise ValueError("Age invalide")
+            if not 0 <= age_min <= age_max <= 18:
+                raise ValueError("Age hors plage")
         if (type(p["lat"]) not in (int, float) or type(p["lng"]) not in (int, float)
                 or not math.isfinite(p["lat"]) or not math.isfinite(p["lng"])
                 or not -90 <= p["lat"] <= 90 or not -180 <= p["lng"] <= 180
