@@ -10,9 +10,11 @@ from datetime import date, datetime
 import json
 import math
 import os
+import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 import re
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
@@ -92,20 +94,30 @@ def api_record(uid, get=None):
     args = urlencode({"limit": MAX_ROWS, "select": FIELDS,
                       "where": "uid='" + str(uid) + "'"})
     url = API + "?" + args
-    if get is not None:
-        doc = get(url)
-    else:
-        request = Request(url, headers={
-            "Accept": "application/json",
-            "User-Agent": "PtitesOndesIndependentEvidence/1.0",
-        })
-        with urlopen(request, timeout=18) as response:
-            if urlparse(response.geturl()).hostname != urlparse(API).hostname:
-                raise ValueError("Redirection ODS non autorisée")
-            data = response.read(250_001)
-        if len(data) > 250_000:
-            raise ValueError("Réponse ODS trop volumineuse")
-        doc = json.loads(data)
+    # Bound retries to transient transport failures; never retry invalid evidence.
+    for attempt in range(3):
+        try:
+            if get is not None:
+                doc = get(url)
+            else:
+                request = Request(url, headers={
+                    "Accept": "application/json",
+                    "User-Agent": "PtitesOndesIndependentEvidence/1.0",
+                })
+                with urlopen(request, timeout=18) as response:
+                    if urlparse(response.geturl()).hostname != urlparse(API).hostname:
+                        raise ValueError("Redirection ODS non autorisée")
+                    data = response.read(250_001)
+                if len(data) > 250_000:
+                    raise ValueError("Réponse ODS trop volumineuse")
+                doc = json.loads(data)
+            break
+        except (HTTPError, URLError, ConnectionError, TimeoutError) as exc:
+            if isinstance(exc, HTTPError) and exc.code not in (429, 500, 502, 503, 504):
+                raise
+            if attempt == 2:
+                raise
+            time.sleep(0.4 * (2 ** attempt))
     if not isinstance(doc, dict) or not isinstance(doc.get("results"), list):
         raise ValueError("Réponse ODS malformée")
     rows = [r for r in doc["results"] if str(r.get("uid", "")) == str(uid)]
@@ -130,10 +142,39 @@ def category_for(title, description):
         return "cine-concert", "Ciné-concert"
     if "concert" in name and any(x in name for x in ("enfant","jeune public","famill","tout petit","bebe")):
         return "concert", "Concert"
+    # Many official family listings use a short work title ("Momo",
+    # "Ici, là-bas") and state the format solely in the description.
+    # Require BOTH an explicit child/family cue and an explicit music format.
+    # The official date, venue, source and coordinates are verified later.
+    details = norm(description)
+    if any(x in details for x in ("famill", "enfant", "jeune public",
+                                   "tout petit", "bebe")):
+        for label, category, caption in (
+            ("conte musical", "conte-musical", "Conte musical"),
+            ("cine concert", "cine-concert", "Ciné-concert"),
+            ("eveil musical", "eveil-musical", "Éveil musical"),
+            ("atelier musical", "atelier-musical", "Atelier musical"),
+            ("spectacle musical", "spectacle-musical", "Spectacle musical"),
+        ):
+            if label in details:
+                return category, caption
+        if re.search(r"\bconcert\b", details):
+            return "concert", "Concert"
     return None
 
 
-def confirmed_session(timings, day):
+# Official organizer evidence: these slots are exclusively school/group sessions,
+# not publicly bookable family outings; other sessions of the same show remain.
+# https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301
+# https://www.opera-bordeaux.com/famille-orchestre-les-droles-de-petites-betes-86441
+SCHOOL_ONLY_TIMES = {
+    ("54065371", "2027-01-22"): frozenset({"14:30"}),
+    ("66367832", "2027-01-28"): frozenset({"14:30"}),
+    ("66367832", "2027-01-29"): frozenset({"14:30"}),
+}
+
+
+def confirmed_session(timings, day, uid=None):
     if isinstance(timings, str):
         timings = json.loads(timings)
     if not isinstance(timings, list):
@@ -155,6 +196,10 @@ def confirmed_session(timings, day):
             times.append(stamp.strftime("%H:%M"))
     if not times:
         raise ValueError("Séance datée et horodatée absente")
+    restricted = SCHOOL_ONLY_TIMES.get((str(uid), day), frozenset())
+    times = [time for time in times if time not in restricted]
+    if not times:
+        raise ValueError("Séance uniquement scolaire ou réservée")
     if len(set(times)) > 4:
         raise ValueError("Trop de séances le même jour")
     return ", ".join(sorted(set(times)))
@@ -170,12 +215,50 @@ def scheduled(row):
     return isinstance(status, dict) and status.get("id") == 1
 
 
+def openagenda_path_parts(raw):
+    """Parse only a strict HTTPS event page, without unsafe URL components."""
+    if not isinstance(raw, str):
+        return None
+    p = urlparse(raw)
+    try:
+        port = p.port
+    except ValueError:
+        return None
+    if (p.scheme != "https" or p.hostname != "openagenda.com" or
+            port not in (None, 443) or p.username or p.password or
+            p.query or p.fragment):
+        return None
+    match = re.fullmatch(r"/(?:(?:fr|en)/)?([^/]+)/events/([^/]+)", p.path)
+    return match.groups() if match else None
+
+
+def reconciled_openagenda_url(lead, row):
+    """Permit only same-UID OA v2 aliases on the very same OpenAgenda agenda.
+
+    ODS already has to return exactly one record for this UID. The proposed
+    event still needs official independent time, title, venue and GPS proof.
+    Never allow similarity-only matches or cross-agenda redirects.
+    """
+    original = lead["source_url"]
+    canonical = row.get("canonicalurl")
+    source_parts = openagenda_path_parts(original)
+    target_parts = openagenda_path_parts(canonical)
+    if source_parts is None or target_parts is None:
+        raise ValueError("URL canonique non autorisée")
+    if original == canonical:
+        return canonical
+    if (lead.get("collector") != "openagenda-v2" or
+            source_parts[0] != target_parts[0] or
+            not source_parts[1].startswith(lead["external_id"] + "_")):
+        raise ValueError("URL canonique différente")
+    return canonical
+
+
 def make_event(lead, row, location, today):
     """Build only from exact dated first-party fields and reviewed venue coords."""
     if str(row.get("uid")) != lead["external_id"]:
         raise ValueError("UID source différent")
-    if row.get("canonicalurl") != lead["source_url"]:
-        raise ValueError("URL canonique différente")
+    canonical = reconciled_openagenda_url(lead, row)
     if norm(row.get("title_fr")) != norm(lead["title"]):
         raise ValueError("Titre différent")
     if norm(row.get("location_city")) != norm(lead["city"]):
@@ -210,10 +293,10 @@ def make_event(lead, row, location, today):
         "title": row["title_fr"].strip(),
         "category": category[0], "category_label": category[1],
         "date_start": day, "date_end": day,
-        "time": confirmed_session(row.get("timings"), day),
+        "time": confirmed_session(row.get("timings"), day, lead["external_id"]),
         "city": row["location_city"], "department": department,
         "region": region, "venue": row["location_name"],
-        "source_url": row["canonicalurl"],
+        "source_url": canonical,
         "source_label": source,
         "verified_at": today.isoformat(), "geo_verified_at": today.isoformat(),
         "geo_precision": "venue",
