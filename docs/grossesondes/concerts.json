@@ -2101,6 +2101,21 @@
       "id": "slapdown",
       "name": "Slapdown",
       "aliases": []
+    },
+    {
+      "id": "manimal",
+      "name": "Manimal",
+      "aliases": []
+    },
+    {
+      "id": "movements",
+      "name": "Movements",
+      "aliases": []
+    },
+    {
+      "id": "shoreline",
+      "name": "Shoreline",
+      "aliases": []
     }
   ],
   "venues": [
@@ -12900,6 +12915,96 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Bikini",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261122-strasbourg-marillion-lazuli",
+      "title": "Marillion + Lazuli",
+      "date": "2026-11-22",
+      "artistIds": [
+        "marillion",
+        "lazuli"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/marillion/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-toulouse-psykup-manimal",
+      "title": "Psykup + Manimal",
+      "date": "2026-12-12",
+      "artistIds": [
+        "psykup",
+        "manimal"
+      ],
+      "venueId": "le-metronum",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lemetronum.fr/evenement/psykup/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Metronum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270223-paris-movements-shoreline",
+      "title": "Movements + Shoreline",
+      "date": "2027-02-23",
+      "artistIds": [
+        "movements",
+        "shoreline"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Post-Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/movements/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Trabendo",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
