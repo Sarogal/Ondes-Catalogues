@@ -3359,7 +3359,17 @@ class ConcertsTourThreeNovember5Tests(unittest.TestCase):
         cls.today = dt.date(2026, 11, 5)
         catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
         cls.venues = {v["id"]: v for v in catalogue["venues"]}
-        cls.artists = {a["id"]: a for a in catalogue["artists"]}
+        # Les fiches signées ont été publiées après la création des tests.
+        # Le validateur de nouvelles approbations reçoit l'état des artistes
+        # *avant* le lot ; une fiche déjà publiée est vérifiée séparément.
+        batch_new_ids = {
+            a["id"] for signed in cls.signed_set.values()
+            for a in signed["newArtists"]
+        }
+        cls.artists = {
+            a["id"]: a for a in catalogue["artists"]
+            if a["id"] not in batch_new_ids
+        }
         cls.published = catalogue["events"]
 
     def item(self, key):
@@ -3382,9 +3392,20 @@ class ConcertsTourThreeNovember5Tests(unittest.TestCase):
                 self.assertEqual(event, signed["event"])
                 self.assertIsNone(event["time"])
                 self.assertEqual(set(artists), {x["id"] for x in signed["newArtists"]})
-                self.assertFalse(any(
-                    a["date"] == event["date"] and a["venueId"] == event["venueId"]
-                    for a in self.published))
+                # Avant publication : aucune collision. Après publication :
+                # exactement la fiche approuvée, sans duplication ni retouche.
+                collision = [
+                    a for a in self.published
+                    if a["date"] == event["date"]
+                    and a["venueId"] == event["venueId"]
+                    and set(a["artistIds"]) & set(event["artistIds"])
+                ]
+                self.assertLessEqual(len(collision), 1)
+                if collision:
+                    for field in ("id", "title", "date", "artistIds", "venueId",
+                                  "genres", "status", "officialUrl", "sourceType",
+                                  "time"):
+                        self.assertEqual(collision[0][field], event[field])
 
     def test_altered_date_artists_venue_url_proofs_and_hour_rejected(self):
         mutations = (
@@ -3411,6 +3432,76 @@ class ConcertsTourThreeNovember5Tests(unittest.TestCase):
                     mutate(fake)
                     with self.assertRaises((ValueError, KeyError, TypeError)):
                         validate_approval(fake, self.venues, self.artists, self.today)
+
+
+class AeronefMarillionSigned20261105Tests(unittest.TestCase):
+    """Lille, Marillion + Lazuli : date prouvée, aucune heure musicale inférée."""
+
+    @classmethod
+    def setUpClass(cls):
+        from concerts_cloud_sync import AERONEF_LILLE_MARILLION_SIGNED_20261105
+        from datetime import date
+        cls.signed = AERONEF_LILLE_MARILLION_SIGNED_20261105
+        cls.today = date(2026, 11, 5)
+        cls.catalogue = json.loads(
+            (ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.venues = {v["id"]:v for v in cls.catalogue["venues"]}
+        cls.artists = {a["id"]:a for a in cls.catalogue["artists"]}
+
+    def approval(self):
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-05",
+            "officialEvidence": copy.deepcopy(self.signed["proofs"]),
+            "event": copy.deepcopy(self.signed["event"]),
+            "newArtists": [],
+        }
+
+    def test_exact_bill_and_no_venue_or_artist_creation(self):
+        obj = self.approval()
+        existing = [
+            e for e in self.catalogue["events"]
+            if e["date"] == "2026-11-19"
+            and e["venueId"] == "l-aeronef-lille"
+            and "marillion" in e["artistIds"]
+        ]
+        self.assertLessEqual(len(existing), 1)
+        if existing:
+            for field in ("id", "title", "date", "artistIds", "venueId",
+                          "genres", "status", "officialUrl", "sourceType",
+                          "time"):
+                self.assertEqual(existing[0][field], self.signed["event"][field])
+        event, newly = validate_approval(obj, self.venues, self.artists, self.today)
+        self.assertEqual(event, self.signed["event"])
+        self.assertEqual(newly, {})
+        self.assertIsNone(event["time"])
+
+    def test_any_unapproved_mutation_fails(self):
+        mutations = (
+            ("date", lambda a: a["event"].update(date="2026-11-20")),
+            ("title", lambda a: a["event"].update(title="Marillion solo")),
+            ("artists", lambda a: a["event"].update(artistIds=["marillion"])),
+            ("time", lambda a: a["event"].update(time="20:00")),
+            ("venue", lambda a: a["event"].update(venueId="le-metronum")),
+            ("status", lambda a: a["event"].update(status="cancelled")),
+            ("official-url", lambda a: a["event"].update(officialUrl="https://example.org/marillion")),
+            ("reviewer", lambda a: a.update(reviewedBy="automated-official-recheck")),
+            ("new-artist", lambda a: a["newArtists"].append({"id":"unknown","name":"Unknown"})),
+            ("proof-0", lambda a: a["officialEvidence"][0].update(url="https://example.org/bad")),
+            ("proof-1", lambda a: a["officialEvidence"][1].update(checkedAt="2026-11-04")),
+            ("proof-2", lambda a: a["officialEvidence"][2].update(proofType="aggregator")),
+            ("extra-hour", lambda a: a["officialEvidence"][0]["checkedFields"].append("concertStartTime")),
+            ("missing-evidence", lambda a: a["officialEvidence"].pop()),
+            ("stale-review", lambda a: a.update(reviewedAt="2026-05-01")),
+            ("duplicate-url", lambda a: a["event"].update(id="go-c-20261119-lille-copy")),
+        )
+        for name, mutation in mutations:
+            with self.subTest(name=name):
+                obj = self.approval()
+                mutation(obj)
+                with self.assertRaises((ValueError, KeyError, TypeError)):
+                    validate_approval(obj, self.venues, self.artists, self.today)
 
 if __name__=="__main__":
     unittest.main()

@@ -3500,6 +3500,9 @@ TOUR_FIVE_SIGNED_20261105 = json.loads(r'''{"go-c-20261118-grenoble-inspector-cl
 TOUR_THREE_VERIFIED_20261105 = json.loads(r'''{"go-c-20261122-strasbourg-marillion-lazuli":{"event":{"id":"go-c-20261122-strasbourg-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-22","time":null,"artistIds":["marillion","lazuli"],"venueId":"la-laiterie-strasbourg","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://www.artefact.org/la-laiterie/evenements/marillion/","sourceType":"salle"},"newArtists":[],"proofs":[{"url":"https://www.artefact.org/la-laiterie/evenements/marillion/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche officielle: dimanche 22/11/2026 Marillion + Lazuli, rock progressif. 18h30 = ouverture des portes."},{"url":"https://www.artefact.org/la-laiterie/programmation/","proofType":"first-party-venue-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Programmation officielle recoupant date, affiche, salle et genre. Billetterie indiquée complet."}]},"go-c-20261212-toulouse-psykup-manimal":{"event":{"id":"go-c-20261212-toulouse-psykup-manimal","title":"Psykup + Manimal","date":"2026-12-12","time":null,"artistIds":["psykup","manimal"],"venueId":"le-metronum","genres":["Metal"],"status":"confirmed","officialUrl":"https://lemetronum.fr/evenement/psykup/","sourceType":"salle"},"newArtists":[{"id":"manimal","name":"Manimal"}],"proofs":[{"url":"https://lemetronum.fr/evenement/psykup/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche du Metronum: samedi 12/12/2026, Psykup + Manimal, catégorie metal; 20h n'est pas explicitement une heure de début musical."}]},"go-c-20270223-paris-movements-shoreline":{"event":{"id":"go-c-20270223-paris-movements-shoreline","title":"Movements + Shoreline","date":"2027-02-23","time":null,"artistIds":["movements","shoreline"],"venueId":"le-trabendo-paris","genres":["Post-Hardcore"],"status":"confirmed","officialUrl":"https://www.letrabendo.net/programmation/movements/","sourceType":"salle"},"newArtists":[{"id":"movements","name":"Movements"},{"id":"shoreline","name":"Shoreline"}],"proofs":[{"url":"https://www.letrabendo.net/programmation/movements/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche individuelle du Trabendo: 23/02/2027 Movements + Shoreline, post-hardcore. Les portes ouvrent à 19h; aucun début musical déduit."}]}}''')
 
 
+AERONEF_LILLE_MARILLION_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20261119-lille-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-19","time":null,"artistIds":["marillion","lazuli"],"venueId":"l-aeronef-lille","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://aeronef.fr/agenda/marillion2026","sourceType":"salle"},"proofs":[{"url":"https://aeronef.fr/agenda/marillion2026","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche officielle L'Aéronef : Marillion + Lazuli, jeudi 19 novembre ; titre URL marillion2026 et présentation d'automne 2026, date complète recoupée par l'agenda officiel et le tour du groupe ; 20h00 n'est pas un début musical explicitement attesté."},{"url":"https://aeronef.fr/agenda","proofType":"first-party-venue-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue"],"notes":"Agenda officiel de L'Aéronef, ligne jeudi 19 novembre 2026 : MARILLION + Lazuli, Lille. Année 2026 explicite."},{"url":"https://www.marillion.com/tour/","proofType":"independent-official-artist-tour","checkedAt":"2026-11-05","checkedFields":["artists","date","city","venue","country"],"notes":"Tour officiel Marillion : Thursday 19 November 2026, L'Aeronef, Lille, France ; en-tête France 2026 indique Support - Lazuli. Aucune indication de début musical."}]}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3570,6 +3573,16 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(event.get("venueId") == pinned["venueId"]
                 and official_url == pinned["officialUrl"],
                 "Lot 05/11 : ID, salle ou URL non concordants")
+
+    # Marillion Lille : un même lien officiel ne peut homologuer un autre événement.
+    aeronef_signed = AERONEF_LILLE_MARILLION_SIGNED_20261105["event"]
+    if (event_id == aeronef_signed["id"]
+            or official_url == aeronef_signed["officialUrl"]):
+        require(event_id == aeronef_signed["id"]
+                and event.get("venueId") == aeronef_signed["venueId"]
+                and official_url == aeronef_signed["officialUrl"],
+                "Marillion Lille : URL, ID et salle réservés")
+
     # Une URL de tournée nominative ne peut servir à publier une autre affiche.
     tour_signed_by_url = {v["event"]["officialUrl"]: k
                           for k, v in TOUR_FIVE_SIGNED_20261105.items()}
@@ -3870,6 +3883,35 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         norm(resolved[a["id"]]["name"]) == norm(a["name"])
                         for a in new_artists),
                 "Lot 05/11 : groupe fictif ou homonyme non revu")
+
+    # Lille : double confirmation de L'Aéronef + source indépendante du groupe.
+    # Aucune heure musicalement démontrée ; garder explicitement time=null.
+    if event_id == AERONEF_LILLE_MARILLION_SIGNED_20261105["event"]["id"]:
+        signed = AERONEF_LILLE_MARILLION_SIGNED_20261105
+        require(reviewer == "independent-official-verifier"
+                and event == signed["event"]
+                and new_artists == [],
+                "Marillion Lille : affiche, date ou groupe hors signature")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Marillion Lille : vérification périmée ou future")
+        require(isinstance(evidence, list) and len(evidence) == 3
+                and all(isinstance(p, dict) for p in evidence),
+                "Marillion Lille : trois preuves officielles obligatoires")
+        for actual, signed_proof in zip(evidence, signed["proofs"]):
+            require(all(actual.get(field) == signed_proof[field] for field in
+                        ("url", "proofType", "checkedAt", "checkedFields"))
+                    and actual.get("checkedAt") == checked.isoformat()
+                    and not ({"startTime", "concertStartTime", "doorTime"} &
+                             set(actual.get("checkedFields") or [])),
+                    "Marillion Lille : preuve ou heure musicalement non vérifiée")
+        require(ids == ["marillion", "lazuli"]
+                and all(aid in known_artist_ids for aid in ids)
+                and norm(known_artist_ids["marillion"]["name"]) == norm("Marillion")
+                and norm(known_artist_ids["lazuli"]["name"]) == norm("Lazuli")
+                and event.get("time") is None,
+                "Marillion Lille : artiste absent ou heure inventée")
+
     # Cinq affiches recoupées, signatures exactes et non réutilisables.
     if event_id in TOUR_FIVE_SIGNED_20261105:
         spec = TOUR_FIVE_SIGNED_20261105[event_id]
@@ -3947,7 +3989,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Les cinq concerts sont vérifiés ci-dessus par leurs identités complètes.
     # Ce branchement ne modifie pas les whitelists générales de chaque salle.
     if (event_id in TOUR_FIVE_SIGNED_20261105
-            or event_id in TOUR_THREE_VERIFIED_20261105):
+            or event_id in TOUR_THREE_VERIFIED_20261105
+            or event_id == AERONEF_LILLE_MARILLION_SIGNED_20261105["event"]["id"]):
         pass
     elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]
