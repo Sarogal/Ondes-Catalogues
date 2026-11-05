@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/**'
       - 'tests/**'
+      - 'docs/ptitesondes/lieux.json'
       - '.github/workflows/ptitesondes-cloud-sync.yml'
   schedule:
     # Synchronisation après collecte, prévalidation privée et audit indépendant.
@@ -46,6 +47,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: main
+          fetch-depth: 2
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
@@ -53,6 +55,25 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
           python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_places.py' -v
+      - name: Contrôler les lieux permanents (append-only)
+        id: places
+        run: |
+          set -euo pipefail
+          python scripts/ptitesondes_places.py docs/ptitesondes/lieux.json
+          if [ "${{ github.event_name }}" = "push" ]; then
+            if git cat-file -e HEAD^:docs/ptitesondes/lieux.json 2>/dev/null; then
+              git show HEAD^:docs/ptitesondes/lieux.json > /tmp/ptitesondes-lieux-previous.json
+              python scripts/ptitesondes_places.py docs/ptitesondes/lieux.json --previous /tmp/ptitesondes-lieux-previous.json
+            fi
+            if git diff --quiet HEAD^ HEAD -- docs/ptitesondes/lieux.json; then
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Lire, contrôler et fusionner sans écriture distante
         id: sync
         env:
@@ -62,11 +83,12 @@ jobs:
         id: decision
         env:
           CHANGED: ${{ steps.sync.outputs.changed }}
+          PLACES_CHANGED: ${{ steps.places.outputs.changed }}
           CLOUD_ENABLED: ${{ vars.PTITESONDES_CLOUD_SYNC }}
           USER_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if [ "$CHANGED" = "true" ] && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
+          if { [ "$CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
