@@ -145,7 +145,10 @@ def noel_2026_update(original, update, sources, today):
             return None
     # All provenance is fixed in this validator. An attacker's evidence list
     # cannot redirect or replace any live re-fetch.
-    if set(update.get("evidence", [])) != set(PROOF_SOURCES.values()) | set(TICKET_URLS.values()):
+    evidence = update.get("evidence")
+    if (not isinstance(evidence, list) or not all(isinstance(u, str) for u in evidence)
+            or len(evidence) != len(set(evidence))
+            or set(evidence) != set(PROOF_SOURCES.values()) | set(TICKET_URLS.values())):
         return None
     homepage = visible(sources.get("noel_organizer", ""))
     if not (present(homepage, "34 festival de noel")
