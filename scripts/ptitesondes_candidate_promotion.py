@@ -158,7 +158,7 @@ def category_for(title, description):
         ):
             if label in details:
                 return category, caption
-        if re.search(r"\\bconcert\\b", details):
+        if re.search(r"\bconcert\b", details):
             return "concert", "Concert"
     return None
 
