@@ -1138,7 +1138,7 @@ def validate_new_reference_geo(approvals, reference, today):
             url, fields = expected[p["proofType"]]
             require(p.get("url") == url
                     and p.get("checkedAt") == checked.isoformat()
-                    and fields.issubset(set(p.get("checkedFields") or [])),
+                    and set(fields).issubset(set(p.get("checkedFields") or [])),
                     "Adresse ou repère cartographique absent/incomplet")
         initial = [v for v in reference["venues"] if v["id"] == venue_id]
         require(len(initial) == 1 and
