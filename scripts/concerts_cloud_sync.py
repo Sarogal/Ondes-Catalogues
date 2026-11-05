@@ -3596,6 +3596,33 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     actual.get("confirmedArtists") == expected["confirmedArtists"],
                     "Howlin’ Jaws Nantes/Aix : champs ou provenance altérés")
 
+    # Cap Caval : URL, artiste, scène et preuve protégés par une signature
+    # nominative (pas d'approbation générale de tous ses futurs concerts).
+    signed_cap = CAP_CAVAL_SIGNED_20261105["event"]
+    if (event.get("venueId") == "salle-cap-caval-penmarch" or
+            event_id == signed_cap["id"] or
+            event.get("officialUrl") == signed_cap["officialUrl"]):
+        require(event == signed_cap and
+                approval.get("newArtists", []) == [] and
+                reviewer == "independent-official-verifier",
+                "Cap Caval : concert, salle ou identité modifiés")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Cap Caval : preuve de revue trop ancienne ou future")
+        expected_proofs = CAP_CAVAL_SIGNED_20261105["proofs"]
+        require(len(evidence) == len(expected_proofs) == 2 and
+                all(isinstance(p,dict) for p in evidence),
+                "Cap Caval : deux preuves indépendantes obligatoires")
+        for actual, expected in zip(evidence, expected_proofs):
+            require(actual.get("url") == expected["url"] and
+                    actual.get("proofType") == expected["proofType"] and
+                    actual.get("checkedAt") == reviewed.isoformat() and
+                    actual.get("checkedFields") == expected["checkedFields"] and
+                    actual.get("confirmedArtists") == expected["confirmedArtists"],
+                    "Cap Caval : provenance, champs vérifiés ou artistes altérés")
+        require(event.get("time") is None,
+                "Cap Caval : heure musicale non attestée explicitement")
+
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
     if event_id in ROUEN_DEATH_VALLEY_SIGNED:
