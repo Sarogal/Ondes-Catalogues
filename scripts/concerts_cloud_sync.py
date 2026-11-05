@@ -3592,7 +3592,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if official_url in regional_by_url:
         require(event_id == regional_by_url[official_url],
                 "Lot régional : URL officielle réservée à son concert signé")
-    if event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
+    # Ces cinq seules identités possèdent leurs propres signatures exactes
+    # validées ci-dessus; les listes fermées des salles restent inchangées
+    # pour tous les autres concerts des mêmes lieux.
+    if event_id in TOUR_FIVE_SIGNED_20261105:
+        pass
+    elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         require(event.get("venueId") ==
                 UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]["venueId"],
                 "Lot régional : identifiant déplacé hors de la salle")
