@@ -91,6 +91,12 @@ class CandidatePromotionTests(unittest.TestCase):
 
     def test_only_official_openagenda_leads(self):
         self.assertTrue(permitted(lead(), TODAY))
+        # Les pistes de l’API OpenAgenda v2 doivent passer les mêmes contrôles
+        # indépendants que celles de l’index ODS, sans passe-droit.
+        self.assertTrue(permitted(dict(lead(), collector="openagenda-v2"), TODAY))
+        self.assertFalse(permitted(dict(lead(), collector="untrusted-source"), TODAY))
+        self.assertFalse(permitted(dict(lead(), collector="openagenda-v2",
+                                        external_id="invalid"), TODAY))
         self.assertFalse(permitted(dict(lead(), source_url="https://example.org/valid"), TODAY))
         self.assertFalse(permitted(dict(lead(), source_url="http://openagenda.com/fake"), TODAY))
         self.assertFalse(permitted(dict(lead(), source_url="https://openagenda.com@evil.example/"), TODAY))
@@ -149,6 +155,23 @@ class CandidatePromotionTests(unittest.TestCase):
                                       checker=lambda event, originals: (True, "verified"))
         self.assertEqual(result_report["ajoutes"], 1)
         self.assertEqual(result["events"][:100], ref["events"])
+
+    def test_openagenda_v2_lead_still_requires_independent_proof(self):
+        ref = base()
+        direct = dict(lead(), collector="openagenda-v2")
+        p, report = evaluate([direct], ref, ref, TODAY,
+                             fetch=lambda uid: record(),
+                             verifier=lambda event, originals: (False, "No official session proof"))
+        self.assertEqual(p["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+        self.assertEqual(report["details"][0]["status"], "unverified")
+        p, report = evaluate([direct], ref, ref, TODAY,
+                             fetch=lambda uid: record(),
+                             verifier=lambda event, originals: (True, "verified"))
+        self.assertEqual(report["accepted_preflight"], 1)
+        self.assertEqual(len(p["additions"]), 1)
+        self.assertFalse(p["safe_to_publish"])
+        self.assertTrue(p["checks"]["official_sources_verified"])
 
     def test_failed_independent_proof_keeps_deferred(self):
         ref = base()
