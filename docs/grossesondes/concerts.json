@@ -2116,6 +2116,11 @@
       "id": "shoreline",
       "name": "Shoreline",
       "aliases": []
+    },
+    {
+      "id": "gloria",
+      "name": "Gloria",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3145,6 +3150,32 @@
       "longitude": -1.7184605,
       "geoPrecision": "point Google Maps nominatif 'Le MeM - Magic Mirror' relié depuis la page officielle du MeM en 2026 (48.1032992,-1.7184605), cohérent avec une photo géolocalisée le 18/10/2026 près du nouveau bâtiment ; repère indicatif du site rénové, pas la porte exacte et sans précision métrique garantie",
       "geoSource": "https://www.google.com/maps/place/Le+MeM+-+Magic+Mirror/@48.1033028,-1.7210354,17z/data=!3m1!4b1!4m6!3m5!1s0x480ee199e0031c8f:0xe9f3c5422f9585e3!8m2!3d48.1032992!4d-1.7184605!16s%2Fg%2F11h5_1c5zn?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D"
+    },
+    {
+      "id": "stereolux-nantes",
+      "name": "Stereolux",
+      "address": "4 boulevard Léon-Bureau",
+      "postalCode": "44200",
+      "city": "Nantes",
+      "department": "44",
+      "region": "Pays de la Loire",
+      "latitude": 47.205119,
+      "longitude": -1.563498,
+      "geoPrecision": "point GPS nominatif Stereolux publié par Nantes Université (47.205119, -1.563498), cohérent avec le point OpenStreetMap node 2434544471 voisin ; repère indicatif de l'établissement, pas l'entrée exacte de la salle Maxi",
+      "geoSource": "https://www.univ-nantes.fr/plans-des-campus/stereolux"
+    },
+    {
+      "id": "6mic-aix-en-provence",
+      "name": "6MIC",
+      "address": "160 rue Pascal Duverger",
+      "postalCode": "13090",
+      "city": "Aix-en-Provence",
+      "department": "13",
+      "region": "Provence-Alpes-Côte d’Azur",
+      "latitude": 43.5193,
+      "longitude": 5.42182,
+      "geoPrecision": "centre indicatif du bâtiment 6MIC identifié sur OpenStreetMap way 701032991 via Mapcarta (coordonnées arrondies à cinq décimales), pas son entrée exacte",
+      "geoSource": "https://mapcarta.com/fr/W701032991"
     }
   ],
   "events": [
@@ -13237,6 +13268,67 @@
       "time": "20:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Chabada",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261208-nantes-fff-howlin-jaws",
+      "title": "FFF + Howlin’ Jaws",
+      "date": "2026-12-08",
+      "artistIds": [
+        "fff",
+        "howlin-jaws"
+      ],
+      "venueId": "stereolux-nantes",
+      "genres": [
+        "Funk Rock",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://stereolux.org/agenda/fff",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "O Spectacles",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270402-aix-howlin-jaws-gloria",
+      "title": "Howlin’ Jaws + Gloria",
+      "date": "2027-04-02",
+      "artistIds": [
+        "howlin-jaws",
+        "gloria"
+      ],
+      "venueId": "6mic-aix-en-provence",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "6MIC",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
