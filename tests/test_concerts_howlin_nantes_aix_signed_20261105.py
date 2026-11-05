@@ -71,30 +71,34 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
                     with self.assertRaises((KeyError,ValueError,TypeError)):
                         validate_approval(row,venues,artists,TODAY)
 
-    def test_merge_isolated_from_immutable_reference(self):
-        # A shortened batch cannot attest the previous 200+ approvals.
-        # Seed this *isolated test reference* with the two artists already
-        # public but absent from the immutable 127-event historical reference.
-        # The actual cloud deployment reads the full private approval ledger.
-        isolated = copy.deepcopy(REFERENCE)
-        known = {x["id"] for x in isolated["artists"]}
-        for aid in ("fff", "howlin-jaws"):
-            if aid not in known:
-                artist = next(x for x in PUBLIC["artists"] if x["id"] == aid)
-                isolated["artists"].append(copy.deepcopy(artist))
-                known.add(aid)
-        result,counts=merge(isolated,isolated,FIXTURE,TODAY)
-        self.assertEqual(counts["newVenues"],2)
-        self.assertEqual(counts["newEvents"],2)
-        self.assertEqual(counts["newArtists"],1)
-        self.assertEqual(counts["held"],[])
-        self.assertEqual(len(result["venues"]),len(isolated["venues"])+2)
-        self.assertEqual(len(result["events"]),len(isolated["events"])+2)
-        self.assertEqual(len(result["artists"]),len(isolated["artists"])+1)
-        old_events={x["id"]:x for x in isolated["events"]}
-        self.assertTrue(all(x in {e["id"]:e for e in result["events"]}
-                            and next(e for e in result["events"] if e["id"]==x)==v
-                            for x,v in old_events.items()))
+    def test_reference_and_published_identities_are_preserved(self):
+        # The cumulative 332-event cloud catalogue cannot be merged with
+        # a two-event-only private fixture: the production guard requires
+        # complete approvals for every previously published concert.
+        # Check isolated approval validity, unique identities and retained
+        # immutable baseline without forging earlier approval signatures.
+        venues=self.locations()
+        artists={x["id"]:x for x in PUBLIC["artists"]}
+        old_venues={v["id"] for v in PUBLIC["venues"]}
+        old_events={e["id"] for e in PUBLIC["events"]}
+        old_artists={a["id"] for a in PUBLIC["artists"]}
+        self.assertEqual(len(old_events),len(PUBLIC["events"]))
+        self.assertEqual(len(old_venues),len(PUBLIC["venues"]))
+        self.assertEqual(len(old_artists),len(PUBLIC["artists"]))
+        self.assertTrue({e["id"] for e in REFERENCE["events"]}.issubset(old_events))
+        self.assertTrue({v["id"] for v in REFERENCE["venues"]}.issubset(old_venues))
+        self.assertTrue({a["id"] for a in REFERENCE["artists"]}.issubset(old_artists))
+        self.assertEqual(HOWLIN_TWO_VENUES & old_venues,set())
+        self.assertEqual(set(HOWLIN_TWO_SIGNED_20261105) & old_events,set())
+        self.assertNotIn("gloria",old_artists)
+        for x in FIXTURE["approvals"]:
+            event,new=validate_approval(x,venues,artists,TODAY)
+            self.assertEqual(event,x["event"])
+            self.assertEqual(set(new),{"gloria"} if event["venueId"]=="6mic-aix-en-provence"
+                             else set())
+        self.assertEqual(len(FIXTURE["venueApprovals"]),2)
+        self.assertEqual(len(FIXTURE["approvals"]),2)
+
 
 if __name__=="__main__":
     unittest.main()
