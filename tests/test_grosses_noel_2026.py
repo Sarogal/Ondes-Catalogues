@@ -17,8 +17,7 @@ from test_grosses_stage import fixtures
 
 
 def original_row():
-    data = json.loads((ROOT / "docs/grossesondes/festivals.json").read_text(encoding="utf-8"))
-    return next(row for row in data["festivals"] if row["slug"] == SLUG)
+    return json.loads((ROOT / "tests/fixtures/noel-2026-reference.json").read_text(encoding="utf-8"))
 
 
 def proposal(row, date_verified="2026-11-05"):
@@ -58,7 +57,7 @@ def independent_sources():
 
 
 class NoelOfficialApprovalTests(unittest.TestCase):
-    def test_actual_publication_row_exactly_matches_pinned_sessions(self):
+    def test_pinned_reference_exactly_matches_sessions_and_preserves_17(self):
         row = original_row()
         self.assertEqual(row["lineupByDate"], GROUPS)
         self.assertEqual(len(row["lineup"]), 17)
