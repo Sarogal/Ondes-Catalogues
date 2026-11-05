@@ -3600,6 +3600,11 @@ TOURNEE_DU_COEUR_GRENOBLE_SIGNED_20261105 = {
     ],
 }
 
+# Signatures nominatives : deux concerts et une salle, aucune ouverture globale.
+PILOT_VENUES["le-sew-morlaix"] = json.loads(r'''{"venue":{"id":"le-sew-morlaix","name":"Le SEW","address":"39 quai du Léon","postalCode":"29600","city":"Morlaix","department":"29","region":"Bretagne","latitude":48.58309,"longitude":-3.83484,"geoPrecision":"Point indicatif de la salle SEW – La Manu publié par MusiTree (48.58309, -3.83484), cohérent avec le repère nommé ToFromFrance 48.58313, -3.83481 ; pas l'entrée exacte du SEW","geoSource":"https://musitree.fr/concerts/salles/sew-la-manu-morlaix/"},"officialUrl":"https://sew-morlaix.com/infos","locationUrl":"https://musitree.fr/concerts/salles/sew-la-manu-morlaix/","locationProofType":"independent-named-venue-geolocation"}''')
+TOURNEE_DU_COEUR_MOLOCO_SEW_SIGNED_20261105 = json.loads(r'''{"go-c-20270225-audincourt-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270225-audincourt-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-25","time":null,"artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"le-moloco-audincourt","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://www.lemoloco.com/agenda/cachemire-la-phaze-bobs-not-dead/","sourceType":"salle","organizer":"Le Moloco"},"newArtists":[],"proofs":[{"url":"https://www.lemoloco.com/agenda/cachemire-la-phaze-bobs-not-dead/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"]},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]},"go-c-20270211-morlaix-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270211-morlaix-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-11","time":"20:00","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"le-sew-morlaix","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://sew-morlaix.com/evenements/la-tournee-du-coeur","sourceType":"salle","organizer":"WART / Le SEW"},"newArtists":[],"proofs":[{"url":"https://sew-morlaix.com/evenements/la-tournee-du-coeur","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"20:00"},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]}}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3643,6 +3648,43 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Tournée du Cœur Grenoble : heure musicale non attestée")
         require(event.get("time") is None,
                 "Tournée du Cœur Grenoble : heure inférée interdite")
+
+    # Liste blanche exclusivement pour ces deux affiches datées ; les autres
+    # concerts du Moloco restent soumis aux règles existantes, et la salle SEW
+    # ne peut être utilisée par une affiche encore non revue.
+    coeur_signed = TOURNEE_DU_COEUR_MOLOCO_SEW_SIGNED_20261105
+    coeur_urls = {v["event"]["officialUrl"]: key
+                  for key, v in coeur_signed.items()}
+    if (event_id in coeur_signed
+            or event.get("officialUrl") in coeur_urls
+            or event.get("venueId") == "le-sew-morlaix"):
+        signed = coeur_signed.get(event_id)
+        require(signed is not None and event == signed["event"]
+                and approval.get("newArtists", []) == signed["newArtists"]
+                and reviewer == "independent-official-verifier",
+                "Tournée du Cœur Moloco/SEW : affiche ou salle non signée")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Tournée du Cœur Moloco/SEW : revue ancienne ou future")
+        expected_proofs = signed["proofs"]
+        require(isinstance(evidence, list)
+                and len(evidence) == len(expected_proofs) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "Tournée du Cœur Moloco/SEW : deux preuves indépendantes exigées")
+        for actual, proof in zip(evidence, expected_proofs):
+            require(actual.get("url") == proof["url"]
+                    and actual.get("proofType") == proof["proofType"]
+                    and actual.get("checkedAt") == checked.isoformat()
+                    and actual.get("checkedFields") == proof["checkedFields"]
+                    and actual.get("confirmedArtists") == proof.get("confirmedArtists")
+                    and actual.get("concertStartTimeConfirmed")
+                        == proof.get("concertStartTimeConfirmed"),
+                    "Tournée du Cœur Moloco/SEW : provenance, heure ou plateau altérés")
+        start_fields = set(evidence[0].get("checkedFields") or [])
+        require("startTime" not in start_fields
+                and (("concertStartTime" in start_fields)
+                     == (event.get("time") is not None)),
+                "Tournée du Cœur Moloco/SEW : horaires de portes pris pour scène")
 
     require(event.get("venueId") in venues,
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
