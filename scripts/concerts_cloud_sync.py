@@ -418,6 +418,8 @@ PILOT_VENUES = {
     "radiant-bellevue-caluire": {"venue":{"id":"radiant-bellevue-caluire","name":"Radiant-Bellevue","address":"1 rue Jean Moulin","postalCode":"69300","city":"Caluire-et-Cuire","department":"69","region":"Auvergne-Rhône-Alpes","latitude":45.79795,"longitude":4.84301,"geoPrecision":"centre indicatif du bâtiment Radiant-Bellevue sur OpenStreetMap way 299047133 via Mapcarta (5 décimales), non l'entrée exacte ; la tournée annonce Lyon mais la salle est située à Caluire-et-Cuire","geoSource":"https://mapcarta.com/fr/W299047133"},"officialUrl":"https://radiant-bellevue.fr/contact-acces/","locationUrl":"https://mapcarta.com/fr/W299047133","locationProofType":"openstreetmap-venue-way"},
     "cepac-silo-marseille": {"venue":{"id":"cepac-silo-marseille","name":"CEPAC Silo","address":"35 quai du Lazaret","postalCode":"13002","city":"Marseille","department":"13","region":"Provence-Alpes-Côte d’Azur","latitude":43.310475,"longitude":5.366558,"geoPrecision":"point de repère touristique de la salle Le Silo/CEPAC Silo, publié via Cirkwi par l'Office de Tourisme et des Congrès de Marseille (43.310475, 5.366558) ; point indicatif du site, pas l'entrée ni une précision métrique","geoSource":"https://www.cirkwi.com/en/point-interet/4687013-le-silo"},"officialUrl":"https://www.cepacsilo-marseille.fr/infos-pratiques/","locationUrl":"https://www.cirkwi.com/en/point-interet/4687013-le-silo","locationProofType":"independent-tourism-gps"},
 
+    "le-mem-rennes": {"venue":{"id":"le-mem-rennes","name":"Le MeM","address":"La Piverdière, accès route de Sainte-Foix","postalCode":"35000","city":"Rennes","department":"35","region":"Bretagne","latitude":48.1032992,"longitude":-1.7184605,"geoPrecision":"point Google Maps nominatif 'Le MeM - Magic Mirror' relié depuis la page officielle du MeM en 2026 (48.1032992,-1.7184605), cohérent avec une photo géolocalisée le 18/10/2026 près du nouveau bâtiment ; repère indicatif du site rénové, pas la porte exacte et sans précision métrique garantie","geoSource":"https://www.google.com/maps/place/Le+MeM+-+Magic+Mirror/@48.1033028,-1.7210354,17z/data=!3m1!4b1!4m6!3m5!1s0x480ee199e0031c8f:0xe9f3c5422f9585e3!8m2!3d48.1032992!4d-1.7184605!16s%2Fg%2F11h5_1c5zn?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D"},"officialUrl":"https://www.lemem.fr/pratique/","locationUrl":"https://www.google.com/maps/place/Le+MeM+-+Magic+Mirror/@48.1033028,-1.7210354,17z/data=!3m1!4b1!4m6!3m5!1s0x480ee199e0031c8f:0xe9f3c5422f9585e3!8m2!3d48.1032992!4d-1.7184605!16s%2Fg%2F11h5_1c5zn?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D","locationProofType":"first-party-venue-map"},
+
 }
 
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
@@ -1577,8 +1579,11 @@ def validate_venue_approval(row, today):
     checked = norm_date(row.get("reviewedAt"))
     require(checked <= today, "Vérification de salle datée dans le futur")
     evidence = row.get("officialEvidence")
-    require(isinstance(evidence, list) and len(evidence) == 2,
-            "Deux preuves indépendantes exigées pour une nouvelle salle")
+    # Le MeM 2026 a été reconstruit et déplacé : vérification renforcée
+    # par photo géolocalisée du site actuel, pas uniquement une carte ancienne.
+    expected_count = 3 if venue["id"] == "le-mem-rennes" else 2
+    require(isinstance(evidence, list) and len(evidence) == expected_count,
+            "Preuves nominatives indépendantes manquantes pour la salle")
     first = next((x for x in evidence if isinstance(x, dict) and
                   x.get("url") == approved["officialUrl"] and
                   x.get("proofType") == "official-venue-address"), None)
@@ -1597,6 +1602,23 @@ def validate_venue_approval(row, today):
             and isinstance(venue["latitude"], (float, int))
             and isinstance(venue["longitude"], (float, int)),
             "Position du lieu non sourcée")
+    if venue["id"] == "le-mem-rennes":
+        photo_url = "https://commons.wikimedia.org/wiki/File:Le_MeM_Rennes_-_Vue_de_l%27entr%C3%A9e_principale.jpg"
+        photo = next((p for p in evidence if isinstance(p, dict)
+                      and p.get("proofType") == "independent-geotagged-photo-2026"), None)
+        require(photo is not None
+                and photo.get("url") == photo_url
+                and photo.get("checkedAt") == checked.isoformat()
+                and set(photo.get("checkedFields") or []) ==
+                    {"venueName", "photoDate", "geotaggedSite"}
+                and photo.get("photoDate") == "2026-10-18"
+                and photo.get("photoLat") == 48.10283
+                and photo.get("photoLon") == -1.718835
+                and venue["latitude"] == 48.1032992
+                and venue["longitude"] == -1.7184605
+                and abs(venue["latitude"] - photo["photoLat"]) < 0.0007
+                and abs(venue["longitude"] - photo["photoLon"]) < 0.0007,
+                "Le MeM : salle déplacée ; photo indépendante récente ou GPS actuel absent")
     return copy.deepcopy(venue)
 
 
@@ -3510,6 +3532,9 @@ AERONEF_LILLE_MARILLION_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20
 NATIONAL_MARILLION_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261121-paris-marillion-lazuli":{"event":{"id":"go-c-20261121-paris-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-21","time":null,"artistIds":["marillion","lazuli"],"venueId":"casino-de-paris","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://www.casinodeparis.fr/fr/Marillion-En-Concert-21-Novembre-2026-Billetterie-Paris","sourceType":"salle"},"proofs":[{"url":"https://www.casinodeparis.fr/fr/Marillion-En-Concert-21-Novembre-2026-Billetterie-Paris","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"officialConfirmedArtists":["Marillion"],"notes":"Annonce nominative de la salle Casino de Paris : Marillion, samedi 21/11/2026, rock néo-progressif. Ne nomme pas la première partie. La preuve 'artists' porte ici sur Marillion uniquement ; Lazuli vérifié sur ses propres dates de tournée. 19:00 est une heure de séance, pas un début musical prouvé."},{"url":"https://www.marillion.com/tour/","proofType":"official-artist-tour-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","tourSupport"],"officialConfirmedArtists":["Marillion","Lazuli"],"notes":"Tour officiel Marillion, section Live In France 2026 : Support - Lazuli ; samedi 21 novembre 2026 Casino De Paris, Paris, France."},{"url":"https://lazuli-music.com/tour/","proofType":"independent-official-support-tour","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","supportRole"],"officialConfirmedArtists":["Marillion","Lazuli"],"notes":"Tour officiel Lazuli : 21.11.2026 Casino de Paris, Lazuli special guest with Marillion. Indépendant de la salle et du groupe principal."}]},"go-c-20261129-caluire-marillion-lazuli":{"event":{"id":"go-c-20261129-caluire-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-29","time":null,"artistIds":["marillion","lazuli"],"venueId":"radiant-bellevue-caluire","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://radiant-bellevue.fr/spectacles/marillion/","sourceType":"salle"},"proofs":[{"url":"https://radiant-bellevue.fr/spectacles/marillion/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"officialConfirmedArtists":["Marillion"],"notes":"Fiche Radiant-Bellevue : Marillion, dimanche 29 novembre 2026, rock néo-progressif. La salle est en réalité à Caluire-et-Cuire ; première partie Lazuli attestée séparément. 19:00 est une horaire annoncé sans qualification du début musical."},{"url":"https://www.marillion.com/tour/","proofType":"official-artist-tour-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","tourSupport"],"officialConfirmedArtists":["Marillion","Lazuli"],"notes":"Tour officiel Marillion, section France 2026 : Support - Lazuli ; dimanche 29 novembre 2026 Radiant-Bellevue, Lyon (agglomération), France."},{"url":"https://lazuli-music.com/tour/","proofType":"independent-official-support-tour","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","supportRole"],"officialConfirmedArtists":["Marillion","Lazuli"],"notes":"Tour officiel Lazuli : 29.11.2026 Radiant-Bellevue (Lyon), Lazuli special guest with Marillion."}]}}''')
 
 
+MEM_RENNES_MARILLION_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20261118-rennes-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-18","time":null,"artistIds":["marillion","lazuli"],"venueId":"le-mem-rennes","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://www.lemem.fr/programmation/marillion/","sourceType":"salle"},"proofs":[{"url":"https://www.lemem.fr/programmation/marillion/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["leadArtist","date","venue","genre"],"confirmedArtists":["Marillion"],"notes":"Fiche 2026 du MeM, 18/11/2026, Le Magic Mirrors, 20h00 affiché et portes à 19h00. Page ne cite que Marillion ; aucune inférence sur la première partie ou sur une heure de début musical garantie."},{"url":"https://lazuli-music.com/tour/","proofType":"independent-official-support-tour","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["Marillion","Lazuli"],"notes":"Tournée officielle Lazuli : 18.11.2026 Le Mem Rennes, Lazuli special guest with Marillion ; cette source indépendante prouve Lazuli."},{"url":"https://www.marillion.com/tour/","proofType":"official-artist-tour-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","country","tourSupport"],"confirmedArtists":["Marillion","Lazuli"],"notes":"Marillion - Live In France 2026, section Support - Lazuli : Wednesday 18 November 2026, Le Mem, Rennes, France."},{"url":"https://www.aegpresents.fr/event/marillion/","proofType":"independent-official-organizer-tour","checkedAt":"2026-11-05","checkedFields":["leadArtist","date","venue"],"confirmedArtists":["Marillion"],"notes":"Organisateur AEG Presents France : Marillion 18 novembre au MeM Rennes, vérification de l'annonce sans attribution d'heure musicale."}]}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3601,6 +3626,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(official_url == pinned["officialUrl"]
                 and event["venueId"] == pinned["venueId"],
                 "Marillion national : ID, salle ou URL déplacés")
+    # Marillion Rennes : l'URL nominative du Magic Mirrors ne valide
+    # aucune autre date, scène ni artiste que la signature indépendante.
+    mem_signed = MEM_RENNES_MARILLION_SIGNED_20261105["event"]
+    if event_id == mem_signed["id"] or official_url == mem_signed["officialUrl"]:
+        require(event_id == mem_signed["id"]
+                and official_url == mem_signed["officialUrl"]
+                and event.get("venueId") == "le-mem-rennes",
+                "Le MeM : identifiant, salle ou URL de concert réaffectés")
     # Une URL de tournée nominative ne peut servir à publier une autre affiche.
     tour_signed_by_url = {v["event"]["officialUrl"]: k
                           for k, v in TOUR_FIVE_SIGNED_20261105.items()}
@@ -3960,6 +3993,39 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and norm(known_artist_ids["marillion"]["name"]) == "marillion"
                 and norm(known_artist_ids["lazuli"]["name"]) == "lazuli",
                 "Marillion national : invité non vérifié indépendamment")
+    # Marillion + Lazuli au nouveau MeM : la salle n'annonce que Marillion ;
+    # Lazuli est attesté par son propre agenda, sans heure musicale inférée.
+    if event_id == MEM_RENNES_MARILLION_SIGNED_20261105["event"]["id"]:
+        signed = MEM_RENNES_MARILLION_SIGNED_20261105
+        require(reviewer == "independent-official-verifier"
+                and event == signed["event"]
+                and new_artists == []
+                and ids == ["marillion", "lazuli"]
+                and event.get("time") is None,
+                "Le MeM/Marillion : affiche ou horaire hors revue indépendante")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(checked == dt.date(2026, 11, 5)
+                and checked <= today and today - checked <= dt.timedelta(days=14),
+                "Le MeM/Marillion : revue non datée ou périmée")
+        require(isinstance(evidence, list) and len(evidence) == 4
+                and all(isinstance(p, dict) for p in evidence),
+                "Le MeM/Marillion : quatre documents officiels requis")
+        for actual, pinned in zip(evidence, signed["proofs"]):
+            require(all(actual.get(k) == pinned[k] for k in
+                        ("url", "proofType", "checkedAt",
+                         "checkedFields", "confirmedArtists"))
+                    and actual.get("checkedAt") == checked.isoformat()
+                    and not ({"concertStartTime", "startTime", "doorTime"}
+                             & set(actual.get("checkedFields") or [])),
+                    "Le MeM/Marillion : preuve, rôle ou horaire modifié")
+        require(evidence[0]["confirmedArtists"] == ["Marillion"]
+                and evidence[1]["confirmedArtists"] == ["Marillion", "Lazuli"]
+                and evidence[2]["confirmedArtists"] == ["Marillion", "Lazuli"]
+                and evidence[3]["confirmedArtists"] == ["Marillion"]
+                and all(aid in known_artist_ids for aid in ids)
+                and norm(known_artist_ids["marillion"]["name"]) == "marillion"
+                and norm(known_artist_ids["lazuli"]["name"]) == "lazuli",
+                "Le MeM/Marillion : première partie inventée ou artiste inconnu")
     # Cinq affiches recoupées, signatures exactes et non réutilisables.
     if event_id in TOUR_FIVE_SIGNED_20261105:
         spec = TOUR_FIVE_SIGNED_20261105[event_id]
@@ -4039,7 +4105,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if (event_id in TOUR_FIVE_SIGNED_20261105
             or event_id in TOUR_THREE_VERIFIED_20261105
             or event_id == AERONEF_LILLE_MARILLION_SIGNED_20261105["event"]["id"]
-            or event_id in NATIONAL_MARILLION_TWO_SIGNED_20261105):
+            or event_id in NATIONAL_MARILLION_TWO_SIGNED_20261105
+            or event_id == MEM_RENNES_MARILLION_SIGNED_20261105["event"]["id"]):
         pass
     elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]
