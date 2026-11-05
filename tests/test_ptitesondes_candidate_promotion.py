@@ -111,6 +111,21 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertIsNone(category_for("Concert Beethoven", "A l'Opéra"))
         self.assertEqual(category_for("Éveil musical", "Bibliothèque")[0], "eveil-musical")
 
+    def test_official_family_description_can_classify_a_short_work_title(self):
+        self.assertEqual(category_for("Momo, l'enfant pêche",
+                         "Famille | Conte musical à partir de 6 ans")[0],
+                         "conte-musical")
+        self.assertEqual(category_for("Les Drôles de petites bêtes",
+                         "Famille | Ciné-concert dès 4 ans")[0],
+                         "cine-concert")
+        self.assertEqual(category_for("Ici, là-bas",
+                         "Famille | Concert à partir de 18 mois")[0],
+                         "concert")
+        self.assertIsNone(category_for("Momo, l'enfant pêche",
+                          "Une aventure racontée aux visiteurs adultes"))
+        self.assertIsNone(category_for("Concert classique pour adultes",
+                          "Concert classique sans public familial identifié"))
+
     def test_only_exact_local_performance_days(self):
         times = record()["timings"]
         self.assertEqual(confirmed_session(times, DAY), "14:30")
