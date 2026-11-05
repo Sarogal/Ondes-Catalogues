@@ -3820,3 +3820,99 @@ class FffHowlinJawsBretagneAnjouTwoShowsTests(unittest.TestCase):
 
 if __name__=="__main__":
     unittest.main()
+
+class BackstageAutonomousApprovalTests(unittest.TestCase):
+    """Only an exact fresh first-party event header can authorize auto review."""
+
+    @staticmethod
+    def example():
+        url = "https://www.backstage-btm.com/agenda/lost-society-hokka/"
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "automated-official-recheck",
+            "reviewedAt": "2026-11-05",
+            "officialEvidence": [{
+                "url": url, "proofType": "official-organizer-or-venue",
+                "checkedAt": "2026-11-05",
+                "checkedFields": ["artists", "date", "venue", "genre"],
+                "officialArtistNames": ["LOST SOCIETY", "HOKKA"]
+            }],
+            "event": {
+                "id": "go-c-20270219-paris-lost-society",
+                "title": "LOST SOCIETY + HOKKA",
+                "date": "2027-02-19",
+                "time": None,
+                "artistIds": ["lost-society", "hokka"],
+                "venueId": "backstage-by-the-mill-paris",
+                "genres": ["Groove Metal"],
+                "status": "confirmed",
+                "officialUrl": url,
+                "sourceType": "salle"
+            },
+            "newArtists": [
+                {"id": "lost-society", "name": "LOST SOCIETY"},
+                {"id": "hokka", "name": "HOKKA"}
+            ]
+        }
+
+    @staticmethod
+    def reference():
+        published = json.loads((ROOT/"docs/grossesondes/concerts.json")
+                               .read_text(encoding="utf-8"))
+        return ({v["id"]: v for v in published["venues"]},
+                {a["id"]: a for a in published["artists"]})
+
+    def test_fresh_backstage_first_party_review_is_publishable(self):
+        import datetime as dt
+        venues, artists = self.reference()
+        event, created = validate_approval(self.example(), venues, artists,
+                                           dt.date(2026, 11, 5))
+        self.assertEqual(event["venueId"], "backstage-by-the-mill-paris")
+        self.assertIsNone(event["time"])
+        self.assertEqual(set(created), {"lost-society", "hokka"})
+
+    def test_unverified_backstage_fields_are_rejected(self):
+        import datetime as dt
+        base_venues, base_artists = self.reference()
+        for mutant in ("host", "agenda", "query", "venue", "start-time",
+                       "date", "band", "new-band", "alias", "genre", "missing-proof",
+                       "unverified-lineup", "stale", "wrong-reviewer"):
+            row = copy.deepcopy(self.example())
+            venues, artists = base_venues, dict(base_artists)
+            ev, proof = row["event"], row["officialEvidence"][0]
+            if mutant == "host":
+                ev["officialUrl"] = "https://malicious.example/agenda/lost-society-hokka/"
+                proof["url"] = ev["officialUrl"]
+            elif mutant == "agenda":
+                ev["officialUrl"] = "https://www.backstage-btm.com/agenda/"
+                proof["url"] = ev["officialUrl"]
+            elif mutant == "query":
+                ev["officialUrl"] += "?event=other"
+                proof["url"] = ev["officialUrl"]
+            elif mutant == "venue":
+                ev["venueId"] = "le-ferrailleur-nantes"
+            elif mutant == "start-time":
+                ev["time"] = "20:00"
+            elif mutant == "date":
+                ev["date"] = "2027-02-20"
+            elif mutant == "band":
+                ev["artistIds"][1] = "wrong-artist"
+            elif mutant == "new-band":
+                row["newArtists"][1]["name"] = "NOT HOKKA"
+            elif mutant == "alias":
+                artists["prior-known"] = {"id": "prior-known", "name": "OTHER",
+                                           "aliases": ["HOKKA"]}
+            elif mutant == "genre":
+                ev["genres"] = ["Electro"]
+            elif mutant == "missing-proof":
+                proof["checkedFields"] = ["artists", "date"]
+            elif mutant == "unverified-lineup":
+                proof["officialArtistNames"] = ["LOST SOCIETY", "OTHER"]
+            elif mutant == "stale":
+                row["reviewedAt"] = "2026-10-01"
+                proof["checkedAt"] = "2026-10-01"
+            elif mutant == "wrong-reviewer":
+                row["reviewedBy"] = "human"
+            with self.subTest(mutant=mutant):
+                with self.assertRaises((ValueError, KeyError)):
+                    validate_approval(row, venues, artists, dt.date(2026, 11, 5))
