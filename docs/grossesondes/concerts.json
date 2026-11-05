@@ -3132,6 +3132,19 @@
       "longitude": 5.366558,
       "geoPrecision": "point de repère touristique de la salle Le Silo/CEPAC Silo, publié via Cirkwi par l'Office de Tourisme et des Congrès de Marseille (43.310475, 5.366558) ; point indicatif du site, pas l'entrée ni une précision métrique",
       "geoSource": "https://www.cirkwi.com/en/point-interet/4687013-le-silo"
+    },
+    {
+      "id": "le-mem-rennes",
+      "name": "Le MeM",
+      "address": "La Piverdière, accès route de Sainte-Foix",
+      "postalCode": "35000",
+      "city": "Rennes",
+      "department": "35",
+      "region": "Bretagne",
+      "latitude": 48.1032992,
+      "longitude": -1.7184605,
+      "geoPrecision": "point Google Maps nominatif 'Le MeM - Magic Mirror' relié depuis la page officielle du MeM en 2026 (48.1032992,-1.7184605), cohérent avec une photo géolocalisée le 18/10/2026 près du nouveau bâtiment ; repère indicatif du site rénové, pas la porte exacte et sans précision métrique garantie",
+      "geoSource": "https://www.google.com/maps/place/Le+MeM+-+Magic+Mirror/@48.1033028,-1.7210354,17z/data=!3m1!4b1!4m6!3m5!1s0x480ee199e0031c8f:0xe9f3c5422f9585e3!8m2!3d48.1032992!4d-1.7184605!16s%2Fg%2F11h5_1c5zn?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D"
     }
   ],
   "events": [
@@ -13134,6 +13147,36 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Radiant-Bellevue",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261118-rennes-marillion-lazuli",
+      "title": "Marillion + Lazuli",
+      "date": "2026-11-18",
+      "artistIds": [
+        "marillion",
+        "lazuli"
+      ],
+      "venueId": "le-mem-rennes",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lemem.fr/programmation/marillion/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le MeM",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
