@@ -16,7 +16,7 @@ def catalogue():
 class FamilyPlaceCatalogueTests(unittest.TestCase):
     def test_real_mille_formes_record_separate_from_events(self):
         j = catalogue()
-        self.assertEqual(validate(j), 4)
+        self.assertEqual(validate(j), 5)
         loc = j["places"][0]
         self.assertEqual(loc["name"], "mille formes Montpellier")
         self.assertEqual((loc["lat"], loc["lng"]), (43.60826, 3.88612))
@@ -39,7 +39,7 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
                 "https://www.openstreetmap.org/node/395241034"),
         }
         by_id = {place["id"]: place for place in j["places"]}
-        self.assertEqual(set(by_id), set(expected) | {"montpellier-mille-formes"})
+        self.assertEqual(set(by_id), set(expected) | {"montpellier-mille-formes", "pace-totems"})
         for pid, (city, category, geo_url) in expected.items():
             with self.subTest(place=pid):
                 p = by_id[pid]
@@ -51,6 +51,31 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
                 self.assertTrue(40 <= p["lat"] <= 51)
                 self.assertTrue(-5 <= p["lng"] <= 9)
                 self.assertFalse(set(p) & {"date_start", "date_end", "time", "sessions"})
+
+    def test_pace_totems_municipal_ludotheque_and_exact_osm_building(self):
+        j = catalogue()
+        found = [p for p in j["places"] if p["id"] == "pace-totems"]
+        self.assertEqual(len(found), 1)
+        p = found[0]
+        self.assertEqual(p["name"], "Totems")
+        self.assertEqual(p["city"], "Pacé")
+        self.assertEqual(p["category"], "ludotheque")
+        self.assertEqual(p["postal_code"], "35740")
+        self.assertIn("12 chemin de la Métairie", p["address"])
+        self.assertEqual((p["lat"], p["lng"]), (48.1462808, -1.7739782))
+        # La page municipale ne prouve pas une plage 0-18 ans.
+        self.assertIsNone(p["age_min"])
+        self.assertIsNone(p["age_max"])
+        self.assertEqual(p["official_url"],
+            "https://www.ville-pace.bzh/mes-loisirs/culture/mediatheque/")
+        self.assertEqual(p["geo_source_url"],
+            "https://www.openstreetmap.org/way/67402599")
+        self.assertIn("gratuite", p["admission"])
+        self.assertEqual(p["activities"],
+                         ["ludothèque", "éveil musical", "espace enfants"])
+        self.assertIn("modalités", p["reservation_note"])
+        self.assertTrue(p["is_publicly_accessible"])
+        self.assertFalse(set(p) & {"date_start", "date_end", "sessions", "time"})
 
     def test_independent_sources_not_replaceable_by_unrelated_domain(self):
         j = catalogue()

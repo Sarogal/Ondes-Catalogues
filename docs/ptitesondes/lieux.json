@@ -124,6 +124,34 @@
       "geo_source_url": "https://www.openstreetmap.org/node/395241034",
       "reviewed_at": "2026-11-05",
       "is_publicly_accessible": true
+    },
+    {
+      "id": "pace-totems",
+      "name": "Totems",
+      "kind": "lieu-permanent",
+      "category": "ludotheque",
+      "category_label": "Médiathèque et ludothèque",
+      "city": "Pacé",
+      "department": "Ille-et-Vilaine",
+      "region": "Bretagne",
+      "postal_code": "35740",
+      "address": "12 chemin de la Métairie, 35740 Pacé",
+      "lat": 48.1462808,
+      "lng": -1.7739782,
+      "geo_precision": "lieu",
+      "age_min": null,
+      "age_max": null,
+      "admission": "consultation sur place libre et gratuite",
+      "activities": [
+        "ludothèque",
+        "éveil musical",
+        "espace enfants"
+      ],
+      "reservation_note": "Pour les emprunts et animations, vérifier les modalités sur le site officiel.",
+      "official_url": "https://www.ville-pace.bzh/mes-loisirs/culture/mediatheque/",
+      "geo_source_url": "https://www.openstreetmap.org/way/67402599",
+      "reviewed_at": "2026-11-05",
+      "is_publicly_accessible": true
     }
   ]
 }
