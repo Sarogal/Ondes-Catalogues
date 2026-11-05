@@ -2724,16 +2724,16 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
                 "venueId": venue_id,
                 "reviewDecision": "approved",
                 "reviewedBy": "independent-official-verifier",
-                "reviewedAt": "2026-11-03",
+                "reviewedAt": spec.get("checkedAt", "2026-11-03"),
                 "venuePatch": copy.deepcopy(spec["patch"]),
                 "officialEvidence": [
                     {"url": spec["officialUrl"],
                      "proofType": spec["officialProof"],
-                     "checkedAt": "2026-11-03",
+                     "checkedAt": spec.get("checkedAt", "2026-11-03"),
                      "checkedFields": sorted(spec["officialFields"])},
                     {"url": spec["geoUrl"],
                      "proofType": spec["geoProof"],
-                     "checkedAt": "2026-11-03",
+                     "checkedAt": spec.get("checkedAt", "2026-11-03"),
                      "checkedFields": sorted(spec["geoFields"])},
                 ],
             })
@@ -2743,13 +2743,13 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
         from concerts_cloud_sync import (
             NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
         )
-        day = __import__("datetime").date(2026, 11, 3)
+        day = __import__("datetime").date(2026, 11, 5)
         current = copy.deepcopy(BASE)
         current["venues"] = corrected_reference_venues(
             BASE, secret_place=True, le_rex=True)
         signed = self.private_review_fixture()
         corrected, stats = merge(BASE, current, signed, day)
-        self.assertEqual(stats["correctedVenues"], 4)
+        self.assertEqual(stats["correctedVenues"], 7)
         self.assertEqual(stats["newEvents"], 0)
         self.assertEqual(corrected["events"], current["events"])
         self.assertEqual(corrected["artists"], current["artists"])
@@ -2777,7 +2777,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
         from concerts_cloud_sync import (
             NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues
         )
-        day = __import__("datetime").date(2026, 11, 3)
+        day = __import__("datetime").date(2026, 11, 5)
         current = copy.deepcopy(BASE)
         current["venues"] = corrected_reference_venues(
             BASE, secret_place=True, le_rex=True)
@@ -2797,7 +2797,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
 
     def test_any_missing_or_forged_geo_evidence_is_rejected(self):
         from concerts_cloud_sync import corrected_reference_venues
-        day = __import__("datetime").date(2026, 11, 3)
+        day = __import__("datetime").date(2026, 11, 5)
         current = copy.deepcopy(BASE)
         current["venues"] = corrected_reference_venues(
             BASE, secret_place=True, le_rex=True)
@@ -2839,7 +2839,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
     def test_extra_venue_ids_and_duplicate_signed_rows_refused(self):
         from concerts_cloud_sync import (
             NEW_REFERENCE_GEO_SOURCES, corrected_reference_venues)
-        day = __import__("datetime").date(2026, 11, 3)
+        day = __import__("datetime").date(2026, 11, 5)
         current = copy.deepcopy(BASE)
         current["venues"] = corrected_reference_venues(BASE)
         signed = self.private_review_fixture()
@@ -2852,7 +2852,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             duplicate["referenceVenueCorrections"][2]["venueId"])
         with self.assertRaises((ValueError, KeyError)):
             merge(BASE, current, duplicate, day)
-        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 4)
+        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 7)
 
 
 
