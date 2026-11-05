@@ -120,6 +120,22 @@ class CandidatePromotionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             confirmed_session([{"begin":"2027-02-10T14:30"}], DAY)
 
+    def test_curated_school_only_slots_are_never_published_as_family_outings(self):
+        # First-party organizer schedules differentiate schools and family seats.
+        momo = [
+            {"begin": "2027-01-22T14:30:00+01:00"},
+            {"begin": "2027-01-22T19:00:00+01:00"},
+        ]
+        self.assertEqual(confirmed_session(momo, "2027-01-22", "54065371"), "19:00")
+        scolaire = [{"begin": "2027-01-28T14:30:00+01:00"}]
+        with self.assertRaisesRegex(ValueError, "scolaire"):
+            confirmed_session(scolaire, "2027-01-28", "66367832")
+        self.assertEqual(confirmed_session(
+            [{"begin": "2027-01-29T19:00:00+01:00"}],
+            "2027-01-29", "66367832"), "19:00")
+        # A different UID must never inherit the school's exclusion.
+        self.assertEqual(confirmed_session(scolaire, "2027-01-28", "11111"), "14:30")
+
     def test_require_programmed_status(self):
         self.assertTrue(scheduled(record()))
         self.assertFalse(scheduled(dict(record(), status='{"id":3}')))
