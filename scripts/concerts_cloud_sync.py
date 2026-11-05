@@ -4065,7 +4065,18 @@ def validate_approval(approval, venues, known_artist_ids, today):
             isinstance(venues[venue], dict) and
             all(venues[venue].get(k) == v for k,v in FERRAILLEUR_LOCATION_FIX.items())
         )
-        require(bool(rex or molotov or ferrailleur) and event.get("sourceType") == "salle",
+        backstage = (
+            venue == "backstage-by-the-mill-paris" and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "www.backstage-btm.com" and
+            re.fullmatch(r"/agenda/[a-z0-9-]{3,100}/", parsed_url.path) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None
+        )
+        require(bool(rex or molotov or ferrailleur or backstage)
+                and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=7) <= reviewed_at <= today,
@@ -5406,42 +5417,96 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         for a in new_artists),
                 "Rocher de Palmer : identité d'artiste incertaine")
     elif event.get("venueId") == "backstage-by-the-mill-paris":
-        # For this pilot venue, an independent reviewer must explicitly sign
-        # one of the three EXACT official bills and the artist identities.
-        spec = BACKSTAGE_VERIFIED.get(event_id)
-        require(spec is not None and reviewer == "independent-official-verifier"
-                and event.get("sourceType") == "salle"
-                and all(event.get(k) == spec[k] for k in
-                        ("title", "date", "artistIds", "genres"))
-                and official_url == spec["url"] and event.get("time") is None,
-                "Backstage : concert hors liste blanche ou heure non documentée")
         target = urlsplit(official_url)
         require(target.scheme == "https" and
                 target.hostname == "www.backstage-btm.com"
                 and not target.username and not target.password
                 and not target.port and not target.query and not target.fragment
-                and re.fullmatch(r"/agenda/[a-z0-9-]+/", target.path),
+                and re.fullmatch(r"/agenda/[a-z0-9-]{3,100}/", target.path),
                 "Backstage : fiche événement individuelle HTTPS obligatoire")
         reviewed_at = norm_date(approval.get("reviewedAt"))
-        require(today - dt.timedelta(days=14) <= reviewed_at <= today,
-                "Backstage : relecture trop ancienne ou future")
-        require(any(
-            isinstance(p, dict) and p.get("url") == spec["url"]
-            and p.get("proofType") == "official-organizer-or-venue"
-            and p.get("checkedAt") == reviewed_at.isoformat()
-            and {"artists","date","venue","genre"}.issubset(
-                set(p.get("checkedFields") or []))
-            for p in evidence),
-            "Backstage : preuve officielle datée et détaillée manquante")
-        resolved = dict(known_artist_ids)
-        resolved.update(added)
-        require(len(ids) == len(spec["artistIds"])
-                and all(a in resolved for a in ids)
-                and all(norm(resolved[a]["name"]).replace(" ", "-") == a
-                        for a in ids)
-                and all(norm(a["name"]).replace(" ", "-") == a["id"]
+        if reviewer == "automated-official-recheck":
+            # This is a DIFFERENT trust route from the signed historic bills.
+            # It accepts only a fresh first-party H1/date/category/venue
+            # recheck, with all band names recorded explicitly in the proof.
+            require(event_id not in BACKSTAGE_VERIFIED
+                    and event.get("sourceType") == "salle"
+                    and event.get("status") == "confirmed"
+                    and event.get("time") is None
+                    and today - dt.timedelta(days=7) <= reviewed_at <= today,
+                    "Backstage auto : signature réservée, horaire ou preuve périmée")
+            require(len(evidence) == 1 and isinstance(evidence[0], dict),
+                    "Backstage auto : une preuve officielle individuelle exigée")
+            proof = evidence[0]
+            require(proof.get("url") == official_url
+                    and proof.get("proofType") == "official-organizer-or-venue"
+                    and proof.get("checkedAt") == reviewed_at.isoformat()
+                    and proof.get("checkedFields") == ["artists","date","venue","genre"],
+                    "Backstage auto : date, genre, lieu ou origine non attestés")
+            names = proof.get("officialArtistNames")
+            displayed = re.split(r"\s+\+\s+", event.get("title", ""))
+            require(isinstance(names, list) and 1 <= len(names) <= 5
+                    and all(isinstance(n, str) and len(norm(n)) >= 3 for n in names)
+                    and len({norm(n) for n in names}) == len(names)
+                    and len(displayed) == len(names)
+                    and all(norm(x) == norm(y) for x,y in zip(displayed,names)),
+                    "Backstage auto : plateau non nominatif ou mal décomposé")
+            require(event_id == ("go-c-" + event["date"].replace("-", "")
+                                + "-paris-" + norm(names[0]).replace(" ","-")[:72]),
+                    "Backstage auto : identité/date du concert non déterministe")
+            safe_genres = {"Groove Metal","Black Metal","Death Metal",
+                "Melodic Death Metal","Metalcore","Industrial Metal",
+                "Progressive Metal","Heavy Metal","Thrash Metal","Hardcore",
+                "Post Hardcore","Post Metal","Doom Metal","Stoner Rock",
+                "Punk Rock","Punk","Metal","Hard Rock"}
+            require(isinstance(event.get("genres"), list)
+                    and len(event["genres"]) == 1
+                    and event["genres"][0] in safe_genres,
+                    "Backstage auto : genre non qualifié par le détail officiel")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(len(ids) == len(names)
+                    and all(aid in resolved and norm(resolved[aid]["name"]) == norm(name)
+                            for aid,name in zip(ids,names))
+                    and all(a["id"] == norm(a["name"]).replace(" ","-")[:72]
+                            for a in new_artists),
+                    "Backstage auto : identité d'artiste ou alias non corroboré")
+            aliases = {norm(alias)
+                       for obj in known_artist_ids.values()
+                       for alias in (obj.get("aliases") or [])
+                       if isinstance(alias,str)}
+            require(all(norm(a["name"]) not in aliases
+                        and a["id"] not in known_artist_ids
                         for a in new_artists),
-                "Backstage : artiste absent, identité ou slug incohérents")
+                    "Backstage auto : nouvel artiste déjà référencé comme alias")
+        else:
+            # Legacy nominated human reviews remain untouched.
+            spec = BACKSTAGE_VERIFIED.get(event_id)
+            require(spec is not None and reviewer == "independent-official-verifier"
+                    and event.get("sourceType") == "salle"
+                    and all(event.get(k) == spec[k] for k in
+                            ("title", "date", "artistIds", "genres"))
+                    and official_url == spec["url"] and event.get("time") is None,
+                    "Backstage : concert hors liste blanche ou heure non documentée")
+            require(today - dt.timedelta(days=14) <= reviewed_at <= today,
+                    "Backstage : relecture trop ancienne ou future")
+            require(any(
+                isinstance(p, dict) and p.get("url") == spec["url"]
+                and p.get("proofType") == "official-organizer-or-venue"
+                and p.get("checkedAt") == reviewed_at.isoformat()
+                and {"artists","date","venue","genre"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence),
+                "Backstage : preuve officielle datée et détaillée manquante")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(len(ids) == len(spec["artistIds"])
+                    and all(a in resolved for a in ids)
+                    and all(norm(resolved[a]["name"]).replace(" ", "-") == a
+                            for a in ids)
+                    and all(norm(a["name"]).replace(" ", "-") == a["id"]
+                            for a in new_artists),
+                    "Backstage : artiste absent, identité ou slug incohérents")
     elif event.get("venueId") == "jokers-pub-angers":
         require(reviewer == "independent-official-verifier"
                 and reviewer == "independent-official-verifier"
