@@ -16,7 +16,7 @@ def catalogue():
 class FamilyPlaceCatalogueTests(unittest.TestCase):
     def test_real_mille_formes_record_separate_from_events(self):
         j = catalogue()
-        self.assertEqual(validate(j), 1)
+        self.assertEqual(validate(j), 4)
         loc = j["places"][0]
         self.assertEqual(loc["name"], "mille formes Montpellier")
         self.assertEqual((loc["lat"], loc["lng"]), (43.60826, 3.88612))
@@ -24,6 +24,42 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
         self.assertEqual(loc["official_url"].split("/")[2], "www.montpellier.fr")
         self.assertEqual(loc["geo_source_url"], "https://mapcarta.com/fr/N13508792408")
         self.assertFalse(any(k in loc for k in ("date_start", "date_end", "time", "timings")))
+
+    def test_three_independently_located_new_venues_without_sessions(self):
+        j = catalogue()
+        expected = {
+            "toulouse-museum-mediatheque-pourquoi-pas": (
+                "Toulouse", "mediatheque-jeunesse",
+                "https://www.openstreetmap.org/way/134123637"),
+            "marseille-mediatheque-salim-hatubou": (
+                "Marseille", "mediatheque-jeunesse",
+                "https://www.openstreetmap.org/way/846159047"),
+            "marseille-bibliotheque-alcazar": (
+                "Marseille", "mediatheque-jeunesse",
+                "https://www.openstreetmap.org/node/395241034"),
+        }
+        by_id = {place["id"]: place for place in j["places"]}
+        self.assertEqual(set(by_id), set(expected) | {"montpellier-mille-formes"})
+        for pid, (city, category, geo_url) in expected.items():
+            with self.subTest(place=pid):
+                p = by_id[pid]
+                self.assertEqual(p["city"], city)
+                self.assertEqual(p["category"], category)
+                self.assertEqual(p["geo_source_url"], geo_url)
+                self.assertTrue(p["official_url"].startswith("https://"))
+                self.assertTrue(p["is_publicly_accessible"])
+                self.assertTrue(40 <= p["lat"] <= 51)
+                self.assertTrue(-5 <= p["lng"] <= 9)
+                self.assertFalse(set(p) & {"date_start", "date_end", "time", "sessions"})
+
+    def test_independent_sources_not_replaceable_by_unrelated_domain(self):
+        j = catalogue()
+        for place in j["places"][1:]:
+            altered = deepcopy(j)
+            item = next(p for p in altered["places"] if p["id"] == place["id"])
+            item["geo_source_url"] = "https://unverified.invalid/coordinates"
+            with self.subTest(place=place["id"]), self.assertRaises(ValueError):
+                validate(altered)
 
     def test_refuse_to_invent_representations_from_opening_hours(self):
         j = catalogue()
