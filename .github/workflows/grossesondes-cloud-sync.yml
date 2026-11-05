@@ -1,12 +1,23 @@
 name: Grosses Ondes — synchronisation cloud securisee
 
 on:
+  pull_request:
+    paths:
+      - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_stage.py'
+      - 'scripts/grossesondes_noel_2026.py'
+      - 'tests/test_grosses_noel_2026.py'
+      - 'tests/fixtures/noel-2026-reference.json'
+      - '.github/workflows/grossesondes-cloud-sync.yml'
   push:
     branches: [main]
     paths:
       - '.github/workflows/grossesondes-cloud-sync.yml'
       - 'scripts/grossesondes_cloud_sync.py'
       - 'scripts/grossesondes_stage.py'
+      - 'scripts/grossesondes_noel_2026.py'
+      - 'tests/test_grosses_noel_2026.py'
+      - 'tests/fixtures/noel-2026-reference.json'
       - 'scripts/grossesondes_preview.py'
       - 'scripts/grossesondes_calendar_approval.py'
       - 'scripts/grossesondes_structured_tickets.py'
@@ -41,8 +52,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tests_pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier tous les contrats sans accès aux secrets ni publication
+        run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
+
   prepare:
-    if: ${{ github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' }}
+    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     outputs:

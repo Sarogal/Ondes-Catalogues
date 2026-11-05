@@ -27,6 +27,10 @@ from grossesondes_field_proof import (
 )
 
 from grossesondes_history_guard import validate_history_extension
+from grossesondes_noel_2026 import (
+    PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
+    SLUG as NOEL_SLUG,
+)
 from grossesondes_calendar_approval import approved_calendar, merge_staged_with_approved
 
 MANIFEST=ROOT/"reference-manifest.json"
@@ -280,6 +284,18 @@ def main():
             else:
                 sources[key]=""
                 print(key+": source inaccessible : changement exclu ("+type(exc).__name__+")")
+    # Fixed, independently hosted proofs for the explicitly typed Noël
+    # dossier. This never fetches URLs supplied by the private patch.
+    if any(isinstance(up,dict) and up.get("slug")==NOEL_SLUG
+           and up.get("proofMode")==NOEL_PROOF_MODE
+           for up in patch.get("updates",[])):
+        for key,url in NOEL_PROOF_SOURCES.items():
+            try:
+                sources[key]=official_text(url)
+            except Exception as exc:
+                sources[key]=""
+                print(key+": preuve indépendante inaccessible ("+
+                      type(exc).__name__+"), mise à jour différée.")
     # Only re-fetch registered officialSite URLs from the immutable production.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
     sources.update(collect_registered_update_sources(patch,original))

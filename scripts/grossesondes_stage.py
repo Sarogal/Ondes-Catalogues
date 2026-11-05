@@ -27,6 +27,10 @@ from grossesondes_structured_edition import (
     conflicts_with_existing,
 )
 from grossesondes_history_guard import validate_history_extension
+from grossesondes_noel_2026 import (
+    PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
+    noel_2026_update,
+)
 # The frozen 2026-10-30 certificate remains tested separately; the live
 # preview is reconciled against the integrity-pinned published head.
 from grossesondes_field_proof import (
@@ -44,6 +48,7 @@ ALLOWED={
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
     FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL,
     IN_YOUR_FACE_TICKET_URL,
+    *NOEL_PROOF_SOURCES.values(),
 }
 
 class TextOnly(HTMLParser):
@@ -195,6 +200,8 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         elif proof_mode == TICKET_PROOF_MODE:
             partial=validate_structured_tickets(
                 current,up,sources.get("registered-ticket:"+slug,""),today)
+        elif proof_mode == NOEL_PROOF_MODE:
+            partial=noel_2026_update(current,up,sources,today)
         elif proof_mode is not None:
             report["held"].append({"slug":slug,"reason":"mode de preuve non pris en charge"})
             continue
@@ -211,16 +218,19 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             revised,fields,uncorroborated=partial
             rows[rows.index(current)]=revised
             report["accepted_updates"].append({"slug":slug,"fields":fields})
-            report["source_proofs"].extend(
-                [current["officialSite"]] if proof_mode in (PROOF_MODE, TICKET_PROOF_MODE)
-                else ([CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
-                      if slug=="cernunnos-pagan-fest"
-                      else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
-                            if slug=="fantasmagorik-fest-2026"
-                            else ([IN_YOUR_FACE_TICKET_URL]
-                                  if slug=="in-your-face-6-2026"
-                                  else [current["officialSite"]])))
-            )
+            if proof_mode == NOEL_PROOF_MODE:
+                report["source_proofs"].extend(NOEL_PROOF_SOURCES.values())
+            else:
+                report["source_proofs"].extend(
+                    [current["officialSite"]] if proof_mode in (PROOF_MODE, TICKET_PROOF_MODE)
+                    else ([CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL]
+                          if slug=="cernunnos-pagan-fest"
+                          else ([FANTASMAGORIK_TICKET_URL,FANTASMAGORIK_DATE_URL]
+                                if slug=="fantasmagorik-fest-2026"
+                                else ([IN_YOUR_FACE_TICKET_URL]
+                                      if slug=="in-your-face-6-2026"
+                                      else [current["officialSite"]])))
+                )
             if uncorroborated:
                 report["held"].append({
                     "slug":slug,"reason":"Noms non présents sur le site officiel",
