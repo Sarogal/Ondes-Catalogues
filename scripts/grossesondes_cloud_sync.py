@@ -12,6 +12,8 @@ import json
 import os
 from pathlib import Path
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from time import sleep
 from zoneinfo import ZoneInfo
 
 from grossesondes_preview import (
@@ -245,6 +247,40 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text):
     return sources
 
 
+def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep):
+    """Fetch only pinned organizer/municipal URLs; retry transient server errors.
+
+    Retry never changes a proof result. HTTP 403 and non-HTTP failures remain
+    unknown. All data stays untrusted until noel_2026_update revalidates it.
+    """
+    needs_proof = any(
+        isinstance(up, dict) and up.get("slug") == NOEL_SLUG
+        and up.get("proofMode") == NOEL_PROOF_MODE
+        for up in patch.get("updates", [])
+    )
+    if not needs_proof:
+        return {}
+    result = {}
+    for key, url in NOEL_PROOF_SOURCES.items():
+        body = ""
+        for attempt in range(2):
+            try:
+                body = fetcher(url)
+                break
+            except HTTPError as exc:
+                if exc.code in {429, 500, 502, 503, 504} and attempt == 0:
+                    sleeper(1)
+                    continue
+                print(key + ": source inaccessible, code HTTP " +
+                      str(exc.code) + " ; preuve différée.")
+            except Exception as exc:
+                print(key + ": preuve inaccessible (" +
+                      type(exc).__name__ + "), modification différée.")
+            break
+        result[key] = body
+    return result
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--mode",choices=("preview","publish"),required=True)
@@ -284,18 +320,8 @@ def main():
             else:
                 sources[key]=""
                 print(key+": source inaccessible : changement exclu ("+type(exc).__name__+")")
-    # Fixed, independently hosted proofs for the explicitly typed Noël
-    # dossier. This never fetches URLs supplied by the private patch.
-    if any(isinstance(up,dict) and up.get("slug")==NOEL_SLUG
-           and up.get("proofMode")==NOEL_PROOF_MODE
-           for up in patch.get("updates",[])):
-        for key,url in NOEL_PROOF_SOURCES.items():
-            try:
-                sources[key]=official_text(url)
-            except Exception as exc:
-                sources[key]=""
-                print(key+": preuve indépendante inaccessible ("+
-                      type(exc).__name__+"), mise à jour différée.")
+    # Fixed proofs never use any URL supplied by the private patch.
+    sources.update(collect_noel_independent_sources(patch))
     # Only re-fetch registered officialSite URLs from the immutable production.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
     sources.update(collect_registered_update_sources(patch,original))
