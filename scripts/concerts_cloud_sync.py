@@ -422,6 +422,10 @@ PILOT_VENUES = {
 
 }
 
+# Stereolux Nantes / 6MIC Aix : dossiers signés 05/11/2026.
+# Whitelist STRICTEMENT nominative ; toute autre salle reste refusée.
+PILOT_VENUES.update(json.loads(r'''{"stereolux-nantes":{"venue":{"id":"stereolux-nantes","name":"Stereolux","address":"4 boulevard Léon-Bureau","postalCode":"44200","city":"Nantes","department":"44","region":"Pays de la Loire","latitude":47.205119,"longitude":-1.563498,"geoPrecision":"point GPS nominatif Stereolux publié par Nantes Université (47.205119, -1.563498), cohérent avec le point OpenStreetMap node 2434544471 voisin ; repère indicatif de l'établissement, pas l'entrée exacte de la salle Maxi","geoSource":"https://www.univ-nantes.fr/plans-des-campus/stereolux"},"officialUrl":"https://stereolux.org/infos-pratiques/accessibilite","locationUrl":"https://www.univ-nantes.fr/plans-des-campus/stereolux","locationProofType":"independent-institutional-venue-gps"},"6mic-aix-en-provence":{"venue":{"id":"6mic-aix-en-provence","name":"6MIC","address":"160 rue Pascal Duverger","postalCode":"13090","city":"Aix-en-Provence","department":"13","region":"Provence-Alpes-Côte d’Azur","latitude":43.5193,"longitude":5.42182,"geoPrecision":"centre indicatif du bâtiment 6MIC identifié sur OpenStreetMap way 701032991 via Mapcarta (coordonnées arrondies à cinq décimales), pas son entrée exacte","geoSource":"https://mapcarta.com/fr/W701032991"},"officialUrl":"https://www.6mic-aix.fr/comment-venir-au-6mic/","locationUrl":"https://mapcarta.com/fr/W701032991","locationProofType":"openstreetmap-venue-way"}}'''))
+
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
 # The venue's generic Billetweb calendar and unrelated organizer tickets remain blocked.
 BRIN_ORGANIZER_VERIFIED = {
