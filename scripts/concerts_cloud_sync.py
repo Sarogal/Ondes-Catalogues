@@ -1171,7 +1171,7 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False,
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 6,
+    require(isinstance(corrections, list) and len(corrections) <= 9,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
@@ -1223,7 +1223,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 6,
+    require(isinstance(corrections, list) and len(corrections) <= 9,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
