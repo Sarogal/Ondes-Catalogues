@@ -3230,6 +3230,32 @@
       "longitude": -3.83484,
       "geoPrecision": "Point indicatif de la salle SEW – La Manu publié par MusiTree (48.58309, -3.83484), cohérent avec le repère nommé ToFromFrance 48.58313, -3.83481 ; pas l'entrée exacte du SEW",
       "geoSource": "https://musitree.fr/concerts/salles/sew-la-manu-morlaix/"
+    },
+    {
+      "id": "la-manufacture-saint-quentin",
+      "name": "La Manufacture",
+      "address": "8 rue Paul Codos",
+      "postalCode": "02100",
+      "city": "Saint-Quentin",
+      "department": "02",
+      "region": "Hauts-de-France",
+      "latitude": 49.85444,
+      "longitude": 3.27029,
+      "geoPrecision": "Point nominatif indicatif de la Manufacture sur ToFromFrance (49.85444, 3.27029), cohérent avec une fiche événement 49.8544659, 3.2701279 ; entrée exacte non garantie",
+      "geoSource": "https://tofromfrance.com/lieu/le-concert-des-deux-pianos-a-la-manufacture"
+    },
+    {
+      "id": "l-orange-bleue-vitry-le-francois",
+      "name": "L'Orange Bleue",
+      "address": "4 rue Auguste Choisy",
+      "postalCode": "51300",
+      "city": "Vitry-le-François",
+      "department": "51",
+      "region": "Grand Est",
+      "latitude": 48.72668,
+      "longitude": 4.57955,
+      "geoPrecision": "Point indicatif de la salle L'Orange Bleue publié par MusiTree (48.72668, 4.57955), à proximité du GPS de la fiche technique L'Orange Bleue (48.7264026, 4.5791939) ; entrée exacte non garantie",
+      "geoSource": "https://musitree.fr/concerts/salles/bords-2-scenes-lorange-bleue-vitry-le-francois/"
     }
   ],
   "events": [
@@ -13632,6 +13658,70 @@
       "time": "20:00",
       "timeMeaning": "début du concert",
       "organizer": "WART / Le SEW",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270204-saint-quentin-cachemire-la-phaze-bobs-not-dead",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-02-04",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "la-manufacture-saint-quentin",
+      "genres": [
+        "Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://billetterie-saint-quentin.mapado.com/en/event/756872-la-tournee-du-coeur",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rage Tour / Ville de Saint-Quentin",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270205-vitry-le-francois-cachemire-la-phaze-bobs-not-dead",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-02-05",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "l-orange-bleue-vitry-le-francois",
+      "genres": [
+        "Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bords2scenes.fr/agenda/la-tournee-du-coeur-3",
+      "sourceType": "salle",
+      "time": "21:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Bords 2 Scènes",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
