@@ -62,14 +62,18 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
         self.assertEqual(p["category"], "ludotheque")
         self.assertEqual(p["postal_code"], "35740")
         self.assertIn("12 chemin de la Métairie", p["address"])
-        self.assertEqual((p["lat"], p["lng"]), (48.1463486, -1.7738531))
+        self.assertEqual((p["lat"], p["lng"]), (48.1462808, -1.7739782))
+        # La page municipale ne prouve pas une plage 0-18 ans.
+        self.assertIsNone(p["age_min"])
+        self.assertIsNone(p["age_max"])
         self.assertEqual(p["official_url"],
             "https://www.ville-pace.bzh/mes-loisirs/culture/mediatheque/")
         self.assertEqual(p["geo_source_url"],
             "https://www.openstreetmap.org/way/67402599")
-        self.assertIn("abonnement", p["admission"])
         self.assertIn("gratuite", p["admission"])
-        self.assertIn("éveil musical", p["activities"])
+        self.assertEqual(p["activities"],
+                         ["ludothèque", "éveil musical", "espace enfants"])
+        self.assertIn("modalités", p["reservation_note"])
         self.assertTrue(p["is_publicly_accessible"])
         self.assertFalse(set(p) & {"date_start", "date_end", "sessions", "time"})
 
