@@ -7,6 +7,7 @@ on:
       - 'scripts/**'
       - 'tests/**'
       - 'docs/ptitesondes/lieux.json'
+      - 'docs/ptitesondes/carte-lieux.html'
       - '.github/workflows/ptitesondes-cloud-sync.yml'
   schedule:
     # Synchronisation après collecte, prévalidation privée et audit indépendant.
@@ -66,7 +67,7 @@ jobs:
               git show HEAD^:docs/ptitesondes/lieux.json > /tmp/ptitesondes-lieux-previous.json
               python scripts/ptitesondes_places.py docs/ptitesondes/lieux.json --previous /tmp/ptitesondes-lieux-previous.json
             fi
-            if git diff --quiet HEAD^ HEAD -- docs/ptitesondes/lieux.json; then
+            if git diff --quiet HEAD^ HEAD -- docs/ptitesondes/lieux.json docs/ptitesondes/carte-lieux.html; then
               echo "changed=false" >> "$GITHUB_OUTPUT"
             else
               echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -95,7 +96,7 @@ jobs:
             echo "Prévisualisation seulement ou aucune fiche indépendante vérifiée."
           fi
       - name: Archiver le nouveau catalogue dans Git
-        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        if: ${{ steps.decision.outputs.deploy == 'true' && steps.sync.outputs.changed == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
