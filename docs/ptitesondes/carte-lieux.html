@@ -115,7 +115,10 @@
       popup.className = 'popup-body';
       text(popup, 'div', p.name, 'popup-title');
       text(popup, 'div', p.address);
-      text(popup, 'div', 'De ' + p.age_min + ' à ' + p.age_max + ' ans · ' + p.admission);
+      const ageLabel = p.age_min == null || p.age_max == null
+        ? 'Âges non précisés · ' + p.admission
+        : 'De ' + p.age_min + ' à ' + p.age_max + ' ans · ' + p.admission;
+      text(popup, 'div', ageLabel);
       text(popup, 'div', (p.activities || []).join(' · '));
       text(popup, 'div', p.reservation_note);
       safeLink(popup, p.official_url);
