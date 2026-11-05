@@ -13534,6 +13534,38 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270227-grenoble-cachemire-la-phaze-bobs-not-dead",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-02-27",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "la-belle-electrique-grenoble",
+      "genres": [
+        "Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.la-belle-electrique.com/fr/agenda/tournee-du-coeur",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rage Tour",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
