@@ -57,6 +57,7 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
         found = [p for p in j["places"] if p["id"] == "pace-totems"]
         self.assertEqual(len(found), 1)
         p = found[0]
+        self.assertEqual(p["name"], "Totems")
         self.assertEqual(p["city"], "Pacé")
         self.assertEqual(p["category"], "ludotheque")
         self.assertEqual(p["postal_code"], "35740")
