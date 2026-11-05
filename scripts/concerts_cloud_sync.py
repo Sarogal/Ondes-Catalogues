@@ -3568,6 +3568,38 @@ MEM_RENNES_MARILLION_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20261
 FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261210-rennes-fff-howlin-jaws":{"event":{"id":"go-c-20261210-rennes-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-10","time":null,"artistIds":["fff","howlin-jaws"],"venueId":"le-mem-rennes","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.lemem.fr/programmation/fff/","sourceType":"salle"},"proofs":[{"url":"https://www.lemem.fr/programmation/fff/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Fiche officielle du Magic Mirrors : FFF + Howlin' Jaws, jeudi 10 décembre 2026, rock, première partie citée explicitement ; 20h avec portes à 19h non déclaré début musical."},{"url":"https://diogene.fr/artistes/fff/","proofType":"independent-official-promoter","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Diogène Productions : jeudi 10 décembre 2026 Rennes Le MeM, première partie Howlin' Jaws nommée."},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Tour officiel Howlin' Jaws/Radical Production : 10 déc. 2026 Rennes, MeM, en première partie de FFF."}]},"go-c-20261211-angers-fff-howlin-jaws":{"event":{"id":"go-c-20261211-angers-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-11","time":"20:30","artistIds":["fff","howlin-jaws"],"venueId":"le-chabada-angers","genres":["Funk Rock"],"status":"confirmed","officialUrl":"https://lechabada.com/evenement/fff/","sourceType":"salle"},"proofs":[{"url":"https://lechabada.com/evenement/fff/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre","concertStartTime"],"confirmedArtists":["FFF","Howlin' Jaws"],"concertStartTimeConfirmed":"20:30","notes":"Fiche salle Chabada vendredi 11 décembre 2026 : F.F.F. + Howlin' Jaws, rock/funk, ouverture des portes 19h45 et *Début des concerts : 20h30* explicitement."},{"url":"https://billetterie.lechabada.com/agenda/947-F-F-F?session=947","proofType":"official-venue-ticketing","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","concertStartTime"],"confirmedArtists":["FFF","Howlin' Jaws"],"concertStartTimeConfirmed":"20:30","notes":"Billetterie nominative du Chabada : F.F.F. + Howlin' Jaws, ouverture 19h45, début concerts 20h30. Horaire attesté explicitement."},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"],"notes":"Tourneur Howlin' Jaws annonce vendredi 11 décembre 2026 Angers, Chabada, en première partie de FFF."}]}}''')
 
 
+# Autorisation strictement nominative du 27/02/2027, pas une ouverture
+# générale de La Belle Électrique ni de la Tournée du Cœur.
+TOURNEE_DU_COEUR_GRENOBLE_SIGNED_20261105 = {
+    "event": {
+        "id": "go-c-20270227-grenoble-cachemire-la-phaze-bobs-not-dead",
+        "title": "Cachemire + La Phaze + Bob's Not Dead",
+        "date": "2027-02-27",
+        "time": None,
+        "artistIds": ["cachemire", "la-phaze", "bobs-not-dead"],
+        "venueId": "la-belle-electrique-grenoble",
+        "genres": ["Rock", "Punk"],
+        "status": "confirmed",
+        "officialUrl": "https://www.la-belle-electrique.com/fr/agenda/tournee-du-coeur",
+        "sourceType": "salle",
+        "organizer": "Rage Tour",
+    },
+    "proofs": [
+        {
+            "url": "https://www.la-belle-electrique.com/fr/agenda/tournee-du-coeur",
+            "proofType": "official-organizer-or-venue",
+            "checkedFields": ["artists", "date", "venue", "genre",
+                              "address", "eventTime"],
+            "confirmedArtists": ["Cachemire", "La Phaze", "Bob's Not Dead"],
+        },
+        {
+            "url": "https://tourneeducoeur.ragetour.com/",
+            "proofType": "official-promoter-tour-calendar",
+            "checkedFields": ["date", "city", "venue"],
+        },
+    ],
+}
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3582,6 +3614,36 @@ def validate_approval(approval, venues, known_artist_ids, today):
     event_id = event.get("id", "")
     require(isinstance(event_id, str) and re.fullmatch(r"go-c-[a-z0-9-]{7,150}", event_id),
             "Identifiant d'événement invalide")
+    # Une seule affiche officielle Cachemire/La Phaze/Bob's Not Dead
+    # acceptée, et uniquement après revue récente avec deux sources.
+    coeur = TOURNEE_DU_COEUR_GRENOBLE_SIGNED_20261105
+    if (event_id == coeur["event"]["id"]
+            or event.get("officialUrl") == coeur["event"]["officialUrl"]):
+        require(event == coeur["event"]
+                and approval.get("newArtists", []) == []
+                and reviewer == "independent-official-verifier",
+                "Tournée du Cœur Grenoble : identité ou validateur altéré")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Tournée du Cœur Grenoble : revue trop ancienne ou future")
+        require(len(evidence) == 2 and all(isinstance(p, dict) for p in evidence),
+                "Tournée du Cœur Grenoble : deux sources requises")
+        for proof, expected in zip(evidence, coeur["proofs"]):
+            require(proof.get("url") == expected["url"]
+                    and proof.get("proofType") == expected["proofType"]
+                    and proof.get("checkedAt") == reviewed.isoformat()
+                    and proof.get("checkedFields") == expected["checkedFields"],
+                    "Tournée du Cœur Grenoble : provenance ou champs altérés")
+            if "confirmedArtists" in expected:
+                require(proof.get("confirmedArtists") ==
+                        expected["confirmedArtists"],
+                        "Tournée du Cœur Grenoble : affiche officielle altérée")
+            require(not ({"concertStartTime", "startTime"}
+                         & set(proof.get("checkedFields") or [])),
+                    "Tournée du Cœur Grenoble : heure musicale non attestée")
+        require(event.get("time") is None,
+                "Tournée du Cœur Grenoble : heure inférée interdite")
+
     require(event.get("venueId") in venues,
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
     # Aucun candidat de tournée brut ne peut hériter d'une validation de salle.
