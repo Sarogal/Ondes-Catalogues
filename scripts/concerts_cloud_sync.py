@@ -3497,6 +3497,9 @@ LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104 = {
 
 TOUR_FIVE_SIGNED_20261105 = json.loads(r'''{"go-c-20261118-grenoble-inspector-cluzo":{"event":{"id":"go-c-20261118-grenoble-inspector-cluzo","title":"The Inspector Cluzo","date":"2026-11-18","time":null,"artistIds":["the-inspector-cluzo"],"venueId":"la-belle-electrique-grenoble","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.la-belle-electrique.com/fr/agenda/the-inspector-cluzo?from=2026-12","sourceType":"salle"},"proofs":[{"url":"https://www.la-belle-electrique.com/fr/agenda/the-inspector-cluzo?from=2026-12","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","address"]},{"url":"https://billetterie.la-belle-electrique.com/agenda/741-The-Inspector-Cluzo?session=741","proofType":"official-venue-ticketing-detail","checkedFields":["artists","date","venue"]}]},"go-c-20261205-paris-skip-the-use":{"event":{"id":"go-c-20261205-paris-skip-the-use","title":"Skip The Use","date":"2026-12-05","time":null,"artistIds":["skip-the-use"],"venueId":"zenith-paris-la-villette-paris","genres":["Rock"],"status":"confirmed","officialUrl":"https://le-zenith.com/shows/Skip%20The%20Use-20507","sourceType":"salle"},"proofs":[{"url":"https://le-zenith.com/shows/Skip%20The%20Use-20507","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime"]},{"url":"https://www.livenation.fr/event/skip-the-use-love-and-anxiety-paris-tickets-edp1632116","proofType":"official-promoter-tour-detail","checkedFields":["artists","date","venue"]}]},"go-c-20270122-paris-7weeks":{"event":{"id":"go-c-20270122-paris-7weeks","title":"7Weeks","date":"2027-01-22","time":null,"artistIds":["7weeks"],"venueId":"la-maroquinerie-paris","genres":["Heavy Rock"],"status":"confirmed","officialUrl":"https://7weeks.fr/concerts/","sourceType":"organisateur"},"proofs":[{"url":"https://7weeks.fr/concerts/","proofType":"official-artist-tour-calendar","checkedFields":["artists","date","venue"]},{"url":"https://www.eventim.fr/event/7-weeks-la-maroquinerie-paris-20-21549826/","proofType":"authorized-ticket-distributor-full-date","checkedFields":["artists","date","venue"]}]},"go-c-20270204-villeurbanne-revnoir-ice-sealed-eyes":{"event":{"id":"go-c-20270204-villeurbanne-revnoir-ice-sealed-eyes","title":"Revnoir + Ice Sealed Eyes","date":"2027-02-04","time":"20:00","timeMeaning":"début du concert","artistIds":["revnoir","ice-sealed-eyes"],"venueId":"le-transbordeur-villeurbanne","genres":["Metalcore"],"status":"confirmed","officialUrl":"https://www.transbordeur.fr/evenement/revnoir-ice-sealed-eyes-04022027/","sourceType":"salle"},"proofs":[{"url":"https://www.transbordeur.fr/evenement/revnoir-ice-sealed-eyes-04022027/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"]},{"url":"https://slhproductions.fr/agenda/revnoir2027/","proofType":"official-promoter-event-detail","checkedFields":["artists","date","venue"]}]},"go-c-20270318-ramonville-skip-the-use":{"event":{"id":"go-c-20270318-ramonville-skip-the-use","title":"Skip The Use","date":"2027-03-18","time":null,"artistIds":["skip-the-use"],"venueId":"le-bikini-toulouse","genres":["Rock"],"status":"confirmed","officialUrl":"https://lebikini.com/2027/03/18/skip-the-use","sourceType":"salle"},"proofs":[{"url":"https://lebikini.com/2027/03/18/skip-the-use","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","address"]},{"url":"https://www.livenation.fr/event/skip-the-use-love-and-anxiety-ramonville-st-agne-tickets-edp1665831","proofType":"official-promoter-tour-detail","checkedFields":["artists","date","venue"]}]}}''')
 
+TOUR_THREE_VERIFIED_20261105 = json.loads(r'''{"go-c-20261122-strasbourg-marillion-lazuli":{"event":{"id":"go-c-20261122-strasbourg-marillion-lazuli","title":"Marillion + Lazuli","date":"2026-11-22","time":null,"artistIds":["marillion","lazuli"],"venueId":"la-laiterie-strasbourg","genres":["Rock progressif"],"status":"confirmed","officialUrl":"https://www.artefact.org/la-laiterie/evenements/marillion/","sourceType":"salle"},"newArtists":[],"proofs":[{"url":"https://www.artefact.org/la-laiterie/evenements/marillion/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche officielle: dimanche 22/11/2026 Marillion + Lazuli, rock progressif. 18h30 = ouverture des portes."},{"url":"https://www.artefact.org/la-laiterie/programmation/","proofType":"first-party-venue-calendar","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Programmation officielle recoupant date, affiche, salle et genre. Billetterie indiquée complet."}]},"go-c-20261212-toulouse-psykup-manimal":{"event":{"id":"go-c-20261212-toulouse-psykup-manimal","title":"Psykup + Manimal","date":"2026-12-12","time":null,"artistIds":["psykup","manimal"],"venueId":"le-metronum","genres":["Metal"],"status":"confirmed","officialUrl":"https://lemetronum.fr/evenement/psykup/","sourceType":"salle"},"newArtists":[{"id":"manimal","name":"Manimal"}],"proofs":[{"url":"https://lemetronum.fr/evenement/psykup/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche du Metronum: samedi 12/12/2026, Psykup + Manimal, catégorie metal; 20h n'est pas explicitement une heure de début musical."}]},"go-c-20270223-paris-movements-shoreline":{"event":{"id":"go-c-20270223-paris-movements-shoreline","title":"Movements + Shoreline","date":"2027-02-23","time":null,"artistIds":["movements","shoreline"],"venueId":"le-trabendo-paris","genres":["Post-Hardcore"],"status":"confirmed","officialUrl":"https://www.letrabendo.net/programmation/movements/","sourceType":"salle"},"newArtists":[{"id":"movements","name":"Movements"},{"id":"shoreline","name":"Shoreline"}],"proofs":[{"url":"https://www.letrabendo.net/programmation/movements/","proofType":"official-organizer-or-venue","checkedAt":"2026-11-05","checkedFields":["artists","date","venue","genre"],"notes":"Fiche individuelle du Trabendo: 23/02/2027 Movements + Shoreline, post-hardcore. Les portes ouvrent à 19h; aucun début musical déduit."}]}}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3556,6 +3559,17 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and event.get("venueId") == "la-vapeur-dijon"
                 and official_url == LA_VAPEUR_SKIP_SIGNED_20261104["officialUrl"],
                 "La Vapeur / Skip : identifiant, URL ou salle réaffectés")
+    # Trois fiches nominatives nouvelles. Les URL sont attachées à leurs ID.
+    reserved_three = {r["event"]["officialUrl"]: k
+                      for k, r in TOUR_THREE_VERIFIED_20261105.items()}
+    if official_url in reserved_three:
+        require(event_id == reserved_three[official_url],
+                "Lot 05/11 : URL nominative déjà réservée")
+    if event_id in TOUR_THREE_VERIFIED_20261105:
+        pinned = TOUR_THREE_VERIFIED_20261105[event_id]["event"]
+        require(event.get("venueId") == pinned["venueId"]
+                and official_url == pinned["officialUrl"],
+                "Lot 05/11 : ID, salle ou URL non concordants")
     # Une URL de tournée nominative ne peut servir à publier une autre affiche.
     tour_signed_by_url = {v["event"]["officialUrl"]: k
                           for k, v in TOUR_FIVE_SIGNED_20261105.items()}
@@ -3828,6 +3842,34 @@ def validate_approval(approval, venues, known_artist_ids, today):
         if spec["time"] is None:
             require(event.get("time") is None,
                     "Echonova : début musical non confirmé (Meteora)")
+    # Validation stricte du lot 05/11, sans jamais inférer les horaires affichés.
+    if event_id in TOUR_THREE_VERIFIED_20261105:
+        spec = TOUR_THREE_VERIFIED_20261105[event_id]
+        require(reviewer == "independent-official-verifier"
+                and event == spec["event"]
+                and event.get("time") is None
+                and new_artists == spec["newArtists"],
+                "Lot 05/11 : affiche, identité ou heure de début altérées")
+        review_day = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= review_day <= today,
+                "Lot 05/11 : revue trop ancienne ou future")
+        require(isinstance(evidence, list) and len(evidence) == len(spec["proofs"])
+                and all(isinstance(proof, dict) for proof in evidence),
+                "Lot 05/11 : nombre de preuves erroné")
+        for proof, expected_proof in zip(evidence, spec["proofs"]):
+            require(all(proof.get(field) == expected_proof[field] for field in
+                        ("url", "proofType", "checkedAt", "checkedFields"))
+                    and proof.get("checkedAt") == review_day.isoformat()
+                    and not ({"concertStartTime", "startTime", "doorTime"}
+                             & set(proof.get("checkedFields") or [])),
+                    "Lot 05/11 : preuves, date ou horaire non documentés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved for aid in ids)
+                and all(a["id"] in ids and
+                        norm(resolved[a["id"]]["name"]) == norm(a["name"])
+                        for a in new_artists),
+                "Lot 05/11 : groupe fictif ou homonyme non revu")
     # Cinq affiches recoupées, signatures exactes et non réutilisables.
     if event_id in TOUR_FIVE_SIGNED_20261105:
         spec = TOUR_FIVE_SIGNED_20261105[event_id]
@@ -3904,7 +3946,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Nantes/Toulouse : groupe inventé ou identité incohérente")
     # Les cinq concerts sont vérifiés ci-dessus par leurs identités complètes.
     # Ce branchement ne modifie pas les whitelists générales de chaque salle.
-    if event_id in TOUR_FIVE_SIGNED_20261105:
+    if (event_id in TOUR_FIVE_SIGNED_20261105
+            or event_id in TOUR_THREE_VERIFIED_20261105):
         pass
     elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]

@@ -3347,5 +3347,70 @@ class LaVapeurRodrigoMidoriSignedTests(unittest.TestCase):
             validate_approval(bad, self.venues, self.artists, self.today)
 
 
+
+class ConcertsTourThreeNovember5Tests(unittest.TestCase):
+    """Preuves à identité figée et tests de mutations adverses."""
+
+    @classmethod
+    def setUpClass(cls):
+        import datetime as dt
+        from concerts_cloud_sync import TOUR_THREE_VERIFIED_20261105
+        cls.signed_set = TOUR_THREE_VERIFIED_20261105
+        cls.today = dt.date(2026, 11, 5)
+        catalogue = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.venues = {v["id"]: v for v in catalogue["venues"]}
+        cls.artists = {a["id"]: a for a in catalogue["artists"]}
+        cls.published = catalogue["events"]
+
+    def item(self, key):
+        spec = copy.deepcopy(self.signed_set[key])
+        return {
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-05",
+            "officialEvidence": spec["proofs"],
+            "event": spec["event"],
+            "newArtists": spec["newArtists"],
+        }
+
+    def test_three_approved_dates_without_duplicate_or_music_time(self):
+        for key, signed in self.signed_set.items():
+            with self.subTest(key=key):
+                approval = self.item(key)
+                event, artists = validate_approval(
+                    approval, self.venues, self.artists, self.today)
+                self.assertEqual(event, signed["event"])
+                self.assertIsNone(event["time"])
+                self.assertEqual(set(artists), {x["id"] for x in signed["newArtists"]})
+                self.assertFalse(any(
+                    a["date"] == event["date"] and a["venueId"] == event["venueId"]
+                    for a in self.published))
+
+    def test_altered_date_artists_venue_url_proofs_and_hour_rejected(self):
+        mutations = (
+            ("day", lambda a: a["event"].update(date="2027-06-01")),
+            ("bill", lambda a: a["event"].update(title="Unknown Band")),
+            ("group", lambda a: a["event"].update(artistIds=["unknown-artist"])),
+            ("place", lambda a: a["event"].update(venueId="la-cartonnerie-reims")),
+            ("clock", lambda a: a["event"].update(time="20:00")),
+            ("status", lambda a: a["event"].update(status="cancelled")),
+            ("url", lambda a: a["event"].update(officialUrl="https://example.org/bad")),
+            ("reviewer", lambda a: a.update(reviewedBy="automated-official-recheck")),
+            ("evidence-url", lambda a: a["officialEvidence"][0].update(url="https://example.org/bad")),
+            ("evidence-date", lambda a: a["officialEvidence"][0].update(checkedAt="2026-01-01")),
+            ("invent-clock", lambda a: a["officialEvidence"][0]["checkedFields"].append("concertStartTime")),
+            ("missing-evidence", lambda a: a.update(officialEvidence=[])),
+            ("stale", lambda a: a.update(reviewedAt="2026-01-01")),
+            ("invent-band", lambda a: a["newArtists"].append({"id":"false","name":"False"})),
+            ("reused-url", lambda a: a["event"].update(id="go-c-20271111-duplicate")),
+        )
+        for key in self.signed_set:
+            for label, mutate in mutations:
+                with self.subTest(key=key, case=label):
+                    fake = self.item(key)
+                    mutate(fake)
+                    with self.assertRaises((ValueError, KeyError, TypeError)):
+                        validate_approval(fake, self.venues, self.artists, self.today)
+
 if __name__=="__main__":
     unittest.main()
