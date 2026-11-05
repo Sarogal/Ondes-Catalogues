@@ -3740,5 +3740,83 @@ class MemRennes2026MarillionSignedTests(unittest.TestCase):
                 with self.assertRaises((ValueError,KeyError,TypeError)):
                     validate_approval(row,self.venues,self.artists,self.today)
 
+
+class FffHowlinJawsBretagneAnjouTwoShowsTests(unittest.TestCase):
+    """Deux dates : Rennes 20h non qualifié, Angers 20h30 début prouvé."""
+
+    @classmethod
+    def setUpClass(cls):
+        from datetime import date
+        from concerts_cloud_sync import PILOT_VENUES, FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105
+        cls.items=FFF_BRETAGNE_ANJOU_TWO_SIGNED_20261105
+        cls.day=date(2026,11,5)
+        current=json.loads((ROOT/"docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        cls.venues={v["id"]:v for v in current["venues"]}
+        cls.venues["le-mem-rennes"]=PILOT_VENUES["le-mem-rennes"]["venue"]
+        cls.artists={a["id"]:a for a in current["artists"]}
+        cls.published=current["events"]
+
+    def item(self,ident):
+        s=copy.deepcopy(self.items[ident])
+        return {"reviewDecision":"approved",
+                "reviewedBy":"independent-official-verifier",
+                "reviewedAt":"2026-11-05",
+                "officialEvidence":s["proofs"],
+                "event":s["event"],"newArtists":[]}
+
+    def test_two_events_signed_and_present_only_once(self):
+        for ident,signed in self.items.items():
+            with self.subTest(ident=ident):
+                candidate,new=validate_approval(
+                    self.item(ident),self.venues,self.artists,self.day)
+                self.assertEqual(candidate,signed["event"])
+                self.assertEqual(new,{})
+                self.assertEqual(candidate["time"],"20:30" if "angers" in ident else None)
+                published=[x for x in self.published
+                    if x["date"]==candidate["date"] and
+                    x["venueId"]==candidate["venueId"] and
+                    set(x["artistIds"]) & set(candidate["artistIds"])]
+                self.assertLessEqual(len(published),1)
+                if published:
+                    for key in ("id","title","date","artistIds","venueId",
+                                "genres","status","officialUrl","sourceType","time"):
+                        self.assertEqual(published[0][key],candidate[key])
+
+    def test_forged_date_support_or_hour_is_rejected(self):
+        amendments=(
+            lambda a:a["event"].update(date="2026-12-12"),
+            lambda a:a["event"].update(venueId="la-carene-brest"),
+            lambda a:a["event"].update(artistIds=["fff"]),
+            lambda a:a["event"].update(officialUrl="https://example.org/fake"),
+            lambda a:a["event"].update(time="19:00"),
+            lambda a:a["event"].update(title="FFF sans Howlin' Jaws"),
+            lambda a:a["event"].update(status="cancelled"),
+            lambda a:a["event"].update(id="go-c-20261212-false-event"),
+            lambda a:a["officialEvidence"].pop(),
+            lambda a:a["officialEvidence"][0].update(url="https://example.org/faux"),
+            lambda a:a["officialEvidence"][1].update(confirmedArtists=["FFF"]),
+            lambda a:a["officialEvidence"][2].update(checkedAt="2026-11-04"),
+            lambda a:a["officialEvidence"][0]["checkedFields"].append("fakeStart"),
+            lambda a:a["officialEvidence"][0].update(concertStartTimeConfirmed="23:59"),
+            lambda a:a.update(reviewedBy="automated-official-recheck"),
+            lambda a:a.update(reviewedAt="2026-01-01"),
+            lambda a:a["newArtists"].append({"id":"fake","name":"Fake"}),
+        )
+        for ident in self.items:
+            for ix,change in enumerate(amendments):
+                with self.subTest(ident=ident,case=ix):
+                    a=self.item(ident)
+                    change(a)
+                    with self.assertRaises((ValueError,KeyError,TypeError)):
+                        validate_approval(a,self.venues,self.artists,self.day)
+
+    def test_strict_different_source_clock_claims(self):
+        ren="go-c-20261210-rennes-fff-howlin-jaws"
+        ang="go-c-20261211-angers-fff-howlin-jaws"
+        self.assertNotIn("concertStartTime",
+                         self.items[ren]["proofs"][0]["checkedFields"])
+        self.assertEqual(self.items[ang]["proofs"][0]["concertStartTimeConfirmed"],"20:30")
+        self.assertEqual(self.items[ang]["proofs"][1]["concertStartTimeConfirmed"],"20:30")
+
 if __name__=="__main__":
     unittest.main()
