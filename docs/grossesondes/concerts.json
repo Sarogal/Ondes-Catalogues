@@ -3176,6 +3176,19 @@
       "longitude": 5.42182,
       "geoPrecision": "centre indicatif du bâtiment 6MIC identifié sur OpenStreetMap way 701032991 via Mapcarta (coordonnées arrondies à cinq décimales), pas son entrée exacte",
       "geoSource": "https://mapcarta.com/fr/W701032991"
+    },
+    {
+      "id": "salle-cap-caval-penmarch",
+      "name": "Salle Cap Caval",
+      "address": "Avenue de Skibbereen",
+      "postalCode": "29760",
+      "city": "Penmarc’h",
+      "department": "29",
+      "region": "Bretagne",
+      "latitude": 47.81333,
+      "longitude": -4.33766,
+      "geoPrecision": "centre arrondi du bâtiment Salle Cap Caval désigné nominativement sur OpenStreetMap way 66608817 (amenity=music_venue, building=yes) via Mapcarta ; pas son entrée exacte ni un parking Cap Caval voisin",
+      "geoSource": "https://mapcarta.com/W66608817"
     }
   ],
   "events": [
@@ -13329,6 +13342,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "6MIC",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270227-penmarch-howlin-jaws-komodor",
+      "title": "Howlin’ Jaws + Komodor",
+      "date": "2027-02-27",
+      "artistIds": [
+        "howlin-jaws",
+        "komodor"
+      ],
+      "venueId": "salle-cap-caval-penmarch",
+      "genres": [
+        "Psych Rock",
+        "Hard Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cap-caval.fr/evenements/howlin-jaws-komodor/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Salle Cap Caval",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
