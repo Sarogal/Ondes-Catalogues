@@ -43,9 +43,9 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
             with self.subTest(id=item["event"]["id"]):
                 ev,added=validate_approval(item,venues,artists,TODAY)
                 self.assertEqual(ev,item["event"])
-                self.assertEqual(added.keys(),
-                                 {"gloria"}.keys() if item["event"]["venueId"]=="6mic-aix-en-provence"
-                                 else {}.keys())
+                self.assertEqual(set(added),
+                                 {"gloria"} if item["event"]["venueId"]=="6mic-aix-en-provence"
+                                 else set())
                 self.assertIsNone(ev["time"])
 
     def test_mutations_forged_source_artist_time_venue_rejected(self):
