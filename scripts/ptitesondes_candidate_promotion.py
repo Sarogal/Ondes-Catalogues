@@ -142,6 +142,24 @@ def category_for(title, description):
         return "cine-concert", "Ciné-concert"
     if "concert" in name and any(x in name for x in ("enfant","jeune public","famill","tout petit","bebe")):
         return "concert", "Concert"
+    # Many official family listings use a short work title ("Momo",
+    # "Ici, là-bas") and state the format solely in the description.
+    # Require BOTH an explicit child/family cue and an explicit music format.
+    # The official date, venue, source and coordinates are verified later.
+    details = norm(description)
+    if any(x in details for x in ("famill", "enfant", "jeune public",
+                                   "tout petit", "bebe")):
+        for label, category, caption in (
+            ("conte musical", "conte-musical", "Conte musical"),
+            ("cine concert", "cine-concert", "Ciné-concert"),
+            ("eveil musical", "eveil-musical", "Éveil musical"),
+            ("atelier musical", "atelier-musical", "Atelier musical"),
+            ("spectacle musical", "spectacle-musical", "Spectacle musical"),
+        ):
+            if label in details:
+                return category, caption
+        if re.search(r"\\bconcert\\b", details):
+            return "concert", "Concert"
     return None
 
 
