@@ -1000,13 +1000,112 @@ NEW_REFERENCE_GEO_SOURCES = {
             "latitude": 48.113, "longitude": -1.681,
         },
     },
+    "zenith-paris-la-villette-paris": {
+        "patch": {
+            "address": "211 avenue Jean Jaurès",
+            "postalCode": "75019",
+            "latitude": 48.89418,
+            "longitude": 2.39317,
+            "geoPrecision": "position indicative du bâtiment Zénith Paris – La Villette (OpenStreetMap way 63971432), et non entrée garantie",
+            "geoSource": "https://mapcarta.com/fr/W63971432"
+        },
+        "officialUrl": "https://le-zenith.com/contact",
+        "officialProof": "official-venue-address",
+        "officialFields": [
+            "venueName",
+            "address",
+            "postalCode",
+            "city"
+        ],
+        "geoUrl": "https://mapcarta.com/fr/W63971432",
+        "geoProof": "openstreetmap-venue-way",
+        "geoFields": [
+            "venueName",
+            "coordinates"
+        ],
+        "expectedOriginal": {
+            "name": "Zénith Paris – La Villette",
+            "city": "Paris",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 48.866,
+            "longitude": 2.343
+        },
+        "checkedAt": "2026-11-05"
+    },
+    "le-transbordeur-villeurbanne": {
+        "patch": {
+            "address": "3 boulevard de la Bataille de Stalingrad",
+            "postalCode": "69100",
+            "latitude": 45.78401,
+            "longitude": 4.86079,
+            "geoPrecision": "position indicative du bâtiment Le Transbordeur (OpenStreetMap way 85000536), pas l'entrée exacte du Club Transbo",
+            "geoSource": "https://mapcarta.com/fr/W85000536"
+        },
+        "officialUrl": "https://www.transbordeur.fr/acces/",
+        "officialProof": "official-venue-address",
+        "officialFields": [
+            "venueName",
+            "address",
+            "postalCode",
+            "city"
+        ],
+        "geoUrl": "https://mapcarta.com/fr/W85000536",
+        "geoProof": "openstreetmap-venue-way",
+        "geoFields": [
+            "venueName",
+            "coordinates"
+        ],
+        "expectedOriginal": {
+            "name": "Le Transbordeur",
+            "city": "Villeurbanne",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 45.757,
+            "longitude": 4.917
+        },
+        "checkedAt": "2026-11-05"
+    },
+    "la-belle-electrique-grenoble": {
+        "patch": {
+            "address": "12 esplanade Andry-Farcy",
+            "postalCode": "38000",
+            "latitude": 45.18718,
+            "longitude": 5.70419,
+            "geoPrecision": "position indicative du bâtiment La Belle Électrique (OpenStreetMap way 299631312), non l'entrée exacte",
+            "geoSource": "https://mapcarta.com/fr/W299631312"
+        },
+        "officialUrl": "https://www.la-belle-electrique.com/fr/",
+        "officialProof": "official-venue-address",
+        "officialFields": [
+            "venueName",
+            "address",
+            "postalCode",
+            "city"
+        ],
+        "geoUrl": "https://mapcarta.com/fr/W299631312",
+        "geoProof": "openstreetmap-venue-way",
+        "geoFields": [
+            "venueName",
+            "coordinates"
+        ],
+        "expectedOriginal": {
+            "name": "La Belle Électrique",
+            "city": "Grenoble",
+            "address": "Adresse exacte à vérifier",
+            "postalCode": "À vérifier",
+            "latitude": 45.186,
+            "longitude": 5.729
+        },
+        "checkedAt": "2026-11-05"
+    },
 }
 
 
 def validate_new_reference_geo(approvals, reference, today):
     """Independently signed, two-source proof for exact historic pins."""
     rows = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(rows, list) and len(rows) <= 6,
+    require(isinstance(rows, list) and len(rows) <= 9,
             "Trop de corrections historiques de salles")
     allowed = {SECRET_PLACE_VENUE_ID, REX_VENUE_ID} | set(NEW_REFERENCE_GEO_SOURCES)
     ids = [x.get("venueId") if isinstance(x, dict) else None for x in rows]
@@ -1021,7 +1120,7 @@ def validate_new_reference_geo(approvals, reference, today):
         checked = norm_date(row.get("reviewedAt"))
         require(row.get("reviewDecision") == "approved"
                 and row.get("reviewedBy") == "independent-official-verifier"
-                and checked == dt.date(2026, 11, 3) and checked <= today
+                and checked == dt.date.fromisoformat(spec.get("checkedAt", "2026-11-03")) and checked <= today
                 and row.get("venuePatch") == spec["patch"],
                 "Adresse ou coordonnées hors liste blanche : " + venue_id)
         proofs = row.get("officialEvidence")
@@ -1039,7 +1138,7 @@ def validate_new_reference_geo(approvals, reference, today):
             url, fields = expected[p["proofType"]]
             require(p.get("url") == url
                     and p.get("checkedAt") == checked.isoformat()
-                    and fields.issubset(set(p.get("checkedFields") or [])),
+                    and set(fields).issubset(set(p.get("checkedFields") or [])),
                     "Adresse ou repère cartographique absent/incomplet")
         initial = [v for v in reference["venues"] if v["id"] == venue_id]
         require(len(initial) == 1 and
@@ -1072,7 +1171,7 @@ def corrected_reference_venues(reference, secret_place=False, le_rex=False,
 def validate_secret_place_location_correction(approvals, reference, today):
     """Require a signed, persistent, double-source correction for an existing venue."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 6,
+    require(isinstance(corrections, list) and len(corrections) <= 9,
             "Corrections géographiques historiques non conformes")
     ids = [c.get("venueId") for c in corrections if isinstance(c, dict)]
     require(len(ids) == len(corrections)
@@ -1124,7 +1223,7 @@ def validate_secret_place_location_correction(approvals, reference, today):
 def validate_rex_location_correction(approvals, reference, today):
     """Require exact official GPS and independent tourism-office address."""
     corrections = approvals.get("referenceVenueCorrections", [])
-    require(isinstance(corrections, list) and len(corrections) <= 6,
+    require(isinstance(corrections, list) and len(corrections) <= 9,
             "Liste géographique inattendue")
     rows = [c for c in corrections if isinstance(c, dict)
             and c.get("venueId") == REX_VENUE_ID]
@@ -3396,6 +3495,8 @@ LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104 = {
     "ticketUrl": "https://billetterie.lavapeur.com/agenda/840-Rodrigo-y-Gabriela?session=840",
 }
 
+TOUR_FIVE_SIGNED_20261105 = json.loads(r'''{"go-c-20261118-grenoble-inspector-cluzo":{"event":{"id":"go-c-20261118-grenoble-inspector-cluzo","title":"The Inspector Cluzo","date":"2026-11-18","time":null,"artistIds":["the-inspector-cluzo"],"venueId":"la-belle-electrique-grenoble","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.la-belle-electrique.com/fr/agenda/the-inspector-cluzo?from=2026-12","sourceType":"salle"},"proofs":[{"url":"https://www.la-belle-electrique.com/fr/agenda/the-inspector-cluzo?from=2026-12","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","address"]},{"url":"https://billetterie.la-belle-electrique.com/agenda/741-The-Inspector-Cluzo?session=741","proofType":"official-venue-ticketing-detail","checkedFields":["artists","date","venue"]}]},"go-c-20261205-paris-skip-the-use":{"event":{"id":"go-c-20261205-paris-skip-the-use","title":"Skip The Use","date":"2026-12-05","time":null,"artistIds":["skip-the-use"],"venueId":"zenith-paris-la-villette-paris","genres":["Rock"],"status":"confirmed","officialUrl":"https://le-zenith.com/shows/Skip%20The%20Use-20507","sourceType":"salle"},"proofs":[{"url":"https://le-zenith.com/shows/Skip%20The%20Use-20507","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime"]},{"url":"https://www.livenation.fr/event/skip-the-use-love-and-anxiety-paris-tickets-edp1632116","proofType":"official-promoter-tour-detail","checkedFields":["artists","date","venue"]}]},"go-c-20270122-paris-7weeks":{"event":{"id":"go-c-20270122-paris-7weeks","title":"7Weeks","date":"2027-01-22","time":null,"artistIds":["7weeks"],"venueId":"la-maroquinerie-paris","genres":["Heavy Rock"],"status":"confirmed","officialUrl":"https://7weeks.fr/concerts/","sourceType":"organisateur"},"proofs":[{"url":"https://7weeks.fr/concerts/","proofType":"official-artist-tour-calendar","checkedFields":["artists","date","venue"]},{"url":"https://www.eventim.fr/event/7-weeks-la-maroquinerie-paris-20-21549826/","proofType":"authorized-ticket-distributor-full-date","checkedFields":["artists","date","venue"]}]},"go-c-20270204-villeurbanne-revnoir-ice-sealed-eyes":{"event":{"id":"go-c-20270204-villeurbanne-revnoir-ice-sealed-eyes","title":"Revnoir + Ice Sealed Eyes","date":"2027-02-04","time":"20:00","timeMeaning":"début du concert","artistIds":["revnoir","ice-sealed-eyes"],"venueId":"le-transbordeur-villeurbanne","genres":["Metalcore"],"status":"confirmed","officialUrl":"https://www.transbordeur.fr/evenement/revnoir-ice-sealed-eyes-04022027/","sourceType":"salle"},"proofs":[{"url":"https://www.transbordeur.fr/evenement/revnoir-ice-sealed-eyes-04022027/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"]},{"url":"https://slhproductions.fr/agenda/revnoir2027/","proofType":"official-promoter-event-detail","checkedFields":["artists","date","venue"]}]},"go-c-20270318-ramonville-skip-the-use":{"event":{"id":"go-c-20270318-ramonville-skip-the-use","title":"Skip The Use","date":"2027-03-18","time":null,"artistIds":["skip-the-use"],"venueId":"le-bikini-toulouse","genres":["Rock"],"status":"confirmed","officialUrl":"https://lebikini.com/2027/03/18/skip-the-use","sourceType":"salle"},"proofs":[{"url":"https://lebikini.com/2027/03/18/skip-the-use","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","address"]},{"url":"https://www.livenation.fr/event/skip-the-use-love-and-anxiety-ramonville-st-agne-tickets-edp1665831","proofType":"official-promoter-tour-detail","checkedFields":["artists","date","venue"]}]}}''')
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3455,6 +3556,17 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and event.get("venueId") == "la-vapeur-dijon"
                 and official_url == LA_VAPEUR_SKIP_SIGNED_20261104["officialUrl"],
                 "La Vapeur / Skip : identifiant, URL ou salle réaffectés")
+    # Une URL de tournée nominative ne peut servir à publier une autre affiche.
+    tour_signed_by_url = {v["event"]["officialUrl"]: k
+                          for k, v in TOUR_FIVE_SIGNED_20261105.items()}
+    if official_url in tour_signed_by_url:
+        require(event_id == tour_signed_by_url[official_url],
+                "Tournée vérifiée : URL officielle réaffectée à une autre fiche")
+    if event_id in TOUR_FIVE_SIGNED_20261105:
+        expected = TOUR_FIVE_SIGNED_20261105[event_id]["event"]
+        require(event.get("venueId") == expected["venueId"]
+                and official_url == expected["officialUrl"],
+                "Tournée vérifiée : identifiant/salle/URL divergents")
     if (event_id == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["id"]
             or official_url == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["officialUrl"]):
         require(event_id == LA_VAPEUR_RODRIGO_MIDORI_SIGNED_20261104["id"]
@@ -3528,7 +3640,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Big Band Café : identifiant réservé à sa salle")
     require(any(
         item.get("url") == official_url and
-        item.get("proofType") == "official-organizer-or-venue" and
+        (item.get("proofType") == "official-organizer-or-venue"
+         or (event_id == "go-c-20270122-paris-7weeks"
+             and item.get("proofType") == "official-artist-tour-calendar")) and
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
@@ -3714,6 +3828,33 @@ def validate_approval(approval, venues, known_artist_ids, today):
         if spec["time"] is None:
             require(event.get("time") is None,
                     "Echonova : début musical non confirmé (Meteora)")
+    # Cinq affiches recoupées, signatures exactes et non réutilisables.
+    if event_id in TOUR_FIVE_SIGNED_20261105:
+        spec = TOUR_FIVE_SIGNED_20261105[event_id]
+        expected = spec["event"]
+        require(reviewer == "independent-official-verifier"
+                and event == expected and event.get("status") == "confirmed"
+                and not new_artists,
+                "Tournée : identité, plateau, heure ou source non identiques à la revue")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(checked == dt.date(2026, 11, 5)
+                and today - dt.timedelta(days=14) <= checked <= today,
+                "Tournée : revue non datée ou preuve expirée")
+        require(len(evidence) == len(spec["proofs"]) == 2
+                and all(isinstance(p,dict) for p in evidence),
+                "Tournée : deux preuves distinctes exigées")
+        for observed, pinned in zip(evidence, spec["proofs"]):
+            require(observed.get("url") == pinned["url"]
+                    and observed.get("proofType") == pinned["proofType"]
+                    and observed.get("checkedFields") == pinned["checkedFields"]
+                    and observed.get("checkedAt") == checked.isoformat(),
+                    "Tournée : source, date, lieu, genre ou heure non vérifiés")
+        require(event.get("time") is None or (
+            event_id == "go-c-20270204-villeurbanne-revnoir-ice-sealed-eyes"
+            and event.get("time") == "20:00"
+            and event.get("timeMeaning") == "début du concert"
+            and "concertStartTime" in evidence[0]["checkedFields"]),
+            "Tournée : début musical non documenté")
     require(isinstance(event.get("genres"), list) and
             1 <= len(event["genres"]) <= 10 and
             all(isinstance(x, str) and x for x in event["genres"]),
@@ -3761,10 +3902,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Nantes/Toulouse : groupe inventé ou identité incohérente")
-    # Ces sept entrées franchissent uniquement leur revue nominative signée.
-    # Les règles fermées des salles pour les autres concerts restent inchangées.
-    # Les autres concerts des trois salles restent hors de ce lot signé.
-    if event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
+    # Les cinq concerts sont vérifiés ci-dessus par leurs identités complètes.
+    # Ce branchement ne modifie pas les whitelists générales de chaque salle.
+    if event_id in TOUR_FIVE_SIGNED_20261105:
+        pass
+    elif event_id in UNDERCOVERED_REGIONS_NOV2026_VERIFIED:
         spec = UNDERCOVERED_REGIONS_NOV2026_VERIFIED[event_id]
         require(reviewer == "independent-official-verifier"
                 and event.get("sourceType") == "salle"
