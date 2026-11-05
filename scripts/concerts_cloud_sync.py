@@ -4067,7 +4067,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
         if event_id == "go-c-20261210-rennes-fff-howlin-jaws":
             require(event["time"] is None
                     and all(not ({"startTime","doorTime","concertStartTime"} &
-                                set(p["checkedFields"])) for p in evidence),
+                                set(p["checkedFields"])) for p in evidence)
+                    and all("concertStartTimeConfirmed" not in p
+                            for p in evidence),
                     "FFF Rennes : 20h00 ne prouve pas le début musical")
         else:
             require(event["time"] == "20:30"
