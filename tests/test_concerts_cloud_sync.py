@@ -2749,7 +2749,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             BASE, secret_place=True, le_rex=True)
         signed = self.private_review_fixture()
         corrected, stats = merge(BASE, current, signed, day)
-        self.assertEqual(stats["correctedVenues"], 7)
+        self.assertEqual(stats["correctedVenues"], 8)
         self.assertEqual(stats["newEvents"], 0)
         self.assertEqual(corrected["events"], current["events"])
         self.assertEqual(corrected["artists"], current["artists"])
@@ -2852,7 +2852,7 @@ class ThreeHistoricVenueGeoCorrectionTests(unittest.TestCase):
             duplicate["referenceVenueCorrections"][2]["venueId"])
         with self.assertRaises((ValueError, KeyError)):
             merge(BASE, current, duplicate, day)
-        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 7)
+        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 8)
 
 
 

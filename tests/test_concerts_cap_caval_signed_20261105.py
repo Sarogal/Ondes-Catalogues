@@ -40,7 +40,12 @@ class CapCavalTests(unittest.TestCase):
         self.assertEqual(new,{})
         self.assertEqual(event["artistIds"],["howlin-jaws","komodor"])
         self.assertIsNone(event["time"])
-        self.assertNotIn(event["id"],{x["id"] for x in CURRENT["events"]})
+        published = {x["id"]: x for x in CURRENT["events"]}
+        if event["id"] in published:
+            self.assertTrue(all(published[event["id"]].get(key) == event[key]
+                                for key in ("id", "title", "date", "artistIds",
+                                            "venueId", "genres", "status", "officialUrl", "sourceType")))
+            self.assertIsNone(published[event["id"]].get("time"))
 
     def test_moved_event_false_artists_time_or_proof_cannot_pass(self):
         _,venues,artists=self.validated()

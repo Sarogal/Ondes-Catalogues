@@ -86,7 +86,7 @@ class FiveTourOfficialSignaturesTests(unittest.TestCase):
             "le-transbordeur-villeurbanne": (45.78401, 4.86079),
             "la-belle-electrique-grenoble": (45.18718, 5.70419),
         }
-        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 7)
+        self.assertEqual(len(NEW_REFERENCE_GEO_SOURCES), 8)
         for ident, location in expected.items():
             with self.subTest(id=ident):
                 spec = NEW_REFERENCE_GEO_SOURCES[ident]

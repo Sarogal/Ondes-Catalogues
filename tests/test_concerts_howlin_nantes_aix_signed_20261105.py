@@ -26,6 +26,12 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
         return {**{v["id"]:v for v in PUBLIC["venues"]},
                 **{v["id"]:v for v in approved}}
 
+    def historic_artists_before_gloria(self):
+        # Rejouer le dossier signé à la date de sa première validation.
+        # Gloria est désormais dans le catalogue publié et ne doit pas
+        # faire rejeter a posteriori ce test d'approbation initial.
+        return {x["id"]:x for x in PUBLIC["artists"] if x["id"]!="gloria"}
+
     def test_exact_venue_sources_and_independent_coordinates(self):
         for item in FIXTURE["venueApprovals"]:
             with self.subTest(id=item["venue"]["id"]):
@@ -35,10 +41,18 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
 
     def test_two_exact_events_pass_and_are_not_duplicates(self):
         venues=self.locations()
-        artists={x["id"]:x for x in PUBLIC["artists"]}
+        artists=self.historic_artists_before_gloria()
         self.assertEqual(len(HOWLIN_TWO_SIGNED_20261105),2)
-        self.assertFalse(any(x["event"]["id"] in {ev["id"] for ev in PUBLIC["events"]}
-                             for x in FIXTURE["approvals"]))
+        published = {e["id"]:e for e in PUBLIC["events"]}
+        for approval in FIXTURE["approvals"]:
+            original = approval["event"]
+            if original["id"] in published:
+                self.assertTrue(all(
+                    published[original["id"]].get(key)==original[key]
+                    for key in ("id","title","date","artistIds","venueId",
+                                "genres","status","officialUrl","sourceType")))
+                self.assertEqual(published[original["id"]].get("time"),
+                                 original["time"])
         for item in FIXTURE["approvals"]:
             with self.subTest(id=item["event"]["id"]):
                 ev,added=validate_approval(item,venues,artists,TODAY)
@@ -50,7 +64,7 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
 
     def test_mutations_forged_source_artist_time_venue_rejected(self):
         venues=self.locations()
-        artists={x["id"]:x for x in PUBLIC["artists"]}
+        artists=self.historic_artists_before_gloria()
         mutations=[
             ("fake-date",lambda r:r["event"].update(date="2027-12-31")),
             ("fake-venue",lambda r:r["event"].update(venueId="le-mem-rennes")),
@@ -78,7 +92,7 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
         # Check isolated approval validity, unique identities and retained
         # immutable baseline without forging earlier approval signatures.
         venues=self.locations()
-        artists={x["id"]:x for x in PUBLIC["artists"]}
+        artists=self.historic_artists_before_gloria()
         old_venues={v["id"] for v in PUBLIC["venues"]}
         old_events={e["id"] for e in PUBLIC["events"]}
         old_artists={a["id"] for a in PUBLIC["artists"]}
@@ -88,9 +102,18 @@ class HowlinJawsNantesAixSignedTests(unittest.TestCase):
         self.assertTrue({e["id"] for e in REFERENCE["events"]}.issubset(old_events))
         self.assertTrue({v["id"] for v in REFERENCE["venues"]}.issubset(old_venues))
         self.assertTrue({a["id"] for a in REFERENCE["artists"]}.issubset(old_artists))
-        self.assertEqual(HOWLIN_TWO_VENUES & old_venues,set())
-        self.assertEqual(set(HOWLIN_TWO_SIGNED_20261105) & old_events,set())
-        self.assertNotIn("gloria",old_artists)
+        published_venues={x["id"]:x for x in PUBLIC["venues"]}
+        for ident in HOWLIN_TWO_VENUES & old_venues:
+            self.assertEqual(published_venues[ident],PILOT_VENUES[ident]["venue"])
+        published_events={x["id"]:x for x in PUBLIC["events"]}
+        for ident in set(HOWLIN_TWO_SIGNED_20261105) & old_events:
+            original=HOWLIN_TWO_SIGNED_20261105[ident]["event"]
+            self.assertTrue(all(published_events[ident].get(k)==original[k]
+                for k in ("id","title","date","artistIds","venueId","genres",
+                          "status","officialUrl","sourceType")))
+        if "gloria" in old_artists:
+            self.assertEqual(next(x["name"] for x in PUBLIC["artists"] 
+                                  if x["id"]=="gloria"),"Gloria")
         for x in FIXTURE["approvals"]:
             event,new=validate_approval(x,venues,artists,TODAY)
             self.assertEqual(event,x["event"])
