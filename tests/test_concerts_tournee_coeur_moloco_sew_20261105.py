@@ -86,7 +86,7 @@ class TourneeCoeurMolocoSewCloudTests(unittest.TestCase):
                 ("date", lambda x: x["event"].update(date="2027-02-26")),
                 ("artists", lambda x: x["event"]["artistIds"].append("faux-groupe")),
                 ("time", lambda x: x["event"].update(time="21:30")),
-                ("venue", lambda x: x["event"].update(venueId="le-sew-morlaix")),
+                ("venue", lambda x: x["event"].update(venueId="rockstore-montpellier")),
                 ("source", lambda x: x["officialEvidence"][0].update(url="https://example.org")),
                 ("tour", lambda x: x["officialEvidence"][1].update(url="https://example.org")),
                 ("lineup", lambda x: x["officialEvidence"][0].update(confirmedArtists=["Autre groupe"])),
