@@ -431,6 +431,11 @@ PILOT_VENUES.update(json.loads(r'''{"stereolux-nantes":{"venue":{"id":"stereolux
 HOWLIN_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261208-nantes-fff-howlin-jaws":{"event":{"id":"go-c-20261208-nantes-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-08","time":null,"artistIds":["fff","howlin-jaws"],"venueId":"stereolux-nantes","genres":["Funk Rock","Rock"],"status":"confirmed","officialUrl":"https://stereolux.org/agenda/fff","sourceType":"salle","organizer":"O Spectacles"},"newArtists":[],"proofs":[{"url":"https://stereolux.org/agenda/fff","proofType":"official-organizer-or-venue","checkedFields":["leadArtist","date","venue","supportUnspecified"],"confirmedArtists":["FFF"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"]}]},"go-c-20270402-aix-howlin-jaws-gloria":{"event":{"id":"go-c-20270402-aix-howlin-jaws-gloria","title":"Howlin’ Jaws + Gloria","date":"2027-04-02","time":null,"artistIds":["howlin-jaws","gloria"],"venueId":"6mic-aix-en-provence","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/","sourceType":"salle","organizer":"6MIC"},"newArtists":[{"id":"gloria","name":"Gloria"}],"proofs":[{"url":"https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre"],"confirmedArtists":["Howlin' Jaws","Gloria"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-artist-agent","checkedFields":["leadArtist","date","venue","otherArtistNamed"],"confirmedArtists":["Howlin' Jaws","Gloria"]}]}}''')
 HOWLIN_TWO_VENUES = {"stereolux-nantes", "6mic-aix-en-provence"}
 
+# Cap Caval Penmarc'h: preuve officielle et bâtiment OSM nominatif,
+# jamais le nœud de parking à vélos homonyme.
+PILOT_VENUES["salle-cap-caval-penmarch"] = json.loads(r'''{"venue":{"id":"salle-cap-caval-penmarch","name":"Salle Cap Caval","address":"Avenue de Skibbereen","postalCode":"29760","city":"Penmarc’h","department":"29","region":"Bretagne","latitude":47.81333,"longitude":-4.33766,"geoPrecision":"centre arrondi du bâtiment Salle Cap Caval désigné nominativement sur OpenStreetMap way 66608817 (amenity=music_venue, building=yes) via Mapcarta ; pas son entrée exacte ni un parking Cap Caval voisin","geoSource":"https://mapcarta.com/W66608817"},"officialUrl":"https://www.cap-caval.fr/infos-pratiques/","locationUrl":"https://mapcarta.com/W66608817","locationProofType":"openstreetmap-venue-way"}''')
+CAP_CAVAL_SIGNED_20261105 = json.loads(r'''{"event":{"id":"go-c-20270227-penmarch-howlin-jaws-komodor","title":"Howlin’ Jaws + Komodor","date":"2027-02-27","time":null,"artistIds":["howlin-jaws","komodor"],"venueId":"salle-cap-caval-penmarch","genres":["Psych Rock","Hard Rock"],"status":"confirmed","officialUrl":"https://www.cap-caval.fr/evenements/howlin-jaws-komodor/","sourceType":"salle","organizer":"Salle Cap Caval"},"newArtists":[],"proofs":[{"url":"https://www.cap-caval.fr/evenements/howlin-jaws-komodor/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","eventStartTime"],"confirmedArtists":["Howlin’ Jaws","Komodor"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-artist-agent","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["Howlin’ Jaws","Komodor"]}]}''')
+
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
 # The venue's generic Billetweb calendar and unrelated organizer tickets remain blocked.
 BRIN_ORGANIZER_VERIFIED = {
@@ -3590,6 +3595,33 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     actual.get("checkedFields") == expected["checkedFields"] and
                     actual.get("confirmedArtists") == expected["confirmedArtists"],
                     "Howlin’ Jaws Nantes/Aix : champs ou provenance altérés")
+
+    # Cap Caval : URL, artiste, scène et preuve protégés par une signature
+    # nominative (pas d'approbation générale de tous ses futurs concerts).
+    signed_cap = CAP_CAVAL_SIGNED_20261105["event"]
+    if (event.get("venueId") == "salle-cap-caval-penmarch" or
+            event_id == signed_cap["id"] or
+            event.get("officialUrl") == signed_cap["officialUrl"]):
+        require(event == signed_cap and
+                approval.get("newArtists", []) == [] and
+                reviewer == "independent-official-verifier",
+                "Cap Caval : concert, salle ou identité modifiés")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "Cap Caval : preuve de revue trop ancienne ou future")
+        expected_proofs = CAP_CAVAL_SIGNED_20261105["proofs"]
+        require(len(evidence) == len(expected_proofs) == 2 and
+                all(isinstance(p,dict) for p in evidence),
+                "Cap Caval : deux preuves indépendantes obligatoires")
+        for actual, expected in zip(evidence, expected_proofs):
+            require(actual.get("url") == expected["url"] and
+                    actual.get("proofType") == expected["proofType"] and
+                    actual.get("checkedAt") == reviewed.isoformat() and
+                    actual.get("checkedFields") == expected["checkedFields"] and
+                    actual.get("confirmedArtists") == expected["confirmedArtists"],
+                    "Cap Caval : provenance, champs vérifiés ou artistes altérés")
+        require(event.get("time") is None,
+                "Cap Caval : heure musicale non attestée explicitement")
 
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
