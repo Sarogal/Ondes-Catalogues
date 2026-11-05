@@ -1,0 +1,83 @@
+{
+  "slug": "festival-de-noel-xxxiv-2026",
+  "name": "Festival de Noël # XXXIV",
+  "startDate": "2026-12-11",
+  "endDate": "2026-12-19",
+  "city": "Limoges",
+  "department": "87",
+  "region": "Nouvelle-Aquitaine",
+  "styles": "Punk / Hardcore / Heavy Rock / Metal moderne",
+  "bands": 17,
+  "days": "4",
+  "capacity": null,
+  "price": "Soirée 11 déc. 15 € ; soirées 12, 18 et 19 déc. 25 € ; pass 4 soirées 70 € en prévente ; gratuit moins de 15 ans (pass vérifié HelloAsso, prix soirée déjà documentés).",
+  "organizer": "Association EXECUTION Mgt",
+  "officialSite": null,
+  "social": null,
+  "status": "Confirmé",
+  "source": "https://www.helloasso.com/associations/association-execution-mgt/evenements/festival-de-noel-xxxiv-edition-2026-pass-4-jours",
+  "lastVerified": "2026-10-17",
+  "notes": "34e édition au CCM John-Lennon de Limoges. Quatre soirées DISTINCTES les 11, 12, 18 et 19 décembre 2026 ; pas de concert officiel les 13–17 décembre sur cette billetterie. 17 artistes sont déjà nominativement présents dans le catalogue, mais leur affectation précise aux quatre soirées n'est pas attestée dans le pass HelloAsso (pas de répartition arbitraire). Pass quatre soirées à 70 € ; gratuit pour les moins de 15 ans ; prix de soirée relevés dans la fiche historique. La billetterie de pass couvre administrativement le 11–19 décembre, sans signifier neuf journées de concerts. Répartition des 17 artistes par soirée rapportée lors de la veille du 16/10/2026 ; la page du pass 4 jours HelloAsso consultée le 17/10 confirme les quatre dates mais NE détaille PAS les groupes par date : répartition à confirmer auprès de l’organisateur. Red Gordon apparaît dans certains agendas secondaires pour le 19/12 mais n’est pas ajouté à la programmation sans confirmation officielle.",
+  "lat": 45.8567,
+  "lon": 1.226,
+  "geoPrecision": "commune",
+  "sessionDates": [
+    "2026-12-11",
+    "2026-12-12",
+    "2026-12-18",
+    "2026-12-19"
+  ],
+  "sourceConfidence": "institutionnelle",
+  "dateRangeIsContinuous": false,
+  "lineup": [
+    "Pussy Miel",
+    "Sex Shop Mushrooms",
+    "One Burning Match",
+    "Emprise",
+    "Monkeys on Mars",
+    "Mars Red Sky",
+    "Monkey3",
+    "Goatfather",
+    "Houle",
+    "Alta Rossa",
+    "Galibot",
+    "Messalina",
+    "Les Bâtards du Roi",
+    "Revnoir",
+    "Ashen",
+    "Wake the Dead",
+    "Jiro"
+  ],
+  "auditSources": [
+    "https://www.helloasso.com/associations/association-execution-mgt/evenements/festival-de-noel-xxxiv-edition-2026-pass-4-jours"
+  ],
+  "venue": "Centre culturel municipal John-Lennon, 41 ter rue de Feytiat, 87000 Limoges",
+  "verificationStatus": "Dates discontinues et pass confirmés officiellement ; répartition des artistes par soirée à confirmer",
+  "lineupByDate": {
+    "2026-12-11": [
+      "Pussy Miel",
+      "Sex Shop Mushrooms",
+      "One Burning Match",
+      "Emprise"
+    ],
+    "2026-12-12": [
+      "Monkeys on Mars",
+      "Mars Red Sky",
+      "Monkey3",
+      "Goatfather"
+    ],
+    "2026-12-18": [
+      "Houle",
+      "Alta Rossa",
+      "Galibot",
+      "Messalina",
+      "Les Bâtards du Roi"
+    ],
+    "2026-12-19": [
+      "Revnoir",
+      "Ashen",
+      "Wake the Dead",
+      "Jiro"
+    ]
+  }
+}
