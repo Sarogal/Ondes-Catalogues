@@ -32,10 +32,21 @@ de l'accessibilité familiale et de la localisation GPS indépendante.
 Les anciennes fiches sont conservées intactes (append-only) : les
 corrections, fermetures ou déménagements demandent une procédure séparée.
 
+Une carte de prévisualisation combinant les sorties datées et les lieux est
+servie à l'adresse :
+
+https://sarogal.github.io/Ondes-Catalogues/ptitesondes/carte-lieux.html
+
+Les lieux y possèdent des marqueurs verts distincts des sorties.
+Cette carte est une **prévisualisation**, et non la page officielle
+`ptitesondes.fr/sorties.html` hébergée sur Infomaniak.
+
 Le fichier est livré via GitHub Pages dans
 `https://sarogal.github.io/Ondes-Catalogues/ptitesondes/lieux.json`.
-Le workflow existant `ptitesondes-cloud-sync.yml` peut publier ce fichier
-lorsqu'il change, même si `sorties.json` n'a aucune nouvelle fiche.
+Le workflow existant `ptitesondes-cloud-sync.yml` peut publier le fichier
+`lieux.json` et la prévisualisation de carte lorsqu'ils changent, même si
+`sorties.json` n'a aucune nouvelle fiche. Il **n'essaie pas de faire un
+commit de sorties** quand seul un lieu change.
 Le moteur ne dispose d'aucun droit de publication de lieux issus
 directement du backlog privé.
 
