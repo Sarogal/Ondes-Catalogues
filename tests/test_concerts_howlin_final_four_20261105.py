@@ -34,19 +34,34 @@ class HowlinFourVerifiedTests(unittest.TestCase):
         venues={x["id"]:x for x in PUBLIC["venues"]}
         venues[venue["id"]]=venue
         artists={x["id"]:x for x in PUBLIC["artists"]}
+        # Ce test rejoue l'approbation de novembre sur l'état *avant*
+        # publication. Les trois artistes sont désormais présents en public :
+        # les conserver ferait échouer à tort la validation 'nouvel artiste'.
+        for artist_id in ("moundrag", "theo-charaf", "hayko"):
+            if artist_id not in artists:
+                raise AssertionError("Artiste Howlin' Jaws publié manquant : " + artist_id)
+            del artists[artist_id]
         return venues,artists
 
     def test_four_full_approvals_with_three_new_artists(self):
         venues,artists=self.known()
         self.assertEqual(len(HOWLIN_FINAL_FOUR_SIGNED_20261105),4)
         self.assertEqual(set(self.approvals),set(HOWLIN_FINAL_FOUR_SIGNED_20261105))
-        existing={x["id"] for x in PUBLIC["events"]}
+        published={x["id"]:x for x in PUBLIC["events"]}
+        historic={x["id"] for x in REFERENCE["events"]}
         creations=set()
         for ident,entry in self.approvals.items():
             with self.subTest(id=ident):
                 event,new=validate_approval(entry,venues,artists,TODAY)
                 self.assertEqual(event,entry["event"])
-                self.assertNotIn(ident,existing)
+                # Les quatre ajouts ont déjà été synchronisés : vérifier la
+                # présence exacte en production, pas leur absence historique.
+                self.assertIn(ident,published)
+                self.assertNotIn(ident,historic)
+                self.assertEqual(sum(x["id"]==ident for x in PUBLIC["events"]),1)
+                for field in ("id","title","date","time","artistIds",
+                              "venueId","genres","status","officialUrl","sourceType"):
+                    self.assertEqual(published[ident].get(field),event.get(field))
                 self.assertIsNone(event["time"] if ident.endswith("theo-charaf")
                                   or ident.endswith("nancy-howlin-jaws-komodor") else None)
                 creations.update(new)

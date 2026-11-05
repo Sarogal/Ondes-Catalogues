@@ -2121,6 +2121,21 @@
       "id": "gloria",
       "name": "Gloria",
       "aliases": []
+    },
+    {
+      "id": "moundrag",
+      "name": "Moundrag",
+      "aliases": []
+    },
+    {
+      "id": "theo-charaf",
+      "name": "Théo Charaf",
+      "aliases": []
+    },
+    {
+      "id": "hayko",
+      "name": "Hayko",
+      "aliases": []
     }
   ],
   "venues": [
@@ -2270,15 +2285,15 @@
     {
       "id": "l-autre-canal-nancy",
       "name": "L’Autre Canal",
-      "address": "Adresse exacte à vérifier",
-      "postalCode": "À vérifier",
+      "address": "45 boulevard d'Austrasie",
+      "postalCode": "54000",
       "city": "Nancy",
       "department": "54",
       "region": "Grand Est",
-      "latitude": 48.692,
-      "longitude": 6.185,
-      "geoPrecision": "centre de commune (position indicative, pas la salle)",
-      "geoSource": "Géolocalisation indicative par commune"
+      "latitude": 48.694175,
+      "longitude": 6.198269,
+      "geoPrecision": "coordonnées GPS publiées par L'Autre Canal dans son dossier technique de 2023 (48.694175, 6.198269), concordant avec le bâtiment OSM way 115010861 à proximité; localisation indicative du site, pas une entrée garantie",
+      "geoSource": "https://lautrecanalnancy.fr/sites/default/files/lautrecanal/fichiers/dossier_technique_2023_fr.pdf"
     },
     {
       "id": "la-belle-electrique-grenoble",
@@ -3189,6 +3204,19 @@
       "longitude": -4.33766,
       "geoPrecision": "centre arrondi du bâtiment Salle Cap Caval désigné nominativement sur OpenStreetMap way 66608817 (amenity=music_venue, building=yes) via Mapcarta ; pas son entrée exacte ni un parking Cap Caval voisin",
       "geoSource": "https://mapcarta.com/W66608817"
+    },
+    {
+      "id": "marche-gare-lyon",
+      "name": "Marché Gare",
+      "address": "4–6 place Hubert Mounier",
+      "postalCode": "69002",
+      "city": "Lyon",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.74135,
+      "longitude": 4.82265,
+      "geoPrecision": "centre indicatif du bâtiment Marché Gare (OpenStreetMap way 82189851 via Mapcarta), bâtiment arts_centre et building=yes avec site marchegare.fr ; la fiche OSM conserve l'ancienne adresse rue Casimir Périer, tandis que le site officiel 2026 indique l'accès actuel 4–6 place Hubert Mounier ; ni entrée précise ni parking LPA",
+      "geoSource": "https://mapcarta.com/W82189851"
     }
   ],
   "events": [
@@ -13373,6 +13401,160 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Salle Cap Caval",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261110-roubaix-howlin-jaws-moundrag",
+      "title": "Howlin’ Jaws + Moundrag",
+      "date": "2026-11-10",
+      "artistIds": [
+        "howlin-jaws",
+        "moundrag"
+      ],
+      "venueId": "la-cave-aux-poetes-roubaix",
+      "genres": [
+        "Psych Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://caveauxpoetes.com/evenement/howlinjaws-moundrag/",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Cave aux Poètes",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261118-paris-howlin-jaws-theo-charaf",
+      "title": "Howlin’ Jaws + Théo Charaf",
+      "date": "2026-11-18",
+      "artistIds": [
+        "howlin-jaws",
+        "theo-charaf"
+      ],
+      "venueId": "le-trabendo-paris",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.letrabendo.net/programmation/howlin-jaws/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Radical Production",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-lyon-howlin-jaws-hayko",
+      "title": "Howlin’ Jaws + Hayko",
+      "date": "2026-11-21",
+      "artistIds": [
+        "howlin-jaws",
+        "hayko"
+      ],
+      "venueId": "marche-gare-lyon",
+      "genres": [
+        "Rock",
+        "Indie Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://marchegare.fr/agenda/howlin-jaws",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Marché Gare",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270429-nancy-howlin-jaws-komodor",
+      "title": "Howlin’ Jaws + Komodor",
+      "date": "2027-04-29",
+      "artistIds": [
+        "howlin-jaws",
+        "komodor"
+      ],
+      "venueId": "l-autre-canal-nancy",
+      "genres": [
+        "Psych Rock",
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lautrecanalnancy.fr/agenda/howlin-jaws-komodor",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Autre Canal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270227-grenoble-cachemire-la-phaze-bobs-not-dead",
+      "title": "Cachemire + La Phaze + Bob's Not Dead",
+      "date": "2027-02-27",
+      "artistIds": [
+        "cachemire",
+        "la-phaze",
+        "bobs-not-dead"
+      ],
+      "venueId": "la-belle-electrique-grenoble",
+      "genres": [
+        "Rock",
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.la-belle-electrique.com/fr/agenda/tournee-du-coeur",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rage Tour",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
