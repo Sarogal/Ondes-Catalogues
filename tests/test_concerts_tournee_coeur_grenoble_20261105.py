@@ -42,7 +42,16 @@ class TourneeCoeurGrenobleCloudTests(unittest.TestCase):
         self.assertEqual(event, SIGNED["event"])
         self.assertEqual(added, {})
         self.assertIsNone(event["time"])
-        self.assertNotIn(event["id"], {x["id"] for x in CATALOG["events"]})
+        # Après une publication autorisée, ce concert peut être déjà dans
+        # le catalogue. Vérifier alors chaque champ signé : aucune
+        # mutation silencieuse ni doublon, sans exiger artificiellement
+        # qu'une fiche approuvée reste absente.
+        published = [x for x in CATALOG["events"] if x["id"] == event["id"]]
+        self.assertLessEqual(len(published), 1)
+        if published:
+            for field, signed_value in event.items():
+                with self.subTest(field=field):
+                    self.assertEqual(published[0][field], signed_value)
         self.assertEqual(
             [self.artists[i]["name"] for i in event["artistIds"]],
             ["Cachemire", "La Phaze", "Bob's Not Dead"])
