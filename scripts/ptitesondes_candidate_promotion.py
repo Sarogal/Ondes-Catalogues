@@ -145,7 +145,18 @@ def category_for(title, description):
     return None
 
 
-def confirmed_session(timings, day):
+# Official organizer evidence: these slots are exclusively school/group sessions,
+# not publicly bookable family outings; other sessions of the same show remain.
+# https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301
+# https://www.opera-bordeaux.com/famille-orchestre-les-droles-de-petites-betes-86441
+SCHOOL_ONLY_TIMES = {
+    ("54065371", "2027-01-22"): frozenset({"14:30"}),
+    ("66367832", "2027-01-28"): frozenset({"14:30"}),
+    ("66367832", "2027-01-29"): frozenset({"14:30"}),
+}
+
+
+def confirmed_session(timings, day, uid=None):
     if isinstance(timings, str):
         timings = json.loads(timings)
     if not isinstance(timings, list):
@@ -167,6 +178,10 @@ def confirmed_session(timings, day):
             times.append(stamp.strftime("%H:%M"))
     if not times:
         raise ValueError("Séance datée et horodatée absente")
+    restricted = SCHOOL_ONLY_TIMES.get((str(uid), day), frozenset())
+    times = [time for time in times if time not in restricted]
+    if not times:
+        raise ValueError("Séance uniquement scolaire ou réservée")
     if len(set(times)) > 4:
         raise ValueError("Trop de séances le même jour")
     return ", ".join(sorted(set(times)))
@@ -260,7 +275,7 @@ def make_event(lead, row, location, today):
         "title": row["title_fr"].strip(),
         "category": category[0], "category_label": category[1],
         "date_start": day, "date_end": day,
-        "time": confirmed_session(row.get("timings"), day),
+        "time": confirmed_session(row.get("timings"), day, lead["external_id"]),
         "city": row["location_city"], "department": department,
         "region": region, "venue": row["location_name"],
         "source_url": canonical,
