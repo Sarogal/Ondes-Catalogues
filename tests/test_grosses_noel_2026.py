@@ -13,6 +13,8 @@ from grossesondes_noel_2026 import (
     noel_2026_update, expected_sources,
 )
 from grossesondes_stage import stage
+from grossesondes_cloud_sync import collect_noel_independent_sources
+from urllib.error import HTTPError
 from test_grosses_stage import fixtures
 
 
@@ -123,6 +125,42 @@ class NoelOfficialApprovalTests(unittest.TestCase):
                                                       ["Red Gordon"]})
         self.assertIsNone(noel_2026_update(altered, proposal(altered),
                                            src, "2026-11-05"))
+
+    def test_cloud_retry_only_transient_http_not_403(self):
+        row = original_row()
+        patch = {"updates": [proposal(row)]}
+        first_url = ORGANIZER_URL
+        calls, sleeps = [], []
+        def fetch(url):
+            calls.append(url)
+            if url == first_url and calls.count(url) == 1:
+                raise HTTPError(url, 503, "Service Unavailable", None, None)
+            if url == MUNICIPAL_URLS["2026-12-12"]:
+                raise HTTPError(url, 403, "Forbidden", None, None)
+            return "Sources indépendantes accessibles"
+        collected = collect_noel_independent_sources(
+            patch, fetcher=fetch, sleeper=sleeps.append)
+        self.assertEqual(calls.count(first_url), 2)
+        self.assertEqual(calls.count(MUNICIPAL_URLS["2026-12-12"]), 1)
+        self.assertEqual(sleeps, [1])
+        self.assertEqual(collected["noel_organizer"],
+                         "Sources indépendantes accessibles")
+        self.assertEqual(collected["noel_city_2026-12-12"], "")
+        self.assertEqual(set(collected), set(PROOF_SOURCES))
+
+    def test_cloud_sources_ignore_patch_urls_and_absent_mode(self):
+        self.assertEqual(collect_noel_independent_sources(
+            {"updates": []}, fetcher=lambda url: self.fail(url)), {})
+        patch = {"updates": [proposal(original_row())]}
+        patch["updates"][0]["evidence"] = ["https://evil.fr/"]
+        visited = []
+        collected = collect_noel_independent_sources(
+            patch,
+            fetcher=lambda url: visited.append(url) or "preuve",
+            sleeper=lambda _: self.fail("unexpected sleep"))
+        self.assertEqual(set(visited), set(PROOF_SOURCES.values()))
+        self.assertNotIn("https://evil.fr/", visited)
+        self.assertEqual(len(collected), 5)
 
     def test_stage_holds_without_sources_then_accepts_when_independently_proven(self):
         c, h, p = fixtures()
