@@ -3611,6 +3611,13 @@ PILOT_VENUES.update(TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_VENUES_20261105)
 TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_SIGNED_20261105 = json.loads(r'''{"go-c-20270204-saint-quentin-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270204-saint-quentin-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-04","time":null,"artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"la-manufacture-saint-quentin","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://billetterie-saint-quentin.mapado.com/en/event/756872-la-tournee-du-coeur","sourceType":"salle","organizer":"Rage Tour / Ville de Saint-Quentin"},"newArtists":[],"proofs":[{"url":"https://billetterie-saint-quentin.mapado.com/en/event/756872-la-tournee-du-coeur","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","ticketTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"]},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]},"go-c-20270205-vitry-le-francois-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270205-vitry-le-francois-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-05","time":"21:00","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"l-orange-bleue-vitry-le-francois","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://bords2scenes.fr/agenda/la-tournee-du-coeur-3","sourceType":"salle","organizer":"Bords 2 Scènes"},"newArtists":[],"proofs":[{"url":"https://bords2scenes.fr/agenda/la-tournee-du-coeur-3","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"21:00"},{"url":"https://tourneeducoeur.ragetour.com/","proofType":"official-promoter-tour-calendar","checkedFields":["date","city","venue"]}]}}''')
 
 
+# La CLEF (date confirmée par l'artiste malgré 'à venir' du promoteur),
+# et l'Espace Bel Air, tous deux sourcés et signés indépendamment.
+TOURNEE_DU_COEUR_CLEF_BELAIR_VENUES_20261105 = json.loads(r'''{"la-clef-saint-germain-en-laye":{"venue":{"id":"la-clef-saint-germain-en-laye","name":"La CLEF","address":"46 rue de Mareil","postalCode":"78100","city":"Saint-Germain-en-Laye","department":"78","region":"Île-de-France","latitude":48.89409,"longitude":2.08842,"geoPrecision":"Point indicatif nominatif de La CLEF (MusiTree 48.89409,2.08842), confirmé à quelques mètres par Party2Night 48.894068,2.088503; entrée exacte non garantie","geoSource":"https://musitree.fr/concerts/salles/la-clef-saint-germain-en-laye-saint-germain-en-laye/"},"officialUrl":"https://laclef.asso.fr/infos-pratiques/comment-venir/","locationUrl":"https://musitree.fr/concerts/salles/la-clef-saint-germain-en-laye-saint-germain-en-laye/","locationProofType":"independent-named-venue-geolocation"},"espace-bel-air-saint-aubin-du-cormier":{"venue":{"id":"espace-bel-air-saint-aubin-du-cormier","name":"Espace Bel Air","address":"rue des Rochers","postalCode":"35140","city":"Saint-Aubin-du-Cormier","department":"35","region":"Bretagne","latitude":48.25787,"longitude":-1.38968,"geoPrecision":"Point indicatif nominatif du bâtiment Espace Bel Air, OSM way W117002146 via Mapcarta (48.25787,-1.38968), cohérent avec le repère 7J56+44 du plan municipal","geoSource":"https://mapcarta.com/fr/W117002146"},"officialUrl":"https://espacebelair.net/info-pratiques/","locationUrl":"https://mapcarta.com/fr/W117002146","locationProofType":"openstreetmap-venue-way"}}''')
+PILOT_VENUES.update(TOURNEE_DU_COEUR_CLEF_BELAIR_VENUES_20261105)
+TOURNEE_DU_COEUR_CLEF_BELAIR_SIGNED_20261105 = json.loads(r'''{"go-c-20270129-saint-germain-en-laye-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270129-saint-germain-en-laye-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-01-29","time":"20:30","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"la-clef-saint-germain-en-laye","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://laclef.asso.fr/evenement/la-tournee-du-coeur-cachemire-la-phaze-bobs-not-dead/","sourceType":"salle","organizer":"La CLEF"},"newArtists":[],"proofs":[{"url":"https://laclef.asso.fr/evenement/la-tournee-du-coeur-cachemire-la-phaze-bobs-not-dead/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","doorTime","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"20:30"},{"url":"https://www.cachemiremusic.fr/concerts.html","proofType":"official-artist-tour-calendar","checkedFields":["artist","date","city","venue"]}]},"go-c-20270212-saint-aubin-du-cormier-cachemire-la-phaze-bobs-not-dead":{"event":{"id":"go-c-20270212-saint-aubin-du-cormier-cachemire-la-phaze-bobs-not-dead","title":"Cachemire + La Phaze + Bob's Not Dead","date":"2027-02-12","time":"20:30","artistIds":["cachemire","la-phaze","bobs-not-dead"],"venueId":"espace-bel-air-saint-aubin-du-cormier","genres":["Rock","Punk"],"status":"confirmed","officialUrl":"https://espacebelair.net/laffiche/saison-culturelle-2026-2027/","sourceType":"salle","organizer":"Espace Bel Air / Saint-Aubin-du-Cormier"},"newArtists":[],"proofs":[{"url":"https://espacebelair.net/laffiche/saison-culturelle-2026-2027/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","concertStartTime"],"confirmedArtists":["Cachemire","La Phaze","Bob's Not Dead"],"concertStartTimeConfirmed":"20:30"},{"url":"https://www.saint-aubin-du-cormier.bzh/evenement/tournee-du-coeur-iii-cachemire-la-phaze-bobs-not-dead/","proofType":"first-party-municipal-event-calendar","checkedFields":["artists","date","city","venue","genre"]}]}}''')
+
+
 def validate_approval(approval, venues, known_artist_ids, today):
     require(approval.get("reviewDecision") == "approved",
             "Événement non approuvé")
@@ -3625,6 +3632,41 @@ def validate_approval(approval, venues, known_artist_ids, today):
     event_id = event.get("id", "")
     require(isinstance(event_id, str) and re.fullmatch(r"go-c-[a-z0-9-]{7,150}", event_id),
             "Identifiant d'événement invalide")
+    # 29/01 Saint-Germain-en-Laye + 12/02 Saint-Aubin-du-Cormier.
+    # Aucune autorisation fondée sur l'inconnu 'À venir' de Rage Tour.
+    clef_belair = TOURNEE_DU_COEUR_CLEF_BELAIR_SIGNED_20261105
+    locked_urls = {a["event"]["officialUrl"] for a in clef_belair.values()}
+    locked_venues = set(TOURNEE_DU_COEUR_CLEF_BELAIR_VENUES_20261105)
+    if (event_id in clef_belair or event.get("venueId") in locked_venues
+            or event.get("officialUrl") in locked_urls):
+        signed_bill = clef_belair.get(event_id)
+        require(signed_bill is not None
+                and event == signed_bill["event"]
+                and approval.get("newArtists", []) == signed_bill["newArtists"]
+                and reviewer == "independent-official-verifier",
+                "CLEF/Bel Air : événement ou salle non approuvés")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "CLEF/Bel Air : signature officielle périmée")
+        proofs = signed_bill["proofs"]
+        require(isinstance(evidence, list)
+                and len(evidence) == len(proofs) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "CLEF/Bel Air : sources officielles incomplètes")
+        for proof, expected in zip(evidence, proofs):
+            require(proof.get("url") == expected["url"]
+                    and proof.get("proofType") == expected["proofType"]
+                    and proof.get("checkedAt") == checked.isoformat()
+                    and proof.get("checkedFields") == expected["checkedFields"]
+                    and proof.get("confirmedArtists") == expected.get("confirmedArtists")
+                    and proof.get("concertStartTimeConfirmed")
+                        == expected.get("concertStartTimeConfirmed"),
+                    "CLEF/Bel Air : plateau, horaire ou provenance altérés")
+        require(event.get("time") == "20:30"
+                and "concertStartTime" in (evidence[0].get("checkedFields") or [])
+                and "startTime" not in (evidence[0].get("checkedFields") or []),
+                "CLEF/Bel Air : début musical non attesté")
+
     # 04/02 Saint-Quentin et 05/02 Vitry : aucune autre affiche
     # autorisée dans ces deux salles avant une approbation nominative.
     signed = TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_SIGNED_20261105
