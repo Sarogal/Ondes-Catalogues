@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "updated_at": "2026-11-05",
+  "places": [
+    {
+      "id": "montpellier-mille-formes",
+      "name": "mille formes Montpellier",
+      "kind": "lieu-permanent",
+      "category": "centre-eveil-artistique",
+      "category_label": "Centre d'éveil artistique",
+      "city": "Montpellier",
+      "department": "Hérault",
+      "region": "Occitanie",
+      "postal_code": "34000",
+      "address": "1 place Paul Bec, 34000 Montpellier",
+      "lat": 43.60826,
+      "lng": 3.88612,
+      "geo_precision": "lieu",
+      "age_min": 0,
+      "age_max": 6,
+      "admission": "gratuit",
+      "activities": [
+        "éveil artistique",
+        "expositions interactives",
+        "arts vivants",
+        "musique",
+        "lecture"
+      ],
+      "reservation_note": "Les spectacles et certains ateliers peuvent nécessiter une réservation. Consulter le programme officiel.",
+      "official_url": "https://www.montpellier.fr/vie-quotidienne/vivre-ici/se-cultiver/jeune-public/mille-formes-centre-dart-pour-les-0-6-ans",
+      "geo_source_url": "https://mapcarta.com/fr/N13508792408",
+      "reviewed_at": "2026-11-05",
+      "is_publicly_accessible": true
+    }
+  ]
+}
