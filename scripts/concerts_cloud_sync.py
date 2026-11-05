@@ -426,6 +426,11 @@ PILOT_VENUES = {
 # Whitelist STRICTEMENT nominative ; toute autre salle reste refusée.
 PILOT_VENUES.update(json.loads(r'''{"stereolux-nantes":{"venue":{"id":"stereolux-nantes","name":"Stereolux","address":"4 boulevard Léon-Bureau","postalCode":"44200","city":"Nantes","department":"44","region":"Pays de la Loire","latitude":47.205119,"longitude":-1.563498,"geoPrecision":"point GPS nominatif Stereolux publié par Nantes Université (47.205119, -1.563498), cohérent avec le point OpenStreetMap node 2434544471 voisin ; repère indicatif de l'établissement, pas l'entrée exacte de la salle Maxi","geoSource":"https://www.univ-nantes.fr/plans-des-campus/stereolux"},"officialUrl":"https://stereolux.org/infos-pratiques/accessibilite","locationUrl":"https://www.univ-nantes.fr/plans-des-campus/stereolux","locationProofType":"independent-institutional-venue-gps"},"6mic-aix-en-provence":{"venue":{"id":"6mic-aix-en-provence","name":"6MIC","address":"160 rue Pascal Duverger","postalCode":"13090","city":"Aix-en-Provence","department":"13","region":"Provence-Alpes-Côte d’Azur","latitude":43.5193,"longitude":5.42182,"geoPrecision":"centre indicatif du bâtiment 6MIC identifié sur OpenStreetMap way 701032991 via Mapcarta (coordonnées arrondies à cinq décimales), pas son entrée exacte","geoSource":"https://mapcarta.com/fr/W701032991"},"officialUrl":"https://www.6mic-aix.fr/comment-venir-au-6mic/","locationUrl":"https://mapcarta.com/fr/W701032991","locationProofType":"openstreetmap-venue-way"}}'''))
 
+# Concerts nominatifs vérifiés : aucun autre événement ne peut emprunter les
+# deux nouvelles salles ou réutiliser leurs URLs sans revue de code.
+HOWLIN_TWO_SIGNED_20261105 = json.loads(r'''{"go-c-20261208-nantes-fff-howlin-jaws":{"event":{"id":"go-c-20261208-nantes-fff-howlin-jaws","title":"FFF + Howlin’ Jaws","date":"2026-12-08","time":null,"artistIds":["fff","howlin-jaws"],"venueId":"stereolux-nantes","genres":["Funk Rock","Rock"],"status":"confirmed","officialUrl":"https://stereolux.org/agenda/fff","sourceType":"salle","organizer":"O Spectacles"},"newArtists":[],"proofs":[{"url":"https://stereolux.org/agenda/fff","proofType":"official-organizer-or-venue","checkedFields":["leadArtist","date","venue","supportUnspecified"],"confirmedArtists":["FFF"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-support-agent","checkedFields":["artists","date","venue","supportRole"],"confirmedArtists":["FFF","Howlin' Jaws"]}]},"go-c-20270402-aix-howlin-jaws-gloria":{"event":{"id":"go-c-20270402-aix-howlin-jaws-gloria","title":"Howlin’ Jaws + Gloria","date":"2027-04-02","time":null,"artistIds":["howlin-jaws","gloria"],"venueId":"6mic-aix-en-provence","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/","sourceType":"salle","organizer":"6MIC"},"newArtists":[{"id":"gloria","name":"Gloria"}],"proofs":[{"url":"https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre"],"confirmedArtists":["Howlin' Jaws","Gloria"]},{"url":"https://radical-production.fr/artistes/howlin-jaws/","proofType":"independent-official-artist-agent","checkedFields":["leadArtist","date","venue","otherArtistNamed"],"confirmedArtists":["Howlin' Jaws","Gloria"]}]}}''')
+HOWLIN_TWO_VENUES = {"stereolux-nantes", "6mic-aix-en-provence"}
+
 # Only these exact, individually reviewed organizer-controlled tickets are allowed.
 # The venue's generic Billetweb calendar and unrelated organizer tickets remain blocked.
 BRIN_ORGANIZER_VERIFIED = {
@@ -3558,6 +3563,34 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Identifiant d'événement invalide")
     require(event.get("venueId") in venues,
             "Lieu non connu : nouvel emplacement à vérifier avant publication")
+    # Aucun candidat de tournée brut ne peut hériter d'une validation de salle.
+    # Les deux nouveaux lieux ne sont ouverts qu'aux affiches signées ci-dessus.
+    signed_urls = {x["event"]["officialUrl"]: key for key, x in
+                   HOWLIN_TWO_SIGNED_20261105.items()}
+    if (event.get("venueId") in HOWLIN_TWO_VENUES or
+            event_id in HOWLIN_TWO_SIGNED_20261105 or
+            event.get("officialUrl") in signed_urls):
+        spec = HOWLIN_TWO_SIGNED_20261105.get(event_id)
+        require(spec is not None and
+                event == spec["event"] and
+                approval.get("newArtists", []) == spec["newArtists"] and
+                approval.get("reviewedBy") == "independent-official-verifier",
+                "Howlin’ Jaws Nantes/Aix : identité signée, salle ou artiste modifiés")
+        checked = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= checked <= today,
+                "Howlin’ Jaws Nantes/Aix : vérification ancienne ou future")
+        proofs = spec["proofs"]
+        require(len(evidence) == len(proofs) == 2 and
+                all(isinstance(p, dict) for p in evidence),
+                "Howlin’ Jaws Nantes/Aix : preuves nominatives incomplètes")
+        for actual, expected in zip(evidence, proofs):
+            require(actual.get("url") == expected["url"] and
+                    actual.get("proofType") == expected["proofType"] and
+                    actual.get("checkedAt") == checked.isoformat() and
+                    actual.get("checkedFields") == expected["checkedFields"] and
+                    actual.get("confirmedArtists") == expected["confirmedArtists"],
+                    "Howlin’ Jaws Nantes/Aix : champs ou provenance altérés")
+
     # An exact approved event ID cannot be transplanted to another existing
     # venue to bypass its venue-specific proof and hostname rules.
     if event_id in ROUEN_DEATH_VALLEY_SIGNED:
