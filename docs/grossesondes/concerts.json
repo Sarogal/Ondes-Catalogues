@@ -3093,6 +3093,45 @@
       "longitude": 5.05964,
       "geoPrecision": "point nominatif de La Vapeur sur OpenStreetMap node 3474725036 via Mapcarta, coordonnées arrondies à 5 décimales ; position indicative de la salle, pas son entrée",
       "geoSource": "https://mapcarta.com/fr/N3474725036"
+    },
+    {
+      "id": "casino-de-paris",
+      "name": "Casino de Paris",
+      "address": "16 rue de Clichy",
+      "postalCode": "75009",
+      "city": "Paris",
+      "department": "75",
+      "region": "Île-de-France",
+      "latitude": 48.87845,
+      "longitude": 2.33051,
+      "geoPrecision": "centre indicatif du bâtiment Casino de Paris sur OpenStreetMap way 69257631, reproduit par Mapcarta (5 décimales) ; ni l'entrée spectateurs ni une précision métrique garanties",
+      "geoSource": "https://mapcarta.com/fr/26253924"
+    },
+    {
+      "id": "radiant-bellevue-caluire",
+      "name": "Radiant-Bellevue",
+      "address": "1 rue Jean Moulin",
+      "postalCode": "69300",
+      "city": "Caluire-et-Cuire",
+      "department": "69",
+      "region": "Auvergne-Rhône-Alpes",
+      "latitude": 45.79795,
+      "longitude": 4.84301,
+      "geoPrecision": "centre indicatif du bâtiment Radiant-Bellevue sur OpenStreetMap way 299047133 via Mapcarta (5 décimales), non l'entrée exacte ; la tournée annonce Lyon mais la salle est située à Caluire-et-Cuire",
+      "geoSource": "https://mapcarta.com/fr/W299047133"
+    },
+    {
+      "id": "cepac-silo-marseille",
+      "name": "CEPAC Silo",
+      "address": "35 quai du Lazaret",
+      "postalCode": "13002",
+      "city": "Marseille",
+      "department": "13",
+      "region": "Provence-Alpes-Côte d’Azur",
+      "latitude": 43.310475,
+      "longitude": 5.366558,
+      "geoPrecision": "point de repère touristique de la salle Le Silo/CEPAC Silo, publié via Cirkwi par l'Office de Tourisme et des Congrès de Marseille (43.310475, 5.366558) ; point indicatif du site, pas l'entrée ni une précision métrique",
+      "geoSource": "https://www.cirkwi.com/en/point-interet/4687013-le-silo"
     }
   ],
   "events": [
@@ -13035,6 +13074,66 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "L’Aéronef",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-paris-marillion-lazuli",
+      "title": "Marillion + Lazuli",
+      "date": "2026-11-21",
+      "artistIds": [
+        "marillion",
+        "lazuli"
+      ],
+      "venueId": "casino-de-paris",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.casinodeparis.fr/fr/Marillion-En-Concert-21-Novembre-2026-Billetterie-Paris",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Casino de Paris",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261129-caluire-marillion-lazuli",
+      "title": "Marillion + Lazuli",
+      "date": "2026-11-29",
+      "artistIds": [
+        "marillion",
+        "lazuli"
+      ],
+      "venueId": "radiant-bellevue-caluire",
+      "genres": [
+        "Rock progressif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://radiant-bellevue.fr/spectacles/marillion/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Radiant-Bellevue",
       "ticketUrl": null,
       "lastVerified": "2026-11-05",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
