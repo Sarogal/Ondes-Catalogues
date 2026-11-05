@@ -1,5 +1,6 @@
 """No-network guards for prospective outings promotions; no production writes."""
 from datetime import date, timedelta
+from urllib.error import HTTPError
 import json
 import tempfile
 from pathlib import Path
@@ -10,7 +11,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from ptitesondes_candidate_promotion import (
     api_record, category_for, confirmed_session, evaluate, main, make_event,
-    permitted, registry_location, scheduled,
+    permitted, reconciled_openagenda_url, registry_location, scheduled,
 )
 from merge_policy import ORIGIN, merge
 from venue_registry import VENUES
@@ -250,6 +251,83 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertEqual([e["date_start"] for e in p["additions"]],
                          ["2027-02-10", "2027-02-14"])
         self.assertEqual(len({e["id"] for e in p["additions"]}), 2)
+
+    def test_oa_v2_url_alias_requires_uid_and_agenda(self):
+        alias = dict(lead(), collector="openagenda-v2",
+                     source_url="https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_generated-path")
+        self.assertEqual(reconciled_openagenda_url(alias, record()), URL)
+        item = make_event(alias, record(), registry_location(alias), TODAY)
+        self.assertEqual(item["source_url"], URL)
+        p, report = evaluate([alias], base(), base(), TODAY,
+                             fetch=lambda uid: record(),
+                             verifier=lambda event, originals: (False, "official proof absent"))
+        self.assertEqual(p["additions"], [])
+        self.assertEqual(report["details"][0]["status"], "unverified")
+
+    def test_oa_v2_alias_rejects_cross_identity_or_unsafe_destination(self):
+        alias = dict(lead(), collector="openagenda-v2",
+                     source_url="https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_generated-path")
+        invalid = (
+            dict(alias, external_id="99999"),
+            dict(alias, collector="opendatasoft-index"),
+            dict(alias, source_url=alias["source_url"].replace("/77081258_", "/999999_")),
+            dict(alias, source_url=alias["source_url"].replace("openagenda.com", "evil.example")),
+            dict(alias, source_url=alias["source_url"] + "?q=1"),
+        )
+        for candidate in invalid:
+            with self.subTest(candidate=candidate):
+                with self.assertRaises(ValueError):
+                    reconciled_openagenda_url(candidate, record())
+        for target in (
+            "https://openagenda.com/other-agenda/events/slug",
+            "https://openagenda.com.evil.example/other/events/slug",
+            "https://openagenda.com:444/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/slug",
+            "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/slug#fragment",
+            "http://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/slug",
+        ):
+            with self.subTest(target=target):
+                with self.assertRaises(ValueError):
+                    reconciled_openagenda_url(alias, dict(record(), canonicalurl=target))
+
+    def test_ods_retry_transient_reset_and_bounded_permanent_timeout(self):
+        calls = []
+        def recovering(url):
+            calls.append(url)
+            if len(calls) == 1:
+                raise ConnectionResetError("connection reset by peer")
+            return {"results": [record()]}
+        with patch("ptitesondes_candidate_promotion.time.sleep") as sleep:
+            self.assertEqual(api_record("77081258", get=recovering)["uid"], "77081258")
+        self.assertEqual(len(calls), 2)
+        sleep.assert_called_once_with(0.4)
+
+        calls = []
+        def unavailable(url):
+            calls.append(url)
+            raise TimeoutError("unavailable")
+        with patch("ptitesondes_candidate_promotion.time.sleep") as sleep:
+            with self.assertRaises(TimeoutError):
+                api_record("77081258", get=unavailable)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(sleep.call_count, 2)
+
+    def test_ods_no_retry_for_http_404_or_malformed_payload(self):
+        calls = []
+        def missing(url):
+            calls.append(url)
+            raise HTTPError(url, 404, "Not Found", {}, None)
+        with patch("ptitesondes_candidate_promotion.time.sleep") as sleep:
+            with self.assertRaises(HTTPError):
+                api_record("77081258", get=missing)
+        self.assertEqual(len(calls), 1)
+        sleep.assert_not_called()
+        calls = []
+        def malformed(url):
+            calls.append(url)
+            return {"results": "invalid"}
+        with self.assertRaisesRegex(ValueError, "malformée"):
+            api_record("77081258", get=malformed)
+        self.assertEqual(len(calls), 1)
 
 
 if __name__ == "__main__":
