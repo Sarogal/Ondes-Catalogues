@@ -113,6 +113,24 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ci.preview(value, "fake-token", dt.date(2026, 11, 6))
 
+    def test_real_cli_entrypoint_has_clock_and_no_private_value(self):
+        # Unlike direct preview() calls, main() actually resolves the Paris
+        # clock. This catches a missing datetime import before deployment.
+        from contextlib import redirect_stdout
+        from io import StringIO
+        import os
+        output = StringIO()
+        with (patch.dict(os.environ, {"GROSSES_ONDES_INTAKE_READ_TOKEN": "fake-token"}),
+              patch.object(ci.sys, "argv", ["cli", "--head-sha", "a" * 40]),
+              patch.object(ci, "preview", return_value=4) as inspect,
+              redirect_stdout(output)):
+            self.assertEqual(ci.main(), 0)
+        self.assertEqual(inspect.call_args.args[0], "a" * 40)
+        self.assertEqual(inspect.call_args.args[1], "fake-token")
+        self.assertIsInstance(inspect.call_args.args[2], dt.date)
+        self.assertNotIn("fake-token", output.getvalue())
+        self.assertIn("4 nouveaux concerts", output.getvalue())
+
     def test_only_pinned_sha_and_main_json_are_requested(self):
         refs = []
         def approved(ref, token):
