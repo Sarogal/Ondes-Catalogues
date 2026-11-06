@@ -159,7 +159,38 @@ jobs:
           fi
           echo "Revue des sources officielles réalisée sans changement d'approbation." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Conserver uniquement le registre de pistes dans le dépôt privé
+      - name: Vérifier les annulations, reports et incohérences des concerts publiés
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/published_watch.py \
+              --report "$RUNNER_TEMP/concerts-published-watch.json" \
+              --summary "$RUNNER_TEMP/concerts-published-watch.md" \
+              --max-check 24 \
+              > "$RUNNER_TEMP/concerts-private-logs/published-watch.log" 2>&1; then
+            echo "::error::Contrôle des concerts publiés indisponible ; aucun rapport privé modifié"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-published-watch.json"
+          report = json.loads(p.read_text(encoding="utf-8"))
+          assert isinstance(report.get("needsReview"), list)
+          print("Contrôle des concerts publiés effectué ; modifications automatiques interdites.")
+          PY
+
+      - name: Conserver les rapports sensibles uniquement dans le dépôt privé
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="confidential/automation/concerts/intake"
+          cp "$RUNNER_TEMP/concerts-official-review.json" "$target/official-review.json"
+          cp "$RUNNER_TEMP/concerts-published-watch.json" "$target/published-watch.json"
+
+      - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
         shell: bash
@@ -169,7 +200,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- automation/concerts/intake/registry.json
+          git add -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
           if git diff --cached --quiet; then
             echo "Aucune nouvelle piste à enregistrer."
           else
