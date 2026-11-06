@@ -57,6 +57,58 @@
         "Ludothèque Bellevue-Méta",
         "La ludothèque de la Meta"
       ]
+    },
+    {
+      "id": "pace-totems",
+      "facts": {
+        "id": "pace-totems",
+        "name": "Totems",
+        "kind": "lieu-permanent",
+        "category": "ludotheque",
+        "category_label": "Médiathèque et ludothèque",
+        "city": "Pacé",
+        "department": "Ille-et-Vilaine",
+        "region": "Bretagne",
+        "postal_code": "35740",
+        "address": "12 chemin de la Métairie, 35740 Pacé",
+        "geo_precision": "lieu",
+        "age_min": null,
+        "age_max": null,
+        "admission": "consultation sur place libre et gratuite",
+        "activities": [
+          "ludothèque",
+          "éveil musical",
+          "espace enfants"
+        ],
+        "reservation_note": "Pour les emprunts et animations, vérifier les modalités sur le site officiel.",
+        "official_url": "https://www.ville-pace.bzh/mes-loisirs/culture/mediatheque/",
+        "geo_source_url": "https://www.openstreetmap.org/way/67402599",
+        "is_publicly_accessible": true
+      },
+      "official_anchors": [
+        "totems",
+        "un équipement culturel municipal ouvert à tous",
+        "la ludothèque",
+        "l espace enfants",
+        "la consultation sur place est libre et gratuite",
+        "éveil musical"
+      ],
+      "osm": {
+        "type": "way",
+        "id": 67402599,
+        "lat": 48.1462808,
+        "lng": -1.7739782,
+        "tags": {
+          "name": "Totems",
+          "amenity": "library",
+          "addr:street": "Chemin de la Métairie",
+          "addr:housenumber": "12",
+          "addr:postcode": "35740"
+        }
+      },
+      "aliases": [
+        "Médiathèque Totems"
+      ]
     }
   ]
 }
