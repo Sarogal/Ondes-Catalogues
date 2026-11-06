@@ -1,0 +1,54 @@
+name: P'tites Ondes — lieux, prévalidation publique indépendante
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_place_preflight.py'
+      - 'tests/test_ptitesondes_place_preflight.py'
+      - '.github/workflows/ptitesondes-place-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_place_preflight.py'
+      - 'tests/test_ptitesondes_place_preflight.py'
+      - '.github/workflows/ptitesondes-place-preflight.yml'
+  workflow_dispatch:
+  schedule:
+    - cron: '50 08 * * *'
+    - cron: '50 11 * * *'
+    - cron: '50 15 * * *'
+    - cron: '50 19 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-independent-place-preflight
+  cancel-in-progress: false
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Tests hors ligne de non-régression
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_place_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_places.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_place_nullable_age.py' -v
+  preview:
+    needs: tests
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Preuves officielles et OSM en direct, aucune publication
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        run: python scripts/ptitesondes_place_preflight.py --mode preview
