@@ -57,6 +57,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
           python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_places.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_place_preflight.py' -v
       - name: Contrôler les lieux permanents (append-only)
         id: places
         run: |
