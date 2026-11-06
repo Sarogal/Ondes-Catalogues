@@ -142,8 +142,8 @@ def source_index(document, today):
                 m["tags"]["addr:postcode"] != p["postal_code"] or
                 norm(m["tags"].get("addr:city", p["city"])) != norm(p["city"]) or
                 not re.search(r"(?<![0-9])"+re.escape(m["tags"]["addr:housenumber"])+r"(?![0-9])", p["address"]) or
-                not re.search(r"\\b"+re.escape(norm(m["tags"]["addr:street"]))+r"\\b", norm(p["address"])) or
-                not re.search(r"\\b"+re.escape(p["postal_code"])+r"\\b", p["address"])):
+                not re.search(r"\b"+re.escape(norm(m["tags"]["addr:street"]))+r"\b", norm(p["address"])) or
+                not re.search(r"\b"+re.escape(p["postal_code"])+r"\b", p["address"])):
             raise ValueError("OSM address not pinned to place")
         stamp = today.isoformat()
         canonical = dict(p, lat=m["lat"], lng=m["lng"], reviewed_at=stamp)
