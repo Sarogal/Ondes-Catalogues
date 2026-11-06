@@ -143,21 +143,48 @@ jobs:
             fi
           done
 
-      - name: Recontrôler des candidats sur leurs sources officielles sans les approuver
+      - name: Valider les approbations avec données privées avant activation éventuelle
         if: steps.access.outputs.ready == 'true'
         shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
         run: |
           set -euo pipefail
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            cp confidential/automation/concerts/approved.json public/automation/concerts/approved.json
+            if ! python -m unittest discover -s public/automation/concerts -p 'test_*.py' -v \
+                > "$RUNNER_TEMP/concerts-private-logs/private-approval-regression.log" 2>&1; then
+              echo "::error::Tests privés Concerts échoués : aucune approbation appliquée"
+              exit 1
+            fi
+            echo "Contrôle privé des approbations exécuté sans journal public."
+          fi
+
+      - name: Revérifier et approuver uniquement si le verrou existant le permet
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
           if ! python public/automation/concerts/official_recheck.py \
               --registry confidential/automation/concerts/intake/registry.json \
               --approvals confidential/automation/concerts/approved.json \
               --out "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
-              --report "$RUNNER_TEMP/concerts-official-review.json" \
+              --report "$RUNNER_TEMP/concerts-official-review.json" "${OPTIONS[@]}" \
               > "$RUNNER_TEMP/concerts-private-logs/official-review.log" 2>&1; then
-            echo "::error::La revue officielle Concerts a échoué, aucun changement appliqué"
+            echo "::error::La revue officielle Concerts a échoué : approbation suspendue"
             exit 1
           fi
-          echo "Revue des sources officielles réalisée sans changement d'approbation." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            echo "Contrôles privés et revue officielle validés ; approbations stockées uniquement en privé." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Revue officielle en prévisualisation : approbations inchangées." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Vérifier les annulations, reports et incohérences des concerts publiés
         if: steps.access.outputs.ready == 'true'
@@ -196,11 +223,15 @@ jobs:
         shell: bash
         env:
           INTAKE_PUSH_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            git add -- automation/concerts/approved.json
+          fi
           if git diff --cached --quiet; then
             echo "Aucune nouvelle piste à enregistrer."
           else
