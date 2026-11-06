@@ -20,7 +20,7 @@ from urllib.request import Request, urlopen
 
 from merge_policy import ORIGIN, byid, valid, safe_published_event
 from private_intake import BRANCH, PATH, github
-from official_organizer_proof import canonical_event_title
+from official_organizer_proof import canonical_event_title, reviewed_family_category
 from proof import norm, meters
 from proof_text import verify_event
 from venue_registry import VENUES
@@ -288,6 +288,10 @@ def make_event(lead, row, location, today):
             (lat, lng), (location["lat"], location["lng"])) > 65:
         raise ValueError("Position source incompatible avec le registre vérifié")
     category = category_for(row["title_fr"], row.get("description_fr") or "")
+    if not category:
+        category = reviewed_family_category(
+            lead["external_id"], canonical, row["title_fr"],
+            row["location_city"], row["location_name"])
     if not category:
         raise ValueError("Destination familiale musicale insuffisamment explicite")
     department = row.get("location_department")
