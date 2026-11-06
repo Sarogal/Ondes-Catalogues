@@ -1,0 +1,121 @@
+{
+  "schema": "grossesondes.concert.artist_tour_sources.v1",
+  "updatedAt": "2026-11-05",
+  "policy": "Découverte uniquement : chaque nouvelle fiche nécessite une vérification indépendante de la salle et du concert. Aucune approbation implicite.",
+  "sources": [
+    {
+      "artistId": "resolve",
+      "url": "https://resolveofficial.co/",
+      "sourceRole": "artist_official",
+      "enabled": true,
+      "checkedAt": "2026-11-04",
+      "origin": "Site officiel du groupe ; dates de janvier 2027 visibles dans la rubrique tour dates",
+      "note": "Page Shopify : si dates non structurées en HTML, adaptateur à développer; ne jamais extrapoler"
+    },
+    {
+      "artistId": "skip-the-use",
+      "url": "https://www.livenation.fr/skip-the-use-tickets-adp498333",
+      "sourceRole": "promoter_official",
+      "enabled": true,
+      "checkedAt": "2026-11-04",
+      "origin": "Page de tournée officielle du producteur français",
+      "note": "Détails individuels uniquement : année explicite obligatoire ; 6 pages maximum par exécution, pays encore à vérifier avant toute approbation.",
+      "detailPathPrefix": "/event/skip-the-use-",
+      "maxDetailPages": 6,
+      "excludedCities": [
+        "Mondorf-les-Bains"
+      ]
+    },
+    {
+      "artistId": "revnoir",
+      "url": "https://slhproductions.fr/agenda/revnoir2027/",
+      "sourceRole": "promoter_official",
+      "enabled": true,
+      "checkedAt": "2026-11-04",
+      "origin": "Organisateur officiel REVNOIR + ICE SEALED EYES à Lyon le 4 février 2027",
+      "note": "Concert individuel. La date précise est une piste, à confronter au catalogue et aux preuves, sans publication"
+    },
+    {
+      "artistId": "7weeks",
+      "url": "https://7weeks.fr/concerts/",
+      "sourceRole": "artist_official",
+      "enabled": true,
+      "adapter": "seven_weeks_official_tour",
+      "checkedAt": "2026-11-05",
+      "origin": "Page Concerts officielle de 7WEEKS, dates jour/mois/année et couple ville/salle; tournée Going Back Home",
+      "note": "Les 15 futures dates fournissent uniquement des candidats, sans preuve d'adresse, géolocalisation, pays, genre ou accompagnateurs. La page officielle est une source de découverte; aucune approbation automatique."
+    },
+    {
+      "artistId": "the-inspector-cluzo",
+      "url": "https://theinspectorcluzo.com/en/tour2026/",
+      "sourceRole": "artist_official",
+      "enabled": true,
+      "adapter": "inspector_cluzo_official_tour",
+      "checkedAt": "2026-11-05",
+      "origin": "Calendrier officiel The Inspector Cluzo 2026 avec date complète, pays explicite (FR/US/CA/JP), ville et lieu.",
+      "note": "Ne retenir que lignes FR datées après aujourd'hui et exclure festivals. Deuxième vérification des concerts nécessaire."
+    },
+    {
+      "artistId": "marillion",
+      "url": "https://www.marillion.com/tour/",
+      "sourceRole": "artist_official",
+      "adapter": "marillion_official_tour",
+      "enabled": true,
+      "checkedAt": "2026-11-05",
+      "origin": "Tournée officielle Marillion 2026-2027 : dates complètes, jour, salle, ville et pays explicitement indiqués.",
+      "note": "Seules les entrées France complètes sont archivées comme pistes privées; la commune de Radiant-Bellevue et toutes les coordonnées doivent être recoupées. Ne jamais déduire Lazuli sur chaque date ni publier les pistes directement."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "url": "https://radical-production.fr/artistes/howlin-jaws/",
+      "sourceRole": "promoter_official",
+      "adapter": "howlin_jaws_radical_tour",
+      "enabled": true,
+      "checkedAt": "2026-11-05",
+      "origin": "Page officielle de tournée de l'agence de Howlin' Jaws, 12 dates françaises à venir jusqu'en avril 2027.",
+      "note": "Candidats privés uniquement. La page affiche dates complètes, villes et salles mais omet le pays sur les lignes France ; l'adaptateur applique une liste exacte de villes recensées, maintient countryToVerify et refuse l'événement espagnol et les dates passées. Invités et première partie ne sont jamais validés automatiquement."
+    },
+    {
+      "artistId": "tagada-jones",
+      "url": "https://www.tagadajones.com/new/",
+      "sourceRole": "artist_official",
+      "enabled": false,
+      "adapter": "tagada_jones_official_tour",
+      "checkedAt": "2026-11-05",
+      "origin": "Page officielle Tagada Jones : dates complètes 2026–2027 et communes annoncées avec codes de département",
+      "note": "COLLECTE SUSPENDUE : https://www.tagadajones.com/robots.txt publie User-agent: * / Disallow: /. Exécution réelle 2026-11-05 arrêtée par les garde-fous robots; ne pas contourner ni réactiver sans autorisation explicite du site. Adaptateur conservé pour usage ultérieur autorisé.",
+      "suspendedAt": "2026-11-05",
+      "suspensionReason": "robots_disallow_all"
+    },
+    {
+      "artistId": "cachemire",
+      "url": "https://tourneeducoeur.ragetour.com/",
+      "sourceRole": "promoter_official",
+      "enabled": true,
+      "adapter": "tournee_du_coeur_official_2027",
+      "checkedAt": "2026-11-05",
+      "origin": "Rage Tour : La Tournée du Cœur III 2027, agenda officiel avec dates entières et lieux pour Cachemire, La Phaze et Bob's Not Dead ; URL publique, robots.txt 404 au contrôle.",
+      "note": "Découverte privée uniquement. Les trois membres du plateau ne sont pas ajoutés automatiquement; filtrer les dates non annoncées et intitulés de festivals; pays, commune exacte, géolocalisation, horaires et programmation exigent des confirmations indépendantes."
+    },
+    {
+      "artistId": "the-stranglers",
+      "url": "https://thestranglers.co.uk/the-stranglers-announce-french-tour-2026/",
+      "sourceRole": "artist_official",
+      "enabled": true,
+      "adapter": "stranglers_french_2026",
+      "checkedAt": "2026-11-06",
+      "origin": "Annonce officielle du groupe : 11 concerts français entre le 20 novembre et le 4 décembre 2026.",
+      "note": "Pistes privées seulement ; l'annonce n'identifie pas toutes les premières parties ni les horaires. Respect robots.txt et vérification séparée du pays, de la salle, de la commune, du genre et des coordonnées. Aucune publication automatique."
+    },
+    {
+      "artistId": "the-stranglers",
+      "url": "https://tix.to/TheStranglers_France26",
+      "sourceRole": "artist_official",
+      "enabled": true,
+      "adapter": "stranglers_official_ticket_campaign",
+      "checkedAt": "2026-11-06",
+      "origin": "Campagne billetterie officielle France 2026 liée explicitement depuis l'annonce du groupe https://thestranglers.co.uk/the-stranglers-announce-french-tour-2026/ ; 11 dates et salles affichées",
+      "note": "Canal de découverte de repli, non source organisatrice indépendante. Respect robots.txt ; candidats en revue uniquement, aucune inférence de plateau, genre, début musical, adresse ou coordonnées. Si le site est inaccessible, aucune piste."
+    }
+  ]
+}
