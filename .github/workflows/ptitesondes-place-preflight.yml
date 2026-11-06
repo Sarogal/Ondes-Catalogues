@@ -3,12 +3,14 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_place_preflight.py'
+      - 'scripts/ptitesondes_place_sources.json'
       - 'tests/test_ptitesondes_place_preflight.py'
       - '.github/workflows/ptitesondes-place-preflight.yml'
   push:
     branches: [main]
     paths:
       - 'scripts/ptitesondes_place_preflight.py'
+      - 'scripts/ptitesondes_place_sources.json'
       - 'tests/test_ptitesondes_place_preflight.py'
       - '.github/workflows/ptitesondes-place-preflight.yml'
   workflow_dispatch:
