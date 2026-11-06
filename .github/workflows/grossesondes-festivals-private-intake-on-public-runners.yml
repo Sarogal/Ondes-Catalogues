@@ -39,8 +39,9 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Veille non activée : configurer les secrets Actions de lecture et écriture privée"
-            printf 'Veille Festivals non activée : secrets absents.\n' >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Veille Festivals interrompue : secrets Actions de lecture ou écriture privée absents"
+            printf 'ÉCHEC : veille Festivals non exécutée, accès privé manquant.\n' >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - name: Récupérer uniquement le moteur public validé
