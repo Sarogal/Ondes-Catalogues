@@ -1,0 +1,12 @@
+{
+  "schema": "grossesondes.concert.ticketmaster-venue-probes.v1",
+  "role": "discovery_only_no_automatic_publication",
+  "venues": [
+    {"id": "secret-place-saint-jean-de-vedas", "name": "Secret Place", "aliases": ["Secret Place", "La Secret Place"], "city": "Saint-Jean-de-Védas", "postalCode": "34430"},
+    {"id": "le-ferrailleur-nantes", "name": "Le Ferrailleur", "aliases": ["Le Ferrailleur"], "city": "Nantes", "postalCode": "44200"},
+    {"id": "le-molotov-marseille", "name": "Le Molotov", "aliases": ["Le Molotov", "Molotov"], "city": "Marseille", "postalCode": "13006"},
+    {"id": "le-rex-toulouse", "name": "Le Rex", "aliases": ["Le Rex", "Le Rex Toulouse"], "city": "Toulouse", "postalCode": null}
+  ],
+  "maxVenuesPerRun": 2,
+  "maxApiRequestsPerVenue": 2
+}

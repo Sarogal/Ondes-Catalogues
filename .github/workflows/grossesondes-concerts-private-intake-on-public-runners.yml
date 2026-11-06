@@ -1,0 +1,243 @@
+name: Grosses Ondes — Concerts nationaux sur runner public, revue privée
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        type: choice
+        description: Cycle de surveillance
+        options: [normal, catchup]
+        default: normal
+        required: true
+  schedule:
+    - cron: '18 7 * * *'
+    - cron: '11 13,20 * * *'
+
+# Never run pull_request code with private tokens or Ticketmaster credentials.
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-concerts-public-private-intake
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Vérifier la disponibilité des accès sans afficher de secret
+        id: access
+        shell: bash
+        env:
+          INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          INTAKE_WRITE_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}
+        run: |
+          if [[ -n "$INTAKE_READ_TOKEN" && -n "$INTAKE_WRITE_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Concerts non activés : secrets de lecture/écriture de l'intake privé absents"
+            echo "Veille Concerts non activée : accès privé manquant." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.access.outputs.ready == 'true'
+        with:
+          ref: main
+          path: public
+          persist-credentials: false
+
+      - name: Lire uniquement les états et approbations privés
+        if: steps.access.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/GrossesOndes
+          ref: main
+          path: confidential
+          token: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            automation/concerts/approved.json
+            automation/concerts/intake/
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        if: steps.access.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Préparer un espace de travail sans artefact ou log public
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s confidential/automation/concerts/approved.json
+          test -s confidential/automation/concerts/intake/registry.json
+          mkdir -p "$RUNNER_TEMP/concerts-discovery" \
+            "$RUNNER_TEMP/concerts-tours" "$RUNNER_TEMP/concerts-private-logs"
+          python -m compileall -q public/automation/concerts
+
+      - name: Veille nationale des salles, agendas et Ticketmaster
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          TICKETMASTER_API_KEY: ${{ secrets.TICKETMASTER_API_KEY }}
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/discover.py \
+             --output "$RUNNER_TEMP/concerts-discovery" \
+             > "$RUNNER_TEMP/concerts-private-logs/discovery.log" 2>&1; then
+            echo "::error::La collecte Concerts a échoué ; les sorties restent confidentielles"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-discovery/candidates.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data.get("schema") == "grossesondes.concert.discovery.v1"
+          assert data.get("publicationAllowed") is False
+          assert data.get("automaticPublication") is False
+          assert all(c.get("publicationAllowed") is False for c in data["candidates"])
+          print("Collecte nationale réussie : pistes en quarantaine, aucune publication.")
+          PY
+
+      - name: Découverte des tournées d'artistes déjà référencés
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/artist_tour_discovery.py \
+              --max-sources 10 --output "$RUNNER_TEMP/concerts-tours" \
+              > "$RUNNER_TEMP/concerts-private-logs/tours.log" 2>&1; then
+            echo "::error::La veille des tournées a échoué ; aucune sortie privée publiée"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-tours/candidates.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data.get("schema") == "grossesondes.concert.discovery.v1"
+          assert data.get("publicationAllowed") is False
+          assert all(c.get("publicationAllowed") is False for c in data["candidates"])
+          print("Tournées qualifiées en recherche seulement ; aucune date automatiquement approuvée.")
+          PY
+
+      - name: Archiver les deux découvertes dans le registre du dépôt privé
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          STORE="confidential/automation/concerts/intake/registry.json"
+          for channel in concerts-discovery concerts-tours; do
+            if ! python public/automation/concerts/intake_archive.py \
+                --source "$RUNNER_TEMP/$channel/candidates.json" \
+                --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \
+                > "$RUNNER_TEMP/concerts-private-logs/$channel-archive.log" 2>&1; then
+              echo "::error::Archivage privé refusé : $channel"
+              exit 1
+            fi
+          done
+
+      - name: Valider les approbations avec données privées avant activation éventuelle
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            cp confidential/automation/concerts/approved.json public/automation/concerts/approved.json
+            if ! python -m unittest discover -s public/automation/concerts -p 'test_*.py' -v \
+                > "$RUNNER_TEMP/concerts-private-logs/private-approval-regression.log" 2>&1; then
+              echo "::error::Tests privés Concerts échoués : aucune approbation appliquée"
+              exit 1
+            fi
+            echo "Contrôle privé des approbations exécuté sans journal public."
+          fi
+
+      - name: Revérifier et approuver uniquement si le verrou existant le permet
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
+          if ! python public/automation/concerts/official_recheck.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --approvals confidential/automation/concerts/approved.json \
+              --out "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+              --report "$RUNNER_TEMP/concerts-official-review.json" "${OPTIONS[@]}" \
+              > "$RUNNER_TEMP/concerts-private-logs/official-review.log" 2>&1; then
+            echo "::error::La revue officielle Concerts a échoué : approbation suspendue"
+            exit 1
+          fi
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            echo "Contrôles privés et revue officielle validés ; approbations stockées uniquement en privé." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Revue officielle en prévisualisation : approbations inchangées." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Vérifier les annulations, reports et incohérences des concerts publiés
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/published_watch.py \
+              --report "$RUNNER_TEMP/concerts-published-watch.json" \
+              --summary "$RUNNER_TEMP/concerts-published-watch.md" \
+              --max-check 24 \
+              > "$RUNNER_TEMP/concerts-private-logs/published-watch.log" 2>&1; then
+            echo "::error::Contrôle des concerts publiés indisponible ; aucun rapport privé modifié"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-published-watch.json"
+          report = json.loads(p.read_text(encoding="utf-8"))
+          assert isinstance(report.get("needsReview"), list)
+          print("Contrôle des concerts publiés effectué ; modifications automatiques interdites.")
+          PY
+
+      - name: Conserver les rapports sensibles uniquement dans le dépôt privé
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="confidential/automation/concerts/intake"
+          cp "$RUNNER_TEMP/concerts-official-review.json" "$target/official-review.json"
+          cp "$RUNNER_TEMP/concerts-published-watch.json" "$target/published-watch.json"
+
+      - name: Conserver uniquement le registre et les revues dans le dépôt privé
+        if: steps.access.outputs.ready == 'true'
+        working-directory: confidential
+        shell: bash
+        env:
+          INTAKE_PUSH_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            git add -- automation/concerts/approved.json
+          fi
+          if git diff --cached --quiet; then
+            echo "Aucune nouvelle piste à enregistrer."
+          else
+            git commit -m 'data(concerts): archiver la veille publique en registre privé'
+            HEADER="$(printf 'x-access-token:%s' "$INTAKE_PUSH_TOKEN" | base64 -w0)"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $HEADER" \
+              push origin HEAD:main
+          fi
+          echo "Concerts : moteur public exécuté ; registre et revue confidentiels, aucune publication directe." >> "$GITHUB_STEP_SUMMARY"

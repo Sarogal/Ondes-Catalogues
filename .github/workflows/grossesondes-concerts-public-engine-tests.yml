@@ -1,0 +1,46 @@
+name: Grosses Ondes — parité Concerts sur runners publics
+
+on:
+  pull_request:
+    paths:
+      - 'automation/concerts/**'
+      - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'automation/concerts/**'
+      - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  concerts-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier absence de secrets et états de revue
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find automation/concerts -type f \( -name 'approved.json' -o -name 'registry.json' -o -name 'candidates.json' -o -name '.env*' \) | grep -q .; then
+            echo "::error::Une donnée de décision ou un état privé a été déplacé"
+            exit 1
+          fi
+          if grep -rIlE '(github_pat_[A-Za-z0-9_]{15,}|ghp_[A-Za-z0-9]{20,}|-----BEGIN .*PRIVATE KEY-----)' automation/concerts; then
+            echo "::error::Un secret potentiel figure dans le portage"
+            exit 1
+          fi
+      - name: Vérifier la syntaxe de tous les modules et tests Concerts
+        run: python -m compileall -q automation/concerts
+      - name: Exécuter tous les tests qui n'exigent pas approved.json privé
+        run: python scripts/grossesondes_concerts_public_parity.py

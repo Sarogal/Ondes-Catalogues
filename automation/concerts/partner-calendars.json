@@ -1,0 +1,20 @@
+{
+  "schema": "grossesondes.concert.partner-calendar.v1",
+  "role": "SOURCE_TIERCE_DE_DECOUVERTE_JAMAIS_PREUVE_OFFICIELLE",
+  "feeds": [
+    {
+      "id": "secret-place-agendatickets-ics",
+      "venueName": "Secret Place",
+      "city": "Saint-Jean-de-Védas",
+      "department": "34",
+      "url": "https://www.agendatickets.com/lieu/secret-place-2/?ical=1",
+      "kind": "third_party_public_ical",
+      "sourceLabel": "Agenda Tickets (agrégateur non officiel de la salle)",
+      "officialVenuePage": "https://www.toutafond.com/nos-evenements",
+      "secondaryOfficialOrganizer": "https://r.shotgun.live/fr/venues/secret-place",
+      "status": "source_found_requires_independent_confirmation",
+      "publicationAllowed": false,
+      "maxEntriesPerRun": 60
+    }
+  ]
+}

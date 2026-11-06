@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Independent first-party Molotov event-detail verifier (no listing heuristics).
+
+Only the genuine Le Molotov venue (not nearby Le Dodu) is supported. Dates,
+full heading, explicitly named artists, and explicit genre must agree with
+discovery and the public artist/venue registry. No automatic new identities.
+"""
+from __future__ import annotations
+
+import datetime as dt
+from html.parser import HTMLParser
+import re
+from urllib.parse import urlsplit
+
+from official_recheck import norm, slug, GENRES, BANNED, artist_names
+
+HOST = "lemolotov.com"
+VENUE = "le-molotov-marseille"
+MONTHS = {
+    "jan": 1, "fev": 2, "mar": 3, "avr": 4, "mai": 5, "jun": 6,
+    "jul": 7, "aou": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12
+}
+# Genre labels in the HTML must be explicit; broad venue descriptions are ignored.
+ALLOWED = GENRES | {"alt metal", "melodic death metal", "modern metal",
+                    "blackened hardcore", "post punk", "street punk",
+                    "punk hxc", "grunge", "progressive metal", "groove metal"}
+
+
+class Headings(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.rows = []
+        self.article = 0
+        self.collect = None
+        self.depth = 0
+        self.text_parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "article":
+            self.article += 1
+        if not self.article:
+            return
+        if self.collect and tag in ("br", "hr", "img", "input"):
+            self.text_parts.append(" ")
+        elif self.collect:
+            self.depth += 1
+        elif tag in ("h1", "h2", "h3", "h4"):
+            self.collect = tag
+            self.depth = 1
+            self.text_parts = []
+
+    def handle_endtag(self, tag):
+        if self.collect:
+            self.depth -= 1
+            if self.depth == 0:
+                self.rows.append((self.collect, " ".join(" ".join(self.text_parts).split())))
+                self.collect = None
+                self.text_parts = []
+        if tag == "article":
+            self.article = max(0, self.article - 1)
+
+    def handle_data(self, data):
+        if self.collect:
+            self.text_parts.append(data)
+
+
+def parse_detail(page):
+    parser = Headings()
+    parser.feed(page)
+    rows = parser.rows
+    title_at = [(n, text) for n, (tag, text) in enumerate(rows) if tag == "h1" and text]
+    if len(title_at) != 1:
+        raise ValueError("Une seule affiche officielle détaillée est nécessaire")
+    pos, title = title_at[0]
+    before = rows[:pos]
+    # Require exactly one date and the venue and street address in detail
+    days = [v for k, v in before if k == "h2" and re.fullmatch(r"\d{1,2}", v)]
+    months = [norm(v) for k, v in before if k == "h3" and norm(v) in MONTHS]
+    years = [v for k, v in before if k == "h3" and re.fullmatch(r"20\d\d", v)]
+    if len(days) != 1 or len(months) != 1 or len(years) != 1:
+        raise ValueError("Date complète absente ou ambiguë")
+    date = dt.date(int(years[0]), MONTHS[months[0]], int(days[0])).isoformat()
+    locations = [norm(v) for k, v in before if k == "h4"]
+    if locations.count("le molotov") != 1 or not any("3 place paul cezanne" in x for x in locations):
+        raise ValueError("Le lieu n'est pas précisément Le Molotov")
+    after = rows[pos + 1:]
+    if not after or after[0][0] != "h2":
+        raise ValueError("Genres officiels absents")
+    genre_labels = [x.strip() for x in after[0][1].split(",") if x.strip()]
+    if not ({norm(g) for g in genre_labels} & ALLOWED):
+        raise ValueError("Aucun genre métal ou punk explicite")
+    return {"title": title, "date": date, "genres": genre_labels,
+            "genreTags": {norm(g) for g in genre_labels}}
+
+
+def verify(candidate, page, catalogue, today):
+    if candidate.get("source") != "agenda_officiel_molotov_genre":
+        raise ValueError("Source officielle Molotov requise")
+    if candidate.get("reviewBucket") != "genre_tag_review" or candidate.get("possibleExistingConcert"):
+        raise ValueError("Doublon ou piste nécessitant une vérification distincte")
+    if candidate.get("publicationAllowed") is not False or candidate.get("reviewRequired") is not True:
+        raise ValueError("Candidat non isolé par la veille")
+    if candidate.get("venue") != "Le Molotov" or norm(candidate.get("city")) != "marseille":
+        raise ValueError("Le lieu est différent de Le Molotov")
+    url = candidate.get("sourceUrl") or ""
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or parsed.hostname != HOST or not re.fullmatch(r"/events/[^/]+/?", parsed.path):
+        raise ValueError("Page événement individuelle officielle obligatoire")
+    detail = parse_detail(page)
+    if norm(detail["title"]) != norm(candidate.get("name")):
+        raise ValueError("Affiche incohérente entre la veille et la page officielle")
+    if detail["date"] != candidate.get("date") or dt.date.fromisoformat(detail["date"]) <= today:
+        raise ValueError("Date modifiée, passée ou imminente")
+    if not (detail["genreTags"] & {norm(g) for g in candidate.get("classification") or []}):
+        raise ValueError("Genres contradictoires")
+    if BANNED.search(norm(detail["title"])):
+        raise ValueError("Affiche incomplète, annulée ou festival")
+    parts = artist_names(detail["title"])
+    artists_by_norm = {}
+    for artist in catalogue.get("artists", []):
+        artists_by_norm.setdefault(norm(artist["name"]), []).append(artist["id"])
+    ids = []
+    for name in parts:
+        match = artists_by_norm.get(norm(name), [])
+        if len(match) != 1:
+            raise ValueError("Artiste absent ou ambigu dans le catalogue")
+        ids.append(match[0])
+    if len(set(ids)) != len(ids):
+        raise ValueError("Identités d'artistes en collision")
+    venues = {v["id"]: v for v in catalogue.get("venues", [])}
+    if VENUE not in venues or norm(venues[VENUE].get("city")) != "marseille":
+        raise ValueError("Salle absente ou incohérente du catalogue")
+    for event in catalogue.get("events", []):
+        if event.get("date") == detail["date"] and event.get("venueId") == VENUE:
+            if set(event.get("artistIds", [])) & set(ids):
+                raise ValueError("Concert déjà référencé sur la même scène et même date")
+    event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + slug(parts[0])
+    if any(e["id"] == event_id for e in catalogue.get("events", [])):
+        raise ValueError("Identifiant d'événement déjà utilisé")
+    return {
+        "reviewDecision": "approved", "reviewedBy": "automated-official-recheck",
+        "reviewedAt": today.isoformat(),
+        "officialEvidence": [{
+            "url": url, "proofType": "official-organizer-or-venue",
+            "checkedAt": today.isoformat(),
+            "checkedFields": ["artists", "date", "venue", "genre"],
+            "notes": "Fiche officielle Molotov : titre, date, salle et genres vérifiés séparément."
+        }],
+        "event": {"id": event_id, "title": detail["title"],
+                  "date": detail["date"], "time": None,
+                  "artistIds": ids, "venueId": VENUE,
+                  "genres": detail["genres"], "status": "confirmed",
+                  "officialUrl": url, "sourceType": "salle",
+                  "organizer": "Le Molotov"},
+        "newArtists": []
+    }

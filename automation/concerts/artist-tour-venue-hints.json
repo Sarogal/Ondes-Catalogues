@@ -1,0 +1,207 @@
+{
+  "schema": "grossesondes.concert.artist_tour_venue_hints.v1",
+  "checkedAt": "2026-11-05",
+  "scope": "Annotations de contrôle privées uniquement ; aucune modification du catalogue, aucune approbation automatique.",
+  "hints": [
+    {
+      "artistId": "7weeks",
+      "reportedVenue": "CCM JOHN LENNON",
+      "reportedCity": "LIMOGES",
+      "canonicalVenueId": "espace-john-lennon-limoges",
+      "canonicalCity": "Limoges",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://centresculturels.limoges.fr/se-rendre-dans-les-centres-culturels",
+      "note": "Le centre culturel John-Lennon (CCM) est le même lieu que l'Espace John Lennon du catalogue; ne pas créer une deuxième salle."
+    },
+    {
+      "artistId": "revnoir",
+      "reportedVenue": "Club Transbo",
+      "reportedCity": "Villeurbanne",
+      "canonicalVenueId": "le-transbordeur-villeurbanne",
+      "canonicalCity": "Villeurbanne",
+      "roomWithinVenue": true,
+      "officialEvidenceUrl": "https://www.transbordeur.fr/evenement/revnoir-ice-sealed-eyes-04022027/",
+      "note": "L'agenda du Transbordeur désigne explicitement Club Transbo comme espace du même établissement. Garder la salle intérieure comme mention, éviter de créer une salle indépendante."
+    },
+    {
+      "artistId": "skip-the-use",
+      "reportedVenue": "Le Radiant Bellevue",
+      "reportedCity": "Lyon",
+      "canonicalVenueId": "radiant-bellevue-caluire",
+      "canonicalCity": "Caluire-et-Cuire",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://radiant-bellevue.fr/contact-acces/",
+      "note": "Le tourneur annonce Lyon pour le Radiant-Bellevue, salle aujourd'hui publiée à Caluire-et-Cuire (1 rue Jean Moulin, 69300). L'ID du lieu est identifié pour revue uniquement, sans changer la mention source."
+    },
+    {
+      "artistId": "the-inspector-cluzo",
+      "reportedVenue": "Diff’Art",
+      "reportedCity": "PARTENAY",
+      "canonicalVenueId": null,
+      "canonicalCity": "Parthenay",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.helloasso.com/associations/diff-art/evenements/the-inspector-cluzo",
+      "note": "Le site du groupe mentionne PARTENAY, mais l'organisateur Diff'Art situe la salle au 15 rue du Président Salvador Allende, 79200 Parthenay. Conserver l'orthographe source et signaler la correction géographique avant approbation."
+    },
+    {
+      "artistId": "marillion",
+      "reportedVenue": "Le Bikini",
+      "reportedCity": "Toulouse",
+      "canonicalVenueId": "le-bikini-toulouse",
+      "canonicalCity": "Ramonville-Saint-Agne",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://lebikini.com/section/infos-pratiques/infos-pratiques",
+      "note": "Le tour officiel Marillion mentionne Toulouse, mais Le Bikini confirme son adresse au Parc Technologique du Canal, rue Théodore Monod, 31520 Ramonville-Saint-Agne. La fiche existante du catalogue utilise le-bikini-toulouse. Annotation de revue uniquement : ne pas changer l'affichage source, l'ID du candidat, ni la position de la carte."
+    },
+    {
+      "artistId": "marillion",
+      "reportedVenue": "Casino De Paris",
+      "reportedCity": "Paris",
+      "canonicalVenueId": "casino-de-paris",
+      "canonicalCity": "Paris",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.casinodeparis.fr/fr/infos-pratiques",
+      "note": "La tournée officielle nomme Casino De Paris, Paris ; adresse indépendante confirmée au 16 rue de Clichy, 75009 Paris. ID de salle déjà géolocalisée, sans déduire heures, invités ni coordonnées."
+    },
+    {
+      "artistId": "marillion",
+      "reportedVenue": "Radiant-Bellevue",
+      "reportedCity": "Lyon",
+      "canonicalVenueId": "radiant-bellevue-caluire",
+      "canonicalCity": "Caluire-et-Cuire",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://radiant-bellevue.fr/contact-acces/",
+      "note": "Marillion annonce l'agglomération Lyon ; le Radiant-Bellevue se situe réellement 1 rue Jean Moulin, 69300 Caluire-et-Cuire. Identité de salle recoupée avec son site et OSM, sans modifier la ville d'annonce."
+    },
+    {
+      "artistId": "marillion",
+      "reportedVenue": "Le Silo",
+      "reportedCity": "Marseille",
+      "canonicalVenueId": "cepac-silo-marseille",
+      "canonicalCity": "Marseille",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.cepacsilo-marseille.fr/infos-pratiques/",
+      "note": "Marillion annonce Le Silo (Weekend mai 2027), nom actuel CEPAC Silo, 35 quai du Lazaret 13002 Marseille. Rapprochement d'un lieu, aucune qualification des soirées comme concerts indépendants."
+    },
+    {
+      "artistId": "marillion",
+      "reportedVenue": "Le Mem",
+      "reportedCity": "Rennes",
+      "canonicalVenueId": "le-mem-rennes",
+      "canonicalCity": "Rennes",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.lemem.fr/pratique/",
+      "note": "Tour officiel Marillion affiche Le Mem, Rennes. Le Magic Mirrors du MeM a rouvert dans un nouveau bâtiment en 2026 ; ID du lieu déjà publié après preuves officielles et photo géolocalisée octobre 2026, ne pas reprendre l'ancien point GPS. Marillion + Lazuli 18/11/2026 déjà publié sous cet ID ; seule annotation privée, aucun changement automatique."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Cave aux Poètes",
+      "reportedCity": "Roubaix",
+      "canonicalVenueId": "la-cave-aux-poetes-roubaix",
+      "canonicalCity": "Roubaix",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://caveauxpoetes.com/",
+      "note": "La tournée Radical appelle Cave aux Poètes la salle existante La Cave aux Poètes à Roubaix ; identité recoupée avec le site officiel du lieu."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Trabendo",
+      "reportedCity": "PARIS",
+      "canonicalVenueId": "le-trabendo-paris",
+      "canonicalCity": "Paris",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.letrabendo.net/",
+      "note": "Le tourneur abrège Le Trabendo en Trabendo ; même salle parisienne déjà répertoriée, aucune nouvelle géolocalisation."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Carène",
+      "reportedCity": "BREST",
+      "canonicalVenueId": "la-carene-brest",
+      "canonicalCity": "Brest",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.lacarene.fr/",
+      "note": "Radical annonce Carène à Brest ; le site officiel nomme La Carène et confirme l'identité de la salle déjà référencée."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "MeM",
+      "reportedCity": "Rennes",
+      "canonicalVenueId": "le-mem-rennes",
+      "canonicalCity": "Rennes",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.lemem.fr/pratique/",
+      "note": "La date Radical mentionne MeM à Rennes ; site officiel du MeM à La Piverdière, position 2026 existante à préserver."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Chabada",
+      "reportedCity": "ANGERS",
+      "canonicalVenueId": "le-chabada-angers",
+      "canonicalCity": "Angers",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://lechabada.com/",
+      "note": "La tournée mentionne Chabada à Angers, nom abrégé du Chabada déjà connu dans la ville."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Fil",
+      "reportedCity": "SAINT-ÉTIENNE",
+      "canonicalVenueId": "le-fil-saint-etienne",
+      "canonicalCity": "Saint-Étienne",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.le-fil.com/",
+      "note": "Le tourneur indique Fil à Saint-Étienne ; établissement officiel Le Fil, déjà répertorié."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Laiterie",
+      "reportedCity": "STRASBOURG",
+      "canonicalVenueId": "la-laiterie-strasbourg",
+      "canonicalCity": "Strasbourg",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://radical-production.fr/artistes/howlin-jaws/",
+      "note": "La tournée officielle nomme Laiterie à Strasbourg ; ID de la salle existante La Laiterie. Adresse et point GPS restent explicitement à vérifier."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Autre Canal",
+      "reportedCity": "NANCY",
+      "canonicalVenueId": "l-autre-canal-nancy",
+      "canonicalCity": "Nancy",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://lautrecanalnancy.fr/",
+      "note": "La tournée annonce Autre Canal à Nancy ; site officiel de L'Autre Canal et fiche de salle préexistante. Point GPS encore indicatif."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Cap Caval",
+      "reportedCity": "PENMARC'H",
+      "canonicalVenueId": "salle-cap-caval-penmarch",
+      "canonicalCity": "Penmarc’h",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.cap-caval.fr/infos-pratiques/",
+      "note": "Tour Radical : Cap Caval à Penmarc’h, même salle officiellement nommée Salle Cap Caval et géolocalisée sur bâtiment OSM way 66608817 ; ne pas confondre avec stationnement homonyme. Date 27/02/2027 déjà publiée, revue privée toujours exigée."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "Stereolux",
+      "reportedCity": "NANTES",
+      "canonicalVenueId": "stereolux-nantes",
+      "canonicalCity": "Nantes",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://stereolux.org/agenda/fff",
+      "note": "Tour Radical : Stereolux Nantes, même établissement que la fiche FFF + première partie 08/12/2026 ; le tourneur nomme Howlin' Jaws. Salle et concert déjà publiés ; aucune nouvelle date ne doit résulter de cet alias."
+    },
+    {
+      "artistId": "howlin-jaws",
+      "reportedVenue": "6MIC",
+      "reportedCity": "Aix-En-Provence",
+      "canonicalVenueId": "6mic-aix-en-provence",
+      "canonicalCity": "Aix-en-Provence",
+      "roomWithinVenue": false,
+      "officialEvidenceUrl": "https://www.6mic-aix.fr/evenements/club-indle-club-inde-w-howlin-jaws-gloria/",
+      "note": "Tour Radical : 6MIC Aix-en-Provence ; identité avec la salle 6MIC au 160 rue Pascal Duverger. Date 02/04/2027 déjà publiée avec Gloria. Rapprochement privé seulement, sans GPS inféré."
+    }
+  ]
+}
