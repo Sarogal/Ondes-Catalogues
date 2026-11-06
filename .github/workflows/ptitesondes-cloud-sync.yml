@@ -75,6 +75,21 @@ jobs:
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
+      - name: Prévalidation publique indépendante des lieux permanents
+        id: place_release
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          USER_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          cp docs/ptitesondes/lieux.json /tmp/ptitesondes-lieux-before-release.json
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$USER_MODE" != "publish" ]; then
+            python scripts/ptitesondes_place_preflight.py --mode preview
+          else
+            python scripts/ptitesondes_place_preflight.py --mode apply
+          fi
+          python scripts/ptitesondes_places.py docs/ptitesondes/lieux.json --previous /tmp/ptitesondes-lieux-before-release.json
       - name: Lire, contrôler et fusionner sans écriture distante
         id: sync
         env:
@@ -85,22 +100,23 @@ jobs:
         env:
           CHANGED: ${{ steps.sync.outputs.changed }}
           PLACES_CHANGED: ${{ steps.places.outputs.changed }}
+          PLACE_RELEASE_CHANGED: ${{ steps.place_release.outputs.changed }}
           CLOUD_ENABLED: ${{ vars.PTITESONDES_CLOUD_SYNC }}
           USER_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if { [ "$CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
+          if { [ "$CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ] || [ "$PLACE_RELEASE_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
             echo "Prévisualisation seulement ou aucune fiche indépendante vérifiée."
           fi
       - name: Archiver le nouveau catalogue dans Git
-        if: ${{ steps.decision.outputs.deploy == 'true' && steps.sync.outputs.changed == 'true' }}
+        if: ${{ steps.decision.outputs.deploy == 'true' && (steps.sync.outputs.changed == 'true' || steps.place_release.outputs.changed == 'true') }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- docs/ptitesondes/sorties.json
+          git add -- docs/ptitesondes/sorties.json docs/ptitesondes/lieux.json
           git diff --cached --quiet && exit 1
           git commit -m "data(ptitesondes): publier les seuls événements indépendamment vérifiés"
           git push origin HEAD:main
