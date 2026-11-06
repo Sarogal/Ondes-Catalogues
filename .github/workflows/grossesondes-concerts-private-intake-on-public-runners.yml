@@ -38,8 +38,9 @@ jobs:
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Concerts non activés : secrets de lecture/écriture de l'intake privé absents"
-            echo "Veille Concerts non activée : accès privé manquant." >> "$GITHUB_STEP_SUMMARY"
+            echo "::error::Veille Concerts interrompue : secrets de lecture ou écriture de l'intake privé absents"
+            echo "ÉCHEC : veille Concerts non exécutée, accès privé manquant." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
 
       - uses: actions/checkout@v4
