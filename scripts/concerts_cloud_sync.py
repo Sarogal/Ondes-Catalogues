@@ -4075,7 +4075,21 @@ def validate_approval(approval, venues, known_artist_ids, today):
             not parsed_url.fragment and
             event.get("time") is None
         )
-        require(bool(rex or molotov or ferrailleur or backstage)
+        atabal_pilot = (
+            venue == "atabal-biarritz" and
+            event_id == "go-c-20270408-biarritz-peter-hook-and-the-light" and
+            official_url == (
+                "https://www.atabal-biarritz.fr/agenda/concerts/"
+                "peter-hook-the-light-a-joy-division-celebration-jeudi-08-avril-2027/") and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "www.atabal-biarritz.fr" and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None and
+            not (approval.get("newArtists") or [])
+        )
+        require(bool(rex or molotov or ferrailleur or backstage or atabal_pilot)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4967,44 +4981,94 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         for aid in ids),
                 "Secret Place : artiste inventé ou mal orthographié")
     elif event.get("venueId") == "atabal-biarritz":
-        spec=ATABAL_VERIFIED.get(event_id)
-        require(spec is not None and reviewer=="independent-official-verifier"
-                and event.get("sourceType")=="salle"
-                and all(event.get(k)==spec[k] for k in
-                        ("title","date","time","artistIds","genres"))
-                and official_url==spec["officialUrl"],
-                "Atabal : affiche non agréée, annulation, doublon ou date modifiée")
-        u=urlsplit(official_url)
-        require(u.scheme=="https" and u.hostname=="www.atabal-biarritz.fr"
-                and re.fullmatch(r"/agenda/concerts/[a-z0-9-]{16,220}/",u.path)
-                and u.path==urlsplit(spec["officialUrl"]).path
+        if reviewer == "automated-official-recheck":
+            # Entirely separate from the signed human Atabal bills: permit
+            # ONLY this specific official headliner already present in artists.
+            target = (
+                "https://www.atabal-biarritz.fr/agenda/concerts/"
+                "peter-hook-the-light-a-joy-division-celebration-jeudi-08-avril-2027/")
+            checked = norm_date(approval.get("reviewedAt"))
+            require(
+                event_id == "go-c-20270408-biarritz-peter-hook-and-the-light"
+                and event_id not in ATABAL_VERIFIED
+                and official_url == target
+                and event.get("title") == "PETER HOOK & THE LIGHT"
+                and event.get("date") == "2027-04-08"
+                and event.get("time") is None
+                and event.get("artistIds") == ["peter-hook-and-the-light"]
+                and event.get("genres") == ["Post Punk"]
+                and event.get("status") == "confirmed"
+                and event.get("sourceType") == "salle"
+                and event.get("organizer") == "Atabal"
+                and new_artists == []
+                and today - dt.timedelta(days=7) <= checked <= today,
+                "Atabal auto : événement, artiste, statut ou preuve périmée"
+            )
+            u=urlsplit(official_url)
+            require(
+                u.scheme == "https" and u.hostname == "www.atabal-biarritz.fr"
+                and re.fullmatch(r"/agenda/concerts/[a-z0-9-]{16,220}/", u.path)
                 and not u.username and not u.password and not u.port
                 and not u.query and not u.fragment,
-                "Atabal : URL officielle individuelle exacte obligatoire")
-        checked=norm_date(approval.get("reviewedAt"))
-        require(today-dt.timedelta(days=14)<=checked<=today,
-                "Atabal : revue nominative trop ancienne")
-        require(len(evidence)==2 and any(
-                isinstance(p,dict) and p.get("url")==spec["officialUrl"]
-                and p.get("proofType")=="official-organizer-or-venue"
-                and p.get("checkedAt")==checked.isoformat()
-                and {"artists","date","venue","genre"}.issubset(
-                    set(p.get("checkedFields") or []))
-                for p in evidence) and any(
-                isinstance(p,dict) and p.get("url")==
-                    "https://www.atabal-biarritz.fr/agenda/concerts/"
-                and p.get("proofType")=="first-party-venue-calendar"
-                and p.get("checkedAt")==checked.isoformat()
-                and {"artists","date","venue"}.issubset(
-                    set(p.get("checkedFields") or []))
-                for p in evidence),
-                "Atabal : fiche individuelle et agenda datés exigés")
-        resolved=dict(known_artist_ids)
-        resolved.update(added)
-        require([a["id"] for a in new_artists]==spec["newArtistIds"]
-                and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
-                        for i in ids),
-                "Atabal : groupes ou nouvelles identités non conformes")
+                "Atabal auto : seule une URL individuelle officielle HTTPS est admise"
+            )
+            require(len(evidence) == 1 and isinstance(evidence[0],dict),
+                    "Atabal auto : une seule preuve nominative exigée")
+            proof=evidence[0]
+            require(
+                proof.get("url") == target
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == checked.isoformat()
+                and proof.get("checkedFields") == ["artists","date","venue","genre"]
+                and proof.get("officialArtistNames") == ["PETER HOOK & THE LIGHT"],
+                "Atabal auto : preuve première main nominative complète requise"
+            )
+            known=known_artist_ids.get("peter-hook-and-the-light")
+            require(
+                isinstance(known, dict)
+                and known.get("id") == "peter-hook-and-the-light"
+                and norm(known.get("name")) == "peter hook and the light",
+                "Atabal auto : identité de l'artiste canonique non démontrée"
+            )
+        else:
+            spec=ATABAL_VERIFIED.get(event_id)
+            require(spec is not None and reviewer=="independent-official-verifier"
+                    and event.get("sourceType")=="salle"
+                    and all(event.get(k)==spec[k] for k in
+                            ("title","date","time","artistIds","genres"))
+                    and official_url==spec["officialUrl"],
+                    "Atabal : affiche non agréée, annulation, doublon ou date modifiée")
+            u=urlsplit(official_url)
+            require(u.scheme=="https" and u.hostname=="www.atabal-biarritz.fr"
+                    and re.fullmatch(r"/agenda/concerts/[a-z0-9-]{16,220}/",u.path)
+                    and u.path==urlsplit(spec["officialUrl"]).path
+                    and not u.username and not u.password and not u.port
+                    and not u.query and not u.fragment,
+                    "Atabal : URL officielle individuelle exacte obligatoire")
+            checked=norm_date(approval.get("reviewedAt"))
+            require(today-dt.timedelta(days=14)<=checked<=today,
+                    "Atabal : revue nominative trop ancienne")
+            require(len(evidence)==2 and any(
+                    isinstance(p,dict) and p.get("url")==spec["officialUrl"]
+                    and p.get("proofType")=="official-organizer-or-venue"
+                    and p.get("checkedAt")==checked.isoformat()
+                    and {"artists","date","venue","genre"}.issubset(
+                        set(p.get("checkedFields") or []))
+                    for p in evidence) and any(
+                    isinstance(p,dict) and p.get("url")==
+                        "https://www.atabal-biarritz.fr/agenda/concerts/"
+                    and p.get("proofType")=="first-party-venue-calendar"
+                    and p.get("checkedAt")==checked.isoformat()
+                    and {"artists","date","venue"}.issubset(
+                        set(p.get("checkedFields") or []))
+                    for p in evidence),
+                    "Atabal : fiche individuelle et agenda datés exigés")
+            resolved=dict(known_artist_ids)
+            resolved.update(added)
+            require([a["id"] for a in new_artists]==spec["newArtistIds"]
+                    and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
+                            for i in ids),
+                    "Atabal : groupes ou nouvelles identités non conformes")
     elif event.get("venueId") == "hydrophone-lorient":
         spec=HYDROPHONE_VERIFIED.get(event_id)
         require(spec is not None and reviewer=="independent-official-verifier"
