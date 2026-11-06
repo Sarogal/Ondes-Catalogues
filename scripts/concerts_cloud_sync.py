@@ -1896,6 +1896,11 @@ CHATODO_VERIFIED = {
     },
 }
 
+# Four independently checked 2026 Stranglers shows at ALREADY listed venues.
+# Each signed venue/artist/genre/music-start is immutable, and none of these
+# exact signatures grants access to any other concerts at those venues.
+STRANGLERS_FOUR_SIGNED_20261106 = json.loads(r'''{"go-c-20261121-penmarch-the-stranglers":{"event":{"id":"go-c-20261121-penmarch-the-stranglers","title":"The Stranglers","date":"2026-11-21","time":"20:30","artistIds":["the-stranglers"],"venueId":"salle-cap-caval-penmarch","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.cap-caval.fr/evenements/the-stranglers-2/","sourceType":"salle","organizer":"Salle Cap Caval"},"proofs":[{"url":"https://www.cap-caval.fr/evenements/the-stranglers-2/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","concertStartTime"],"officialArtistNames":["The Stranglers"],"concertStartTimeConfirmed":"20:30"},{"url":"https://thestranglers.co.uk/the-stranglers-announce-french-tour-2026/","proofType":"official-artist-tour-calendar","checkedFields":["leadArtist","date","venue","city"],"officialArtistNames":["The Stranglers"]}]},"go-c-20261128-aix-the-stranglers":{"event":{"id":"go-c-20261128-aix-the-stranglers","title":"The Stranglers","date":"2026-11-28","time":"20:30","artistIds":["the-stranglers"],"venueId":"6mic-aix-en-provence","genres":["Rock"],"status":"confirmed","officialUrl":"https://www.6mic-aix.fr/evenements/the-stranglers/","sourceType":"salle","organizer":"6MIC"},"proofs":[{"url":"https://www.6mic-aix.fr/evenements/the-stranglers/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","scheduledTime"],"officialArtistNames":["The Stranglers"]},{"url":"https://www.fnacspectacles.com/event/the-stranglers-6mic-aix-en-provence-21714726/","proofType":"authorized-ticket-distributor-full-date","checkedFields":["artists","date","venue","concertStartTime","doorTime"],"officialArtistNames":["The Stranglers"],"concertStartTimeConfirmed":"20:30","doorTimeConfirmed":"18:30"}]},"go-c-20261130-villeurbanne-the-stranglers":{"event":{"id":"go-c-20261130-villeurbanne-the-stranglers","title":"The Stranglers + Brother Junior","date":"2026-11-30","time":"20:00","artistIds":["the-stranglers","brother-junior"],"venueId":"le-transbordeur-villeurbanne","genres":["Punk Rock"],"status":"confirmed","officialUrl":"https://www.transbordeur.fr/evenement/the-stranglers-brother-junior-30112026/","sourceType":"salle","organizer":"Mediatone"},"proofs":[{"url":"https://www.transbordeur.fr/evenement/the-stranglers-brother-junior-30112026/","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","concertStartTime","doorTime"],"officialArtistNames":["The Stranglers","Brother Junior"],"concertStartTimeConfirmed":"20:00","doorTimeConfirmed":"18:30"},{"url":"https://thestranglers.co.uk/the-stranglers-announce-french-tour-2026/","proofType":"official-artist-tour-calendar","checkedFields":["leadArtist","date","venue","city"],"officialArtistNames":["The Stranglers"]}]},"go-c-20261203-vaureal-the-stranglers":{"event":{"id":"go-c-20261203-vaureal-the-stranglers","title":"The Stranglers + Brother Junior","date":"2026-12-03","time":"20:30","artistIds":["the-stranglers","brother-junior"],"venueId":"le-forum-vaureal","genres":["Rock Alternatif"],"status":"confirmed","officialUrl":"https://leforum.cergypontoise.fr/agenda/thestranglers","sourceType":"salle","organizer":"Le Forum"},"proofs":[{"url":"https://leforum.cergypontoise.fr/agenda/thestranglers","proofType":"official-organizer-or-venue","checkedFields":["artists","date","venue","genre","concertStartTime","doorTime"],"officialArtistNames":["The Stranglers","Brother Junior"],"concertStartTimeConfirmed":"20:30","doorTimeConfirmed":"20:00"},{"url":"https://thestranglers.co.uk/the-stranglers-announce-french-tour-2026/","proofType":"official-artist-tour-calendar","checkedFields":["leadArtist","date","venue","city"],"officialArtistNames":["The Stranglers"]}]}}''')
+
 # Eight exact Rocher de Palmer bills; Gwendoline and The Stranglers lineups rechecked 2026-11-06.
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
@@ -3785,7 +3790,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Les deux nouveaux lieux ne sont ouverts qu'aux affiches signées ci-dessus.
     signed_urls = {x["event"]["officialUrl"]: key for key, x in
                    HOWLIN_TWO_SIGNED_20261105.items()}
-    if (event.get("venueId") in HOWLIN_TWO_VENUES or
+    if ((event.get("venueId") in HOWLIN_TWO_VENUES
+          and event_id not in STRANGLERS_FOUR_SIGNED_20261106) or
             event_id in HOWLIN_TWO_SIGNED_20261105 or
             event.get("officialUrl") in signed_urls):
         spec = HOWLIN_TWO_SIGNED_20261105.get(event_id)
@@ -3812,7 +3818,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # Cap Caval : URL, artiste, scène et preuve protégés par une signature
     # nominative (pas d'approbation générale de tous ses futurs concerts).
     signed_cap = CAP_CAVAL_SIGNED_20261105["event"]
-    if (event.get("venueId") == "salle-cap-caval-penmarch" or
+    if ((event.get("venueId") == "salle-cap-caval-penmarch"
+          and event_id not in STRANGLERS_FOUR_SIGNED_20261106) or
             event_id == signed_cap["id"] or
             event.get("officialUrl") == signed_cap["officialUrl"]):
         require(event == signed_cap and
@@ -5207,6 +5214,55 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(resolved[aid]["name"]).replace(" ","-")==aid
                         for aid in ids),
                 "Cave aux Poètes : noms ou identifiants d'artistes non corroborés")
+    elif (event_id in STRANGLERS_FOUR_SIGNED_20261106
+          or official_url in {
+              r["event"]["officialUrl"] for r in
+              STRANGLERS_FOUR_SIGNED_20261106.values()}):
+        # Per-event exact signatures; a published venue is not a blanket grant.
+        signed = STRANGLERS_FOUR_SIGNED_20261106.get(event_id)
+        require(signed is not None
+                and reviewer == "independent-official-verifier"
+                and event == signed["event"]
+                and event.get("sourceType") == "salle"
+                and new_artists == [],
+                "The Stranglers : affiche, salle ou identité hors signature")
+        reviewed = norm_date(approval.get("reviewedAt"))
+        require(today - dt.timedelta(days=14) <= reviewed <= today,
+                "The Stranglers : revue officielle ancienne ou future")
+        pinned = signed["proofs"]
+        require(len(evidence) == len(pinned) == 2
+                and all(isinstance(p, dict) for p in evidence),
+                "The Stranglers : deux preuves de provenance obligatoires")
+        for actual, expected in zip(evidence, pinned):
+            require(all(actual.get(k) == expected[k] for k in
+                        ("url", "proofType", "checkedFields",
+                         "officialArtistNames"))
+                    and actual.get("checkedAt") == reviewed.isoformat()
+                    and actual.get("concertStartTimeConfirmed")
+                        == expected.get("concertStartTimeConfirmed")
+                    and actual.get("doorTimeConfirmed")
+                        == expected.get("doorTimeConfirmed"),
+                    "The Stranglers : preuves, artistes ou horaires modifiés")
+        require(
+            all((known_artist_ids.get(ident) or {}).get("name") == name
+                for ident, name in zip(event["artistIds"],
+                   ["The Stranglers", "Brother Junior"][:len(event["artistIds"])]))
+            and event["artistIds"][0] == "the-stranglers"
+            and (len(event["artistIds"]) == 1
+                 or event["artistIds"] == ["the-stranglers", "brother-junior"]),
+            "The Stranglers : réutilisation canonique des artistes invalide")
+        require(any(p.get("concertStartTimeConfirmed") == event["time"]
+                    and "concertStartTime" in p["checkedFields"]
+                    for p in evidence),
+                "The Stranglers : horaire du billet ou des portes non prouvé")
+        official = urlsplit(official_url)
+        require(official.scheme == "https"
+                and official.hostname == urlsplit(signed["event"]["officialUrl"]).hostname
+                and official.path == urlsplit(signed["event"]["officialUrl"]).path
+                and not official.username and not official.password
+                and not official.port and not official.query
+                and not official.fragment,
+                "The Stranglers : URL de salle officielle invalide")
     elif event.get("venueId") == "le-forum-vaureal":
         spec=FORUM_VERIFIED.get(event_id)
         require(spec is not None
