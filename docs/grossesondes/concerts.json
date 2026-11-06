@@ -13863,6 +13863,35 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270408-biarritz-peter-hook-and-the-light",
+      "title": "PETER HOOK & THE LIGHT",
+      "date": "2027-04-08",
+      "artistIds": [
+        "peter-hook-and-the-light"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/peter-hook-the-light-a-joy-division-celebration-jeudi-08-avril-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-06",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
