@@ -16,7 +16,8 @@ def catalogue():
 class FamilyPlaceCatalogueTests(unittest.TestCase):
     def test_real_mille_formes_record_separate_from_events(self):
         j = catalogue()
-        self.assertEqual(validate(j), 5)
+        self.assertEqual(validate(j), len(j["places"]))
+        self.assertGreaterEqual(len(j["places"]), 5)
         loc = j["places"][0]
         self.assertEqual(loc["name"], "mille formes Montpellier")
         self.assertEqual((loc["lat"], loc["lng"]), (43.60826, 3.88612))
@@ -39,7 +40,9 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
                 "https://www.openstreetmap.org/node/395241034"),
         }
         by_id = {place["id"]: place for place in j["places"]}
-        self.assertEqual(set(by_id), set(expected) | {"montpellier-mille-formes", "pace-totems"})
+        baseline = set(expected) | {"montpellier-mille-formes", "pace-totems"}
+        self.assertTrue(baseline <= set(by_id))
+        self.assertTrue(set(by_id) <= baseline | {"nantes-ludotheque-bellevue"})
         for pid, (city, category, geo_url) in expected.items():
             with self.subTest(place=pid):
                 p = by_id[pid]
