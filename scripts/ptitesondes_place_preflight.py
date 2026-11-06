@@ -315,7 +315,7 @@ def private_json(token):
     data = github(p, token)
     if data.get("encoding") != "base64":
         raise ValueError("private proposal unreadable")
-    raw = base64.b64decode(data["content"], validate=True)
+    raw = base64.b64decode("".join(data["content"].split()), validate=True)
     if len(raw) > 150000:
         raise ValueError("private proposal oversized")
     return json.loads(raw)
