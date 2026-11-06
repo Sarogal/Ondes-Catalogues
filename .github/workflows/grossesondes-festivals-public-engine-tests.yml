@@ -1,0 +1,45 @@
+name: Grosses Ondes — parité moteur Festivals sur runners publics
+
+on:
+  pull_request:
+    paths:
+      - 'festival-automation/**'
+      - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
+      - 'GROSSES_ONDES_MIGRATION_PUBLIQUE.md'
+  push:
+    branches: [main]
+    paths:
+      - 'festival-automation/**'
+      - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier que le portage n'inclut aucun état confidentiel
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find festival-automation -type f \( -name 'source-watch-state.json' -o -name 'approved.json' -o -name '*-review.json' -o -name 'patch-*.json' -o -name '.env*' \) | grep -q .; then
+            echo "::error::Un état privé ou une approbation figure dans le portage"
+            exit 1
+          fi
+          if grep -rIlE '(github_pat_[A-Za-z0-9_]{15,}|ghp_[A-Za-z0-9]{20,}|-----BEGIN .*PRIVATE KEY-----)' festival-automation; then
+            echo "::error::Un secret potentiel figure dans le portage"
+            exit 1
+          fi
+      - name: Vérifier la syntaxe Python du moteur existant
+        run: python -m compileall -q festival-automation
+      - name: Exécuter la suite originale complète sans réseau ni secrets
+        run: python -m unittest discover -s festival-automation -p 'test_*.py' -v
