@@ -91,13 +91,26 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
                     ci.audit(BEFORE, AFTER, {}, PUBLISHED,
                              dt.date(2026, 11, 6))
 
-    def test_invalid_pr_input_is_rejected_before_any_api_query(self):
-        for number in ("1;cat /etc/passwd", "refs/heads/main", "-1", "0001", "7\nX"):
-            with self.subTest(number=number), (
-                    patch.object(ci, "github_json",
+    def test_invalid_sha_is_rejected_before_any_api_query(self):
+        for value in ("1;cat /etc/passwd", "refs/heads/main", "-1", "0001",
+                      "7\nX", "a" * 39, "a" * 41):
+            with self.subTest(ref=value), (
+                    patch.object(ci, "github_approval",
                                  side_effect=AssertionError("network forbidden"))):
                 with self.assertRaises(ValueError):
-                    ci.preview(number, "fake-token", dt.date(2026, 11, 6))
+                    ci.preview(value, "fake-token", dt.date(2026, 11, 6))
+
+    def test_only_pinned_sha_and_main_json_are_requested(self):
+        refs = []
+        def approved(ref, token):
+            refs.append(ref)
+            return BEFORE if ref == "main" else AFTER
+        with (patch.object(ci, "github_approval", side_effect=approved),
+              patch.object(ci, "read_json", side_effect=({}, PUBLISHED)),
+              patch.object(ci, "audit", return_value=1)):
+            self.assertEqual(ci.preview("a" * 40, "fake-token",
+                                        dt.date(2026, 11, 6)), 1)
+        self.assertEqual(refs, ["main", "a" * 40])
 
 
 if __name__ == "__main__":
