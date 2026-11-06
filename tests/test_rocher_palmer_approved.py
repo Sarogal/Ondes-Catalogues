@@ -4,7 +4,7 @@ import datetime as dt
 import unittest
 from scripts import concerts_cloud_sync as sync
 
-TODAY = dt.date(2026, 11, 2)
+TODAY = dt.date(2026, 11, 6)
 KNOWN = {
     "les-tambours-du-bronx": {"id":"les-tambours-du-bronx","name":"Les Tambours du Bronx"},
     "rhapsody-of-fire": {"id":"rhapsody-of-fire","name":"Rhapsody of Fire"},
@@ -19,18 +19,19 @@ VENUES = {"le-rocher-de-palmer-cenon": {
     "name":"Le Rocher de Palmer","city":"Cenon",
 }}
 FRESH = {"tagada-jones":"Tagada Jones","die-arzte":"Die Ärzte",
-         "gwendoline":"Gwendoline"}
+         "gwendoline":"Gwendoline","bleu-panique":"Bleu Panique"}
 
 
 def approval(event_id):
     s=sync.ROCHER_PALMER_VERIFIED[event_id]
+    checked="2026-11-06" if event_id=="go-c-20261107-cenon-gwendoline" else "2026-11-02"
     return {
         "reviewDecision":"approved",
         "reviewedBy":"independent-official-verifier",
-        "reviewedAt":"2026-11-02",
+        "reviewedAt":checked,
         "officialEvidence":[{
             "url":s["officialUrl"],"proofType":"official-organizer-or-venue",
-            "checkedAt":"2026-11-02",
+            "checkedAt":checked,
             "checkedFields":["artists","date","venue","genre","startTime"],
             "notes":"Named headliners, date, salle and advertised start confirmed on first-party event detail."
         }],
@@ -53,6 +54,27 @@ class RocherPalmerValidation(unittest.TestCase):
                 event,artists=sync.validate_approval(approval(event_id),VENUES,KNOWN,TODAY)
                 self.assertEqual(event["venueId"],"le-rocher-de-palmer-cenon")
                 self.assertEqual(set(artists),set(x["id"] for x in approval(event_id)["newArtists"]))
+
+    def test_gwendoline_officially_named_support_and_canonicals(self):
+        event_id="go-c-20261107-cenon-gwendoline"
+        reviewed=approval(event_id)
+        self.assertEqual(reviewed["reviewedAt"],"2026-11-06")
+        event,added=sync.validate_approval(reviewed,VENUES,KNOWN,TODAY)
+        self.assertEqual(event["title"],"Gwendoline + Bleu Panique")
+        self.assertEqual(event["artistIds"],["gwendoline","bleu-panique"])
+        self.assertEqual(event["date"],"2026-11-07")
+        self.assertEqual(event["time"],"20:30")
+        self.assertEqual(set(added),{"gwendoline","bleu-panique"})
+        for change in ("dropped-support","wrong-support","invented-time"):
+            a=approval(event_id)
+            if change=="dropped-support":
+                a["event"]["artistIds"]=["gwendoline"]
+            elif change=="wrong-support":
+                a["newArtists"][1]["name"]="Unknown Performer"
+            elif change=="invented-time":
+                a["event"]["time"]="19:30"
+            with self.subTest(change=change),self.assertRaises(ValueError):
+                sync.validate_approval(a,VENUES,KNOWN,TODAY)
 
     def test_mutations_are_never_an_approval(self):
         event_id="go-c-20270326-cenon-uuhai"
