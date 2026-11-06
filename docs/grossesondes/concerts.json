@@ -2146,6 +2146,11 @@
       "id": "hokka",
       "name": "HOKKA",
       "aliases": []
+    },
+    {
+      "id": "bleu-panique",
+      "name": "Bleu Panique",
+      "aliases": []
     }
   ],
   "venues": [
@@ -9097,10 +9102,11 @@
     },
     {
       "id": "go-c-20261107-cenon-gwendoline",
-      "title": "Gwendoline",
+      "title": "Gwendoline + Bleu Panique",
       "date": "2026-11-07",
       "artistIds": [
-        "gwendoline"
+        "gwendoline",
+        "bleu-panique"
       ],
       "venueId": "le-rocher-de-palmer-cenon",
       "genres": [
@@ -9113,7 +9119,7 @@
       "timeMeaning": "début du concert",
       "organizer": "Le Rocher de Palmer",
       "ticketUrl": null,
-      "lastVerified": "2026-11-02",
+      "lastVerified": "2026-11-06",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
       "sourceLabel": "Programmation officielle (salle / organisateur)",
       "locationPrecision": "Position connue du catalogue, précision à confirmer",
@@ -9121,6 +9127,10 @@
         {
           "date": "2026-11-02",
           "change": "Ajout après revue des preuves officielles"
+        },
+        {
+          "date": "2026-11-06",
+          "change": "Première partie Bleu Panique ajoutée après vérification officielle du programme du Rocher de Palmer"
         }
       ]
     },
