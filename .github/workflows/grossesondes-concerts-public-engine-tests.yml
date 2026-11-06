@@ -5,11 +5,13 @@ on:
     paths:
       - 'automation/concerts/**'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   push:
     branches: [main]
     paths:
       - 'automation/concerts/**'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
 
 permissions:
