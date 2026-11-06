@@ -1,0 +1,112 @@
+name: P'tites Ondes — diagnostic ponctuel d'écriture privée
+
+# Contrôle ponctuel, sans planification, aucune donnée privée publiée.
+on:
+  pull_request:
+    paths: ['.github/workflows/ptitesondes-private-write-probe.yml']
+  push:
+    branches: [main]
+    paths: ['.github/workflows/ptitesondes-private-write-probe.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Vérifier le caractère privé et ponctuel
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          c = Path('.github/workflows/ptitesondes-private-write-probe.yml').read_text()
+          assert chr(10) + '  schedule:' + chr(10) not in c
+          assert 'Sarogal/PtitesOndes' in c
+          assert 'automation/ptitesondes-intake' in c
+          assert 'PTITESONDES_INTAKE_WRITE_TOKEN' in c
+          assert 'persist-credentials: false' in c
+          assert 'if: github.event_name == ' in c
+          assert 'github.ref == ' in c
+          assert ('workflow' + '_' + 'dispatch') not in c
+          assert ('docs/ptitesondes/' + 'sorties.json') not in c
+          print('Contrat diagnostic : OK')
+          PY
+
+  write-probe:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      PTITES_READ: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+      PTITES_WRITE: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+    steps:
+      - name: Refuser les credentials absents
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$PTITES_READ" ]] || { echo "::error::Clé de lecture manquante"; exit 1; }
+          [[ -n "$PTITES_WRITE" ]] || { echo "::error::Clé d'écriture manquante"; exit 1; }
+
+      - name: Extraire la branche privée, sans enregistrer de credentials
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          ref: automation/ptitesondes-intake
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+
+      - name: Enregistrer une preuve de test non sensible uniquement en privé
+        shell: bash
+        run: |
+          set -euo pipefail
+          file='automation-intake/ptitesondes/reports/public-runner-write-probe.json'
+          test -d state/automation-intake/ptitesondes/reports
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          p=Path('state/automation-intake/ptitesondes/reports/public-runner-write-probe.json')
+          p.write_text(json.dumps({
+              'schema': 'ptitesondes.private_runner_write_probe.v1',
+              'checked_at_utc': datetime.now(timezone.utc).isoformat(),
+              'safe_to_publish': False,
+              'public_catalogue_modified': False,
+              'purpose': 'verify scoped private write token without external publication'
+          }, indent=2)+'\n', encoding='utf-8')
+          PY
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          HEADER="$(printf 'x-access-token:%s' "$PTITES_WRITE" | base64 -w0)"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
+          logfile="$RUNNER_TEMP/private-write-probe.log"
+          if ! git -C state add -- "$file" > "$logfile" 2>&1; then
+            echo "::error::Impossible d'ajouter la preuve privée (sparse checkout ou fetch)."
+            exit 1
+          fi
+          git -C state commit -m 'test(ptitesondes): prove scoped public-runner write access' > "$logfile" 2>&1
+          if ! git -C state push origin HEAD:automation/ptitesondes-intake > "$logfile" 2>&1; then
+            if grep -Eiq '403|Write access to repository not granted|Permission to .* denied|Resource not accessible|permission denied' "$logfile"; then
+              echo "::error::Token reconnu mais permission Contents Write refusée sur le dépôt privé."
+            elif grep -Eiq 'non-fast-forward|fetch first|rejected|stale info' "$logfile"; then
+              echo "::error::Branche privée modifiée entre lecture et écriture : conflit non forcé."
+            elif grep -Eiq 'protected branch|repository rule|protected ref|rule violations' "$logfile"; then
+              echo "::error::Règle GitHub de branche refusant l'écriture directe."
+            elif grep -Eiq 'Could not resolve|Connection|network|timeout' "$logfile"; then
+              echo "::error::Erreur de connexion GitHub durant le push."
+            else
+              echo "::error::Écriture privée refusée (raison non classifiée, aucune clé affichée)."
+            fi
+            exit 1
+          fi
+          echo "Preuve non sensible sauvegardée sur la branche exclusivement privée." >> "$GITHUB_STEP_SUMMARY"
+          echo "Aucun catalogue public ni données d'approbation n'a été modifié." >> "$GITHUB_STEP_SUMMARY"
