@@ -2,6 +2,10 @@ name: P'tites Ondes — moteurs privés sur runners publics (bascule pilote)
 
 # Phase pilote : aucun schedule avant validation du cycle intégral privé.
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
   pull_request:
     paths:
       - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
@@ -58,7 +62,7 @@ jobs:
           PY
 
   run-private:
-    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
