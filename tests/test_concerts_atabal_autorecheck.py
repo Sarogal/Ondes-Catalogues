@@ -51,7 +51,7 @@ class AtabalPublicGateTests(unittest.TestCase):
         self.assertEqual(event["id"],row()["event"]["id"])
         self.assertEqual(event["artistIds"],["peter-hook-and-the-light"])
         self.assertIsNone(event["time"])
-        self.assertEqual(created,[])
+        self.assertEqual(created,{})
 
     def test_narrow_review_rejects_mutations(self):
         for mutant in (
