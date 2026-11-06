@@ -87,8 +87,11 @@ jobs:
             exit 1
           fi
           if [[ "$CYCLE" != "places" && -z "$OPENAGENDA_READ_KEY" ]]; then
-            echo "::error::Clé OpenAgenda absente : impossible d'assurer la couverture nationale."
-            exit 1
+            if [[ "$RUN_MODE" == "write" ]]; then
+              echo "::error::Clé OpenAgenda absente : aucune collecte complète sauvegardée."
+              exit 1
+            fi
+            echo "::warning::Prévisualisation partielle sans OpenAgenda : couverture nationale non validée, aucune écriture."
           fi
           [[ "$CYCLE" == "outings" || "$CYCLE" == "places" || "$CYCLE" == "all" ]]
           [[ "$RUN_MODE" == "preview" || "$RUN_MODE" == "write" ]]
