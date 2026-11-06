@@ -4,7 +4,7 @@ import datetime as dt
 import unittest
 from scripts import concerts_cloud_sync as sync
 
-TODAY = dt.date(2026, 11, 2)
+TODAY = dt.date(2026, 11, 6)
 KNOWN = {
     "les-tambours-du-bronx": {"id":"les-tambours-du-bronx","name":"Les Tambours du Bronx"},
     "rhapsody-of-fire": {"id":"rhapsody-of-fire","name":"Rhapsody of Fire"},
@@ -19,18 +19,19 @@ VENUES = {"le-rocher-de-palmer-cenon": {
     "name":"Le Rocher de Palmer","city":"Cenon",
 }}
 FRESH = {"tagada-jones":"Tagada Jones","die-arzte":"Die Ärzte",
-         "gwendoline":"Gwendoline"}
+         "gwendoline":"Gwendoline","bleu-panique":"Bleu Panique"}
 
 
 def approval(event_id):
     s=sync.ROCHER_PALMER_VERIFIED[event_id]
+    checked = "2026-11-06" if event_id == "go-c-20261107-cenon-gwendoline" else "2026-11-02"
     return {
         "reviewDecision":"approved",
         "reviewedBy":"independent-official-verifier",
-        "reviewedAt":"2026-11-02",
+        "reviewedAt":checked,
         "officialEvidence":[{
             "url":s["officialUrl"],"proofType":"official-organizer-or-venue",
-            "checkedAt":"2026-11-02",
+            "checkedAt":checked,
             "checkedFields":["artists","date","venue","genre","startTime"],
             "notes":"Named headliners, date, salle and advertised start confirmed on first-party event detail."
         }],
