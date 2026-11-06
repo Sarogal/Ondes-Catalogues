@@ -1,4 +1,62 @@
 {
   "schema": "ptitesondes.public_place_sources.v1",
-  "sources": []
+  "sources": [
+    {
+      "id": "nantes-ludotheque-bellevue",
+      "facts": {
+        "id": "nantes-ludotheque-bellevue",
+        "name": "Ludothèque Bellevue",
+        "kind": "lieu-permanent",
+        "category": "ludotheque",
+        "category_label": "Ludothèque",
+        "city": "Nantes",
+        "department": "Loire-Atlantique",
+        "region": "Pays de la Loire",
+        "postal_code": "44100",
+        "address": "20 rue Firmin Colas, 44100 Nantes",
+        "geo_precision": "lieu",
+        "age_min": null,
+        "age_max": null,
+        "admission": "Adhésion Accoord (8,80 €) nécessaire pour participer aux activités ; certaines gratuites, d’autres payantes.",
+        "activities": [
+          "ludothèque",
+          "contes et comptines",
+          "atelier d’éveil artistique parents/enfants"
+        ],
+        "reservation_note": "Vérifier les horaires, l’adhésion et les modalités de participation sur le site officiel.",
+        "official_url": "https://parents.loire-atlantique.fr/44/centre-socioculturel-de-bellevue-meta-accoord/parents_10602",
+        "geo_source_url": "https://www.openstreetmap.org/node/2810810943",
+        "is_publicly_accessible": true
+      },
+      "official_anchors": [
+        "Ludothèque Bellevue-Meta",
+        "20 rue Firmin Colas",
+        "44100 Nantes",
+        "ludo.meta@accoord.fr",
+        "Contes et comptines",
+        "L’adhésion à l’Accoord (8,80€) est nécessaire pour participer aux activités",
+        "une ludothèque",
+        "Atelier d’éveil artistique parents/enfants",
+        "certaines étant gratuites et d'autres payantes"
+      ],
+      "osm": {
+        "type": "node",
+        "id": 2810810943,
+        "lat": 47.2035757,
+        "lng": -1.6073739,
+        "tags": {
+          "name": "La ludothèque de la Meta",
+          "amenity": "toy_library",
+          "addr:city": "Nantes",
+          "addr:street": "Rue Firmin Colas",
+          "addr:housenumber": "20",
+          "addr:postcode": "44100"
+        }
+      },
+      "aliases": [
+        "Ludothèque Bellevue-Méta",
+        "La ludothèque de la Meta"
+      ]
+    }
+  ]
 }
