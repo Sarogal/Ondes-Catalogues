@@ -52,7 +52,32 @@ jobs:
           if ! python scripts/concerts_private_approval_preview.py \
               --head-sha "$PRIVATE_HEAD_SHA" \
               > "$RUNNER_TEMP/concerts-private-preview.log" 2>&1; then
-            echo "::error::Prévalidation privée refusée ; aucun contenu privé divulgué."
+            # Only an intentionally fixed stage code can pass to public logs.
+            # No approval content, URL, API response or raw exception is emitted.
+            if grep -Eq '^PREVIEW_STAGE=(READ_MAIN|READ_HEAD|READ_PUBLIC|MERGE|UNEXPECTED)
+          fi
+          echo "Prévalidation sûre : historique conservé, nouvelles fiches vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
+          echo "Runner public ; lecture des approbations via un jeton privé de portée limitée." >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirmer l'absence totale d'écriture ou d'artefact privé
+        shell: bash
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Aucune modification des dépôts ou des catalogues."
+ "$RUNNER_TEMP/concerts-private-preview.log"; then
+              grep -E '^PREVIEW_STAGE=(READ_MAIN|READ_HEAD|READ_PUBLIC|MERGE|UNEXPECTED)
+          fi
+          echo "Prévalidation sûre : historique conservé, nouvelles fiches vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
+          echo "Runner public ; lecture des approbations via un jeton privé de portée limitée." >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirmer l'absence totale d'écriture ou d'artefact privé
+        shell: bash
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Aucune modification des dépôts ou des catalogues."
+ "$RUNNER_TEMP/concerts-private-preview.log"
+            fi
+            echo "::error::Prévalidation privée refusée ; aucune preuve divulguée."
             exit 1
           fi
           echo "Prévalidation sûre : historique conservé, nouvelles fiches vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
