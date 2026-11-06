@@ -40,5 +40,5 @@ jobs:
           fi
       - name: Vérifier la syntaxe de tous les modules et tests Concerts
         run: python -m compileall -q automation/concerts
-      - name: Exécuter la suite de tests Concerts en bac à sable hors réseau
-        run: python -m unittest discover -s automation/concerts -p 'test_*.py' -v
+      - name: Exécuter tous les tests qui n'exigent pas approved.json privé
+        run: python scripts/grossesondes_concerts_public_parity.py
