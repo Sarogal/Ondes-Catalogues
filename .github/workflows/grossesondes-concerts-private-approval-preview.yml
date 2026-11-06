@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/grossesondes-concerts-private-approval-preview.yml'
+      - 'scripts/concerts_private_approval_preview.py'
+      - 'tests/test_concerts_private_approval_preview.py'
   workflow_dispatch:
     inputs:
       private_head_sha:
