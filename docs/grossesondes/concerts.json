@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-05",
+  "updatedAt": "2026-11-06",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2135,6 +2135,16 @@
     {
       "id": "hayko",
       "name": "Hayko",
+      "aliases": []
+    },
+    {
+      "id": "lost-society",
+      "name": "LOST SOCIETY",
+      "aliases": []
+    },
+    {
+      "id": "hokka",
+      "name": "HOKKA",
       "aliases": []
     }
   ],
@@ -13820,6 +13830,36 @@
       "history": [
         {
           "date": "2026-11-05",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270219-paris-lost-society",
+      "title": "LOST SOCIETY + HOKKA",
+      "date": "2027-02-19",
+      "artistIds": [
+        "lost-society",
+        "hokka"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Groove Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/lost-society-hokka/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-05",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-06",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
