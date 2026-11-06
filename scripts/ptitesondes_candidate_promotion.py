@@ -374,7 +374,8 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         # Avoid even contacting ODS for an occurrence already represented by
         # a multi-day published fiche (e.g. Bordeaux 21–22 Jan or 6–7 Feb).
         if covered_by_published_range(lead, published["events"]):
-            rejected.append(dict(evidence, status="already_published_range"))
+            rejected.append(dict(evidence, status="already_published",
+                                 reason="séance couverte par une fiche publiée"))
             continue
         try:
             record = fetch(lead["external_id"])
