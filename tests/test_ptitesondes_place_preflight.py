@@ -207,6 +207,14 @@ class IndependentPlacesGateTests(unittest.TestCase):
         bad["sources"][0]["facts"]["age_min"] = 0
         with self.assertRaises(ValueError):
             source_index(bad, TODAY)
+        # Neither a numeric substring nor a shortened street is a valid address.
+        for wrong in (("addr:housenumber", "2"),
+                      ("addr:street", "Rue Firmin Cola"),
+                      ("addr:postcode", "44101")):
+            bad = deepcopy(REGISTRY)
+            bad["sources"][0]["osm"]["tags"][wrong[0]] = wrong[1]
+            with self.subTest(wrong=wrong), self.assertRaises(ValueError):
+                source_index(bad, TODAY)
 
     def test_github_base64_wrapped_at_linebreaks_is_validated(self):
         original = private(BELLEVUE)
