@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from ptitesondes_candidate_promotion import (
     api_record, category_for, confirmed_session, evaluate, main, make_event,
     permitted, reconciled_openagenda_url, registry_location, scheduled,
+    covered_by_published_range,
 )
 from merge_policy import ORIGIN, merge
 from venue_registry import VENUES
@@ -245,6 +246,54 @@ class CandidatePromotionTests(unittest.TestCase):
                              verifier=lambda e, originals: (True, "proof"))
         self.assertEqual(report["accepted_preflight"], 1)
         self.assertEqual(p["additions"][0]["date_start"], "2027-02-14")
+
+    def test_existing_multi_day_public_card_blocks_later_single_day_duplicate(self):
+        ref = base()
+        same = make_event(lead(), record(), registry_location(lead()), TODAY)
+        existing = dict(same, id="family-nantes-combined-2027-02-09",
+                        date_start="2027-02-09", date_end="2027-02-10")
+        public = dict(ref, events=ref["events"] + [existing])
+        self.assertTrue(covered_by_published_range(lead(), public["events"]))
+        def never_fetch(uid):
+            self.fail("A published multi-day range must stop the query upstream")
+        patch_doc, report = evaluate([lead()], ref, public, TODAY, fetch=never_fetch)
+        self.assertEqual(patch_doc["additions"], [])
+        self.assertEqual(report["details"][0]["status"], "already_published_range")
+
+    def test_range_dedup_checks_date_title_city_and_venue_exactly(self):
+        existing = {"title":"Momo, l’enfant pêche", "city":"Bordeaux",
+                    "venue":"Auditorium de Bordeaux",
+                    "date_start":"2027-01-21", "date_end":"2027-01-22"}
+        candidate = {"title":"Momo, l'enfant pêche", "city":"Bordeaux",
+                     "venue":"Auditorium de Bordeaux", "date_start":"2027-01-22"}
+        self.assertTrue(covered_by_published_range(candidate, [existing]))
+        other = {"title":"Ici, là-bas", "city":"Bordeaux",
+                 "venue":"Grand Théâtre - Foyer rouge",
+                 "date_start":"2027-02-07"}
+        published = {"title":"Ici, là-bas", "city":"Bordeaux",
+                     "venue":"Grand-Théâtre – Foyer rouge",
+                     "date_start":"2027-02-06", "date_end":"2027-02-07"}
+        self.assertTrue(covered_by_published_range(other, [published]))
+        for different in (
+            dict(candidate, title="Un autre spectacle"),
+            dict(candidate, city="Paris"),
+            dict(candidate, venue="Autre salle"),
+            dict(candidate, date_start="2027-01-23"),
+        ):
+            with self.subTest(different=different):
+                self.assertFalse(covered_by_published_range(different, [existing]))
+        self.assertFalse(covered_by_published_range(
+            candidate, [dict(existing, date_end="not-a-date")]))
+
+    def test_school_only_time_takes_priority_over_missing_family_description(self):
+        school = dict(lead(), external_id="66367832",
+                      date_start="2027-01-28", date_end="2027-01-28")
+        details = dict(record(), uid="66367832",
+                       title_fr=school["title"],
+                       description_fr="Ciné-concert",
+                       timings='[{"begin":"2027-01-28T14:30:00+01:00"}]')
+        with self.assertRaisesRegex(ValueError, "scolaire"):
+            make_event(school, details, registry_location(school), TODAY)
 
     def test_existing_id_and_semantic_duplication_blocked(self):
         ref = base()
