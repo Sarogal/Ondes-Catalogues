@@ -91,6 +91,19 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
                     ci.audit(BEFORE, AFTER, {}, PUBLISHED,
                              dt.date(2026, 11, 6))
 
+    def test_fail_stage_is_fixed_and_private_exception_is_suppressed(self):
+        secret = "PRIVATE_PROOF_NOT_FOR_PUBLIC_LOGS"
+        for stage, callback in (
+            ("READ_MAIN", lambda: ci.guarded("READ_MAIN", lambda: (_ for _ in ()).throw(ValueError(secret)))),
+            ("READ_HEAD", lambda: ci.guarded("READ_HEAD", lambda: (_ for _ in ()).throw(ValueError(secret)))),
+            ("MERGE", lambda: ci.guarded("MERGE", lambda: (_ for _ in ()).throw(ValueError(secret)))),
+        ):
+            with self.subTest(stage=stage):
+                with self.assertRaises(ci.PrivatePreviewStageError) as result:
+                    callback()
+                self.assertEqual(result.exception.stage, stage)
+                self.assertNotIn(secret, str(result.exception))
+
     def test_invalid_sha_is_rejected_before_any_api_query(self):
         for value in ("1;cat /etc/passwd", "refs/heads/main", "-1", "0001",
                       "7\nX", "a" * 39, "a" * 41):
