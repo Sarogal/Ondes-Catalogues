@@ -2151,6 +2151,11 @@
       "id": "bleu-panique",
       "name": "Bleu Panique",
       "aliases": []
+    },
+    {
+      "id": "brother-junior",
+      "name": "Brother Junior",
+      "aliases": []
     }
   ],
   "venues": [
@@ -13891,6 +13896,36 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Atabal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-06",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261124-cenon-the-stranglers",
+      "title": "The Stranglers + Brother Junior",
+      "date": "2026-11-24",
+      "artistIds": [
+        "the-stranglers",
+        "brother-junior"
+      ],
+      "venueId": "le-rocher-de-palmer-cenon",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lerocherdepalmer.fr/agenda/stranglers",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Rocher de Palmer",
       "ticketUrl": null,
       "lastVerified": "2026-11-06",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
