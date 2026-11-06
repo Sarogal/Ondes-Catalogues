@@ -1,7 +1,14 @@
 name: P'tites Ondes — moteurs privés sur runners publics (bascule pilote)
 
-# Phase pilote : aucun schedule avant validation du cycle intégral privé.
+# Basculer seulement après validation des secrets et d'une écriture privée sur runner public.
 on:
+  schedule:
+    # Quatre collectes Sorties et une rotation Lieux, horaires UTC.
+    - cron: '05 07 * * *'
+    - cron: '05 10 * * *'
+    - cron: '05 14 * * *'
+    - cron: '05 18 * * *'
+    - cron: '30 21 * * *'
   push:
     branches: [main]
     paths:
@@ -55,21 +62,22 @@ jobs:
           assert "persist-credentials: false" in s
           assert "PRIVATE_INTAKE_READ_TOKEN" in s and "PTITESONDES_INTAKE_WRITE_TOKEN" in s
           assert "OPENAGENDA_READ_KEY" in s
-          assert "on:" in s and chr(10) + "  schedule:" + chr(10) not in s
+          assert "on:" in s and chr(10) + "  schedule:" + chr(10) in s
+          assert "vars.PTITESONDES_PUBLIC_INTAKE != 'paused'" in s
           assert ("deploy" + "-pages") not in s and "docs/ptitesondes/sorties.json" in s
           assert ("git push origin HEAD" + ":main") not in s
-          print('Contrat public / données privées : OK. Aucun cycle auto activé.')
+          print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
 
   run-private:
-    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push')
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
       contents: read
     env:
-      RUN_MODE: ${{ inputs.mode || 'preview' }}
-      CYCLE: ${{ inputs.cycle || 'all' }}
+      RUN_MODE: ${{ github.event_name == 'schedule' && 'write' || inputs.mode || 'preview' }}
+      CYCLE: ${{ github.event_name == 'schedule' && github.event.schedule == '30 21 * * *' && 'places' || github.event_name == 'schedule' && 'outings' || inputs.cycle || 'all' }}
       PRIVATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
       PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
       OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
@@ -169,7 +177,7 @@ jobs:
           fi
 
       - name: Collecter les sorties et effectuer une vérification indépendante
-        if: ${{ inputs.cycle != 'places' }}
+        if: ${{ env.CYCLE != 'places' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -223,7 +231,7 @@ jobs:
           echo "Sorties collectées et prévalidées indépendamment ; aucune publication publique." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
-        if: ${{ inputs.cycle != 'outings' }}
+        if: ${{ env.CYCLE != 'outings' }}
         shell: bash
         run: |
           set -euo pipefail
