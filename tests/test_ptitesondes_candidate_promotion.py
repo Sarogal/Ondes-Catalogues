@@ -258,7 +258,8 @@ class CandidatePromotionTests(unittest.TestCase):
             self.fail("A published multi-day range must stop the query upstream")
         patch_doc, report = evaluate([lead()], ref, public, TODAY, fetch=never_fetch)
         self.assertEqual(patch_doc["additions"], [])
-        self.assertEqual(report["details"][0]["status"], "already_published_range")
+        self.assertEqual(report["details"][0]["status"], "already_published")
+        self.assertIn("couverte", report["details"][0]["reason"])
 
     def test_range_dedup_checks_date_title_city_and_venue_exactly(self):
         existing = {"title":"Momo, l’enfant pêche", "city":"Bordeaux",
