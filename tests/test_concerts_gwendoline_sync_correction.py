@@ -90,7 +90,16 @@ class SignedExistingConcertCorrection(unittest.TestCase):
         original = simulated_prepublication(self.current)
         candidate = copy.deepcopy(original)
         sync.apply_gwendoline_signed_correction(candidate, self.approval)
-        self.assertEqual(candidate, self.current)
+        # Later approved artists (e.g. Brother Junior) may have been appended
+        # after Bleu Panique. Reconstructing the historical mutation changes
+        # the artists list order, not the identities or published records.
+        self.assertEqual(candidate["events"], self.current["events"])
+        self.assertEqual(
+            {a["id"]: a for a in candidate["artists"]},
+            {a["id"]: a for a in self.current["artists"]})
+        self.assertEqual(
+            {k: v for k, v in candidate.items() if k not in ("artists", "events")},
+            {k: v for k, v in self.current.items() if k not in ("artists", "events")})
         sync.protect_reference(self.reference, candidate)
         sync.validate_catalogue(candidate)
         before = get_event(original)
