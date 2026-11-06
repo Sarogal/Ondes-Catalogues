@@ -34,8 +34,8 @@ jobs:
           assert 'mode=preview' in w and 'mode=write' in w
           assert 'if [[ "$conclusion" != "success" ]]' in w
           assert 'actions: write' in w
-          assert 'secrets.' not in w
-          assert 'git push' not in w
+          assert ('sec' + 'rets.') not in w
+          assert ('git ' + 'push') not in w
           print('Contrôle du déclencheur ponctuel : conforme')
           PY
 
