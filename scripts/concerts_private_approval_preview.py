@@ -10,8 +10,6 @@ from __future__ import annotations
 
 import argparse
 import base64
-import copy
-import datetime as dt
 import json
 import os
 from pathlib import Path
@@ -26,7 +24,6 @@ from scripts import concerts_cloud_sync as sync
 ROOT = Path(__file__).resolve().parents[1]
 API = "https://api.github.com/repos/Sarogal/GrossesOndes"
 FILE = "automation/concerts/approved.json"
-ALLOWED = re.compile(r"automation/concerts/test_[a-z0-9_]+\.py\Z")
 SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
@@ -54,7 +51,6 @@ def append_only(previous, proposed, published):
     fresh = new[len(old):]
     require(1 <= len(fresh) <= sync.MAX_NEW_EVENTS_PER_SYNC,
             "Lot nouveau trop important ou vide")
-    old_ids = [r.get("event", {}).get("id") for r in old]
     all_ids = [r.get("event", {}).get("id") for r in new]
     require(len(all_ids) == len(set(all_ids))
             and all(isinstance(i, str) and i for i in all_ids),
@@ -112,7 +108,8 @@ def github_json(path, token):
 
 
 def github_approval(ref, token):
-    require(SHA.fullmatch(ref), "Référence Git inconnue")
+    require(bool(SHA.fullmatch(ref)) or ref == "main",
+            "Référence Git inconnue")
     meta = github_json("/contents/" + FILE + "?ref=" +
                        urllib.parse.quote(ref, safe=""), token)
     require(meta.get("type") == "file" and meta.get("encoding") == "base64",
@@ -122,32 +119,14 @@ def github_approval(ref, token):
     return json.loads(content.decode("utf-8"))
 
 
-def preview(pr_number, token, today):
-    require(re.fullmatch(r"[1-9][0-9]{0,5}", pr_number),
-            "Numéro de PR invalide")
-    number = int(pr_number)
-    pr = github_json("/pulls/" + str(number), token)
-    require(pr.get("state") == "open"
-            and pr.get("base", {}).get("ref") == "main"
-            and pr.get("head", {}).get("repo", {}).get("full_name")
-                == "Sarogal/GrossesOndes"
-            and pr.get("base", {}).get("repo", {}).get("full_name")
-                == "Sarogal/GrossesOndes",
-            "PR privée non autorisée")
-    head = pr["head"]["sha"]
-    main = github_json("/branches/main", token)["commit"]["sha"]
-    require(SHA.fullmatch(head) and SHA.fullmatch(main),
-            "Références Git invalides")
-    # A PR cannot smuggle executable scripts/workflows into this validation.
-    changed = github_json("/pulls/" + str(number) + "/files?per_page=100", token)
-    require(isinstance(changed, list) and 1 <= len(changed) <= 20
-            and {f["filename"] for f in changed}.issuperset({FILE})
-            and all(f["filename"] == FILE
-                    or ALLOWED.fullmatch(f["filename"])
-                    for f in changed),
-            "La PR modifie des fichiers hors périmètre")
-    previous = github_approval(main, token)
-    proposed = github_approval(head, token)
+def preview(head_sha, token, today):
+    # A trusted operator copies the exact head SHA from the *private* PR.
+    # Only the approved JSON blob is read. No PR branch code is checked out,
+    # and only a repository-contents:read token is needed.
+    require(isinstance(head_sha, str) and SHA.fullmatch(head_sha),
+            "Référence Git privée invalide")
+    previous = github_approval("main", token)
+    proposed = github_approval(head_sha, token)
     reference = read_json(ROOT / "docs/grossesondes/concerts-reference.json")
     published = read_json(ROOT / "docs/grossesondes/concerts.json")
     return audit(previous, proposed, reference, published, today)
@@ -155,7 +134,7 @@ def preview(pr_number, token, today):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--pr-number", required=True)
+    parser.add_argument("--head-sha", required=True)
     args = parser.parse_args()
     # The read token lives in the trusted, main-only job environment.
     # Never echo it or a private API response.
@@ -165,7 +144,7 @@ def main():
         return 1
     try:
         checked = preview(
-            args.pr_number, token,
+            args.head_sha, token,
             dt.datetime.now(ZoneInfo("Europe/Paris")).date())
     except Exception:
         print("::error::Prévalidation refusée ; aucun détail privé diffusé",
