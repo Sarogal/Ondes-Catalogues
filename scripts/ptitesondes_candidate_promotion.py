@@ -287,6 +287,10 @@ def make_event(lead, row, location, today):
     if not math.isfinite(lat) or not math.isfinite(lng) or meters(
             (lat, lng), (location["lat"], location["lng"])) > 65:
         raise ValueError("Position source incompatible avec le registre vérifié")
+    # Reject a known school-only session even when the abbreviated ODS
+    # description does not independently classify its family audience.
+    day = lead["date_start"]
+    performance_time = confirmed_session(row.get("timings"), day, lead["external_id"])
     category = category_for(row["title_fr"], row.get("description_fr") or "")
     if not category:
         raise ValueError("Destination familiale musicale insuffisamment explicite")
@@ -295,13 +299,12 @@ def make_event(lead, row, location, today):
     source = row.get("originagenda_title")
     if not all(isinstance(v, str) and v.strip() for v in (department, region, source)):
         raise ValueError("Département, région ou auteur manquant")
-    day = lead["date_start"]
     e = {
         "id": "openagenda-" + lead["external_id"] + "-" + day,
         "title": row["title_fr"].strip(),
         "category": category[0], "category_label": category[1],
         "date_start": day, "date_end": day,
-        "time": confirmed_session(row.get("timings"), day, lead["external_id"]),
+        "time": performance_time,
         "city": row["location_city"], "department": department,
         "region": region, "venue": row["location_name"],
         "source_url": canonical,
@@ -314,6 +317,37 @@ def make_event(lead, row, location, today):
     # Omit age and price if unverified; they are NEVER inferred from a title.
     # The public policy checker independently reconfirms source, sessions, GPS.
     return e
+
+
+def covered_by_published_range(lead, published_events):
+    """Fail closed when a dated session is already inside a published series.
+
+    Public cards may legitimately group consecutive performances into one
+    date_start/date_end span. Compare exact title, city and venue identities,
+    not merely the initial day. Never merge distinct venues or different
+    works based on fuzzy names or shared sources.
+    """
+    try:
+        day = date.fromisoformat(lead["date_start"])
+    except (KeyError, ValueError, TypeError):
+        return False
+    identity = (norm(lead.get("title")), norm(lead.get("city")),
+                norm(lead.get("venue")))
+    if any(not value for value in identity):
+        return False
+    for item in published_events:
+        if not isinstance(item, dict) or (
+                norm(item.get("title")), norm(item.get("city")),
+                norm(item.get("venue"))) != identity:
+            continue
+        try:
+            start = date.fromisoformat(item["date_start"])
+            end = date.fromisoformat(item.get("date_end") or item["date_start"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        if start <= day <= end:
+            return True
+    return False
 
 
 def evaluate(leads, baseline, published, today, fetch=api_record,
@@ -337,6 +371,11 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
             break
         assessed += 1
         evidence = {"source_url": lead["source_url"], "date": lead["date_start"]}
+        # Avoid even contacting ODS for an occurrence already represented by
+        # a multi-day published fiche (e.g. Bordeaux 21–22 Jan or 6–7 Feb).
+        if covered_by_published_range(lead, published["events"]):
+            rejected.append(dict(evidence, status="already_published_range"))
+            continue
         try:
             record = fetch(lead["external_id"])
             event = make_event(lead, record, registry_location(lead), today)
