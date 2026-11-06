@@ -19,6 +19,77 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_municipal_event_label_recovers_archive_identity_not_navigation(self):
+        # Municipal agenda labels are longer than the event's real title.
+        source = ANGERS
+        label = "Plus d'information sur l'évènement : Hellfest 2027"
+        html = '<a href="/actualites-sorties/agenda/hellfest-2027">' + label + '</a>'
+        archive = {"hellfest": {"slug": "hellfest", "last_known_year": 2026}}
+        found = candidate_links(html, source, "2026-11-06", archive)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["title"], "Hellfest 2027")
+        self.assertEqual(found[0]["archive_slug"], "hellfest")
+        self.assertEqual(found[0]["signal"], ARCHIVE_SIGNAL)
+        self.assertEqual(found[0]["candidate_url"],
+                         "https://www.angers.fr/actualites-sorties/agenda/hellfest-2027")
+        self.assertNotIn("date_verified", found[0])
+
+    def test_visible_generic_button_can_use_explicit_municipal_aria_label(self):
+        html = (
+            '<article><a href="/actualites-sorties/agenda/metal-fest-2027" '
+            'aria-label="Plus d&#39;information sur l&#39;évènement : '
+            'Metal Fest des Rives 2027">En savoir plus</a></article>')
+        found = candidate_links(html, ANGERS, "2026-11-06")
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["title"], "Metal Fest des Rives 2027")
+        self.assertEqual(found[0]["signal"], "THEMATIC_NAME_ONLY")
+        self.assertTrue(found[0]["candidate_url"].startswith("https://www.angers.fr/"))
+
+    def test_municipal_accessibility_metadata_never_overrides_specific_visible_title(self):
+        html = ('<a href="/actualites-sorties/agenda/visible-concert" '
+                'aria-label="Plus d’information sur l’évènement : Metal Fest 2027">'
+                'Concert de jazz 2027</a>')
+        self.assertEqual(candidate_links(html, ANGERS, "2026-11-06"), [])
+
+    def test_municipal_event_names_stay_private_and_reject_untrusted_links(self):
+        source = ANGERS
+        html = (
+            '<div hidden><a href="/actualites-sorties/agenda/hidden" '
+            'aria-label="Plus d’information sur l’évènement : Metal Fest 2027">'
+            'En savoir plus</a></div>'
+            '<script><a href="/actualites-sorties/agenda/script">'
+            "Plus d'information sur l'évènement : Metal Fest 2027</a></script>"
+            '<a href="https://evil.example/fest" '
+            'aria-label="Plus d’information sur l’évènement : Metal Fest 2027">'
+            'En savoir plus</a>'
+            '<a href="/actualites-sorties/agenda/old-fest" '
+            'aria-label="Plus d’information sur l’évènement : Metal Fest 2022">'
+            'En savoir plus</a>'
+            '<a href="/actualites-sorties/agenda/generic" '
+            'aria-label="Plus d’information sur l’évènement : Festival des plantes 2027">'
+            'En savoir plus</a>'
+            '<a href="/actualites-sorties/agenda/ticket.pdf" '
+            'aria-label="Plus d’information sur l’évènement : Metal Fest 2027">'
+            'En savoir plus</a>'
+            '<a href="/actualites-sorties/agenda/suspect" '
+            'aria-label="Plus d’information sur l’évènement sans titre">'
+            'En savoir plus</a>'
+        )
+        self.assertEqual(candidate_links(html, source, "2026-11-06"), [])
+
+    def test_accessible_municipal_lead_is_never_approved_by_scan(self):
+        html = ('<a href="/actualites-sorties/agenda/metal-fest-2027" '
+                'aria-label="Plus d’information sur l’évènement : Metal Fest 2027">'
+                'En savoir plus</a>')
+        state = {}
+        r = report("2026-11-06")
+        found = scan_regional_indexes(
+            r, state, [B], "2026-11-06", lambda _: html, limit=1)
+        self.assertEqual(len(found), 1)
+        self.assertIs(found[0]["publication_authorized"], False)
+        self.assertEqual(r["regional_festival_publications"], 0)
+        self.assertEqual(r["regional_festival_detail_pages_checked_review_only"], 0)
+
     def test_allowlist_never_accepts_dynamic_hosts_or_region_spoofs(self):
         self.assertEqual(load_indexes({"schema":SCHEMA,"indexes":[A]}),[A])
         for bad in (dict(A,url="https://127.0.0.1/agenda"),
