@@ -3865,6 +3865,10 @@ class BackstageAutonomousApprovalTests(unittest.TestCase):
     def test_fresh_backstage_first_party_review_is_publishable(self):
         import datetime as dt
         venues, artists = self.reference()
+        # This test models the initial approval, before these artists were
+        # published. Use a test-only snapshot rather than mutating production.
+        artists = {k: v for k, v in artists.items()
+                   if k not in ("lost-society", "hokka")}
         event, created = validate_approval(self.example(), venues, artists,
                                            dt.date(2026, 11, 5))
         self.assertEqual(event["venueId"], "backstage-by-the-mill-paris")
