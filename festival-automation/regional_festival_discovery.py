@@ -17,6 +17,7 @@ from regional_visible_article_clues import (
 
 from official_watch import get_page, permitted_url
 from source_qualification import Anchors, VisibleContent, clean_url, normalized
+from regional_source_diagnostics import record_regional_diagnostics
 from regional_agenda_pagination import (
     canonical_page_url, discover_pagination, eligible_page_checks,
     prune_page_queue, remember_page_links, MAX_PAGES_DISCOVERED_PER_SCAN, MAX_PAGE)
@@ -561,6 +562,7 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
     report["regional_festival_pending_links_review_only"] = len(pending)
     report["regional_festival_detail_pages_checked_review_only"] = 0
     report["regional_festival_publications"] = 0
+    record_regional_diagnostics(state, outcomes, APPROVED, today, permitted_url)
     return new
 
 
