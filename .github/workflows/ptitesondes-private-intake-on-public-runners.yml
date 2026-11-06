@@ -251,6 +251,12 @@ jobs:
             echo "::error::Audit municipal échoué."
             exit 1
           fi
+          # Index OSM : 2 communes par jour, aucun GPS ni publication.
+          # Moteur public, données d'entrée privées, sortie privée uniquement.
+          if ! python public/scripts/ptitesondes_osm_poi_triage.py --date "$DAY" --municipal "$OUT/lieux-current-municipal-audit.json" --backlog "$OUT/lieux-backlog.json" --existing "$STATE/lieux-osm-poi-triage.json" --output "$OUT/lieux-osm-poi-triage.json" --summary "$OUT/lieux-osm-poi-triage-summary.json" > "$LOG/lieux-osm-poi-triage.log" 2>&1; then
+            echo "::error::Recherche OSM privée échouée ; aucune donnée publique modifiée."
+            exit 1
+          fi
           if ! python src/automation/place_official_proof.py --date "$DAY" --report "$OUT/lieux-qualification.json" --public public/docs/ptitesondes/lieux.json --sources src/automation/place_official_sources.json --output "$OUT/lieux-official-proof.json" --summary "$OUT/lieux-official-proof-summary.json" > "$LOG/lieux-proof.log" 2>&1; then
             echo "::error::Preuve officielle des lieux échouée."
             exit 1
@@ -260,13 +266,13 @@ jobs:
             exit 1
           fi
           if [[ "$RUN_MODE" == "write" ]]; then
-            for f in lieux-backlog.json lieux-qualification.json lieux-current-municipal-audit.json lieux-official-proof.json lieux-release-review.json; do
+            for f in lieux-backlog.json lieux-qualification.json lieux-current-municipal-audit.json lieux-osm-poi-triage.json lieux-official-proof.json lieux-release-review.json; do
               test -s "$OUT/$f"
               cp "$OUT/$f" "$STATE/$f"
             done
             git -C state config user.name 'github-actions[bot]'
             git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git -C state add -- automation-intake/ptitesondes/lieux-backlog.json automation-intake/ptitesondes/lieux-qualification.json automation-intake/ptitesondes/lieux-current-municipal-audit.json automation-intake/ptitesondes/lieux-official-proof.json automation-intake/ptitesondes/lieux-release-review.json
+            git -C state add -- automation-intake/ptitesondes/lieux-backlog.json automation-intake/ptitesondes/lieux-qualification.json automation-intake/ptitesondes/lieux-current-municipal-audit.json automation-intake/ptitesondes/lieux-osm-poi-triage.json automation-intake/ptitesondes/lieux-official-proof.json automation-intake/ptitesondes/lieux-release-review.json
             if ! git -C state diff --cached --quiet; then
               git -C state commit -m 'data(ptitesondes): lieux nationaux depuis runner public' > "$LOG/git-lieux-commit.log" 2>&1
               AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
