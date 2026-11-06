@@ -38,8 +38,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_concerts_private_approval_preview.py' -v
       - name: Valider les approbations privées sans publier ni divulguer les sources
         env:
-          GROSSES_ONDES_INTAKE_READ_TOKEN: \${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
-          PRIVATE_PR: \${{ inputs.private_pr_number || '298' }}
+          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          PRIVATE_PR: ${{ inputs.private_pr_number || '298' }}
         shell: bash
         run: |
           set -euo pipefail
