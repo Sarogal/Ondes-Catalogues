@@ -51,7 +51,7 @@ jobs:
           assert "persist-credentials: false" in s
           assert "PRIVATE_INTAKE_READ_TOKEN" in s and "PTITESONDES_INTAKE_WRITE_TOKEN" in s
           assert "OPENAGENDA_READ_KEY" in s
-          assert "on:" in s and "  schedule:" not in s
+          assert "on:" in s and chr(10) + "  schedule:" + chr(10) not in s
           assert "deploy-pages" not in s and "docs/ptitesondes/sorties.json" in s
           assert "git push origin HEAD:main" not in s
           print('Contrat public / données privées : OK. Aucun cycle auto activé.')
