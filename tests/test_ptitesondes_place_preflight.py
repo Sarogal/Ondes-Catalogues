@@ -1,5 +1,7 @@
 """Adversarial OFFLINE tests of the independent multi-place public gate."""
 from copy import deepcopy
+import base64
+from unittest.mock import patch
 from datetime import date
 import json
 from pathlib import Path
@@ -9,7 +11,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from ptitesondes_place_preflight import (
-    evaluate, source_index, pinned_proposal, official_proof,
+    evaluate, source_index, pinned_proposal, official_proof, private_json,
     mapped_proof, safe_host, verify_envelope,
 )
 from ptitesondes_places import validate, assert_append_only
@@ -205,6 +207,18 @@ class IndependentPlacesGateTests(unittest.TestCase):
         bad["sources"][0]["facts"]["age_min"] = 0
         with self.assertRaises(ValueError):
             source_index(bad, TODAY)
+
+    def test_github_base64_wrapped_at_linebreaks_is_validated(self):
+        original = private(BELLEVUE)
+        encoded = base64.b64encode(json.dumps(original).encode()).decode()
+        multiline = "\n".join(encoded[i:i+60] for i in range(0, len(encoded), 60))
+        with patch("ptitesondes_place_preflight.github",
+                   return_value={"encoding": "base64", "content": multiline}):
+            self.assertEqual(private_json("synthetic-test-token"), original)
+        with patch("ptitesondes_place_preflight.github",
+                   return_value={"encoding": "base64", "content": "bad!invalid"}):
+            with self.assertRaises(ValueError):
+                private_json("synthetic-test-token")
 
     def test_nonexistent_ages_and_any_date_fields_are_not_invented(self):
         old = historical(BELLEVUE["id"])
