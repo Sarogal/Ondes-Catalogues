@@ -1,0 +1,106 @@
+name: P'tites Ondes — validation ponctuelle du transfert privé
+
+# Exécuté une seule fois lors d'un merge explicitement marqué.
+# Ne contient aucun token privé : il déclenche le moteur approuvé sur main.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ptitesondes-cutover-once.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ptitesondes-cutover-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Auditer la cible et les gardes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          w = Path('.github/workflows/ptitesondes-cutover-once.yml').read_text(encoding='utf-8')
+          assert 'ptitesondes-private-intake-on-public-runners.yml' in w
+          assert 'github.event.head_commit.message' in w
+          assert '[ptitesondes-once]' in w
+          assert 'workflow run "$WORKFLOW"' in w
+          assert 'mode=preview' in w and 'mode=write' in w
+          assert 'if [[ "$conclusion" != "success" ]]' in w
+          assert 'actions: write' in w
+          assert 'secrets.' not in w
+          assert 'git push' not in w
+          print('Contrôle du déclencheur ponctuel : conforme')
+          PY
+
+  validate:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && github.event_name == 'push' && contains(github.event.head_commit.message, '[ptitesondes-once]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      actions: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Sarogal/Ondes-Catalogues
+      WORKFLOW: ptitesondes-private-intake-on-public-runners.yml
+    steps:
+      - name: Prévisualiser puis tester une écriture privée sans publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          run_list() {
+            gh api "repos/$GH_REPO/actions/workflows/$WORKFLOW/runs?event=workflow_dispatch&per_page=10" --jq '.workflow_runs[0].id // 0'
+          }
+          wait_run() {
+            local baseline="$1"
+            local phase="$2"
+            local id=""
+            local status=""
+            local conclusion=""
+            for (( i=0; i<180; i++ )); do
+              if [[ -z "$id" ]]; then
+                local candidate
+                candidate="$(run_list)"
+                if (( candidate > baseline )); then
+                  id="$candidate"
+                  echo "[$phase] Exécution publique $id reçue"
+                fi
+              fi
+              if [[ -n "$id" ]]; then
+                status="$(gh api "repos/$GH_REPO/actions/runs/$id" --jq '.status')"
+                if [[ "$status" == "completed" ]]; then
+                  conclusion="$(gh api "repos/$GH_REPO/actions/runs/$id" --jq '.conclusion')"
+                  echo "[$phase] Exécution $id : $conclusion"
+                  if [[ "$conclusion" != "success" ]]; then
+                    echo "::error::Échec de la phase $phase ; la suite est suspendue. Vérifier le run privé $id."
+                    return 1
+                  fi
+                  echo "[$phase] validé" >> "$GITHUB_STEP_SUMMARY"
+                  return 0
+                fi
+              fi
+              sleep 10
+            done
+            echo "::error::Expiration de la phase $phase ; ne pas activer les planifications."
+            return 1
+          }
+          before="$(run_list)"
+          echo "Déclenchement de la prévisualisation intégrale ; aucune publication."
+          gh workflow run "$WORKFLOW" --repo "$GH_REPO" --ref main -f cycle=all -f mode=preview
+          wait_run "$before" preview
+
+          before="$(run_list)"
+          echo "Déclenchement de l'écriture uniquement sur la branche de données privée."
+          gh workflow run "$WORKFLOW" --repo "$GH_REPO" --ref main -f cycle=all -f mode=write
+          wait_run "$before" write
+
+          echo "## Migration P'tites Ondes" >> "$GITHUB_STEP_SUMMARY"
+          echo "Prévisualisation complète puis écriture privée exécutées sur runners publics." >> "$GITHUB_STEP_SUMMARY"
+          echo "Aucune écriture vers les catalogues publics dans ce workflow." >> "$GITHUB_STEP_SUMMARY"
