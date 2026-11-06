@@ -1,0 +1,13 @@
+{
+  "schema": "grossesondes.institutional-agenda-seeds.v1",
+  "seeds": [
+    {
+      "slug": "dawn-metal-festival-2026",
+      "index_url": "https://www.phalempin.fr/mes-loisirs/evenements-manifestations/"
+    },
+    {
+      "slug": "lothbrock-fest-2027",
+      "index_url": "https://www.saintes-tourisme.fr/agenda/concerts-et-festivals/"
+    }
+  ]
+}
