@@ -1,6 +1,8 @@
 """Strict tests for the seven signed Rocher de Palmer event records (no network)."""
 import copy
 import datetime as dt
+import json
+from pathlib import Path
 import unittest
 from scripts import concerts_cloud_sync as sync
 
@@ -75,6 +77,38 @@ class RocherPalmerValidation(unittest.TestCase):
                 a["event"]["time"]="19:30"
             with self.subTest(change=change),self.assertRaises(ValueError):
                 sync.validate_approval(a,VENUES,KNOWN,TODAY)
+
+    def test_existing_gwendoline_correction_is_signed_and_immutable(self):
+        published=json.loads((Path(__file__).resolve().parents[1]/
+            "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        row=next(e for e in published["events"]
+                 if e["id"]=="go-c-20261107-cenon-gwendoline")
+        reviewed=approval(row["id"])
+        self.assertIsNone(
+            sync.validate_gwendoline_existing_correction(row,reviewed))
+        for mutation in ("reviewer","proof","date","artists","hour",
+                         "history","unverified","new-artist","old-review"):
+            e=copy.deepcopy(row);a=copy.deepcopy(reviewed)
+            if mutation=="reviewer":
+                a["reviewedBy"]="automated-official-recheck"
+            elif mutation=="proof":
+                a["officialEvidence"][0]["checkedAt"]="2026-11-02"
+            elif mutation=="date":
+                e["date"]="2026-11-08"
+            elif mutation=="artists":
+                e["artistIds"]=["gwendoline"]
+            elif mutation=="hour":
+                e["timeMeaning"]="ouverture des portes"
+            elif mutation=="history":
+                e["history"]=[]
+            elif mutation=="unverified":
+                e["lastVerified"]="2026-11-02"
+            elif mutation=="new-artist":
+                a["newArtists"][1]["name"]="Other Artist"
+            elif mutation=="old-review":
+                a["reviewedAt"]="2026-11-02"
+            with self.subTest(mutation=mutation),self.assertRaises(ValueError):
+                sync.validate_gwendoline_existing_correction(e,a)
 
     def test_mutations_are_never_an_approval(self):
         event_id="go-c-20270326-cenon-uuhai"
