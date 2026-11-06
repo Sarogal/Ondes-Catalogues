@@ -210,8 +210,33 @@ def validate_inputs(municipal, backlog, existing):
             if (k not in PINS_BY_KEY or k in old
                     or item.get("public_eligible") is not False
                     or item.get("gps_verified") is not False
-                    or item.get("mapped_feature_verified") is not False):
+                    or item.get("official_site_verified") is not False
+                    or item.get("mapped_feature_verified") is not False
+                    or set(item) - {
+                        "city", "venue", "commune_insee", "status",
+                        "osm_candidates_unverified", "public_eligible",
+                        "mapped_feature_verified", "official_site_verified",
+                        "gps_verified", "observed_at", "source_errors"}):
                 raise ValueError("Ancienne preuve OSM non sûre")
+            if (item.get("commune_insee") != PINS_BY_KEY[k][2]
+                    or not isinstance(item.get("osm_candidates_unverified"), list)
+                    or len(item["osm_candidates_unverified"]) > MAX_RESULTS):
+                raise ValueError("Ancien objet OSM non sûr")
+            fields = {"osm_object_hint", "osm_url_hint",
+                      "mapped_name_unverified", "mapped_amenity_unverified",
+                      "post_code_tag_matches", "city_tag_matches",
+                      "street_tag_present", "house_number_tag_present",
+                      "mapped_feature_verified", "gps_verified"}
+            for hint in item["osm_candidates_unverified"]:
+                if (not isinstance(hint, dict) or set(hint) != fields
+                        or hint.get("mapped_feature_verified") is not False
+                        or hint.get("gps_verified") is not False
+                        or not isinstance(hint.get("osm_object_hint"), str)
+                        or not re.fullmatch(r"(?:node|way|relation)/[1-9][0-9]*",
+                                            hint["osm_object_hint"])
+                        or hint.get("osm_url_hint") !=
+                        "https://www.openstreetmap.org/" + hint["osm_object_hint"]):
+                    raise ValueError("Indices OSM précédents non sûrs")
             old[k] = item
     return checked, old
 
