@@ -1896,14 +1896,16 @@ CHATODO_VERIFIED = {
     },
 }
 
-# Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
+# Six exact Rocher de Palmer bills; Gwendoline lineup rechecked 2026-11-06
+# after the newly announced named support Bleu Panique (same venue/date/start).
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
     "go-c-20261107-cenon-gwendoline": {
-        "title": "Gwendoline",
+        "title": "Gwendoline + Bleu Panique",
         "date": "2026-11-07",
         "artistIds": [
-            "gwendoline"
+            "gwendoline",
+            "bleu-panique"
         ],
         "genres": [
             "Post Punk"
