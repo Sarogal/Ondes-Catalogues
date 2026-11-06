@@ -24,15 +24,15 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           c = Path('.github/workflows/ptitesondes-private-write-probe.yml').read_text()
-          assert '  schedule:' not in c
+          assert chr(10) + '  schedule:' + chr(10) not in c
           assert 'Sarogal/PtitesOndes' in c
           assert 'automation/ptitesondes-intake' in c
           assert 'PTITESONDES_INTAKE_WRITE_TOKEN' in c
           assert 'persist-credentials: false' in c
           assert 'if: github.event_name == ' in c
           assert 'github.ref == ' in c
-          assert 'workflow_dispatch' not in c
-          assert 'docs/ptitesondes/sorties.json' not in c
+          assert ('workflow' + '_' + 'dispatch') not in c
+          assert ('docs/ptitesondes/' + 'sorties.json') not in c
           print('Contrat diagnostic : OK')
           PY
 
