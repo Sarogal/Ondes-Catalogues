@@ -1,0 +1,165 @@
+name: Grosses Ondes — moteur Festivals public, état privé protégé
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Rotation officielle des sources
+        type: choice
+        options: [primary, catchup]
+        default: primary
+        required: true
+  schedule:
+    - cron: '24 6 * * *'
+    - cron: '42 18 * * *'
+
+# Only this public repository's trusted main branch executes the private intake.
+# No pull_request, no pull_request_target and no reusable untrusted workflow.
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-festivals-public-private-intake
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 22
+    steps:
+      - name: Vérifier uniquement la présence des secrets, sans les afficher
+        id: access
+        shell: bash
+        env:
+          INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          INTAKE_WRITE_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}
+        run: |
+          if [[ -n "$INTAKE_READ_TOKEN" && -n "$INTAKE_WRITE_TOKEN" ]]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Veille non activée : configurer les secrets Actions de lecture et écriture privée"
+            printf 'Veille Festivals non activée : secrets absents.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Récupérer uniquement le moteur public validé
+        if: steps.access.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: application
+          persist-credentials: false
+
+      - name: Charger l'état dans la branche privée, sans persister de credentials
+        if: steps.access.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/GrossesOndes
+          ref: automation/grossesondes-intake
+          path: intake
+          fetch-depth: 0
+          persist-credentials: false
+          token: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+
+      - name: Charger uniquement les configurations internes nécessaires
+        if: steps.access.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/GrossesOndes
+          ref: main
+          path: confidential-config
+          persist-credentials: false
+          sparse-checkout: |
+            festival-automation/curated_future_leads.json
+            festival-automation/curated_source_leads.json
+            festival-automation/curated_lineup_disputes.json
+          sparse-checkout-cone-mode: false
+          token: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+
+      - name: Préparer les données privées sans aucun artefact public
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for filename in curated_future_leads.json curated_source_leads.json curated_lineup_disputes.json; do
+            test -s "confidential-config/festival-automation/$filename"
+            cp "confidential-config/festival-automation/$filename" "application/festival-automation/$filename"
+          done
+          test -s intake/automation-intake/grossesondes/source-watch-state.json
+          mkdir -p /tmp/grossesondes-official-watch /tmp/grossesondes-private-logs
+
+      - uses: actions/setup-python@v5
+        if: steps.access.outputs.ready == 'true'
+        with:
+          python-version: '3.12'
+
+      - name: Exécuter la découverte et la qualification sans afficher les dossiers
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          PHASE: ${{ github.event_name == 'schedule' && github.event.schedule == '42 18 * * *' && 'catchup' || inputs.phase || 'primary' }}
+        run: |
+          set -euo pipefail
+          run_private() {
+            local name="$1"
+            shift
+            if ! "$@" >"/tmp/grossesondes-private-logs/$name.log" 2>&1; then
+              echo "::error::Étape $name échouée ; son journal confidentiel n'est pas publié"
+              exit 1
+            fi
+          }
+          ENGINE="application/festival-automation"
+          INTAKE="intake/automation-intake/grossesondes"
+          REPORT="/tmp/grossesondes-official-watch/report.json"
+          run_private official python "$ENGINE/official_watch.py" --intake "$INTAKE" --phase "$PHASE" --limit 24
+          run_private sources python "$ENGINE/source_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 6
+          run_private institutions python "$ENGINE/institutional_agenda_discovery.py" --intake "$INTAKE" --report "$REPORT" --limit 2
+          run_private regions python "$ENGINE/regional_festival_discovery.py" --intake "$INTAKE" --report "$REPORT" --limit 4
+          run_private future python "$ENGINE/curated_future_lead_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2
+          run_private future_review python "$ENGINE/curated_future_review.py" --intake "$INTAKE" --report "$REPORT"
+          run_private corroboration python "$ENGINE/curated_corroboration.py" --intake "$INTAKE" --report "$REPORT" --limit 2
+          run_private secondary python "$ENGINE/curated_secondary_discovery.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --detail-limit 1
+          run_private targeted python "$ENGINE/curated_targeted_secondary.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --detail-limit 1
+          run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
+          run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 1
+          run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
+          test -s "$REPORT"
+          python - "$REPORT" <<'PY'
+          import json, sys
+          report = json.load(open(sys.argv[1], encoding='utf-8'))
+          assert report.get('schema') == 'grossesondes.source-watch-report.v1'
+          assert report.get('regional_festival_publications', 0) == 0
+          assert report.get('curated_future_leads_publications', 0) == 0
+          assert report.get('curated_secondary_publications', 0) == 0
+          print('Collecte et qualification terminées ; aucune publication directe autorisée.')
+          PY
+
+      - name: Enregistrer exclusivement les états dans la branche privée
+        if: steps.access.outputs.ready == 'true'
+        working-directory: intake
+        shell: bash
+        env:
+          INTAKE_PUSH_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- automation-intake/grossesondes/source-watch-state.json \
+            automation-intake/grossesondes/patch-*.json \
+            automation-intake/grossesondes/curated-future-review.json \
+            automation-intake/grossesondes/curated-multi-source-review.json \
+            automation-intake/grossesondes/curated-secondary-sources-review.json \
+            automation-intake/grossesondes/national-festival-discovery-review.json \
+            automation-intake/grossesondes/national-festival-detail-review.json \
+            automation-intake/grossesondes/national-festival-editorial-review.json
+          if git diff --cached --quiet; then
+            echo "Aucun changement des états privés ; rien à envoyer."
+          else
+            git commit -m 'data(festivals): observations depuis runner public sécurisé'
+            AUTH_HEADER="$(printf 'x-access-token:%s' "$INTAKE_PUSH_TOKEN" | base64 -w0)"
+            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH_HEADER" \
+              push origin HEAD:automation/grossesondes-intake
+            echo "États conservés exclusivement dans le dépôt privé."
+          fi
+          echo "Veille Festivals exécutée sur runner public ; aucune publication directe." >> "$GITHUB_STEP_SUMMARY"
