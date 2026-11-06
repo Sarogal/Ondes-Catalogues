@@ -4,7 +4,13 @@
 
 Les runners GitHub Actions **standard** du dépôt public `Sarogal/Ondes-Catalogues` n'épuisent pas le quota de calcul du dépôt privé. Le dépôt public héberge déjà les mécanismes de synchronisation protégée des festivals et concerts et une découverte ministérielle.
 
-Le pilote `grossesondes-regional-public-discovery.yml` interroge quatre des **18 index institutionnels publiquement répertoriés** à chaque passage, matin et soir, couvrant 13 régions sur sa configuration. Il produit uniquement des compteurs de liens visibles et de disponibilité. Il **ne** crée **aucune** fiche, ne valide **aucune** date, n'ouvre **aucune** URL découverte, et n'écrit dans **aucun** catalogue public. Les rapports GitHub Actions dans un dépôt public sont eux-mêmes publics : n'y inclure aucun jeton, aucune donnée confidentielle ni dossier interne.
+Le pilote `grossesondes-regional-public-discovery.yml` permet une **exécution manuelle de diagnostic** sur quatre des **18 index institutionnels publiquement répertoriés**, couvrant 13 régions dans sa configuration. Ses deux anciennes planifications quotidiennes ont été retirées, car le moteur complet `grossesondes-festivals-private-intake-on-public-runners.yml` exécute désormais la collecte à **06:24 et 18:42 UTC** avec état privé protégé. Il n'est pas utile de relancer simultanément le pilote. Il produit uniquement des compteurs de liens visibles et de disponibilité. Il **ne** crée **aucune** fiche, ne valide **aucune** date, n'ouvre **aucune** URL découverte, et n'écrit dans **aucun** catalogue public. Les rapports GitHub Actions dans un dépôt public sont eux-mêmes publics : n'y inclure aucun jeton, aucune donnée confidentielle ni dossier interne.
+
+## État de bascule au 6 novembre 2026
+
+Les veilles planifiées Festivals et Concerts ont été transférées sur les runners publics. Leurs secrets restent dans les paramètres Actions et les propositions/états sont conservés dans les branches privées. Les anciens crons privés correspondants ont été supprimés (PR privée #299, PR publique #175). Les premières exécutions **automatiques** de cette nouvelle architecture doivent toujours être inspectées avant de considérer la régularité comme prouvée.
+
+Le moteur de diagnostic régional ancien reste disponible en manuel, mais ses crons ont été retirés pour éviter deux séries de requêtes identiques vers des sources régionales.
 
 ## Où conserver les secrets ?
 

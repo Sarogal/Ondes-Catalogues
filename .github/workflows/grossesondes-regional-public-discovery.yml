@@ -20,10 +20,8 @@ on:
         options: [morning, evening]
         default: morning
         required: true
-  schedule:
-    - cron: '24 6 * * *'
-    - cron: '42 18 * * *'
-
+# Manual diagnostics only: the complete public Festivals engine already
+# owns the two daily schedules at 06:24 and 18:42 UTC. Avoid double crawling.
 # NO secrets / private repositories / token write permissions / publishing.
 permissions:
   contents: read
@@ -44,13 +42,13 @@ jobs:
       - name: Vérifier les gardes sans réseau ni secrets
         run: python -m unittest discover -s tests -p 'test_grossesondes_public_regional_probe.py' -v
       - name: Veille régionale sans publication
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch'
         env:
-          SLOT: ${{ github.event_name == 'schedule' && github.event.schedule == '42 18 * * *' && 'evening' || inputs.slot || 'morning' }}
+          SLOT: ${{ inputs.slot || 'morning' }}
         run: |
           python scripts/grossesondes_public_regional_probe.py --slot "$SLOT" --output "$RUNNER_TEMP/grossesondes-public-discovery/rapport.json"
       - name: Conserver uniquement le rapport public de diagnostic
-        if: github.event_name != 'pull_request'
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
           name: grossesondes-regional-public-diagnostic
