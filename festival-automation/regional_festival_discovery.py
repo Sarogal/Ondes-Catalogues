@@ -160,13 +160,69 @@ def load_indexes(config):
     return output
 
 
+def municipal_event_title(label):
+    """Recover a visible event name from a city's exact 'more information' label.
+
+    The prefix is factual navigation text, NOT part of a festival identity.
+    No keyword supplied by the page is used as a new search URL or a date.
+    Require a colon and a meaningful title so generic buttons cannot qualify.
+    """
+    if not isinstance(label, str) or len(label) > 300:
+        return None
+    prefix, separator, tail = label.partition(":")
+    if (not separator or normalized(prefix) not in
+            ("plus d information sur l evenement",
+             "plus d informations sur l evenement")):
+        return None
+    title = " ".join(tail.split())
+    if not (8 <= len(normalized(title)) <= 140 and len(title) <= 160):
+        return None
+    return title
+
+
+class RegionalEventAnchors(Anchors):
+    """Read an explicitly labelled, *visible* municipal event link.
+
+    Some approved agendas render 'En savoir plus' as anchor text and put the
+    exact event identity only in aria-label. The source's normal visible text
+    remains primary; only an exact event-label convention may replace an
+    otherwise generic anchor. Existing hidden-element filtering is inherited.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.accessible_event_label = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag.lower() == "a":
+            self.accessible_event_label = None
+        super().handle_starttag(tag, attrs)
+        if tag.lower() == "a" and self.current is not None:
+            attributes = dict(attrs)
+            for field in ("aria-label", "title"):
+                label = attributes.get(field)
+                if municipal_event_title(label):
+                    self.accessible_event_label = label
+                    break
+
+    def handle_endtag(self, tag):
+        if tag.lower() == "a":
+            if self.current is not None and self.accessible_event_label:
+                visible = normalized("".join(self.current[1]))
+                if not visible or GENERIC_LINK_TEXT.fullmatch(visible):
+                    self.current[1] = [self.accessible_event_label]
+        super().handle_endtag(tag)
+        if tag.lower() == "a":
+            self.accessible_event_label = None
+
+
 def candidate_links(html, source, today, historical_hints=None, diagnostics=None):
     if not isinstance(html, str) or len(html) > 650_000:
         raise ValueError("HTML agenda inexploitable")
     if source not in APPROVED:
         raise ValueError("source non approuvée")
     year = date.fromisoformat(today).year
-    parser = Anchors()
+    parser = RegionalEventAnchors()
     parser.feed(html)
     if isinstance(diagnostics, dict):
         # Navigation is not a candidate; this only diagnoses page visibility.
@@ -176,7 +232,8 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
     for href, label, prefix in parser.anchors[:650]:
         if not isinstance(href, str) or not isinstance(label, str):
             continue
-        title = " ".join(label.split())[:160]
+        event_title = municipal_event_title(label)
+        title = event_title if event_title is not None else " ".join(label.split())[:160]
         name = normalized(title)
         if not 8 <= len(name) <= 140:
             continue
