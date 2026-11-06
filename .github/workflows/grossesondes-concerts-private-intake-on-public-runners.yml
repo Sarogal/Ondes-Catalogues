@@ -228,6 +228,13 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Sparse checkout uses a blobless promisor remote: git add may fetch
+          # missing private objects. Keep scoped authentication for add/commit/push.
+          # GitHub checkout credentials remain unpersisted in the repository.
+          HEADER="$(printf 'x-access-token:%s' "$INTAKE_PUSH_TOKEN" | base64 -w0)"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             git add -- automation/concerts/approved.json
@@ -236,8 +243,6 @@ jobs:
             echo "Aucune nouvelle piste à enregistrer."
           else
             git commit -m 'data(concerts): archiver la veille publique en registre privé'
-            HEADER="$(printf 'x-access-token:%s' "$INTAKE_PUSH_TOKEN" | base64 -w0)"
-            git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $HEADER" \
-              push origin HEAD:main
+            git push origin HEAD:main
           fi
           echo "Concerts : moteur public exécuté ; registre et revue confidentiels, aucune publication directe." >> "$GITHUB_STEP_SUMMARY"
