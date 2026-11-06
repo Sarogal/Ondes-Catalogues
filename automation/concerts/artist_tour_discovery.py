@@ -23,6 +23,7 @@ import seven_weeks_tour_adapter
 import inspector_cluzo_tour_adapter
 import marillion_tour_adapter
 import howlin_jaws_tour_adapter
+import verygroup_tour_adapter
 import tagada_jones_tour_adapter
 import tournee_du_coeur_adapter
 import stranglers_tour_adapter
@@ -253,6 +254,13 @@ def scan(catalogue, config, day, max_sources=4, slot=0,
 
             if source.get("adapter") == "howlin_jaws_radical_tour":
                 tour_rows = howlin_jaws_tour_adapter.candidates(
+                    body, source, artists[source["artistId"]], catalogue, day)
+                report["officialTourEntries"] = len(tour_rows)
+                for row in tour_rows:
+                    retain(row)
+
+            if source.get("adapter") == "verygroup_official_tour":
+                tour_rows = verygroup_tour_adapter.candidates(
                     body, source, artists[source["artistId"]], catalogue, day)
                 report["officialTourEntries"] = len(tour_rows)
                 for row in tour_rows:
