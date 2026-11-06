@@ -61,7 +61,7 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             automation/concerts/approved.json
-            automation/concerts/intake/registry.json
+            automation/concerts/intake/
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -228,7 +228,7 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
+          git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             git add -- automation/concerts/approved.json
           fi
