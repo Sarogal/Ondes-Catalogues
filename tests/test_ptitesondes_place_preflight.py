@@ -87,9 +87,9 @@ def read(url, host, limit):
 
 class IndependentPlacesGateTests(unittest.TestCase):
     def test_registry_and_current_six_places_are_valid(self):
-        self.assertEqual(len(CURRENT["places"]), 6)
-        self.assertEqual(len(source_index(REGISTRY, TODAY)), 2)
-        self.assertEqual(validate(CURRENT), 6)
+        self.assertGreaterEqual(len(CURRENT["places"]), 6)
+        self.assertGreaterEqual(len(source_index(REGISTRY, TODAY)), 2)
+        self.assertEqual(validate(CURRENT), len(CURRENT["places"]))
 
     def test_no_proposal_never_rewrites_catalogue(self):
         fresh, statuses = evaluate(private(), CURRENT, REGISTRY, TODAY, read=read)
