@@ -19,9 +19,11 @@ import urllib.parse
 import urllib.request
 from zoneinfo import ZoneInfo
 
-from scripts import concerts_cloud_sync as sync
-
 ROOT = Path(__file__).resolve().parents[1]
+# Direct invocation as python scripts/...py must see the trusted repository root.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from scripts import concerts_cloud_sync as sync
 API = "https://api.github.com/repos/Sarogal/GrossesOndes"
 FILE = "automation/concerts/approved.json"
 SHA = re.compile(r"[0-9a-f]{40}\Z")
