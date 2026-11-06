@@ -1,0 +1,65 @@
+name: Concerts — valider une PR d'approbations privées sur runner public
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-concerts-private-approval-preview.yml'
+  workflow_dispatch:
+    inputs:
+      private_pr_number:
+        description: Numéro de PR dans Sarogal/GrossesOndes
+        required: true
+        type: string
+        default: '298'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-concerts-private-approvals-readonly
+  cancel-in-progress: false
+
+jobs:
+  private-approval-check:
+    # Only the trusted main branch can read private data. No pull_request trigger.
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester la sécurité du vérificateur sans accéder aux secrets
+        run: python -m unittest discover -s tests -p 'test_concerts_private_approval_preview.py' -v
+      - name: Valider les approbations privées sans publier ni divulguer les sources
+        env:
+          GROSSES_ONDES_INTAKE_READ_TOKEN: \${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          PRIVATE_PR: \${{ inputs.private_pr_number || '298' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$GROSSES_ONDES_INTAKE_READ_TOKEN" ]]; then
+            echo "::error::Accès privé de lecture absent : prévalidation impossible."
+            exit 1
+          fi
+          # API GET only. Private PR is DATA, not executable code.
+          # Never emit private payloads, evidence, errors or API responses.
+          if ! python scripts/concerts_private_approval_preview.py \
+              --pr-number "$PRIVATE_PR" \
+              > "$RUNNER_TEMP/concerts-private-preview.log" 2>&1; then
+            echo "::error::Prévalidation privée refusée ; aucun contenu privé divulgué."
+            exit 1
+          fi
+          echo "Prévalidation sûre : historique conservé, nouvelles fiches vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
+          echo "Runner public ; lecture des approbations via un jeton privé de portée limitée." >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirmer l'absence totale d'écriture ou d'artefact privé
+        shell: bash
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Aucune modification des dépôts ou des catalogues."
