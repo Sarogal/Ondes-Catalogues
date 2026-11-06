@@ -1,0 +1,64 @@
+name: Grosses Ondes — découverte régionale publique (pilote gratuit)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-regional-public-discovery.yml'
+      - 'scripts/grossesondes_public_regional_probe.py'
+      - 'tests/test_grossesondes_public_regional_probe.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-regional-public-discovery.yml'
+      - 'scripts/grossesondes_public_regional_probe.py'
+      - 'tests/test_grossesondes_public_regional_probe.py'
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Partie de la rotation nationale'
+        type: choice
+        options: [morning, evening]
+        default: morning
+        required: true
+  schedule:
+    - cron: '24 6 * * *'
+    - cron: '42 18 * * *'
+
+# NO secrets / private repositories / token write permissions / publishing.
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-public-regional-discovery
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les gardes sans réseau ni secrets
+        run: python -m unittest discover -s tests -p 'test_grossesondes_public_regional_probe.py' -v
+      - name: Veille régionale sans publication
+        if: github.event_name != 'pull_request'
+        env:
+          SLOT: ${{ github.event_name == 'schedule' && github.event.schedule == '42 18 * * *' && 'evening' || inputs.slot || 'morning' }}
+        run: |
+          python scripts/grossesondes_public_regional_probe.py --slot "$SLOT" --output "$RUNNER_TEMP/grossesondes-public-discovery/rapport.json"
+      - name: Conserver uniquement le rapport public de diagnostic
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: grossesondes-regional-public-diagnostic
+          path: ${{ runner.temp }}/grossesondes-public-discovery/rapport.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Confirmer la non-publication
+        run: |
+          git diff --exit-code -- docs/grossesondes/festivals.json docs/grossesondes/festival-history.json docs/grossesondes/concerts.json
+          git diff --cached --exit-code
+          echo 'Pilote de découverte publique : aucun candidat ni catalogue publié.' >> "$GITHUB_STEP_SUMMARY"
