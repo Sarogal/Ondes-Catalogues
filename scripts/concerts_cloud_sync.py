@@ -1896,9 +1896,17 @@ CHATODO_VERIFIED = {
     },
 }
 
-# Seven exact Rocher de Palmer bills; the Gwendoline lineup was rechecked 2026-11-06.
+# Eight exact Rocher de Palmer bills; Gwendoline and The Stranglers lineups rechecked 2026-11-06.
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
+    "go-c-20261124-cenon-the-stranglers": {
+        "title": "The Stranglers + Brother Junior",
+        "date": "2026-11-24",
+        "artistIds": ["the-stranglers", "brother-junior"],
+        "genres": ["Rock"],
+        "time": "20:30",
+        "officialUrl": "https://lerocherdepalmer.fr/agenda/stranglers"
+    },
     "go-c-20261107-cenon-gwendoline": {
         "title": "Gwendoline + Bleu Panique",
         "date": "2026-11-07",
@@ -5464,14 +5472,48 @@ def validate_approval(approval, venues, known_artist_ids, today):
         reviewed_at = norm_date(approval.get("reviewedAt"))
         require(today - dt.timedelta(days=14) <= reviewed_at <= today,
                 "Rocher de Palmer : vérification ancienne ou future")
-        require(len(evidence) == 1 and all(
-            p.get("url") == official_url
-            and p.get("proofType") == "official-organizer-or-venue"
-            and p.get("checkedAt") == reviewed_at.isoformat()
-            and {"artists", "date", "venue", "genre", "startTime"}.issubset(
-                set(p.get("checkedFields") or []))
-            for p in evidence if isinstance(p, dict)),
-            "Rocher de Palmer : preuve primaire nominative complète requise")
+        if event_id == "go-c-20261124-cenon-the-stranglers":
+            # Venue event detail and its own ticketing page agree on a complete
+            # named bill. The ticketing is NOT a second independent organizer.
+            # Never infer the music start from doors or from ticket availability.
+            require(len(evidence) == 2
+                    and all(isinstance(p, dict) for p in evidence),
+                    "Rocher/Stranglers : fiche et billetterie officielles requises")
+            proof, ticket = evidence
+            require(proof.get("url") == official_url
+                    and proof.get("proofType") == "official-organizer-or-venue"
+                    and proof.get("checkedAt") == reviewed_at.isoformat()
+                    and proof.get("checkedFields") ==
+                       ["artists", "date", "venue", "genre", "startTime", "doorTime"]
+                    and proof.get("officialArtistNames") ==
+                       ["The Stranglers", "Brother Junior"]
+                    and proof.get("concertStartTimeConfirmed") == "20:30"
+                    and proof.get("doorTimeConfirmed") == "19:30",
+                    "Rocher/Stranglers : affiche, genre ou heures non attestés")
+            require(ticket.get("url") ==
+                       "https://billetterie.lerocherdepalmer.fr/agenda/1862-THE-STRANGLERS?session=1862"
+                    and ticket.get("proofType") == "first-party-venue-ticketing"
+                    and ticket.get("checkedAt") == reviewed_at.isoformat()
+                    and ticket.get("checkedFields") ==
+                       ["artists", "date", "venue"]
+                    and ticket.get("officialArtistNames") ==
+                       ["The Stranglers", "Brother Junior"],
+                    "Rocher/Stranglers : seconde fiche de billetterie non conforme")
+            require(new_artists == [
+                        {"id": "brother-junior", "name": "Brother Junior"}]
+                    and known_artist_ids.get("the-stranglers", {}).get("name") ==
+                        "The Stranglers"
+                    and event.get("organizer") == "Le Rocher de Palmer",
+                    "Rocher/Stranglers : identité canonique ou organisateur incorrect")
+        else:
+            require(len(evidence) == 1 and all(
+                p.get("url") == official_url
+                and p.get("proofType") == "official-organizer-or-venue"
+                and p.get("checkedAt") == reviewed_at.isoformat()
+                and {"artists", "date", "venue", "genre", "startTime"}.issubset(
+                    set(p.get("checkedFields") or []))
+                for p in evidence if isinstance(p, dict)),
+                "Rocher de Palmer : preuve primaire nominative complète requise")
         resolved = dict(known_artist_ids)
         resolved.update(added)
         require(all(aid in resolved for aid in ids)

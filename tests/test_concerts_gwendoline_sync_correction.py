@@ -48,6 +48,26 @@ def get_event(catalogue):
     return next(e for e in catalogue["events"] if e["id"] == IDENT)
 
 
+def simulated_prepublication(catalogue):
+    """Reconstruct the signed pre-correction state for negative-path tests.
+
+    The real public catalogue is already corrected; never reintroduce the old
+    incomplete bill into GitHub Pages just to exercise a legacy transition.
+    """
+    original = copy.deepcopy(catalogue)
+    event = get_event(original)
+    assert event["title"] == "Gwendoline + Bleu Panique"
+    assert event["artistIds"] == ["gwendoline", "bleu-panique"]
+    assert event["lastVerified"] == "2026-11-06"
+    assert len(event["history"]) == 2
+    original["artists"] = [a for a in original["artists"] if a["id"] != "bleu-panique"]
+    event["title"] = "Gwendoline"
+    event["artistIds"] = ["gwendoline"]
+    event["lastVerified"] = "2026-11-02"
+    event["history"] = event["history"][:1]
+    return original
+
+
 class SignedExistingConcertCorrection(unittest.TestCase):
     def setUp(self):
         self.current = json.loads(PUBLIC.read_text(encoding="utf-8"))
@@ -58,14 +78,19 @@ class SignedExistingConcertCorrection(unittest.TestCase):
         sync.protect_reference(self.reference, self.current)
         self.assertEqual(len([e for e in self.current["events"]
                               if e["id"] == IDENT]), 1)
-        self.assertEqual(get_event(self.current)["title"], "Gwendoline")
-        self.assertNotIn("bleu-panique",
-                         {a["id"] for a in self.current["artists"]})
+        self.assertEqual(get_event(self.current)["title"], "Gwendoline + Bleu Panique")
+        self.assertIn("bleu-panique",
+                      {a["id"] for a in self.current["artists"]})
+        before = simulated_prepublication(self.current)
+        sync.protect_reference(self.reference, before)
+        self.assertEqual(get_event(before)["title"], "Gwendoline")
+        self.assertNotIn("bleu-panique", {a["id"] for a in before["artists"]})
 
     def test_signed_patch_only_edits_one_event_and_appends_one_artist(self):
-        original = copy.deepcopy(self.current)
-        candidate = copy.deepcopy(self.current)
+        original = simulated_prepublication(self.current)
+        candidate = copy.deepcopy(original)
         sync.apply_gwendoline_signed_correction(candidate, self.approval)
+        self.assertEqual(candidate, self.current)
         sync.protect_reference(self.reference, candidate)
         sync.validate_catalogue(candidate)
         before = get_event(original)
@@ -127,13 +152,13 @@ class SignedExistingConcertCorrection(unittest.TestCase):
                 a["event"]["genres"] = ["Pop"]
             with self.subTest(mutation=mutation), self.assertRaises(ValueError):
                 sync.apply_gwendoline_signed_correction(
-                    copy.deepcopy(self.current), a)
+                    simulated_prepublication(self.current), a)
 
     def test_invalid_old_state_or_preexisting_artist_is_rejected(self):
         for mutation in ("old_date", "old_artists", "old_time", "old_history",
                          "old_venue", "old_proof_date", "existing_artist_id",
                          "existing_artist_alias", "duplicate_event"):
-            candidate = copy.deepcopy(self.current)
+            candidate = simulated_prepublication(self.current)
             e = get_event(candidate)
             if mutation == "old_date":
                 e["date"] = "2026-11-08"
