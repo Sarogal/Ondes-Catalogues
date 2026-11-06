@@ -52,19 +52,19 @@ jobs:
           from curated_future_lead_watch import ALLOWED, SCHEMA
           # Synthetic dates for offline compatibility tests; NOT event claims.
           examples = [
-              ('mozhell-open-air-2027', 'MozHell Open Air', '23 24 juillet 2027', '2027-07-23', '2027-07-24'),
-              ('festibarock-in-2027', 'Festibarock in', 'juin 2027', '2027-06-01', '2027-06-02'),
-              ('la-sainte-rock-festival-2027', 'La Sainte Rock Festival', 'mai 2027', '2027-05-01', '2027-05-02'),
-              ('colombin-rock-festival-2027', 'Colombin Rock Festival', 'aout 2027', '2027-08-01', '2027-08-02'),
-              ('esqui-riot-2027', 'Esqui Riot', 'edition en 2027', None, None),
+              ('mozhell-open-air-2027', 'MozHell Open Air', '23 24 et 25 juillet 2027', '2027-07-23', '2027-07-25', 'Grand Est'),
+              ('festibarock-in-2027', 'Festibarock in', 'juin 2027', '2027-06-01', '2027-06-02', 'Grand Est'),
+              ('la-sainte-rock-festival-2027', 'La Sainte Rock Festival', '23 24 avril 2027', '2027-04-23', '2027-04-24', 'Provence-Alpes-Côte d\'Azur'),
+              ('colombin-rock-festival-2027', 'Colombin Rock Festival', 'aout 2027', '2027-08-01', '2027-08-02', 'Bourgogne-Franche-Comté'),
+              ('esqui-riot-2027', 'Esqui Riot', 'edition en 2027', None, None, 'Nouvelle-Aquitaine'),
           ]
           rows = []
-          for ident, name, phrase, start, end in examples:
+          for ident, name, phrase, start, end, region in examples:
               source, home = ALLOWED[ident]
               rows.append(dict(id=ident, name=name, source_url=source,
                                official_home_candidate=home, date_phrase=phrase,
                                start_date=start, end_date=end, city_hint='Ville fictive',
-                               region_hint='Région de test', genre_hint='metal rock'))
+                               region_hint=region, genre_hint='metal rock'))
           out = Path('festival-automation/curated_future_leads.json')
           out.write_text(json.dumps({'schema': SCHEMA, 'leads': rows}, ensure_ascii=False),
                          encoding='utf-8')
