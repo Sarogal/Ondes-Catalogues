@@ -1,0 +1,271 @@
+name: P'tites Ondes — moteurs privés sur runners publics (bascule pilote)
+
+# Phase pilote : aucun schedule avant validation du cycle intégral privé.
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
+  workflow_dispatch:
+    inputs:
+      cycle:
+        description: Collecte, lieux ou cycle complet
+        type: choice
+        required: true
+        default: all
+        options: [outings, places, all]
+      mode:
+        description: Preview sans ecriture ou sauvegarde uniquement dans le prive
+        type: choice
+        required: true
+        default: preview
+        options: [preview, write]
+
+permissions:
+  contents: read
+
+# Une seule ecriture privée simultanée, y compris lors de relances manuelles.
+concurrency:
+  group: ptitesondes-public-private-intake
+  cancel-in-progress: false
+
+jobs:
+  lint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Vérifier que le pont ne publie rien et refuse les PR
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/ptitesondes-private-intake-on-public-runners.yml')
+          s = p.read_text(encoding='utf-8')
+          assert "github.ref == 'refs/heads/main'" in s
+          assert "github.event_name == 'workflow_dispatch'" in s
+          assert "Sarogal/PtitesOndes" in s
+          assert "automation/ptitesondes-intake" in s
+          assert "persist-credentials: false" in s
+          assert "PRIVATE_INTAKE_READ_TOKEN" in s and "PTITESONDES_INTAKE_WRITE_TOKEN" in s
+          assert "OPENAGENDA_READ_KEY" in s
+          assert "on:" in s and "  schedule:" not in s
+          assert "deploy-pages" not in s and "docs/ptitesondes/sorties.json" in s
+          assert "git push origin HEAD:main" not in s
+          print('Contrat public / données privées : OK. Aucun cycle auto activé.')
+          PY
+
+  run-private:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      RUN_MODE: ${{ inputs.mode || 'preview' }}
+      CYCLE: ${{ inputs.cycle || 'all' }}
+      PRIVATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+      PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+      OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+    steps:
+      - name: Valider les accès requis sans les afficher
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$PRIVATE_READ_TOKEN" ]]; then
+            echo "::error::Token de lecture privée P'tites Ondes absent : cycle suspendu."
+            exit 1
+          fi
+          if [[ "$RUN_MODE" == "write" && -z "$PRIVATE_WRITE_TOKEN" ]]; then
+            echo "::error::Token d'écriture privée P'tites Ondes absent : aucune persistance."
+            exit 1
+          fi
+          if [[ "$CYCLE" != "places" && -z "$OPENAGENDA_READ_KEY" ]]; then
+            echo "::error::Clé OpenAgenda absente : impossible d'assurer la couverture nationale."
+            exit 1
+          fi
+          [[ "$CYCLE" == "outings" || "$CYCLE" == "places" || "$CYCLE" == "all" ]]
+          [[ "$RUN_MODE" == "preview" || "$RUN_MODE" == "write" ]]
+
+      - name: Charger le code source privé approuvé (jamais de branche PR)
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: main
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: src
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+
+      - name: Charger la branche de stockage exclusivement privée
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+
+      - name: Charger la référence publique indépendante, en lecture seule
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: public
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Vérifier présence des fichiers privés sans affichage de leur contenu
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s src/automation/outings_intake.py
+          test -s src/automation/place_discovery.py
+          test -s src/automation/merge_verified.py
+          test -s src/automation/sources.json
+          test -s src/automation/place_official_sources.json
+          test -s state/automation-intake/ptitesondes/backlog.json
+          test -s state/automation-intake/ptitesondes/lieux-backlog.json
+          test -s public/docs/ptitesondes/sorties.json
+          test -s public/docs/ptitesondes/lieux.json
+          mkdir -p "$RUNNER_TEMP/ptitesondes-private-logs" "$RUNNER_TEMP/ptitesondes-outings" "$RUNNER_TEMP/ptitesondes-verified" "$RUNNER_TEMP/ptitesondes-lieux"
+
+      - name: Tester la logique privée sélectionnée hors réseau
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CYCLE" != "places" ]]; then
+            if ! python -m unittest discover -s src/automation -p 'test_outings_intake.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-outings.log" 2>&1; then
+              echo "::error::Tests privés sorties échoués ; journaux non publiés."
+              exit 1
+            fi
+            if ! python -m unittest discover -s src/automation -p 'test_merge_verified.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-merge.log" 2>&1; then
+              echo "::error::Tests privés de fusion échoués ; journaux non publiés."
+              exit 1
+            fi
+          fi
+          if [[ "$CYCLE" != "outings" ]]; then
+            for f in test_place_discovery.py test_place_osm_discovery.py test_place_ministry_discovery.py test_place_ministry_current_audit.py test_place_qualification.py test_place_official_proof.py test_place_release_gate.py; do
+              if ! python -m unittest discover -s src/automation -p "$f" -v > "$RUNNER_TEMP/ptitesondes-private-logs/$f.log" 2>&1; then
+                echo "::error::Tests privés lieux échoués ($f) ; journaux non publiés."
+                exit 1
+              fi
+            done
+          fi
+
+      - name: Collecter les sorties et effectuer une vérification indépendante
+        if: ${{ inputs.cycle != 'places' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DAY="$(TZ=Europe/Paris date +%F)"
+          STATE="state/automation-intake/ptitesondes"
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          OUT="$RUNNER_TEMP/ptitesondes-outings"
+          VERIFIED="$RUNNER_TEMP/ptitesondes-verified"
+          push_private() {
+            if [[ "$RUN_MODE" != "write" ]]; then return 0; fi
+            git -C state config user.name 'github-actions[bot]'
+            git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            if git -C state diff --cached --quiet; then return 0; fi
+            git -C state commit -m "$1" > "$LOG/git-commit.log" 2>&1
+            local auth
+            auth="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+            if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $auth" push origin HEAD:automation/ptitesondes-intake > "$LOG/git-push.log" 2>&1; then
+              echo "::error::Sauvegarde privée indisponible : aucune publication effectuée."
+              exit 1
+            fi
+          }
+          if ! python src/automation/outings_intake.py --config src/automation/sources.json --patch-dir "$STATE" --output-dir "$OUT" > "$LOG/collecte-sorties.log" 2>&1; then
+            echo "::error::Collecte sorties échouée ; journal confidentiel non exposé."
+            exit 1
+          fi
+          test -s "$OUT/backlog.json"
+          test -s "$OUT/patch-$DAY.json"
+          cp "$OUT/backlog.json" "$STATE/backlog.json"
+          cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
+          mkdir -p "$STATE/reports"
+          cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
+          if [[ "$RUN_MODE" == "write" ]]; then
+            git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
+            push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
+          fi
+          if ! python public/scripts/ptitesondes_candidate_promotion.py --date "$DAY" --limit 15 --backlog-file "$STATE/backlog.json" --catalogue-file public/docs/ptitesondes/sorties.json --output-dir "$VERIFIED" > "$LOG/verification-sorties.log" 2>&1; then
+            echo "::error::Prévalidation indépendante échouée ; aucune approbation appliquée."
+            exit 1
+          fi
+          if ! python src/automation/merge_verified.py --date "$DAY" --existing "$STATE/patch-$DAY.json" --candidate "$VERIFIED/preview-patch.json" --report "$VERIFIED/report.json" --backlog "$STATE/backlog.json" --public public/docs/ptitesondes/sorties.json --output "$VERIFIED/patch-$DAY.json" > "$LOG/fusion-verifiee.log" 2>&1; then
+            echo "::error::Réconciliation cumulative refusée ; aucune approbation écrite."
+            exit 1
+          fi
+          test -s "$VERIFIED/patch-$DAY.json"
+          cp "$VERIFIED/patch-$DAY.json" "$STATE/patch-$DAY.json"
+          if [[ "$RUN_MODE" == "write" ]]; then
+            cp "$LOG/fusion-verifiee.log" "$STATE/reports/verification-$DAY.json"
+            git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/verification-$DAY.json"
+            push_private 'data(ptitesondes): verifier les preuves uniquement en privé'
+          fi
+          echo "Sorties collectées et prévalidées indépendamment ; aucune publication publique." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Rechercher et qualifier les lieux permanents pour enfants
+        if: ${{ inputs.cycle != 'outings' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          DAY="$(TZ=Europe/Paris date +%F)"
+          STATE="state/automation-intake/ptitesondes"
+          OUT="$RUNNER_TEMP/ptitesondes-lieux"
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          if ! python src/automation/place_discovery.py --date "$DAY" --backlog "$STATE/backlog.json" --existing "$STATE/lieux-backlog.json" --public public/docs/ptitesondes/lieux.json --public-sources public/scripts/ptitesondes_place_sources.json --output "$OUT/lieux-backlog.json" --report "$OUT/report.json" > "$LOG/lieux-discovery.log" 2>&1; then
+            echo "::error::Découverte des lieux échouée ; aucune donnée nouvelle publiée."
+            exit 1
+          fi
+          if ! python src/automation/place_qualification.py --date "$DAY" --backlog "$OUT/lieux-backlog.json" --existing-report "$STATE/lieux-qualification.json" --official-sources src/automation/place_official_sources.json --public public/docs/ptitesondes/lieux.json --output "$OUT/lieux-qualification.json" --summary "$OUT/lieux-qualification-summary.json" > "$LOG/lieux-qualification.log" 2>&1; then
+            echo "::error::Qualification des lieux échouée."
+            exit 1
+          fi
+          if ! python src/automation/place_ministry_current_audit.py --date "$DAY" --backlog "$OUT/lieux-backlog.json" --output "$OUT/lieux-current-municipal-audit.json" --summary "$OUT/lieux-current-municipal-summary.json" > "$LOG/lieux-ministry.log" 2>&1; then
+            echo "::error::Audit municipal échoué."
+            exit 1
+          fi
+          if ! python src/automation/place_official_proof.py --date "$DAY" --report "$OUT/lieux-qualification.json" --public public/docs/ptitesondes/lieux.json --sources src/automation/place_official_sources.json --output "$OUT/lieux-official-proof.json" --summary "$OUT/lieux-official-proof-summary.json" > "$LOG/lieux-proof.log" 2>&1; then
+            echo "::error::Preuve officielle des lieux échouée."
+            exit 1
+          fi
+          if ! python src/automation/place_release_gate.py --date "$DAY" --prequalification "$OUT/lieux-qualification.json" --official-proof "$OUT/lieux-official-proof.json" --public public/docs/ptitesondes/lieux.json --sources src/automation/place_official_sources.json --output "$OUT/lieux-release-review.json" --summary "$OUT/lieux-release-review-summary.json" > "$LOG/lieux-release.log" 2>&1; then
+            echo "::error::Contrôle de sécurité des lieux échoué."
+            exit 1
+          fi
+          if [[ "$RUN_MODE" == "write" ]]; then
+            for f in lieux-backlog.json lieux-qualification.json lieux-current-municipal-audit.json lieux-official-proof.json lieux-release-review.json; do
+              test -s "$OUT/$f"
+              cp "$OUT/$f" "$STATE/$f"
+            done
+            git -C state config user.name 'github-actions[bot]'
+            git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git -C state add -- automation-intake/ptitesondes/lieux-backlog.json automation-intake/ptitesondes/lieux-qualification.json automation-intake/ptitesondes/lieux-current-municipal-audit.json automation-intake/ptitesondes/lieux-official-proof.json automation-intake/ptitesondes/lieux-release-review.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state commit -m 'data(ptitesondes): lieux nationaux depuis runner public' > "$LOG/git-lieux-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:automation/ptitesondes-intake > "$LOG/git-lieux-push.log" 2>&1; then
+                echo "::error::Échec de stockage privé des lieux ; aucun catalogue modifié."
+                exit 1
+              fi
+            fi
+          fi
+          echo "Lieux recherchés et qualifiés ; états et preuves exclusivement privés." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Vérifier absence d'écriture ou de publication dans le dépôt public
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C public diff --exit-code -- docs/ptitesondes/sorties.json docs/ptitesondes/lieux.json
+          echo "Aucune écriture vers le catalogue public ; synchronisation et publication autonomes restent indépendantes." >> "$GITHUB_STEP_SUMMARY"
