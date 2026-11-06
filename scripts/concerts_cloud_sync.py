@@ -1896,14 +1896,15 @@ CHATODO_VERIFIED = {
     },
 }
 
-# Six exact bills confirmed from first-party individual Rocher de Palmer pages on 2026-11-02.
+# Seven exact Rocher de Palmer bills; the Gwendoline lineup was rechecked 2026-11-06.
 # These are reviewed cases, not an open-ended permission for the venue.
 ROCHER_PALMER_VERIFIED = {
     "go-c-20261107-cenon-gwendoline": {
-        "title": "Gwendoline",
+        "title": "Gwendoline + Bleu Panique",
         "date": "2026-11-07",
         "artistIds": [
-            "gwendoline"
+            "gwendoline",
+            "bleu-panique"
         ],
         "genres": [
             "Post Punk"
@@ -6241,6 +6242,110 @@ def validate_approval(approval, venues, known_artist_ids, today):
     return event, added
 
 
+
+GWENDOLINE_CORRECTION_ID = "go-c-20261107-cenon-gwendoline"
+GWENDOLINE_CORRECTION_DATE = "2026-11-06"
+GWENDOLINE_CORRECTION_URL = "https://lerocherdepalmer.fr/agenda/gwendoline"
+GWENDOLINE_CORRECTION_CHANGE = (
+    "Première partie Bleu Panique ajoutée après vérification officielle "
+    "du programme du Rocher de Palmer"
+)
+
+
+def validate_gwendoline_signed_correction(existing, approval):
+    """Narrow, signed, persistent correction of one previously published bill.
+
+    Return True only when the original one-artist event still needs the edit.
+    This does not authorize generic changes to events or reference records.
+    """
+    spec = ROCHER_PALMER_VERIFIED[GWENDOLINE_CORRECTION_ID]
+    signed = approval.get("event") or {}
+    require(approval.get("reviewDecision") == "approved"
+            and approval.get("reviewedBy") == "independent-official-verifier"
+            and approval.get("reviewedAt") == GWENDOLINE_CORRECTION_DATE,
+            "Gwendoline : approbation indépendante actualisée absente")
+    proof = approval.get("officialEvidence")
+    require(isinstance(proof, list) and len(proof) == 1
+            and isinstance(proof[0], dict)
+            and proof[0].get("url") == GWENDOLINE_CORRECTION_URL
+            and proof[0].get("proofType") == "official-organizer-or-venue"
+            and proof[0].get("checkedAt") == GWENDOLINE_CORRECTION_DATE
+            and {"artists", "date", "venue", "genre", "startTime"}.issubset(
+                set(proof[0].get("checkedFields") or [])),
+            "Gwendoline : preuve officielle actualisée insuffisante")
+    require(approval.get("newArtists") == [
+                {"id": "gwendoline", "name": "Gwendoline"},
+                {"id": "bleu-panique", "name": "Bleu Panique"}],
+            "Gwendoline : identité d'artiste non attestée")
+    require(all(signed.get(k) == spec[k] for k in
+                ("title", "date", "time", "artistIds", "genres", "officialUrl"))
+            and signed.get("id") == GWENDOLINE_CORRECTION_ID
+            and signed.get("venueId") == "le-rocher-de-palmer-cenon"
+            and signed.get("status") == "confirmed"
+            and signed.get("sourceType") == "salle"
+            and signed.get("organizer") == "Le Rocher de Palmer",
+            "Gwendoline : champs approuvés altérés")
+    require(existing.get("id") == GWENDOLINE_CORRECTION_ID
+            and existing.get("date") == spec["date"]
+            and existing.get("time") == spec["time"]
+            and existing.get("timeMeaning") == "début du concert"
+            and existing.get("venueId") == "le-rocher-de-palmer-cenon"
+            and existing.get("genres") == spec["genres"]
+            and existing.get("officialUrl") == spec["officialUrl"]
+            and existing.get("status") == "confirmed"
+            and existing.get("sourceType") == "salle"
+            and existing.get("organizer") == "Le Rocher de Palmer",
+            "Gwendoline : événement de référence modifié")
+    history = existing.get("history")
+    require(isinstance(history, list) and history and
+            history[0] == {"date": "2026-11-02",
+                           "change": "Ajout après revue des preuves officielles"},
+            "Gwendoline : origine de la fiche non conservée")
+    if existing.get("title") == "Gwendoline":
+        require(existing.get("artistIds") == ["gwendoline"]
+                and existing.get("lastVerified") == "2026-11-02"
+                and len(history) == 1,
+                "Gwendoline : état original altéré")
+        return True
+    require(existing.get("title") == spec["title"]
+            and existing.get("artistIds") == spec["artistIds"]
+            and existing.get("lastVerified") == GWENDOLINE_CORRECTION_DATE
+            and history == [
+                {"date": "2026-11-02",
+                 "change": "Ajout après revue des preuves officielles"},
+                {"date": GWENDOLINE_CORRECTION_DATE,
+                 "change": GWENDOLINE_CORRECTION_CHANGE}],
+            "Gwendoline : correction déjà publiée non conforme")
+    return False
+
+
+def apply_gwendoline_signed_correction(result, approval):
+    """Apply exactly one signed existing-event lineup edit, retaining its ID."""
+    positions = [i for i, event in enumerate(result["events"])
+                 if event.get("id") == GWENDOLINE_CORRECTION_ID]
+    require(len(positions) == 1, "Gwendoline : fiche absente ou dupliquée")
+    event = result["events"][positions[0]]
+    require(validate_gwendoline_signed_correction(event, approval),
+            "Gwendoline : cette correction est déjà appliquée")
+    require(not any(a.get("id") == "bleu-panique"
+                    or norm(a.get("name", "")) == norm("Bleu Panique")
+                    for a in result["artists"]),
+            "Gwendoline : Bleu Panique déjà présent sous un autre identifiant")
+    require(any(a.get("id") == "gwendoline"
+                and a.get("name") == "Gwendoline"
+                for a in result["artists"]),
+            "Gwendoline : artiste historique introuvable")
+    spec = ROCHER_PALMER_VERIFIED[GWENDOLINE_CORRECTION_ID]
+    event["title"] = spec["title"]
+    event["artistIds"] = list(spec["artistIds"])
+    event["lastVerified"] = GWENDOLINE_CORRECTION_DATE
+    event["history"].append({
+        "date": GWENDOLINE_CORRECTION_DATE,
+        "change": GWENDOLINE_CORRECTION_CHANGE})
+    result["artists"].append({
+        "id": "bleu-panique", "name": "Bleu Panique", "aliases": []})
+
+
 def merge(reference, current, approvals, today):
     protect_reference(reference, current)
     require(approvals.get("schema") == SCHEMA and
@@ -6254,15 +6359,27 @@ def merge(reference, current, approvals, today):
         a.get("event", {}).get("id"): a
         for a in approvals["approvals"] if a.get("reviewDecision") == "approved"
     }
+    gwendoline_approval = None
     for existing in current["events"][len(reference["events"]):]:
         approval = approved_ids.get(existing["id"])
         require(bool(approval), "Concert cloud publié sans approbation privée")
         expected = approval["event"]
+        if existing["id"] == GWENDOLINE_CORRECTION_ID:
+            if existing.get("title") == "Gwendoline" and expected.get("title") != "Gwendoline":
+                require(validate_gwendoline_signed_correction(existing, approval),
+                        "Gwendoline : nouvelle approbation non applicable")
+                gwendoline_approval = approval
+                continue
+            if existing.get("title") == ROCHER_PALMER_VERIFIED[GWENDOLINE_CORRECTION_ID]["title"]:
+                require(not validate_gwendoline_signed_correction(existing, approval),
+                        "Gwendoline : approbation incohérente")
         require(all(existing.get(k) == expected.get(k) for k in
                     ("id", "title", "date", "artistIds", "venueId", "genres",
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
+    if gwendoline_approval is not None:
+        apply_gwendoline_signed_correction(result, gwendoline_approval)
     location_review = validate_secret_place_location_correction(
         approvals, reference, today)
     rex_review = validate_rex_location_correction(approvals, reference, today)
@@ -6337,8 +6454,8 @@ def merge(reference, current, approvals, today):
         approval = approved_venues.get(prior["id"])
         require(approval is not None and prior == validate_venue_approval(approval, today),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
-    counts = {"newEvents": 0, "newArtists": 0, "newVenues": 0,
-              "correctedEvents": corrected_count, "correctedVenues": venue_corrected_count,
+    counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
+              "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
     for entry in venue_approvals:
         try:
