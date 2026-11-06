@@ -1,0 +1,95 @@
+{
+  "schema": "grossesondes.regional-festival-indexes.v1",
+  "indexes": [
+    {
+      "id": "hdf-phalempin",
+      "region": "Hauts-de-France",
+      "url": "https://www.phalempin.fr/mes-loisirs/evenements-manifestations/"
+    },
+    {
+      "id": "na-saintes",
+      "region": "Nouvelle-Aquitaine",
+      "url": "https://www.saintes-tourisme.fr/agenda/concerts-et-festivals/"
+    },
+    {
+      "id": "na-limoges",
+      "region": "Nouvelle-Aquitaine",
+      "url": "https://sortir.limoges.fr/agenda"
+    },
+    {
+      "id": "pdl-angers",
+      "region": "Pays de la Loire",
+      "url": "https://www.angers.fr/actualites-sorties/agenda/index.html"
+    },
+    {
+      "id": "occ-montpellier",
+      "region": "Occitanie",
+      "url": "https://agenda.montpellier.fr/"
+    },
+    {
+      "id": "occ-tourisme",
+      "region": "Occitanie",
+      "url": "https://www.tourisme-occitanie.com/agenda/par-theme/festivals/"
+    },
+    {
+      "id": "idf-seine-marne",
+      "region": "Île-de-France",
+      "url": "https://www.tourisme-seine-et-marne.fr/agenda/"
+    },
+    {
+      "id": "cvl-loire",
+      "region": "Centre-Val de Loire",
+      "url": "https://www.val-de-loire-41.com/agenda/grands-evenements/"
+    },
+    {
+      "id": "bre-tourisme",
+      "region": "Bretagne",
+      "url": "https://www.tourismebretagne.com/preparer-mon-sejour/agenda/"
+    },
+    {
+      "id": "ara-lyon",
+      "region": "Auvergne-Rhône-Alpes",
+      "url": "https://www.visiterlyon.com/sortir/l-agenda/festivals"
+    },
+    {
+      "id": "paca-digne",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "url": "https://www.dignelesbains-tourisme.com/agendas/tout-lagenda/"
+    },
+    {
+      "id": "cor-centrecorse",
+      "region": "Corse",
+      "url": "https://tourisme-centrecorse.corsica/agenda/"
+    },
+    {
+      "id": "ge-explore",
+      "region": "Grand Est",
+      "url": "https://www.explore-grandest.com/agenda/"
+    },
+    {
+      "id": "nor-tourisme",
+      "region": "Normandie",
+      "url": "https://www.normandie-tourisme.fr/agenda/"
+    },
+    {
+      "id": "bfc-bourgogne",
+      "region": "Bourgogne-Franche-Comté",
+      "url": "https://www.bourgogne-tourisme.com/sejourner/agenda/"
+    },
+    {
+      "id": "na-limoges-rock",
+      "region": "Nouvelle-Aquitaine",
+      "url": "https://sortir.limoges.fr/agenda?keys=rock"
+    },
+    {
+      "id": "na-limoges-festival",
+      "region": "Nouvelle-Aquitaine",
+      "url": "https://sortir.limoges.fr/agenda?keys=festival"
+    },
+    {
+      "id": "bre-festivals",
+      "region": "Bretagne",
+      "url": "https://www.tourismebretagne.com/preparer-mon-sejour/agenda/festivals-bretagne/"
+    }
+  ]
+}

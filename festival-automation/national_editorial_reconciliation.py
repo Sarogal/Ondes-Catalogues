@@ -1,0 +1,380 @@
+"""Pure, private editorial reconciliation of national festival discoveries.
+
+Crosschecks historic names, published editions and fresh vetted observations.
+A historic edition is NEVER evidence of the next year's edition. No network
+fetch destinations are drawn from state or queues. No catalogue writer exists.
+"""
+import argparse
+from datetime import date, datetime
+import json
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+from curated_future_lead_watch import load_leads
+from curated_future_review import valid_observation
+from national_discovery_queue import _identity, _safe_title, SCHEMA as QUEUE_SCHEMA
+from national_detail_qualification import (
+    SCHEMA as DETAIL_SCHEMA, _valid_observation,
+)
+from official_watch import get_json, PAGES, GIT
+from regional_festival_discovery import HISTORY_PAGES, HISTORY_GIT
+
+SCHEMA = "grossesondes.national-editorial-reconciliation-private.v1"
+MAX_PUBLIC = 600
+MAX_ARCHIVE = 500
+MAX_QUEUE = 200
+MAX_SOURCE_ROWS = 12
+MAX_MATCHES = 8
+
+
+def _canonical(value):
+    """Exact normalized name excluding the edition year; never fuzzy matching."""
+    if not _safe_title(value):
+        return None
+    result = _identity(value)
+    return result[0] if result else None
+
+
+def _names(row):
+    names = [row.get("name")]
+    extra = row.get("aliases", [])
+    if isinstance(extra, list) and len(extra) <= 25:
+        names.extend(extra)
+    return {name for value in names if (name := _canonical(value))}
+
+
+def _city_equal(a, b):
+    from source_qualification import normalized
+    if not isinstance(a, str) or not isinstance(b, str):
+        return None
+    if not a.strip() or not b.strip():
+        return None
+    return normalized(a) == normalized(b)
+
+
+def _archive_matches(dossier, history):
+    """History provides identity hints, not evidence that an edition exists."""
+    found = []
+    names = {dossier["normalized_name"]}
+    names.update(filter(None, (_canonical(v) for v in dossier.get("name_variants", [])[:8])))
+    for row in history:
+        if not isinstance(row, dict) or row.get("region") != dossier["region_hint"]:
+            continue
+        if type(row.get("lastKnownYear")) is not int:
+            continue
+        if not names.intersection(_names(row)):
+            continue
+        city = _city_equal(dossier.get("city_hint"), row.get("city"))
+        if city is False:
+            continue
+        try:
+            start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+            if start > end or end.year != row["lastKnownYear"]:
+                continue
+        except (ValueError, TypeError, KeyError):
+            continue
+        # No archive 2027 name may be silently reinterpreted as evidence
+        # of an earlier or later edition.
+        if (dossier["edition_year_hint"] is not None
+                and row["lastKnownYear"] >= dossier["edition_year_hint"]):
+            continue
+        found.append({
+            "slug": row.get("slug") if isinstance(row.get("slug"), str) else None,
+            "last_known_year": row["lastKnownYear"],
+            "city_hint_match": city is True,
+            "identity_match_only": True,
+            "future_edition_verified": False,
+        })
+    return found[:MAX_MATCHES]
+
+
+def _public_matches(dossier, published):
+    exact, uncertain = [], []
+    names = {dossier["normalized_name"]}
+    names.update(filter(None, (_canonical(v) for v in dossier.get("name_variants", [])[:8])))
+    edition = dossier.get("edition_year_hint")
+    if type(edition) is not int:
+        return exact, uncertain
+    for row in published:
+        if not isinstance(row, dict) or row.get("region") != dossier["region_hint"]:
+            continue
+        if not _names(row).intersection(names):
+            continue
+        try:
+            start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        except (ValueError, TypeError, KeyError):
+            continue
+        if start.year != edition or end < start:
+            continue
+        city = _city_equal(dossier.get("city_hint"), row.get("city"))
+        item = {
+            "slug": row.get("slug") if isinstance(row.get("slug"), str) else None,
+            "year": edition,
+            "city_hint_match": city,
+            "edition_already_published": True,
+        }
+        (uncertain if city is False else exact).append(item)
+    return exact[:MAX_MATCHES], uncertain[:MAX_MATCHES]
+
+
+def _dynamic_proofs(dossier, detail):
+    """Recheck each detail report against the same dossier URL and identity."""
+    rows = []
+    witnesses = {
+        (s["url"], s["discovered_via"])
+        for s in dossier.get("sources", [])[:MAX_SOURCE_ROWS]
+        if isinstance(s, dict) and s.get("kind") == "REGIONAL_INDEX_UNVERIFIED"
+        and isinstance(s.get("url"), str)
+        and isinstance(s.get("discovered_via"), str)
+        and s.get("publication_authorized") is False
+    }
+    for record in detail.get("observations", [])[:MAX_QUEUE]:
+        if not isinstance(record, dict):
+            continue
+        url, origin = record.get("candidate_url"), record.get("index_url")
+        if (url, origin) not in witnesses:
+            continue
+        source = {
+            "dossier_id": dossier["id"], "url": url,
+            "index_url": origin, "title": record.get("name_hint"),
+            "year": dossier["edition_year_hint"],
+        }
+        if (record.get("name_hint") not in dossier.get("name_variants", [])
+                or not _valid_observation(source, record, detail["as_of"])):
+            continue
+        rows.append({
+            "url": url, "index_url": origin,
+            "observed_at": record["observed_at"],
+            "name_seen": record["name_seen"],
+            "edition_year_near_name": record["edition_year_near_name"],
+            "possible_cancellation": record["possible_cancellation_review_only"],
+            "visible_text_sha256": record["visible_text_sha256"],
+            "structured_event_clues_private": [
+                dict(item) for item in record.get("structured_event_clues_private", [])
+            ],
+            "official_site_verified": False,
+            "independent_source_verified": False,
+            "dates_verified": False,
+        })
+    return rows
+
+
+def _primary_proof(dossier, leads, state, today):
+    observations = state.get("curated_future_lead_observations", {})
+    if not isinstance(observations, dict):
+        raise ValueError("observations primaires incoherentes")
+    for lead in leads:
+        if (dossier.get("normalized_name") != _canonical(lead["name"])
+                or dossier.get("region_hint") != lead["region_hint"]
+                or dossier.get("edition_year_hint") !=
+                    (int(lead["start_date"][:4]) if lead["start_date"] else
+                     int(lead["id"][-4:]) if lead["id"][-4:].isdigit() else None)
+                or not any(
+                    s.get("kind") == "CURATED_PRIMARY_CANDIDATE"
+                    and s.get("url") == lead["source_url"]
+                    and s.get("publication_authorized") is False
+                    for s in dossier.get("sources", []) if isinstance(s, dict))):
+            continue
+        row = observations.get(lead["id"])
+        if valid_observation(lead, row, today):
+            return {
+                "curated_id": lead["id"],
+                "source_url": lead["source_url"],
+                "observed_at": row["lastSeen"],
+                "first_seen": row["firstSeen"],
+                "visible_text_sha256": row["lastVisibleDigest"],
+                "dates_visible_in_primary": lead["start_date"] is not None,
+                "start_date_hint": lead["start_date"],
+                "end_date_hint": lead["end_date"],
+                "organizer_verified": False,
+                "independent_confirmation": False,
+                "publication_authorized": False,
+            }
+    return None
+
+
+def build_review(queue, detail, state, leads, public, history, today):
+    date.fromisoformat(today)
+    if (not isinstance(queue, dict) or queue.get("schema") != QUEUE_SCHEMA
+            or queue.get("as_of") != today
+            or queue.get("publication_authorized") is not False
+            or queue.get("safe_to_publish") is not False
+            or queue.get("review_only") is not True
+            or not isinstance(queue.get("dossiers"), list)
+            or len(queue["dossiers"]) > MAX_QUEUE
+            or not isinstance(detail, dict) or detail.get("schema") != DETAIL_SCHEMA
+            or detail.get("as_of") != today or detail.get("publication_authorized") is not False
+            or detail.get("safe_to_publish") is not False
+            or not isinstance(detail.get("observations"), list)
+            or not isinstance(state, dict)
+            or state.get("schema") != "grossesondes.source-watch.v1"
+            or not isinstance(leads, list)
+            or not isinstance(public, dict) or public.get("schema") != 1
+            or not isinstance(public.get("festivals"), list)
+            or len(public["festivals"]) > MAX_PUBLIC
+            or not isinstance(history, dict) or history.get("schema") != 2
+            or not isinstance(history.get("knownFestivals"), list)
+            or len(history["knownFestivals"]) > MAX_ARCHIVE):
+        raise ValueError("donnees de reconciliation incompletes")
+    result, proposed, seen = [], [], set()
+    for dossier in queue["dossiers"]:
+        if (not isinstance(dossier, dict)
+                or dossier.get("publication_authorized") is not False
+                or dossier.get("safe_to_publish") is not False
+                or not isinstance(dossier.get("id"), str)
+                or dossier["id"] in seen
+                or not isinstance(dossier.get("normalized_name"), str)
+                or not isinstance(dossier.get("region_hint"), str)
+                or (dossier.get("edition_year_hint") is not None
+                    and type(dossier.get("edition_year_hint")) is not int)
+                or not isinstance(dossier.get("sources"), list)
+                or len(dossier["sources"]) > MAX_SOURCE_ROWS):
+            raise ValueError("dossier prive non conforme")
+        seen.add(dossier["id"])
+        archival = _archive_matches(dossier, history["knownFestivals"])
+        exact, conflicting = _public_matches(dossier, public["festivals"])
+        primary = _primary_proof(dossier, leads, state, today)
+        detail_clues = _dynamic_proofs(dossier, detail)
+        cancellation = any(row["possible_cancellation"] for row in detail_clues)
+        event_clues = [hint for row in detail_clues
+                       for hint in row.get("structured_event_clues_private", [])]
+        ambiguous_history = len(archival) > 1
+        if exact:
+            status = "PUBLISHED_EDITION_MATCH_REVIEW"
+        elif conflicting or ambiguous_history or cancellation:
+            status = "POTENTIAL_CONFLICT_REVIEW"
+        elif primary and primary["dates_visible_in_primary"]:
+            status = "PRIMARY_DATE_CLAIM_REVIEW"
+        elif any(x["name_seen"] and x["edition_year_near_name"] for x in detail_clues):
+            status = "REGIONAL_NAME_YEAR_REVIEW"
+        else:
+            status = "RESEARCH_REQUIRED"
+        blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
+                  "independent_date_confirmation", "coordinates_review",
+                  "lineup_review", "ticketing_review", "duplicate_review"]
+        if not primary:
+            blocks.append("first_party_date_observation_missing")
+        if not detail_clues and not primary:
+            blocks.append("edition_detail_proof_missing")
+        if not dossier.get("edition_year_hint"):
+            blocks.append("edition_year_unknown")
+        if exact:
+            blocks.append("already_published_edition")
+        if conflicting:
+            blocks.append("same_name_year_region_city_conflict")
+        if ambiguous_history:
+            blocks.append("ambiguous_historical_identity")
+        if cancellation:
+            blocks.append("possible_cancellation_review")
+        row = {
+            "id": dossier["id"], "name_hint": dossier["name_hint"],
+            "edition_year_hint": dossier["edition_year_hint"],
+            "region_hint": dossier["region_hint"],
+            "city_hint": dossier.get("city_hint"),
+            "status": status, "publication_authorized": False,
+            "safe_to_publish": False, "review_only": True,
+            "archive_identity_hints": archival,
+            "published_exact_edition_matches": exact,
+            "published_city_conflicts": conflicting,
+            "primary_observation": primary,
+            "regional_detail_observations": detail_clues,
+            "structured_date_hints_count": len(event_clues),
+            "named_organizer_hints_count": sum(
+                bool(h.get("organizer_name_hint")) for h in event_clues),
+            "visible_start_date_hints_count": sum(
+                h["start_date_visible_near_name"] for h in event_clues),
+            "independence_verified": False,
+            "future_edition_confirmed": False,
+            "missing_checks": sorted(set(blocks)),
+        }
+        result.append(row)
+        # A draft is prepared only for an observed future-date claim on a
+        # reviewed curated primary, never merely because the archive is older.
+        if (status == "PRIMARY_DATE_CLAIM_REVIEW"
+                and primary and primary["start_date_hint"]
+                and date.fromisoformat(primary["start_date_hint"]) > date.fromisoformat(today)):
+            proposed.append({
+                "id": dossier["id"], "status": "PRIVATE_EDITORIAL_DRAFT",
+                "review_only": True, "publication_authorized": False,
+                "safe_to_publish": False,
+                "primary_source_url": primary["source_url"],
+                "primary_observed_at": primary["observed_at"],
+                "candidate_fields_unverified": {
+                    "name_hint": dossier["name_hint"],
+                    "edition_year_hint": dossier["edition_year_hint"],
+                    "start_date_hint": primary["start_date_hint"],
+                    "end_date_hint": primary["end_date_hint"],
+                    "city": None, "department": None, "venue": None,
+                    "organizer": None, "lineup": None, "ticketing": None,
+                    "coordinates": None,
+                },
+                "missing_checks": list(row["missing_checks"]),
+            })
+    return {
+        "schema": SCHEMA, "as_of": today, "review_only": True,
+        "safe_to_publish": False, "publication_authorized": False,
+        "publications": 0, "public_editions_count": len(public["festivals"]),
+        "historic_references_count": len(history["knownFestivals"]),
+        "dossiers_count": len(result),
+        "historical_identity_hints_count": sum(bool(x["archive_identity_hints"]) for x in result),
+        "published_duplicate_dossiers_count": sum(bool(x["published_exact_edition_matches"]) for x in result),
+        "primary_observed_dossiers_count": sum(x["primary_observation"] is not None for x in result),
+        "regional_detail_observed_dossiers_count": sum(bool(x["regional_detail_observations"]) for x in result),
+        "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
+        "organizer_name_hints_count": sum(x["named_organizer_hints_count"] for x in result),
+        "visible_start_date_hints_count": sum(x["visible_start_date_hints_count"] for x in result),
+        "editorial_drafts_count": len(proposed),
+        "dossiers": result,
+        "editorial_drafts_private": proposed,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--intake", required=True, type=Path)
+    parser.add_argument("--report", required=True, type=Path)
+    args = parser.parse_args()
+    today = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
+    intake = args.intake
+    queue = json.loads((intake / "national-festival-discovery-review.json")
+                       .read_text(encoding="utf-8"))
+    detail = json.loads((intake / "national-festival-detail-review.json")
+                        .read_text(encoding="utf-8"))
+    state = json.loads((intake / "source-watch-state.json").read_text(encoding="utf-8"))
+    report = json.loads(args.report.read_text(encoding="utf-8"))
+    if report.get("schema") != "grossesondes.source-watch-report.v1" or report.get("date") != today:
+        raise ValueError("rapport de veille invalide")
+    # Fixed first-party catalogue URLs; untrusted state supplies NO destinations.
+    pages, git = get_json(PAGES), get_json(GIT)
+    historic_pages, historic_git = get_json(HISTORY_PAGES), get_json(HISTORY_GIT)
+    if pages != git or historic_pages != historic_git:
+        raise ValueError("catalogues publics divergents : rapprochement suspendu")
+    leads = load_leads(json.loads(Path(__file__).with_name(
+        "curated_future_leads.json").read_text(encoding="utf-8")))
+    review = build_review(queue, detail, state, leads, git, historic_git, today)
+    (intake / "national-festival-editorial-review.json").write_text(
+        json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    report["national_reconcile_dossiers_private"] = review["dossiers_count"]
+    report["national_reconcile_archive_hints_private"] = review["historical_identity_hints_count"]
+    report["national_reconcile_duplicate_dossiers_private"] = review["published_duplicate_dossiers_count"]
+    report["national_reconcile_primary_seen_private"] = review["primary_observed_dossiers_count"]
+    report["national_reconcile_editorial_drafts_private"] = review["editorial_drafts_count"]
+    report["national_reconcile_structured_date_hints_private"] = review["structured_date_hints_count"]
+    report["national_reconcile_organizer_hints_private"] = review["organizer_name_hints_count"]
+    report["national_reconcile_publications"] = 0
+    args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+                           encoding="utf-8")
+    print("RECONCILIATION_FESTIVALS_PRIVEE:", json.dumps({
+        "dossiers": review["dossiers_count"],
+        "archive_hints": review["historical_identity_hints_count"],
+        "duplicates": review["published_duplicate_dossiers_count"],
+        "primary_observed": review["primary_observed_dossiers_count"],
+        "drafts": review["editorial_drafts_count"],
+        "structured_date_hints": review["structured_date_hints_count"],
+        "organizer_hints": review["organizer_name_hints_count"],
+        "published": 0,
+    }, ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()

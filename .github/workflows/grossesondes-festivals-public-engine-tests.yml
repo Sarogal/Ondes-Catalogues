@@ -1,0 +1,73 @@
+name: Grosses Ondes — parité moteur Festivals sur runners publics
+
+on:
+  pull_request:
+    paths:
+      - 'festival-automation/**'
+      - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
+      - 'GROSSES_ONDES_MIGRATION_PUBLIQUE.md'
+  push:
+    branches: [main]
+    paths:
+      - 'festival-automation/**'
+      - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  engine-parity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier que le portage n'inclut aucun état confidentiel
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find festival-automation -type f \( -name 'source-watch-state.json' -o -name 'approved.json' -o -name '*-review.json' -o -name 'patch-*.json' -o -name '.env*' \) | grep -q .; then
+            echo "::error::Un état privé ou une approbation figure dans le portage"
+            exit 1
+          fi
+          if grep -rIlE '(github_pat_[A-Za-z0-9_]{15,}|ghp_[A-Za-z0-9]{20,}|-----BEGIN .*PRIVATE KEY-----)' festival-automation; then
+            echo "::error::Un secret potentiel figure dans le portage"
+            exit 1
+          fi
+      - name: Vérifier la syntaxe Python du moteur existant
+        run: python -m compileall -q festival-automation
+      - name: Générer une fixture strictement synthétique, jamais versionnée
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'festival-automation')
+          from curated_future_lead_watch import ALLOWED, SCHEMA
+          # Synthetic dates for offline compatibility tests; NOT event claims.
+          examples = [
+              ('mozhell-open-air-2027', 'MozHell Open Air', '23 24 et 25 juillet 2027', '2027-07-23', '2027-07-25', 'Grand Est'),
+              ('festibarock-in-2027', 'Festibarock in', 'juin 2027', '2027-06-01', '2027-06-02', 'Grand Est'),
+              ('la-sainte-rock-festival-2027', 'La Sainte Rock Festival', '23 24 avril 2027', '2027-04-23', '2027-04-24', 'Provence-Alpes-Côte d\'Azur'),
+              ('colombin-rock-festival-2027', 'Colombin Rock Festival', 'aout 2027', '2027-08-01', '2027-08-02', 'Bourgogne-Franche-Comté'),
+              ('esqui-riot-2027', 'Esqui Riot', 'edition en 2027', None, None, 'Nouvelle-Aquitaine'),
+          ]
+          rows = []
+          for ident, name, phrase, start, end, region in examples:
+              source, home = ALLOWED[ident]
+              rows.append(dict(id=ident, name=name, source_url=source,
+                               official_home_candidate=home, date_phrase=phrase,
+                               start_date=start, end_date=end, city_hint='Ville fictive',
+                               region_hint=region, genre_hint='metal rock'))
+          out = Path('festival-automation/curated_future_leads.json')
+          out.write_text(json.dumps({'schema': SCHEMA, 'leads': rows}, ensure_ascii=False),
+                         encoding='utf-8')
+          PY
+      - name: Exécuter la suite originale complète sans réseau ni secrets
+        run: python -m unittest discover -s festival-automation -p 'test_*.py' -v
