@@ -136,6 +136,16 @@
       "checkedAt": "2026-11-06",
       "origin": "Fiche officielle du tourneur Veryshow : concerts datés, salle, villes et départements français.",
       "note": "Pistes privées uniquement. Aucune intégration implicite de groupes invités (+7WEEKS, +Manimal). Contrôles indépendants avant toute approbation; respecter robots.txt."
+    },
+    {
+      "artistId": "slift",
+      "url": "https://radical-production.fr/artistes/slift/",
+      "sourceRole": "promoter_official",
+      "adapter": "radical_slift_official_tour",
+      "enabled": true,
+      "checkedAt": "2026-11-06",
+      "origin": "Page tournée de l'agence officielle Radical Production, dates complètes jour/mois/année avec ville et salle.",
+      "note": "Ne retenir qu'une liste pré-identifiée de communes françaises ; écarter dates passées, pays étrangers et festivals. Pistes privées seulement ; pays, GPS, horaires et line-up à confirmer indépendamment."
     }
   ]
 }
