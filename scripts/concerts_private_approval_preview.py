@@ -121,17 +121,33 @@ def github_approval(ref, token):
     return json.loads(content.decode("utf-8"))
 
 
+class PrivatePreviewStageError(RuntimeError):
+    """Only the fixed stage code, never a private exception message."""
+    def __init__(self, stage):
+        self.stage = stage
+        super().__init__(stage)
+
+
+def guarded(stage, callback):
+    try:
+        return callback()
+    except Exception:
+        raise PrivatePreviewStageError(stage) from None
+
+
 def preview(head_sha, token, today):
     # A trusted operator copies the exact head SHA from the *private* PR.
     # Only the approved JSON blob is read. No PR branch code is checked out,
     # and only a repository-contents:read token is needed.
     require(isinstance(head_sha, str) and SHA.fullmatch(head_sha),
             "Référence Git privée invalide")
-    previous = github_approval("main", token)
-    proposed = github_approval(head_sha, token)
-    reference = read_json(ROOT / "docs/grossesondes/concerts-reference.json")
-    published = read_json(ROOT / "docs/grossesondes/concerts.json")
-    return audit(previous, proposed, reference, published, today)
+    previous = guarded("READ_MAIN", lambda: github_approval("main", token))
+    proposed = guarded("READ_HEAD", lambda: github_approval(head_sha, token))
+    reference = guarded("READ_PUBLIC", lambda: read_json(
+        ROOT / "docs/grossesondes/concerts-reference.json"))
+    published = guarded("READ_PUBLIC", lambda: read_json(
+        ROOT / "docs/grossesondes/concerts.json"))
+    return guarded("MERGE", lambda: audit(previous, proposed, reference, published, today))
 
 
 def main():
@@ -148,9 +164,13 @@ def main():
         checked = preview(
             args.head_sha, token,
             dt.datetime.now(ZoneInfo("Europe/Paris")).date())
+    except PrivatePreviewStageError as failure:
+        # Fixed vocabulary is safe for public Actions logs. Never print the
+        # suppressed exception or its possibly confidential validation context.
+        print("PREVIEW_STAGE=" + failure.stage, file=sys.stderr)
+        return 1
     except Exception:
-        print("::error::Prévalidation refusée ; aucun détail privé diffusé",
-              file=sys.stderr)
+        print("PREVIEW_STAGE=UNEXPECTED", file=sys.stderr)
         return 1
     print("Prévalidation privée réussie en lecture seule : "
           + str(checked) + " nouveaux concerts, sans publication.")

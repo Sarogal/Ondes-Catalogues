@@ -52,6 +52,12 @@ jobs:
           if ! python scripts/concerts_private_approval_preview.py \
               --head-sha "$PRIVATE_HEAD_SHA" \
               > "$RUNNER_TEMP/concerts-private-preview.log" 2>&1; then
+            # Only a fixed non-confidential step code may enter the public log.
+            for stage in READ_MAIN READ_HEAD READ_PUBLIC MERGE UNEXPECTED; do
+              if grep -Fq "PREVIEW_STAGE=$stage" "$RUNNER_TEMP/concerts-private-preview.log"; then
+                echo "PREVIEW_STAGE=$stage"
+              fi
+            done
             echo "::error::Prévalidation privée refusée ; aucun contenu privé divulgué."
             exit 1
           fi
