@@ -210,7 +210,8 @@ class RegionalEventAnchors(Anchors):
             if self.current is not None and self.accessible_event_label:
                 visible = normalized("".join(self.current[1]))
                 if not visible or GENERIC_LINK_TEXT.fullmatch(visible):
-                    self.current[1] = [self.accessible_event_label]
+                    self.current[1].clear()
+                    self.current[1].append(self.accessible_event_label)
         super().handle_endtag(tag)
         if tag.lower() == "a":
             self.accessible_event_label = None
