@@ -143,3 +143,12 @@ jobs:
       - name: Déployer le catalogue JSON sur GitHub Pages
         id: published
         uses: actions/deploy-pages@v5
+      - name: Charger la référence Git effectivement publiée
+        uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Comparer les JSON réellement servis par GitHub Pages
+        run: python scripts/ptitesondes_pages_verify.py
