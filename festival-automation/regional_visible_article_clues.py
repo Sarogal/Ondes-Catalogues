@@ -127,7 +127,11 @@ def visible_article_clues(html, today, archive_hints=None):
         thematic = bool(
             (FEST.search(name) and (MUSIC.search(name) or GENRE.search(context)))
             or (MUSIC.search(name) and FEST.search(context))
-            or (FEST.search(context) and GENRE.search(context)))
+            or (FEST.search(context) and GENRE.search(context))
+            # A year-bearing neutral title can describe a thematic festival
+            # in its own visible card text, without a visible hyperlink.
+            # Such a hint is review-only and is NEVER publication evidence.
+            or (year is not None and FEST.search(context) and MUSIC.search(context)))
         if not thematic and not archive_slug:
             continue
         key = (name, year)
