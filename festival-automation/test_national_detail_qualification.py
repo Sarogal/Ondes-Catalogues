@@ -37,6 +37,74 @@ class NationalDetailQualificationTests(unittest.TestCase):
         queue = build_queue(state, report, [], TODAY)
         return state, queue
 
+    def test_municipal_accessible_event_link_reaches_private_detail_probe(self):
+        """Regional aria-labelled discovery must survive independent revalidation."""
+        origin = "https://www.angers.fr/actualites-sorties/agenda/index.html"
+        url = "https://www.angers.fr/actualites-sorties/agenda/metal-fest-des-rives-2027"
+        title = "Metal Fest des Rives 2027"
+        html = (
+            '<article><a href="/actualites-sorties/agenda/metal-fest-des-rives-2027" '
+            'aria-label="Plus d’information sur l’évènement : Metal Fest des Rives 2027">'
+            'En savoir plus</a></article>'
+        )
+        state, _ = self.data(title=title, url=url)
+        row = state["regional_festival_candidates_review_only"][url]
+        row["source_index"] = origin
+        row["region"] = "Pays de la Loire"
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": []}
+        queue = build_queue(state, report, [], TODAY)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        visits = []
+
+        def fetch(target):
+            visits.append(target)
+            return (html if target == origin
+                    else "<main><h1>Metal Fest des Rives 2027</h1>"
+                         "<p>Une édition 2027 annoncée.</p></main>")
+
+        outcome = scan(state, queue, TODAY, fetch=fetch)
+        self.assertEqual(visits, [origin, url])
+        self.assertEqual(outcome[0]["status"], "NAME_YEAR_VISIBLE_REVIEW_ONLY")
+        review = build_review(state, queue, TODAY)
+        self.assertEqual(review["observations_count"], 1)
+        self.assertFalse(review["observations"][0]["publication_authorized"])
+        self.assertFalse(review["observations"][0]["date_claim_verified"])
+        self.assertEqual(review["publications"], 0)
+
+    def test_municipal_accessible_label_keeps_exact_live_link_safeguards(self):
+        origin = "https://www.angers.fr/actualites-sorties/agenda/index.html"
+        url = "https://www.angers.fr/actualites-sorties/agenda/metal-fest-des-rives-2027"
+        source = {"title": "Metal Fest des Rives 2027",
+                  "index_url": origin, "url": url, "year": 2027}
+        prefix = ('<a href="/actualites-sorties/agenda/metal-fest-des-rives-2027" '
+                  'aria-label="Plus d’information sur l’évènement : '
+                  'Metal Fest des Rives 2027">')
+        valid = prefix + "En savoir plus</a>"
+        self.assertTrue(_seen_again(valid, source))
+        self.assertTrue(_seen_again(
+            '<a href="/actualites-sorties/agenda/metal-fest-des-rives-2027" '
+            'title="Plus d’information sur l’évènement : Metal Fest des Rives 2027">'
+            'En savoir plus</a>', source))
+        unsafe = (
+            prefix + "Concert de jazz 2027</a>",  # specific visible title wins
+            "<div hidden>" + valid + "</div>",
+            '<div aria-hidden="true">' + valid + "</div>",
+            "<script>" + valid + "</script>",
+            valid.replace("/actualites-sorties/agenda/metal-fest-des-rives-2027",
+                          "/actualites-sorties/agenda/metal-fest-des-rives-2028"),
+            valid.replace('/actualites-sorties/agenda/metal-fest-des-rives-2027',
+                          'https://www.angers.fr.evil.example/festival'),
+            valid.replace('Plus d’information sur l’évènement : ',
+                          'Voir cet évènement : '),
+            valid.replace('Metal Fest des Rives 2027', 'Metal Fest des Rives 2028'),
+            '<a href="/actualites-sorties/agenda/metal-fest-des-rives-2027">'
+            'En savoir plus</a>',
+        )
+        for html in unsafe:
+            with self.subTest(html=html):
+                self.assertFalse(_seen_again(html, source))
+
     def test_next_day_fresh_index_then_one_detail_and_private_observation(self):
         state, queue = self.data()
         visited = []
