@@ -1,0 +1,33 @@
+name: Ondes — surveillance publique en lecture seule
+
+on:
+  pull_request:
+    paths:
+      - 'monitoring/ondes_watchdog.php'
+      - 'monitoring/README.md'
+      - '.github/workflows/ondes-public-watchdog.yml'
+  schedule:
+    - cron: '29 04 * * *'
+    - cron: '29 16 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Vérifier le code et les tests locaux (aucune écriture)
+        run: |
+          php -l monitoring/ondes_watchdog.php
+          php monitoring/ondes_watchdog.php --self-test
+      - name: Contrôler les passages GitHub et les quatre catalogues servis
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: php monitoring/ondes_watchdog.php
