@@ -106,13 +106,14 @@ jobs:
           print("Collecte nationale réussie : pistes en quarantaine, aucune publication.")
           PY
 
+      # Un passage couvre toutes les sources actives, même si GitHub retarde les schedules.
       - name: Découverte des tournées d'artistes déjà référencés
         if: steps.access.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           if ! python public/automation/concerts/artist_tour_discovery.py \
-              --max-sources 10 --output "$RUNNER_TEMP/concerts-tours" \
+              --max-sources 20 --output "$RUNNER_TEMP/concerts-tours" \
               > "$RUNNER_TEMP/concerts-private-logs/tours.log" 2>&1; then
             echo "::error::La veille des tournées a échoué ; aucune sortie privée publiée"
             exit 1
