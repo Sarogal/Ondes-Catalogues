@@ -35,8 +35,12 @@ def detail_url(base, link):
         return None
     url = urljoin(base, link)
     p = urlparse(url)
+    try:
+        port = p.port
+    except ValueError:
+        return None
     if (p.scheme != "https" or p.hostname != "www.ville-pace.bzh"
-            or p.username or p.password or p.port or p.query or p.fragment
+            or p.username or p.password or port or p.query or p.fragment
             or not DETAIL_PATH.fullmatch(p.path)):
         return None
     return url
