@@ -194,6 +194,10 @@ def validate_inputs(municipal, backlog, existing):
         if postcodes != {PINS_BY_KEY[k][3]}:
             raise ValueError("Code postal historique incompatible")
         checked[k] = item
+    # A partial probe must never silently replace the six-town private
+    # triage history with fewer records and a misleading successful run.
+    if len(checked) != len(PINS_BY_KEY):
+        raise ValueError("Rapport municipal incomplet : une ligne par commune épinglée est requise")
 
     old = {}
     if existing is not None:

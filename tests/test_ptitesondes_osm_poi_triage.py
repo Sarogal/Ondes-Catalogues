@@ -185,6 +185,8 @@ class PlaceOSMTriagePublicRunnerTests(unittest.TestCase):
                 {"gps_verified": True})},
             {"municipal": lambda m: m["records"].append(
                 dict(m["records"][0]))},
+            {"municipal": lambda m: m["records"].pop()},
+            {"municipal": lambda m: m["records"].clear()},
             {"backlog": lambda b: b.append(dict(b[0]))},
         ):
             municipal, backlog = fixtures()
