@@ -60,6 +60,26 @@ class TourDiscoveryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             tour.source_selection(bad, tour.artist_ranking(CATALOG), DAY, 3)
 
+    def test_un_seul_cycle_couvre_toutes_les_sources_officielles_actives(self):
+        # Les schedules GitHub peuvent manquer : le passage restant doit suffire.
+        config = json.loads(tour.SOURCES.read_text(encoding="utf-8"))
+        active = {(s["artistId"], s["url"]) for s in config["sources"]
+                  if s.get("enabled") is True}
+        self.assertGreater(len(active), 10)
+        self.assertLessEqual(len(active), 20)
+        ranking = [{"artistId": aid, "recordedDateCount": 1}
+                   for aid in sorted({aid for aid, _ in active})]
+        for slot in range(4):
+            selected = tour.source_selection(config, ranking, DAY, 20, slot)
+            self.assertEqual({(s["artistId"], s["url"]) for s in selected}, active)
+            self.assertTrue(all(s["sourceRole"] in ("artist_official",
+                                                     "promoter_official")
+                                for s in selected))
+        workflow = (tour.ROOT.parents[1] / ".github/workflows/"
+                    "grossesondes-concerts-private-intake-on-public-runners.yml")
+        self.assertIn("--max-sources 20 --output",
+                      workflow.read_text(encoding="utf-8"))
+
     def test_piste_officielle_nest_jamais_approuvee(self):
         candidate = tour.event_candidate(RAW, SOURCE, "Resolve", CATALOG, DAY)
         self.assertEqual(candidate["date"], "2027-02-01")
