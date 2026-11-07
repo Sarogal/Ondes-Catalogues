@@ -264,10 +264,19 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                    "agenda_officiel_backstage_detail",
                    "agenda_officiel_atabal_detail") and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
-    eligible = [i for i in candidates if
-                (i["candidate"].get("sourceUrl"), i["candidate"].get("date"))
-                not in approved_pairs]
-    already_approved_skipped = len(candidates) - len(eligible)
+    unapproved = [i for i in candidates if
+                  (i["candidate"].get("sourceUrl"), i["candidate"].get("date"))
+                  not in approved_pairs]
+    already_approved_skipped = len(candidates) - len(unapproved)
+    # Conserver les dates passées dans l'historique privé sans refaire de réseau.
+    # Un format invalide continue d'être inspecté et retenu, jamais ignoré.
+    def is_expired(row):
+        try:
+            return dt.date.fromisoformat(row["candidate"].get("date")) < today
+        except (TypeError, ValueError):
+            return False
+    expired_skipped = sum(is_expired(i) for i in unapproved)
+    eligible = [i for i in unapproved if not is_expired(i)]
     eligible.sort(key=lambda x: x["candidate"].get("candidateId", ""))
     # Rotation ensures every eligible candidate gets checked over successive days.
     offset = (today.toordinal() * limit) % len(eligible) if eligible else 0
@@ -294,6 +303,7 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                             "reason": str(ex)[:180]})
     return out, {"evaluated": len(chosen), "totalEligible": len(eligible),
                  "alreadyApprovedSkipped": already_approved_skipped,
+                 "expiredSkipped": expired_skipped,
                  "newApprovals": new, "held": [r for r in results if r["status"] == "held"],
                  "results": results}
 
