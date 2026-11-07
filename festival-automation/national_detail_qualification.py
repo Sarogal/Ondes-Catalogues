@@ -210,7 +210,7 @@ def _inspect_detail(html, source, today):
     return {
         "dossier_id": source["dossier_id"],
         "candidate_url": source["url"], "index_url": source["index_url"],
-        "index_page": source["index_page"],
+        "index_page": source.get("index_page", source["index_url"]),
         "name_hint": source["title"], "edition_year_hint": source["year"],
         "observed_at": today, "name_seen": name_seen,
         "edition_year_near_name": year_near_name,
@@ -230,7 +230,7 @@ def _valid_observation(source, row, today):
     if (not isinstance(row, dict) or row.get("dossier_id") != source["dossier_id"]
             or row.get("candidate_url") != source["url"]
             or row.get("index_url") != source["index_url"]
-            or row.get("index_page") != source["index_page"]
+            or row.get("index_page", row.get("index_url")) != source.get("index_page", source["index_url"])
             or row.get("name_hint") != source["title"]
             or row.get("edition_year_hint") != source["year"]
             or row.get("status") not in (
