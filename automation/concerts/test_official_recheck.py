@@ -174,6 +174,50 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(report["evaluated"], 0)
         self.assertEqual(result, approvals)
 
+    def test_dates_passees_ne_mobilisent_plus_de_reverification(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
+        expired = record()
+        expired["candidateId"] = "rex:expired"
+        expired["date"] = "2026-10-31"
+        future = record()
+        registry = {"items": {
+            "expired": {"candidate": expired, "observations": 3},
+            "future": {"candidate": future, "observations": 3},
+        }}
+        fetched = []
+        def fetch(url, cache):
+            fetched.append(url)
+            return PAGE
+        result, report = v.process(registry, catalogue(), approvals,
+                                   dt.date(2026, 11, 7), fetch=fetch)
+        self.assertEqual(report["expiredSkipped"], 1)
+        self.assertEqual(report["totalEligible"], 1)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(fetched), 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
+        self.assertEqual(result["approvals"][0]["event"]["date"], "2027-05-06")
+        self.assertIn("expired", registry["items"])
+        self.assertEqual(registry["items"]["expired"]["candidate"]["date"],
+                         "2026-10-31")
+
+    def test_date_invalide_est_retenue_pas_passee_sous_silence(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
+        invalid = record()
+        invalid["date"] = "date-illisible"
+        registry = {"items": {"invalid": {"candidate": invalid,
+                                             "observations": 2}}}
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return PAGE
+        result, report = v.process(registry, catalogue(), approvals,
+                                   dt.date(2026, 11, 7), fetch=fetch)
+        self.assertEqual(report["expiredSkipped"], 0)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(report["held"]), 1)
+        self.assertEqual(result, approvals)
+
     def test_two_observations_accept_once_without_mutating_inputs(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         registry = {"items": {"x": {"candidate": record(), "observations": 2}}}
