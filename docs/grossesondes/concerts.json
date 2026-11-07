@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-06",
+  "updatedAt": "2026-11-07",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -13934,6 +13934,124 @@
       "history": [
         {
           "date": "2026-11-06",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261121-penmarch-the-stranglers",
+      "title": "The Stranglers",
+      "date": "2026-11-21",
+      "artistIds": [
+        "the-stranglers"
+      ],
+      "venueId": "salle-cap-caval-penmarch",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.cap-caval.fr/evenements/the-stranglers-2/",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Salle Cap Caval",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-07",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-aix-the-stranglers",
+      "title": "The Stranglers",
+      "date": "2026-11-28",
+      "artistIds": [
+        "the-stranglers"
+      ],
+      "venueId": "6mic-aix-en-provence",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.6mic-aix.fr/evenements/the-stranglers/",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "6MIC",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-07",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261130-villeurbanne-the-stranglers",
+      "title": "The Stranglers + Brother Junior",
+      "date": "2026-11-30",
+      "artistIds": [
+        "the-stranglers",
+        "brother-junior"
+      ],
+      "venueId": "le-transbordeur-villeurbanne",
+      "genres": [
+        "Punk Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.transbordeur.fr/evenement/the-stranglers-brother-junior-30112026/",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Mediatone",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-07",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-vaureal-the-stranglers",
+      "title": "The Stranglers + Brother Junior",
+      "date": "2026-12-03",
+      "artistIds": [
+        "the-stranglers",
+        "brother-junior"
+      ],
+      "venueId": "le-forum-vaureal",
+      "genres": [
+        "Rock Alternatif"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://leforum.cergypontoise.fr/agenda/thestranglers",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Forum",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-06",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-07",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
