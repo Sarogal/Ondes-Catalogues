@@ -60,3 +60,51 @@ L'intégration visuelle nécessite de modifier cette carte pour charger
 pas se faire en falsifiant des événements dans `sorties.json`.
 Tant que le code actif de la carte n'a pas été intégré, la fiche est
 disponible sur GitHub Pages mais pas encore visible sur la carte du site.
+
+
+## Veille des programmations officielles (pilote, novembre 2026)
+
+Les lieux permanents et leurs rendez-vous datés restent **deux objets distincts**.
+Le moteur public `scripts/ptitesondes_place_agenda_watch.py` suit des URLs
+officielles exactes décrites dans
+`scripts/ptitesondes_place_agenda_sources.json`, sans parcourir librement
+les liens, sans suivre de redirection et sans publier de données.
+
+La surveillance est branchée dans le cycle **Lieux** du pont existant
+`.github/workflows/ptitesondes-private-intake-on-public-runners.yml`,
+à **21:37 UTC** (22:37 en hiver, 23:37 en été en France), sous réserve
+que GitHub exécute effectivement le cron. Elle ne crée aucun déclencheur
+ni runner privé supplémentaire.
+
+Le pilote recense cinq pages officielles liées à quatre lieux :
+- mille formes Montpellier : programme de la Ville et agenda de saison ;
+- médiathèque Pourquoi pas ? à Toulouse : page institutionnelle ;
+- Totems à Pacé : page municipale ;
+- ludothèque Bellevue à Nantes : page de l'organisme public familial.
+
+Les trois dernières sont des **pages de lieu**, pas encore des agendas
+événementiels directs : leur surveillance détecte des modifications mais
+ne justifie aucune séance. Les pages marseillaises connues renvoient
+actuellement un squelette demandant JavaScript au lecteur automatisé :
+il faut trouver une programmation officielle directement accessible
+avant de pouvoir en surveiller les événements.
+
+La sortie du moteur va **exclusivement** dans la branche privée
+`Sarogal/PtitesOndes:automation/ptitesondes-intake` :
+- `automation-intake/ptitesondes/lieux-agenda-watch.json` :
+  empreintes des contenus lisibles ;
+- `automation-intake/ptitesondes/lieux-agenda-candidates.json` :
+  changements et pistes de séances à requalifier.
+
+Même si une page annonce un atelier, une séance n'est admise comme
+*piste* que lorsqu'un objet JSON-LD Event indique clairement un horaire,
+une date, le lieu exact et une URL officielle. Les dates d'ouverture,
+plages de saisons, horaires récurrents, pages sans preuve et indices
+douteux ne génèrent **jamais** d'événements. La vérification indépendante
+d'une séance, des âges, de son lieu et d'éventuelles annulations reste
+obligatoire avant toute future publication dans `sorties.json`.
+
+**État fonctionnel :** surveillance et signalement des changements ;
+l'injection automatisée des pistes d'agenda dans la prévalidation
+indépendante des événements reste une étape ultérieure. Ne pas présenter
+ce pilote comme une publication automatique déjà opérationnelle.
