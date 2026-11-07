@@ -1,6 +1,6 @@
 {
   "schema": "ptitesondes.place_agenda_watch.v1",
-  "notes": "Pages exactes contrôlées le 7 novembre 2026. Trois agendas/pages de programmation identifiés à Montpellier, Pacé et Toulouse; trois pages institutionnelles simples restent des pistes. Les bibliothèques marseillaises demandent un calendrier officiel lisible sans JavaScript. Aucune publication.",
+  "notes": "Pages institutionnelles exactes suivies; saison mille formes utilisée pour surveiller les annonces de saison, jamais générer des séances quotidiennes. Seuls les extraits datés de programmes approuvés produisent des pistes privées. Les pages JS marseillaises restent en attente d'une source fiable.",
   "sources": [
     {
       "id": "montpellier-mille-formes-programme",
@@ -15,8 +15,8 @@
     {
       "id": "montpellier-mille-formes-saison",
       "place_id": "montpellier-mille-formes",
-      "url": "https://agenda.montpellier.fr/event/110467/mille-formes-saison-2-montpellier",
-      "kind": "programme",
+      "url": "https://agenda.montpellier.fr/en/event/110467/mille-formes-saison-2-montpellier",
+      "kind": "venue-page",
       "identity": "MILLE FORMES",
       "venue_aliases": [
         "mille formes"
