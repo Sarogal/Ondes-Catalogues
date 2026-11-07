@@ -425,9 +425,10 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
         # Reject altered state before it can reach national qualification.
         source_page = record.get("source_page", origin)
         if source_page != origin:
+            if canonical_page_url(source_page, origin, permitted_url) != source_page:
+                continue
             entry = pages.get(source_page)
-            if (canonical_page_url(source_page, origin, permitted_url) != source_page
-                    or not isinstance(entry, dict)
+            if (not isinstance(entry, dict)
                     or entry.get("candidate_url") != source_page
                     or entry.get("source_index") != origin
                     or entry.get("publication_authorized") is not False
