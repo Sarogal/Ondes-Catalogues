@@ -159,6 +159,8 @@ jobs:
           test -s state/automation-intake/ptitesondes/lieux-backlog.json
           test -s public/docs/ptitesondes/sorties.json
           test -s public/docs/ptitesondes/lieux.json
+          test -s public/scripts/ptitesondes_place_agenda_watch.py
+          test -s public/scripts/ptitesondes_place_agenda_sources.json
           mkdir -p "$RUNNER_TEMP/ptitesondes-private-logs" "$RUNNER_TEMP/ptitesondes-outings" "$RUNNER_TEMP/ptitesondes-verified" "$RUNNER_TEMP/ptitesondes-lieux"
 
       - name: Tester la logique privée sélectionnée hors réseau
@@ -182,6 +184,10 @@ jobs:
                 exit 1
               fi
             done
+            if ! python -m unittest discover -s public/tests -p 'test_ptitesondes_place_agenda_watch.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-venue-agendas.log" 2>&1; then
+              echo "::error::Tests de surveillance des programmes de lieux échoués ; aucune collecte."
+              exit 1
+            fi
           fi
 
       - name: Collecter les sorties et effectuer une vérification indépendante
@@ -273,6 +279,20 @@ jobs:
             echo "::error::Contrôle de sécurité des lieux échoué."
             exit 1
           fi
+          # Calendriers officiels : empreintes et indices structurés conservés
+          # dans la branche PRIVÉE uniquement. Un échec de site n'interrompt
+          # jamais la recherche nationale de lieux.
+          WATCH_OK=0
+          if python public/scripts/ptitesondes_place_agenda_watch.py \
+              --sources public/scripts/ptitesondes_place_agenda_sources.json \
+              --catalogue public/docs/ptitesondes/lieux.json \
+              --existing "$STATE/lieux-agenda-watch.json" \
+              --output "$OUT/lieux-agenda-watch.json" \
+              --report "$OUT/lieux-agenda-candidates.json" > "$LOG/lieux-agenda-watch.log" 2>&1; then
+            WATCH_OK=1
+          else
+            echo "::warning::Surveillance des programmes indisponible ; aucune piste promue."
+          fi
           if [[ "$RUN_MODE" == "write" ]]; then
             for f in lieux-backlog.json lieux-qualification.json lieux-current-municipal-audit.json lieux-osm-poi-triage.json lieux-official-proof.json lieux-release-review.json; do
               test -s "$OUT/$f"
@@ -281,6 +301,11 @@ jobs:
             git -C state config user.name 'github-actions[bot]'
             git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git -C state add -- automation-intake/ptitesondes/lieux-backlog.json automation-intake/ptitesondes/lieux-qualification.json automation-intake/ptitesondes/lieux-current-municipal-audit.json automation-intake/ptitesondes/lieux-osm-poi-triage.json automation-intake/ptitesondes/lieux-official-proof.json automation-intake/ptitesondes/lieux-release-review.json
+            if [[ "$WATCH_OK" == 1 ]]; then
+              cp "$OUT/lieux-agenda-watch.json" "$STATE/lieux-agenda-watch.json"
+              cp "$OUT/lieux-agenda-candidates.json" "$STATE/lieux-agenda-candidates.json"
+              git -C state add -- automation-intake/ptitesondes/lieux-agenda-watch.json automation-intake/ptitesondes/lieux-agenda-candidates.json
+            fi
             if ! git -C state diff --cached --quiet; then
               git -C state commit -m 'data(ptitesondes): lieux nationaux depuis runner public' > "$LOG/git-lieux-commit.log" 2>&1
               AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
