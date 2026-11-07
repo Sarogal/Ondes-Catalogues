@@ -125,12 +125,15 @@ def find_index_hints(index_url, html, today):
 
 
 def child_age_proven(body):
-    return bool(
-        re.search(r"\b\d{1,2}\s+mois\s+a\s+\d{1,2}\s+ans\b", body)
-        or re.search(r"\b(?:a partir de|des)\s+\d{1,2}\s+ans\b", body)
-        or re.search(r"\bde\s+\d{1,2}(?:\s+ans?)?\s+a\s+\d{1,2}\s+ans\b", body)
-        or re.search(r"\benfants?\s+(?:de|a partir de)\s+\d{1,2}\s+ans\b", body)
-    )
+    """Ages actually stated in the detailed event, never generic venue ages."""
+    months = re.search(r"\b(\d{1,2})\s+mois\s+a\s+(\d{1,2})\s+ans\b", body)
+    if months and 0 < int(months.group(1)) <= 24 and 0 < int(months.group(2)) <= 12:
+        return True
+    ranged = re.search(r"\bde\s+(\d{1,2})(?:\s+ans?)?\s+a\s+(\d{1,2})\s+ans\b", body)
+    if ranged and 0 <= int(ranged.group(1)) <= int(ranged.group(2)) <= 12:
+        return True
+    minimum = re.search(r"\b(?:a partir de|des|enfants?\s+(?:de|a partir de))\s+(\d{1,2})\s+ans\b", body)
+    return bool(minimum and 0 <= int(minimum.group(1)) <= 12)
 
 
 def detail_candidates(source, detail_url_value, html, today):
