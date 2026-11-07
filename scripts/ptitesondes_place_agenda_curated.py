@@ -152,7 +152,7 @@ def montpellier_leads(source, html, today):
             continue
         full = norm(" ".join(section))
         # Enforce a child-specific audience in this exact event section.
-        if not re.search(r"\bde\s+\d{1,2}\s+a\s+\d{1,2}\s+ans\b", full) and (
+        if not re.search(r"\bde\s+\d{1,2}(?:\s+ans?)?\s+a\s+\d{1,2}\s+ans\b", full) and (
                 "enfant qui vient de naitre" not in full):
             continue
         if any(bad in full for bad in ("chants prenataux", "pour les adultes et l enfant a venir",
