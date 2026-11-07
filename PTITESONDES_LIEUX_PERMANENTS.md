@@ -136,3 +136,27 @@ l'analyse indépendante de l'index OpenAgenda et de la page officielle,
 ni la recherche de prochains programmes sur de nouvelles URLs. Les
 événements de Totems nécessitent encore la lecture et le contrôle de leurs
 fiches détaillées avant d'être traités comme des séances pour enfants.
+
+
+## Totems (Pacé) : depuis l'agenda général jusqu'à la fiche détaillée
+
+Le collecteur `scripts/ptitesondes_place_agenda_pace.py` est appelé par
+le cycle Lieux existant pour la source municipale approuvée
+`https://www.ville-pace.bzh/mes-loisirs/agenda/` :
+1. repérer uniquement des titres indicateurs d'activités pour enfants ;
+2. restreindre strictement chaque URL candidate à une fiche
+   `https://www.ville-pace.bzh/evenement/…/`, sans query, fragment,
+   sous-domaine externe, redirection, port spécial, etc. ;
+3. consulter un **maximum de six** fiches par passage, par rotation
+   déterministe pour couvrir davantage de fiches au fil des jours ;
+4. n'ajouter une piste que si la fiche individuelle indique le lieu Totems
+   et son adresse exacte, une année/jour/mois cohérents, des horaires
+   explicites et une tranche d'âge pour enfants, en excluant les fiches
+   périmées, annulées, reportées, complètes ou destinées aux adultes.
+
+Une même URL peut être réutilisée par l'organisateur pour plusieurs
+éditions : les dates de l'index ne prouvent **jamais** les dates des
+séances. Les fiches extraites sont des candidats privés non publiables,
+et sont toujours soumises à la prévalidation indépendante avant
+toute modification de la carte. Aucun nouveau déclencheur GitHub Actions
+n'est ajouté.

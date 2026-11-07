@@ -243,6 +243,12 @@ def run_watch(registry, catalogue, previous=None, getter=fetch, today=None):
                 # explicitly reviewed adapters; each lead remains private.
                 from ptitesondes_place_agenda_curated import curated_leads
                 leads.extend(curated_leads(source, html, today))
+                # Strictly bounded first-party drilldown for Totems only.
+                # Detail URLs are discovered on the official municipality
+                # index, but never trusted until their individual date,
+                # place, age and time match on the detail itself.
+                from ptitesondes_place_agenda_pace import pace_agenda_leads
+                leads.extend(pace_agenda_leads(source, html, today, getter))
         except (OSError, HTTPError, ValueError, UnicodeError) as error:
             record["status"] = "source_unavailable"
             record["reason"] = type(error).__name__
