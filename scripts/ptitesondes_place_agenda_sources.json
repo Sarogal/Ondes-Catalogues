@@ -1,0 +1,56 @@
+{
+  "schema": "ptitesondes.place_agenda_watch.v1",
+  "notes": "Listes exactes de pages publiques contrôlées le 7 novembre 2026. Une page de lieu n'est PAS à elle seule un agenda. Les pistes datées sont privées et non publiables. Les deux bibliothèques marseillaises demandent des pages d'agenda lisibles sans JavaScript avant activation.",
+  "sources": [
+    {
+      "id": "montpellier-mille-formes-programme",
+      "place_id": "montpellier-mille-formes",
+      "url": "https://www.montpellier.fr/vie-quotidienne/vivre-ici/se-cultiver/jeune-public/mille-formes-centre-dart-pour-les-0-6-ans",
+      "kind": "programme",
+      "identity": "mille formes",
+      "venue_aliases": [
+        "mille formes"
+      ]
+    },
+    {
+      "id": "montpellier-mille-formes-saison",
+      "place_id": "montpellier-mille-formes",
+      "url": "https://agenda.montpellier.fr/event/110467/mille-formes-saison-2-montpellier",
+      "kind": "programme",
+      "identity": "MILLE FORMES",
+      "venue_aliases": [
+        "mille formes"
+      ]
+    },
+    {
+      "id": "toulouse-pourquoi-pas-page",
+      "place_id": "toulouse-museum-mediatheque-pourquoi-pas",
+      "url": "https://museum.toulouse-metropole.fr/bibliotheque-2/mediatheque-jeunesse-pourquoi-pas/",
+      "kind": "venue-page",
+      "identity": "médiathèque jeunesse Pourquoi pas",
+      "venue_aliases": [
+        "médiathèque jeunesse Pourquoi pas"
+      ]
+    },
+    {
+      "id": "pace-totems-page",
+      "place_id": "pace-totems",
+      "url": "https://www.ville-pace.bzh/mes-loisirs/culture/mediatheque/",
+      "kind": "venue-page",
+      "identity": "Totems",
+      "venue_aliases": [
+        "Totems"
+      ]
+    },
+    {
+      "id": "nantes-bellevue-page",
+      "place_id": "nantes-ludotheque-bellevue",
+      "url": "https://parents.loire-atlantique.fr/44/centre-socioculturel-de-bellevue-meta-accoord/parents_10602",
+      "kind": "venue-page",
+      "identity": "Ludothèque Bellevue",
+      "venue_aliases": [
+        "Ludothèque Bellevue"
+      ]
+    }
+  ]
+}
