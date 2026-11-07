@@ -420,7 +420,21 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
             continue
         if not timedelta(0) <= age <= timedelta(days=MAX_AGE):
             continue
-        cleaned[url] = dict(record, candidate_url=url,
+        # A persisted page may only be a pre-approved root or one of the
+        # canonical 1..6 pages previously recorded in the bounded queue.
+        # Reject altered state before it can reach national qualification.
+        source_page = record.get("source_page", origin)
+        if source_page != origin:
+            if canonical_page_url(source_page, origin, permitted_url) != source_page:
+                continue
+            entry = pages.get(source_page)
+            if (not isinstance(entry, dict)
+                    or entry.get("candidate_url") != source_page
+                    or entry.get("source_index") != origin
+                    or entry.get("publication_authorized") is not False
+                    or entry.get("status") != "UNVERIFIED_INDEX_PAGE"):
+                continue
+        cleaned[url] = dict(record, candidate_url=url, source_page=source_page,
                             publication_authorized=False)
     pending.clear()
     pending.update(dict(list(cleaned.items())[-MAX_PENDING:]))
@@ -494,6 +508,9 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
                 record = {
                     "candidate_url": url, "title": match["title"],
                     "source_index": origin, "region": region,
+                    # Preserve where this link was actually seen. An index
+                    # root cannot stand in for page=2/3 during next-day review.
+                    "source_page": source_url,
                     "firstSeen": old["firstSeen"] if old else today,
                     "lastSeen": today, "status": "UNVERIFIED_THEME_LINK",
                     "discovery_signal": match["signal"],
