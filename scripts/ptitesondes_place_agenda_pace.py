@@ -162,7 +162,7 @@ def detail_candidates(source, detail_url_value, html, today):
     month_words = "|".join(MONTHS)
     official = re.search(
         r"\ble\s+(\d{1,2})\s+(" + month_words + r")\s+(20\d{2})"
-        r"\s+(\d{1,2})\s+([0-5]\d)\b", body)
+        r"\s+(\d{1,2})\s+([0-5]\d)\s+(\d{1,2})\s+([0-5]\d)\b", body)
     if not official:
         return []
     d, month, year = int(official.group(1)), MONTHS.index(official.group(2)) + 1, int(official.group(3))
@@ -187,7 +187,8 @@ def detail_candidates(source, detail_url_value, html, today):
     if not sessions:
         return []
     listed_start = time_value(official.group(4), official.group(5))
-    if listed_start != sessions[0]:
+    listed_end = time_value(official.group(6), official.group(7))
+    if listed_end <= listed_start or listed_start != sessions[0]:
         return []
     result = []
     for clock in sessions[:3]:
