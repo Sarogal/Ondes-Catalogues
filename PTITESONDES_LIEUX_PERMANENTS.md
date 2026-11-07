@@ -76,14 +76,15 @@ La surveillance est branchée dans le cycle **Lieux** du pont existant
 que GitHub exécute effectivement le cron. Elle ne crée aucun déclencheur
 ni runner privé supplémentaire.
 
-Le pilote recense cinq pages officielles liées à quatre lieux :
+Le pilote recense sept pages officielles liées à quatre lieux :
 - mille formes Montpellier : programme de la Ville et agenda de saison ;
-- médiathèque Pourquoi pas ? à Toulouse : page institutionnelle ;
-- Totems à Pacé : page municipale ;
+- médiathèque Pourquoi pas ? à Toulouse : page institutionnelle et
+  programmation officielle des « Bébés explorateurs » ;
+- Totems à Pacé : page municipale et véritable agenda de la ville ;
 - ludothèque Bellevue à Nantes : page de l'organisme public familial.
 
-Les trois dernières sont des **pages de lieu**, pas encore des agendas
-événementiels directs : leur surveillance détecte des modifications mais
+Les pages institutionnelles des trois dernières villes sont des
+**pages de lieu**, pas des agendas événementiels directs : leur surveillance détecte des modifications mais
 ne justifie aucune séance. Les pages marseillaises connues renvoient
 actuellement un squelette demandant JavaScript au lecteur automatisé :
 il faut trouver une programmation officielle directement accessible
