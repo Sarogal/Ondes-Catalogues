@@ -27,7 +27,43 @@ PROGRAMS = {
         "category": "conte-musical", "rule": "feb-2027-animal",
         "age": "conseille de 3 a 10 ans",
     },
+    # Exact OpenAgenda canonical URLs independently corroborated by the
+    # first-party public family programme of Opéra National de Bordeaux.
+    "https://openagenda.com/ville-de-bordeaux/events/momo-lenfant-peche-3216479": {
+        "organizer_url": "https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301",
+        "official_title": "Momo, l'enfant pêche",
+        "city": "Bordeaux", "venue": "Auditorium de Bordeaux",
+        "official_venue_label": "Auditorium",
+        "category": "conte-musical", "category_label": "Conte musical",
+        "rule": "bordeaux-momo-2027", "age": "a partir de 6 ans",
+        "uid": "54065371", "reviewed_family_category": True,
+    },
+    "https://openagenda.com/ville-de-bordeaux/events/les-droles-de-petites-betes-8323158": {
+        "organizer_url": "https://www.opera-bordeaux.com/famille-orchestre-les-droles-de-petites-betes-86441",
+        "official_title": "Les Drôles de petites bêtes",
+        "city": "Bordeaux", "venue": "Auditorium de Bordeaux",
+        "official_venue_label": "Auditorium",
+        "category": "cine-concert", "category_label": "Ciné-concert",
+        "rule": "bordeaux-droles-2027", "age": "a partir de 4 ans",
+        "uid": "66367832", "reviewed_family_category": True,
+    },
 }
+
+
+def reviewed_family_category(uid, canonical_url, title, city, venue):
+    """Classify only an exact source-backed work, never approve its session.
+
+    The independent organizer schedule remains mandatory in verify_event.
+    """
+    info = PROGRAMS.get(canonical_url)
+    if (not info or not info.get("reviewed_family_category") or
+            str(uid) != info.get("uid") or
+            norm(title) != norm(info["official_title"]) or
+            norm(city) != norm(info["city"]) or
+            norm(venue) != norm(info["venue"])):
+        return None
+    return info["category"], info["category_label"]
+
 
 def organizer_url(event):
     """Only exact, reviewed source URLs with matching venue/title are eligible."""
@@ -66,7 +102,7 @@ def reviewed_schedule(event, heading, text):
     expected = norm(info["official_title"])
     if expected not in head:
         return False, "titre du spectacle absent de la page organisateur"
-    if norm(info["venue"]) not in body or norm(info["city"]) not in body:
+    if norm(info.get("official_venue_label", info["venue"])) not in body or norm(info["city"]) not in body:
         return False, "ville ou lieu non confirmé par l'organisateur"
     if info["age"] not in body or "enfant" not in body:
         return False, "destination jeune public non prouvée"
@@ -81,7 +117,24 @@ def reviewed_schedule(event, heading, text):
     time = event.get("time")
     if not isinstance(time, str) or not re.fullmatch(r"\d{2}:\d{2}", time):
         return False, "heure de séance ambiguë"
-    if info["rule"] == "jan-2027-chat":
+    if info["rule"] == "bordeaux-momo-2027":
+        if (day, time) not in {
+                (date(2027, 1, 21), "19:00"),
+                (date(2027, 1, 22), "19:00")}:
+            return False, "séance familiale bordelaise absente du programme"
+        if "famille conte musical a partir de 6 ans" not in body:
+            return False, "destination jeune public non confirmée"
+        if f" {day.day} jan 2027 a 19h00 " not in " " + body + " ":
+            return False, "séance et heure officielles non confirmées"
+    elif info["rule"] == "bordeaux-droles-2027":
+        # The 28/01 and 29/01 sessions at 14:30 are reserved for schools.
+        if (day, time) != (date(2027, 1, 29), "19:00"):
+            return False, "séance uniquement scolaire ou réservée"
+        if ("famille concert illustre a partir de 4 ans" not in body or
+                "cine concert" not in body or
+                " 29 jan 2027 a 19h00 " not in " " + body + " "):
+            return False, "séance familiale bordelaise non confirmée"
+    elif info["rule"] == "jan-2027-chat":
         if day not in (date(2027, 1, 13), date(2027, 1, 14),
                        date(2027, 1, 20)):
             return False, "séance de janvier absente du programme homologué"

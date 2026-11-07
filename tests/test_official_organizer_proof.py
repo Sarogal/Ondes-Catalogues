@@ -6,7 +6,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from official_organizer_proof import PROGRAMS, organizer_url, reviewed_schedule
+from official_organizer_proof import PROGRAMS, organizer_url, reviewed_schedule, reviewed_family_category
 from proof_text import verify_event
 from ptitesondes_candidate_promotion import evaluate
 from merge_policy import merge
@@ -32,6 +32,41 @@ FEB_PAGE = """<html><head><title>UN ANIMAL, DES AMIS MOTS</title></head>
 <p>LES MERCREDIS À 14H30</p><p>LES DIMANCHES À 15H</p>
 <p>Du 10 au 17 février 2027</p></html>"""
 
+BORDEAUX_MOMO_URL = "https://openagenda.com/ville-de-bordeaux/events/momo-lenfant-peche-3216479"
+BORDEAUX_DROLES_URL = "https://openagenda.com/ville-de-bordeaux/events/les-droles-de-petites-betes-8323158"
+BORDEAUX_MOMO_HTML = """<html><head><title>Momo, l'enfant pêche - Opéra National de Bordeaux</title></head>
+<h1>Momo, l'enfant pêche</h1><p>Auditorium - Opéra National de Bordeaux</p>
+<p>Famille | Conte musical à partir de 6 ans</p><p>21 Jan 2027 à 19H00</p>
+<p>22 Jan 2027 à 14H30 Séance pour les scolaires</p><p>22 Jan 2027 à 19H00</p>
+<p>Accueil enfants, réservation obligatoire</p></html>"""
+BORDEAUX_DROLES_HTML = """<html><head><title>Les Drôles de petites bêtes - Opéra National de Bordeaux</title></head>
+<h1>Les Drôles de petites bêtes</h1><p>Auditorium - Opéra National de Bordeaux</p>
+<p>Famille | Concert illustré à partir de 4 ans. Un ciné-concert pour les enfants.</p>
+<p>28 Jan 2027 à 14H30 Séance pour les scolaires + Séance détente</p>
+<p>29 Jan 2027 à 14H30 Séance pour les scolaires</p>
+<p>29 Jan 2027 à 19H00 Je réserve</p></html>"""
+
+
+def bordeaux_event(url=BORDEAUX_MOMO_URL, day="2027-01-22", hour="19:00"):
+    momo = url == BORDEAUX_MOMO_URL
+    return {
+        "title": "Momo, l'enfant pêche" if momo else "Les Drôles de petites bêtes",
+        "source_url": url, "category": "conte-musical" if momo else "cine-concert",
+        "city": "Bordeaux", "venue": "Auditorium de Bordeaux",
+        "lat": 44.8421883, "lng": -0.5801358,
+        "date_start": day, "date_end": day, "time": hour,
+    }
+
+
+def bordeaux_mock_source(url):
+    if url in (BORDEAUX_MOMO_URL, BORDEAUX_DROLES_URL):
+        return OA_SHELL, ""
+    if url == PROGRAMS[BORDEAUX_MOMO_URL]["organizer_url"]:
+        return BORDEAUX_MOMO_HTML, ""
+    if url == PROGRAMS[BORDEAUX_DROLES_URL]["organizer_url"]:
+        return BORDEAUX_DROLES_HTML, ""
+    return None, "not a pinned organizer"
+
 
 def event(day="2027-01-13", time="14:30", feb=False):
     return {
@@ -55,6 +90,59 @@ def evidence(url):
 
 
 class ApprovedOrganizerTests(unittest.TestCase):
+    def test_pinned_bordeaux_family_programme_verifies_only_bookable_times(self):
+        for event in (
+            bordeaux_event(), bordeaux_event(day="2027-01-21"),
+            bordeaux_event(BORDEAUX_DROLES_URL, "2027-01-29", "19:00"),
+        ):
+            with self.subTest(event=event):
+                with patch("proof_text.read", side_effect=bordeaux_mock_source) as fetched:
+                    good, reason = verify_event(event, [])
+                self.assertTrue(good, reason)
+                self.assertEqual(fetched.call_count, 2)
+        for blocked in (
+            bordeaux_event(day="2027-01-22", hour="14:30"),
+            bordeaux_event(day="2027-01-23"),
+            bordeaux_event(BORDEAUX_DROLES_URL, "2027-01-28", "14:30"),
+            bordeaux_event(BORDEAUX_DROLES_URL, "2027-01-29", "14:30"),
+            bordeaux_event(BORDEAUX_DROLES_URL, "2027-01-29", "20:00"),
+        ):
+            with self.subTest(blocked=blocked):
+                with patch("proof_text.read", side_effect=bordeaux_mock_source):
+                    self.assertFalse(verify_event(blocked, [])[0])
+
+    def test_bordeaux_source_missing_title_age_venue_date_fails_closed(self):
+        for body in (
+            BORDEAUX_MOMO_HTML.replace("22 Jan 2027 à 19H00", ""),
+            BORDEAUX_MOMO_HTML.replace("à partir de 6 ans", "pour les adultes"),
+            BORDEAUX_MOMO_HTML.replace("Auditorium", "Salle imaginaire"),
+            BORDEAUX_MOMO_HTML.replace("2027", "2026"),
+            BORDEAUX_MOMO_HTML + "<p>Annulé</p>",
+        ):
+            with self.subTest(body=body[:100]):
+                def source(url, html=body):
+                    if url == PROGRAMS[BORDEAUX_MOMO_URL]["organizer_url"]:
+                        return html, ""
+                    return OA_SHELL, ""
+                with patch("proof_text.read", side_effect=source):
+                    self.assertFalse(verify_event(bordeaux_event(), [])[0])
+        self.assertIsNone(organizer_url(dict(bordeaux_event(), source_url=BORDEAUX_MOMO_URL+"?q=1")))
+        self.assertIsNone(organizer_url(dict(bordeaux_event(), venue="Lieu inconnu")))
+        self.assertIsNone(organizer_url(dict(bordeaux_event(), category="concert")))
+
+    def test_pinned_bordeaux_family_category_requires_exact_identity(self):
+        args=("54065371", BORDEAUX_MOMO_URL, "Momo, l'enfant pêche",
+              "Bordeaux", "Auditorium de Bordeaux")
+        self.assertEqual(reviewed_family_category(*args), ("conte-musical", "Conte musical"))
+        for wrong in (
+            ("wrong-uid", *args[1:]),
+            (args[0], BORDEAUX_MOMO_URL+"?redirect=1", *args[2:]),
+            (args[0], args[1], "Autre titre", args[3], args[4]),
+            (args[0], args[1], args[2], "Paris", args[4]),
+            (args[0], args[1], args[2], args[3], "Autre salle"),
+        ):
+            self.assertIsNone(reviewed_family_category(*wrong))
+
     def test_exact_approved_official_sources_only(self):
         self.assertEqual(organizer_url(event()), PROGRAMS[JAN_URL]["organizer_url"])
         self.assertIsNone(organizer_url(dict(event(), source_url=JAN_URL + "?x=1")))
