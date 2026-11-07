@@ -17,7 +17,8 @@ from zoneinfo import ZoneInfo
 from curated_future_lead_watch import visible_text
 from national_discovery_queue import _identity, _recent, _safe_origin_link
 from national_structured_clues import detail_event_clues, valid_clues
-from official_watch import get_page
+from official_watch import get_page, permitted_url
+from regional_agenda_pagination import canonical_page_url
 from regional_festival_discovery import (
     APPROVED, RegionalEventAnchors, municipal_event_title,
 )
@@ -46,6 +47,39 @@ def _safe_queue(queue, today):
             or len(queue["dossiers"]) > MAX_DOSSIERS):
         raise ValueError("file nationale invalide")
     return queue["dossiers"]
+
+
+def _review_index_page(state, row, origin, today):
+    """Return only the exact approved index page observed by the regional scan.
+
+    A private row is never permission to crawl an arbitrary URL. For paginated
+    pages require the canonical approved page=1..6 and the previously persisted
+    successful index-page scan, no later than today or earlier than the lead.
+    Legacy root observations continue to use the curated origin.
+    """
+    page = row.get("source_page", origin)
+    if page == origin:
+        return origin
+    if canonical_page_url(page, origin, permitted_url) != page:
+        return None
+    pending = state.get("regional_festival_page_queue_review_only", {})
+    rec = pending.get(page) if isinstance(pending, dict) else None
+    if (not isinstance(rec, dict)
+            or rec.get("source_index") != origin
+            or rec.get("candidate_url") != page
+            or rec.get("status") != "UNVERIFIED_INDEX_PAGE"
+            or rec.get("publication_authorized") is not False):
+        return None
+    try:
+        checked = date.fromisoformat(rec["lastChecked"])
+        first = date.fromisoformat(rec["firstSeen"])
+        latest_lead = date.fromisoformat(row["lastSeen"])
+        today_date = date.fromisoformat(today)
+    except (KeyError, ValueError, TypeError):
+        return None
+    if not first <= latest_lead <= checked <= today_date:
+        return None
+    return page
 
 
 def _eligible_sources(state, queue, today, due_only=True):
@@ -90,6 +124,9 @@ def _eligible_sources(state, queue, today, due_only=True):
                     or row["firstSeen"] >= today
                     or row["lastSeen"] < (now - timedelta(days=MAX_AGE_DAYS)).isoformat()):
                 continue
+            index_page = _review_index_page(state, row, index, today)
+            if index_page is None:
+                continue
             ident = _identity(row["title"])
             if (ident is None or ident[1] != year
                     or ident[0] != dossier.get("normalized_name")):
@@ -120,6 +157,7 @@ def _eligible_sources(state, queue, today, due_only=True):
             eligible.append((priority, {
                 "dossier_id": dossier["id"], "url": url, "index_url": index,
                 "title": row["title"], "year": year,
+                "index_page": index_page,
             }))
     eligible.sort(key=lambda x: x[0])
     return [source for _, source in eligible]
@@ -147,7 +185,7 @@ def _seen_again(index_html, source):
         if normalized(title) != expected:
             continue
         try:
-            url = urljoin(source["index_url"], href)
+            url = urljoin(source.get("index_page", source["index_url"]), href)
         except (TypeError, ValueError):
             continue
         if url == source["url"] and _safe_origin_link(url, source["index_url"]):
@@ -172,6 +210,7 @@ def _inspect_detail(html, source, today):
     return {
         "dossier_id": source["dossier_id"],
         "candidate_url": source["url"], "index_url": source["index_url"],
+        "index_page": source["index_page"],
         "name_hint": source["title"], "edition_year_hint": source["year"],
         "observed_at": today, "name_seen": name_seen,
         "edition_year_near_name": year_near_name,
@@ -191,6 +230,7 @@ def _valid_observation(source, row, today):
     if (not isinstance(row, dict) or row.get("dossier_id") != source["dossier_id"]
             or row.get("candidate_url") != source["url"]
             or row.get("index_url") != source["index_url"]
+            or row.get("index_page") != source["index_page"]
             or row.get("name_hint") != source["title"]
             or row.get("edition_year_hint") != source["year"]
             or row.get("status") not in (
@@ -241,7 +281,7 @@ def scan(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
         status = "INDEX_UNAVAILABLE"
         observations.pop(url, None)  # Failed rechecks cannot preserve positives.
         try:
-            html = fetch(source["index_url"])
+            html = fetch(source["index_page"])
             if not _seen_again(html, source):
                 status = "INDEX_LINK_NOT_FOUND"
             else:
@@ -258,6 +298,7 @@ def scan(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
         history[url] = {"lastAttempted": today, "status": status}
         outcomes.append({
             "candidate_url": url, "index_url": source["index_url"],
+            "checked_index_page": source["index_page"],
             "dossier_id": source["dossier_id"], "status": status,
             "publication_authorized": False,
         })
