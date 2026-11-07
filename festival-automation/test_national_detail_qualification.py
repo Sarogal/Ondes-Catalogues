@@ -105,6 +105,99 @@ class NationalDetailQualificationTests(unittest.TestCase):
             with self.subTest(html=html):
                 self.assertFalse(_seen_again(html, source))
 
+    def test_festival_discovered_on_page_two_is_rechecked_on_page_two(self):
+        """A page-specific candidate must not be searched on the index root."""
+        origin = "https://sortir.limoges.fr/agenda?keys=festival"
+        page = origin + "&page=2"
+        url = "https://sortir.limoges.fr/agenda/metal-fest-2027"
+        title = "Metal Fest 2027"
+        state, _ = self.data(title=title, url=url)
+        row = state["regional_festival_candidates_review_only"][url]
+        row["source_index"] = origin
+        row["region"] = "Nouvelle-Aquitaine"
+        row["source_page"] = page
+        row["lastSeen"] = YESTERDAY
+        state["regional_festival_page_queue_review_only"] = {
+            page: {
+                "candidate_url": page, "source_index": origin,
+                "firstSeen": "2026-11-04", "lastSeen": YESTERDAY,
+                "lastChecked": YESTERDAY, "lastAttempted": YESTERDAY,
+                "status": "UNVERIFIED_INDEX_PAGE",
+                "publication_authorized": False,
+            },
+        }
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": []}
+        queue = build_queue(state, report, [], TODAY)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        seen = []
+        def fetch(target):
+            seen.append(target)
+            if target == page:
+                return '<main><a href="/agenda/metal-fest-2027">Metal Fest 2027</a></main>'
+            if target == url:
+                return ('<main><h1>Metal Fest 2027</h1>'
+                        '<p>Festival de metal 2027, programmation en préparation.</p></main>')
+            raise AssertionError("Unapproved or unrelated URL fetched: " + target)
+        outcomes = scan(state, queue, TODAY, fetch=fetch)
+        self.assertEqual(seen, [page, url])
+        self.assertEqual(outcomes[0]["checked_index_page"], page)
+        self.assertEqual(outcomes[0]["status"], "NAME_YEAR_VISIBLE_REVIEW_ONLY")
+        review = build_review(state, queue, TODAY)
+        self.assertEqual(review["observations_count"], 1)
+        self.assertEqual(review["observations"][0]["index_url"], origin)
+        self.assertEqual(review["observations"][0]["index_page"], page)
+        self.assertFalse(review["observations"][0]["publication_authorized"])
+        self.assertFalse(review["observations"][0]["date_claim_verified"])
+        self.assertEqual(review["publications"], 0)
+
+    def test_forged_paginated_provenance_never_fetches_a_page(self):
+        """Untrusted state may not introduce page=999, a foreign host, or a stale page."""
+        origin = "https://sortir.limoges.fr/agenda?keys=festival"
+        page = origin + "&page=2"
+        url = "https://sortir.limoges.fr/agenda/metal-fest-2027"
+        state, _ = self.data(title="Metal Fest 2027", url=url)
+        row = state["regional_festival_candidates_review_only"][url]
+        row.update({"source_index": origin, "region": "Nouvelle-Aquitaine",
+                    "source_page": page, "lastSeen": YESTERDAY})
+        valid = {"candidate_url": page, "source_index": origin,
+                 "firstSeen": "2026-11-04", "lastSeen": YESTERDAY,
+                 "lastChecked": YESTERDAY, "lastAttempted": YESTERDAY,
+                 "status": "UNVERIFIED_INDEX_PAGE",
+                 "publication_authorized": False}
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": []}
+        for page_override, rec in (
+            (origin + "&page=999", valid),
+            ("https://127.0.0.1/admin", valid),
+            ("https://sortir.limoges.fr.evil.example/agenda?page=2", valid),
+            (origin + "&page=2#malformed", valid),
+            (page, None),
+            (page, dict(valid, status="CONFIRMED")),
+            (page, dict(valid, publication_authorized=True)),
+            (page, dict(valid, source_index="https://agenda.montpellier.fr/")),
+            (page, dict(valid, lastChecked="")),
+            (page, dict(valid, lastChecked="2026-11-04")),
+            (page, dict(valid, lastChecked="2026-11-08")),
+        ):
+            with self.subTest(index=page_override, record=rec):
+                probe = deepcopy(state)
+                probe["regional_festival_candidates_review_only"][url]["source_page"] = page_override
+                probe["regional_festival_page_queue_review_only"] = (
+                    {page_override: rec} if rec is not None else {})
+                queue = build_queue(probe, report, [], TODAY)
+                visited = []
+                scan(probe, queue, TODAY, fetch=lambda target: visited.append(target))
+                self.assertEqual(visited, [])
+        # Legacy index roots remain eligible after the page-specific update.
+        row.pop("source_page")
+        state["regional_festival_page_queue_review_only"] = {}
+        queue = build_queue(state, report, [], TODAY)
+        visited = []
+        scan(state, queue, TODAY,
+             fetch=lambda u: (visited.append(u), "<main>Nothing</main>")[1])
+        self.assertEqual(visited, [origin])
+
     def test_next_day_fresh_index_then_one_detail_and_private_observation(self):
         state, queue = self.data()
         visited = []
