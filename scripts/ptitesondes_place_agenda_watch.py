@@ -238,6 +238,11 @@ def run_watch(registry, catalogue, previous=None, getter=fetch, today=None):
                                 else "official_page_changed"})
             if source["kind"] == "programme":
                 leads.extend(event_leads(html, source, today))
+                # Official institutions frequently publish exact sessions as
+                # dated headings rather than structured JSON-LD. Use only
+                # explicitly reviewed adapters; each lead remains private.
+                from ptitesondes_place_agenda_curated import curated_leads
+                leads.extend(curated_leads(source, html, today))
         except (OSError, HTTPError, ValueError, UnicodeError) as error:
             record["status"] = "source_unavailable"
             record["reason"] = type(error).__name__

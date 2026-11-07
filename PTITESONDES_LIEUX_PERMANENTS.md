@@ -109,3 +109,30 @@ obligatoire avant toute future publication dans `sorties.json`.
 l'injection automatisée des pistes d'agenda dans la prévalidation
 indépendante des événements reste une étape ultérieure. Ne pas présenter
 ce pilote comme une publication automatique déjà opérationnelle.
+
+
+## Extraction de séances institutionnelles (pilote complémentaire)
+
+Le module `scripts/ptitesondes_place_agenda_curated.py` prépare, dans la
+même veille des lieux, des **pistes de séances datées** lorsque les programmes
+officiels contiennent une preuve suffisamment explicite. Il prend en charge
+pour l'instant :
+- le programme détaillé du centre mille formes de Montpellier, par sections
+  datées et public enfant clairement annoncé ;
+- une fiche de la médiathèque jeunesse du Muséum de Toulouse sur les
+  « Bébés explorateurs : formes et matières », avec les dates individuelles
+  et heures corroborées par le calendrier de la fiche.
+
+Les séances sont toujours de simples objets
+`requires_independent_session_proof` conservés en privé ; les fiches
+publiques `sorties.json` restent inchangées. Une activité adulte, des
+heures d'ouverture, un calendrier général, un intitulé sans horaire, une
+séance annulée, une date dépassée ou un événement dans un autre lieu sont
+écartés. La saison complète de mille formes est surveillée comme
+information générale mais non interprétée comme des événements quotidiens.
+
+Ces deux adaptateurs sont des **pilotes bornés** : ils ne remplacent pas
+l'analyse indépendante de l'index OpenAgenda et de la page officielle,
+ni la recherche de prochains programmes sur de nouvelles URLs. Les
+événements de Totems nécessitent encore la lecture et le contrôle de leurs
+fiches détaillées avant d'être traités comme des séances pour enfants.
