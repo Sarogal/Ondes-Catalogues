@@ -18,8 +18,8 @@ from curated_future_lead_watch import visible_text
 from national_discovery_queue import _identity, _recent, _safe_origin_link
 from national_structured_clues import detail_event_clues, valid_clues
 from official_watch import get_page
-from regional_festival_discovery import APPROVED
-from source_qualification import Anchors, normalized
+from regional_festival_discovery import APPROVED, RegionalEventAnchors
+from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-detail-qualification-private.v1"
 STATE_SCHEMA = "grossesondes.source-watch.v1"
@@ -124,10 +124,15 @@ def _eligible_sources(state, queue, today, due_only=True):
 
 
 def _seen_again(index_html, source):
-    """The exact destination and identity must reappear in today's live index."""
+    """The exact destination and identity must reappear in today's live index.
+
+    Reuse the regional discovery parser: municipality event titles may be
+    carried by a strictly recognized aria-label while the anchor is a generic
+    "En savoir plus". A different visible title must never be overridden.
+    """
     if not isinstance(index_html, str) or len(index_html) > 650_000:
         raise ValueError("index HTML inexploitable")
-    parser = Anchors()
+    parser = RegionalEventAnchors()
     parser.feed(index_html)
     expected = normalized(source["title"])
     for href, label, _prefix in parser.anchors[:MAX_ANCHORS]:
