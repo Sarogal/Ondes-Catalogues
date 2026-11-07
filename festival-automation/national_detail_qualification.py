@@ -18,7 +18,9 @@ from curated_future_lead_watch import visible_text
 from national_discovery_queue import _identity, _recent, _safe_origin_link
 from national_structured_clues import detail_event_clues, valid_clues
 from official_watch import get_page
-from regional_festival_discovery import APPROVED, RegionalEventAnchors
+from regional_festival_discovery import (
+    APPROVED, RegionalEventAnchors, municipal_event_title,
+)
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-detail-qualification-private.v1"
@@ -138,7 +140,11 @@ def _seen_again(index_html, source):
     for href, label, _prefix in parser.anchors[:MAX_ANCHORS]:
         if not isinstance(href, str) or not isinstance(label, str):
             continue
-        if normalized(" ".join(label.split())[:160]) != expected:
+        # The discovery step strips this *exact* municipal navigation prefix.
+        # Do the same here; a specific visible title never gets overridden.
+        event_title = municipal_event_title(label)
+        title = event_title if event_title is not None else " ".join(label.split())[:160]
+        if normalized(title) != expected:
             continue
         try:
             url = urljoin(source["index_url"], href)
