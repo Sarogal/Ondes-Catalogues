@@ -128,6 +128,9 @@ def montpellier_leads(source, html, today):
         # hour from another section forward to another date.
         if MONTHS[month - 1] not in header:
             continue
+        if not any(x in header for x in (
+                "atelier", "spectacle", "lecture", "festival", "disco", "concert")):
+            continue
         dates = re.match(
             r"^(" + "|".join(WEEKDAYS) + r")\s+(\d{1,2})"
             r"(?:\s+et\s+(" + "|".join(WEEKDAYS) + r")\s+(\d{1,2}))?"
@@ -215,6 +218,11 @@ def toulouse_bebes_leads(source, html, today):
         return []
     result = []
     for day in (first, last):
+        # Require each individual listing, not a header saying merely 7–21.
+        # A changed weekday in the detail prevents accidental promotion.
+        anchor = r"\bsamedi\s+" + str(day) + r"\s+" + str(int(start[:2])) + r"\s+" + start[-2:] + r"\b"
+        if not re.search(anchor, content):
+            return []
         d = _dated(int(year_match.group(1)), 11, day, "samedi", today)
         if d is not None:
             result.append(_candidate(source, "Les bébés explorateurs : formes et matières",
