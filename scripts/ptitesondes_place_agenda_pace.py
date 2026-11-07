@@ -171,11 +171,6 @@ def detail_candidates(source, detail_url_value, html, today):
         return []
     # The same detail must explicitly mention its weekday and its start time
     # in prose. A generic exhibition period or hours of opening cannot pass.
-    anchor = re.search(
-        r"\b(" + "|".join(WEEKDAYS) + r")\s+" + str(d) + r"\s+"
-        + MONTHS[month - 1] + r"\s+a\s+(\d{1,2})h(\d{0,2})"
-        + r"(?:\s+et\s+a\s+\d{1,2}h\d{0,2})?", norm(content).replace(
-            " a ", " à "))
     # Normalize diacritics while preserving the hour separator.
     raw = unicodedata.normalize("NFKD", content.lower())
     raw = "".join(c for c in raw if not unicodedata.combining(c))
