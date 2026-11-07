@@ -1,6 +1,6 @@
 {
   "schema": "ptitesondes.place_agenda_watch.v1",
-  "notes": "Listes exactes de pages publiques contrôlées le 7 novembre 2026. Une page de lieu n'est PAS à elle seule un agenda. Les pistes datées sont privées et non publiables. Les deux bibliothèques marseillaises demandent des pages d'agenda lisibles sans JavaScript avant activation.",
+  "notes": "Pages exactes contrôlées le 7 novembre 2026. Trois agendas/pages de programmation identifiés à Montpellier, Pacé et Toulouse; trois pages institutionnelles simples restent des pistes. Les bibliothèques marseillaises demandent un calendrier officiel lisible sans JavaScript. Aucune publication.",
   "sources": [
     {
       "id": "montpellier-mille-formes-programme",
@@ -50,6 +50,27 @@
       "identity": "Ludothèque Bellevue",
       "venue_aliases": [
         "Ludothèque Bellevue"
+      ]
+    },
+    {
+      "id": "pace-totems-official-agenda",
+      "place_id": "pace-totems",
+      "url": "https://www.ville-pace.bzh/mes-loisirs/agenda/",
+      "kind": "programme",
+      "identity": "Totems",
+      "venue_aliases": [
+        "Totems"
+      ]
+    },
+    {
+      "id": "toulouse-pourquoi-pas-bebes-explorateurs",
+      "place_id": "toulouse-museum-mediatheque-pourquoi-pas",
+      "url": "https://museum.toulouse-metropole.fr/tout-doux-pour-les-bebes-explorateurs/",
+      "kind": "programme",
+      "identity": "Les bébés explorateurs",
+      "venue_aliases": [
+        "Médiathèque jeunesse Pourquoi pas",
+        "médiathèque jeunesse du Muséum"
       ]
     }
   ]
