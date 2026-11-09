@@ -4105,7 +4105,20 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event.get("time") is None and
             not (approval.get("newArtists") or [])
         )
-        require(bool(rex or molotov or ferrailleur or backstage or atabal_pilot)
+        atabal_multi = (
+            venue == "atabal-biarritz" and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "www.atabal-biarritz.fr" and
+            re.fullmatch(r"/agenda/concerts/[a-z0-9-]{16,220}/",
+                         parsed_url.path) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event_id != "go-c-20270408-biarritz-peter-hook-and-the-light" and
+            event.get("time") is None
+        )
+        require(bool(rex or molotov or ferrailleur or backstage
+                     or atabal_pilot or atabal_multi)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4997,7 +5010,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         for aid in ids),
                 "Secret Place : artiste inventé ou mal orthographié")
     elif event.get("venueId") == "atabal-biarritz":
-        if reviewer == "automated-official-recheck":
+        if (reviewer == "automated-official-recheck" and
+                event_id == "go-c-20270408-biarritz-peter-hook-and-the-light"):
             # Entirely separate from the signed human Atabal bills: permit
             # ONLY this specific official headliner already present in artists.
             target = (
@@ -5046,6 +5060,94 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and norm(known.get("name")) == "peter hook and the light",
                 "Atabal auto : identité de l'artiste canonique non démontrée"
             )
+        elif reviewer == "automated-official-recheck":
+            # Unlike the exact Peter Hook pilot, only first-party programmes
+            # with THREE OR FOUR acts repeated as separate named sections
+            # qualify. The producer enforces page structure; this independent
+            # publisher checks all identity, URL, time, genre and proof fields.
+            checked = norm_date(approval.get("reviewedAt"))
+            require(today - dt.timedelta(days=7) <= checked <= today,
+                    "Atabal multi : revue trop ancienne ou future")
+            require(event_id not in ATABAL_VERIFIED and
+                    official_url not in {v["officialUrl"]
+                                         for v in ATABAL_VERIFIED.values()},
+                    "Atabal multi : affiche déjà réservée à une signature humaine")
+            u = urlsplit(official_url)
+            date_slug = re.search(
+                r"-(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)-"
+                r"(\\d{1,2})-(janvier|fevrier|mars|avril|mai|juin|juillet|"
+                r"aout|septembre|octobre|novembre|decembre)-(20\\d{2})/$",
+                u.path)
+            require(date_slug is not None,
+                    "Atabal multi : URL sans date complète")
+            month_map = {name: n for n, name in enumerate(
+                ("janvier", "fevrier", "mars", "avril", "mai", "juin",
+                 "juillet", "aout", "septembre", "octobre",
+                 "novembre", "decembre"), 1)}
+            try:
+                url_day = dt.date(int(date_slug.group(3)),
+                                  month_map[date_slug.group(2)],
+                                  int(date_slug.group(1)))
+            except (ValueError, TypeError) as exc:
+                raise ValueError("Atabal multi : date URL invalide") from exc
+            require(event.get("date") == url_day.isoformat()
+                    and url_day > today,
+                    "Atabal multi : date URL et concert divergents")
+            require(len(evidence) == 1 and isinstance(evidence[0], dict),
+                    "Atabal multi : une preuve nominative exacte exigée")
+            proof = evidence[0]
+            names = proof.get("officialArtistNames")
+            require(isinstance(names, list) and
+                    3 <= len(names) <= 4 and
+                    all(isinstance(n, str) and
+                        3 <= len(norm(n)) <= 100 for n in names) and
+                    len({norm(n) for n in names}) == len(names),
+                    "Atabal multi : artistes non documentés et non distincts")
+            require(proof.get("url") == official_url
+                    and proof.get("proofType") == "official-organizer-or-venue"
+                    and proof.get("checkedAt") == checked.isoformat()
+                    and proof.get("checkedFields") == [
+                        "artists", "date", "venue", "genre"]
+                    and proof.get("sourceStructure") ==
+                        "event-header-and-named-artist-sections"
+                    and proof.get("verifiedNewArtists") ==
+                        [a["name"] for a in new_artists],
+                    "Atabal multi : source ou artistes nouveaux non corroborés")
+            require(event.get("title") == " + ".join(names)
+                    and event.get("status") == "confirmed"
+                    and event.get("sourceType") == "salle"
+                    and event.get("organizer") == "Atabal"
+                    and event.get("time") is None
+                    and event.get("genres") in (
+                        ["Hardcore"], ["Post Punk"], ["Punk Rock"],
+                        ["Punk"], ["Metal"], ["Sludge Metal"],
+                        ["Metalcore"], ["Hard Rock"], ["Deathcore"],
+                        ["Heavy Metal"], ["Grindcore"], ["Stoner"],
+                        ["Doom"], ["Thrash"]),
+                    "Atabal multi : affiche, genre, heure ou statut non approuvés")
+            expected_id = ("go-c-" + url_day.strftime("%Y%m%d") +
+                           "-biarritz-" + "-".join(
+                               norm(n).replace(" ", "-")[:72].strip("-")
+                               for n in names))
+            require(event_id == expected_id and len(ids) == len(names),
+                    "Atabal multi : ID d'affiche ou nombre d'artistes divergent")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(all(aid in resolved and
+                        norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, names)),
+                    "Atabal multi : identité d'artiste falsifiée")
+            existing = {norm(a["name"]) for a in known_artist_ids.values()}
+            existing_aliases = {
+                norm(alias) for a in known_artist_ids.values()
+                for alias in (a.get("aliases") or [])
+                if isinstance(alias, str)
+            }
+            require(all(norm(a["name"]) not in existing | existing_aliases
+                        and a["id"] ==
+                        norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                        for a in new_artists),
+                    "Atabal multi : nouvel artiste ou alias en collision")
         else:
             spec=ATABAL_VERIFIED.get(event_id)
             require(spec is not None and reviewer=="independent-official-verifier"
