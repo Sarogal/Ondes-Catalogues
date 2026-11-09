@@ -375,6 +375,47 @@ class CandidatePromotionTests(unittest.TestCase):
                          ["2027-02-10", "2027-02-14"])
         self.assertEqual(len({e["id"] for e in p["additions"]}), 2)
 
+    def test_two_collectors_retry_only_strict_canonical_alias_for_one_uid_day(self):
+        ref = base()
+        ods = dict(lead(), source_url=URL + "-old-index-slug")
+        canonical_oa = dict(lead(), collector="openagenda-v2",
+            source_url=("https://openagenda.com/"
+                        "contributions-evenements-culturels-nantes-et-metropole-nantaise/"
+                        "events/77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots"))
+        # The ODS lead's old slug is not canonical; the OA-v2 UID-prefixed
+        # alias MUST still pass the same-agenda and exact-UID checks.
+        result, report = evaluate([ods, canonical_oa], ref, ref, TODAY,
+                                   fetch=lambda uid: record(),
+                                   verifier=lambda ev, old: (True, "proved"))
+        self.assertEqual(report["eligible_raw"], 2)
+        self.assertEqual(report["duplicate_collector_leads_skipped"], 1)
+        self.assertEqual(report["checked"], 1)
+        self.assertEqual(report["accepted_preflight"], 1)
+        self.assertEqual(result["additions"][0]["source_url"], URL)
+
+    def test_cross_agenda_fallback_cannot_bypass_canonical_policy(self):
+        ref = base()
+        ods = dict(lead(), source_url=URL + "-old-index-slug")
+        unreviewed = dict(lead(), collector="openagenda-v2",
+                          source_url="https://openagenda.com/untrusted/events/77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots")
+        result, report = evaluate([ods, unreviewed], ref, ref, TODAY,
+                                   fetch=lambda uid: record(),
+                                   verifier=lambda ev, old: (True, "proved"))
+        self.assertEqual(result["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+        self.assertEqual(report["details"][0]["status"], "deferred")
+
+    def test_conflicting_same_collector_sources_are_not_a_fallback(self):
+        ref = base()
+        first = lead()
+        conflicting = dict(lead(), source_url=URL + "-different")
+        result, report = evaluate([first, conflicting], ref, ref, TODAY,
+                                   fetch=lambda uid: self.fail("Conflicting URL must never be fetched"),
+                                   verifier=lambda ev, old: (True, "proved"))
+        self.assertEqual(result["additions"], [])
+        self.assertEqual(report["conflicting_uid_days_deferred"], 1)
+        self.assertEqual(report["checked"], 0)
+
     def test_oa_v2_url_alias_requires_uid_and_agenda(self):
         alias = dict(lead(), collector="openagenda-v2",
                      source_url=("https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/"
