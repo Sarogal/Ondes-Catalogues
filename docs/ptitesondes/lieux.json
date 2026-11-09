@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-11-06",
+  "updated_at": "2026-11-09",
   "places": [
     {
       "id": "montpellier-mille-formes",
@@ -179,6 +179,36 @@
       "official_url": "https://parents.loire-atlantique.fr/44/centre-socioculturel-de-bellevue-meta-accoord/parents_10602",
       "geo_source_url": "https://www.openstreetmap.org/node/2810810943",
       "reviewed_at": "2026-11-06",
+      "is_publicly_accessible": true
+    },
+    {
+      "id": "marseille-bibliotheque-cinq-avenues",
+      "name": "Bibliothèque des Cinq-Avenues",
+      "kind": "lieu-permanent",
+      "category": "mediatheque-jeunesse",
+      "category_label": "Bibliothèque avec espace jeunesse",
+      "city": "Marseille",
+      "department": "Bouches-du-Rhône",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "postal_code": "13004",
+      "address": "5 impasse Fissiaux, 13004 Marseille",
+      "lat": 43.302307,
+      "lng": 5.396262,
+      "geo_precision": "lieu",
+      "age_min": null,
+      "age_max": null,
+      "admission": "Accès libre sur place ; animations selon la programmation et les places disponibles.",
+      "activities": [
+        "lecture jeunesse",
+        "albums et contes",
+        "CD et DVD jeunesse",
+        "animations culturelles",
+        "éveil artistique"
+      ],
+      "reservation_note": "Les ateliers et événements ont leurs propres horaires et conditions d'inscription. Vérifier l'agenda officiel des Bibliothèques de Marseille avant la visite.",
+      "official_url": "https://www.bmvr.marseille.fr/reseau/bibliotheques-municipales-de-marseille",
+      "geo_source_url": "https://mapcarta.com/fr/N2499494870",
+      "reviewed_at": "2026-11-09",
       "is_publicly_accessible": true
     }
   ]
