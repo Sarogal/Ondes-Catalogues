@@ -57,10 +57,11 @@ class VenueAgendaPreflightTests(unittest.TestCase):
         for altered in (
             html.replace("samedi 21 10:30", "samedi 21 11:30"),
             html.replace("samedis 7 et 21 novembre", "samedis 7 et 22 novembre"),
-            html.replace("de 0 à 3 ans", "adultes uniquement"),
+            html.replace("De 0 à 3 ans", "Adultes uniquement"),
             html.replace("Pourquoi Pas ?", "un autre établissement"),
         ):
             with self.subTest(html=altered[-120:]):
+                self.assertNotEqual(altered, html, "La mutation doit modifier la source")
                 result = review(report, sources, places, outings,
                                 date(2026, 11, 9), getter=lambda _: altered)
                 self.assertEqual(result["records"][0]["state"], "deferred")
