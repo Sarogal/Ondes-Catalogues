@@ -15,6 +15,29 @@ import sys
 SCHEMA = "grossesondes.concert.intake.v1"
 DISCOVERY_SCHEMA = "grossesondes.concert.discovery.v1"
 
+# Only stable first-party identity fields may count as repeated evidence.
+# A changed date, venue, bill, genre or duplicate flag starts a NEW streak.
+IDENTITY_FIELDS = (
+    "source", "sourceUrl", "date", "name", "leadArtist", "venue", "city",
+    "department", "venueCatalogueId", "classification", "reviewBucket",
+    "possibleExistingConcert", "officialDetailFound", "genreToConfirm",
+)
+
+
+def identity_signature(candidate):
+    """Canonical identity for repeat-observation stability, not proof itself."""
+    return json.dumps(
+        {field: candidate.get(field) for field in IDENTITY_FIELDS},
+        sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+
+
+def observation_day(timestamp):
+    try:
+        return dt.date.fromisoformat(str(timestamp)[:10]).isoformat()
+    except (ValueError, TypeError) as exc:
+        raise ValueError("Invalid observation date") from exc
+
+
 
 def merge(previous, discovery, now):
     if discovery.get("schema") != DISCOVERY_SCHEMA:
@@ -39,6 +62,9 @@ def merge(previous, discovery, now):
     seen = set()
     added = 0
     updated = 0
+    stable_reobserved = 0
+    restarted_stability = 0
+    day = observation_day(now)
     for candidate in items:
         cid = candidate.get("candidateId")
         if not isinstance(cid, str) or not cid or len(cid) > 240 or cid in seen:
@@ -54,7 +80,10 @@ def merge(previous, discovery, now):
             entries[cid] = {
                 "candidateId": cid, "status": "pending_review",
                 "firstSeenAt": now, "lastSeenAt": now,
-                "observations": 1, "candidate": candidate
+                "observations": 1, "candidate": candidate,
+                "stableObservations": 1,
+                "lastStableObservationDay": day,
+                "identitySignature": identity_signature(candidate),
             }
             added += 1
         else:
@@ -64,6 +93,19 @@ def merge(previous, discovery, now):
             if not record.get("firstSeenAt"):
                 raise ValueError("FirstSeen absent")
             # Ne réactive PAS un candidat rejeté et n'efface pas la décision.
+            signature = identity_signature(candidate)
+            if record.get("identitySignature") != signature:
+                # Conservative migration for historical rows: do not claim
+                # earlier observations were independent or identity-stable.
+                record["identitySignature"] = signature
+                record["stableObservations"] = 1
+                record["lastStableObservationDay"] = day
+                restarted_stability += 1
+            elif record.get("lastStableObservationDay") != day:
+                record["stableObservations"] = int(
+                    record.get("stableObservations", 0)) + 1
+                record["lastStableObservationDay"] = day
+                stable_reobserved += 1
             record["lastSeenAt"] = now
             record["observations"] = int(record.get("observations", 0)) + 1
             record["candidate"] = candidate
@@ -71,7 +113,13 @@ def merge(previous, discovery, now):
     registry["lastRunAt"] = now
     registry["lastRunCandidates"] = len(items)
     registry["total"] = len(entries)
-    return registry, {"added": added, "seenAgain": updated, "total": len(entries)}
+    return registry, {"added": added, "seenAgain": updated, "total": len(entries),
+                      "stableReobservedOnNewDay": stable_reobserved,
+                      "stabilityResetOrMigrated": restarted_stability,
+                      "stableEligible": sum(
+                          r.get("status") == "pending_review"
+                          and r.get("stableObservations", 0) >= 2
+                          for r in entries.values())}
 
 
 def main():
