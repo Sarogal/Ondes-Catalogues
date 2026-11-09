@@ -100,7 +100,11 @@ def _url_edition_hint(url, title, today):
         return None
     try:
         parsed = urlsplit(url)
-        if parsed.query or parsed.fragment:
+        # Even before the caller's origin check, ignore impostor domains.
+        if (parsed.scheme != "https" or parsed.port not in (None, 443)
+                or parsed.username or parsed.password
+                or parsed.hostname not in {urlsplit(seed).hostname for seed in APPROVED}
+                or parsed.query or parsed.fragment):
             return None
         slug = parsed.path.rstrip("/").rsplit("/", 1)[-1]
         match = re.fullmatch(r"([a-z0-9]+(?:-[a-z0-9]+)*)-(20[2-4]\d)", slug)
