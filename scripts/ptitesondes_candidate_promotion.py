@@ -356,7 +356,7 @@ def covered_by_published_range(lead, published_events):
 
 
 
-def unique_review_candidates(leads, today):
+def unique_review_candidates(leads, today, with_alternatives=False):
     """Avoid wasting bounded review slots on two mirrors of a single UID/day.
 
     OpenDataSoft and OpenAgenda v2 are *not* independent proofs. They often
@@ -397,8 +397,9 @@ def unique_review_candidates(leads, today):
         variants = tuple(lead for lead in batch
                          if lead is not preferred
                          and lead["source_url"] != preferred["source_url"])
-        candidates.append(dict(
-            preferred, _same_uid_date_alternatives=variants))
+        candidates.append(
+            dict(preferred, _same_uid_date_alternatives=variants)
+            if with_alternatives else preferred)
         duplicates_skipped += len(batch) - 1
     candidates.sort(key=lambda x: (
         x["date_start"], x["source_url"], x["external_id"]))
@@ -437,7 +438,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     urls = {(e.get("source_url"), e.get("date_start"))
             for e in published["events"]}
     candidates, eligible_raw, duplicates, conflicts = unique_review_candidates(
-        leads, today)
+        leads, today, with_alternatives=True)
     selected, page, pages = rotating_batch(candidates, today, limit, slot)
     accepted, rejected, assessed = [], [], 0
     for lead in selected:
