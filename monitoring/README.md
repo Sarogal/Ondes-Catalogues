@@ -22,8 +22,9 @@ La solution retenue pour Starter est un **témoin externe** : quand le workflow 
 2. Configurer ce contrôle en mode **Cron**, expression `29 4,16 * * *`, fuseau `UTC`, délai de grâce initial `9 heures`. Les horaires correspondent aux crons du workflow existant.
 3. Configurer la notification **e-mail** dans Healthchecks et vérifier que l’intégration est active.
 4. Copier l’URL de ping générée par Healthchecks (`https://hc-ping.com/…`) **uniquement** dans le secret Actions du dépôt public GitHub `Sarogal/Ondes-Catalogues`, nommé `HEALTHCHECKS_ONDES_PING_URL`. Ne pas publier la valeur dans une PR, un fichier versionné, un ticket ou un message.
-5. À partir du prochain **déclenchement programmé réussi** de `Ondes — surveillance publique en lecture seule`, un ping doit apparaître dans Healthchecks. Les exécutions manuelles et les PR **ne déclenchent pas le ping**, pour ne pas masquer un cron manquant.
-6. Inspecter la prochaine exécution réelle et tester l’envoi d’e-mail via l’interface du service. Tant que le secret est absent, le workflow reste actif mais n’émet aucun ping.
+5. Facultatif : lancer `Actions → Ondes — surveillance publique en lecture seule → Run workflow` sur `main`. Le job contrôle alors **la présence et la forme du secret sans jamais imprimer sa valeur ni envoyer de ping** ; l'étape « Vérifier le secret Healthchecks en mode manuel » doit réussir. Cela ne prouve pas que le ping réel a été reçu.
+6. À partir du prochain **déclenchement programmé réussi** de `Ondes — surveillance publique en lecture seule`, un ping doit apparaître dans Healthchecks. Les exécutions manuelles et les PR **ne déclenchent pas le ping**, pour ne pas masquer un cron manquant.
+7. Inspecter la prochaine exécution réelle et tester l’envoi d’e-mail via l’interface du service. Tant que le secret est absent, le workflow reste actif mais n’émet aucun ping.
 
 Le ping est exécuté comme **étape du job existant** après la vérification, sans workflow ni runner additionnel. Un échec du service de ping est journalisé comme avertissement et ne transforme pas une collecte en panne ; l’absence de ping est détectée par le témoin externe.
 
