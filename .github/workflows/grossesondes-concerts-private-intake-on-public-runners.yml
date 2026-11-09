@@ -169,15 +169,12 @@ jobs:
           GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
         run: |
           set -euo pipefail
-          OPTIONS=()
-          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
-            OPTIONS+=(--apply)
-          fi
+          # Generate proposal only; persistent writes require publisher preflight.
           if ! python public/automation/concerts/official_recheck.py \
               --registry confidential/automation/concerts/intake/registry.json \
               --approvals confidential/automation/concerts/approved.json \
               --out "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
-              --report "$RUNNER_TEMP/concerts-official-review.json" "${OPTIONS[@]}" \
+              --report "$RUNNER_TEMP/concerts-official-review.json" \
               > "$RUNNER_TEMP/concerts-private-logs/official-review.log" 2>&1; then
             echo "::error::La revue officielle Concerts a échoué : approbation suspendue"
             exit 1
@@ -187,6 +184,31 @@ jobs:
           else
             echo "Revue officielle en prévisualisation : approbations inchangées." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        env:
+          GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
+        run: |
+          set -euo pipefail
+          OPTIONS=()
+          if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
+            OPTIONS+=(--apply)
+          fi
+          # Sensitive evidence never enters a public artifact or log.
+          if ! python public/automation/concerts/approval_preflight.py \
+              --before confidential/automation/concerts/approved.json \
+              --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+              --reference public/docs/grossesondes/concerts-reference.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --report confidential/automation/concerts/intake/approval-preflight.json \
+              "${OPTIONS[@]}" \
+              > "$RUNNER_TEMP/concerts-private-logs/approval-preflight.log" 2>&1; then
+            echo "::error::Prévalidation éditeur Concerts refusée : approbations inchangées"
+            exit 1
+          fi
+          echo "Prévalidation officielle et compatibilité éditeur contrôlées sans fuite privée." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Vérifier les annulations, reports et incohérences des concerts publiés
         if: steps.access.outputs.ready == 'true'
@@ -237,7 +259,7 @@ jobs:
           export GIT_CONFIG_COUNT=1
           export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
-          git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/published-watch.json
+          git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             git add -- automation/concerts/approved.json
           fi
