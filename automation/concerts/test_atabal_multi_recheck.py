@@ -63,6 +63,42 @@ class StrictMultiBillTests(unittest.TestCase):
         self.assertEqual(approval["officialEvidence"][0]["sourceStructure"],
                          multi.STRUCTURE)
 
+    def test_live_template_inline_heading_fragments_and_duplicate_sections(self):
+        # The actual venue template breaks artist heading text into inline
+        # chunks and repeats Pussy Miel's biography section. Ignore markup
+        # boundaries, not unknown artist names or other heading elements.
+        page = PAGE.replace(
+            "<h2>Pussy Miel ~ Kill!Kill!Diana</h2>",
+            "<h2>Pussy Miel <span>~</span> Kill!Kill!Diana</h2>")
+        page = page.replace(
+            "<h2>Kill!Kill!Diana</h2>",
+            "<h2>Kill!<strong>Kill!</strong>Diana<br/></h2>")
+        page = page.replace(
+            "<h2>PUSSY MIEL</h2>",
+            "<h2>PUSSY MIEL</h2><p>Biography</p><h2>PUSSY MIEL</h2>")
+        self.assertEqual(
+            multi.exact_names(page), ["COILGUNS", "Pussy Miel", "Kill!Kill!Diana"])
+        approval = multi.verify(candidate(), page, catalogue(), NOW)
+        event, added = validate_approval(
+            approval, {v["id"]: v for v in catalogue()["venues"]}, {}, NOW)
+        self.assertEqual(event["artistIds"],
+                         ["coilguns", "pussy-miel", "kill-kill-diana"])
+        self.assertEqual(len(added), 3)
+
+    def test_unlisted_fourth_artist_section_is_not_silently_ignored(self):
+        page = PAGE.replace(
+            "<h4>Vous devriez aimer:</h4>",
+            "<h2>UNANNOUNCED GUEST</h2><h4>Vous devriez aimer:</h4>")
+        with self.assertRaisesRegex(ValueError, "étrangère"):
+            multi.verify(candidate(), page, catalogue(), NOW)
+
+    def test_unlisted_artist_inside_recommendations_is_ignored(self):
+        page = PAGE.replace(
+            "<h2>Unrelated recommended act</h2>",
+            "<h2>OTHER POP STAR</h2>")
+        self.assertEqual(
+            multi.exact_names(page), ["COILGUNS", "Pussy Miel", "Kill!Kill!Diana"])
+
     def test_exact_approval_accepted_by_real_publisher(self):
         approval = multi.verify(candidate(), PAGE, catalogue(), NOW)
         evt, additions = validate_approval(

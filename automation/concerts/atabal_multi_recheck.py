@@ -8,6 +8,7 @@ This module never writes approvals or public catalogue data.
 from __future__ import annotations
 
 import datetime as dt
+from html.parser import HTMLParser
 import re
 from urllib.parse import urlsplit
 
@@ -27,13 +28,69 @@ def slug(name):
     return source.norm(name).replace(" ", "-")[:72].strip("-")
 
 
+class FirstArticleHeadings(HTMLParser):
+    """Group complete headings, including text split across nested HTML tags.
+
+    The discovery parser records text fragments separately; that is useful
+    for broad intake but cannot safely identify a multi-artist H2 assembled
+    from spans, <strong> and <br> in a live venue's event template.
+    """
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.in_article = False
+        self.done = False
+        self.hidden = 0
+        self.capture = None
+        self.buffer = []
+        self.h1 = []
+        self.h2 = []
+
+    def handle_starttag(self, tag, attrs):
+        if self.done:
+            return
+        if tag == "article" and not self.in_article:
+            self.in_article = True
+        if tag in ("script", "style", "noscript", "svg"):
+            self.hidden += 1
+        if self.in_article and not self.hidden and self.capture is None:
+            if tag in ("h1", "h2", "h4"):
+                self.capture = tag
+                self.buffer = []
+
+    def handle_data(self, data):
+        if self.in_article and not self.done and not self.hidden:
+            if self.capture is not None:
+                self.buffer.append(data)
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript", "svg") and self.hidden:
+            self.hidden -= 1
+            return
+        if not self.in_article or self.done:
+            return
+        if self.capture == tag:
+            # Do not insert spaces between inline styling fragments: that
+            # would transform "Kill!<span>Kill!</span>Diana" into another act.
+            heading = " ".join("".join(self.buffer).split())
+            if tag == "h4" and source.norm(heading).startswith("vous devriez aimer"):
+                self.done = True
+            elif tag == "h1":
+                self.h1.append(heading)
+            elif tag == "h2":
+                self.h2.append(heading)
+            self.capture = None
+            self.buffer = []
+        if tag == "article":
+            self.done = True
+
+
 def exact_names(page):
-    p = source.Event()
+    p = FirstArticleHeadings()
     p.feed(page)
-    if not p.title_captured or not p.main_title:
+    if len(p.h1) != 1 or not p.h1[0]:
         raise ValueError("Atabal: titre principal absent ou incomplet")
-    lead = " ".join(p.main_title).strip()
-    h2 = [value.strip() for tag, value in p.headings if tag == "h2"]
+    lead = p.h1[0]
+    h2 = p.h2
     if not h2 or not re.search(r"\s+~\s+", h2[0]):
         raise ValueError("Atabal: plateau multi-artistes explicite absent")
     supporting = [x.strip() for x in re.split(r"\s+~\s+", h2[0])]
