@@ -276,6 +276,22 @@ def build_review(queue, detail, state, leads, public, history, today):
         exact, conflicting = _public_matches(dossier, public["festivals"])
         city_variants = _published_city_variants(dossier, public["festivals"])
         primary = _primary_proof(dossier, leads, state, today)
+        # Archive homepage claims are syntactic hints, not a validated
+        # primary source or proof that a festival edition exists.
+        archive_date_hints = dossier.get(
+            "historical_homepage_date_hints_review_only", [])
+        if not isinstance(archive_date_hints, list) or len(archive_date_hints) > 3:
+            raise ValueError("dates historiques privées invalides")
+        from historical_future_lead_watch import _valid_private_date_hints
+        accepted_archive_hints = _valid_private_date_hints(
+            archive_date_hints, dossier.get("edition_year_hint"), today)
+        if accepted_archive_hints is None:
+            raise ValueError("indices de dates historiques altérés")
+        if accepted_archive_hints and not any(
+                item.get("kind") == "HISTORICAL_HOMEPAGE_YEAR_HINT"
+                and item.get("publication_authorized") is False
+                for item in dossier["sources"] if isinstance(item, dict)):
+            raise ValueError("indice de dates historique sans source approuvée")
         detail_clues = _dynamic_proofs(dossier, detail)
         cancellation = any(row["possible_cancellation"] for row in detail_clues)
         event_clues = [hint for row in detail_clues
@@ -289,6 +305,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             status = "PRIMARY_DATE_CLAIM_REVIEW"
         elif any(x["name_seen"] and x["edition_year_near_name"] for x in detail_clues):
             status = "REGIONAL_NAME_YEAR_REVIEW"
+        elif accepted_archive_hints:
+            status = "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW"
         else:
             status = "RESEARCH_REQUIRED"
         blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
@@ -298,6 +316,10 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("first_party_date_observation_missing")
         if not detail_clues and not primary:
             blocks.append("edition_detail_proof_missing")
+        if accepted_archive_hints:
+            blocks.append("archival_visible_dates_require_primary_confirmation")
+            if len(accepted_archive_hints) > 1:
+                blocks.append("possible_multiple_same_year_editions_need_review")
         if not dossier.get("edition_year_hint"):
             blocks.append("edition_year_unknown")
         if exact:
@@ -323,6 +345,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "published_title_city_variants_review_only": city_variants,
             "primary_observation": primary,
             "regional_detail_observations": detail_clues,
+            "historical_homepage_date_hints_review_only": accepted_archive_hints,
             "structured_date_hints_count": len(event_clues),
             "named_organizer_hints_count": sum(
                 bool(h.get("organizer_name_hint")) for h in event_clues),
@@ -367,6 +390,10 @@ def build_review(queue, detail, state, leads, public, history, today):
             bool(x["published_title_city_variants_review_only"]) for x in result),
         "primary_observed_dossiers_count": sum(x["primary_observation"] is not None for x in result),
         "regional_detail_observed_dossiers_count": sum(bool(x["regional_detail_observations"]) for x in result),
+        "historical_homepage_date_dossiers_private": sum(
+            bool(x["historical_homepage_date_hints_review_only"]) for x in result),
+        "historical_homepage_visible_date_hints_private": sum(
+            len(x["historical_homepage_date_hints_review_only"]) for x in result),
         "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
         "organizer_name_hints_count": sum(x["named_organizer_hints_count"] for x in result),
         "visible_start_date_hints_count": sum(x["visible_start_date_hints_count"] for x in result),
