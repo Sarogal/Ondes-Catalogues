@@ -19,8 +19,8 @@ VENUE_ID = "the-black-lab-wasquehal"
 CITY = "wasquehal"
 SOURCE_URL = adapter.AGENDA
 DANGEROUS_TITLE = re.compile(
-    r"\\b(?:festival|tribute|hommage|cover|dj|guest|invite|surprise|"
-    r"annule|reporte|reportee|postponed|cancelled)\\b", re.IGNORECASE
+    r"\b(?:festival|tribute|hommage|cover|dj|guest|invite|surprise|"
+    r"annule|reporte|reportee|postponed|cancelled)\b", re.IGNORECASE
 )
 
 
