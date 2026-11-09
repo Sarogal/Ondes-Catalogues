@@ -166,6 +166,26 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(len(report["newApprovals"]),0)
         self.assertTrue(report["held"])
 
+    def test_rejected_and_superseded_private_rows_are_never_rechecked(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1",
+                     "approvals": []}
+        registry = {"items": {
+            "rejected": {"status": "rejected", "candidate": record(),
+                         "observations": 9},
+            "superseded": {"status": "superseded", "candidate": record(),
+                           "observations": 9},
+            "approved": {"status": "approved", "candidate": record(),
+                         "observations": 9},
+        }}
+        def forbidden(*args):
+            self.fail("A private decision must never be rechecked")
+        unchanged, report = v.process(
+            registry, catalogue(), approvals, dt.date(2026, 11, 9),
+            fetch=forbidden)
+        self.assertEqual(unchanged, approvals)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["decidedSkipped"], 3)
+
     def test_single_observation_does_not_qualify(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         registry = {"items": {"x": {"candidate": record(), "observations": 1}}}
