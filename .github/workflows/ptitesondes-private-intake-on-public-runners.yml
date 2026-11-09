@@ -86,6 +86,7 @@ jobs:
     env:
       RUN_MODE: ${{ github.event_name == 'schedule' && 'write' || inputs.mode || 'preview' }}
       CYCLE: ${{ github.event_name == 'schedule' && github.event.schedule == '37 21 * * *' && 'places' || github.event_name == 'schedule' && 'outings' || inputs.cycle || 'all' }}
+      REVIEW_CRON: ${{ github.event.schedule }}
       PRIVATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
       PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
       OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
@@ -153,6 +154,7 @@ jobs:
           test -s src/automation/outings_intake.py
           test -s src/automation/place_discovery.py
           test -s src/automation/merge_verified.py
+          test -s src/automation/test_oa_v2_backlog_binding.py
           test -s src/automation/sources.json
           test -s src/automation/place_official_sources.json
           test -s state/automation-intake/ptitesondes/backlog.json
@@ -175,6 +177,10 @@ jobs:
             fi
             if ! python -m unittest discover -s src/automation -p 'test_merge_verified.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-merge.log" 2>&1; then
               echo "::error::Tests privés de fusion échoués ; journaux non publiés."
+              exit 1
+            fi
+            if ! python -m unittest discover -s src/automation -p 'test_oa_v2_backlog_binding.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-oa-v2.log" 2>&1; then
+              echo "::error::Tests privés de liaison OpenAgenda v2 échoués ; journaux non publiés."
               exit 1
             fi
           fi
@@ -232,7 +238,17 @@ jobs:
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
-          if ! python public/scripts/ptitesondes_candidate_promotion.py --date "$DAY" --limit 15 --backlog-file "$STATE/backlog.json" --catalogue-file public/docs/ptitesondes/sorties.json --output-dir "$VERIFIED" > "$LOG/verification-sorties.log" 2>&1; then
+          # Respect the scheduled cycle (not GitHub's delayed start time).
+          # Exactly the same four review slots as the independent preview.
+          case "$REVIEW_CRON" in
+            '17 07 * * *') REVIEW_SLOT=0 ;;
+            '17 10 * * *') REVIEW_SLOT=1 ;;
+            '17 14 * * *') REVIEW_SLOT=2 ;;
+            '17 18 * * *') REVIEW_SLOT=3 ;;
+            '') REVIEW_SLOT=0 ;; # preview / push without scheduled slot
+            *) echo "::error::Créneau de vérification inconnu ; arrêt sûr." ; exit 1 ;;
+          esac
+          if ! python public/scripts/ptitesondes_candidate_promotion.py --date "$DAY" --limit 15 --slot "$REVIEW_SLOT" --backlog-file "$STATE/backlog.json" --catalogue-file public/docs/ptitesondes/sorties.json --output-dir "$VERIFIED" > "$LOG/verification-sorties.log" 2>&1; then
             echo "::error::Prévalidation indépendante échouée ; aucune approbation appliquée."
             exit 1
           fi
