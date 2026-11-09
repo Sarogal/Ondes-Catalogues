@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 from zoneinfo import ZoneInfo
 
-from curated_future_lead_watch import visible_text
+from curated_future_lead_watch import _VisibleBody
 from official_watch import get_json, get_page, permitted_url
 from regional_festival_discovery import HISTORY_PAGES, HISTORY_GIT
 from source_qualification import normalized
@@ -104,9 +104,27 @@ def load_verified_roster(today, fetch_json=get_json):
         return {}, "UNAVAILABLE_OR_INVALID"
 
 
+
+class _ArchiveVisibleBody(_VisibleBody):
+    # <title> is page metadata, not visible evidence. Navigation and footers
+    # can mention unrelated events or copyright years.
+    HIDDEN = _VisibleBody.HIDDEN | {"head", "title", "nav", "footer"}
+
+
+def _archive_visible_text(html):
+    if not isinstance(html, str) or len(html) > 650_000:
+        raise ValueError("HTML historique non conforme")
+    parser = _ArchiveVisibleBody()
+    parser.feed(html)
+    result = normalized(" ".join(parser.parts))
+    if len(result) < 30:
+        raise ValueError("texte historique visible insuffisant")
+    return result
+
+
 def visible_future_years(name, html, today):
     """Only bounded adjacent visible wording; no schema, metadata or date claim."""
-    text = visible_text(html)  # hides scripts, templates, and hidden elements
+    text = _archive_visible_text(html)  # excludes document head and hidden HTML
     identity = normalized(name)
     now = date.fromisoformat(today).year
     years = set()
