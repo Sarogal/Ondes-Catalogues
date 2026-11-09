@@ -108,6 +108,25 @@ FORUM_FULL_DATE = re.compile(
 FORUM_STATUS = re.compile(r"\b(annule|annulee|annulation|reporte|reportee|"
                           r"deplace|deplacee|cancelled|postponed)\b")
 
+TRABENDO_EXACT_TWO_BILLS = {
+    # Individually reviewed PUBLIC concert IDs and their exact official URLs.
+    # This is a watchdog proof rule only; it CANNOT approve or publish anything.
+    "go-c-20261112-paris-frankie-witch-fingers": {
+        "url": "https://www.letrabendo.net/programmation/frankie-and-the-witch-fingers/",
+        "date": "2026-11-12",
+        "names": ("Frankie and the Witch Fingers", "Iguana Death Cult"),
+    },
+    "go-c-20261128-paris-kid-kapichi": {
+        "url": "https://www.letrabendo.net/programmation/kid-kapichi/",
+        "date": "2026-11-28",
+        "names": ("Kid Kapichi", "Demob Happy"),
+    },
+}
+TRABENDO_FRENCH_MONTHS = (
+    "", "janvier", "fevrier", "mars", "avril", "mai", "juin",
+    "juillet", "aout", "septembre", "octobre", "novembre", "decembre",
+)
+
 CHECK_LIMIT = 24
 
 
@@ -466,6 +485,57 @@ def rocher_inspect(event, page, artists):
                     "reason":"Début du concert différent sur la fiche officielle"}
     return {"status":"matched","observedDate":date}
 
+def trabendo_exact_named_support(event, page, artists, detail):
+    """Verify BOTH named acts in the same first-party concert card.
+
+    Restrict to two individually signed public bills. The <title> and first
+    dated genre card are checked separately by trabendo_adapter; this second
+    check only accepts the exact lineup next to the SECOND event date, before
+    door opening, and before any recommended event carousel. Artist bios and
+    unrelated cards are NEVER accepted as evidence of a support band.
+    """
+    signed = TRABENDO_EXACT_TWO_BILLS.get(event.get("id"))
+    if not signed or not isinstance(event.get("artistIds"), list):
+        return False
+    if (event.get("officialUrl") != signed["url"]
+            or event.get("date") != signed["date"]
+            or len(event["artistIds"]) != len(signed["names"])
+            or not all(norm(artists.get(aid)) == norm(name)
+                       for aid, name in zip(event["artistIds"], signed["names"]))
+            or norm(event.get("title")) != norm(" + ".join(signed["names"]))
+            or norm(detail.get("leadArtist")) != norm(signed["names"][0])
+            or norm(detail.get("name")) != norm(signed["names"][0])
+            or norm(detail.get("classification", [""])[0]) not in
+                {norm(g) for g in event.get("genres", [])}):
+        return False
+    # Preserve '+' in the programme: using norm() here would erase the
+    # explicit official support separator, a necessary proof of the lineup.
+    doc = trabendo_adapter.Parser()
+    doc.feed(page)
+    raw = " ".join(doc.fragments)
+    display = unicodedata.normalize("NFKD", raw).encode(
+        "ascii", "ignore").decode("ascii").casefold()
+    display = " ".join(display.split())
+    display = display.split("vous devriez aimer", 1)[0]
+    # Ignore all preceding biographies and generic genre categories.
+    # The exact event summary card must precede the full named lineup.
+    venue_cards = list(re.finditer(
+        r"trabendo\s*-\s*salle\s+de\s+concert\b", display))
+    if len(venue_cards) != 1:
+        return False
+    actual = display[venue_cards[0].end():]
+    day = dt.date.fromisoformat(signed["date"])
+    date_str = (str(day.day) + " " +
+                TRABENDO_FRENCH_MONTHS[day.month] + " " + str(day.year))
+    names = [norm(x) for x in signed["names"]]
+    return bool(re.match(
+        r"^\s*" + re.escape(date_str) + r"\s+" +
+        re.escape(names[0]) + r"\s*\+\s*" +
+        re.escape(names[1]) + r"\s+ouverture\s+des\s+portes\b",
+        actual,
+    ))
+
+
 def inspect(event, page, artists):
     """Parse source-specific *positive evidence*. Never infer cancellation."""
     kind = source_kind(event)
@@ -553,11 +623,14 @@ def inspect(event, page, artists):
                 raise
             observed_date=detail["date"]
             names=[norm(artists.get(aid,"")) for aid in event["artistIds"]]
-            lineup_match=(len(names)==1 and bool(names[0]) and
-                          norm(detail["leadArtist"])==names[0] and
-                          norm(detail["name"])==norm(event["title"]) and
-                          norm(detail["classification"][0]) in
-                          {norm(x) for x in event.get("genres",[])})
+            lineup_match=(
+                (len(names)==1 and bool(names[0]) and
+                 norm(detail["leadArtist"])==names[0] and
+                 norm(detail["name"])==norm(event["title"]) and
+                 norm(detail["classification"][0]) in
+                 {norm(x) for x in event.get("genres",[])})
+                or trabendo_exact_named_support(event, page, artists, detail)
+            )
             start_changed=False
         elif kind == "maroquinerie":
             source={"name":"La Maroquinerie","city":"Paris",
