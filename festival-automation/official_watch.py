@@ -215,7 +215,7 @@ def cycle_pick(rows, count, tick):
     return [ordered[(start + i) % len(ordered)] for i in range(count)]
 
 
-def choose_sources(catalogue, today, phase="primary", limit=24):
+def choose_sources(catalogue, today, phase="primary", limit=24, tick_override=None):
     """Reserve at most one third for urgent editions; rotate the remainder.
 
     Both daily passes have disjoint slices within each group whenever the
@@ -225,7 +225,10 @@ def choose_sources(catalogue, today, phase="primary", limit=24):
     if phase not in ("primary", "catchup") or not (1 <= limit <= 48):
         raise ValueError("phase ou volume de collecte invalide")
     sources, _missing = source_inventory(catalogue, today)
-    tick = (today - date(2026, 11, 4)).days * 2 + (phase == "catchup")
+    if tick_override is not None and (type(tick_override) is not int or tick_override < 0):
+        raise ValueError("curseur de rotation invalide")
+    tick = ((today - date(2026, 11, 4)).days * 2 + (phase == "catchup")
+            if tick_override is None else tick_override)
     urgent = [r for r in sources.values() if r["urgent"]]
     routine = [r for r in sources.values() if not r["urgent"]]
     near = cycle_pick(urgent, min((limit + 2) // 3, len(urgent)), tick)
@@ -236,14 +239,14 @@ def choose_sources(catalogue, today, phase="primary", limit=24):
         near.extend(cycle_pick([r for r in urgent if r["url"] not in used], remaining, tick))
     return [(r["slugs"][0], r["url"]) for r in near + general]
 
-def choose_pending_rechecks(catalogue, today, phase, limit, state):
+def choose_pending_rechecks(catalogue, today, phase, limit, state, tick_override=None):
     """Reserve <=1/6 of checks for yesterday's structured evidence.
 
     Future editions, artists, ticket categories and sensitive statuses share
     the same budget; all URLs must be registered in the published catalogue.
     The normal national rotation continues for the remaining slots.
     """
-    regular=choose_sources(catalogue,today,phase,limit)
+    regular=choose_sources(catalogue,today,phase,limit,tick_override=tick_override)
     records=state.get("future_edition_observations", {})
     roster_records=state.get("roster_candidate_observations", {})
     ticket_records=state.get("ticket_status_observations", {})
@@ -262,7 +265,8 @@ def choose_pending_rechecks(catalogue, today, phase, limit, state):
             pending.add(item["source"])
     if not pending:
         return regular
-    tick=(today-date(2026,11,4)).days * 2 + (phase=="catchup")
+    tick=((today-date(2026,11,4)).days * 2 + (phase=="catchup")
+          if tick_override is None else tick_override)
     slots=min(len(pending),max(1,limit//6))
     urgent=[official[url] for url in sorted(pending)]
     priority=cycle_pick(urgent,slots,tick)
@@ -270,6 +274,20 @@ def choose_pending_rechecks(catalogue, today, phase, limit, state):
     used={url for _slug,url in selected}
     selected.extend((slug,url) for slug,url in regular if url not in used)
     return selected[:limit]
+
+
+def resumable_rotation_tick(state, today, phase):
+    """Resume the NEXT unvisited source slice after delayed or missed cron runs.
+
+    This private-state cursor moves only after at least one source was actually
+    scanned. No historical dates are replayed and no publication gate changes.
+    """
+    tick = state.get("rotation_next_tick")
+    if tick is None:
+        tick = (today - date(2026, 11, 4)).days * 2 + (phase == "catchup")
+    if type(tick) is not int or tick < 0:
+        raise ValueError("curseur de rotation des sources invalide")
+    return tick
 
 
 def stable_roster_observation(state, slug, url, observations, today):
@@ -373,11 +391,13 @@ def run(folder, today, phase="primary", limit=24, download_json=get_json, downlo
     state = json.loads(statefile.read_text(encoding="utf-8")) if statefile.exists() else {"schema": "grossesondes.source-watch.v1", "sources": {}}
     if state.get("schema") != "grossesondes.source-watch.v1" or not isinstance(state.get("sources"), dict):
         raise ValueError("état de veille non reconnu")
+    rotation_tick = resumable_rotation_tick(state, date.fromisoformat(today), phase)
     vendor_history = state.setdefault("ticket_provider_last_checked", {})
     if not isinstance(vendor_history, dict):
         raise ValueError("historique des vérifications prestataires invalide")
     report = {"schema": "grossesondes.source-watch-report.v1", "date": today,
-              "phase": phase, "references": reference, "scanned": [], "changed": [],
+              "phase": phase, "rotationTick": rotation_tick,
+              "references": reference, "scanned": [], "changed": [],
               "baselines": [], "unavailable": [], "structured_candidates": [],
               "candidate_updates": [], "candidateUpdateCount": 0,
                "candidate_editions": [], "candidateEditionCount": 0, "deferredAdded": 0,
@@ -405,7 +425,8 @@ def run(folder, today, phase="primary", limit=24, download_json=get_json, downlo
     original = indexed(origin)
     live = indexed(pages)
     for slug, url in choose_pending_rechecks(
-            pages, date.fromisoformat(today), phase, limit, state):
+            pages, date.fromisoformat(today), phase, limit, state,
+            tick_override=rotation_tick):
         try:
             html = download_page(url)
             digest = fingerprint(html)
@@ -610,6 +631,10 @@ def run(folder, today, phase="primary", limit=24, download_json=get_json, downlo
                 or report["ticketProposalWithdrawnCount"]):
             (folder / f"patch-{today}.json").write_text(
                 json.dumps(patch, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if report["scanned"]:
+        # Cron missing? The next successful pass resumes the reserved slice.
+        # Never advance the cursor if all official sources were unreachable.
+        state["rotation_next_tick"] = rotation_tick + 1
     old_state = json.loads(statefile.read_text(encoding="utf-8")) if statefile.exists() else None
     if state != old_state:
         statefile.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
