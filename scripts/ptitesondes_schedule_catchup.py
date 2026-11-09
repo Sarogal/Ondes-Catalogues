@@ -48,31 +48,35 @@ def already_reviewed(reports_dir, day, slot):
 def pending_slots(day, now_utc, event, cron, reports_dir):
     """Return due, unprocessed slots (always <= 4).
 
-    Only scheduled outings can catch up; manual/push preview preserves its
-    original single-slot behavior. When Paris has rolled over to tomorrow
+    Scheduled outings and authenticated external recovery can catch up;
+    ordinary manual/push preview preserves its single-slot behavior.
+    When Paris has rolled over to tomorrow
     but UTC has not, refuse to mislabel prior-day cron slots.
     """
     if now_utc.tzinfo is None or now_utc.utcoffset() != timezone.utc.utcoffset(now_utc):
         raise ValueError("Horodatage UTC explicite requis")
-    if event != "schedule":
+    if event not in {"schedule", "external_rescue"}:
         if event not in {"push", "workflow_dispatch"} or cron:
             raise ValueError("Événement de rattrapage non autorisé")
         return [0]
     nominal = {key: (slot, hour, minute)
                for slot, (key, hour, minute) in enumerate(OUTINGS_CRONS)}
-    if cron not in nominal:
+    if event == "schedule" and cron not in nominal:
         raise ValueError("Créneau programmé inconnu")
+    if event == "external_rescue" and cron:
+        raise ValueError("Créneau nominal interdit pour un secours externe")
     if day != now_utc.date():
         # Scheduled outings are at 07-18 UTC and always occur on the same
         # Paris and UTC day; at or after local midnight, a delayed trigger
         # cannot safely be assigned to a day from cron alone.
         return []
-    slot, hour, minute = nominal[cron]
     instant = now_utc.astimezone(timezone.utc)
-    planned = datetime(day.year, day.month, day.day, hour, minute,
-                       tzinfo=timezone.utc)
-    if instant < planned:
-        raise ValueError("Déclenchement antérieur à son créneau nominal")
+    if event == "schedule":
+        slot, hour, minute = nominal[cron]
+        planned = datetime(day.year, day.month, day.day, hour, minute,
+                           tzinfo=timezone.utc)
+        if instant < planned:
+            raise ValueError("Déclenchement antérieur à son créneau nominal")
     due = [index for index, (_, h, m) in enumerate(OUTINGS_CRONS)
            if instant >= datetime(day.year, day.month, day.day, h, m,
                                   tzinfo=timezone.utc)]
@@ -83,7 +87,7 @@ def pending_slots(day, now_utc, event, cron, reports_dir):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", type=date.fromisoformat, required=True)
-    ap.add_argument("--event", choices=("schedule", "push", "workflow_dispatch"),
+    ap.add_argument("--event", choices=("schedule", "external_rescue", "push", "workflow_dispatch"),
                     required=True)
     ap.add_argument("--cron", default="")
     ap.add_argument("--reports-dir", type=Path, required=True)
