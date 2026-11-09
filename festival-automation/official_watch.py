@@ -218,9 +218,9 @@ def cycle_pick(rows, count, tick):
 def choose_sources(catalogue, today, phase="primary", limit=24, tick_override=None):
     """Reserve at most one third for urgent editions; rotate the remainder.
 
-    Both daily passes have disjoint slices within each group whenever the
-    source pool is large enough. The choice does not mutate source state or
-    create a commit merely because the clock advanced.
+    Consecutive rotation ticks have distinct slices when the source pool is
+    large enough. A private cursor can supply tick_override: a missed GitHub
+    schedule then does not consume a slice. This function never publishes.
     """
     if phase not in ("primary", "catchup") or not (1 <= limit <= 48):
         raise ValueError("phase ou volume de collecte invalide")
