@@ -114,6 +114,16 @@ def _exact_dates_near_name(html, source):
     for occurrence in list(re.finditer(
             r"(?<![a-z0-9])" + re.escape(name) + r"(?![a-z0-9])", text))[:20]:
         local = text[max(0, occurrence.start()-170):occurrence.end()+1100]
+        trailing = text[occurrence.end():occurrence.end()+250]
+        first_year = re.search(r"(?<![0-9])20[2-4][0-9](?![0-9])", trailing)
+        if first_year and int(first_year.group(0)) != dates[0].year:
+            # Mauges Pit Fest 2026 followed by *another* festival's 2027
+            # programme is not Mauges Pit Fest VI corroboration.
+            continue
+        if first_year and re.search(
+                r"\b(?:autre festival|another festival|autre evenement)\b",
+                trailing[:first_year.start()]):
+            continue
         start = matches_date(local, dates[0].isoformat())
         end = matches_date(local, dates[1].isoformat())
         # Date range with a shared month and year plus weekday labels.
