@@ -126,6 +126,31 @@ class TestsCloud(unittest.TestCase):
                              verified_at="2026-10-28")]
         with self.assertRaises(ValueError):merge(b,public,p,TODAY)
 
+    def test_momo_school_only_history_correction_is_exact_and_manual(self):
+        b, p = fixture()
+        p["additions"] = []
+        item = b["events"][0]
+        item.update(
+            id="bordeaux-momo-enfant-peche-2027-01-21",
+            date_start="2027-01-21", date_end="2027-01-22",
+            source_url="https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301",
+            time="21 janv. 19:00 ; 22 janv. 14:30 (scolaires) et 19:00")
+        current = dict(b, events=[dict(b["events"][0], time="21 janv. 19:00 ; 22 janv. 19:00")] + b["events"][1:])
+        result, summary = merge(b, current, p, TODAY, checker=lambda e, ref: (True, "proof"))
+        self.assertEqual(result, current)
+        self.assertEqual(summary["ajoutes"], 0)
+        self.assertEqual(summary["correction"], 0)
+        for forbidden in (
+            dict(current["events"][0], time="21 janv. 19:00"),
+            dict(current["events"][0], title="Autre spectacle"),
+            dict(current["events"][0], lat=1.5),
+            dict(current["events"][0], source_url="https://example.org/momo"),
+        ):
+            with self.subTest(forbidden=forbidden):
+                forged = dict(b, events=[forbidden] + b["events"][1:])
+                with self.assertRaisesRegex(ValueError, "historique"):
+                    merge(b, forged, p, TODAY)
+
     def test_historical_deletion_blocked(self):
         b,p=fixture()
         o=dict(b,events=b["events"][1:])
