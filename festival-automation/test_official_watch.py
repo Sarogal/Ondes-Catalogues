@@ -261,11 +261,18 @@ class OfficialWatchTests(unittest.TestCase):
             self.assertFalse((folder / "patch-2026-11-04.json").exists())
             state = json.loads((folder / "source-watch-state.json").read_text())
             self.assertEqual(len(state["sources"]), 3)
+            # This test deliberately rechecks the SAME sites to isolate fingerprint
+            # change detection. Production advances a resumable source cursor.
+            state["rotation_next_tick"] = first["rotationTick"]
+            (folder / "source-watch-state.json").write_text(json.dumps(state), encoding="utf-8")
             second = run(folder, "2026-11-04", limit=3, download_json=lambda u: data[u], download_page=lambda u: html.replace("metal", "punk"))
             self.assertEqual(second["deferredAdded"], 3)
             addition = json.loads((folder / "patch-2026-11-04.json").read_text())
             self.assertEqual(len(addition["deferred"]), 3)
             self.assertEqual(addition["updates"], patch()["updates"])
+            state = json.loads((folder / "source-watch-state.json").read_text())
+            state["rotation_next_tick"] = first["rotationTick"]
+            (folder / "source-watch-state.json").write_text(json.dumps(state), encoding="utf-8")
             again = run(folder, "2026-11-04", limit=3, download_json=lambda u: data[u], download_page=lambda u: html.replace("metal", "punk"))
             self.assertEqual(again["deferredAdded"], 0)
             self.assertEqual(len(latest_patch(folder, "2026-11-04")["deferred"]), 3)
