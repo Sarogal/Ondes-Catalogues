@@ -1,6 +1,13 @@
 name: Grosses Ondes — Concerts nationaux sur runner public, revue privée
 
 on:
+  # One controlled post-merge cloud run for Concerts engine maintenance only.
+  # Never execute on PR code with private credentials.
+  push:
+    branches: [main]
+    paths:
+      - 'automation/concerts/registry_funnel.py'
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
     inputs:
       phase:
@@ -260,6 +267,21 @@ jobs:
             echo "::warning::Bilan privé indisponible, archivage poursuivi."
           fi
 
+      - name: Auditer en privé la conversion de tous les candidats Concerts
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/registry_funnel.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --approvals confidential/automation/concerts/approved.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/registry-funnel.json \
+              > "$RUNNER_TEMP/concerts-private-logs/registry-funnel.log" 2>&1; then
+            # Never publish the private diagnostic or interrupt the safe archive.
+            echo "::warning::Entonnoir privé indisponible ; registre conservé."
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -281,6 +303,9 @@ jobs:
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
           if [ -f automation/concerts/intake/daily-metrics.json ]; then
             git add --sparse -- automation/concerts/intake/daily-metrics.json
+          fi
+          if [ -f automation/concerts/intake/registry-funnel.json ]; then
+            git add --sparse -- automation/concerts/intake/registry-funnel.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             git add -- automation/concerts/approved.json
