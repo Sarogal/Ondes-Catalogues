@@ -31,6 +31,12 @@ on:
         required: true
         default: preview
         options: [preview, write]
+      recovery:
+        description: Rattrapage de lots echus (secours externe authentifie uniquement)
+        type: choice
+        required: true
+        default: none
+        options: [none, catchup]
 
 permissions:
   contents: read
@@ -81,6 +87,7 @@ jobs:
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
+          node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
@@ -92,7 +99,8 @@ jobs:
       RUN_MODE: ${{ github.event_name == 'schedule' && 'write' || inputs.mode || 'preview' }}
       CYCLE: ${{ github.event_name == 'schedule' && github.event.schedule == '37 21 * * *' && 'places' || github.event_name == 'schedule' && 'outings' || inputs.cycle || 'all' }}
       REVIEW_CRON: ${{ github.event.schedule }}
-      RUN_EVENT: ${{ github.event_name }}
+      RUN_EVENT: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery == 'catchup' && 'external_rescue' || github.event_name }}
+      RECOVERY: ${{ inputs.recovery || 'none' }}
       PRIVATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
       PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
       OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
@@ -118,6 +126,12 @@ jobs:
           fi
           [[ "$CYCLE" == "outings" || "$CYCLE" == "places" || "$CYCLE" == "all" ]]
           [[ "$RUN_MODE" == "preview" || "$RUN_MODE" == "write" ]]
+          if [[ "$RECOVERY" == 'catchup' ]]; then
+            if [[ "$RUN_EVENT" != 'external_rescue' || "$RUN_MODE" != 'write' || "$CYCLE" != 'outings' ]]; then
+              echo "::error::Le rattrapage externe exige sorties + ecriture privee."
+              exit 1
+            fi
+          fi
 
       - name: Charger le code source privé approuvé (jamais de branche PR)
         uses: actions/checkout@v4
@@ -252,7 +266,9 @@ jobs:
           # not-yet-reviewed batches. One intake collection per run (no
           # claim that historical missed network collections occurred).
           # A valid private per-slot report prevents duplicate review.
-          # Manual and push preview retain the original single-slot mode.
+          # Manual/push preview retain one slot; only an explicit authenticated
+          # workflow_dispatch recovery=catchup may reuse scheduled catch-up.
+          # The external scheduler gets no permission on the private repository.
           if ! python public/scripts/ptitesondes_schedule_catchup.py \
             --date "$DAY" --event "$RUN_EVENT" --cron "$REVIEW_CRON" \
             --reports-dir "$STATE/reports" --output "$VERIFIED/review-slots.txt" \
