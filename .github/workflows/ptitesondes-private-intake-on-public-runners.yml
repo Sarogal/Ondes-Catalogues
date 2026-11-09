@@ -38,6 +38,7 @@ permissions:
 # Une seule ecriture privée simultanée, y compris lors de relances manuelles.
 concurrency:
   group: ptitesondes-public-private-intake
+  queue: max
   cancel-in-progress: false
 
 jobs:
@@ -74,8 +75,12 @@ jobs:
           assert "vars.PTITESONDES_PUBLIC_INTAKE != 'paused'" in s
           assert ("deploy" + "-pages") not in s and "docs/ptitesondes/sorties.json" in s
           assert ("git push origin HEAD" + ":main") not in s
+          assert "ptitesondes_schedule_catchup.py" in s
+          assert "queue: max" in s
+          assert 'mapfile -t REVIEW_SLOTS' in s
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
+          python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
 
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
@@ -87,6 +92,7 @@ jobs:
       RUN_MODE: ${{ github.event_name == 'schedule' && 'write' || inputs.mode || 'preview' }}
       CYCLE: ${{ github.event_name == 'schedule' && github.event.schedule == '37 21 * * *' && 'places' || github.event_name == 'schedule' && 'outings' || inputs.cycle || 'all' }}
       REVIEW_CRON: ${{ github.event.schedule }}
+      RUN_EVENT: ${{ github.event_name }}
       PRIVATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
       PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
       OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
@@ -171,6 +177,10 @@ jobs:
         run: |
           set -euo pipefail
           if [[ "$CYCLE" != "places" ]]; then
+            if ! python -m unittest discover -s public/tests -p 'test_ptitesondes_schedule_catchup.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-catchup.log" 2>&1; then
+              echo "::error::Tests de rattrapage des créneaux échoués ; aucune collecte."
+              exit 1
+            fi
             if ! python -m unittest discover -s src/automation -p 'test_outings_intake.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-outings.log" 2>&1; then
               echo "::error::Tests privés sorties échoués ; journaux non publiés."
               exit 1
@@ -238,44 +248,66 @@ jobs:
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
-          # Respect the scheduled cycle (not GitHub's delayed start time).
-          # Exactly the same four review slots as the independent preview.
-          case "$REVIEW_CRON" in
-            '17 07 * * *') REVIEW_SLOT=0 ;;
-            '17 10 * * *') REVIEW_SLOT=1 ;;
-            '17 14 * * *') REVIEW_SLOT=2 ;;
-            '17 18 * * *') REVIEW_SLOT=3 ;;
-            '') REVIEW_SLOT=0 ;; # preview / push without scheduled slot
-            *) echo "::error::Créneau de vérification inconnu ; arrêt sûr." ; exit 1 ;;
-          esac
-          if ! python public/scripts/ptitesondes_candidate_promotion.py --date "$DAY" --limit 15 --slot "$REVIEW_SLOT" --backlog-file "$STATE/backlog.json" --catalogue-file public/docs/ptitesondes/sorties.json --output-dir "$VERIFIED" > "$LOG/verification-sorties.log" 2>&1; then
-            echo "::error::Prévalidation indépendante échouée ; aucune approbation appliquée."
+          # A single delayed scheduled run can catch up to four DUE,
+          # not-yet-reviewed batches. One intake collection per run (no
+          # claim that historical missed network collections occurred).
+          # A valid private per-slot report prevents duplicate review.
+          # Manual and push preview retain the original single-slot mode.
+          if ! python public/scripts/ptitesondes_schedule_catchup.py \
+            --date "$DAY" --event "$RUN_EVENT" --cron "$REVIEW_CRON" \
+            --reports-dir "$STATE/reports" --output "$VERIFIED/review-slots.txt" \
+            > "$LOG/schedule-catchup.log" 2>&1; then
+            echo "::error::Rattrapage sûr des créneaux impossible ; aucune validation écrite."
             exit 1
           fi
-          if ! python src/automation/merge_verified.py --date "$DAY" --existing "$STATE/patch-$DAY.json" --candidate "$VERIFIED/preview-patch.json" --report "$VERIFIED/report.json" --backlog "$STATE/backlog.json" --public public/docs/ptitesondes/sorties.json --output "$VERIFIED/patch-$DAY.json" > "$LOG/fusion-verifiee.log" 2>&1; then
-            echo "::error::Réconciliation cumulative refusée ; aucune approbation écrite."
-            exit 1
-          fi
-          # Produce a bounded, redacted reason breakdown only in the
-          # PRIVATE intake branch. Never upload, print or artifact the raw
-          # candidate report in a public workflow.
-          if ! python public/scripts/ptitesondes_private_qualification_diagnostics.py \
-            --date "$DAY" --slot "$REVIEW_SLOT" \
-            --report "$VERIFIED/report.json" \
-            --output "$VERIFIED/qualification-summary.json" > "$LOG/qualification-diagnostics.log" 2>&1; then
-            echo "::error::Diagnostic privé incohérent ; aucun rapport transmis."
-            exit 1
-          fi
-          test -s "$VERIFIED/patch-$DAY.json"
-          test -s "$VERIFIED/qualification-summary.json"
-          cp "$VERIFIED/patch-$DAY.json" "$STATE/patch-$DAY.json"
-          if [[ "$RUN_MODE" == "write" ]]; then
-            cp "$LOG/fusion-verifiee.log" "$STATE/reports/verification-$DAY.json"
-            cp "$VERIFIED/qualification-summary.json" "$STATE/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
-            git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/verification-$DAY.json" "automation-intake/ptitesondes/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
-            push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
-          fi
-          echo "Sorties collectées et prévalidées indépendamment ; aucune publication publique." >> "$GITHUB_STEP_SUMMARY"
+          mapfile -t REVIEW_SLOTS < "$VERIFIED/review-slots.txt"
+          for REVIEW_SLOT in "${REVIEW_SLOTS[@]}"; do
+            [[ "$REVIEW_SLOT" =~ ^[0-3]$ ]] || { echo "::error::Créneau hors limites."; exit 1; }
+            WORK="$VERIFIED/slot-$REVIEW_SLOT"
+            mkdir -p "$WORK"
+            if ! python public/scripts/ptitesondes_candidate_promotion.py \
+              --date "$DAY" --limit 15 --slot "$REVIEW_SLOT" \
+              --backlog-file "$STATE/backlog.json" \
+              --catalogue-file public/docs/ptitesondes/sorties.json \
+              --output-dir "$WORK" \
+              > "$LOG/verification-sorties-slot$REVIEW_SLOT.log" 2>&1; then
+              echo "::error::Prévalidation indépendante échouée ; aucune approbation appliquée."
+              exit 1
+            fi
+            if ! python src/automation/merge_verified.py \
+              --date "$DAY" --existing "$STATE/patch-$DAY.json" \
+              --candidate "$WORK/preview-patch.json" --report "$WORK/report.json" \
+              --backlog "$STATE/backlog.json" \
+              --public public/docs/ptitesondes/sorties.json \
+              --output "$WORK/patch-$DAY.json" \
+              > "$LOG/fusion-verifiee-slot$REVIEW_SLOT.log" 2>&1; then
+              echo "::error::Réconciliation cumulative refusée ; aucune approbation écrite."
+              exit 1
+            fi
+            # Only bounded, redacted categories in the PRIVATE branch.
+            # Raw evidence, candidates, URLs and reasons stay on the runner.
+            if ! python public/scripts/ptitesondes_private_qualification_diagnostics.py \
+              --date "$DAY" --slot "$REVIEW_SLOT" \
+              --report "$WORK/report.json" \
+              --output "$WORK/qualification-summary.json" \
+              > "$LOG/qualification-diagnostics-slot$REVIEW_SLOT.log" 2>&1; then
+              echo "::error::Diagnostic privé incohérent ; aucun rapport transmis."
+              exit 1
+            fi
+            test -s "$WORK/patch-$DAY.json"
+            test -s "$WORK/qualification-summary.json"
+            cp "$WORK/patch-$DAY.json" "$STATE/patch-$DAY.json"
+            if [[ "$RUN_MODE" == "write" ]]; then
+              cp "$LOG/fusion-verifiee-slot$REVIEW_SLOT.log" "$STATE/reports/verification-$DAY.json"
+              cp "$WORK/qualification-summary.json" "$STATE/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
+              git -C state add -- \
+                "automation-intake/ptitesondes/patch-$DAY.json" \
+                "automation-intake/ptitesondes/reports/verification-$DAY.json" \
+                "automation-intake/ptitesondes/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
+              push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
+            fi
+          done
+          echo "Une collecte sorties réalisée, ${#REVIEW_SLOTS[@]} lots indépendants vérifiés ou rattrapés ; aucune écriture publique." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
         if: ${{ env.CYCLE != 'outings' }}
