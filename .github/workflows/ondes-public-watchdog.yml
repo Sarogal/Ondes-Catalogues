@@ -31,3 +31,25 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: php monitoring/ondes_watchdog.php
+      - name: Signaler une surveillance réussie au témoin externe (optionnel)
+        if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+        env:
+          HEALTHCHECKS_ONDES_PING_URL: ${{ secrets.HEALTHCHECKS_ONDES_PING_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${HEALTHCHECKS_ONDES_PING_URL:-}" ]]; then
+            echo "Témoin externe non configuré : aucun ping envoyé."
+            exit 0
+          fi
+          # Secret never appears in logs; accept only this expected provider.
+          if [[ "${HEALTHCHECKS_ONDES_PING_URL}" != https://hc-ping.com/* ]]; then
+            echo "::warning::Adresse du témoin externe invalide : attente d'une URL HTTPS hc-ping.com."
+            exit 0
+          fi
+          # A ping never interferes with the publishing workflows. Healthchecks
+          # warns independently when it does not receive an expected heartbeat.
+          if ! curl --fail --silent --show-error --max-time 15 --retry 2 \
+            --output /dev/null "${HEALTHCHECKS_ONDES_PING_URL}"; then
+            echo "::warning::Le service de témoin externe n'a pas répondu."
+          fi
