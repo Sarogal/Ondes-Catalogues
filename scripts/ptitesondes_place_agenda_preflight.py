@@ -139,7 +139,7 @@ def review(report, registry, places, outings, today, getter=fetch):
     rows = []
     unique = set()
     for lead in sorted(report["event_candidates"],
-                       key=lambda item: str(item.get("start", ""))):
+                       key=lambda item: str(item.get("start", "")) if isinstance(item, dict) else ""):
         info = {k: lead.get(k) for k in ("place_id", "name", "start", "source_url")}
         info["state"] = "deferred"
         if (not isinstance(lead, dict) or
