@@ -10,16 +10,29 @@ Tests : php -l monitoring/ondes_watchdog.php ; php monitoring/ondes_watchdog.php
 
 Le workflow en lecture seule ondes-public-watchdog.yml se lance deux fois par jour et peut être lancé manuellement. Il peut lui-même manquer lors d'une panne GitHub : il ne remplace pas la surveillance indépendante.
 
-## Installer la surveillance indépendante chez Infomaniak
+## Surveillance indépendante sans hébergement PHP : Healthchecks.io
 
-1. Déposer monitoring/ondes_watchdog.php dans un dossier PHP dédié de l'hébergement (PHP 8 ou plus). Ne pas importer de données privées.
-2. Si le planificateur appelle une URL HTTP, créer à côté du script un fichier non versionné **ondes-watchdog.local.php** contenant une seule instruction PHP retournant un secret aléatoire d'au moins 32 caractères, par exemple : <?php return 'REMPLACER_PAR_UN_SECRET_ALEATOIRE_LONG'; . Ne jamais utiliser un token GitHub comme secret du watchdog.
-3. Dans le Manager Infomaniak, ouvrir **Outils avancés → Planificateur de tâches**, puis programmer l'URL de ce script avec le paramètre ?token= suivi du secret. Espacer les contrôles de 3 à 6 heures et activer les notifications d'échec et le journal d'exécution. Ne jamais partager cette URL complète.
-4. Lancer manuellement une fois ; la sortie JSON doit indiquer checks=12. Un code HTTP 503 ou une liste alerts non vide signale une anomalie. Une erreur de téléchargement GitHub est également signalée.
-5. Si le forfait prend en charge un lancement direct en PHP CLI, préférer cette option et lancer php /chemin/ondes_watchdog.php sans secret HTTP. Confirmer le mode de planification de l'hébergement avant déploiement.
+**Important : l’hébergement Infomaniak Starter est statique (pas de PHP ni planificateur de tâches). Ne jamais y déposer un script PHP, un jeton local, un ZIP avec des secrets, ou une URL privée.** Un serveur statique peut afficher directement le code source PHP, ce qui expose les secrets placés dans le répertoire public.
 
-Le fichier local de jeton est ignoré par Git. Garder les pages hors indexation et contrôler les permissions du fichier.
+La solution retenue pour Starter est un **témoin externe** : quand le workflow GitHub `ondes-public-watchdog.yml` termine **toutes** ses vérifications avec succès, il envoie un ping à Healthchecks.io depuis le runner public déjà utilisé. Si GitHub ne démarre pas le workflow, si la vérification échoue ou si un ping ne parvient pas au témoin externe, Healthchecks peut prévenir par e-mail sans dépendre de GitHub pour l’alerte.
+
+### Activation manuelle (sans carte bancaire ni nouveau runner)
+
+1. Créer un compte **Hobbyist gratuit** sur https://healthchecks.io et un seul contrôle nommé « Ondes — watchdog public ». Ne pas souscrire de forfait supérieur.
+2. Configurer ce contrôle en mode **Cron**, expression `29 4,16 * * *`, fuseau `UTC`, délai de grâce initial `9 heures`. Les horaires correspondent aux crons du workflow existant.
+3. Configurer la notification **e-mail** dans Healthchecks et vérifier que l’intégration est active.
+4. Copier l’URL de ping générée par Healthchecks (`https://hc-ping.com/…`) **uniquement** dans le secret Actions du dépôt public GitHub `Sarogal/Ondes-Catalogues`, nommé `HEALTHCHECKS_ONDES_PING_URL`. Ne pas publier la valeur dans une PR, un fichier versionné, un ticket ou un message.
+5. À partir du prochain **déclenchement programmé réussi** de `Ondes — surveillance publique en lecture seule`, un ping doit apparaître dans Healthchecks. Les exécutions manuelles et les PR **ne déclenchent pas le ping**, pour ne pas masquer un cron manquant.
+6. Inspecter la prochaine exécution réelle et tester l’envoi d’e-mail via l’interface du service. Tant que le secret est absent, le workflow reste actif mais n’émet aucun ping.
+
+Le ping est exécuté comme **étape du job existant** après la vérification, sans workflow ni runner additionnel. Un échec du service de ping est journalisé comme avertissement et ne transforme pas une collecte en panne ; l’absence de ping est détectée par le témoin externe.
+
+Ce témoin observe que le **contrôle GitHub s’est terminé sans alerte**, pas que chaque nouvelle date a été publiée. Une exécution verte ne certifie pas non plus une mise à jour de carte ; la réconciliation de GitHub Pages doit rester un contrôle séparé (PR #135).
+
+## Option réservée à un hébergement PHP existant (non applicable à Starter)
+
+Le script `ondes_watchdog.php` reste disponible pour une exécution PHP **en ligne de commande** sur un hébergement disposant de PHP et d’un cron. Préférer un dossier hors répertoire public, sans accès HTTP et sans aucun jeton dans le document root. Ne jamais acheter un hébergement supplémentaire uniquement pour ce watchdog.
 
 ## Limites et coûts
 
-La surveillance détecte les passages manqués, mais **ne relance pas les moteurs et ne publie rien**. Le rattrapage des recherches doit être audité dans chaque moteur ; aucun assouplissement des preuves n'est autorisé. Aucun runner privé GitHub ajouté, aucun nouveau forfait souscrit.
+Le témoin externe **détecte et alerte**, mais ne relance pas les moteurs et ne publie rien. Les règles de vérification des sources restent inchangées. À la date de vérification, Healthchecks.io permet 20 contrôles dans son offre Hobbyist gratuite ; cette installation n’en utilise qu’un. Le service pourra modifier ses conditions à l’avenir. Aucun runner GitHub privé ajouté.
