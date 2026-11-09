@@ -97,6 +97,26 @@ class EditorialReconciliationTests(unittest.TestCase):
         self.assertFalse(row["safe_to_publish"])
         self.assertEqual(result["editorial_drafts_count"], 0)
         self.assertEqual(result["publications"], 0)
+        # Regression: a generic name/year public record of the winter edition
+        # must never swallow a distinct summer mention as a published duplicate.
+        public["festivals"] = [{
+            "slug": "les-gueules-de-bois-winter-2027",
+            "name": "Les Gueules de Bois 2027",
+            "startDate": "2027-02-13", "endDate": "2027-02-13",
+            "region": region, "city": "Légna",
+        }]
+        covered = build_review(queue, details, state, leads, public, archive, TODAY)
+        other = next(x for x in covered["dossiers"]
+                     if x["name_hint"] == "Les Gueules de Bois")
+        self.assertEqual(other["status"], "POTENTIAL_CONFLICT_REVIEW")
+        self.assertIn("published_same_year_may_hide_other_edition",
+                      other["missing_checks"])
+        self.assertEqual(len(other["historical_homepage_uncovered_dates_review_only"]), 1)
+        self.assertEqual(other["historical_homepage_uncovered_dates_review_only"][0]
+                         ["start_date_hint"], "2027-08-19")
+        self.assertEqual(covered["historical_homepage_uncovered_date_hints_private"], 1)
+        self.assertFalse(other["publication_authorized"])
+        self.assertEqual(covered["publications"], 0)
 
     def test_archive_identity_not_future_edition_proof(self):
         result = review(fixtures())
