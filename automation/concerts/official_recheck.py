@@ -137,7 +137,12 @@ def artist_names(title):
 def verify(candidate, html_text, catalogue, today):
     if candidate.get("source") == "agenda_officiel_atabal_detail":
         import atabal_recheck
-        return atabal_recheck.verify(candidate, html_text, catalogue, today)
+        # Retain the previously signed pilot unchanged; all other bills pass
+        # a separate, strict header + named artist section verifier.
+        if candidate.get("sourceUrl") == atabal_recheck.URL:
+            return atabal_recheck.verify(candidate, html_text, catalogue, today)
+        import atabal_multi_recheck
+        return atabal_multi_recheck.verify(candidate, html_text, catalogue, today)
     if candidate.get("source") == "agenda_officiel_backstage_detail":
         import backstage_recheck
         return backstage_recheck.verify(candidate, html_text, catalogue, today)
