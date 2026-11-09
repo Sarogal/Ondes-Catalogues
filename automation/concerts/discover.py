@@ -421,8 +421,7 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                 urls = adapter.agenda_links(first, final)
                 chosen_urls = adapter.select_urls(
                     urls, known, day.isoformat(),
-                    source.get("maxDetailPagesPerRun", 6),
-                    scan_slot=scan_slot)
+                    source.get("maxDetailPagesPerRun", 6))
                 diag = {
                     "method": "bounded_echonova_official_detail_review",
                     "agendaPagesRead": 1, "eventLinksFound": len(urls),
@@ -465,7 +464,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                 urls = adapter.archive_links(first, final)
                 chosen_urls = adapter.select_urls(
                     urls, known, day.isoformat(),
-                    source.get("maxDetailPagesPerRun", 6))
+                    source.get("maxDetailPagesPerRun", 6),
+                    scan_slot=scan_slot)
                 diag = {
                     "method": ("pinned_current_programme_to_detail"
                                if source["url"] == adapter.CURRENT
