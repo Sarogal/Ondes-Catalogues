@@ -493,6 +493,29 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     return patch, report
 
 
+# Public runner logs and job summaries must never contain private candidate
+# URLs, exception details, or arbitrary rejection messages. Full reports remain
+# local to the job and are persisted only in the private intake branch.
+PUBLIC_COUNT_KEYS = (
+    "backlog_total", "eligible_with_reviewed_venue", "eligible_raw",
+    "duplicate_collector_leads_skipped", "conflicting_uid_days_deferred",
+    "review_slot", "review_batch", "review_batches",
+    "checked", "accepted_preflight", "deferred_or_duplicates",
+)
+
+
+def public_run_summary(report):
+    """Strict numeric allowlist for public logs, never reason_counts/details."""
+    if not isinstance(report, dict):
+        raise ValueError("Rapport de prévalidation absent")
+    day = date.fromisoformat(report["date"]).isoformat()
+    return {
+        "date": day, "mode": "preview_no_public_write",
+        **{key: report[key] for key in PUBLIC_COUNT_KEYS
+           if type(report.get(key)) is int},
+    }
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--output-dir", type=Path,
@@ -531,8 +554,7 @@ def main():
         json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     (args.output_dir / "report.json").write_text(
         json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(json.dumps({k: v for k, v in report.items() if k != "details"},
-                     indent=2, ensure_ascii=False))
+    print(json.dumps(public_run_summary(report), indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
