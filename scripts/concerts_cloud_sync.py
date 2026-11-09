@@ -4139,8 +4139,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Preuve automatique trop ancienne ou future")
         require(any(
             item.get("url") == official_url and
-            (item.get("proofType") == "official-organizer-or-venue" or
-             (blacklab_auto and item.get("proofType") == "official-venue-detail")) and
+            item.get("proofType") == "official-organizer-or-venue" and
             item.get("checkedAt") == reviewed_at.isoformat() and
             {"artists", "date", "venue", "genre"}.issubset(
                 set(item.get("checkedFields") or []))
@@ -4714,7 +4713,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Black Lab automatique : profil de concert non autorisé")
         p = evidence[0]
         require(p.get("url") == official_url
-                and p.get("proofType") == "official-venue-detail"
+                and p.get("proofType") == "official-organizer-or-venue"
                 and p.get("checkedAt") == reviewed_at.isoformat()
                 and p.get("checkedFields") ==
                     ["artists", "date", "venue", "genre"]
