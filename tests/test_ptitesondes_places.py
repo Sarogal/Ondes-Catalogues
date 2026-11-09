@@ -42,7 +42,10 @@ class FamilyPlaceCatalogueTests(unittest.TestCase):
         by_id = {place["id"]: place for place in j["places"]}
         baseline = set(expected) | {"montpellier-mille-formes", "pace-totems"}
         self.assertTrue(baseline <= set(by_id))
-        self.assertTrue(set(by_id) <= baseline | {"nantes-ludotheque-bellevue"})
+        self.assertTrue(set(by_id) <= baseline | {
+            "nantes-ludotheque-bellevue",
+            "marseille-bibliotheque-cinq-avenues",
+        })
         for pid, (city, category, geo_url) in expected.items():
             with self.subTest(place=pid):
                 p = by_id[pid]
