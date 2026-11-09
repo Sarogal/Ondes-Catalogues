@@ -355,8 +355,27 @@ def covered_by_published_range(lead, published_events):
     return False
 
 
+def rotating_batch(candidates, today, limit, slot=0):
+    """Four deterministic windows/day; no cursor or mutable private state.
+
+    Only already-eligible, chronologically sorted leads are rotated.
+    Across four scheduled previews, up to four different 15-lead batches
+    are examined. With larger backlogs, the daily start advances so the
+    remaining batches are not permanently starved.
+    """
+    if type(limit) is not int or not 1 <= limit <= MAX_FETCH:
+        raise ValueError("Taille de lot de vérification interdite")
+    if type(slot) is not int or not 0 <= slot <= 3:
+        raise ValueError("Créneau de vérification interdit")
+    if not candidates:
+        return [], 0, 0
+    pages = (len(candidates) + limit - 1) // limit
+    page = (today.toordinal() * 4 + slot) % pages
+    return candidates[page * limit:(page + 1) * limit], page, pages
+
+
 def evaluate(leads, baseline, published, today, fetch=api_record,
-             verifier=verify_event, limit=MAX_FETCH):
+             verifier=verify_event, limit=MAX_FETCH, slot=0):
     historic = byid(baseline)
     existing = byid(published)
     if any(k not in existing or existing[k] != v for k, v in historic.items()):
@@ -370,10 +389,9 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
             for e in published["events"]}
     candidates = sorted((x for x in leads if permitted(x, today)),
                         key=lambda x: (x["date_start"], x["source_url"]))
+    selected, page, pages = rotating_batch(candidates, today, limit, slot)
     accepted, rejected, assessed = [], [], 0
-    for lead in candidates:
-        if assessed >= limit:
-            break
+    for lead in selected:
         assessed += 1
         evidence = {"source_url": lead["source_url"], "date": lead["date_start"]}
         # Avoid even contacting ODS for an occurrence already represented by
@@ -424,6 +442,8 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
         "backlog_total": len(leads), "eligible_with_reviewed_venue": len(candidates),
+        "review_slot": slot, "review_batch": page + 1 if pages else 0,
+        "review_batches": pages,
         "checked": assessed, "accepted_preflight": len(accepted),
         "deferred_or_duplicates": len(rejected), "details": rejected,
     }
@@ -435,6 +455,7 @@ def main():
     ap.add_argument("--output-dir", type=Path,
                     default=Path("/tmp/ptitesondes-promotion"))
     ap.add_argument("--limit", type=int, default=MAX_FETCH)
+    ap.add_argument("--slot", type=int, default=0, choices=range(4))
     ap.add_argument("--backlog-file", type=Path)
     ap.add_argument("--reference-file", type=Path)
     ap.add_argument("--catalogue-file", type=Path,
@@ -460,7 +481,8 @@ def main():
             raise ValueError("Référence historique trop volumineuse")
         baseline = json.loads(raw)
     published = json.loads(args.catalogue_file.read_text(encoding="utf-8"))
-    patch, report = evaluate(leads, baseline, published, today, limit=args.limit)
+    patch, report = evaluate(leads, baseline, published, today,
+                             limit=args.limit, slot=args.slot)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "preview-patch.json").write_text(
         json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
