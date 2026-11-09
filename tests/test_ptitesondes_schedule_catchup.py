@@ -56,6 +56,29 @@ class CatchupTests(unittest.TestCase):
                                            "schedule", OUTINGS_CRONS[3][0], Path(base)),
                              [0, 1, 2, 3])
 
+    def test_external_rescue_recovers_only_due_missing_slots(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            add_completed_report(root, DAY, 0)
+            self.assertEqual(pending_slots(DAY, utc(DAY, 14, 47),
+                                           "external_rescue", "", root), [1, 2])
+            self.assertEqual(pending_slots(DAY, utc(DAY, 18, 47),
+                                           "external_rescue", "", root), [1, 2, 3])
+            for slot in (1, 2, 3):
+                add_completed_report(root, DAY, slot)
+            self.assertEqual(pending_slots(DAY, utc(DAY, 18, 50),
+                                           "external_rescue", "", root), [])
+
+    def test_external_rescue_refuses_cron_and_cross_day(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            with self.assertRaises(ValueError):
+                pending_slots(DAY, utc(DAY, 18, 47), "external_rescue",
+                              OUTINGS_CRONS[3][0], root)
+            self.assertEqual(pending_slots(
+                date(2026, 11, 10), utc(DAY, 23, 40),
+                "external_rescue", "", root), [])
+
     def test_previous_reports_skip_successful_slots(self):
         with tempfile.TemporaryDirectory() as base:
             root = Path(base)
