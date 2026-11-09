@@ -86,6 +86,33 @@ def _identity(title, explicit_year=None):
     return clean_name, year
 
 
+
+def _url_edition_hint(url, title, today):
+    """Extract only an unverified research year from a same-name URL slug.
+
+    The caller still validates the first-party source URL independently.
+    An URL slug is never a date, organizer proof or publication authority.
+    Only an exact normalized festival name followed by -YYYY may supply
+    the *private* dossier's missing edition-year hint.
+    """
+    ident = _identity(title)
+    if ident is None or ident[1] is not None or not isinstance(url, str):
+        return None
+    try:
+        parsed = urlsplit(url)
+        if parsed.query or parsed.fragment:
+            return None
+        slug = parsed.path.rstrip("/").rsplit("/", 1)[-1]
+        match = re.fullmatch(r"([a-z0-9]+(?:-[a-z0-9]+)*)-(20[2-4]\\d)", slug)
+        if match is None or normalized(match.group(1).replace("-", " ")) != ident[0]:
+            return None
+        year = int(match.group(2))
+        current = date.fromisoformat(today).year
+        return year if current <= year <= current + 2 else None
+    except (ValueError, TypeError):
+        return None
+
+
 def _safe_region(value):
     regions = set(APPROVED.values())
     regions.discard("FRANCE")
@@ -214,7 +241,10 @@ def build_queue(state, report, curated, today):
                 or row.get("region") != APPROVED.get(row.get("source_index"))):
             rejected += 1
             continue
-        add(row.get("title"), None, row["region"], url,
+        # A yearless visible title can keep a strictly matching -YYYY URL
+        # as a REVIEW-ONLY edition hint; never treat a slug as event proof.
+        year_hint = _url_edition_hint(url, row.get("title"), today)
+        add(row.get("title"), year_hint, row["region"], url,
             row["source_index"], "REGIONAL_INDEX_UNVERIFIED",
             row.get("firstSeen"), row.get("lastSeen"),
             archive_slug=row.get("historical_name_slug"))
