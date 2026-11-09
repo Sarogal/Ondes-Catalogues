@@ -26,7 +26,12 @@ class PrivateBridgeRotationTests(unittest.TestCase):
         self.assertEqual(len(OUTINGS_CRONS), MAX_SLOTS)
         self.assertEqual(MAX_SLOTS, 4)
         self.assertIn("REVIEW_CRON: ${{ github.event.schedule }}", text)
-        self.assertIn("RUN_EVENT: ${{ github.event_name }}", text)
+        # Rescue is restricted to authenticated workflow dispatch; ordinary
+        # dispatch and push must retain their bounded one-batch behavior.
+        self.assertIn("RUN_EVENT: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery == 'catchup' && 'external_rescue' || github.event_name }}", text)
+        self.assertIn("RECOVERY: ${{ inputs.recovery || 'none' }}", text)
+        self.assertIn("if [[ \"$RECOVERY\" == 'catchup' ]]", text)
+        self.assertIn('Le rattrapage externe exige sorties + ecriture privee.', text)
         self.assertIn("ptitesondes_schedule_catchup.py", text)
         self.assertIn('--event "$RUN_EVENT" --cron "$REVIEW_CRON"', text)
         self.assertIn('mapfile -t REVIEW_SLOTS', text)
