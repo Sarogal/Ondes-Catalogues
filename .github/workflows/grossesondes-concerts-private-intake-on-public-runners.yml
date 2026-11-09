@@ -193,6 +193,7 @@ jobs:
           fi
 
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
+        id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
         shell: bash
         env:
@@ -212,10 +213,33 @@ jobs:
               --report confidential/automation/concerts/intake/approval-preflight.json \
               "${OPTIONS[@]}" \
               > "$RUNNER_TEMP/concerts-private-logs/approval-preflight.log" 2>&1; then
-            echo "::error::Prévalidation éditeur Concerts refusée : approbations inchangées"
-            exit 1
+            # Keep decisions closed, but do not lose the private discoveries:
+            # the registry and private diagnostics will be committed first.
+            echo "outcome=blocked" >> "$GITHUB_OUTPUT"
+            python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          from pathlib import Path
+          log = Path(os.environ["RUNNER_TEMP"]) / "concerts-private-logs/approval-preflight.log"
+          lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+          reason = next((x[:300] for x in reversed(lines)
+                         if x.startswith(("ValueError:", "TypeError:", "KeyError:"))),
+                        "preflight_execution_error")
+          target = Path("confidential/automation/concerts/intake/approval-preflight.json")
+          target.write_text(json.dumps({
+              "status": "blocked",
+              "validatedByPublisher": False,
+              "applied": False,
+              "reason": reason,
+              "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+          }, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          PY
+            echo "::warning::Prévalidation Concerts refusée ; sauvegarde privée des découvertes avant échec final."
+          else
+            echo "outcome=passed" >> "$GITHUB_OUTPUT"
+            echo "Prévalidation officielle et compatibilité éditeur contrôlées sans fuite privée." >> "$GITHUB_STEP_SUMMARY"
           fi
-          echo "Prévalidation officielle et compatibilité éditeur contrôlées sans fuite privée." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Vérifier les annulations, reports et incohérences des concerts publiés
         if: steps.access.outputs.ready == 'true'
@@ -308,7 +332,11 @@ jobs:
             git add --sparse -- automation/concerts/intake/registry-funnel.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
-            git add -- automation/concerts/approved.json
+            # The private approvals file is staged only after real publisher
+            # acceptance. A blocked proposal must never enter the commit.
+            if [ "${{ steps.publisher_preflight.outputs.outcome }}" = "passed" ]; then
+              git add -- automation/concerts/approved.json
+            fi
           fi
           if git diff --cached --quiet; then
             echo "Aucune nouvelle piste à enregistrer."
@@ -317,3 +345,10 @@ jobs:
             git push origin HEAD:main
           fi
           echo "Concerts : moteur public exécuté ; registre et revue confidentiels, aucune publication directe." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Refuser le cycle après archivage des pistes privées si prévalidation bloquée
+        if: steps.access.outputs.ready == 'true' && steps.publisher_preflight.outputs.outcome == 'blocked'
+        shell: bash
+        run: |
+          echo "::error::Prévalidation éditeur refusée ; découvertes et motif sauvegardés uniquement en privé."
+          exit 1
