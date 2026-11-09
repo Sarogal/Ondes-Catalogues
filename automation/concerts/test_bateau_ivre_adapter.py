@@ -87,7 +87,7 @@ class BateauIvreOfficialTests(unittest.TestCase):
         self.assertIsNone(row["localTime"])
         # The distant recommended H2 may not be accepted as an artist.
         self.assertNotIn("GROUPE D'UNE", row["name"])
-        no_support = page.replace("<h2>+ TACHYCARDIE</h2>\\n        Jeudi",
+        no_support = page.replace("<h2>+ TACHYCARDIE</h2>\n        Jeudi",
                                   "Jeudi", 1)
         row = b.candidate(no_support, url, SOURCE, NOW)
         self.assertEqual(row["firstPartyNamedSupport"], [])
