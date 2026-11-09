@@ -117,6 +117,47 @@ def _public_matches(dossier, published):
     return exact[:MAX_MATCHES], uncertain[:MAX_MATCHES]
 
 
+
+def _published_city_variants(dossier, published):
+    """Flag exact NAME — CITY variants as possible prior public editions.
+
+    This is a *collision hint*, not a duplicate verdict. The suffix must
+    equal the public record's own city and year/region must agree. A missing
+    dossier city is NOT silently inferred from the municipal source.
+    """
+    names = {dossier["normalized_name"]}
+    names.update(filter(None, (_canonical(v) for v in dossier.get("name_variants", [])[:8])))
+    edition = dossier.get("edition_year_hint")
+    if type(edition) is not int:
+        return []
+    found = []
+    for row in published:
+        if (not isinstance(row, dict) or row.get("region") != dossier["region_hint"]
+                or not isinstance(row.get("name"), str)):
+            continue
+        parts = row["name"].split(" — ")
+        if (len(parts) != 2 or _canonical(parts[0]) not in names
+                or _city_equal(parts[1], row.get("city")) is not True
+                or _city_equal(dossier.get("city_hint"), row.get("city")) is False):
+            continue
+        try:
+            start, end = date.fromisoformat(row["startDate"]), date.fromisoformat(row["endDate"])
+        except (KeyError, ValueError, TypeError):
+            continue
+        if start.year != edition or end < start:
+            continue
+        found.append({
+            "slug": row.get("slug") if isinstance(row.get("slug"), str) else None,
+            "year": edition, "published_city": row["city"],
+            "possible_same_edition_only": True,
+            "edition_already_published": False,
+            "publication_authorized": False,
+        })
+        if len(found) == MAX_MATCHES:
+            break
+    return found
+
+
 def _dynamic_proofs(dossier, detail):
     """Recheck each detail report against the same dossier URL and identity."""
     rows = []
@@ -233,6 +274,7 @@ def build_review(queue, detail, state, leads, public, history, today):
         seen.add(dossier["id"])
         archival = _archive_matches(dossier, history["knownFestivals"])
         exact, conflicting = _public_matches(dossier, public["festivals"])
+        city_variants = _published_city_variants(dossier, public["festivals"])
         primary = _primary_proof(dossier, leads, state, today)
         detail_clues = _dynamic_proofs(dossier, detail)
         cancellation = any(row["possible_cancellation"] for row in detail_clues)
@@ -241,7 +283,7 @@ def build_review(queue, detail, state, leads, public, history, today):
         ambiguous_history = len(archival) > 1
         if exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
-        elif conflicting or ambiguous_history or cancellation:
+        elif conflicting or city_variants or ambiguous_history or cancellation:
             status = "POTENTIAL_CONFLICT_REVIEW"
         elif primary and primary["dates_visible_in_primary"]:
             status = "PRIMARY_DATE_CLAIM_REVIEW"
@@ -262,6 +304,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("already_published_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
+        if city_variants:
+            blocks.append("published_title_city_variant_needs_review")
         if ambiguous_history:
             blocks.append("ambiguous_historical_identity")
         if cancellation:
@@ -276,6 +320,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "archive_identity_hints": archival,
             "published_exact_edition_matches": exact,
             "published_city_conflicts": conflicting,
+            "published_title_city_variants_review_only": city_variants,
             "primary_observation": primary,
             "regional_detail_observations": detail_clues,
             "structured_date_hints_count": len(event_clues),
@@ -318,6 +363,8 @@ def build_review(queue, detail, state, leads, public, history, today):
         "dossiers_count": len(result),
         "historical_identity_hints_count": sum(bool(x["archive_identity_hints"]) for x in result),
         "published_duplicate_dossiers_count": sum(bool(x["published_exact_edition_matches"]) for x in result),
+        "published_title_city_variant_dossiers_count": sum(
+            bool(x["published_title_city_variants_review_only"]) for x in result),
         "primary_observed_dossiers_count": sum(x["primary_observation"] is not None for x in result),
         "regional_detail_observed_dossiers_count": sum(bool(x["regional_detail_observations"]) for x in result),
         "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
