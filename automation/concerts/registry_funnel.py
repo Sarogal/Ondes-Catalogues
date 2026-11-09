@@ -27,6 +27,7 @@ AUTOMATIC_RECHECK_SOURCES = frozenset({
     "agenda_officiel_atabal_detail",
     "agenda_officiel_blacklab_detail_review",
     "agenda_officiel_laiterie_detail_review",
+    "agenda_officiel_rockstore_detail_review",
 })
 TERMINAL_STATUSES = frozenset({"approved", "rejected", "superseded"})
 EXCLUDED_BUCKETS = frozenset({
