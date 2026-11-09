@@ -4153,9 +4153,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
             parsed_url.scheme == "https" and
             parsed_url.hostname == "rockstore.fr" and
             bool(re.fullmatch(
-                r"/[a-z0-9-]{3,160}-(?:0?[1-9]|[12]\\d|3[01])-"
+                r"/[a-z0-9-]{3,160}-(?:0?[1-9]|[12]\d|3[01])-"
                 r"(?:janvier|fevrier|mars|avril|mai|juin|juillet|aout|"
-                r"septembre|octobre|novembre|decembre)-20\\d{2}/",
+                r"septembre|octobre|novembre|decembre)-20\d{2}/",
                 parsed_url.path)) and
             not parsed_url.username and not parsed_url.password and
             not parsed_url.port and not parsed_url.query and
@@ -4844,7 +4844,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "septembre": 9, "octobre": 10, "novembre": 11, "decembre": 12,
         }
         url_date = re.search(
-            r"-(\\d{1,2})-([a-z]+)-(20\\d{2})/$",
+            r"-(\d{1,2})-([a-z]+)-(20\\d{2})/$",
             parsed_url.path)
         require(url_date is not None and
                 dt.date(int(url_date[3]), rockstore_months[url_date[2]],
