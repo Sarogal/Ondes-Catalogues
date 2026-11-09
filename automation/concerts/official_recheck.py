@@ -264,10 +264,14 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                    "agenda_officiel_backstage_detail",
                    "agenda_officiel_atabal_detail") and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
-    unapproved = [i for i in candidates if
+    # A private human decision is permanent: never reconsider a rejected or
+    # superseded candidate even if discovery keeps observing the same ID.
+    reviewable = [i for i in candidates if i.get("status", "pending_review") == "pending_review"]
+    skipped_decided = len(candidates) - len(reviewable)
+    unapproved = [i for i in reviewable if
                   (i["candidate"].get("sourceUrl"), i["candidate"].get("date"))
                   not in approved_pairs]
-    already_approved_skipped = len(candidates) - len(unapproved)
+    already_approved_skipped = len(reviewable) - len(unapproved)
     # Conserver les dates passées dans l'historique privé sans refaire de réseau.
     # Un format invalide continue d'être inspecté et retenu, jamais ignoré.
     def is_expired(row):
@@ -302,6 +306,7 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
             results.append({"candidateId": c.get("candidateId"), "status": "held",
                             "reason": str(ex)[:180]})
     return out, {"evaluated": len(chosen), "totalEligible": len(eligible),
+                 "decidedSkipped": skipped_decided,
                  "alreadyApprovedSkipped": already_approved_skipped,
                  "expiredSkipped": expired_skipped,
                  "newApprovals": new, "held": [r for r in results if r["status"] == "held"],
