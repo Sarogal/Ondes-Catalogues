@@ -15,7 +15,7 @@ from urllib.parse import urljoin
 from zoneinfo import ZoneInfo
 
 from curated_future_lead_watch import visible_text
-from national_discovery_queue import _identity, _recent, _safe_origin_link
+from national_discovery_queue import _identity, _recent, _safe_origin_link, _url_edition_hint
 from national_structured_clues import detail_event_clues, valid_clues
 from official_watch import get_page, permitted_url
 from regional_agenda_pagination import canonical_page_url
@@ -127,9 +127,13 @@ def _eligible_sources(state, queue, today, due_only=True):
             index_page = _review_index_page(state, row, index, today)
             if index_page is None:
                 continue
-            ident = _identity(row["title"])
-            if (ident is None or ident[1] != year
-                    or ident[0] != dossier.get("normalized_name")):
+            ident = _identity(row["title"], year)
+            # Never accept a year injected by a private row or a forged
+            # dossier. A yearless title needs an exact -YYYY URL identity
+            # already checked against the live official index.
+            if (ident is None or ident[0] != dossier.get("normalized_name")
+                    or (_identity(row["title"])[1] is None
+                        and _url_edition_hint(url, row["title"], today) != year)):
                 continue
             # The index link cannot be changed by private state alone.
             if (source.get("firstSeen") != row["firstSeen"]
