@@ -103,7 +103,7 @@ def _url_edition_hint(url, title, today):
         if parsed.query or parsed.fragment:
             return None
         slug = parsed.path.rstrip("/").rsplit("/", 1)[-1]
-        match = re.fullmatch(r"([a-z0-9]+(?:-[a-z0-9]+)*)-(20[2-4]\\d)", slug)
+        match = re.fullmatch(r"([a-z0-9]+(?:-[a-z0-9]+)*)-(20[2-4]\d)", slug)
         if match is None or normalized(match.group(1).replace("-", " ")) != ident[0]:
             return None
         year = int(match.group(2))
