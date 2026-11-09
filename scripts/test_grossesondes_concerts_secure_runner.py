@@ -38,6 +38,25 @@ class PrivateIntakeHandoffTests(unittest.TestCase):
         self.assertLess(step.index("git commit -m"),
                         step.index("git push origin HEAD:main"))
 
+    def test_preflight_failure_cannot_skip_private_registry_persistence(self):
+        # Preflight failure no longer destroys today's discoveries; the
+        # workflow must fail only AFTER the private commit.
+        self.assertIn("id: publisher_preflight", self.workflow)
+        self.assertIn('echo "outcome=blocked" >> "$GITHUB_OUTPUT"', self.workflow)
+        self.assertIn('"status": "blocked"', self.workflow)
+        self.assertIn('approval-preflight.json', self.workflow)
+        self.assertIn(
+            "steps.publisher_preflight.outputs.outcome == 'blocked'",
+            self.workflow)
+        self.assertIn('if [ "${{ steps.publisher_preflight.outputs.outcome }}" = "passed" ]; then',
+                      self.commit_step)
+        self.assertLess(
+            self.workflow.index("git push origin HEAD:main"),
+            self.workflow.index(
+                "      - name: Refuser le cycle après archivage des pistes privées"))
+        self.assertNotIn("cat \"$RUNNER_TEMP/concerts-private-logs/approval-preflight.log\"",
+                         self.workflow)
+
     def test_approvals_still_disabled_by_default(self):
         step = self.commit_step
         self.assertIn('if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then', step)

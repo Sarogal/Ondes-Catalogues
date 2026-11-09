@@ -118,7 +118,7 @@ class OfficialRecheckTests(unittest.TestCase):
         cloud["mode"] = "preview-public-unlisted"
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         registry = {"items": {"molotov": {
-            "candidate": molotov_candidate(), "observations": 2
+            "candidate": molotov_candidate(), "observations": 2, "stableObservations": 2
         }}}
         result, report = v.process(registry, cloud, approvals, dt.date(2026,11,1),
                                    fetch=lambda url, cache: molotov_page)
@@ -136,7 +136,7 @@ class OfficialRecheckTests(unittest.TestCase):
         cat["artists"]=[cat["artists"][0]]  # Arkona existing, Seth and TGO new
         queue={"schema":"grossesondes.concert.approvals.v1","approvals":[]}
         reg={"items":{"ferrailleur":{
-            "candidate":ferrailleur_candidate(),"observations":3
+            "candidate":ferrailleur_candidate(),"observations": 3, "stableObservations": 2
         }}}
         updated,report=v.process(reg,cat,queue,dt.date(2026,11,1),
                                   fetch=lambda url,cache:ferrailleur_page)
@@ -159,7 +159,7 @@ class OfficialRecheckTests(unittest.TestCase):
         cat["artists"]=[cat["artists"][0]]
         cat["artists"][0]["aliases"]=["Seth"]
         queue={"schema":"grossesondes.concert.approvals.v1","approvals":[]}
-        reg={"items":{"f":{"candidate":record(),"observations":4}}}
+        reg={"items":{"f":{"candidate":record(),"observations": 4, "stableObservations": 2}}}
         updated,report=v.process(reg,cat,queue,dt.date(2026,11,1),
                                   fetch=lambda url,cache:official_html)
         self.assertEqual(updated,queue)
@@ -171,11 +171,11 @@ class OfficialRecheckTests(unittest.TestCase):
                      "approvals": []}
         registry = {"items": {
             "rejected": {"status": "rejected", "candidate": record(),
-                         "observations": 9},
+                         "observations": 9, "stableObservations": 2},
             "superseded": {"status": "superseded", "candidate": record(),
-                           "observations": 9},
+                           "observations": 9, "stableObservations": 2},
             "approved": {"status": "approved", "candidate": record(),
-                         "observations": 9},
+                         "observations": 9, "stableObservations": 2},
         }}
         def forbidden(*args):
             self.fail("A private decision must never be rechecked")
@@ -200,6 +200,20 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(report["evaluated"], 0)
         self.assertEqual(out, approvals)
 
+    def test_legacy_raw_sightings_without_day_proof_are_never_promoted(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1",
+                     "approvals": []}
+        legacy = {"items": {"legacy": {
+            "candidate": record(), "observations": 120,
+            "status": "pending_review"}}}
+        def forbidden(*args):
+            self.fail("Legacy raw observations are not independent days")
+        unchanged, report = v.process(
+            legacy, catalogue(), approvals, dt.date(2026, 11, 9),
+            fetch=forbidden)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(unchanged, approvals)
+
     def test_single_observation_does_not_qualify(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         registry = {"items": {"x": {"candidate": record(), "observations": 1}}}
@@ -215,8 +229,8 @@ class OfficialRecheckTests(unittest.TestCase):
         expired["date"] = "2026-10-31"
         future = record()
         registry = {"items": {
-            "expired": {"candidate": expired, "observations": 3},
-            "future": {"candidate": future, "observations": 3},
+            "expired": {"candidate": expired, "observations": 3, "stableObservations": 2},
+            "future": {"candidate": future, "observations": 3, "stableObservations": 2},
         }}
         fetched = []
         def fetch(url, cache):
@@ -239,7 +253,7 @@ class OfficialRecheckTests(unittest.TestCase):
         invalid = record()
         invalid["date"] = "date-illisible"
         registry = {"items": {"invalid": {"candidate": invalid,
-                                             "observations": 2}}}
+                                             "observations": 2, "stableObservations": 2}}}
         calls = []
         def fetch(url, cache):
             calls.append(url)
@@ -252,9 +266,9 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(len(report["held"]), 1)
         self.assertEqual(result, approvals)
 
-    def test_two_observations_accept_once_without_mutating_inputs(self):
+    def test_two_stable_distinct_day_observations_accept_once_without_mutating_inputs(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
-        registry = {"items": {"x": {"candidate": record(), "observations": 2}}}
+        registry = {"items": {"x": {"candidate": record(), "observations": 2, "stableObservations": 2}}}
         original_catalogue = catalogue()
         saved = copy.deepcopy(original_catalogue)
         result, report = v.process(registry, original_catalogue, approvals,
@@ -275,7 +289,7 @@ class OfficialRecheckTests(unittest.TestCase):
 
     def test_changed_date_at_same_official_url_is_not_silently_skipped(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
-        registry = {"items": {"x": {"candidate": record(), "observations": 2}}}
+        registry = {"items": {"x": {"candidate": record(), "observations": 2, "stableObservations": 2}}}
         first, report = v.process(registry, catalogue(), approvals,
                                   dt.date(2026, 11, 1),
                                   fetch=lambda url, cache: PAGE)

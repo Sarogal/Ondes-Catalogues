@@ -122,7 +122,8 @@ class AtabalRecheckTests(unittest.TestCase):
 
     def test_two_observations_one_approval_and_no_repeat_fetch(self):
         queue={"schema":"grossesondes.concert.approvals.v1","approvals":[]}
-        reg={"items":{"atabal":{"candidate":candidate(),"observations":2}}}
+        reg={"items":{"atabal":{"candidate":candidate(),"observations":2,
+                                 "stableObservations":2}}}
         cat=catalogue()
         saved=copy.deepcopy(cat)
         reviewed,report=official.process(reg,cat,queue,NOW,

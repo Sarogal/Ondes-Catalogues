@@ -61,7 +61,8 @@ class BackstageRecheckTests(unittest.TestCase):
         self.assertIsNone(a["event"]["time"])
 
     def test_two_observations_are_required_and_second_run_is_idempotent(self):
-        reg = {"items": {"only": {"candidate": candidate(), "observations": 2}}}
+        reg = {"items": {"only": {"candidate": candidate(), "observations": 2,
+                                  "stableObservations": 2}}}
         queue = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         cat = catalogue()
         original = copy.deepcopy(cat)
@@ -75,6 +76,7 @@ class BackstageRecheckTests(unittest.TestCase):
         self.assertEqual(len(out2["approvals"]), 1)
         self.assertEqual(report2["newApprovals"], [])
         reg["items"]["only"]["observations"] = 1
+        reg["items"]["only"]["stableObservations"] = 1
         _, held = official.process(reg, cat, queue, DAY,
                                    fetch=lambda url, cache: PAGE)
         self.assertEqual(held["evaluated"], 0)
