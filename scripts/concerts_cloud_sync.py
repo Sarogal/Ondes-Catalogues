@@ -5075,8 +5075,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
             u = urlsplit(official_url)
             date_slug = re.search(
                 r"-(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)-"
-                r"(\\d{1,2})-(janvier|fevrier|mars|avril|mai|juin|juillet|"
-                r"aout|septembre|octobre|novembre|decembre)-(20\\d{2})/$",
+                r"(\d{1,2})-(janvier|fevrier|mars|avril|mai|juin|juillet|"
+                r"aout|septembre|octobre|novembre|decembre)-(20\d{2})/$",
                 u.path)
             require(date_slug is not None,
                     "Atabal multi : URL sans date complète")
