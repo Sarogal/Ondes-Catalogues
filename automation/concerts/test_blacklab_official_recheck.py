@@ -113,7 +113,7 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
             check.verify(lead(), changed, catalog(), self.TODAY)
 
     def test_official_genre_change_refused(self):
-        page = dahlia(description="THE BLACK DAHLIA MURDER grindcore (USA)")
+        page = dahlia(description="THE BLACK DAHLIA MURDER punk rock (USA)")
         with self.assertRaisesRegex(ValueError, "modifiée"):
             check.verify(lead(), page, catalog(), self.TODAY)
 
