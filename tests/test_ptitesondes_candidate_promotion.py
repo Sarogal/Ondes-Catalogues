@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from ptitesondes_candidate_promotion import (
     api_record, category_for, confirmed_session, evaluate, main, make_event,
     permitted, reconciled_openagenda_url, registry_location, scheduled,
-    covered_by_published_range,
+    covered_by_published_range, public_run_summary,
 )
 from merge_policy import ORIGIN, merge
 from venue_registry import VENUES
@@ -85,6 +85,31 @@ class CandidatePromotionTests(unittest.TestCase):
             self.assertEqual(candidate["generated_at"], str(TODAY))
             self.assertFalse(candidate["safe_to_publish"])
             self.assertEqual(report["backlog_total"], 0)
+
+    def test_public_diagnostic_output_never_exposes_private_reasons(self):
+        source = {
+            "date": "2026-11-09", "backlog_total": 229,
+            "eligible_with_reviewed_venue": 29,
+            "eligible_raw": 36, "duplicate_collector_leads_skipped": 7,
+            "conflicting_uid_days_deferred": 0,
+            "checked": 15, "accepted_preflight": 0,
+            "reason_counts": {
+                "deferred: PRIVATE_TOKEN=https://private.invalid": 15
+            },
+            "details": [{"source_url": "https://private.invalid/secret",
+                         "reason": "PRIVATE_TOKEN"}],
+        }
+        result = public_run_summary(source)
+        self.assertEqual(result["duplicate_collector_leads_skipped"], 7)
+        self.assertEqual(result["eligible_raw"], 36)
+        self.assertEqual(result["mode"], "preview_no_public_write")
+        encoded = json.dumps(result)
+        self.assertNotIn("private.invalid", encoded)
+        self.assertNotIn("PRIVATE_TOKEN", encoded)
+        self.assertNotIn("reason_counts", encoded)
+        self.assertNotIn("details", encoded)
+        with self.assertRaises(ValueError):
+            public_run_summary(dict(source, date="secret"))
 
     def test_exact_registry_alias_required(self):
         self.assertEqual(registry_location(lead())["city"], "Nantes")
