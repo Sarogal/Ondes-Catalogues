@@ -27,7 +27,9 @@ APPROVED_HOSTS = {
     "museum.toulouse-metropole.fr", "www.ville-pace.bzh",
     "parents.loire-atlantique.fr",
 }
-MAX_BYTES = 300_000
+# Government and municipal CMS pages can contain large navigation templates.
+# Explicit cap still protects GitHub Actions memory/network; 1.5 MiB max.
+MAX_BYTES = 1_500_000
 DATE_TIME = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:Z|[+-]\d{2}:\d{2})$")
 JSON_LD = re.compile(r'<script\b(?=[^>]*\btype\s*=\s*["\x27]application/ld\+json["\x27])[^>]*>(.*?)</script\s*>', re.I | re.S)
 
@@ -251,7 +253,24 @@ def run_watch(registry, catalogue, previous=None, getter=fetch, today=None):
                 leads.extend(pace_agenda_leads(source, html, today, getter))
         except (OSError, HTTPError, ValueError, UnicodeError) as error:
             record["status"] = "source_unavailable"
-            record["reason"] = type(error).__name__
+            # Stable private diagnostics: never copy arbitrary exception
+            # text, full URLs, HTML or tokens into reports and logs.
+            if isinstance(error, HTTPError):
+                record["reason"] = ("http_" + str(error.code)
+                                    if 300 <= error.code <= 599 else "http_error")
+            elif isinstance(error, ValueError):
+                record["reason"] = {
+                    "Source hors liste autorisée": "unsafe_source",
+                    "Redirection refusée": "redirect_blocked",
+                    "Le programme n'est pas une page HTML": "non_html_page",
+                    "Page trop volumineuse": "html_over_limit",
+                    "Réponse HTML invalide ou excessive": "invalid_or_large_html",
+                    "Identité du lieu absente de la page": "identity_missing",
+                }.get(str(error), "validation_failed")
+            elif isinstance(error, UnicodeError):
+                record["reason"] = "invalid_encoding"
+            else:
+                record["reason"] = "network_error"
             # Previous fingerprint survives failure.
         entries.append(record)
     report = {"schema": REPORT, "policy": "no_automatic_publication",
