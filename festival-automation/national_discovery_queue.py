@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 
 from curated_future_lead_watch import load_leads
 from historical_future_lead_watch import validated_hints
+from targeted_institutional_future_watch import validated_observations as validated_institutional
 from curated_secondary_discovery import clean_queue
 from curated_targeted_secondary import APPROVED_ALL, validated_targets
 from regional_festival_discovery import APPROVED
@@ -145,6 +146,11 @@ def build_queue(state, report, curated, today):
                      if report.get("historical_future_watch_archive_status_private")
                      == "CONSISTENT" else [])
     approved_archive_urls = {entry["url"] for entry in archive_hints}
+    institutional_hints = (validated_institutional(state, today)
+                           if report.get("institutional_future_archive_status_private")
+                           == "CONSISTENT" else [])
+    approved_institutional_urls = {entry["institutional_url"]
+                                   for entry in institutional_hints}
     dossiers = {}
     rejected = 0
     observed_sources = 0
@@ -152,7 +158,7 @@ def build_queue(state, report, curated, today):
 
     def add(title, year, region, url, origin, kind, first, last,
             city=None, archive_slug=None, date_hint=None,
-            archive_date_hints=None):
+            archive_date_hints=None, institutional_date_hint=None):
         nonlocal rejected, observed_sources, newly_discovered_sources
         ident = _identity(title, year)
         region = _safe_region(region)
@@ -163,7 +169,10 @@ def build_queue(state, report, curated, today):
                 and origin == url) or (
                     isinstance(url, str)
                     and kind == "HISTORICAL_HOMEPAGE_YEAR_HINT"
-                    and url in approved_archive_urls and origin == url)
+                    and url in approved_archive_urls and origin == url) or (
+                    isinstance(url, str)
+                    and kind == "INSTITUTIONAL_FUTURE_DATE_HINT"
+                    and url in approved_institutional_urls and origin == url)
         if (ident is None or not region or not isinstance(url, str)
                 or not (safe or _safe_origin_link(url, origin))
                 or not _recent(first, last, today)):
@@ -187,6 +196,7 @@ def build_queue(state, report, curated, today):
                 "archive_slug_hint": None,
                 "date_hints": [],
                 "historical_homepage_date_hints_review_only": [],
+                "institutional_future_date_hints_review_only": [],
                 "firstSeen": first, "lastSeen": last,
                 "sources": [],
                 "source_independence_verified": False,
@@ -223,6 +233,10 @@ def build_queue(state, report, curated, today):
                         and len(row["historical_homepage_date_hints_review_only"]) < 3):
                     row["historical_homepage_date_hints_review_only"].append(
                         dict(clue))
+        if kind == "INSTITUTIONAL_FUTURE_DATE_HINT" and institutional_date_hint:
+            if institutional_date_hint not in row["institutional_future_date_hints_review_only"]:
+                row["institutional_future_date_hints_review_only"].append(
+                    dict(institutional_date_hint))
         witness = {"url": url, "discovered_via": origin, "kind": kind,
                    "firstSeen": first, "lastSeen": last,
                    "independence_verified": False,
@@ -255,6 +269,24 @@ def build_queue(state, report, curated, today):
             hint["firstSeen"], hint["lastSeen"],
             archive_slug=hint["slug"],
             archive_date_hints=hint["date_hints_review_only"])
+
+    for hint in institutional_hints:
+        add(hint["name"], int(hint["start"][:4]), hint["region"],
+            hint["institutional_url"], hint["institutional_url"],
+            "INSTITUTIONAL_FUTURE_DATE_HINT", hint["first"], hint["last"],
+            city=hint["city"], archive_slug=hint["slug"],
+            institutional_date_hint={
+                "start_date_hint": hint["start"], "end_date_hint": hint["end"],
+                "city_name_hint": hint["city"],
+                "venue_name_hint": hint["venue"],
+                "official_home": hint["official_home"],
+                "official_home_future_dates_visible": hint["primary_same_dates"],
+                "provider_claim": hint["provider"],
+                "institutional_source_url": hint["institutional_url"],
+                "observed_at": hint["last"],
+                "publication_authorized": False, "review_only": True,
+                "independence_verified": False, "edition_dates_verified": False,
+            })
 
     regional = state.get("regional_festival_candidates_review_only", {})
     if not isinstance(regional, dict):
@@ -378,6 +410,8 @@ def build_queue(state, report, curated, today):
         row["date_hints"].sort(key=lambda d: (d["start_date"] or ""))
         row["historical_homepage_date_hints_review_only"].sort(
             key=lambda d: (d["start_date_hint"], d["end_date_hint"]))
+        row["institutional_future_date_hints_review_only"].sort(
+            key=lambda d: (d["start_date_hint"], d["end_date_hint"]))
         row["missing_checks"] = sorted(set(row["missing_checks"]))
     return {
         "schema": SCHEMA, "as_of": today,
@@ -392,6 +426,8 @@ def build_queue(state, report, curated, today):
                 for s in row["sources"]) for row in rows),
         "historical_homepage_date_hints_private": sum(
             len(row["historical_homepage_date_hints_review_only"]) for row in rows),
+        "institutional_future_date_dossiers_private": sum(
+            bool(row["institutional_future_date_hints_review_only"]) for row in rows),
         "non_curated_dossiers_count": sum(
             not any(s["kind"] == "CURATED_PRIMARY_CANDIDATE"
                     for s in row["sources"]) for row in rows),
@@ -423,6 +459,8 @@ def main():
     report["national_discovery_dossiers_private"] = review["candidate_dossiers_count"]
     report["national_discovery_historical_homepage_dossiers_private"] = (
         review["historical_homepage_dossiers_private"])
+    report["national_discovery_institutional_future_dossiers_private"] = (
+        review["institutional_future_date_dossiers_private"])
     report["national_discovery_sources_private"] = review["candidate_sources_count"]
     report["national_discovery_new_sources_private"] = review["newly_discovered_sources_count"]
     report["national_discovery_non_curated_dossiers_private"] = review["non_curated_dossiers_count"]
