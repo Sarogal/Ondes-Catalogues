@@ -355,6 +355,46 @@ def covered_by_published_range(lead, published_events):
     return False
 
 
+
+def unique_review_candidates(leads, today):
+    """Avoid wasting bounded review slots on two mirrors of a single UID/day.
+
+    OpenDataSoft and OpenAgenda v2 are *not* independent proofs. They often
+    submit the same session twice with different OpenAgenda URL aliases.
+    Prefer the ODS index lead only as an input to the existing strict ODS
+    record and organizer verification, NEVER as evidence of the session.
+
+    Contradictory identity or collector URL for the same UID/date blocks that
+    entire group; no fuzzy identity guessing and no widening URL rules.
+    """
+    eligible = [x for x in leads if permitted(x, today)]
+    grouped = {}
+    for lead in eligible:
+        grouped.setdefault((lead["external_id"], lead["date_start"]), []).append(lead)
+    candidates = []
+    duplicates_skipped = 0
+    conflicting_uid_days = 0
+    priority = {"opendatasoft-index": 0, "openagenda-v2": 1}
+    for batch in grouped.values():
+        identities = {
+            (norm(lead["title"]), norm(lead["city"]), norm(lead["venue"]),
+             lead["date_end"]) for lead in batch
+        }
+        sources_by_collector = {}
+        for lead in batch:
+            sources_by_collector.setdefault(lead["collector"], set()).add(
+                lead["source_url"])
+        if (len(identities) != 1 or
+                any(len(urls) != 1 for urls in sources_by_collector.values())):
+            conflicting_uid_days += 1
+            continue  # a disagreement must never select an arbitrary winner
+        candidates.append(min(batch, key=lambda lead: (
+            priority[lead["collector"]], lead["source_url"])))
+        duplicates_skipped += len(batch) - 1
+    candidates.sort(key=lambda x: (
+        x["date_start"], x["source_url"], x["external_id"]))
+    return candidates, len(eligible), duplicates_skipped, conflicting_uid_days
+
 def rotating_batch(candidates, today, limit, slot=0):
     """Four deterministic windows/day; no cursor or mutable private state.
 
@@ -387,8 +427,8 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
                   for e in published["events"]}
     urls = {(e.get("source_url"), e.get("date_start"))
             for e in published["events"]}
-    candidates = sorted((x for x in leads if permitted(x, today)),
-                        key=lambda x: (x["date_start"], x["source_url"]))
+    candidates, eligible_raw, duplicates, conflicts = unique_review_candidates(
+        leads, today)
     selected, page, pages = rotating_batch(candidates, today, limit, slot)
     accepted, rejected, assessed = [], [], 0
     for lead in selected:
@@ -442,6 +482,9 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
         "backlog_total": len(leads), "eligible_with_reviewed_venue": len(candidates),
+        "eligible_raw": eligible_raw,
+        "duplicate_collector_leads_skipped": duplicates,
+        "conflicting_uid_days_deferred": conflicts,
         "review_slot": slot, "review_batch": page + 1 if pages else 0,
         "review_batches": pages,
         "checked": assessed, "accepted_preflight": len(accepted),
