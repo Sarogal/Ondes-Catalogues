@@ -241,6 +241,25 @@ jobs:
           cp "$RUNNER_TEMP/concerts-official-review.json" "$target/official-review.json"
           cp "$RUNNER_TEMP/concerts-published-watch.json" "$target/published-watch.json"
 
+      - name: Mesurer la couverture des sources et le progrès de la veille en privé
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/intake_metrics.py \
+              --discovery "$RUNNER_TEMP/concerts-discovery/candidates.json" \
+              --tours "$RUNNER_TEMP/concerts-tours/candidates.json" \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --official "$RUNNER_TEMP/concerts-official-review.json" \
+              --watch "$RUNNER_TEMP/concerts-published-watch.json" \
+              --venue-archive "$RUNNER_TEMP/concerts-discovery/archive-summary.json" \
+              --tour-archive "$RUNNER_TEMP/concerts-tours/archive-summary.json" \
+              --out confidential/automation/concerts/intake/daily-metrics.json \
+              > "$RUNNER_TEMP/concerts-private-logs/intake-metrics.log" 2>&1; then
+            # Metrics cannot destroy the already-collected private leads.
+            echo "::warning::Bilan privé indisponible, archivage poursuivi."
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -260,6 +279,9 @@ jobs:
           export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
           export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $HEADER"
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
+          if [ -f automation/concerts/intake/daily-metrics.json ]; then
+            git add --sparse -- automation/concerts/intake/daily-metrics.json
+          fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             git add -- automation/concerts/approved.json
           fi
