@@ -123,6 +123,7 @@ jobs:
           run_private secondary python "$ENGINE/curated_secondary_discovery.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --detail-limit 1
           run_private targeted python "$ENGINE/curated_targeted_secondary.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --detail-limit 1
           run_private history_homepages python "$ENGINE/historical_future_lead_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2
+          run_private targeted_institutional_future python "$ENGINE/targeted_institutional_future_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 1
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 1
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
