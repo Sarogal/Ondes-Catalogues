@@ -121,15 +121,19 @@ def detail_urls(html, listing_url, today, horizon_days=365):
 
 
 
-def selected_details(urls, known, today, limit=12, priority_days=45):
-    """Rotate near-future and later first-party leads, prioritizing new URLs.
+def selected_details(urls, known, today, limit=12, priority_days=45,
+                     scan_slot=0):
+    """Rotate the same per-run budget with a two-day independent-proof core.
 
-    A fixed list of the first five concerts repeatedly re-fetched pop/club
-    listings on the daily Rockstore run. Split the available budget into
-    8 imminent dates and 4 later ones, rotating both daily.
+    Each of the three daily public-runner scans explores different near/far
+    source pages, but keeps at most two imminent first-party details pinned
+    for two consecutive UTC calendar dates. Only the archive's separate
+    day-stamped identity counter may ever make them eligible for approval.
     """
     day = dt.date.fromisoformat(today)
     limit = max(1, min(14, int(limit)))
+    if scan_slot not in (0, 1, 2):
+        raise ValueError("Unknown Rockstore daily scan slot")
     cutoff = day + dt.timedelta(days=priority_days)
     unique = sorted(set(urls), key=lambda u: (detail_identity(u)[0], u)
                     if detail_identity(u) else (dt.date.max, u))
@@ -142,18 +146,23 @@ def selected_details(urls, known, today, limit=12, priority_days=45):
            ("officialUrl", u) not in known]
     seen = [u for u in valid if ("officialUrl", u) in known]
 
+    near_quota = min(8, limit)
+    core_amount = min(2, len(near), near_quota)
+    anchor = ((day.toordinal() // 2) * max(1, core_amount)) % len(near) if near else 0
+    core = [near[(anchor+i) % len(near)] for i in range(core_amount)]
+    remaining_near = [u for u in near if u not in core]
+
     def take(pool, amount):
         if not pool or amount <= 0:
             return []
         k = min(amount, len(pool))
-        offset = (day.toordinal() * max(1, k)) % len(pool)
+        offset = ((day.toordinal() + scan_slot) * max(1, k)) % len(pool)
         return [pool[(offset + i) % len(pool)] for i in range(k)]
 
-    near_quota = min(8, limit)
-    chosen = take(near, near_quota)
+    chosen = core + take(remaining_near, near_quota - len(core))
     chosen.extend(take(far, limit - len(chosen)))
     if len(chosen) < limit:
-        remaining_near = [u for u in near if u not in chosen]
+        remaining_near = [u for u in remaining_near if u not in chosen]
         chosen.extend(take(remaining_near, limit - len(chosen)))
     if len(chosen) < limit:
         remaining_far = [u for u in far if u not in chosen]
@@ -161,6 +170,7 @@ def selected_details(urls, known, today, limit=12, priority_days=45):
     if len(chosen) < limit:
         chosen.extend(take(seen, limit - len(chosen)))
     return chosen
+
 
 def detail_candidate(html, url, source, today):
     ident = detail_identity(url)

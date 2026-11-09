@@ -1213,7 +1213,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                 limit = max(1, min(14, int(source.get("maxDetailPagesPerRun", 12))))
                 seen = [u for u in urls if ("officialUrl", u) in known]
                 selected = rockstore_adapter.selected_details(
-                    urls, known, day.isoformat(), limit)
+                    urls, known, day.isoformat(), limit,
+                    scan_slot=scan_slot)
                 diag = {
                     "method": "rotating_official_rockstore_individual_detail",
                     "officialEventLinks": len(urls),

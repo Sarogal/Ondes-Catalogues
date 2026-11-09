@@ -131,6 +131,41 @@ class RockstoreAdapterTests(unittest.TestCase):
         self.assertTrue(all(len(set(day) & set(far)) == 4 for day in selected))
         self.assertNotEqual(selected[0], selected[1])
 
+    def test_three_local_windows_rotate_and_keep_two_day_proof_core(self):
+        near = [f"https://rockstore.fr/band-n{i}-{i+10}-novembre-2026/"
+                for i in range(20)]
+        far = [f"https://rockstore.fr/band-f{i}-{i+1}-mars-2027/"
+               for i in range(20)]
+        # Fix the test within the valid first-party horizon.
+        start = dt.date(2026, 11, 3)
+        day = start.isoformat()
+        scans = [
+            rockstore_adapter.selected_details(
+                near + far, set(), day, limit=12, scan_slot=i)
+            for i in (0, 1, 2)
+        ]
+        self.assertTrue(all(len(x) == 12 and len(set(x)) == 12
+                            for x in scans))
+        self.assertTrue(all(len(set(x) & set(near)) == 8 for x in scans))
+        self.assertTrue(all(len(set(x) & set(far)) == 4 for x in scans))
+        self.assertEqual(scans[0][:2], scans[1][:2])
+        self.assertEqual(scans[1][:2], scans[2][:2])
+        self.assertGreaterEqual(len(set.union(*(set(x) for x in scans))), 30)
+        # Explicit distinct calendar-day recheck core: never count different
+        # same-day windows as independent stability.
+        baseline = start
+        if baseline.toordinal() % 2:
+            baseline += dt.timedelta(days=1)
+        a = rockstore_adapter.selected_details(
+            near + far, set(), baseline.isoformat(), limit=12)
+        b = rockstore_adapter.selected_details(
+            near + far, set(),
+            (baseline + dt.timedelta(days=1)).isoformat(), limit=12)
+        self.assertEqual(a[:2], b[:2])
+        with self.assertRaises(ValueError):
+            rockstore_adapter.selected_details(
+                near, set(), day, scan_slot=3)
+
     def test_discover_integrates_and_ignores_pop_and_cancelled(self):
         pages = {
             SOURCE["url"]: LISTING,

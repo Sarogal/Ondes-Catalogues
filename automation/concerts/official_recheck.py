@@ -135,6 +135,9 @@ def artist_names(title):
 
 
 def verify(candidate, html_text, catalogue, today):
+    if candidate.get("source") == "agenda_officiel_rockstore_detail_review":
+        import rockstore_official_recheck
+        return rockstore_official_recheck.verify(candidate, html_text, catalogue, today)
     if candidate.get("source") == "agenda_officiel_laiterie_detail_review":
         import laiterie_official_recheck
         return laiterie_official_recheck.verify(candidate, html_text, catalogue, today)
@@ -279,7 +282,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                    "agenda_officiel_backstage_detail",
                    "agenda_officiel_atabal_detail",
                    "agenda_officiel_blacklab_detail_review",
-                   "agenda_officiel_laiterie_detail_review") and
+                   "agenda_officiel_laiterie_detail_review",
+                   "agenda_officiel_rockstore_detail_review") and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.

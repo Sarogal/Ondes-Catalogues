@@ -4061,6 +4061,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
     laiterie_auto = False
+    rockstore_auto = False
     if reviewer == "automated-official-recheck":
         # An automated recheck is not a human signature. Only explicitly
         # allowlisted FIRST-PARTY event detail paths and their exact venue
@@ -4146,9 +4147,25 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event.get("time") is None and
             not (approval.get("newArtists") or [])
         )
+        rockstore_auto = (
+            venue == "rockstore-montpellier" and
+            event_id not in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "rockstore.fr" and
+            bool(re.fullmatch(
+                r"/[a-z0-9-]{3,160}-(?:0?[1-9]|[12]\d|3[01])-"
+                r"(?:janvier|fevrier|mars|avril|mai|juin|juillet|aout|"
+                r"septembre|octobre|novembre|decembre)-20\d{2}/",
+                parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None and
+            not (approval.get("newArtists") or [])
+        )
         require(bool(rex or molotov or ferrailleur or backstage
                      or atabal_pilot or atabal_multi or blacklab_auto
-                     or laiterie_auto)
+                     or laiterie_auto or rockstore_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4793,6 +4810,57 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "rock psychedelique",
                 },
                 "Black Lab automatique : genre de concert non explicite")
+    elif (event.get("venueId") == "rockstore-montpellier"
+          and reviewer == "automated-official-recheck"):
+        # This publisher gate is independent from the discovery verifier.
+        # Historic individually signed Rockstore dossiers remain untouchable.
+        require(rockstore_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "Rockstore"
+                and len(ids) == 1 and new_artists == []
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Rockstore automatique : date ou artiste hors profil")
+        proof = evidence[0]
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("checkedFields") ==
+                    ["artists", "date", "venue", "genre"]
+                and proof.get("sourceStructure") ==
+                    "rockstore-single-artist-official-heading-date-genre"
+                and proof.get("officialArtistNames") == [event.get("title")],
+                "Rockstore automatique : justificatif nominatif absent")
+        performer = known_artist_ids.get(ids[0])
+        require(isinstance(performer, dict)
+                and norm(performer.get("name")) == norm(event.get("title"))
+                and event_id == (
+                    "go-c-" + event["date"].replace("-", "") +
+                    "-montpellier-" + ids[0]),
+                "Rockstore automatique : identite ou ID non canonique")
+        # Match the month/day/year printed in the OFFICIAL URL to the
+        # event's own date (a backstop if the source-page parser changes).
+        rockstore_months = {
+            "janvier": 1, "fevrier": 2, "mars": 3, "avril": 4,
+            "mai": 5, "juin": 6, "juillet": 7, "aout": 8,
+            "septembre": 9, "octobre": 10, "novembre": 11, "decembre": 12,
+        }
+        url_date = re.search(
+            r"-(\d{1,2})-([a-z]+)-(20\d{2})/$",
+            parsed_url.path)
+        require(url_date is not None and
+                dt.date(int(url_date[3]), rockstore_months[url_date[2]],
+                        int(url_date[1])) == norm_date(event["date"]),
+                "Rockstore automatique : date officielle incoherente")
+        require(norm_date(event.get("date")) > today
+                and event.get("time") is None
+                and len(event.get("genres") or []) == 1
+                and event["genres"][0] in {
+                    "Hard Rock", "Death Metal", "Black Metal", "Metalcore",
+                    "Deathcore", "Stoner Rock", "Sludge", "Thrash Metal",
+                    "Doom Metal", "Punk", "Hardcore", "Grunge",
+                    "Shoegaze", "Post Rock", "Noise Rock", "Garage Rock",
+                    "Rock alternatif", "Rock indus", "Metal",
+                },
+                "Rockstore automatique : genre, heure ou date non fiables")
     elif event.get("venueId") in ("rockstore-montpellier",
                                    "the-black-lab-wasquehal"):
         # Existing venue IDs may have coarse historic pins, but never reuse
