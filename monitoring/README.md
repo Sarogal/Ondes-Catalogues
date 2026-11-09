@@ -2,13 +2,13 @@
 
 Le script monitoring/ondes_watchdog.php est un contrôleur **en lecture seule** du dépôt public Sarogal/Ondes-Catalogues. Il n'utilise aucun token privé et ne modifie ni intake, ni fiches, ni catalogues. Il vérifie via l'API GitHub les créneaux des collectes, prévalidations et synchronisations réellement exécutés avec succès, puis le schéma et les volumes minimum des quatre JSON servis par GitHub Pages.
 
-Le contrôle examine les créneaux prévus sur les dernières 27 heures, en laissant **9 heures** de marge pour les retards potentiellement très importants. Une exécution manuelle ne remplace pas un déclenchement programmé. **Attention :** GitHub n'expose pas l'horaire cron exact dans la liste des runs ; l'association entre un passage prévu et une exécution très retardée est indicative. Les alertes de créneau doivent donc être vérifiées avec l'historique des runs et le résultat des jobs, et non interprétées comme une preuve absolue d'absence. Ce contrôle ne garantit pas la découverte de toutes les dates et ne compare pas le JSON public au dépôt main : cela appartient à la PR de réconciliation Pages #135.
+Le contrôle examine une fenêtre de **24 heures**, située entre **33 et 9 heures avant son lancement**, pour laisser **9 heures** de marge aux déclenchements retardés. Une exécution manuelle ne remplace pas un déclenchement programmé. **Attention :** GitHub n'expose pas l'horaire cron exact dans la liste des runs ; l'association entre un passage prévu et une exécution très retardée est indicative. Les alertes de créneau doivent donc être vérifiées avec l'historique des runs et le résultat des jobs, et non interprétées comme une preuve absolue d'absence. Ce contrôle ne garantit pas la découverte de toutes les dates et ne compare pas le JSON public au dépôt main : cela appartient à la PR de réconciliation Pages #135.
 
 ## Contrôles locaux et GitHub
 
 Tests : php -l monitoring/ondes_watchdog.php ; php monitoring/ondes_watchdog.php --self-test.
 
-Le workflow en lecture seule ondes-public-watchdog.yml se lance deux fois par jour et peut être lancé manuellement. Il peut lui-même manquer lors d'une panne GitHub : il ne remplace pas la surveillance indépendante.
+Le workflow en lecture seule ondes-public-watchdog.yml se lance deux fois par jour. Lorsqu'il est lancé manuellement, il **vérifie seulement le secret Healthchecks par défaut** : choisir explicitement l'option `audit_live` permet également d'auditer les 8 workflows et 4 catalogues, avec un échec possible si des crons sont manqués. Les contrôles complets restent **obligatoires sur les passages programmés**. Il peut lui-même manquer lors d'une panne GitHub : il ne remplace pas la surveillance indépendante.
 
 ## Surveillance indépendante sans hébergement PHP : Healthchecks.io
 
@@ -22,7 +22,7 @@ La solution retenue pour Starter est un **témoin externe** : quand le workflow 
 2. Configurer ce contrôle en mode **Cron**, expression `29 4,16 * * *`, fuseau `UTC`, délai de grâce initial `9 heures`. Les horaires correspondent aux crons du workflow existant.
 3. Configurer la notification **e-mail** dans Healthchecks et vérifier que l’intégration est active.
 4. Copier l’URL de ping générée par Healthchecks (`https://hc-ping.com/…`) **uniquement** dans le secret Actions du dépôt public GitHub `Sarogal/Ondes-Catalogues`, nommé `HEALTHCHECKS_ONDES_PING_URL`. Ne pas publier la valeur dans une PR, un fichier versionné, un ticket ou un message.
-5. Facultatif : lancer `Actions → Ondes — surveillance publique en lecture seule → Run workflow` sur `main`. Le job contrôle alors **la présence et la forme du secret sans jamais imprimer sa valeur ni envoyer de ping** ; l'étape « Vérifier le secret Healthchecks en mode manuel » doit réussir. Cela ne prouve pas que le ping réel a été reçu.
+5. Facultatif : lancer `Actions → Ondes — surveillance publique en lecture seule → Run workflow` sur `main` en laissant `audit_live` **décoché** (par défaut). Le job contrôle **la présence et la forme du secret sans jamais imprimer sa valeur ni envoyer de ping** ; l'étape « Vérifier le secret Healthchecks en mode manuel » doit réussir. Si `audit_live` est coché, le contrôle complet pourra afficher un échec pour des passages GitHub manqués, même si le secret est valide. Un test manuel ne prouve pas que le ping réel a été reçu.
 6. À partir du prochain **déclenchement programmé réussi** de `Ondes — surveillance publique en lecture seule`, un ping doit apparaître dans Healthchecks. Les exécutions manuelles et les PR **ne déclenchent pas le ping**, pour ne pas masquer un cron manquant.
 7. Inspecter la prochaine exécution réelle et tester l’envoi d’e-mail via l’interface du service. Tant que le secret est absent, le workflow reste actif mais n’émet aucun ping.
 
