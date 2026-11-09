@@ -96,18 +96,39 @@ def archive_links(html, url):
     p.feed(html)
     return p.urls
 
-def select_urls(urls, known, today, limit=6):
+def select_urls(urls, known, today, limit=6, scan_slot=0):
+    """Bounded, rotating first-party details with a stable daily recheck core.
+
+    Three cloud passes/day inspect different official URLs without increasing
+    pages per run. Two core detail URLs stay pinned across adjacent days so
+    independent-day stability remains possible. This is *discovery only*.
+    """
     amount = max(1, min(8, int(limit)))
+    if scan_slot not in (0, 1, 2):
+        raise ValueError("Unknown daily discovery scan slot")
     unique = sorted(set(x for x in urls if normalize_detail(x) == x))
     new = [x for x in unique if ("officialUrl", x) not in known]
     previous = [x for x in unique if ("officialUrl", x) in known]
+    ordinal = dt.date.fromisoformat(today).toordinal()
+
+    core_size = min(2, len(new), amount)
+    anchor = ((ordinal // 2) * max(1, core_size)) % len(new) if new else 0
+    core = [new[(anchor+i) % len(new)] for i in range(core_size)]
+    remaining_new = [x for x in new if x not in core]
+    room = amount - len(core)
+
     def rotate(pool, n):
-        if not pool or n < 1:
+        if not pool or n <= 0:
             return []
-        begin = (dt.date.fromisoformat(today).toordinal() * n) % len(pool)
-        return [pool[(begin+i)%len(pool)] for i in range(min(len(pool), n))]
-    selected = rotate(new, amount)
-    return selected + rotate(previous, amount - len(selected))
+        # scan_slot ranges 0..2, producing different same-day pages while
+        # keeping exact quotas and eliminating duplicate selected URLs.
+        start = ((ordinal + scan_slot) * n) % len(pool)
+        return [pool[(start+i) % len(pool)] for i in range(min(len(pool), n))]
+
+    extra = rotate(remaining_new, room)
+    rest = rotate(previous, room-len(extra))
+    return core + extra + rest
+
 
 class _Detail(HTMLParser):
     def __init__(self):

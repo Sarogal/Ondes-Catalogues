@@ -242,6 +242,27 @@ class BateauIvreOfficialTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             b.candidate(LIVE, URL+"?spam=1", SOURCE, NOW)
 
+    def test_three_daily_slots_expand_discovery_without_more_http_pages(self):
+        urls = [b.BASE + "/%C3%A9v%C3%A8nements/official-act-" +
+                f"{i:02d}/" for i in range(18)]
+        day = "2026-11-09"
+        results = [b.select_urls(urls, set(), day, limit=6, scan_slot=i)
+                   for i in range(3)]
+        self.assertTrue(all(len(result) == 6 for result in results))
+        self.assertTrue(all(len(set(result)) == 6 for result in results))
+        self.assertGreaterEqual(len(set.union(*(set(x) for x in results))), 12)
+        self.assertGreaterEqual(len(set.intersection(*(set(x) for x in results))), 2)
+        baseline = dt.date.fromisoformat(day)
+        if baseline.toordinal() % 2:
+            baseline += dt.timedelta(days=1)
+        first = b.select_urls(urls, set(), baseline.isoformat(), scan_slot=0)
+        second = b.select_urls(
+            urls, set(), (baseline + dt.timedelta(days=1)).isoformat(),
+            scan_slot=0)
+        self.assertEqual(first[:2], second[:2])
+        with self.assertRaises(ValueError):
+            b.select_urls(urls, set(), day, scan_slot=3)
+
     def test_known_exact_url_moved_to_end_and_6_detail_max(self):
         links = b.archive_links(LISTING, b.ARCHIVE)
         selected = b.select_urls(links, {("officialUrl",URL)}, NOW, limit=2)
