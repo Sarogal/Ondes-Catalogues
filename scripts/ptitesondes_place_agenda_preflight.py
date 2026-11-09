@@ -140,13 +140,16 @@ def review(report, registry, places, outings, today, getter=fetch):
     unique = set()
     for lead in sorted(report["event_candidates"],
                        key=lambda item: str(item.get("start", "")) if isinstance(item, dict) else ""):
-        info = {k: lead.get(k) for k in ("place_id", "name", "start", "source_url")}
+        info = {k: lead.get(k) if isinstance(lead, dict) else None
+                for k in ("place_id", "name", "start", "source_url")}
         info["state"] = "deferred"
         if (not isinstance(lead, dict) or
                 lead.get("status") != "requires_independent_session_proof"
                 or not isinstance(lead.get("name"), str)
                 or not 5 <= len(lead["name"].strip()) <= 180
+                or not isinstance(lead.get("place_id"), str)
                 or lead.get("place_id") not in by_place
+                or not isinstance(lead.get("source_url"), str)
                 or lead.get("end") is not None
                 or valid_local_start(lead.get("start"), today) is None):
             info["reason"] = "invalid_candidate"
