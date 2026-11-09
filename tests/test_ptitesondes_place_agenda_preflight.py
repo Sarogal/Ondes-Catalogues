@@ -132,6 +132,26 @@ class VenueAgendaPreflightTests(unittest.TestCase):
         self.assertNotIn("PRIVATE_TOKEN", json.dumps(result))
         self.assertFalse(result["publish_authorized"])
 
+    def test_malformed_individual_candidates_are_deferred(self):
+        sources, places, outings, report, html = fixtures()
+        report["event_candidates"] = [
+            None, {"place_id": {"bad": "unhashable"}},
+            {"place_id": "toulouse-museum-mediatheque-pourquoi-pas",
+             "name": "Les bébés explorateurs : formes et matières",
+             "start": "2026-11-21T10:30+01:00",
+             "source_url": ["https://example.org"],
+             "end": None,
+             "status": "requires_independent_session_proof"},
+        ]
+        def forbidden(_):
+            raise AssertionError("Malformed candidates must not fetch")
+        result = review(report, sources, places, outings, date(2026, 11, 9),
+                        getter=forbidden)
+        self.assertEqual(result["checked"], 3)
+        self.assertTrue(all(r["reason"] == "invalid_candidate"
+                            for r in result["records"]))
+        self.assertFalse(result["publish_authorized"])
+
     def test_fail_closed_invalid_private_report(self):
         sources, places, outings, report, html = fixtures()
         report["policy"] = "publish_all"
