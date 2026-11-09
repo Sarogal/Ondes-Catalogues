@@ -126,6 +126,66 @@ class EditorialReconciliationTests(unittest.TestCase):
         self.assertEqual(result["dossiers"][0]["status"], "POTENTIAL_CONFLICT_REVIEW")
         self.assertEqual(result["editorial_drafts_count"], 0)
 
+
+    def shred_fixture(self):
+        # Regression: a regional "Shred Fest 2027" lead and the existing
+        # published "Shred Fest 2027 — Limoges" have different full titles.
+        f = list(fixtures())
+        dossier = f[1]["dossiers"][0]
+        dossier.update(
+            name_hint="Shred Fest 2027", normalized_name="shred fest",
+            name_variants=["Shred Fest 2027"],
+            region_hint="Nouvelle-Aquitaine", city_hint=None)
+        f[4]["knownFestivals"] = []
+        f[3]["festivals"] = [{
+            "slug": "shred-fest-2027-limoges",
+            "name": "Shred Fest 2027 — Limoges",
+            "startDate": "2027-02-12", "endDate": "2027-02-12",
+            "city": "Limoges", "region": "Nouvelle-Aquitaine",
+        }]
+        return f
+
+    def test_public_city_variant_is_suspicion_never_certain_duplicate(self):
+        result = review(self.shred_fixture())
+        self.assertEqual(result["published_duplicate_dossiers_count"], 0)
+        self.assertEqual(result["published_title_city_variant_dossiers_count"], 1)
+        row = result["dossiers"][0]
+        self.assertEqual(row["status"], "POTENTIAL_CONFLICT_REVIEW")
+        self.assertIn("published_title_city_variant_needs_review",
+                      row["missing_checks"])
+        self.assertEqual(row["published_title_city_variants_review_only"][0]["slug"],
+                         "shred-fest-2027-limoges")
+        self.assertFalse(row["published_title_city_variants_review_only"][0]
+                         ["edition_already_published"])
+        self.assertFalse(row["publication_authorized"])
+        self.assertFalse(row["safe_to_publish"])
+        self.assertEqual(result["editorial_drafts_count"], 0)
+        self.assertEqual(result["publications"], 0)
+
+    def test_city_variant_requires_verified_public_suffix_and_region_year(self):
+        for field, value in (
+            ("name", "Shred Fest 2027 — Nantes"),
+            ("name", "Shred Fest 2027 — Limoges junior"),
+            ("region", "Occitanie"),
+            ("startDate", "2028-02-12"),
+            ("city", "Paris"),
+        ):
+            with self.subTest(field=field, value=value):
+                f = self.shred_fixture()
+                f[3]["festivals"][0][field] = value
+                result = review(f)
+                self.assertEqual(result["published_title_city_variant_dossiers_count"], 0)
+                self.assertEqual(result["published_duplicate_dossiers_count"], 0)
+                self.assertEqual(result["editorial_drafts_count"], 0)
+
+    def test_conflicting_candidate_city_cannot_be_masked_by_title_variant(self):
+        f = self.shred_fixture()
+        f[1]["dossiers"][0]["city_hint"] = "Nantes"
+        result = review(f)
+        self.assertEqual(result["published_title_city_variant_dossiers_count"], 0)
+        self.assertEqual(result["published_duplicate_dossiers_count"], 0)
+        self.assertEqual(result["publications"], 0)
+
     def test_different_year_not_automatically_duplicate(self):
         f = fixtures()
         f[3]["festivals"] = [
