@@ -233,7 +233,7 @@ jobs:
               "applied": False,
               "reason": reason,
               "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-          }, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+          }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
           PY
             echo "::warning::Prévalidation Concerts refusée ; sauvegarde privée des découvertes avant échec final."
           else
