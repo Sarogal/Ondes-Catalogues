@@ -100,6 +100,12 @@ class HistoricalHomepageTests(unittest.TestCase):
             '<h1>As One Fest</h1><script>As One Fest 2027</script>',
             '<h1>As One Fest</h1><div hidden>As One Fest 2027</div>',
             '<h1>As One Fest</h1><div aria-hidden="true">As One Fest 2027</div>',
+            ('<head><title>As One Fest 2027</title></head><body>'
+             '<h1>As One Fest</h1><p>Édition historique de 2026.</p></body>'),
+            ('<body><nav>As One Fest 2027</nav><main><h1>As One Fest</h1>'
+             '<p>Archives de 2026 seulement.</p></main></body>'),
+            ('<body><h1>As One Fest</h1><p>Archives 2026 uniquement.</p>'
+             '<footer>As One Fest 2027</footer></body>'),
             '<h1>Autre festival 2027</h1><p>As One Fest saison 2026.</p>',
             '<h1>As One Fest</h1><p>Copyright 2027, tous droits réservés.</p>',
         ):
