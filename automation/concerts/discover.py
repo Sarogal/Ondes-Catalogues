@@ -403,6 +403,7 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     "grillen_official_detail_review",
                     "limoges_municipal_card_detail_review",
                     "bateau_ivre_official_detail_review",
+                    "laiterie_official_detail_review",
                     "echonova_official_detail_review")
                          else links[:3]):
                 if robots_allow(link, robot_cache):
