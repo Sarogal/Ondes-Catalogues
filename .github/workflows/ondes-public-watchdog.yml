@@ -10,6 +10,12 @@ on:
     - cron: '29 04 * * *'
     - cron: '29 16 * * *'
   workflow_dispatch:
+    inputs:
+      audit_live:
+        description: 'Auditer aussi les crons et les catalogues (peut signaler des incidents)'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -45,7 +51,7 @@ jobs:
           fi
           echo "Secret configure et format valide ; aucun ping effectue."
       - name: Contrôler les passages GitHub et les quatre catalogues servis
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.audit_live))
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: php monitoring/ondes_watchdog.php
