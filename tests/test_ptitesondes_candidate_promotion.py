@@ -454,6 +454,40 @@ class CandidatePromotionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     reconciled_openagenda_url(alias, dict(record(), canonicalurl=target))
 
+    def test_reviewed_marseille_alcazar_syndication_requires_exact_uid_and_slug(self):
+        # OpenAgenda's official Marseille library network has a dedicated
+        # Alcazar subagenda and an aggregate municipal library agenda.
+        uid = "95978351"
+        slug = "1001-jeux-sonores-avec-les-animaux-dillustration-jeunesse-4575496"
+        subagenda = ("https://openagenda.com/bibliotheque-lalcazar-marseille/events/"
+                     + uid + "_" + slug)
+        city_agenda = "https://openagenda.com/bibliotheques-de-marseille/events/" + slug
+        candidate = dict(lead(), collector="openagenda-v2", external_id=uid,
+                         source_url=subagenda)
+        self.assertEqual(
+            reconciled_openagenda_url(candidate, dict(record(), canonicalurl=city_agenda)),
+            city_agenda)
+        # The same matching URL from the ODS index alone is not an alias.
+        for forbidden in (
+            dict(candidate, collector="opendatasoft-index"),
+            dict(candidate, external_id="99999999"),
+            dict(candidate, source_url=subagenda.replace(uid + "_", "")),
+            dict(candidate, source_url=subagenda.replace("bibliotheque-lalcazar-marseille",
+                                                       "unreviewed-marseille-agenda")),
+        ):
+            with self.subTest(forbidden=forbidden):
+                with self.assertRaisesRegex(ValueError, "canonique différente"):
+                    reconciled_openagenda_url(forbidden,
+                                              dict(record(), canonicalurl=city_agenda))
+        for forbidden_target in (
+            city_agenda.replace("bibliotheques-de-marseille", "unreviewed-aggregate"),
+            city_agenda.replace(slug, "unrelated-event"),
+        ):
+            with self.subTest(target=forbidden_target):
+                with self.assertRaisesRegex(ValueError, "canonique différente"):
+                    reconciled_openagenda_url(candidate,
+                                              dict(record(), canonicalurl=forbidden_target))
+
     def test_reviewed_bordeaux_syndication_requires_exact_slug_and_uid(self):
         # Public ODS mirror records inspected on 2026-11-05: the three
         # immutable UIDs are identical, while syndication changes the agenda.

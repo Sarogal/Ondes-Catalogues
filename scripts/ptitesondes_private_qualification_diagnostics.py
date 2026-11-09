@@ -34,10 +34,9 @@ def reason_bucket(detail):
         return "official_page_dynamic"
     if any(x in reason for x in ("organisateur", "secondaire", "programme")):
         return "organizer_proof"
-    if any(x in reason for x in ("page officielle", "fiche officielle", "source officielle",
-                                 "inaccessible", "redirection", "domaine officiel",
-                                 "non autorisée")):
-        return "official_page_unavailable"
+    # Classify the actual failed CHECK before incidental words such as
+    # "fiche officielle". A date missing FROM a working official page is
+    # not an HTTP/page availability failure.
     if any(x in reason for x in ("géolocalis", "position", "coordonn", "gps",
                                  "lieu absent", "registre")):
         return "venue_or_gps"
@@ -51,6 +50,10 @@ def reason_bucket(detail):
         return "title_or_identity"
     if any(x in reason for x in ("uid", "canonique", "index", "agenda", "source différente")):
         return "uid_or_source"
+    if any(x in reason for x in ("page officielle", "fiche officielle", "source officielle",
+                                 "inaccessible", "redirection", "domaine officiel",
+                                 "non autorisée")):
+        return "official_page_unavailable"
     if any(x in reason for x in ("timeout", "http", "erreur", "réponse",
                                  "json", "malform")):
         return "transport_or_data"
