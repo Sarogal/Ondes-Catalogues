@@ -26,6 +26,24 @@ jobs:
         run: |
           php -l monitoring/ondes_watchdog.php
           php monitoring/ondes_watchdog.php --self-test
+      - name: Vérifier le secret Healthchecks en mode manuel (sans ping)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        shell: bash
+        env:
+          HEALTHCHECKS_ONDES_PING_URL: ${{ secrets.HEALTHCHECKS_ONDES_PING_URL }}
+        run: |
+          set -euo pipefail
+          # Never print the value. A manual dispatch must not mask a missed cron
+          # by sending a success heartbeat to the external monitor.
+          if [[ -z "${HEALTHCHECKS_ONDES_PING_URL:-}" ]]; then
+            echo "::error::Secret HEALTHCHECKS_ONDES_PING_URL absent ou vide."
+            exit 1
+          fi
+          if [[ ! "${HEALTHCHECKS_ONDES_PING_URL}" =~ ^https://hc-ping\.com/[A-Za-z0-9_-]{32,128}/?$ ]]; then
+            echo "::error::Le secret ne ressemble pas a une URL de ping Healthchecks valide."
+            exit 1
+          fi
+          echo "Secret configure et format valide ; aucun ping effectue."
       - name: Contrôler les passages GitHub et les quatre catalogues servis
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
