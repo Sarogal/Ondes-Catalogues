@@ -187,8 +187,9 @@ def validated_observations(state, today):
                 or type(row.get("first_party_current_date_match")) is not bool
                 or row.get("provider_claim") != source["provider"]
                 or not _recent(row.get("firstSeen"), row.get("lastSeen"), today)
+                or not isinstance(row.get("visible_text_sha256"), str)
                 or re.fullmatch(r"[a-f0-9]{64}",
-                                row.get("visible_text_sha256") or "") is None):
+                                row["visible_text_sha256"]) is None):
             continue
         result.append({
             "slug": slug, "name": source["name"],
