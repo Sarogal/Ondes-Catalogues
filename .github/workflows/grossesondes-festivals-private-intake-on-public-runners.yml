@@ -127,6 +127,7 @@ jobs:
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 1
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
+          run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT"
           test -s "$REPORT"
           python - "$REPORT" <<'PY'
           import json, sys
@@ -155,7 +156,8 @@ jobs:
             automation-intake/grossesondes/curated-secondary-sources-review.json \
             automation-intake/grossesondes/national-festival-discovery-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
-            automation-intake/grossesondes/national-festival-editorial-review.json
+            automation-intake/grossesondes/national-festival-editorial-review.json \
+            automation-intake/grossesondes/national-festival-yield-diagnostics.json
           if git diff --cached --quiet; then
             echo "Aucun changement des états privés ; rien à envoyer."
           else
