@@ -11,6 +11,31 @@ from proof import norm
 REQUIRED={"id","title","category","category_label","date_start","date_end","city","department","region","venue","source_url","source_label","verified_at","geo_verified_at","geo_precision","lat","lng"}
 ORIGIN="https://ptitesondes.fr/config/sorties.json"
 
+# Explicit one-field historical correction, independently verified against:
+# https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301
+# 22 January 2027 at 14:30 is for schools only. Family sessions remain at 19:00.
+# This is NOT a patch update route: the publisher never edits existing records.
+MOMO_HISTORY_ID = "bordeaux-momo-enfant-peche-2027-01-21"
+MOMO_HISTORY_URL = "https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301"
+MOMO_HISTORY_OLD = "21 janv. 19:00 ; 22 janv. 14:30 (scolaires) et 19:00"
+MOMO_HISTORY_NEW = "21 janv. 19:00 ; 22 janv. 19:00"
+
+
+def historical_event_unchanged(previous, published):
+    """Allow only the exact, reviewed schooling typo, never general edits."""
+    if previous == published:
+        return True
+    if not isinstance(previous, dict) or not isinstance(published, dict):
+        return False
+    if (previous.get("id") != MOMO_HISTORY_ID
+            or previous.get("source_url") != MOMO_HISTORY_URL
+            or previous.get("date_start") != "2027-01-21"
+            or previous.get("date_end") != "2027-01-22"
+            or previous.get("time") != MOMO_HISTORY_OLD):
+        return False
+    return published == dict(previous, time=MOMO_HISTORY_NEW)
+
+
 def guard(ok, message):
     if not ok: raise ValueError("ARRÊT DE SÉCURITÉ: "+message)
 
@@ -102,7 +127,8 @@ def merge(ref,public,patch,today,checker=proof):
     published=byid(public)
     validate_patch(patch,ref,date.fromisoformat(patch["generated_at"]),today)
     for key,e in originals.items():
-        guard(key in published and published[key]==e,"fiche historique supprimée ou modifiée : "+key)
+        guard(key in published and historical_event_unchanged(e, published[key]),
+              "fiche historique supprimée ou modifiée : "+key)
     fields=set().union(*(set(e) for e in ref["events"]))
     categories={e["category"] for e in ref["events"]}
     signatures={(canonical_event_title(e),norm(e.get("city")),norm(e.get("venue")),e.get("date_start")) for e in public["events"]}
