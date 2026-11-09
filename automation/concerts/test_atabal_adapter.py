@@ -88,6 +88,39 @@ class AtabalOfficial(unittest.TestCase):
             a.candidate(detail(extra="Concert annulé."),ANESTESIA,
                         a.cards(agenda(ANESTESIA))[0],SOURCE,"2026-11-02")
 
+    def test_reggae_or_pop_biography_cannot_masquerade_as_punk(self):
+        examples = (
+            ("steel-pulse-mardi-25-mai-2027/", "25 mai 2027",
+             "STEEL PULSE", "REGGAE ROOTS",
+             "Le reggae roots du groupe a croisé le punk dans son histoire."),
+            ("adele-castillon-dimanche-31-janvier-2027/", "31 janvier 2027",
+             "ADELE CASTILLON", "POP",
+             "L'artiste évoque le rock et le punk dans une interview."),
+        )
+        for slug, date, title, genre, biography in examples:
+            with self.subTest(title=title):
+                url = BASE + slug
+                card = a.cards(agenda(url))[0]
+                html = detail(date=date, name=title, genre=genre,
+                              extra=biography)
+                with self.assertRaisesRegex(ValueError, "Genre"):
+                    a.candidate(html, url, card, SOURCE, "2026-11-09")
+
+    def test_nonofficial_biography_cannot_replace_missing_genre_label(self):
+        url = ANESTESIA
+        html = detail(genre="INDIE POP",
+                      extra="Ce concert revendique les origines hardcore punk.")
+        with self.assertRaisesRegex(ValueError, "Genre"):
+            a.candidate(html, url, a.cards(agenda(url))[0], SOURCE,
+                        "2026-11-09")
+
+    def test_valid_official_genre_survives_irrelevant_biography(self):
+        row = a.candidate(detail(genre="H-CORE",
+                                 extra="La biographie raconte le reggae."),
+                          ANESTESIA, a.cards(agenda(ANESTESIA))[0],
+                          SOURCE, "2026-11-09")
+        self.assertEqual(row["classification"], ["Hardcore"])
+
     def test_unknown_genre_rejected_without_recommendation_leak(self):
         row=a.cards(agenda(ANESTESIA))[0]
         body=detail(genre="INDIE POP").replace(
