@@ -112,15 +112,23 @@ def visible_future_years(name, html, today):
     years = set()
     for occurrence in re.finditer(
             r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])", text):
-        nearby = text[max(0, occurrence.start() - 80):occurrence.end() + 150]
-        for mention in re.finditer(r"(?<!\d)(20[2-4]\d)(?!\d)", nearby):
-            year = int(mention.group(1))
-            if not now < year <= now + 2:
-                continue
-            prefix = nearby[max(0, mention.start() - 22):mention.start()]
-            if re.search(r"(?:copyright|droits reserves|tous droits reserves)\s*$",
-                         prefix):
-                continue
+        # The year must FOLLOW the *same* visible identity locally.
+        # A preceding year may belong to a different event on the page;
+        # a later year may belong to another named festival or a footer.
+        nearby = text[occurrence.end():occurrence.end() + 64]
+        mentions = list(re.finditer(r"(?<!\d)(20[2-4]\d)(?!\d)", nearby))
+        if not mentions:
+            continue
+        mention = mentions[0]  # never skip an older year to borrow a newer one
+        preceding = nearby[:mention.start()]
+        if (len(preceding) > 45
+                or re.search(r"\b(?:autre festival|autre fest|prochain festival)\b",
+                             preceding)
+                or re.search(r"(?:copyright|droits reserves|tous droits reserves)\s*$",
+                             preceding[-24:])):
+            continue
+        year = int(mention.group(1))
+        if now < year <= now + 2:
             years.add(year)
     return sorted(years), sha256(text.encode("utf-8")).hexdigest()
 
