@@ -265,10 +265,11 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
         if a.get("reviewDecision") == "approved" and isinstance(a.get("event"), dict)
     }
     items = list(registry.get("items", {}).values())
-    # Historical rows without a stability counter remain readable. Once
-    # the archiver has migrated them, only distinct-day stable sightings count.
+    # Historical rows without a stability counter stay quarantined until
+    # reobserved with the SAME identity on two distinct UTC calendar days.
+    # Raw observations can be dozens of same-day duplicate scans.
     candidates = [i for i in items if
-                  i.get("stableObservations", i.get("observations", 0)) >= 2 and
+                  i.get("stableObservations", 0) >= 2 and
                   i.get("candidate", {}).get("source") in
                   ("agenda_officiel_rex_genre", "agenda_officiel_molotov_genre",
                    "agenda_officiel_ferrailleur_genre",
