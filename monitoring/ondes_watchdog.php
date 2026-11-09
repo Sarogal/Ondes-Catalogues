@@ -48,9 +48,9 @@ function watch_fetch(string $url): array {
 }
 
 function watch_slots(array $hours, int $now): array {
-    // Don't accuse GitHub prematurely: a delayed cron gets three hours to arrive.
-    $earliest = $now - 27 * 3600;
-    $latest = $now - 3 * 3600;
+    // GitHub cron runs can begin hours late; allow nine hours before accusing a missed passage.
+    $earliest = $now - 33 * 3600;
+    $latest = $now - 9 * 3600;
     $day = (int)(floor($earliest / 86400) * 86400);
     $slots = [];
     while ($day <= $latest) {
@@ -87,7 +87,7 @@ function watch_workflow(string $label, array $spec, array $payload, int $now): a
         $selected = null;
         // A single run cannot validate several scheduled slots.
         foreach ($runs as $index => $run) {
-            if (isset($used[$index]) || $run['ts'] < $slot - 120 || $run['ts'] > $slot + 10800) {
+            if (isset($used[$index]) || $run['ts'] < $slot - 120 || $run['ts'] > $slot + 32400) {
                 continue;
             }
             if ($selected === null || $run['ts'] < $runs[$selected]['ts']) {
@@ -149,13 +149,13 @@ function watch_expect(bool $condition): void {
 }
 
 function watch_self_test(): void {
-    $now = strtotime('2026-11-07T14:30:00Z');
+    $now = strtotime('2026-11-07T20:30:00Z');
     $spec = ['example.yml', ['07:17', '10:17']];
     $slots = watch_slots($spec[1], $now);
-    watch_expect(count($slots) === 2); // 07:17 and 10:17 are mature.
+    watch_expect(count($slots) === 2); // yesterday's 07:17 and 10:17 are mature after nine hours.
     $runs = [];
     foreach ($slots as $slot) {
-        $runs[] = ['event' => 'schedule', 'created_at' => gmdate('c', $slot + 300),
+        $runs[] = ['event' => 'schedule', 'created_at' => gmdate('c', $slot + 5 * 3600),
             'status' => 'completed', 'conclusion' => 'success'];
     }
     watch_expect(watch_workflow('test', $spec, ['workflow_runs' => $runs], $now) === []);
