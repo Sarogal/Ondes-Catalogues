@@ -118,6 +118,40 @@ def _public_matches(dossier, published):
 
 
 
+
+def _uncovered_homepage_dates(dossier, hints, published):
+    """Warn when a generic same-year public match may cover another edition.
+
+    History can describe an event brand with winter *and* summer sessions
+    during the same year. A matching name/year alone cannot prove that the
+    distinct displayed dates have already been published. This only raises
+    a private conflict; it never proposes a new public edition.
+    """
+    if not hints:
+        return []
+    target_names = {dossier["normalized_name"]}
+    target_names.update(filter(
+        None, (_canonical(x) for x in dossier.get("name_variants", [])[:8])))
+    year = dossier.get("edition_year_hint")
+    covered = set()
+    for row in published:
+        if (not isinstance(row, dict)
+                or row.get("region") != dossier["region_hint"]
+                or not _names(row).intersection(target_names)
+                or _city_equal(dossier.get("city_hint"), row.get("city")) is False):
+            continue
+        try:
+            start = date.fromisoformat(row["startDate"])
+            end = date.fromisoformat(row["endDate"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        if start.year != year or end < start:
+            continue
+        covered.add((start.isoformat(), end.isoformat()))
+    return [dict(x) for x in hints
+            if (x["start_date_hint"], x["end_date_hint"]) not in covered]
+
+
 def _published_city_variants(dossier, published):
     """Flag exact NAME — CITY variants as possible prior public editions.
 
@@ -292,12 +326,16 @@ def build_review(queue, detail, state, leads, public, history, today):
                 and item.get("publication_authorized") is False
                 for item in dossier["sources"] if isinstance(item, dict)):
             raise ValueError("indice de dates historique sans source approuvée")
+        uncovered_archive_dates = _uncovered_homepage_dates(
+            dossier, accepted_archive_hints, public["festivals"])
         detail_clues = _dynamic_proofs(dossier, detail)
         cancellation = any(row["possible_cancellation"] for row in detail_clues)
         event_clues = [hint for row in detail_clues
                        for hint in row.get("structured_event_clues_private", [])]
         ambiguous_history = len(archival) > 1
-        if exact:
+        if exact and uncovered_archive_dates:
+            status = "POTENTIAL_CONFLICT_REVIEW"
+        elif exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
         elif conflicting or city_variants or ambiguous_history or cancellation:
             status = "POTENTIAL_CONFLICT_REVIEW"
@@ -324,6 +362,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("edition_year_unknown")
         if exact:
             blocks.append("already_published_edition")
+        if exact and uncovered_archive_dates:
+            blocks.append("published_same_year_may_hide_other_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
         if city_variants:
@@ -346,6 +386,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "primary_observation": primary,
             "regional_detail_observations": detail_clues,
             "historical_homepage_date_hints_review_only": accepted_archive_hints,
+            "historical_homepage_uncovered_dates_review_only": uncovered_archive_dates,
             "structured_date_hints_count": len(event_clues),
             "named_organizer_hints_count": sum(
                 bool(h.get("organizer_name_hint")) for h in event_clues),
@@ -394,6 +435,9 @@ def build_review(queue, detail, state, leads, public, history, today):
             bool(x["historical_homepage_date_hints_review_only"]) for x in result),
         "historical_homepage_visible_date_hints_private": sum(
             len(x["historical_homepage_date_hints_review_only"]) for x in result),
+        "historical_homepage_uncovered_date_hints_private": sum(
+            len(x["historical_homepage_uncovered_dates_review_only"])
+            for x in result),
         "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
         "organizer_name_hints_count": sum(x["named_organizer_hints_count"] for x in result),
         "visible_start_date_hints_count": sum(x["visible_start_date_hints_count"] for x in result),
