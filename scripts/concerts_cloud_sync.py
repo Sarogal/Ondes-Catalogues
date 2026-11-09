@@ -4059,6 +4059,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
+    blacklab_auto = False
     if reviewer == "automated-official-recheck":
         # An automated recheck is not a human signature. Only explicitly
         # allowlisted FIRST-PARTY event detail paths and their exact venue
@@ -4117,8 +4118,20 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event_id != "go-c-20270408-biarritz-peter-hook-and-the-light" and
             event.get("time") is None
         )
+        blacklab_auto = (
+            venue == "the-black-lab-wasquehal" and
+            event_id not in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "theblacklab.fr" and
+            bool(re.fullmatch(r"/agenda/[a-z0-9-]{3,140}/?", parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None and
+            not (approval.get("newArtists") or [])
+        )
         require(bool(rex or molotov or ferrailleur or backstage
-                     or atabal_pilot or atabal_multi)
+                     or atabal_pilot or atabal_multi or blacklab_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4126,7 +4139,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Preuve automatique trop ancienne ou future")
         require(any(
             item.get("url") == official_url and
-            item.get("proofType") == "official-organizer-or-venue" and
+            (item.get("proofType") == "official-organizer-or-venue" or
+             (blacklab_auto and item.get("proofType") == "official-venue-detail")) and
             item.get("checkedAt") == reviewed_at.isoformat() and
             {"artists", "date", "venue", "genre"}.issubset(
                 set(item.get("checkedFields") or []))
@@ -4688,6 +4702,44 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(x["name"]) not in {norm(y["name"]) for y in known_artist_ids.values()}
                         for x in new_artists),
                 "La Laiterie : nouveaux artistes non vérifiés ou identité discordante")
+    elif (event.get("venueId") == "the-black-lab-wasquehal"
+          and reviewer == "automated-official-recheck"):
+        # This independent gate mirrors the Black Lab's only permitted
+        # verifier: one existing canonical artist, a stable first-party
+        # event, no inferred guest, venue, or concert start.
+        require(blacklab_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "The Black Lab"
+                and len(ids) == 1 and new_artists == []
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Black Lab automatique : profil de concert non autorisé")
+        p = evidence[0]
+        require(p.get("url") == official_url
+                and p.get("proofType") == "official-venue-detail"
+                and p.get("checkedAt") == reviewed_at.isoformat()
+                and p.get("checkedFields") ==
+                    ["artists", "date", "venue", "genre"]
+                and p.get("sourceStructure") ==
+                    "official-event-single-known-artist-recheck"
+                and p.get("officialArtistNames") == [event.get("title")],
+                "Black Lab automatique : preuve nominative insuffisante")
+        artist = known_artist_ids.get(ids[0])
+        require(isinstance(artist, dict)
+                and norm(artist.get("name")) == norm(event.get("title"))
+                and norm(event.get("title")) != ""
+                and event_id == ("go-c-" + event["date"].replace("-", "") +
+                                 "-wasquehal-" + ids[0]),
+                "Black Lab automatique : artiste inconnu ou titre ambigu")
+        require(norm_date(event.get("date")) > today
+                and event.get("time") is None,
+                "Black Lab automatique : date passée ou heure inférée")
+        require(len(event.get("genres") or []) == 1 and
+                norm(event["genres"][0]) in {
+                    "metal", "metalcore", "deathcore", "hardcore", "punk",
+                    "stoner", "sludge", "doom", "thrash", "grind",
+                    "hard rock", "grunge", "noise rock", "post punk",
+                    "rock psychedelique",
+                },
+                "Black Lab automatique : genre de concert non explicite")
     elif event.get("venueId") in ("rockstore-montpellier",
                                    "the-black-lab-wasquehal"):
         # Existing venue IDs may have coarse historic pins, but never reuse
