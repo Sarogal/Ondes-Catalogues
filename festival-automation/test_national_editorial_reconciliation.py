@@ -62,6 +62,42 @@ def primary(row):
 
 
 class EditorialReconciliationTests(unittest.TestCase):
+    def test_two_archive_homepage_date_mentions_are_private_editorial_review(self):
+        from historical_future_lead_watch import APPROVED, scan
+        f = list(fixtures())
+        state, _, details, public, archive, leads = f
+        name, region, url = APPROVED["les-gueules-de-bois"]
+        roster = {"les-gueules-de-bois": {
+            "slug": "les-gueules-de-bois", "name": name,
+            "region": region, "url": url, "last_known_year": 2026}}
+        scan(state, roster, TODAY, fetch=lambda _: (
+            "<main><h1>Les Gueules de Bois winter 2027</h1>"
+            "<p>samedi 13 février 2027 à Légna.</p>"
+            "<h2>Les Gueules de Bois été 2027</h2>"
+            "<p>19–21 août 2027 à Légna.</p></main>"))
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": [],
+                  "historical_future_watch_archive_status_private": "CONSISTENT"}
+        queue = build_queue(state, report, leads, TODAY)
+        archive["knownFestivals"].append({
+            "slug": "les-gueules-de-bois", "name": name,
+            "region": region, "city": "Légna", "aliases": [],
+            "startDate": "2026-08-20", "endDate": "2026-08-22",
+            "lastKnownYear": 2026})
+        result = build_review(queue, details, state, leads, public, archive, TODAY)
+        self.assertEqual(result["historical_homepage_date_dossiers_private"], 1)
+        self.assertEqual(result["historical_homepage_visible_date_hints_private"], 2)
+        row = next(x for x in result["dossiers"] if
+                   x["name_hint"] == "Les Gueules de Bois")
+        self.assertEqual(row["status"], "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW")
+        self.assertEqual(len(row["historical_homepage_date_hints_review_only"]), 2)
+        self.assertIn("possible_multiple_same_year_editions_need_review",
+                      row["missing_checks"])
+        self.assertFalse(row["future_edition_confirmed"])
+        self.assertFalse(row["safe_to_publish"])
+        self.assertEqual(result["editorial_drafts_count"], 0)
+        self.assertEqual(result["publications"], 0)
+
     def test_archive_identity_not_future_edition_proof(self):
         result = review(fixtures())
         self.assertEqual(result["schema"], SCHEMA)
