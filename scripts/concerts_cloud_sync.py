@@ -4844,7 +4844,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "septembre": 9, "octobre": 10, "novembre": 11, "decembre": 12,
         }
         url_date = re.search(
-            r"-(\d{1,2})-([a-z]+)-(20\\d{2})/$",
+            r"-(\d{1,2})-([a-z]+)-(20\d{2})/$",
             parsed_url.path)
         require(url_date is not None and
                 dt.date(int(url_date[3]), rockstore_months[url_date[2]],
