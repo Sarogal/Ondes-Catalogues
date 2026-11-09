@@ -149,8 +149,11 @@ def candidate(html,url,card,source,today):
         raise ValueError("Cancelled bill must not be advertised")
     # Genre is checked only in THIS event's official content, before
     # recommendations, not in common website boilerplate.
-    genre=GENRE.search(norm(" ".join(p.first_h5))) or GENRE.search(text)
-    if not genre:raise ValueError("Genre not individually substantiated")
+    # The official style label (<h5>) is the only admissible genre source.
+    # A reggae/pop artist may mention punk or metal in a biography without
+    # performing those styles. Never classify from such passing references.
+    genre=GENRE.search(norm(" ".join(p.first_h5)))
+    if not genre:raise ValueError("Genre not explicitly tagged by official venue")
     # Atabal says 20H30 but does not specify start versus doors; do not guess.
     slug=urlsplit(url).path.split("/")[-2]
     classification={"h core":"Hardcore","sludge metal":"Sludge Metal",
