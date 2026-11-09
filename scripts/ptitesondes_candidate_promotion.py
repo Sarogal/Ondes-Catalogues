@@ -24,6 +24,7 @@ from official_organizer_proof import canonical_event_title
 from proof import norm, meters
 from proof_text import verify_event
 from venue_registry import VENUES
+from ptitesondes_public_place_venues import lookup_public_venue
 
 API = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 FIELDS = ("uid,title_fr,description_fr,canonicalurl,timings,status,"
@@ -56,9 +57,13 @@ def registry_location(lead):
     venue = norm(lead.get("venue"))
     matches = [v for v in VENUES if norm(v["city"]) == city
                and venue in {norm(a) for a in v["aliases"]}]
-    if len(matches) != 1:
-        return None
-    return matches[0]
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        return None  # Ambiguous legacy registry cannot be overruled.
+    # Only geographical proof comes from the public places catalogue.
+    # OpenAgenda and organizer session checks remain wholly independent.
+    return lookup_public_venue(lead.get("city"), lead.get("venue"))
 
 
 def permitted(lead, today):
