@@ -4,6 +4,7 @@ Ajouts au registre uniquement après confrontation de l'adresse officielle et d'
 source cartographique indépendante. La détection ne publie rien à elle seule.
 """
 from proof import norm, meters
+from ptitesondes_public_place_venues import lookup_public_venue
 
 VENUES = [
     {
@@ -90,11 +91,14 @@ VENUES = [
 ]
 
 def verified_location(event):
+    """Exact static or independently approved public-places GPS; never guess."""
+    static_identity = False
     for place in VENUES:
         if norm(place["city"]) != norm(event.get("city", "")):
             continue
         if norm(event.get("venue", "")) not in {norm(a) for a in place["aliases"]}:
             continue
+        static_identity = True
         try:
             d = meters((float(event["lat"]), float(event["lng"])),
                        (place["lat"], place["lng"]))
@@ -102,4 +106,16 @@ def verified_location(event):
             continue
         if d <= 65:
             return True, "registre de lieu documenté (écart %.0f m)" % d
+    # A conflicting legacy registry location must not be overridden by a
+    # different public-place point without a dedicated source review.
+    if not static_identity:
+        approved = lookup_public_venue(event.get("city"), event.get("venue"))
+        if approved is not None:
+            try:
+                d = meters((float(event["lat"]), float(event["lng"])),
+                           (approved["lat"], approved["lng"]))
+            except (ValueError, TypeError, KeyError, OverflowError):
+                d = float("inf")
+            if d <= 65:
+                return True, "lieu permanent public indépendamment vérifié (écart %.0f m)" % d
     return False, "lieu absent du registre ou GPS différent de plus de 65 m"
