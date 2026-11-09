@@ -13,6 +13,7 @@ import re
 from urllib.parse import urlsplit
 
 from curated_future_lead_watch import load_leads
+from historical_future_lead_watch import validated_hints
 from curated_secondary_discovery import clean_queue
 from curated_targeted_secondary import APPROVED_ALL, validated_targets
 from regional_festival_discovery import APPROVED
@@ -138,6 +139,12 @@ def build_queue(state, report, curated, today):
     by_id = {lead["id"]: lead for lead in curated}
     if len(by_id) != len(curated):
         raise ValueError("doublon de piste editee")
+    # A future mention in a reviewed historical homepage is an unverified
+    # search lead, never a date, event announcement or authorized publication.
+    archive_hints = (validated_hints(state, today)
+                     if report.get("historical_future_watch_archive_status_private")
+                     == "CONSISTENT" else [])
+    approved_archive_urls = {entry["url"] for entry in archive_hints}
     dossiers = {}
     rejected = 0
     observed_sources = 0
@@ -152,7 +159,10 @@ def build_queue(state, report, curated, today):
         safe = (isinstance(url, str)
                 and kind == "CURATED_PRIMARY_CANDIDATE"
                 and url in {lead["source_url"] for lead in curated}
-                and origin == url)
+                and origin == url) or (
+                    isinstance(url, str)
+                    and kind == "HISTORICAL_HOMEPAGE_YEAR_HINT"
+                    and url in approved_archive_urls and origin == url)
         if (ident is None or not region or not isinstance(url, str)
                 or not (safe or _safe_origin_link(url, origin))
                 or not _recent(first, last, today)):
@@ -230,6 +240,12 @@ def build_queue(state, report, curated, today):
         add(lead["name"], year, lead["region_hint"], lead["source_url"],
             lead["source_url"], "CURATED_PRIMARY_CANDIDATE",
             today, today, city=lead["city_hint"], date_hint=hint)
+
+    for hint in archive_hints:
+        add(hint["name"], hint["year"], hint["region"],
+            hint["url"], hint["url"], "HISTORICAL_HOMEPAGE_YEAR_HINT",
+            hint["firstSeen"], hint["lastSeen"],
+            archive_slug=hint["slug"])
 
     regional = state.get("regional_festival_candidates_review_only", {})
     if not isinstance(regional, dict):
@@ -359,6 +375,10 @@ def build_queue(state, report, curated, today):
         "candidate_dossiers_count": len(rows),
         "candidate_sources_count": observed_sources,
         "newly_discovered_sources_count": newly_discovered_sources,
+        "historical_homepage_year_hints_private": len(archive_hints),
+        "historical_homepage_dossiers_private": sum(
+            any(s["kind"] == "HISTORICAL_HOMEPAGE_YEAR_HINT"
+                for s in row["sources"]) for row in rows),
         "non_curated_dossiers_count": sum(
             not any(s["kind"] == "CURATED_PRIMARY_CANDIDATE"
                     for s in row["sources"]) for row in rows),
@@ -388,6 +408,8 @@ def main():
     (args.intake / "national-festival-discovery-review.json").write_text(
         json.dumps(review, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     report["national_discovery_dossiers_private"] = review["candidate_dossiers_count"]
+    report["national_discovery_historical_homepage_dossiers_private"] = (
+        review["historical_homepage_dossiers_private"])
     report["national_discovery_sources_private"] = review["candidate_sources_count"]
     report["national_discovery_new_sources_private"] = review["newly_discovered_sources_count"]
     report["national_discovery_non_curated_dossiers_private"] = review["non_curated_dossiers_count"]
