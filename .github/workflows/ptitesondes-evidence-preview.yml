@@ -64,9 +64,19 @@ jobs:
       - name: Preview candidat officiel + lieu documenté
         env:
           PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          CYCLE_CRON: ${{ github.event.schedule }}
         run: |
           set -euo pipefail
-          python scripts/ptitesondes_candidate_promotion.py --limit 15
+          # An explicit cron maps each scheduled preview to a distinct
+          # deterministic batch, even when GitHub starts a job late.
+          case "$CYCLE_CRON" in
+            '40 08 * * *') SLOT=0 ;;
+            '40 11 * * *') SLOT=1 ;;
+            '40 15 * * *') SLOT=2 ;;
+            '40 19 * * *') SLOT=3 ;;
+            *) SLOT=0 ;;
+          esac
+          python scripts/ptitesondes_candidate_promotion.py --limit 15 --slot "$SLOT"
           {
             echo "## Contrôle indépendant — aucune publication"
             python -c 'import json; r=json.load(open("/tmp/ptitesondes-promotion/report.json")); print(json.dumps({k:v for k,v in r.items() if k != "details"},ensure_ascii=False,indent=2))'
