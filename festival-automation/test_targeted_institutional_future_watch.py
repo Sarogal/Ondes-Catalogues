@@ -225,6 +225,7 @@ class InstitutionalPilotTests(unittest.TestCase):
             {"publication_authorized": True},
             {"city_name_hint": "Lyon"},
             {"provider_claim": "Official Organizer"},
+            {"visible_text_sha256": {"not": "a digest"}},
         ):
             with self.subTest(patch=patch):
                 s["institutional_future_date_observations_private"] = deepcopy(pristine)
