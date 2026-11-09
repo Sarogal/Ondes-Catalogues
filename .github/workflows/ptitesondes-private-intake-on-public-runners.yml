@@ -161,6 +161,7 @@ jobs:
           test -s public/docs/ptitesondes/lieux.json
           test -s public/scripts/ptitesondes_place_agenda_watch.py
           test -s public/scripts/ptitesondes_place_agenda_sources.json
+          test -s public/scripts/ptitesondes_place_agenda_preflight.py
           mkdir -p "$RUNNER_TEMP/ptitesondes-private-logs" "$RUNNER_TEMP/ptitesondes-outings" "$RUNNER_TEMP/ptitesondes-verified" "$RUNNER_TEMP/ptitesondes-lieux"
 
       - name: Tester la logique privée sélectionnée hors réseau
@@ -186,6 +187,10 @@ jobs:
             done
             if ! python -m unittest discover -s public/tests -p 'test_ptitesondes_place_agenda_watch.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-venue-agendas.log" 2>&1; then
               echo "::error::Tests de surveillance des programmes de lieux échoués ; aucune collecte."
+              exit 1
+            fi
+            if ! python -m unittest discover -s public/tests -p 'test_ptitesondes_place_agenda_preflight.py' -v > "$RUNNER_TEMP/ptitesondes-private-logs/tests-venue-preflight.log" 2>&1; then
+              echo "::error::Tests de recontrole des seances des lieux echoues ; aucune collecte."
               exit 1
             fi
           fi
@@ -293,6 +298,20 @@ jobs:
           else
             echo "::warning::Surveillance des programmes indisponible ; aucune piste promue."
           fi
+          PREFLIGHT_OK=0
+          if [[ "$WATCH_OK" == 1 ]]; then
+            if python public/scripts/ptitesondes_place_agenda_preflight.py \
+                --input "$OUT/lieux-agenda-candidates.json" \
+                --sources public/scripts/ptitesondes_place_agenda_sources.json \
+                --places public/docs/ptitesondes/lieux.json \
+                --outings public/docs/ptitesondes/sorties.json \
+                --date "$DAY" \
+                --output "$OUT/lieux-agenda-preflight.json" > "$LOG/lieux-agenda-preflight.log" 2>&1; then
+              PREFLIGHT_OK=1
+            else
+              echo "::warning::Recontrole des seances indisponible ; aucun feu vert de publication."
+            fi
+          fi
           if [[ "$RUN_MODE" == "write" ]]; then
             for f in lieux-backlog.json lieux-qualification.json lieux-current-municipal-audit.json lieux-osm-poi-triage.json lieux-official-proof.json lieux-release-review.json; do
               test -s "$OUT/$f"
@@ -305,6 +324,10 @@ jobs:
               cp "$OUT/lieux-agenda-watch.json" "$STATE/lieux-agenda-watch.json"
               cp "$OUT/lieux-agenda-candidates.json" "$STATE/lieux-agenda-candidates.json"
               git -C state add -- automation-intake/ptitesondes/lieux-agenda-watch.json automation-intake/ptitesondes/lieux-agenda-candidates.json
+            fi
+            if [[ "$PREFLIGHT_OK" == 1 ]]; then
+              cp "$OUT/lieux-agenda-preflight.json" "$STATE/lieux-agenda-preflight.json"
+              git -C state add -- automation-intake/ptitesondes/lieux-agenda-preflight.json
             fi
             if ! git -C state diff --cached --quiet; then
               git -C state commit -m 'data(ptitesondes): lieux nationaux depuis runner public' > "$LOG/git-lieux-commit.log" 2>&1
