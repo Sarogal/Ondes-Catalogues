@@ -186,6 +186,20 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(report["evaluated"], 0)
         self.assertEqual(report["decidedSkipped"], 3)
 
+    def test_raw_multiple_same_day_sightings_are_not_sufficient(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1",
+                     "approvals": []}
+        registry = {"items": {"same_day": {
+            "candidate": record(), "observations": 99,
+            "stableObservations": 1, "status": "pending_review"}}}
+        def forbidden(*args):
+            self.fail("Same-day repeat must not trigger network verification")
+        out, report = v.process(
+            registry, catalogue(), approvals, dt.date(2026, 11, 9),
+            fetch=forbidden)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(out, approvals)
+
     def test_single_observation_does_not_qualify(self):
         approvals = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         registry = {"items": {"x": {"candidate": record(), "observations": 1}}}
