@@ -122,6 +122,38 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["legacyRowsWithoutStabilityProof"], 1)
         self.assertEqual(out["readyForIndependentRecheck"], 0)
 
+    def test_seven_day_auto_approval_and_actual_public_snapshot(self):
+        r, a, c = fixtures()
+        a["approvals"] = [
+            {"reviewDecision": "approved",
+             "reviewedBy": "automated-official-recheck",
+             "reviewedAt": "2026-11-09",
+             "event": {"officialUrl": "https://venue.example/e1",
+                       "date": "2027-03-11"}},
+            {"reviewDecision": "approved",
+             "reviewedBy": "independent-official-verifier",
+             "reviewedAt": "2026-11-08",
+             "event": {"officialUrl": "https://venue.example/e2",
+                       "date": "2027-03-12"}},
+            {"reviewDecision": "approved",
+             "reviewedBy": "automated-official-recheck",
+             "reviewedAt": "2026-11-01",
+             "event": {"officialUrl": "https://venue.example/e3",
+                       "date": "2027-03-13"}},
+        ]
+        c["events"] = [
+            {"officialUrl": "https://venue.example/e1", "date": "2027-03-11",
+             "history": [{"date": "2026-11-09", "change": "Ajout"}]},
+            {"officialUrl": "https://venue.example/e2", "date": "2027-03-12",
+             "history": [{"date": "2026-11-02", "change": "Ajout"}]},
+        ]
+        out = f.build(r, a, c, dt.date(2026, 11, 9))["lastSevenDaysInclusive"]
+        self.assertEqual(out["start"], "2026-11-03")
+        self.assertEqual(out["automaticallyApproved"], 1)
+        self.assertEqual(out["automaticallyApprovedAndObservedPublished"], 1)
+        self.assertEqual(out["publicEventsFirstRecordedInHistory"], 1)
+
+
 
 if __name__ == "__main__":
     unittest.main()
