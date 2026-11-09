@@ -24,8 +24,18 @@ TOTEMS = next(s for s in REGISTRY["sources"] if s["id"] == "pace-totems")
 
 
 def historical(*omitted):
+    """Historical 6 Nov fixture: exclude venues reviewed after this test date.
+
+    Newly added real places must not be projected into the older snapshot:
+    a 9 Nov 2026 venue cannot have existed in a 6 Nov 2026 catalogue.
+    Production chronology validation is intentionally left untouched.
+    """
     output = deepcopy(CURRENT)
-    output["places"] = [p for p in output["places"] if p["id"] not in omitted]
+    output["places"] = [
+        p for p in output["places"]
+        if p["id"] not in omitted and p["reviewed_at"] <= TODAY.isoformat()
+    ]
+    output["updated_at"] = TODAY.isoformat()
     return output
 
 
