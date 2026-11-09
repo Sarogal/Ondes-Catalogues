@@ -110,7 +110,7 @@ def verify(candidate, page, catalogue, today):
         "reviewedAt": today.isoformat(),
         "officialEvidence": [{
             "url": official_url,
-            "proofType": "official-venue-detail",
+            "proofType": "official-organizer-or-venue",
             "checkedAt": today.isoformat(),
             "checkedFields": ["artists", "date", "venue", "genre"],
             "officialArtistNames": [performer["name"]],
