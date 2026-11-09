@@ -81,6 +81,31 @@ def build(registry, approvals, catalogue, as_of):
             e = approval.get("event") or {}
             approved_pairs.add(_event_pair(e))
     published_pairs = {_event_pair(e) for e in catalogue["events"]}
+    window_start = as_of - dt.timedelta(days=6)
+
+    def within_week(value):
+        try:
+            day = dt.date.fromisoformat(str(value))
+        except (TypeError, ValueError):
+            return False
+        return window_start <= day <= as_of
+
+    automatic_approvals_this_week = [
+        a for a in approvals["approvals"]
+        if a.get("reviewDecision") == "approved"
+        and a.get("reviewedBy") == "automated-official-recheck"
+        and within_week(a.get("reviewedAt"))
+    ]
+    published_automatic_this_week = sum(
+        _event_pair(a.get("event") or {}) in published_pairs
+        for a in automatic_approvals_this_week
+    )
+    first_recorded_this_week = sum(
+        isinstance(e.get("history"), list) and bool(e["history"])
+        and isinstance(e["history"][0], dict)
+        and within_week(e["history"][0].get("date"))
+        for e in catalogue["events"]
+    )
     bucket_counts = Counter()
     status_counts = Counter()
     date_counts = Counter()
@@ -199,6 +224,16 @@ def build(registry, approvals, catalogue, as_of):
             v["exactPublishedUrlDate"] for v in source_counts.values()),
         "privateApprovedEventsTotal": len(approvals["approvals"]),
         "publicEventsTotal": len(catalogue["events"]),
+        "lastSevenDaysInclusive": {
+            "start": window_start.isoformat(),
+            "end": as_of.isoformat(),
+            "automaticallyApproved": len(automatic_approvals_this_week),
+            "automaticallyApprovedAndObservedPublished": published_automatic_this_week,
+            # Historical first record is an indicator; the cloud sync's
+            # per-run newEvents remains the authoritative publication delta.
+            "publicEventsFirstRecordedInHistory": first_recorded_this_week,
+            "authoritativePublicDeltaSource": "grossesondes-concerts-cloud-sync",
+        },
         "legacyRowsWithoutStabilityProof": signature_missing,
         "candidateDateStatus": dict(sorted(date_counts.items())),
         "candidateReviewBuckets": dict(sorted(bucket_counts.items())),
@@ -216,6 +251,7 @@ def build(registry, approvals, catalogue, as_of):
             "All source data and this diagnostic stay private.",
             "Textual identity collisions are advisory, never deduplicated for publication.",
             "Approved/published totals are full snapshots, not a single-cohort funnel.",
+            "Public first-history-date metric is not the cloud sync event delta.",
             "Official detail flags and genre tags are discovery claims, not independent proof.",
             "Two distinct-day identity-stable observations remain mandatory.",
             "Only independently rechecked events pass preflight and public cloud sync.",
