@@ -16,7 +16,9 @@ def raw_report():
     return {
         "date": "2026-11-09", "mode": "preview_no_public_write",
         "review_slot": 2, "backlog_total": 229,
-        "eligible_with_reviewed_venue": 32,
+        "eligible_with_reviewed_venue": 32, "eligible_raw": 40,
+        "duplicate_collector_leads_skipped": 7,
+        "conflicting_uid_days_deferred": 1,
         "review_batch": 3, "review_batches": 3,
         "checked": 2, "accepted_preflight": 0,
         "deferred_or_duplicates": 2,
@@ -48,6 +50,10 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
             "official_page_dynamic": 1, "venue_or_gps": 1
         })
         self.assertEqual(result["checked"], 2)
+        self.assertEqual(result["eligible_raw"], 40)
+        self.assertEqual(result["not_eligible_for_review"], 189)
+        self.assertEqual(result["duplicate_collector_leads_skipped"], 7)
+        self.assertEqual(result["conflicting_uid_days_deferred"], 1)
         self.assertEqual(result["publications"], 0)
         self.assertEqual(result["mode"], "private_diagnostic_only")
         out = json.dumps(result)
@@ -68,6 +74,12 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
             ("checked", True),
             ("backlog_total", 9000),
             ("eligible_with_reviewed_venue", 999),
+            ("eligible_raw", 250),
+            ("eligible_raw", 31),
+            ("eligible_raw", True),
+            ("duplicate_collector_leads_skipped", 40),
+            ("conflicting_uid_days_deferred", -1),
+            ("conflicting_uid_days_deferred", 100),
             ("accepted_preflight", 2),
             ("deferred_or_duplicates", 1),
             ("review_batch", 4),
@@ -97,7 +109,9 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
     def test_clean_empty_batch_and_one_approved(self):
         source = raw_report()
         empty = dict(
-            source, eligible_with_reviewed_venue=0,
+            source, eligible_with_reviewed_venue=0, eligible_raw=0,
+            duplicate_collector_leads_skipped=0,
+            conflicting_uid_days_deferred=0,
             review_batch=0, review_batches=0, checked=0,
             accepted_preflight=0, deferred_or_duplicates=0, details=[])
         result = summarise(empty, TODAY, 2)
