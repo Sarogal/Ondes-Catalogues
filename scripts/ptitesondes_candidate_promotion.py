@@ -256,7 +256,16 @@ def reconciled_openagenda_url(lead, row):
     # OpenAgenda v2 links an UID-prefixed event under operanationalbordeaux,
     # while the ODS mirror uses its UID-free slug under ville-de-bordeaux.
     # Never infer arbitrary cross-agenda aliases from similar titles.
-    pinned_pairs = {("operanationalbordeaux", "ville-de-bordeaux")}
+    # The Alcazar subagenda is officially part of Marseille's municipal
+    # OpenAgenda library network. Its same-UID occurrence is syndicated to
+    # the aggregate municipal agenda. Both URLs must still have the EXACT
+    # UID-prefixed / canonical slug relation below; all title, date, venue,
+    # GPS, audience and first-party session checks remain mandatory.
+    # https://doc.openagenda.com/fr/article/le-reseau-des-bibliotheques-de-la-ville-de-marseille-mgblk9/
+    pinned_pairs = {
+        ("operanationalbordeaux", "ville-de-bordeaux"),
+        ("bibliotheque-lalcazar-marseille", "bibliotheques-de-marseille"),
+    }
     same_agenda = source_parts[0] == target_parts[0]
     reviewed_syndication = (source_parts[0], target_parts[0]) in pinned_pairs
     expected_source_slug = lead["external_id"] + "_" + target_parts[1]
