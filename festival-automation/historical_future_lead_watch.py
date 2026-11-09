@@ -268,7 +268,7 @@ def _valid_private_date_hints(value, year, today):
         output.append({
             "start_date_hint": first.isoformat(),
             "end_date_hint": last.isoformat(),
-            "season_hint": hint["season_hint"],
+            "season_hint": hint.get("season_hint"),
             "status": "UNVERIFIED_VISIBLE_DATE_PHRASE",
             "edition_dates_verified": False,
             "organizer_verified": False,
