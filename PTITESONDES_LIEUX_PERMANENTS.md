@@ -160,3 +160,22 @@ séances. Les fiches extraites sont des candidats privés non publiables,
 et sont toujours soumises à la prévalidation indépendante avant
 toute modification de la carte. Aucun nouveau déclencheur GitHub Actions
 n'est ajouté.
+
+
+## Robustesse de la lecture des grands agendas (novembre 2026)
+
+Des pages publiques municipales complètes contiennent de volumineux menus et
+listes de rendez-vous, sans que ce volume constitue un événement. Pour conserver
+leur veille, le collecteur accepte désormais **1,5 Mo maximum de HTML** par
+source approuvée (au lieu de 300 Ko), sans suivi de redirection ni extension de
+la liste blanche des domaines. Le collecteur de l'agenda de Pacé applique cette
+limite à l'**index** uniquement ; il conserve une limite de 300 Ko par fiche
+détaillée et un maximum de six fiches consultées par passage.
+
+En cas d'échec, le rapport privé utilise des codes bornés comme
+`html_over_limit`, `identity_missing`, `redirect_blocked`, `non_html_page`
+ou `network_error` : ni contenu de page, ni paramètres secrets, ni message
+d'exception arbitraire ne sont enregistrés. Les anciennes empreintes des sources
+inaccessibles ne sont pas effacées. **Il faut observer un nouveau passage
+planifié** pour confirmer la lecture effective des deux sources problématiques ;
+une CI verte ne constitue pas cette preuve.
