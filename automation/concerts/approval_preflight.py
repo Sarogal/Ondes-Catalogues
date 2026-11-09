@@ -82,8 +82,10 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     published = {e["id"]: e for e in candidate["events"]}
     for approval in appended:
         event = approval["event"]
-        require(published.get(event["id"]) == event,
-                "At least one proposed approval was held or modified by the publisher")
+        published_event = published.get(event["id"])
+        require(published_event is not None and all(
+            published_event.get(field) == value for field, value in event.items()),
+            "At least one proposed approval was held or modified by the publisher")
     require(len(candidate["events"]) - len(current["events"]) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
