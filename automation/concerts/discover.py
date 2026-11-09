@@ -357,11 +357,22 @@ def record_detail_hold(diag, exc, official_url):
         samples.append({"url": official_url, "reason": reason})
 
 
-def scan_venues(sources, known, day, report, max_p2=7):
+def scan_slot_for_hour(hour):
+    """Three deterministic local-time slots without altering source quotas."""
+    if not isinstance(hour, int) or not 0 <= hour <= 23:
+        raise ValueError("Invalid local scan hour")
+    return 0 if hour < 12 else 1 if hour < 18 else 2
+
+
+def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
+    if scan_slot not in (0, 1, 2):
+        raise ValueError("Only the three bounded local scan windows are allowed")
     sites = sources.get("venues") or []
     p1 = [s for s in sites if s["priority"] == "P1"]
     p2 = [s for s in sites if s["priority"] == "P2"]
-    start = (day.toordinal() * max_p2) % len(p2) if p2 else 0
+    # Same number of P2 fetches per run; three daily runs discover distinct
+    # venue cohorts instead of inspecting the same sites each time.
+    start = ((day.toordinal() + scan_slot) * max_p2) % len(p2) if p2 else 0
     chosen = p1 + [p2[(start + i) % len(p2)] for i in range(min(max_p2, len(p2)))]
     collected = {}
     robot_cache = {}
@@ -410,7 +421,8 @@ def scan_venues(sources, known, day, report, max_p2=7):
                 urls = adapter.agenda_links(first, final)
                 chosen_urls = adapter.select_urls(
                     urls, known, day.isoformat(),
-                    source.get("maxDetailPagesPerRun", 6))
+                    source.get("maxDetailPagesPerRun", 6),
+                    scan_slot=scan_slot)
                 diag = {
                     "method": "bounded_echonova_official_detail_review",
                     "agendaPagesRead": 1, "eventLinksFound": len(urls),
@@ -1064,7 +1076,7 @@ def scan_venues(sources, known, day, report, max_p2=7):
                 # The official programme has several pages, but discovery
                 # remains bounded to page one and one rotating later page.
                 last = laiterie_adapter.max_agenda_page(first, final)
-                page_number = (2 + day.toordinal() % (last - 1)) if last > 1 else None
+                page_number = (2 + (day.toordinal() + scan_slot) % (last - 1)) if last > 1 else None
                 extra_agendas = []
                 diag = {"method": "rotating_first_party_laiterie_details",
                         "lastAgendaPage": last, "agendaPagesChecked": 1,
@@ -1102,7 +1114,7 @@ def scan_venues(sources, known, day, report, max_p2=7):
                 pool = unseen[head:] + seen
                 if pool and len(selected) < limit:
                     slots = min(len(pool), limit-len(selected))
-                    offset = (day.toordinal()*slots) % len(pool)
+                    offset = ((day.toordinal() + scan_slot)*slots) % len(pool)
                     selected.extend(pool[(offset+i) % len(pool)] for i in range(slots))
                 for url in selected:
                     try:
@@ -2223,7 +2235,10 @@ def main():
         print("ÉCHEC FERMÉ : référence publique indisponible/invalide : " + type(err).__name__, file=sys.stderr)
         sys.exit(2)
     venues_checks, ticket_checks = [], []
-    venue_candidates = scan_venues(source_file, known, day, venues_checks)
+    scan_slot = scan_slot_for_hour(
+        dt.datetime.now(ZoneInfo("Europe/Paris")).hour)
+    venue_candidates = scan_venues(
+        source_file, known, day, venues_checks, scan_slot=scan_slot)
     partner_checks = []
     partner_candidates = scan_partner_ics(partner_sources, known, day, partner_checks)
     api_candidates = scan_ticketmaster(os.environ.get("TICKETMASTER_API_KEY", "").strip(), known, day, ticket_checks)
@@ -2255,6 +2270,7 @@ def main():
         "catalogue": {"url": CATALOG, "edition": catalog.get("edition"), "events": len(catalog["events"])},
         "festivalsReferenceRead": True,
         "publicationAllowed": False, "automaticPublication": False,
+        "scanSlot": scan_slot,
         "venueChecks": venues_checks, "partnerChecks": partner_checks, "ticketmasterChecks": ticket_checks,
         "ticketmasterVenueProbes": scoped_checks,
         "counts": {"venueCandidates": len(venue_candidates), "partnerCalendarLeads": len(partner_candidates), "ticketmasterCandidates": len(api_candidates),
