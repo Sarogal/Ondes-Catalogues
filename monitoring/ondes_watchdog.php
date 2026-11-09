@@ -8,6 +8,8 @@ const WATCH_WORKFLOWS = [
     'P’tites Ondes — collecte Sorties + Lieux' => ['ptitesondes-private-intake-on-public-runners.yml', ['07:17', '10:17', '14:17', '18:17', '21:37']],
     'Grosses Ondes — collecte Festivals' => ['grossesondes-festivals-private-intake-on-public-runners.yml', ['06:24', '18:42']],
     'Grosses Ondes — collecte Concerts' => ['grossesondes-concerts-private-intake-on-public-runners.yml', ['07:18', '13:11', '20:11']],
+    'P’tites Ondes — prévalidation Sorties' => ['ptitesondes-evidence-preview.yml', ['08:40', '11:40', '15:40', '19:40']],
+    'P’tites Ondes — prévalidation Lieux' => ['ptitesondes-place-preflight.yml', ['08:50', '11:50', '15:50', '19:50']],
     'P’tites Ondes — publication Sorties/Lieux' => ['ptitesondes-cloud-sync.yml', ['09:20', '12:20', '16:20', '20:20']],
     'Grosses Ondes — publication Festivals' => ['grossesondes-cloud-sync.yml', ['10:47', '17:45']],
     'Grosses Ondes — publication Concerts' => ['grossesondes-concerts-cloud-sync.yml', ['00:17', '03:17', '06:17', '09:17', '12:17', '15:17', '18:17', '21:17']],
@@ -172,7 +174,7 @@ function watch_self_test(): void {
         }
         return ['version' => 0];
     }, $now);
-    watch_expect($checked['checks'] === 10 && $checked['ok'] === false);
+    watch_expect($checked['checks'] === 12 && $checked['ok'] === false);
     echo "Tests watchdog : OK\n";
 }
 
