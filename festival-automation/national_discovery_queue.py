@@ -151,7 +151,8 @@ def build_queue(state, report, curated, today):
     newly_discovered_sources = 0
 
     def add(title, year, region, url, origin, kind, first, last,
-            city=None, archive_slug=None, date_hint=None):
+            city=None, archive_slug=None, date_hint=None,
+            archive_date_hints=None):
         nonlocal rejected, observed_sources, newly_discovered_sources
         ident = _identity(title, year)
         region = _safe_region(region)
@@ -185,6 +186,7 @@ def build_queue(state, report, curated, today):
                 "city_hint": None,
                 "archive_slug_hint": None,
                 "date_hints": [],
+                "historical_homepage_date_hints_review_only": [],
                 "firstSeen": first, "lastSeen": last,
                 "sources": [],
                 "source_independence_verified": False,
@@ -215,6 +217,12 @@ def build_queue(state, report, curated, today):
             row["archive_slug_hint"] = archive_slug
         if date_hint and date_hint not in row["date_hints"]:
             row["date_hints"].append(date_hint)
+        if kind == "HISTORICAL_HOMEPAGE_YEAR_HINT" and archive_date_hints:
+            for clue in archive_date_hints:
+                if (clue not in row["historical_homepage_date_hints_review_only"]
+                        and len(row["historical_homepage_date_hints_review_only"]) < 3):
+                    row["historical_homepage_date_hints_review_only"].append(
+                        dict(clue))
         witness = {"url": url, "discovered_via": origin, "kind": kind,
                    "firstSeen": first, "lastSeen": last,
                    "independence_verified": False,
@@ -245,7 +253,8 @@ def build_queue(state, report, curated, today):
         add(hint["name"], hint["year"], hint["region"],
             hint["url"], hint["url"], "HISTORICAL_HOMEPAGE_YEAR_HINT",
             hint["firstSeen"], hint["lastSeen"],
-            archive_slug=hint["slug"])
+            archive_slug=hint["slug"],
+            archive_date_hints=hint["date_hints_review_only"])
 
     regional = state.get("regional_festival_candidates_review_only", {})
     if not isinstance(regional, dict):
@@ -367,6 +376,8 @@ def build_queue(state, report, curated, today):
     for row in rows:
         row["sources"].sort(key=lambda s: (s["url"], s["discovered_via"]))
         row["date_hints"].sort(key=lambda d: (d["start_date"] or ""))
+        row["historical_homepage_date_hints_review_only"].sort(
+            key=lambda d: (d["start_date_hint"], d["end_date_hint"]))
         row["missing_checks"] = sorted(set(row["missing_checks"]))
     return {
         "schema": SCHEMA, "as_of": today,
@@ -379,6 +390,8 @@ def build_queue(state, report, curated, today):
         "historical_homepage_dossiers_private": sum(
             any(s["kind"] == "HISTORICAL_HOMEPAGE_YEAR_HINT"
                 for s in row["sources"]) for row in rows),
+        "historical_homepage_date_hints_private": sum(
+            len(row["historical_homepage_date_hints_review_only"]) for row in rows),
         "non_curated_dossiers_count": sum(
             not any(s["kind"] == "CURATED_PRIMARY_CANDIDATE"
                     for s in row["sources"]) for row in rows),
