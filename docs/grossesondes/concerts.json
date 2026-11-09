@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-07",
+  "updatedAt": "2026-11-09",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2155,6 +2155,21 @@
     {
       "id": "brother-junior",
       "name": "Brother Junior",
+      "aliases": []
+    },
+    {
+      "id": "coilguns",
+      "name": "COILGUNS",
+      "aliases": []
+    },
+    {
+      "id": "pussy-miel",
+      "name": "Pussy Miel",
+      "aliases": []
+    },
+    {
+      "id": "kill-kill-diana",
+      "name": "Kill!Kill!Diana",
       "aliases": []
     }
   ],
@@ -14052,6 +14067,37 @@
       "history": [
         {
           "date": "2026-11-07",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270311-biarritz-coilguns-pussy-miel-kill-kill-diana",
+      "title": "COILGUNS + Pussy Miel + Kill!Kill!Diana",
+      "date": "2027-03-11",
+      "artistIds": [
+        "coilguns",
+        "pussy-miel",
+        "kill-kill-diana"
+      ],
+      "venueId": "atabal-biarritz",
+      "genres": [
+        "Hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.atabal-biarritz.fr/agenda/concerts/coilguns-pussy-miel-killkilldiana-jeudi-11-mars-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Atabal",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-09",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-09",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
