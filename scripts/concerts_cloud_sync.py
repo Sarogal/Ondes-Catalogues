@@ -4060,6 +4060,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
+    laiterie_auto = False
     if reviewer == "automated-official-recheck":
         # An automated recheck is not a human signature. Only explicitly
         # allowlisted FIRST-PARTY event detail paths and their exact venue
@@ -4130,8 +4131,24 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event.get("time") is None and
             not (approval.get("newArtists") or [])
         )
+        laiterie_auto = (
+            venue == "la-laiterie-strasbourg" and
+            event_id not in LAITERIE_OFFICIAL_VERIFIED and
+            event_id not in LAITERIE_SECOND_WAVE_VERIFIED and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "www.artefact.org" and
+            bool(re.fullmatch(
+                r"/la-laiterie/evenements/[a-z0-9-]{3,140}/",
+                parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None and
+            not (approval.get("newArtists") or [])
+        )
         require(bool(rex or molotov or ferrailleur or backstage
-                     or atabal_pilot or atabal_multi or blacklab_auto)
+                     or atabal_pilot or atabal_multi or blacklab_auto
+                     or laiterie_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4649,6 +4666,43 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(all(norm(a["name"]) not in aliases
                     for a in new_artists),
                 "Lot national : nouveau groupe possiblement déjà référencé")
+    elif (event.get("venueId") == "la-laiterie-strasbourg"
+          and reviewer == "automated-official-recheck"):
+        # Do not weaken the historic individually signed La Laiterie lists.
+        # This independent official recheck only accepts ONE previously known
+        # canonical artist and its exact Artefact concert detail page.
+        require(laiterie_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "La Laiterie"
+                and len(ids) == 1 and new_artists == []
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "La Laiterie automatique : concert hors périmètre")
+        proof = evidence[0]
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("checkedFields") ==
+                    ["artists", "date", "venue", "genre"]
+                and proof.get("sourceStructure") ==
+                    "artefact-single-artist-header-and-artist-section"
+                and proof.get("officialArtistNames") == [event.get("title")],
+                "La Laiterie automatique : artiste ou fiche non corroborés")
+        artist = known_artist_ids.get(ids[0])
+        require(isinstance(artist, dict) and
+                norm(artist.get("name")) == norm(event.get("title"))
+                and event_id == (
+                    "go-c-" + event["date"].replace("-", "") +
+                    "-strasbourg-" + ids[0]),
+                "La Laiterie automatique : identité artiste ou ID incohérent")
+        require(norm_date(event.get("date")) > today
+                and event.get("time") is None
+                and len(event.get("genres") or []) == 1
+                and event["genres"][0] in {
+                    "Post Punk", "Black Metal", "Death Metal",
+                    "Hard Rock", "Stoner Rock", "Sludge", "Doom Metal",
+                    "Thrash Metal", "Metal", "Punk", "Grunge",
+                    "Shoegaze", "Noise Rock", "Math Rock", "Post Rock",
+                },
+                "La Laiterie automatique : genre, date ou heure non admissibles")
     elif event.get("venueId") == "la-laiterie-strasbourg":
         spec = (LAITERIE_OFFICIAL_VERIFIED.get(event_id)
                 or LAITERIE_SECOND_WAVE_VERIFIED.get(event_id))
