@@ -96,17 +96,24 @@ jobs:
         env:
           PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
         run: python scripts/run_cloud_sync.py
+      - name: Rattrapage Pages limité à l'horaire scolaire Momo déjà corrigé
+        id: history_pages
+        # The public Pages JSON alone decides whether this single approved
+        # correction still needs publishing. No new cron or direct push.
+        run: python scripts/ptitesondes_pages_release_gate.py
+
       - name: Calculer la permission de déploiement
         id: decision
         env:
           CHANGED: ${{ steps.sync.outputs.changed }}
+          APPROVED_HISTORY_PAGES_CHANGED: ${{ steps.history_pages.outputs.changed }}
           PLACES_CHANGED: ${{ steps.places.outputs.changed }}
           PLACE_RELEASE_CHANGED: ${{ steps.place_release.outputs.changed }}
           CLOUD_ENABLED: ${{ vars.PTITESONDES_CLOUD_SYNC }}
           USER_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if { [ "$CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ] || [ "$PLACE_RELEASE_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
+          if { [ "$CHANGED" = "true" ] || [ "$APPROVED_HISTORY_PAGES_CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ] || [ "$PLACE_RELEASE_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
