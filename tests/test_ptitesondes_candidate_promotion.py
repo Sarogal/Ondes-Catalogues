@@ -307,6 +307,23 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertEqual(report["details"][0]["status"], "already_published")
         self.assertEqual(len(public["events"]), 101)
 
+    def test_exact_momo_historical_time_fix_preserves_preflight(self):
+        ref = base()
+        original = ref["events"][0]
+        original.update(
+            id="bordeaux-momo-enfant-peche-2027-01-21",
+            date_start="2027-01-21", date_end="2027-01-22",
+            source_url="https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301",
+            time="21 janv. 19:00 ; 22 janv. 14:30 (scolaires) et 19:00")
+        edited = dict(original, time="21 janv. 19:00 ; 22 janv. 19:00")
+        public = dict(ref, events=[edited] + ref["events"][1:])
+        patch_doc, report = evaluate([], ref, public, TODAY)
+        self.assertEqual(patch_doc["additions"], [])
+        self.assertEqual(report["checked"], 0)
+        malformed = dict(ref, events=[dict(edited, title="Falsifié")] + ref["events"][1:])
+        with self.assertRaisesRegex(ValueError, "historique"):
+            evaluate([], ref, malformed, TODAY)
+
     def test_immutable_historical_baseline_required(self):
         ref = base()
         public = dict(ref, events=[dict(ref["events"][0], title="Falsifié")] + ref["events"][1:])
