@@ -1,10 +1,13 @@
 """Ensure real private-write bridge uses independent review batch rotation."""
 from pathlib import Path
 import re
+import sys
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
+sys.path.insert(0, str(ROOT / "scripts"))
+from ptitesondes_schedule_catchup import OUTINGS_CRONS, MAX_SLOTS
 
 
 class PrivateBridgeRotationTests(unittest.TestCase):
@@ -17,17 +20,21 @@ class PrivateBridgeRotationTests(unittest.TestCase):
             "17 14 * * *", "17 18 * * *",
             "37 21 * * *",
         ])
-        assignments = re.findall(
-            r"(?m)^\s+'(17 \d\d \* \* \*)'\) REVIEW_SLOT=(\d) ;;$", text)
-        self.assertEqual(assignments, [
-            ("17 07 * * *", "0"),
-            ("17 10 * * *", "1"),
-            ("17 14 * * *", "2"),
-            ("17 18 * * *", "3"),
-        ])
+        # The cron → review slot map lives in one tested planner, not in a
+        # shell case statement duplicated in the workflow.
+        self.assertEqual([row[0] for row in OUTINGS_CRONS], scheduled[:4])
+        self.assertEqual(len(OUTINGS_CRONS), MAX_SLOTS)
+        self.assertEqual(MAX_SLOTS, 4)
         self.assertIn("REVIEW_CRON: ${{ github.event.schedule }}", text)
-        self.assertIn("--limit 15 --slot \"$REVIEW_SLOT\"", text)
-        self.assertIn("*) echo \"::error::Créneau de vérification inconnu", text)
+        self.assertIn("RUN_EVENT: ${{ github.event_name }}", text)
+        self.assertIn("ptitesondes_schedule_catchup.py", text)
+        self.assertIn('--event "$RUN_EVENT" --cron "$REVIEW_CRON"', text)
+        self.assertIn('mapfile -t REVIEW_SLOTS', text)
+        self.assertIn('for REVIEW_SLOT in "${REVIEW_SLOTS[@]}"', text)
+        self.assertIn('--limit 15 --slot "$REVIEW_SLOT"', text)
+        self.assertIn('[[ "$REVIEW_SLOT" =~ ^[0-3]$ ]]', text)
+        self.assertIn("queue: max", text)
+        self.assertNotIn("*) REVIEW_SLOT=0", text)
 
     def test_main_bridge_is_read_only_for_public_output(self):
         text = (WORKFLOWS / "ptitesondes-private-intake-on-public-runners.yml").read_text(
