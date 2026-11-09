@@ -22,6 +22,52 @@ def discovery(*rows):
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_two_passes_same_day_do_not_count_as_independent(self):
+        first, _ = a.merge(None, discovery(candidate()), "2026-11-09T07:00:00Z")
+        second, summary = a.merge(
+            first, discovery(candidate()), "2026-11-09T20:00:00Z")
+        self.assertEqual(second["items"]["venue:x"]["observations"], 2)
+        self.assertEqual(second["items"]["venue:x"]["stableObservations"], 1)
+        self.assertEqual(summary["stableEligible"], 0)
+
+    def test_two_distinct_days_confirm_stability(self):
+        first, _ = a.merge(None, discovery(candidate()), "2026-11-09T07:00:00Z")
+        second, summary = a.merge(
+            first, discovery(candidate()), "2026-11-10T07:00:00Z")
+        self.assertEqual(second["items"]["venue:x"]["stableObservations"], 2)
+        self.assertEqual(summary["stableReobservedOnNewDay"], 1)
+        self.assertEqual(summary["stableEligible"], 1)
+        third, _ = a.merge(second, discovery(candidate()),
+                           "2026-11-10T20:00:00Z")
+        self.assertEqual(third["items"]["venue:x"]["stableObservations"], 2)
+
+    def test_changed_bill_date_venue_or_genre_resets_stability(self):
+        initial, _ = a.merge(None, discovery(candidate()), "2026-11-09")
+        stable, _ = a.merge(initial, discovery(candidate()), "2026-11-10")
+        for changed in ({"date": "2027-03-05"}, {"name": "Other band"},
+                        {"venue": "Other room"},
+                        {"classification": ["Reggae"]},
+                        {"possibleExistingConcert": True}):
+            with self.subTest(changed=changed):
+                revised = candidate()
+                revised.update(changed)
+                later, summary = a.merge(
+                    stable, discovery(revised), "2026-11-11")
+                self.assertEqual(later["items"]["venue:x"]["stableObservations"], 1)
+                self.assertEqual(summary["stabilityResetOrMigrated"], 1)
+                self.assertEqual(summary["stableEligible"], 0)
+
+    def test_historical_row_is_migrated_conservatively(self):
+        prev, _ = a.merge(None, discovery(candidate()), "2026-11-01")
+        row = prev["items"]["venue:x"]
+        row.pop("identitySignature")
+        row.pop("stableObservations")
+        row.pop("lastStableObservationDay")
+        row["observations"] = 17
+        later, _ = a.merge(prev, discovery(candidate()), "2026-11-09")
+        self.assertEqual(later["items"]["venue:x"]["stableObservations"], 1)
+        self.assertEqual(later["items"]["venue:x"]["observations"], 18)
+
     def test_new_discovery_kept(self):
         data, stats = a.merge(None, discovery(candidate()), "2026-11-01T20:00:00Z")
         self.assertEqual(stats["added"], 1)
