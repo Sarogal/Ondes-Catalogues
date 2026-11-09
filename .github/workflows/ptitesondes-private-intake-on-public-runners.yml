@@ -256,12 +256,24 @@ jobs:
             echo "::error::Réconciliation cumulative refusée ; aucune approbation écrite."
             exit 1
           fi
+          # Produce a bounded, redacted reason breakdown only in the
+          # PRIVATE intake branch. Never upload, print or artifact the raw
+          # candidate report in a public workflow.
+          if ! python public/scripts/ptitesondes_private_qualification_diagnostics.py \
+            --date "$DAY" --slot "$REVIEW_SLOT" \
+            --report "$VERIFIED/report.json" \
+            --output "$VERIFIED/qualification-summary.json" > "$LOG/qualification-diagnostics.log" 2>&1; then
+            echo "::error::Diagnostic privé incohérent ; aucun rapport transmis."
+            exit 1
+          fi
           test -s "$VERIFIED/patch-$DAY.json"
+          test -s "$VERIFIED/qualification-summary.json"
           cp "$VERIFIED/patch-$DAY.json" "$STATE/patch-$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             cp "$LOG/fusion-verifiee.log" "$STATE/reports/verification-$DAY.json"
-            git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/verification-$DAY.json"
-            push_private 'data(ptitesondes): verifier les preuves uniquement en privé'
+            cp "$VERIFIED/qualification-summary.json" "$STATE/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
+            git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/verification-$DAY.json" "automation-intake/ptitesondes/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
+            push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
           fi
           echo "Sorties collectées et prévalidées indépendamment ; aucune publication publique." >> "$GITHUB_STEP_SUMMARY"
 
