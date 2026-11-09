@@ -79,5 +79,5 @@ jobs:
           python scripts/ptitesondes_candidate_promotion.py --limit 15 --slot "$SLOT"
           {
             echo "## Contrôle indépendant — aucune publication"
-            python -c 'import json; r=json.load(open("/tmp/ptitesondes-promotion/report.json")); print(json.dumps({k:v for k,v in r.items() if k != "details"},ensure_ascii=False,indent=2))'
+            PYTHONPATH=scripts python -c 'import json; from ptitesondes_candidate_promotion import public_run_summary; r=json.load(open("/tmp/ptitesondes-promotion/report.json")); print(json.dumps(public_run_summary(r),ensure_ascii=False,indent=2))'
           } >> "$GITHUB_STEP_SUMMARY"
