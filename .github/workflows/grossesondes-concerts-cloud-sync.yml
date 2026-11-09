@@ -110,13 +110,10 @@ jobs:
               print("::warning title=Concerts — flux d'approbation absent::Le catalogue est conservé sans nouveaux ajouts.")
           PY
 
-      - name: Archiver le rapport privé de contrôle
-        uses: actions/upload-artifact@v7
-        with:
-          name: grossesondes-concerts-cloud-candidat
-          path: /tmp/grossesondes_concerts/
-          if-no-files-found: error
-          retention-days: 14
+      # The detailed candidate JSON and rejection reasons may contain private
+      # unpublished approvals. Do NOT attach them to a PUBLIC workflow run.
+      # Aggregated counts are already in GITHUB_STEP_SUMMARY above; detailed
+      # diagnostics live only in RUNNER_TEMP for the duration of this job.
 
       - name: Déterminer l'autorisation de publication ou d'initialisation Pages
         id: decision
