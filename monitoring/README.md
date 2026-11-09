@@ -2,7 +2,7 @@
 
 Le script monitoring/ondes_watchdog.php est un contrôleur **en lecture seule** du dépôt public Sarogal/Ondes-Catalogues. Il n'utilise aucun token privé et ne modifie ni intake, ni fiches, ni catalogues. Il vérifie via l'API GitHub les créneaux des collectes et synchronisations réellement exécutés avec succès, puis le schéma et les volumes minimum des quatre JSON servis par GitHub Pages.
 
-Le contrôle examine les créneaux prévus sur les dernières 27 heures, en laissant **3 heures** de marge pour les retards. Une exécution manuelle ne remplace pas un déclenchement programmé. Ce contrôle ne garantit pas la découverte de toutes les dates et ne compare pas le JSON public au dépôt main : cela appartient à la PR de réconciliation Pages #135.
+Le contrôle examine les créneaux prévus sur les dernières 27 heures, en laissant **9 heures** de marge pour les retards potentiellement très importants. Une exécution manuelle ne remplace pas un déclenchement programmé. **Attention :** GitHub n'expose pas l'horaire cron exact dans la liste des runs ; l'association entre un passage prévu et une exécution très retardée est indicative. Les alertes de créneau doivent donc être vérifiées avec l'historique des runs et le résultat des jobs, et non interprétées comme une preuve absolue d'absence. Ce contrôle ne garantit pas la découverte de toutes les dates et ne compare pas le JSON public au dépôt main : cela appartient à la PR de réconciliation Pages #135.
 
 ## Contrôles locaux et GitHub
 
