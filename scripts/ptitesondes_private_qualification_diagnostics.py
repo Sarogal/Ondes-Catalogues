@@ -64,16 +64,21 @@ def summarise(report, expected_day, expected_slot):
             or report.get("mode") != "preview_no_public_write"
             or report.get("review_slot") != expected_slot):
         raise ValueError("Rapport daté ou créneau différent")
-    fields = ("backlog_total", "eligible_with_reviewed_venue",
+    fields = ("backlog_total", "eligible_with_reviewed_venue", "eligible_raw",
+              "duplicate_collector_leads_skipped", "conflicting_uid_days_deferred",
               "review_batch", "review_batches", "checked",
               "accepted_preflight", "deferred_or_duplicates")
     if any(type(report.get(k)) is not int for k in fields):
         raise ValueError("Compteurs invalides")
-    backlog, eligible, batch, batches, checked, accepted, rejected = (
-        report[k] for k in fields
-    )
+    (backlog, eligible, raw_eligible, duplicates, conflicts, batch, batches,
+     checked, accepted, rejected) = (report[k] for k in fields)
     if (not 0 <= backlog <= 4000 or not 0 <= eligible <= backlog
-            or not 0 <= checked <= 15 or not 0 <= accepted <= checked
+            or not 0 <= raw_eligible <= backlog
+            or not 0 <= duplicates <= raw_eligible
+            or not 0 <= conflicts <= raw_eligible - duplicates
+            or eligible + duplicates + conflicts > raw_eligible
+            or not 0 <= checked <= min(eligible, 15)
+            or not 0 <= accepted <= checked
             or rejected != checked - accepted
             or not 0 <= rejected <= 15
             or not 0 <= batches <= 4000):
@@ -95,6 +100,10 @@ def summarise(report, expected_day, expected_slot):
         "schema": "ptitesondes.private_qualification_summary.v1",
         "day": expected_day.isoformat(), "slot": expected_slot,
         "backlog_total": backlog, "eligible": eligible,
+        "eligible_raw": raw_eligible,
+        "not_eligible_for_review": backlog - raw_eligible,
+        "duplicate_collector_leads_skipped": duplicates,
+        "conflicting_uid_days_deferred": conflicts,
         "batch": batch, "batches": batches,
         "checked": checked, "accepted_preflight": accepted,
         "rejected": rejected,
