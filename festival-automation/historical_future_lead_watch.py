@@ -194,6 +194,13 @@ def validated_hints(state, today):
 def scan(state, roster, today, fetch=get_page, limit=MAX_CHECKS):
     if state.get("schema") != STATE_SCHEMA:
         raise ValueError("état privé incompatible")
+    if (not isinstance(roster, dict) or len(roster) > len(APPROVED)
+            or any(slug not in APPROVED or not isinstance(source, dict)
+                   or source.get("slug") != slug
+                   or (source.get("name"), source.get("region"),
+                       source.get("url")) != APPROVED[slug]
+                   for slug, source in roster.items())):
+        raise ValueError("sélection de surveillance non approuvée")
     attempts = state.setdefault("historical_future_source_checks_private", {})
     pending = state.setdefault("historical_future_edition_hints_private", {})
     if not isinstance(pending, dict):
