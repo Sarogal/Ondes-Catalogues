@@ -18,7 +18,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
-from merge_policy import ORIGIN, byid, valid, safe_published_event
+from merge_policy import ORIGIN, byid, valid, safe_published_event, historical_event_unchanged
 from private_intake import BRANCH, PATH, github
 from official_organizer_proof import canonical_event_title
 from proof import norm, meters
@@ -418,7 +418,8 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
              verifier=verify_event, limit=MAX_FETCH, slot=0):
     historic = byid(baseline)
     existing = byid(published)
-    if any(k not in existing or existing[k] != v for k, v in historic.items()):
+    if any(k not in existing or not historical_event_unchanged(v, existing[k])
+           for k, v in historic.items()):
         raise ValueError("Catalogue historique différent du public")
     fields = set().union(*(set(ev) for ev in baseline["events"]))
     categories = {x["category"] for x in baseline["events"]}
