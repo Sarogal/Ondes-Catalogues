@@ -61,6 +61,57 @@ class BateauIvreOfficialTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             b.archive_links(LISTING, b.BASE+"/2026/?post_type=events")
 
+    def test_named_official_support_before_full_date_is_not_silently_lost(self):
+        url = (b.BASE + "/%C3%A9v%C3%A8nements/"
+               "orchestre-tout-puissant-marcel-duchamp/")
+        page = """<html><main><article>
+        <h1>Orchestre tout puissant Marcel Duchamp</h1>
+        <h2>+ TACHYCARDIE</h2>
+        Jeudi 21 Jan 2027<br>20h
+        <p>Le groupe est post-punk, guitares et fanfare punk.</p>
+        <h1>Orchestre tout puissant Marcel Duchamp</h1>
+        Jeudi 21 Jan 2027<br>20h
+        <p>Un concert de rock alternatif.</p>
+        <h2>+ TACHYCARDIE</h2>
+        <p>Présentation du second artiste.</p>
+        <h2>+ GROUPE D'UNE AUTRE RECOMMANDATION</h2>
+        </article></main></html>"""
+        row = b.candidate(page, url, SOURCE, NOW)
+        self.assertEqual(row["leadArtist"],
+                         "Orchestre tout puissant Marcel Duchamp")
+        self.assertEqual(row["name"],
+                         "Orchestre tout puissant Marcel Duchamp + TACHYCARDIE")
+        self.assertEqual(row["firstPartyNamedSupport"], ["TACHYCARDIE"])
+        self.assertEqual(row["date"], "2027-01-21")
+        self.assertFalse(row["publicationAllowed"])
+        self.assertIsNone(row["localTime"])
+        # The distant recommended H2 may not be accepted as an artist.
+        self.assertNotIn("GROUPE D'UNE", row["name"])
+        no_support = page.replace("<h2>+ TACHYCARDIE</h2>\n        Jeudi",
+                                  "Jeudi", 1)
+        row = b.candidate(no_support, url, SOURCE, NOW)
+        self.assertEqual(row["firstPartyNamedSupport"], [])
+        self.assertEqual(row["name"],
+                         "Orchestre tout puissant Marcel Duchamp")
+
+    def test_multiple_explicit_support_headings_need_same_event_masthead(self):
+        url = b.BASE + "/%C3%A9v%C3%A8nements/some-band-one-two/"
+        page = ("""<html><main><h1>SOME BAND</h1>
+            <h2>+ OPENING ONE</h2><h2>+ OPENING TWO</h2>
+            Vendredi 12 Mars 2027<br>20h
+            <p>Concert punk et metal en salle.</p>
+            </main></html>""")
+        row = b.candidate(page, url, SOURCE, NOW)
+        self.assertEqual(row["name"],
+                         "SOME BAND + OPENING ONE + OPENING TWO")
+        self.assertEqual(row["firstPartyNamedSupport"],
+                         ["OPENING ONE", "OPENING TWO"])
+        no_first_party = page.replace(
+            "<h2>+ OPENING TWO</h2>",
+            "Vendredi 12 Mars 2027<br><h2>+ OPENING TWO</h2>")
+        row = b.candidate(no_first_party, url, SOURCE, NOW)
+        self.assertEqual(row["firstPartyNamedSupport"], ["OPENING ONE"])
+
     def test_current_month_programme_is_exact_and_unpublished(self):
         source = {**SOURCE, "name": "Le Bateau Ivre — programme courant",
                   "url": b.CURRENT}

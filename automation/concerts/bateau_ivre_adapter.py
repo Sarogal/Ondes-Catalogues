@@ -114,11 +114,14 @@ class _Detail(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.main_depth = 0
         self.h1_depth = 0
+        self.h2_depth = 0
         self.skip = 0
         # Keep separate H1 positions. WordPress may repeat the same official
         # title before the detailed article; never concatenate different H1s.
         self.headings = []
         self._heading_parts = []
+        self._subheading_parts = []
+        self.support_headings = []
         self.parts = []
 
     def handle_starttag(self, tag, attrs):
@@ -126,10 +129,14 @@ class _Detail(HTMLParser):
             self.main_depth += 1
         if tag in ("script", "style", "nav", "footer", "noscript"):
             self.skip += 1
-        if self.main_depth and tag == "h1":
+        if self.main_depth and not self.skip and tag == "h1":
             if self.h1_depth == 0:
                 self._heading_parts = []
             self.h1_depth += 1
+        if self.main_depth and not self.skip and tag == "h2":
+            if self.h2_depth == 0:
+                self._subheading_parts = []
+            self.h2_depth += 1
 
     def handle_endtag(self, tag):
         if tag == "h1" and self.h1_depth:
@@ -139,6 +146,12 @@ class _Detail(HTMLParser):
                 if heading:
                     # Index of the first text piece following this exact H1.
                     self.headings.append((heading, len(self.parts)))
+        if tag == "h2" and self.h2_depth:
+            self.h2_depth -= 1
+            if self.h2_depth == 0:
+                heading = " ".join(" ".join(self._subheading_parts).split())
+                if heading:
+                    self.support_headings.append((heading, len(self.parts)))
         if tag in ("script", "style", "nav", "footer", "noscript") and self.skip:
             self.skip -= 1
         if tag == "main" and self.main_depth:
@@ -149,6 +162,8 @@ class _Detail(HTMLParser):
             return
         if self.h1_depth:
             self._heading_parts.append(data)
+        if self.h2_depth:
+            self._subheading_parts.append(data)
         self.parts.append(data.strip())
 
 def candidate(html, detail_url, source, today):
@@ -174,6 +189,37 @@ def candidate(html, detail_url, source, today):
     if not 4 <= len(title) <= 170 or EXCLUDED.search(fold(title)):
         raise ValueError("No named valid musical event masthead")
     header_title = fold(title)
+    # Independent first-party support H2s may be placed BETWEEN the official
+    # masthead H1 and its full event date. The old parser silently dropped
+    # them, leaving an incomplete programme in the private review queue.
+    # Only "+ ARTIST" H2 headings in this narrow event-header region count.
+    first_end = p.headings[0][1]
+    next_h1 = p.headings[1][1] if len(p.headings) > 1 else len(p.parts)
+    bound = min(next_h1, first_end + 18, len(p.parts))
+    first_date_end = next((
+        pos for pos in range(first_end, bound)
+        if DATE.search(fold(" ".join(p.parts[first_end:pos+1])))
+    ), bound)
+    supports = []
+    for heading, end_pos in p.support_headings:
+        if not (first_end < end_pos <= first_date_end):
+            continue
+        match = re.fullmatch(r"\s*\+\s*([^+]{2,100})\s*", heading)
+        if not match:
+            continue
+        name = " ".join(match[1].split())
+        if (not 2 <= len(name) <= 100
+                or EXCLUDED.search(fold(name))):
+            raise ValueError("Ambiguous first-party named support artist")
+        if fold(name) not in header_title and name not in supports:
+            supports.append(name)
+    if len(supports) > 3:
+        raise ValueError("More than three support artists, review the programme")
+    full_title = title
+    if supports:
+        full_title += " + " + " + ".join(supports)
+        if len(full_title) > 200:
+            raise ValueError("Official lineup longer than expected")
     # Read only the immediate text after EACH actual H1, not the first
     # ten snippets from <main> (which may contain navigation or hidden
     # header duplicates). Ignore years in artist bios or unrelated cards.
@@ -210,7 +256,9 @@ def candidate(html, detail_url, source, today):
         "candidateId": "bateau-ivre:" + date.isoformat() + ":" + slug,
         "source": "bateau_ivre_official_detail_review",
         "sourceUrl": clean, "sourcePage": source["url"],
-        "name": title, "leadArtist": artist, "date": date.isoformat(),
+        "name": full_title, "leadArtist": artist,
+        "firstPartyNamedSupport": supports,
+        "date": date.isoformat(),
         "venue": "Le Bateau Ivre", "city": "Tours", "department": "37",
         "classification": [category.group()], "genreToConfirm": True,
         "officialDetailFound": True, "localTime": None,
