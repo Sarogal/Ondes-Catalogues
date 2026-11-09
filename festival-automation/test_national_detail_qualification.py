@@ -2,7 +2,7 @@
 from copy import deepcopy
 import unittest
 
-from national_discovery_queue import build_queue
+from national_discovery_queue import build_queue, _url_edition_hint
 from national_detail_qualification import scan, build_review, _seen_again
 
 TODAY = "2026-11-06"
@@ -217,6 +217,74 @@ class NationalDetailQualificationTests(unittest.TestCase):
         self.assertEqual(proof["publications"], 0)
         self.assertEqual(scan(state, queue, TODAY, fetch=fetch), [])
         self.assertEqual(visited, [ORIGIN, URL])
+
+
+    def test_exact_url_year_hint_survives_next_day_private_recheck(self):
+        # Some municipal listings display the event name but put its edition
+        # only in the same-name -YYYY detail slug. This is NOT date evidence.
+        title = "Festival Metal des Garrigues"
+        url = "https://agenda.montpellier.fr/evenement/festival-metal-des-garrigues-2027"
+        index = ('<main><a href="/evenement/festival-metal-des-garrigues-2027">'
+                 'Festival Metal des Garrigues</a></main>')
+        detail = ('<main><h1>Festival Metal des Garrigues</h1>'
+                  '<p>Édition 2027 : dates et informations à venir.</p></main>')
+        state, queue = self.data(first=TODAY, title=title, url=url)
+        self.assertEqual(_url_edition_hint(url, title, TODAY), 2027)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        self.assertEqual(queue["dossiers"][0]["edition_year_hint"], 2027)
+        self.assertFalse(queue["dossiers"][0]["publication_authorized"])
+        visited = []
+        self.assertEqual(scan(state, queue, TODAY,
+                              fetch=lambda x: visited.append(x)), [])
+        self.assertEqual(visited, [])  # First-day no-fetch guard remains.
+
+        next_day = "2026-11-07"
+        state["regional_festival_candidates_review_only"][url]["lastSeen"] = next_day
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": next_day, "source_reference_leads_review_only": []}
+        queue = build_queue(state, report, [], next_day)
+        def fetch(target):
+            visited.append(target)
+            return {ORIGIN: index, url: detail}[target]
+        outcomes = scan(state, queue, next_day, fetch=fetch)
+        self.assertEqual(visited, [ORIGIN, url])
+        self.assertEqual(outcomes[0]["status"], "NAME_YEAR_VISIBLE_REVIEW_ONLY")
+        review = build_review(state, queue, next_day)
+        self.assertEqual(review["observations_count"], 1)
+        self.assertEqual(review["name_year_visible_count"], 1)
+        self.assertFalse(review["observations"][0]["date_claim_verified"])
+        self.assertFalse(review["observations"][0]["publication_authorized"])
+        self.assertEqual(review["publications"], 0)
+
+    def test_url_year_hint_rejects_unrelated_expired_or_query_slugs(self):
+        title = "Festival Metal des Garrigues"
+        unsafe = (
+            "https://agenda.montpellier.fr/evenement/autre-festival-2027",
+            "https://agenda.montpellier.fr/evenement/festival-metal-des-garrigues-2029",
+            "https://agenda.montpellier.fr/evenement/festival-metal-des-garrigues-2027-extra",
+            "https://agenda.montpellier.fr/evenement/festival-metal-des-garrigues-2027?ref=1",
+            "https://agenda.montpellier.fr/evenement/%2fadmin-2027",
+            "https://agenda.montpellier.fr.evil.example/evenement/festival-metal-des-garrigues-2027",
+        )
+        for url in unsafe:
+            with self.subTest(url=url):
+                self.assertIsNone(_url_edition_hint(url, title, TODAY))
+                state, queue = self.data(title=title, url=url)
+                visited = []
+                self.assertEqual(scan(state, queue, TODAY,
+                                      fetch=lambda x: visited.append(x)), [])
+                self.assertEqual(visited, [])
+
+    def test_private_dossier_cannot_forge_url_only_edition_year(self):
+        title = "Festival Metal des Garrigues"
+        url = "https://agenda.montpellier.fr/evenement/festival-metal-des-garrigues-2027"
+        state, queue = self.data(title=title, url=url)
+        self.assertEqual(queue["dossiers"][0]["edition_year_hint"], 2027)
+        queue["dossiers"][0]["edition_year_hint"] = 2028
+        visited = []
+        self.assertEqual(scan(state, queue, TODAY,
+                              fetch=lambda x: visited.append(x)), [])
+        self.assertEqual(visited, [])
 
     def test_first_seen_today_no_fetch_or_verified_fields(self):
         state, queue = self.data(first=TODAY)
