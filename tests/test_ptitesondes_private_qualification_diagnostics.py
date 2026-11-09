@@ -121,6 +121,32 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
         result = summarise(yes, TODAY, 2)
         self.assertEqual((result["checked"], result["accepted_preflight"]), (1, 1))
 
+    def test_official_page_visible_but_missing_proof_is_not_network_outage(self):
+        self.assertEqual(reason_bucket({
+            "status": "unverified",
+            "reason": "date complète non confirmée sur la fiche officielle"
+        }), "date_or_time")
+        self.assertEqual(reason_bucket({
+            "status": "unverified",
+            "reason": "tous les horaires ne sont pas confirmés sur la fiche officielle"
+        }), "date_or_time")
+        self.assertEqual(reason_bucket({
+            "status": "unverified",
+            "reason": "lieu absent de la fiche officielle"
+        }), "venue_or_gps")
+        self.assertEqual(reason_bucket({
+            "status": "unverified",
+            "reason": "titre non confirmé en en-tête de la fiche officielle"
+        }), "title_or_identity")
+        self.assertEqual(reason_bucket({
+            "status": "deferred",
+            "reason": "URL canonique différente"
+        }), "uid_or_source")
+        self.assertEqual(reason_bucket({
+            "status": "unverified",
+            "reason": "page officielle inaccessible"
+        }), "official_page_unavailable")
+
     def test_reason_classification_never_exposes_untrusted_text(self):
         payload = {
             "status": "unverified",
