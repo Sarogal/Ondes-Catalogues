@@ -151,6 +151,134 @@ def visible_future_years(name, html, today):
     return sorted(years), sha256(text.encode("utf-8")).hexdigest()
 
 
+
+# Extract conservative, syntactic FR date hints from the very same page already
+# fetched by the archive watch. These are NEVER verified dates or public fields.
+MONTHS = {
+    "janvier": 1, "fevrier": 2, "mars": 3, "avril": 4, "mai": 5,
+    "juin": 6, "juillet": 7, "aout": 8, "septembre": 9,
+    "octobre": 10, "novembre": 11, "decembre": 12,
+}
+MONTH_PATTERN = "|".join(MONTHS)
+# Accept "13 fevrier 2027", "19 au 21 aout 2027", and "2027 19-21 aout"
+# after HTML text normalization; no cross-month or unstated-year inference.
+FR_DATE_AFTER = re.compile(
+    rf"(?<!\d)(?P<start>[1-9]|[12]\d|3[01])"
+    rf"(?: (?:au |a |et )?(?P<end>[1-9]|[12]\d|3[01]))?"
+    rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
+FR_YEAR_BEFORE = re.compile(
+    rf"(?<!\d)(?P<year>20[2-4]\d) "
+    rf"(?P<start>[1-9]|[12]\d|3[01])"
+    rf"(?: (?:au |a |et )?(?P<end>[1-9]|[12]\d|3[01]))?"
+    rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
+MAX_DATE_HINTS = 3
+PILOT_PRIORITY = {"les-gueules-de-bois"}  # known public 2027 programme; still unverified
+
+
+def visible_future_date_hints(name, html, today, target_year):
+    """Bounded same-festival adjacent date phrases, not official confirmation.
+
+    Ignore title, script, nav and footer; match the year immediately AFTER
+    the festival identity and the date immediately AFTER that year.
+    Never build a date from an old edition's month/day alone.
+    """
+    if type(target_year) is not int or not date.fromisoformat(today).year < target_year <= date.fromisoformat(today).year + 2:
+        return []
+    text = _archive_visible_text(html)
+    identity = normalized(name)
+    output = {}
+    for occurrence in re.finditer(
+            r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])", text):
+        local = text[occurrence.end():occurrence.end() + 200]
+        first_year = re.search(r"(?<!\d)(20[2-4]\d)(?!\d)", local[:65])
+        if not first_year or int(first_year.group(1)) != target_year:
+            continue
+        first_date = first_year.end()
+        # The next date must be attached to this displayed year, not to
+        # a later festival announcement in the same page body.
+        window = local[first_date:first_date + 100]
+        if re.search(r"\b(?:autre festival|autre evenement|prochain festival)\b",
+                     window):
+            continue
+        matches = []
+        for match in FR_DATE_AFTER.finditer(window):
+            matches.append((match.start(), match))
+        # The year-before grammar can start at the exact year we already saw.
+        for match in FR_YEAR_BEFORE.finditer(local[first_year.start():first_year.start() + 120]):
+            matches.append((match.start() - 1, match))
+        for _, match in sorted(matches, key=lambda x: x[0]):
+            if int(match.group("year")) != target_year:
+                continue
+            try:
+                start = date(target_year, MONTHS[match.group("month")],
+                             int(match.group("start")))
+                end = date(target_year, MONTHS[match.group("month")],
+                           int(match.group("end") or match.group("start")))
+            except ValueError:
+                continue
+            if not (date.fromisoformat(today) < start <= end
+                    and (end - start).days <= 14):
+                continue
+            season_text = local[:first_year.end()]
+            seasons = re.findall(r"\b(hiver|winter|ete|summer)\b", season_text)
+            season = ({"hiver": "winter", "winter": "winter",
+                       "ete": "summer", "summer": "summer"}[seasons[-1]]
+                      if seasons else None)
+            item = {
+                "start_date_hint": start.isoformat(),
+                "end_date_hint": end.isoformat(),
+                "season_hint": season,
+                "status": "UNVERIFIED_VISIBLE_DATE_PHRASE",
+                "edition_dates_verified": False,
+                "organizer_verified": False,
+                "independence_verified": False,
+                "publication_authorized": False,
+                "review_only": True,
+            }
+            output[(start.isoformat(), end.isoformat())] = item
+            break  # one date per explicit name/year occurrence
+        if len(output) >= MAX_DATE_HINTS:
+            break
+    return [output[key] for key in sorted(output)][:MAX_DATE_HINTS]
+
+
+def _valid_private_date_hints(value, year, today):
+    if not isinstance(value, list) or len(value) > MAX_DATE_HINTS:
+        return None
+    output = []
+    for hint in value:
+        if not isinstance(hint, dict):
+            return None
+        try:
+            first = date.fromisoformat(hint["start_date_hint"])
+            last = date.fromisoformat(hint["end_date_hint"])
+        except (ValueError, KeyError, TypeError):
+            return None
+        if (first.year != year or last.year != year
+                or not date.fromisoformat(today) < first <= last
+                or (last - first).days > 14
+                or hint.get("season_hint") not in (None, "winter", "summer")
+                or hint.get("status") != "UNVERIFIED_VISIBLE_DATE_PHRASE"
+                or hint.get("edition_dates_verified") is not False
+                or hint.get("organizer_verified") is not False
+                or hint.get("independence_verified") is not False
+                or hint.get("publication_authorized") is not False
+                or hint.get("review_only") is not True):
+            return None
+        output.append({
+            "start_date_hint": first.isoformat(),
+            "end_date_hint": last.isoformat(),
+            "season_hint": hint.get("season_hint"),
+            "status": "UNVERIFIED_VISIBLE_DATE_PHRASE",
+            "edition_dates_verified": False,
+            "organizer_verified": False,
+            "independence_verified": False,
+            "publication_authorized": False,
+            "review_only": True,
+        })
+    return output
+
+
 def choose_roster(roster, attempted, today, limit=MAX_CHECKS):
     if type(limit) is not int or not 0 <= limit <= MAX_CHECKS:
         raise ValueError("budget homepage non conforme")
@@ -172,9 +300,9 @@ def choose_roster(roster, attempted, today, limit=MAX_CHECKS):
                 raise ValueError("rotation dans le futur")
             if previous == now:
                 continue
-        choices.append((when != "", when, slug))
+        choices.append((when != "", when, slug not in PILOT_PRIORITY, slug))
     choices.sort()
-    return [roster[slug] for _, _, slug in choices[:limit]]
+    return [roster[slug] for _, _, _, slug in choices[:limit]]
 
 
 def validated_hints(state, today):
@@ -209,10 +337,15 @@ def validated_hints(state, today):
                 or not isinstance(row.get("visible_text_sha256"), str)
                 or re.fullmatch(r"[0-9a-f]{64}", row["visible_text_sha256"]) is None):
             continue
+        date_hints = _valid_private_date_hints(
+            row.get("date_hints_review_only", []), year, today)
+        if date_hints is None:
+            continue  # untrusted private date claims may not join this dossier
         result.append({
             "slug": slug, "name": name, "region": region, "url": url,
             "year": year, "firstSeen": first.isoformat(),
             "lastSeen": last.isoformat(),
+            "date_hints_review_only": date_hints,
         })
     return sorted(result, key=lambda x: (x["slug"], x["year"]))
 
@@ -240,8 +373,8 @@ def scan(state, roster, today, fetch=get_page, limit=MAX_CHECKS):
         found = []
         status = "UNAVAILABLE"
         try:
-            found, digest = visible_future_years(
-                source["name"], fetch(source["url"]), today)
+            html = fetch(source["url"])
+            found, digest = visible_future_years(source["name"], html, today)
             status = "YEAR_MENTION_REVIEW_ONLY" if found else "NO_FUTURE_YEAR_MENTION"
             if found:
                 # Multiple different years on one page are ambiguous.
@@ -259,6 +392,8 @@ def scan(state, roster, today, fetch=get_page, limit=MAX_CHECKS):
                         "edition_year_hint": found[0],
                         "firstSeen": first_seen, "lastSeen": today,
                         "status": STATUS, "visible_text_sha256": digest,
+                        "date_hints_review_only": visible_future_date_hints(
+                            source["name"], html, today, found[0]),
                         "safe_to_publish": False, "publication_authorized": False,
                         "edition_dates_verified": False,
                         "organizer_verified": False,
@@ -310,6 +445,8 @@ def main():
     report["historical_future_watch_year_mentions_private"] = sum(
         r["status"] == "YEAR_MENTION_REVIEW_ONLY" for r in outcomes)
     report["historical_future_watch_pending_hints_private"] = len(hints)
+    report["historical_future_watch_visible_date_hints_private"] = sum(
+        len(row["date_hints_review_only"]) for row in hints)
     report["historical_future_watch_publications"] = 0
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")

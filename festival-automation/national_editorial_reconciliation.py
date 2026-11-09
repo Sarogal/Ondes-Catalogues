@@ -118,6 +118,40 @@ def _public_matches(dossier, published):
 
 
 
+
+def _uncovered_homepage_dates(dossier, hints, published):
+    """Warn when a generic same-year public match may cover another edition.
+
+    History can describe an event brand with winter *and* summer sessions
+    during the same year. A matching name/year alone cannot prove that the
+    distinct displayed dates have already been published. This only raises
+    a private conflict; it never proposes a new public edition.
+    """
+    if not hints:
+        return []
+    target_names = {dossier["normalized_name"]}
+    target_names.update(filter(
+        None, (_canonical(x) for x in dossier.get("name_variants", [])[:8])))
+    year = dossier.get("edition_year_hint")
+    covered = set()
+    for row in published:
+        if (not isinstance(row, dict)
+                or row.get("region") != dossier["region_hint"]
+                or not _names(row).intersection(target_names)
+                or _city_equal(dossier.get("city_hint"), row.get("city")) is False):
+            continue
+        try:
+            start = date.fromisoformat(row["startDate"])
+            end = date.fromisoformat(row["endDate"])
+        except (ValueError, KeyError, TypeError):
+            continue
+        if start.year != year or end < start:
+            continue
+        covered.add((start.isoformat(), end.isoformat()))
+    return [dict(x) for x in hints
+            if (x["start_date_hint"], x["end_date_hint"]) not in covered]
+
+
 def _published_city_variants(dossier, published):
     """Flag exact NAME — CITY variants as possible prior public editions.
 
@@ -276,12 +310,32 @@ def build_review(queue, detail, state, leads, public, history, today):
         exact, conflicting = _public_matches(dossier, public["festivals"])
         city_variants = _published_city_variants(dossier, public["festivals"])
         primary = _primary_proof(dossier, leads, state, today)
+        # Archive homepage claims are syntactic hints, not a validated
+        # primary source or proof that a festival edition exists.
+        archive_date_hints = dossier.get(
+            "historical_homepage_date_hints_review_only", [])
+        if not isinstance(archive_date_hints, list) or len(archive_date_hints) > 3:
+            raise ValueError("dates historiques privées invalides")
+        from historical_future_lead_watch import _valid_private_date_hints
+        accepted_archive_hints = _valid_private_date_hints(
+            archive_date_hints, dossier.get("edition_year_hint"), today)
+        if accepted_archive_hints is None:
+            raise ValueError("indices de dates historiques altérés")
+        if accepted_archive_hints and not any(
+                item.get("kind") == "HISTORICAL_HOMEPAGE_YEAR_HINT"
+                and item.get("publication_authorized") is False
+                for item in dossier["sources"] if isinstance(item, dict)):
+            raise ValueError("indice de dates historique sans source approuvée")
+        uncovered_archive_dates = _uncovered_homepage_dates(
+            dossier, accepted_archive_hints, public["festivals"])
         detail_clues = _dynamic_proofs(dossier, detail)
         cancellation = any(row["possible_cancellation"] for row in detail_clues)
         event_clues = [hint for row in detail_clues
                        for hint in row.get("structured_event_clues_private", [])]
         ambiguous_history = len(archival) > 1
-        if exact:
+        if exact and uncovered_archive_dates:
+            status = "POTENTIAL_CONFLICT_REVIEW"
+        elif exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
         elif conflicting or city_variants or ambiguous_history or cancellation:
             status = "POTENTIAL_CONFLICT_REVIEW"
@@ -289,6 +343,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             status = "PRIMARY_DATE_CLAIM_REVIEW"
         elif any(x["name_seen"] and x["edition_year_near_name"] for x in detail_clues):
             status = "REGIONAL_NAME_YEAR_REVIEW"
+        elif accepted_archive_hints:
+            status = "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW"
         else:
             status = "RESEARCH_REQUIRED"
         blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
@@ -298,10 +354,16 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("first_party_date_observation_missing")
         if not detail_clues and not primary:
             blocks.append("edition_detail_proof_missing")
+        if accepted_archive_hints:
+            blocks.append("archival_visible_dates_require_primary_confirmation")
+            if len(accepted_archive_hints) > 1:
+                blocks.append("possible_multiple_same_year_editions_need_review")
         if not dossier.get("edition_year_hint"):
             blocks.append("edition_year_unknown")
         if exact:
             blocks.append("already_published_edition")
+        if exact and uncovered_archive_dates:
+            blocks.append("published_same_year_may_hide_other_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
         if city_variants:
@@ -323,6 +385,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             "published_title_city_variants_review_only": city_variants,
             "primary_observation": primary,
             "regional_detail_observations": detail_clues,
+            "historical_homepage_date_hints_review_only": accepted_archive_hints,
+            "historical_homepage_uncovered_dates_review_only": uncovered_archive_dates,
             "structured_date_hints_count": len(event_clues),
             "named_organizer_hints_count": sum(
                 bool(h.get("organizer_name_hint")) for h in event_clues),
@@ -367,6 +431,13 @@ def build_review(queue, detail, state, leads, public, history, today):
             bool(x["published_title_city_variants_review_only"]) for x in result),
         "primary_observed_dossiers_count": sum(x["primary_observation"] is not None for x in result),
         "regional_detail_observed_dossiers_count": sum(bool(x["regional_detail_observations"]) for x in result),
+        "historical_homepage_date_dossiers_private": sum(
+            bool(x["historical_homepage_date_hints_review_only"]) for x in result),
+        "historical_homepage_visible_date_hints_private": sum(
+            len(x["historical_homepage_date_hints_review_only"]) for x in result),
+        "historical_homepage_uncovered_date_hints_private": sum(
+            len(x["historical_homepage_uncovered_dates_review_only"])
+            for x in result),
         "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
         "organizer_name_hints_count": sum(x["named_organizer_hints_count"] for x in result),
         "visible_start_date_hints_count": sum(x["visible_start_date_hints_count"] for x in result),

@@ -5,7 +5,7 @@ import unittest
 from historical_future_lead_watch import (
     APPROVED, HISTORY_GIT, HISTORY_PAGES, STATUS,
     choose_roster, load_verified_roster, scan, validated_hints,
-    validated_roster, visible_future_years,
+    validated_roster, visible_future_years, visible_future_date_hints,
 )
 from national_discovery_queue import build_queue
 
@@ -167,6 +167,97 @@ class HistoricalHomepageTests(unittest.TestCase):
         self.assertEqual(seen, [entry["url"]])
         self.assertEqual(out[0]["status"], "UNAVAILABLE")
         self.assertEqual(validated_hints(s, TOMORROW), [])
+
+    def test_winter_and_summer_future_dates_are_separate_unverified_clues(self):
+        html = ('<main><h1>LES GUEULES DE BOIS PRÉSENTENT WINTER 2027</h1>'
+                '<p>SAMEDI 13 FÉVRIER 2027 à Légna (39)</p>'
+                '<h2>LES GUEULES DE BOIS ÉTÉ 2027</h2>'
+                '<p>19–21 août 2027 à Légna (Jura)</p></main>')
+        clues = visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027)
+        self.assertEqual(len(clues), 2)
+        self.assertEqual(
+            [(x["start_date_hint"], x["end_date_hint"], x["season_hint"])
+             for x in clues],
+            [("2027-02-13", "2027-02-13", "winter"),
+             ("2027-08-19", "2027-08-21", "summer")])
+        self.assertTrue(all(x["edition_dates_verified"] is False for x in clues))
+        self.assertTrue(all(x["publication_authorized"] is False for x in clues))
+
+    def test_visible_year_before_a_short_date_without_own_year_is_hint_only(self):
+        html = ('<main><h1>Les Gueules de Bois été 2027</h1>'
+                '<p>19–21 août à Légna (Jura). Informations et billetterie.</p></main>')
+        clues = visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027)
+        self.assertEqual([(x["start_date_hint"], x["end_date_hint"])
+                          for x in clues], [("2027-08-19", "2027-08-21")])
+
+    def test_website_archive_and_foreign_event_are_not_future_dates(self):
+        for html in (
+            "<main><h1>As One Fest édition 2026</h1><p>13 juin 2026</p></main>",
+            "<main><h1>As One Fest 2027</h1><p>40 février 2027</p></main>",
+            "<main><h1>As One Fest 2027</h1><p>31 février 2027</p></main>",
+            "<main><h1>As One Fest 2027</h1><p>19 au 2 août 2027</p></main>",
+            "<main><h1>As One Fest 2027</h1><p>Autre festival 19 août 2027</p></main>",
+            ('<head><title>As One Fest 13 juin 2027</title></head>'
+             '<main>As One Fest dates à venir ; restez à l’écoute.</main>'),
+            '<main><h1>As One Fest 2027</h1><script>13 juin 2027</script></main>',
+        ):
+            with self.subTest(html=html):
+                try:
+                    self.assertEqual(visible_future_date_hints(
+                        "As One Fest", html, TODAY, 2027), [])
+                except ValueError:
+                    pass
+
+    def test_date_hints_join_private_queue_but_never_produce_publication(self):
+        roster = validated_roster(historical(), TODAY)
+        s = state()
+        scan(s, {"les-gueules-de-bois": roster["les-gueules-de-bois"]},
+             TODAY, fetch=lambda _: (
+                 '<main><h1>Les Gueules de Bois winter 2027</h1>'
+                 '<p>Samedi 13 février 2027 à Légna.</p>'
+                 '<h2>Les Gueules de Bois été 2027</h2>'
+                 '<p>19–21 août 2027 à Légna.</p></main>'))
+        hints = validated_hints(s, TODAY)
+        self.assertEqual(len(hints), 1)
+        self.assertEqual(len(hints[0]["date_hints_review_only"]), 2)
+        queue = build_queue(s, report(), [], TODAY)
+        self.assertEqual(queue["historical_homepage_date_hints_private"], 2)
+        self.assertEqual(queue["historical_homepage_dossiers_private"], 1)
+        self.assertEqual(queue["publications"], 0)
+        self.assertFalse(queue["dossiers"][0]["safe_to_publish"])
+        self.assertFalse(queue["dossiers"][0]["publication_authorized"])
+        self.assertEqual(queue["dossiers"][0]["date_hints"], [])
+        self.assertEqual(len(queue["dossiers"][0]
+                             ["historical_homepage_date_hints_review_only"]), 2)
+
+    def test_forged_private_dates_fail_closed_and_do_not_join_queue(self):
+        roster = validated_roster(historical(), TODAY)
+        s = state()
+        scan(s, {"as-one-fest": roster["as-one-fest"]}, TODAY,
+             fetch=lambda _: ('<main><h1>As One Fest 2027</h1>'
+                              '<p>13 juin 2027. Informations.</p></main>'))
+        record = s["historical_future_edition_hints_private"]["as-one-fest"]
+        valid = deepcopy(record)
+        self.assertEqual(len(valid["date_hints_review_only"]), 1)
+        for patch in (
+            {"start_date_hint": "2026-06-13"},
+            {"end_date_hint": "2028-06-13"},
+            {"publication_authorized": True},
+            {"edition_dates_verified": True},
+            {"season_hint": "winter/summer"},
+            {"start_date_hint": "2027-02-31"},
+        ):
+            with self.subTest(patch=patch):
+                poisoned = deepcopy(valid)
+                poisoned["date_hints_review_only"][0].update(patch)
+                s["historical_future_edition_hints_private"]["as-one-fest"] = poisoned
+                self.assertEqual(validated_hints(s, TODAY), [])
+                q = build_queue(s, report(), [], TODAY)
+                self.assertEqual(q["candidate_dossiers_count"], 0)
+        s["historical_future_edition_hints_private"]["as-one-fest"] = valid
+        self.assertEqual(len(validated_hints(s, TODAY)), 1)
 
     def test_private_poison_cannot_create_fetch_destination_or_published_entry(self):
         roster = validated_roster(historical(), TODAY)
