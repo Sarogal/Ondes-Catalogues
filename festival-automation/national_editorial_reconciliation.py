@@ -328,12 +328,54 @@ def build_review(queue, detail, state, leads, public, history, today):
             raise ValueError("indice de dates historique sans source approuvée")
         uncovered_archive_dates = _uncovered_homepage_dates(
             dossier, accepted_archive_hints, public["festivals"])
+        # Validate the exact pinned source and untrusted private observation
+        # before admitting a review-only institutional future-date claim.
+        institutional_date_hints = dossier.get(
+            "institutional_future_date_hints_review_only", [])
+        if not isinstance(institutional_date_hints, list) or len(institutional_date_hints) > 1:
+            raise ValueError("dates institutionnelles privées invalides")
+        from targeted_institutional_future_watch import validated_observations
+        observations = validated_observations(state, today)
+        accepted_institutional = []
+        for hint in institutional_date_hints:
+            if not isinstance(hint, dict):
+                raise ValueError("indice institutionnel malformé")
+            matching = [obs for obs in observations
+                        if obs["name"] == dossier["name_hint"]
+                        and obs["region"] == dossier["region_hint"]
+                        and int(obs["start"][:4]) == dossier["edition_year_hint"]
+                        and hint == {
+                            "start_date_hint": obs["start"],
+                            "end_date_hint": obs["end"],
+                            "city_name_hint": obs["city"],
+                            "venue_name_hint": obs["venue"],
+                            "official_home": obs["official_home"],
+                            "official_home_future_dates_visible": obs["primary_same_dates"],
+                            "provider_claim": obs["provider"],
+                            "institutional_source_url": obs["institutional_url"],
+                            "observed_at": obs["last"],
+                            "publication_authorized": False,
+                            "review_only": True, "independence_verified": False,
+                            "edition_dates_verified": False,
+                        }
+                        and any(
+                            witness.get("kind") == "INSTITUTIONAL_FUTURE_DATE_HINT"
+                            and witness.get("url") == obs["institutional_url"]
+                            and witness.get("discovered_via") == obs["institutional_url"]
+                            and witness.get("publication_authorized") is False
+                            for witness in dossier["sources"]
+                            if isinstance(witness, dict))]
+            if len(matching) != 1:
+                raise ValueError("indice institutionnel sans preuve courante approuvée")
+            accepted_institutional.append(dict(hint))
+        uncovered_institutional = _uncovered_homepage_dates(
+            dossier, accepted_institutional, public["festivals"])
         detail_clues = _dynamic_proofs(dossier, detail)
         cancellation = any(row["possible_cancellation"] for row in detail_clues)
         event_clues = [hint for row in detail_clues
                        for hint in row.get("structured_event_clues_private", [])]
         ambiguous_history = len(archival) > 1
-        if exact and uncovered_archive_dates:
+        if exact and (uncovered_archive_dates or uncovered_institutional):
             status = "POTENTIAL_CONFLICT_REVIEW"
         elif exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
@@ -343,6 +385,11 @@ def build_review(queue, detail, state, leads, public, history, today):
             status = "PRIMARY_DATE_CLAIM_REVIEW"
         elif any(x["name_seen"] and x["edition_year_near_name"] for x in detail_clues):
             status = "REGIONAL_NAME_YEAR_REVIEW"
+        elif accepted_institutional:
+            status = ("INSTITUTIONAL_AND_ORGANIZER_DATE_HINT_REVIEW"
+                      if any(x["official_home_future_dates_visible"]
+                             for x in accepted_institutional)
+                      else "INSTITUTIONAL_ONLY_FUTURE_DATE_REVIEW")
         elif accepted_archive_hints:
             status = "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW"
         else:
@@ -354,6 +401,12 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("first_party_date_observation_missing")
         if not detail_clues and not primary:
             blocks.append("edition_detail_proof_missing")
+        if accepted_institutional:
+            blocks.append("institutional_syndication_not_independent_confirmation")
+            blocks.append("institutional_future_dates_require_editorial_review")
+            if not any(x["official_home_future_dates_visible"]
+                       for x in accepted_institutional):
+                blocks.append("organizer_site_not_yet_confirming_future_dates")
         if accepted_archive_hints:
             blocks.append("archival_visible_dates_require_primary_confirmation")
             if len(accepted_archive_hints) > 1:
@@ -362,7 +415,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("edition_year_unknown")
         if exact:
             blocks.append("already_published_edition")
-        if exact and uncovered_archive_dates:
+        if exact and (uncovered_archive_dates or uncovered_institutional):
             blocks.append("published_same_year_may_hide_other_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
@@ -387,6 +440,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             "regional_detail_observations": detail_clues,
             "historical_homepage_date_hints_review_only": accepted_archive_hints,
             "historical_homepage_uncovered_dates_review_only": uncovered_archive_dates,
+            "institutional_future_date_hints_review_only": accepted_institutional,
+            "institutional_future_uncovered_dates_review_only": uncovered_institutional,
             "structured_date_hints_count": len(event_clues),
             "named_organizer_hints_count": sum(
                 bool(h.get("organizer_name_hint")) for h in event_clues),
@@ -437,6 +492,12 @@ def build_review(queue, detail, state, leads, public, history, today):
             len(x["historical_homepage_date_hints_review_only"]) for x in result),
         "historical_homepage_uncovered_date_hints_private": sum(
             len(x["historical_homepage_uncovered_dates_review_only"])
+            for x in result),
+        "institutional_future_date_dossiers_private": sum(
+            bool(x["institutional_future_date_hints_review_only"]) for x in result),
+        "institutional_future_source_agreements_private": sum(
+            any(h["official_home_future_dates_visible"]
+                for h in x["institutional_future_date_hints_review_only"])
             for x in result),
         "structured_date_hints_count": sum(x["structured_date_hints_count"] for x in result),
         "organizer_name_hints_count": sum(x["named_organizer_hints_count"] for x in result),
