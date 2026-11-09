@@ -22,6 +22,7 @@ CHILD_TITLES = ("bebes lecteurs", "histoires du mercredi", "la bobine des enfant
                 "eveil musical", "les petits singuliers", "petites histoires",
                 "ludo", "conte pour enfants", "atelier enfants")
 MAX_DETAILS_PER_CYCLE = 6
+MAX_AGENDA_HTML_BYTES = 1_500_000  # Index municipal de 177+ résultats ; bounded HTML
 
 
 def norm(s):
@@ -108,7 +109,7 @@ class DetailText(HTMLParser):
 
 
 def find_index_hints(index_url, html, today):
-    if not isinstance(html, str) or len(html.encode("utf-8")) > 300_000:
+    if not isinstance(html, str) or len(html.encode("utf-8")) > MAX_AGENDA_HTML_BYTES:
         return []
     p = AgendaLinks()
     p.feed(html)
