@@ -76,7 +76,11 @@ def pending_slots(day, now_utc, event, cron, reports_dir):
         planned = datetime(day.year, day.month, day.day, hour, minute,
                            tzinfo=timezone.utc)
         if instant < planned:
-            raise ValueError("Déclenchement antérieur à son créneau nominal")
+            # GitHub may deliver yesterday's nominal schedule after midnight
+            # UTC. There is no nominal date in the event payload, so do not
+            # attribute this run to today's future slots. Collection may be
+            # saved, but no independent review batch is declared completed.
+            return []
     due = [index for index, (_, h, m) in enumerate(OUTINGS_CRONS)
            if instant >= datetime(day.year, day.month, day.day, h, m,
                                   tzinfo=timezone.utc)]
