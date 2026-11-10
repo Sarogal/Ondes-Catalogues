@@ -79,6 +79,24 @@ class CatchupTests(unittest.TestCase):
                 date(2026, 11, 10), utc(DAY, 23, 40),
                 "external_rescue", "", root), [])
 
+    def test_delayed_yesterday_schedule_after_midnight_utc_is_safe_noop(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            today = date(2026, 11, 10)
+            # A yesterday 18:17 cron arrived at 01:30 next UTC day.
+            self.assertEqual(pending_slots(
+                today, utc(today, 1, 30), "schedule",
+                OUTINGS_CRONS[3][0], root), [])
+            self.assertFalse(list(root.glob("qualification-*.json")))
+
+    def test_delayed_yesterday_schedule_at_early_utc_is_safe_noop(self):
+        with tempfile.TemporaryDirectory() as base:
+            root = Path(base)
+            today = date(2026, 11, 10)
+            self.assertEqual(pending_slots(
+                today, utc(today, 6, 0), "schedule",
+                OUTINGS_CRONS[0][0], root), [])
+
     def test_previous_reports_skip_successful_slots(self):
         with tempfile.TemporaryDirectory() as base:
             root = Path(base)
@@ -138,7 +156,6 @@ class CatchupTests(unittest.TestCase):
             root = Path(base)
             cases = (
                 (DAY, utc(DAY, 19, 0), "schedule", "37 21 * * *"),
-                (DAY, utc(DAY, 6, 0), "schedule", OUTINGS_CRONS[0][0]),
                 (DAY, datetime(2026, 11, 9, 19, 0), "schedule",
                  OUTINGS_CRONS[3][0]),
                 (DAY, utc(DAY, 19, 0), "push", OUTINGS_CRONS[0][0]),
