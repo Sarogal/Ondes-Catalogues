@@ -126,8 +126,14 @@ jobs:
           run_private targeted_institutional_future python "$ENGINE/targeted_institutional_future_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 1
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 1
+          # Snapshot the private prior review locally BEFORE it is overwritten.
+          # It never leaves the runner except as derived PRIVATE diagnostics.
+          PREVIOUS="/tmp/grossesondes-official-watch/previous-editorial-review.json"
+          if [[ -f "$INTAKE/national-festival-editorial-review.json" ]]; then
+            cp -- "$INTAKE/national-festival-editorial-review.json" "$PREVIOUS"
+          fi
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
-          run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT"
+          run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
           test -s "$REPORT"
           python - "$REPORT" <<'PY'
           import json, sys
