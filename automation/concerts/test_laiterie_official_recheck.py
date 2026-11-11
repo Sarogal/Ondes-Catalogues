@@ -100,7 +100,7 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
                          "<h2>SOME OTHER BAND</h2>"),
             PAGE.replace("<h2>Artistes</h2>", ""),
             PAGE.replace("<h1>PETER HOOK & THE LIGHT</h1>",
-                         "<h1>PETER HOOK & THE LIGHT + GUEST</h1>"),
+                         "<h1>PETER HOOK & THE LIGHT + GUEST + Other Band</h1>"),
             PAGE.replace("#Rock New wave Post-Punk", "#Chanson electro"),
             PAGE.replace("Laiterie, Grande Salle", "Salle différente"),
             PAGE.replace("Vendredi 2 avril 2027", "Vendredi 3 avril 2027"),
@@ -109,6 +109,42 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
         for html in variants:
             with self.subTest(variant=html[:110]), self.assertRaises(ValueError):
                 verifier.verify(candidate(), html, catalogue(), TODAY)
+
+
+    def test_known_headliner_with_guest_is_approved_without_fake_guest_artist(self):
+        page = PAGE.replace(
+            "<h1>PETER HOOK & THE LIGHT</h1>",
+            "<h1>PETER HOOK & THE LIGHT</h1><h2>+ Guest</h2>",
+        ).replace(
+            "<h2>On vous recommande</h2>",
+            "<h2>Guest</h2><h2>On vous recommande</h2>",
+        )
+        row = adapter.details(page, URL, SOURCE, TODAY.isoformat())
+        row.update({"reviewBucket": "genre_tag_review",
+                    "possibleExistingConcert": False})
+        signed = verifier.verify(row, page, catalogue(), TODAY)
+        self.assertEqual(signed["event"]["artistIds"], ["peter-hook-and-the-light"])
+        self.assertEqual(signed["event"]["title"], "Peter Hook and The Light")
+        self.assertEqual(signed["newArtists"], [])
+        self.assertEqual(signed["officialEvidence"][0]["unannouncedSupportLabel"],
+                         "guest")
+        self.assertEqual(signed["officialEvidence"][0]["sourceStructure"],
+                         verifier.PARTIAL_STRUCTURE)
+        accepted, _ = publisher.validate_approval(
+            signed, {v["id"]: v for v in catalogue()["venues"]},
+            {a["id"]: a for a in catalogue()["artists"]}, TODAY)
+        self.assertEqual(accepted["artistIds"], ["peter-hook-and-the-light"])
+
+    def test_guest_without_named_main_act_is_not_admitted(self):
+        page = PAGE.replace(
+            "<h1>PETER HOOK & THE LIGHT</h1>", "<h1>Guest</h1>")
+        page = page.replace("<h2>PETER HOOK & THE LIGHT</h2>",
+                            "<h2>Guest</h2>")
+        row = adapter.details(page, URL, SOURCE, TODAY.isoformat())
+        row.update({"reviewBucket": "genre_tag_review",
+                    "possibleExistingConcert": False})
+        with self.assertRaises(ValueError):
+            verifier.verify(row, page, catalogue(), TODAY)
 
     def test_discovery_duplicate_and_new_artist_never_pass(self):
         for key, value in (
