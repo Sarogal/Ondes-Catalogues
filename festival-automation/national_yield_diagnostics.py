@@ -133,6 +133,34 @@ def _signals(row):
             if field.startswith("institutional") and hint.get(
                     "organizer_name_home_review_only"):
                 research.add(("current_home_organizer_name_hint",))
+    press = row.get("press_date_observations_review_only", [])
+    if not isinstance(press, list) or len(press) > 4:
+        raise ValueError("invalid private press evidence")
+    from targeted_press_edition_watch import SOURCES as APPROVED_PRESS
+    approved_urls = {item["url"] for item in APPROVED_PRESS.values()}
+    for source in press:
+        if (not isinstance(source, dict)
+                or source.get("article_url") not in approved_urls
+                or source.get("review_only") is not True
+                or source.get("publisher_origin_assessed") is not False
+                or source.get("independence_verified") is not False
+                or source.get("publication_authorized") is not False):
+            raise ValueError("unsafe private press source")
+        claims = source.get("claims")
+        if not isinstance(claims, list) or len(claims) > 2:
+            raise ValueError("invalid press claims")
+        for claim in claims:
+            if (not isinstance(claim, dict)
+                    or claim.get("review_only") is not True
+                    or claim.get("independence_verified") is not False
+                    or claim.get("publication_authorized") is not False
+                    or claim.get("edition_dates_verified") is not False):
+                raise ValueError("unsafe press claim in comparison")
+            start, end = claim.get("start_date_hint"), claim.get("end_date_hint")
+            date.fromisoformat(start)
+            date.fromisoformat(end)
+            evidence.add(("press_article_date_claim", source["article_url"],
+                          start, end, claim.get("season_hint")))
     details = row.get("regional_detail_observations", [])
     if not isinstance(details, list) or len(details) > 50:
         raise ValueError("invalid comparison regional details")
