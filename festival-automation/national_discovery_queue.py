@@ -281,6 +281,7 @@ def build_queue(state, report, curated, today):
                 "venue_name_hint": hint["venue"],
                 "official_home": hint["official_home"],
                 "official_home_future_dates_visible": hint["primary_same_dates"],
+                "organizer_name_home_review_only": hint["organizer_name_on_home_review_only"],
                 "provider_claim": hint["provider"],
                 "institutional_source_url": hint["institutional_url"],
                 "observed_at": hint["last"],
