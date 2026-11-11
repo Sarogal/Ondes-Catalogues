@@ -104,7 +104,7 @@ class DuplicatedCollectorEvidenceTests(unittest.TestCase):
     def test_unreviewed_location_or_outdated_session_stays_ineligible(self):
         rows = [
             lead(),
-            lead(city="Marseille", venue="Bibliothèque du Merlan"),
+            lead(city="Marseille", venue="Bibliothèque du Merlan annexe"),
             lead(date_start="2026-11-08", date_end="2026-11-08"),
             lead(source_url=CANONICAL + "?preview=true")
         ]
