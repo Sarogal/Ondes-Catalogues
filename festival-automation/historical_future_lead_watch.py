@@ -160,20 +160,21 @@ MONTHS = {
     "octobre": 10, "novembre": 11, "decembre": 12,
 }
 MONTH_PATTERN = "|".join(MONTHS)
+DAY = r"(?:0?[1-9]|[12]\d|3[01])"  # zero-padded poster days (07, 08)
+
 # Accept "13 fevrier 2027", "19 au 21 aout 2027", and "2027 19-21 aout"
 # after HTML text normalization; no cross-month or unstated-year inference.
 FR_DATE_AFTER = re.compile(
-    rf"(?<!\d)(?P<start>[1-9]|[12]\d|3[01])"
-    rf"(?: (?:au |a |et )?(?P<end>[1-9]|[12]\d|3[01]))?"
+    rf"(?<!\d)(?P<start>{DAY})"
+    rf"(?: (?:au |a |et )?(?P<end>{DAY}))?"
     rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
 FR_YEAR_BEFORE = re.compile(
     rf"(?<!\d)(?P<year>20[2-4]\d) "
-    rf"(?P<start>[1-9]|[12]\d|3[01])"
-    rf"(?: (?:au |a |et )?(?P<end>[1-9]|[12]\d|3[01]))?"
+    rf"(?P<start>{DAY})"
+    rf"(?: (?:au |a |et )?(?P<end>{DAY}))?"
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
 # Three explicitly printed days (e.g. "19, 20 & 21 aout 2027") must not
 # be shortened into the last two days by the two-day date grammar.
-DAY = r"(?:[1-9]|[12]\d|3[01])"
 FR_DATE_AFTER_THREE = re.compile(
     rf"(?<!\d)(?P<start>{DAY}) (?:et )?(?P<middle>{DAY}) (?:et |au |a )?(?P<end>{DAY})"
     rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
@@ -240,13 +241,24 @@ def visible_future_date_hints(name, html, today, target_year):
         bound = min(boundaries)
         after_window = local[after_year:min(bound, after_year + 100)]
         before_window = local[first_year.start():min(bound, first_year.start() + 120)]
+        # Poster headers put both days BEFORE their first year:
+        # "Le Gros Tonneau - 07.08 Mai 2027".
+        # Constrain to a phrase ending exactly at the FIRST adjacent year.
+        poster_window = local[:first_year.end()]
         matches, three_day_spans = [], []
-        for pattern, text_window, offset, triple in (
-                (FR_DATE_AFTER_THREE, after_window, after_year, True),
-                (FR_YEAR_BEFORE_THREE, before_window, first_year.start(), True),
-                (FR_DATE_AFTER, after_window, after_year, False),
-                (FR_YEAR_BEFORE, before_window, first_year.start(), False)):
+        for pattern, text_window, offset, triple, poster in (
+                (FR_DATE_AFTER_THREE, after_window, after_year, True, False),
+                (FR_YEAR_BEFORE_THREE, before_window, first_year.start(), True, False),
+                (FR_DATE_AFTER, after_window, after_year, False, False),
+                (FR_YEAR_BEFORE, before_window, first_year.start(), False, False),
+                (FR_DATE_AFTER_THREE, poster_window, 0, True, True),
+                (FR_DATE_AFTER, poster_window, 0, False, True)):
             for match in pattern.finditer(text_window):
+                if poster and (match.end() != len(poster_window)
+                               or re.search(
+                                   r"\b(?:autre festival|autre evenement|prochain festival)\b",
+                                   poster_window[:match.start()])):
+                    continue
                 start_at = offset + match.start()
                 stop_at = offset + match.end()
                 if triple:

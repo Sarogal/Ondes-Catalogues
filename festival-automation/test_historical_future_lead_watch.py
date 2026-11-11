@@ -261,6 +261,83 @@ class HistoricalHomepageTests(unittest.TestCase):
         row["date_hints_review_only"][0]["season_hint"] = "summer"
         self.assertEqual(validated_hints(s, TODAY), [])
 
+    def test_gros_tonneau_real_poster_header_becomes_review_only_date_hint(self):
+        # Homepage on 2026-11-11: the poster announces 07.08 Mai 2027;
+        # detailed information pages still describe edition 2026.
+        html = ('<main><h1>Le Gros Tonneau Festival</h1>'
+                '<p>.07.08 Mai 2027</p>'
+                '<h2>Replonge dans le millésime 2026 du GROS TONNEAU !</h2>'
+                '<p>Nous préparons une jolie 6ème cuvée, à Artonne.</p></main>')
+        years, _ = visible_future_years("Le Gros Tonneau", html, TODAY)
+        self.assertEqual(years, [2027])
+        hints = visible_future_date_hints("Le Gros Tonneau", html, TODAY, 2027)
+        self.assertEqual([(h["start_date_hint"], h["end_date_hint"],
+                           h["season_hint"]) for h in hints],
+                         [("2027-05-07", "2027-05-08", None)])
+        self.assertTrue(all(h["review_only"] and not h["publication_authorized"]
+                            and not h["edition_dates_verified"] for h in hints))
+        roster = validated_roster(historical(), TODAY)
+        state_private = state()
+        visited = []
+        scan(state_private, {"le-gros-tonneau": roster["le-gros-tonneau"]},
+             TODAY, fetch=lambda url: (visited.append(url), html)[1])
+        self.assertEqual(visited, ["https://legrostonneau-festival.fr/"])
+        queue = build_queue(state_private, report(), [], TODAY)
+        self.assertEqual(queue["historical_homepage_date_hints_private"], 1)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        self.assertEqual(queue["publications"], 0)
+        self.assertFalse(queue["dossiers"][0]["safe_to_publish"])
+        self.assertEqual(queue["dossiers"][0]
+                         ["historical_homepage_date_hints_review_only"][0]
+                         ["start_date_hint"], "2027-05-07")
+
+    def test_zero_padded_days_before_and_after_year(self):
+        cases = (
+            '<main>Le Gros Tonneau 2027. 07 et 08 mai 2027, Artonne.</main>',
+            '<main>Le Gros Tonneau 2027. 2027, 07 au 08 mai à Artonne.</main>',
+            '<main>Le Gros Tonneau festival 07.08 mai 2027 à Artonne.</main>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                hints = visible_future_date_hints(
+                    "Le Gros Tonneau", html, TODAY, 2027)
+                self.assertEqual([(h["start_date_hint"], h["end_date_hint"])
+                                  for h in hints], [("2027-05-07", "2027-05-08")])
+
+    def test_poster_heading_cannot_borrow_other_events_dates(self):
+        cases = (
+            '<main>Le Gros Tonneau 2027. Autre festival 07.08 mai 2027.</main>',
+            '<main>Le Gros Tonneau festival 07.08 mai 2026. 2027 bientôt.</main>',
+            '<main>Le Gros Tonneau festival <nav>07.08 mai 2027</nav>'
+            ' <p>Actualités et surprises très prochainement.</p></main>',
+            '<head><title>Le Gros Tonneau 07.08 mai 2027</title></head>'
+            '<main>Le Gros Tonneau, nouvelles annonces bientôt.</main>',
+            '<main>Le Gros Tonneau <script>07.08 mai 2027</script>'
+            '<p>Actualités 2026 à Artonne.</p></main>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                try:
+                    hints = visible_future_date_hints(
+                        "Le Gros Tonneau", html, TODAY, 2027)
+                    self.assertEqual(hints, [])
+                except ValueError:
+                    pass
+
+    def test_poster_date_invalid_day_and_year_are_not_fabricated(self):
+        cases = (
+            '<main>Le Gros Tonneau 31.32 mai 2027 — Artonne.</main>',
+            '<main>Le Gros Tonneau 07.08 mai 2028 — Artonne.</main>',
+            '<main>Le Gros Tonneau 07.08 mai 2026 — Artonne.</main>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                try:
+                    self.assertEqual(visible_future_date_hints(
+                        "Le Gros Tonneau", html, TODAY, 2027), [])
+                except ValueError:
+                    pass
+
     def test_date_hints_join_private_queue_but_never_produce_publication(self):
         roster = validated_roster(historical(), TODAY)
         s = state()
