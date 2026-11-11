@@ -39,8 +39,11 @@ def history():
         {"slug": config["slug"], "name": config["name"],
          "region": config["region"],
          "officialSite": config["official_home"],
-         "lastKnownYear": 2026, "startDate": "2026-08-20",
-         "endDate": "2026-08-22"}
+         "lastKnownYear": 2026,
+         "startDate": ("2026-10-02" if config["slug"] == "mauges-pit-fest"
+                       else "2026-08-20"),
+         "endDate": ("2026-10-03" if config["slug"] == "mauges-pit-fest"
+                     else "2026-08-22")}
         for config in SOURCES.values()
     ]}
 
