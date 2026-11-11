@@ -210,6 +210,57 @@ class HistoricalHomepageTests(unittest.TestCase):
                 except ValueError:
                     pass
 
+    def test_summer_heading_cannot_borrow_february_from_winter_section(self):
+        # Regression for the actual 2026-11-10 private contradiction:
+        # 2027-02-13 was wrongly attached to season_hint=summer.
+        html = ('<main><h1>Les Gueules de Bois été 2027</h1>'
+                '<p>Les infos arrivent pour le festival de cet été.</p>'
+                '<h2>Hiver 2027</h2><p>Samedi 13 février 2027 à Légna.</p>'
+                '</main>')
+        self.assertEqual(visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027), [])
+
+    def test_three_day_summer_date_is_not_truncated(self):
+        html = ('<main><h1>Les Gueules de Bois été 2027</h1>'
+                '<p>19, 20 & 21 août 2027 à Légna (Jura).</p></main>')
+        hints = visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027)
+        self.assertEqual([(x["start_date_hint"], x["end_date_hint"],
+                           x["season_hint"]) for x in hints],
+                         [("2027-08-19", "2027-08-21", "summer")])
+
+    def test_three_day_range_with_year_before_dates(self):
+        html = ('<main><h1>Les Gueules de Bois été 2027</h1>'
+                '<p>19 · 20 · 21 août à Légna.</p></main>')
+        hints = visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027)
+        self.assertEqual([(x["start_date_hint"], x["end_date_hint"])
+                          for x in hints], [("2027-08-19", "2027-08-21")])
+
+    def test_cross_section_winter_summer_dates_remain_distinct(self):
+        html = ('<main><h1>Les Gueules de Bois hiver 2027</h1>'
+                '<p>13 février 2027, Légna.</p>'
+                '<h2>Les Gueules de Bois été 2027</h2>'
+                '<p>19, 20 et 21 août 2027 à Légna.</p></main>')
+        hints = visible_future_date_hints(
+            "Les Gueules de Bois", html, TODAY, 2027)
+        self.assertEqual([(x["start_date_hint"], x["end_date_hint"],
+                           x["season_hint"]) for x in hints],
+                         [("2027-02-13", "2027-02-13", "winter"),
+                          ("2027-08-19", "2027-08-21", "summer")])
+        self.assertTrue(all(x["publication_authorized"] is False for x in hints))
+
+    def test_incoherent_persisted_season_fails_closed(self):
+        roster = validated_roster(historical(), TODAY)
+        s = state()
+        scan(s, {"as-one-fest": roster["as-one-fest"]}, TODAY,
+             fetch=lambda _: ('<main><h1>As One Fest 2027</h1>'
+                              '<p>13 février 2027. Actualités.</p></main>'))
+        row = s["historical_future_edition_hints_private"]["as-one-fest"]
+        self.assertEqual(len(row["date_hints_review_only"]), 1)
+        row["date_hints_review_only"][0]["season_hint"] = "summer"
+        self.assertEqual(validated_hints(s, TODAY), [])
+
     def test_date_hints_join_private_queue_but_never_produce_publication(self):
         roster = validated_roster(historical(), TODAY)
         s = state()

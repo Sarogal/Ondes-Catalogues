@@ -171,60 +171,109 @@ FR_YEAR_BEFORE = re.compile(
     rf"(?P<start>[1-9]|[12]\d|3[01])"
     rf"(?: (?:au |a |et )?(?P<end>[1-9]|[12]\d|3[01]))?"
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
+# Three explicitly printed days (e.g. "19, 20 & 21 aout 2027") must not
+# be shortened into the last two days by the two-day date grammar.
+DAY = r"(?:[1-9]|[12]\d|3[01])"
+FR_DATE_AFTER_THREE = re.compile(
+    rf"(?<!\d)(?P<start>{DAY}) (?:et )?(?P<middle>{DAY}) (?:et |au |a )?(?P<end>{DAY})"
+    rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
+FR_YEAR_BEFORE_THREE = re.compile(
+    rf"(?<!\d)(?P<year>20[2-4]\d) (?P<start>{DAY})"
+    rf" (?:et )?(?P<middle>{DAY}) (?:et |au |a )?(?P<end>{DAY})"
+    rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
+
+
+def _season_matches_dates(season, first, last):
+    """Reject obvious season/date contradictions, never infer a season."""
+    months = {first.month, last.month}
+    if season == "summer" and months.intersection({12, 1, 2, 3}):
+        return False
+    if season == "winter" and months.intersection({6, 7, 8}):
+        return False
+    return True
+
+
 MAX_DATE_HINTS = 3
 PILOT_PRIORITY = {"les-gueules-de-bois"}  # known public 2027 programme; still unverified
 
 
 def visible_future_date_hints(name, html, today, target_year):
-    """Bounded same-festival adjacent date phrases, not official confirmation.
+    """Bounded date phrases from one displayed edition context, not proof.
 
-    Ignore title, script, nav and footer; match the year immediately AFTER
-    the festival identity and the date immediately AFTER that year.
-    Never build a date from an old edition's month/day alone.
+    Stop before another mention of the festival or a new winter/summer
+    heading. A summer heading cannot borrow dates from a later winter
+    heading, even when both belong to the same festival and year.
     """
-    if type(target_year) is not int or not date.fromisoformat(today).year < target_year <= date.fromisoformat(today).year + 2:
+    if (type(target_year) is not int
+            or not date.fromisoformat(today).year < target_year
+            <= date.fromisoformat(today).year + 2):
         return []
     text = _archive_visible_text(html)
     identity = normalized(name)
+    identity_pattern = r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])"
     output = {}
-    for occurrence in re.finditer(
-            r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])", text):
+    for occurrence in re.finditer(identity_pattern, text):
         local = text[occurrence.end():occurrence.end() + 200]
         first_year = re.search(r"(?<!\d)(20[2-4]\d)(?!\d)", local[:65])
         if not first_year or int(first_year.group(1)) != target_year:
             continue
-        first_date = first_year.end()
-        # The next date must be attached to this displayed year, not to
-        # a later festival announcement in the same page body.
-        window = local[first_date:first_date + 100]
-        if re.search(r"\b(?:autre festival|autre evenement|prochain festival)\b",
-                     window):
-            continue
-        matches = []
-        for match in FR_DATE_AFTER.finditer(window):
-            matches.append((match.start(), match))
-        # The year-before grammar can start at the exact year we already saw.
-        for match in FR_YEAR_BEFORE.finditer(local[first_year.start():first_year.start() + 120]):
-            matches.append((match.start() - 1, match))
-        for _, match in sorted(matches, key=lambda x: x[0]):
+        before_year = local[:first_year.end()]
+        labels = re.findall(r"\b(hiver|winter|ete|summer)\b", before_year)
+        season_names = {"hiver": "winter", "winter": "winter",
+                        "ete": "summer", "summer": "summer"}
+        seasons = {season_names[label] for label in labels}
+        if len(seasons) > 1:
+            continue  # even the section label is ambiguous
+        season = next(iter(seasons)) if seasons else None
+
+        # The HTML has already been flattened to visible text. A small
+        # fixed window alone can accidentally cross a subsequent section.
+        # Bound BOTH date grammars at the earliest new edition/event header.
+        after_year = first_year.end()
+        boundaries = [len(local)]
+        for pattern in (identity_pattern,
+                        r"\b(?:hiver|winter|ete|summer) 20[2-4]\d\b",
+                        r"\b(?:autre festival|autre evenement|prochain festival)\b"):
+            new_section = re.search(pattern, local[after_year:])
+            if new_section:
+                boundaries.append(after_year + new_section.start())
+        bound = min(boundaries)
+        after_window = local[after_year:min(bound, after_year + 100)]
+        before_window = local[first_year.start():min(bound, first_year.start() + 120)]
+        matches, three_day_spans = [], []
+        for pattern, text_window, offset, triple in (
+                (FR_DATE_AFTER_THREE, after_window, after_year, True),
+                (FR_YEAR_BEFORE_THREE, before_window, first_year.start(), True),
+                (FR_DATE_AFTER, after_window, after_year, False),
+                (FR_YEAR_BEFORE, before_window, first_year.start(), False)):
+            for match in pattern.finditer(text_window):
+                start_at = offset + match.start()
+                stop_at = offset + match.end()
+                if triple:
+                    three_day_spans.append((start_at, stop_at))
+                matches.append((start_at, not triple, stop_at, match, triple))
+        # A two-day submatch inside a three-day phrase is not a separate date.
+        for absolute_start, _, _, match, triple in sorted(matches, key=lambda x: x[:3]):
+            if not triple and any(a <= absolute_start < b
+                                  for a, b in three_day_spans):
+                continue
             if int(match.group("year")) != target_year:
                 continue
             try:
-                start = date(target_year, MONTHS[match.group("month")],
-                             int(match.group("start")))
-                end = date(target_year, MONTHS[match.group("month")],
-                           int(match.group("end") or match.group("start")))
+                start_day = int(match.group("start"))
+                end_day = int(match.group("end") or match.group("start"))
+                if triple and not (int(match.group("middle")) == start_day + 1
+                                   and end_day == start_day + 2):
+                    continue
+                start = date(target_year, MONTHS[match.group("month")], start_day)
+                end = date(target_year, MONTHS[match.group("month")], end_day)
             except ValueError:
                 continue
-            if not (date.fromisoformat(today) < start <= end
-                    and (end - start).days <= 14):
+            if (not date.fromisoformat(today) < start <= end
+                    or (end - start).days > 14
+                    or not _season_matches_dates(season, start, end)):
                 continue
-            season_text = local[:first_year.end()]
-            seasons = re.findall(r"\b(hiver|winter|ete|summer)\b", season_text)
-            season = ({"hiver": "winter", "winter": "winter",
-                       "ete": "summer", "summer": "summer"}[seasons[-1]]
-                      if seasons else None)
-            item = {
+            output[(start.isoformat(), end.isoformat())] = {
                 "start_date_hint": start.isoformat(),
                 "end_date_hint": end.isoformat(),
                 "season_hint": season,
@@ -235,7 +284,6 @@ def visible_future_date_hints(name, html, today, target_year):
                 "publication_authorized": False,
                 "review_only": True,
             }
-            output[(start.isoformat(), end.isoformat())] = item
             break  # one date per explicit name/year occurrence
         if len(output) >= MAX_DATE_HINTS:
             break
@@ -258,6 +306,7 @@ def _valid_private_date_hints(value, year, today):
                 or not date.fromisoformat(today) < first <= last
                 or (last - first).days > 14
                 or hint.get("season_hint") not in (None, "winter", "summer")
+                or not _season_matches_dates(hint.get("season_hint"), first, last)
                 or hint.get("status") != "UNVERIFIED_VISIBLE_DATE_PHRASE"
                 or hint.get("edition_dates_verified") is not False
                 or hint.get("organizer_verified") is not False
