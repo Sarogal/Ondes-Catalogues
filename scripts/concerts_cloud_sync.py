@@ -4682,6 +4682,37 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(all(norm(a["name"]) not in aliases
                     for a in new_artists),
                 "Lot national : nouveau groupe possiblement déjà référencé")
+    elif (event.get("venueId") == "le-molotov-marseille"
+          and reviewer == "automated-official-recheck"):
+        # Legacy fully named Molotov approvals retain their prior contract.
+        # When the producer omits an unannounced support act, independently
+        # ensure it cannot enter public artistIds/title or fake newArtists.
+        require(molotov and len(evidence) == 1 and
+                isinstance(evidence[0], dict),
+                "Le Molotov : source ou preuve officielle ambiguë")
+        proof = evidence[0]
+        if ("unannouncedSupportLabel" in proof or
+                "sourceStructure" in proof):
+            require(proof.get("sourceStructure") ==
+                        "molotov-first-party-bill-with-unannounced-support"
+                    and proof.get("unannouncedSupportLabel") in {
+                        "guest", "special guest", "invite", "invite surprise",
+                        "artiste surprise", "premiere partie", "1ere partie",
+                        "1re partie", "support", "a confirmer", "tba", "surprise",
+                    }
+                    and new_artists == []
+                    and proof.get("officialArtistNames") ==
+                        [(known_artist_ids.get(aid) or {}).get("name")
+                         for aid in ids]
+                    and all(known_artist_ids.get(aid) for aid in ids)
+                    and event.get("title") == " + ".join(
+                        proof["officialArtistNames"])
+                    and event.get("time") is None
+                    and proof.get("url") == official_url
+                    and proof.get("checkedAt") == reviewed_at.isoformat()
+                    and proof.get("checkedFields") ==
+                        ["artists", "date", "venue", "genre"],
+                    "Le Molotov : invité non nommé ou artistes publiés non corroborés")
     elif (event.get("venueId") == "la-laiterie-strasbourg"
           and reviewer == "automated-official-recheck"):
         require(laiterie_auto and event.get("status") == "confirmed"
