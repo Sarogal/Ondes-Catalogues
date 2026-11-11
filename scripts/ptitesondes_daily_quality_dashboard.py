@@ -141,8 +141,8 @@ def markdown_status(status):
         " fiches** ; mise à jour déclarée : `" + cat["updated_at"] + "`.",
         "",
         "| Jour | Sources | Événements | Nouvelles pistes | Backlog | Lots | "
-        "Décisions | Prévalidés | Approuvés privés | Écritures privées signalant publication |",
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+        "Décisions | Rejets | Prévalidés | Approuvés privés | Écritures publiques déclarées (rapport privé) |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     def value(v):
         return "—" if v is None else str(v)
@@ -150,9 +150,18 @@ def markdown_status(status):
         lines.append("| " + " | ".join(value(x) for x in (
             row["day"], row["sources"], row["events_examined"],
             row["new_leads"], row["backlog"], row["qualification_slots"],
-            row["checks"], row["accepted_preflight"], row["private_approvals"],
+            row["checks"], row["rejected_decisions"], row["accepted_preflight"], row["private_approvals"],
             row["public_writes_reported_by_private_intake"],
         )) + " |")
+    for row in reversed(status["days"]):
+        if row["qualification_slots"]:
+            breakdown = ", ".join(
+                code + ": " + str(total)
+                for code, total in sorted(row["reason_groups"].items())
+            )
+            lines.extend(["", "**Motifs du dernier jour contrôlé (" +
+                          row["day"] + ") :** " + (breakdown or "aucun rejet")])
+            break
     lines.extend([
         "",
         "**Attention :** les décisions ne sont pas des candidats uniques. "
