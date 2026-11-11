@@ -159,7 +159,10 @@ def _organizer_visible_on_home(html, source):
     """
     if source != SOURCES["mauges-pit-fest"]:
         return False
-    text = _archive_visible_text(html)
+    try:
+        text = _archive_visible_text(html)
+    except (TypeError, ValueError):
+        return False  # an unreadable page is not an organizer observation
     expected = "association mac n roll metallicus presente le mauges pit fest"
     return re.search(r"(?<![a-z0-9])" + re.escape(expected) +
                      r"(?![a-z0-9])", text) is not None
