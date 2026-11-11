@@ -7,6 +7,7 @@ fetch destinations are drawn from state or queues. No catalogue writer exists.
 import argparse
 from datetime import date, datetime
 import json
+import re
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -52,6 +53,24 @@ def _city_equal(a, b):
     return normalized(a) == normalized(b)
 
 
+def _archival_review_text(value, limit=150):
+    """Untrusted old-edition metadata; never a verified future-edition fact."""
+    if not isinstance(value, str):
+        return None
+    clean = value.strip()
+    if (not 2 <= len(clean) <= limit
+            or any(ord(ch) < 32 or ch in "<>{}" for ch in clean)):
+        return None
+    return clean
+
+
+def _archival_department(value):
+    clean = _archival_review_text(value, limit=3)
+    return (clean if clean and
+            re.fullmatch(r"(?:0[1-9]|[1-9]\d|2[AB]|97[1-6]|98[0-9])", clean)
+            else None)
+
+
 def _archive_matches(dossier, history):
     """History provides identity hints, not evidence that an edition exists."""
     found = []
@@ -83,6 +102,19 @@ def _archive_matches(dossier, history):
             "last_known_year": row["lastKnownYear"],
             "city_hint_match": city is True,
             "identity_match_only": True,
+            # Only the documented historical edition is described below.
+            # These hints speed up editorial research but MUST NOT satisfy
+            # organizer/venue checks for the candidate future year.
+            "prior_edition_organizer_review_only":
+                _archival_review_text(row.get("organizer"), 120),
+            "prior_edition_city_review_only":
+                _archival_review_text(row.get("city"), 100),
+            "prior_edition_department_review_only":
+                _archival_department(row.get("department")),
+            "prior_edition_venue_review_only":
+                _archival_review_text(row.get("venue"), 160),
+            "organizer_verified_for_future": False,
+            "venue_verified_for_future": False,
             "future_edition_verified": False,
         })
     return found[:MAX_MATCHES]
