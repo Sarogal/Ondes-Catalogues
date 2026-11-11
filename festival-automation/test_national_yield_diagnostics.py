@@ -14,7 +14,7 @@ class YieldTests(unittest.TestCase):
     def review(self):
         return {
             "schema": "grossesondes.national-editorial-reconciliation-private.v1",
-            "as_of": TODAY, "safe_to_publish": False,
+            "as_of": TODAY, "review_only": True, "safe_to_publish": False,
             "publication_authorized": False, "publications": 0,
             "dossiers_count": 2, "editorial_drafts_count": 1,
             "public_editions_count": 124, "historic_references_count": 173,
