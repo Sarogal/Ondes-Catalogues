@@ -1,7 +1,8 @@
 """Strict independent recheck of La Laiterie named first-party concert bills.
 
 Only a second retrieval of the EXACT official detail page may sign a date:
-one to four canonical EXISTING artists, no undisclosed support or guest, a single
+one to four confirmed named artists; an explicitly unannounced guest may be omitted
+from the public artist list. The official date, genre and venue remain mandatory. A single
 official event date and an explicit relevant genre. Never infer door times.
 """
 from __future__ import annotations
@@ -16,11 +17,26 @@ SOURCE = "agenda_officiel_laiterie_detail_review"
 VENUE_ID = "la-laiterie-strasbourg"
 STRUCTURE = "artefact-single-artist-header-and-artist-section"
 MULTI_STRUCTURE = "artefact-multi-artist-header-and-sections"
+PARTIAL_STRUCTURE = "artefact-confirmed-artists-with-unannounced-support"
 UNKNOWN = re.compile(
     r"(?<![a-z0-9])(?:guests?|invites?|special guests?|first part|premiere partie|1ere partie|1re partie|"
     r"support|featuring|feat|ft|tba|a confirmer|festival|dj set|tribute|"
-    r"annule|report[eé]|postponed|cancelled)(?![a-z0-9])", re.I
+    r"annule|report[eé]|postponed|cancelled|surprise)(?![a-z0-9])", re.I
 )
+
+# Only whole, well-defined placeholders may be omitted, never a new/unknown
+# proper artist name. Do not turn cancellation, "festival" or a sold-out
+# status into an "unknown guest".
+UNANNOUNCED_LABELS = frozenset({
+    "guest", "special guest", "invite", "invite surprise", "artiste surprise",
+    "premiere partie", "1ere partie", "1re partie", "support", "a confirmer", "tba",
+})
+
+
+def unannounced_label(value):
+    label = triage.words(value)
+    return label if label in UNANNOUNCED_LABELS else None
+
 ALLOWED_GENRES = (
     ("post punk", "Post Punk"),
     ("black metal", "Black Metal"),
@@ -54,8 +70,8 @@ def explicit_genre(tag):
     raise ValueError("Genre rock/punk/metal explicite absent de la fiche")
 
 
-def official_artist_sections(html):
-    """Read only the Artistes section, not biography or recommendations."""
+def official_artist_sections(html, allow_unannounced=False):
+    """Read the exact official Artistes block, excluding recommendations."""
     doc = source._Extract()
     doc.feed(html)
     headings = [(kind, title) for kind, title, _ in doc.headings]
@@ -71,17 +87,21 @@ def official_artist_sections(html):
                 )), len(headings))
     lineup = [t for k, t in headings[begin:end] if k == "h2" and t.strip()]
     normalized = [canonical_words(name) for name in lineup]
-    if (not 1 <= len(lineup) <= 4
+    placeholders = [i for i, n in enumerate(lineup) if unannounced_label(n)]
+    if (not 1 <= len(lineup) <= 5
             or len(set(normalized)) != len(lineup)
-            or any(not 3 <= len(name) <= 100
-                   or UNKNOWN.search(triage.words(raw))
-                   for name, raw in zip(normalized, lineup))):
+            or any(not 3 <= len(name) <= 100 for name in normalized)
+            or (placeholders and
+                (not allow_unannounced or placeholders != [len(lineup) - 1]))
+            or any(UNKNOWN.search(triage.words(raw))
+                   for i, raw in enumerate(lineup) if i not in placeholders)
+            or len(lineup) - len(placeholders) > 4):
         raise ValueError("Programmation officielle incomplète, ambiguë ou non nominative")
     return lineup
 
 
 def official_single_artist_section(html):
-    """Keep the existing single-artist contract available."""
+    """Keep the historic one-artist verifier/test contract intact."""
     names = official_artist_sections(html)
     if len(names) != 1:
         raise ValueError("Plusieurs artistes ou programmation incomplète")
@@ -120,34 +140,62 @@ def verify(candidate, html, catalogue, today):
     if fresh["date"] <= today.isoformat() or fresh.get("localTime") is not None:
         raise ValueError("Date passée ou horaire non fiable")
     title = fresh["name"]
-    if UNKNOWN.search(triage.words(title)):
-        raise ValueError("Invité, première partie ou statut non identifié")
-    # Only split explicit event-header "+" separators, never band-name "&".
+    # A single trailing explicit placeholder is permitted; it is NEVER
+    # represented as an artist or inferred from the official URL/biography.
     parts = [name.strip() for name in re.split(r"\s+\+\s+", title)]
-    normalized = [canonical_words(name) for name in parts]
-    if (not 1 <= len(parts) <= 4 or any(len(name) < 3 for name in normalized)
-            or len(set(normalized)) != len(parts)
+    placeholders = [i for i, name in enumerate(parts) if unannounced_label(name)]
+    if placeholders and (placeholders != [len(parts) - 1] or len(parts) < 2):
+        raise ValueError("Invité non nommé à une position ambiguë")
+    guest = parts[-1] if placeholders else None
+    named_parts = parts[:-1] if guest else parts
+    normalized = [canonical_words(name) for name in named_parts]
+    if (not 1 <= len(named_parts) <= 4
+            or any(len(name) < 3 or UNKNOWN.search(triage.words(raw))
+                   for name, raw in zip(normalized, named_parts))
+            or len(set(normalized)) != len(named_parts)
             or normalized[0] != canonical_words(fresh["leadArtist"])):
-        raise ValueError("Affiche officielle incomplète ou artistes ambigus")
-    # All names must be repeated in the event's own Artistes H2s, in order.
-    sections = official_artist_sections(html)
-    if (len(sections) != len(parts)
+        raise ValueError("Artistes confirmés incomplets ou ambigus")
+    sections = official_artist_sections(html, allow_unannounced=bool(guest))
+    # The official event section must independently repeat all real artists.
+    # It may repeat the announced placeholder once at the very end.
+    named_sections = sections[:-1] if guest and unannounced_label(sections[-1]) else sections
+    if (len(named_sections) != len(named_parts)
             or any(canonical_words(a) != canonical_words(b)
-                   for a, b in zip(parts, sections))):
+                   for a, b in zip(named_parts, named_sections))
+            or (guest and unannounced_label(sections[-1])
+                and unannounced_label(sections[-1]) != unannounced_label(guest))):
         raise ValueError("Programmation nominative non corroborée dans la fiche")
     if not isinstance(catalogue, dict) or any(
         not isinstance(catalogue.get(x), list)
         for x in ("venues", "events", "artists")
     ):
         raise ValueError("Catalogue incomplet")
-    performers = []
-    for name in parts:
+    performers, added = [], []
+    reserved = {a.get("id") for a in catalogue["artists"]}
+    aliases = {canonical_words(alias)
+               for a in catalogue["artists"]
+               for alias in (a.get("aliases") or []) if isinstance(alias, str)}
+    for name in named_parts:
         matches = [a for a in catalogue["artists"]
                    if canonical_words(a.get("name")) == canonical_words(name)
                    and isinstance(a.get("id"), str)]
-        if len(matches) != 1:
+        if len(matches) > 1:
+            raise ValueError("Identité canonique ambiguë")
+        if matches:
+            performers.append(matches[0])
+        elif guest and not added:
+            # A new lead is accepted only when the first-party event header
+            # AND Artistes section independently identify its proper name.
+            artist_id = canonical_words(name).replace(" ", "-")
+            if (not re.fullmatch(r"[a-z0-9-]{3,100}", artist_id)
+                    or artist_id in reserved
+                    or canonical_words(name) in aliases):
+                raise ValueError("Artiste nouveau ou alias ambigu")
+            added.append({"id": artist_id, "name": name})
+            reserved.add(artist_id)
+            performers.append(added[-1])
+        else:
             raise ValueError("Un artiste canonique déjà connu est obligatoire")
-        performers.append(matches[0])
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
     if (len(venues) != 1 or triage.words(venues[0].get("city")) != "strasbourg"
             or not all(venues[0].get(x) is not None
@@ -169,18 +217,23 @@ def verify(candidate, html, catalogue, today):
         raise ValueError("Collision d'identifiant")
     names = [a["name"] for a in performers]
     bill_title = " + ".join(names)
+    proof = {
+        "url": url,
+        "proofType": "official-organizer-or-venue",
+        "checkedAt": today.isoformat(),
+        "checkedFields": ["artists", "date", "venue", "genre"],
+        "officialArtistNames": names,
+        "sourceStructure": (PARTIAL_STRUCTURE if guest else
+                            STRUCTURE if len(ids) == 1 else MULTI_STRUCTURE),
+    }
+    if guest:
+        proof["unannouncedSupportLabel"] = unannounced_label(guest)
+        proof["verifiedNewArtists"] = [a["name"] for a in added]
     return {
         "reviewDecision": "approved",
         "reviewedBy": "automated-official-recheck",
         "reviewedAt": today.isoformat(),
-        "officialEvidence": [{
-            "url": url,
-            "proofType": "official-organizer-or-venue",
-            "checkedAt": today.isoformat(),
-            "checkedFields": ["artists", "date", "venue", "genre"],
-            "officialArtistNames": names,
-            "sourceStructure": STRUCTURE if len(ids) == 1 else MULTI_STRUCTURE,
-        }],
+        "officialEvidence": [proof],
         "event": {
             "id": event_id, "title": bill_title,
             "date": fresh["date"], "time": None,
@@ -189,5 +242,5 @@ def verify(candidate, html, catalogue, today):
             "officialUrl": url, "sourceType": "salle",
             "organizer": "La Laiterie",
         },
-        "newArtists": [],
+        "newArtists": added,
     }
