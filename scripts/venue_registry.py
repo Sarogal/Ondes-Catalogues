@@ -8,6 +8,17 @@ from ptitesondes_public_place_venues import lookup_public_venue
 
 VENUES = [
     {
+        # Justificatifs 11/11/2026 :
+        # Ville de Marseille, adresse officielle du lieu :
+        # https://www.marseille.fr/culture/actualites/20-ans-bibliotheque-alcazar
+        # OSM node 395241034 (bibliothèque, pas l'arrêt de tram homonyme).
+        # https://mapcarta.com/N395241034
+        "city": "Marseille", "aliases": ["Bibliothèque de l'Alcazar"],
+        "lat": 43.29897, "lng": 5.37669,
+        "official": "https://www.marseille.fr/culture/actualites/20-ans-bibliotheque-alcazar",
+        "geo_source": "https://mapcarta.com/N395241034",
+    },
+    {
         "city": "Nantes", "aliases": ["Théâtre de Jeanne"],
         "lat": 47.20457, "lng": -1.57551,
         "official": "https://www.theatre-jeanne.com/infos-pratiques/",
