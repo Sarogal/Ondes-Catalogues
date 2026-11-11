@@ -118,6 +118,51 @@ class EditorialReconciliationTests(unittest.TestCase):
         self.assertFalse(other["publication_authorized"])
         self.assertEqual(covered["publications"], 0)
 
+    def test_gueules_press_article_does_not_certify_two_editions(self):
+        from historical_future_lead_watch import APPROVED, scan as archive_scan
+        from targeted_press_edition_watch import SOURCES as PRESS, scan as press_scan
+        state, _, details, public, archive, leads = fixtures()
+        name, region, url = APPROVED["les-gueules-de-bois"]
+        archive["knownFestivals"].append({
+            "slug": "les-gueules-de-bois", "name": name, "region": region,
+            "city": "Légna", "aliases": [], "lastKnownYear": 2026,
+            "startDate": "2026-08-20", "endDate": "2026-08-22",
+            "officialSite": url,
+        })
+        roster = {"les-gueules-de-bois": {
+            "slug": "les-gueules-de-bois", "name": name,
+            "region": region, "url": url, "last_known_year": 2026}}
+        archive_scan(state, roster, TODAY, fetch=lambda _: (
+            "<main><h1>Les Gueules de Bois hiver 2027</h1>"
+            "<p>Samedi 13 février 2027 à Légna.</p>"
+            "<h2>Les Gueules de Bois été 2027</h2>"
+            "<p>19 au 21 août 2027 à Légna.</p></main>"))
+        press_scan(state, {"gueules-progres": PRESS["gueules-progres"]},
+                   TODAY, fetch=lambda _: (
+                       "<main><h1>Le festival Les Gueules de Bois 2027</h1>"
+                       "<p>Premier rendez-vous le samedi 13 février 2027.</p>"
+                       "<p>Les bénévoles préparent la septième édition du festival, "
+                       "programmée les 19, 20 et 21 août 2027.</p></main>"))
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": [],
+                  "historical_future_watch_archive_status_private": "CONSISTENT"}
+        queue = build_queue(state, report, leads, TODAY)
+        editorial = build_review(queue, details, state, leads, public, archive, TODAY)
+        row = next(x for x in editorial["dossiers"] if x["name_hint"] == name)
+        self.assertEqual(editorial["press_date_claim_dossiers_private"], 1)
+        self.assertEqual(editorial["press_date_claims_private"], 2)
+        self.assertEqual(len(row["press_date_observations_review_only"]), 1)
+        self.assertEqual(len(row["press_date_observations_review_only"][0]["claims"]), 2)
+        self.assertEqual(row["status"], "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW")
+        self.assertIn("press_article_origin_requires_editorial_review",
+                      row["missing_checks"])
+        self.assertIn("independent_date_confirmation", row["missing_checks"])
+        self.assertIn("editorial_approval", row["missing_checks"])
+        self.assertFalse(row["future_edition_confirmed"])
+        self.assertFalse(row["publication_authorized"])
+        self.assertFalse(row["safe_to_publish"])
+        self.assertEqual(editorial["publications"], 0)
+
     def test_archive_identity_not_future_edition_proof(self):
         result = review(fixtures())
         self.assertEqual(result["schema"], SCHEMA)

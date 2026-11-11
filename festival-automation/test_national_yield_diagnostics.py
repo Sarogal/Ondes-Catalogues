@@ -70,6 +70,60 @@ class YieldTests(unittest.TestCase):
         self.assertEqual(got["publications"], 0)
         self.assertFalse(got["safe_to_publish"])
 
+    def test_new_press_claim_is_progress_but_never_publication(self):
+        from targeted_press_edition_watch import SOURCES as PRESS
+        old = self.comparable("2026-11-08")
+        current = self.comparable()
+        source = PRESS["mauges-angers"]
+        hint = {
+            "claim_id": "next-edition",
+            "start_date_hint": "2027-10-08",
+            "end_date_hint": "2027-10-09",
+            "season_hint": None, "review_only": True,
+            "publication_authorized": False, "edition_dates_verified": False,
+            "independence_verified": False,
+        }
+        row = current["dossiers"][0]
+        row["press_date_observations_review_only"] = [{
+            "article_url": source["url"], "publisher": source["publisher"],
+            "observed_at": TODAY, "claims": [hint],
+            "review_only": True, "publisher_origin_assessed": False,
+            "independence_verified": False, "publication_authorized": False,
+        }]
+        delta = diagnose(self.state(), current, TODAY, old)[
+            "progress_since_previous_review"]
+        self.assertEqual(delta["evidence_gained_dossiers"], 1)
+        self.assertEqual(delta["changed_dossiers"][0]["evidence_added"],
+                         ["press_article_date_claim"])
+        self.assertFalse(current["dossiers"][0]["publication_authorized"])
+        self.assertFalse(current["dossiers"][0]["safe_to_publish"])
+        old = deepcopy(current)
+        old["as_of"] = TODAY
+        current["dossiers"][0]["press_date_observations_review_only"][0][
+            "observed_at"] = "2026-11-11"
+        delta = diagnose(self.state(), current, TODAY, old)[
+            "progress_since_previous_review"]
+        self.assertEqual(delta["evidence_gained_dossiers"], 0)
+
+    def test_invalid_press_provenance_in_history_fails_closed(self):
+        from targeted_press_edition_watch import SOURCES as PRESS
+        old = self.comparable("2026-11-08")
+        current = self.comparable()
+        old["dossiers"][0]["press_date_observations_review_only"] = [{
+            "article_url": PRESS["mauges-angers"]["url"],
+            "publisher": "Angers Info",
+            "claims": [{
+                "start_date_hint": "2027-10-08",
+                "end_date_hint": "2027-10-09",
+                "review_only": True, "edition_dates_verified": False,
+                "independence_verified": False,
+                "publication_authorized": False}],
+            "review_only": True, "publisher_origin_assessed": False,
+            "independence_verified": True, "publication_authorized": False,
+        }]
+        with self.assertRaises(ValueError):
+            diagnose(self.state(), current, TODAY, old)
+
     def test_repeat_observation_date_is_not_progress(self):
         old = self.comparable("2026-11-08")
         current = self.comparable()

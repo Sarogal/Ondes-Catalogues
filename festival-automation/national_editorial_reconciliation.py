@@ -323,6 +323,10 @@ def build_review(queue, detail, state, leads, public, history, today):
             or not isinstance(history.get("knownFestivals"), list)
             or len(history["knownFestivals"]) > MAX_ARCHIVE):
         raise ValueError("donnees de reconciliation incompletes")
+    # Another publisher's article is an externally reported claim, not
+    # evidence of independently established provenance or publication approval.
+    from targeted_press_edition_watch import validated_observations as press_observations
+    private_press = press_observations(state, today)
     result, proposed, seen = [], [], set()
     for dossier in queue["dossiers"]:
         if (not isinstance(dossier, dict)
@@ -339,6 +343,25 @@ def build_review(queue, detail, state, leads, public, history, today):
             raise ValueError("dossier prive non conforme")
         seen.add(dossier["id"])
         archival = _archive_matches(dossier, history["knownFestivals"])
+        archive_slugs = {x["slug"] for x in archival if x["slug"]}
+        press_review = [
+            {
+                "article_url": item["url"],
+                "publisher": item["publisher"],
+                "observed_at": item["observed_at"],
+                "claims": item["claims"],
+                "review_only": True,
+                "publisher_origin_assessed": False,
+                "independence_verified": False,
+                "publication_authorized": False,
+            }
+            for item in private_press
+            if (item["slug"] in archive_slugs
+                and item["name"] == dossier["name_hint"]
+                and item["region"] == dossier["region_hint"]
+                and any(int(claim["start_date_hint"][:4]) ==
+                        dossier["edition_year_hint"] for claim in item["claims"]))
+        ]
         exact, conflicting = _public_matches(dossier, public["festivals"])
         city_variants = _published_city_variants(dossier, public["festivals"])
         primary = _primary_proof(dossier, leads, state, today)
@@ -425,6 +448,8 @@ def build_review(queue, detail, state, leads, public, history, today):
                       else "INSTITUTIONAL_ONLY_FUTURE_DATE_REVIEW")
         elif accepted_archive_hints:
             status = "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW"
+        elif press_review:
+            status = "PRESS_DATE_CLAIM_REVIEW"
         else:
             status = "RESEARCH_REQUIRED"
         blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
@@ -440,6 +465,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             if not any(x["official_home_future_dates_visible"]
                        for x in accepted_institutional):
                 blocks.append("organizer_site_not_yet_confirming_future_dates")
+        if press_review:
+            blocks.append("press_article_origin_requires_editorial_review")
         if accepted_archive_hints:
             blocks.append("archival_visible_dates_require_primary_confirmation")
             if len(accepted_archive_hints) > 1:
@@ -472,6 +499,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "primary_observation": primary,
             "regional_detail_observations": detail_clues,
             "historical_homepage_date_hints_review_only": accepted_archive_hints,
+            "press_date_observations_review_only": press_review,
             "historical_homepage_uncovered_dates_review_only": uncovered_archive_dates,
             "institutional_future_date_hints_review_only": accepted_institutional,
             "institutional_future_uncovered_dates_review_only": uncovered_institutional,
@@ -526,6 +554,12 @@ def build_review(queue, detail, state, leads, public, history, today):
         "historical_homepage_uncovered_date_hints_private": sum(
             len(x["historical_homepage_uncovered_dates_review_only"])
             for x in result),
+        "press_date_claim_dossiers_private": sum(
+            bool(x["press_date_observations_review_only"]) for x in result),
+        "press_date_claims_private": sum(
+            len(source["claims"])
+            for dossier in result
+            for source in dossier["press_date_observations_review_only"]),
         "institutional_future_date_dossiers_private": sum(
             bool(x["institutional_future_date_hints_review_only"]) for x in result),
         "institutional_future_source_agreements_private": sum(

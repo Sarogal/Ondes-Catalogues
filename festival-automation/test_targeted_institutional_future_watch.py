@@ -207,6 +207,35 @@ class InstitutionalPilotTests(unittest.TestCase):
         self.assertEqual(editorial["publications"], 0)
         self.assertEqual(editorial["editorial_drafts_count"], 0)
 
+    def test_mauges_press_claim_is_not_an_independent_date_certificate(self):
+        from targeted_press_edition_watch import SOURCES as PRESS, scan as press_scan
+        private = state()
+        scan(private, SOURCES, TODAY, fetch=fake_fetch)
+        press_scan(private, {"mauges-angers": PRESS["mauges-angers"]},
+                   TODAY, fetch=lambda _: (
+                       "<main><h1>Le Mauges Pit Fest, bilan de la cinquième édition</h1>"
+                       "<p>Le festival a eu lieu en 2026 à Saint-Macaire-en-Mauges. "
+                       "D'après Ouest-France, la cinquième édition a mobilisé "
+                       "des bénévoles locaux.</p>"
+                       "<p>La prochaine édition du festival est d'ores et déjà "
+                       "programmée pour les 8 et 9 octobre 2027.</p></main>"))
+        queue, editorial = full_review(private)
+        row = editorial["dossiers"][0]
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        self.assertEqual(editorial["press_date_claim_dossiers_private"], 1)
+        self.assertEqual(editorial["press_date_claims_private"], 1)
+        self.assertEqual(row["status"], "INSTITUTIONAL_ONLY_FUTURE_DATE_REVIEW")
+        self.assertEqual(row["press_date_observations_review_only"][0]["publisher"],
+                         "Angers Info")
+        self.assertFalse(row["press_date_observations_review_only"][0]
+                         ["publisher_origin_assessed"])
+        self.assertIn("press_article_origin_requires_editorial_review",
+                      row["missing_checks"])
+        self.assertIn("independent_date_confirmation", row["missing_checks"])
+        self.assertIn("organizer_site_not_yet_confirming_future_dates",
+                      row["missing_checks"])
+        self.assertEqual(editorial["publications"], 0)
+
     def test_failed_institutional_fetch_removes_prior_claim(self):
         s = state()
         scan(s, SOURCES, TODAY, fetch=fake_fetch)
