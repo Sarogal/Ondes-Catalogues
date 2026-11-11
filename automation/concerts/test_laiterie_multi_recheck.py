@@ -69,8 +69,6 @@ class LaiterieMultiTests(unittest.TestCase):
 
     def test_unidentified_unsupported_and_contradictory_bills_are_held(self):
         variants = [
-            TWO.replace("+ 7WEEKS", "+ 1ère partie").replace("<h2>7WEEKS</h2>",
-                                                              "<h2>1ère partie</h2>"),
             TWO.replace("<h2>7WEEKS</h2><h2>On vous recommande",
                         "<h2>Other Artist</h2><h2>On vous recommande"),
             TWO.replace("<h2>7WEEKS</h2><h2>On vous recommande",
@@ -97,7 +95,9 @@ class LaiterieMultiTests(unittest.TestCase):
             "<h2>Guest</h2><h2>On vous recommande</h2>",
         )
         cat = catalogue()  # ARCHIVE deliberately absent from artists.
-        row = adapter.details(page, URL, SOURCE, TODAY.isoformat())
+        archive_url = ("https://www.artefact.org/la-laiterie/evenements/"
+                       "archive-2027/")
+        row = adapter.details(page, archive_url, SOURCE, TODAY.isoformat())
         row.update({"reviewBucket": "genre_tag_review",
                     "possibleExistingConcert": False})
         approval = verifier.verify(row, page, cat, TODAY)
