@@ -62,7 +62,11 @@ class ApprovedPublicVenuesTests(unittest.TestCase):
         self.assertEqual(registry_location(lead)["public_place_id"],
                          "marseille-bibliotheque-alcazar")
         self.assertTrue(permitted(lead, date(2026, 11, 9)))
-        self.assertFalse(permitted(dict(lead, venue="Bibliothèque du Merlan"),
+        # Merlan's own documented GPS is eligible after the dedicated review.
+        # A similar or annexed venue still cannot inherit those coordinates.
+        self.assertTrue(permitted(dict(lead, venue="Bibliothèque du Merlan"),
+                                  date(2026, 11, 9)))
+        self.assertFalse(permitted(dict(lead, venue="Bibliothèque du Merlan annexe"),
                                    date(2026, 11, 9)))
 
     def test_verified_building_cannot_verify_an_unproven_session(self):
