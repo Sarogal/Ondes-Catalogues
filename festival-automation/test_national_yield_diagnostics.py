@@ -98,7 +98,7 @@ class YieldTests(unittest.TestCase):
         self.assertFalse(current["dossiers"][0]["publication_authorized"])
         self.assertFalse(current["dossiers"][0]["safe_to_publish"])
         old = deepcopy(current)
-        old["as_of"] = "2026-11-10"
+        old["as_of"] = TODAY
         current["dossiers"][0]["press_date_observations_review_only"][0][
             "observed_at"] = "2026-11-11"
         delta = diagnose(self.state(), current, TODAY, old)[
