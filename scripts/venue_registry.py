@@ -8,6 +8,37 @@ from ptitesondes_public_place_venues import lookup_public_venue
 
 VENUES = [
     {
+        # Adresse officielle 1 rue Eugene Thomas, 44300 Nantes :
+        # https://metropole.nantes.fr/lieu/mediatheque-luce-courville
+        # OSM way 84294254 (amenity=library, building=civic) :
+        # https://mapcarta.com/fr/W84294254
+        "city": "Nantes", "aliases": ["Médiathèque Luce Courville"],
+        "lat": 47.26184, "lng": -1.57400,
+        "official": "https://metropole.nantes.fr/lieu/mediatheque-luce-courville",
+        "geo_source": "https://mapcarta.com/fr/W84294254",
+    },
+    {
+        # Adresse du Centre urbain du Merlan, avenue Raimu (ville de Marseille) :
+        # https://www.marseille-tourisme.com/offres/bibliotheque-du-merlan-marseille-14eme-fr-3381351/
+        # OSM node 1920263029, amenity=library et non théâtre voisin :
+        # https://mapcarta.com/fr/N1920263029
+        "city": "Marseille", "aliases": ["Bibliothèque du Merlan"],
+        "lat": 43.33056, "lng": 5.39888,
+        "official": "https://www.marseille-tourisme.com/offres/bibliotheque-du-merlan-marseille-14eme-fr-3381351/",
+        "geo_source": "https://mapcarta.com/fr/N1920263029",
+    },
+    {
+        # Adresse municipale 6 boulevard Jean Salducci, 13016 Marseille :
+        # https://www.marseille-tourisme.com/offres/bibliotheque-saint-andre-marseille-16eme-fr-3382594/
+        # Geolocalisation indépendante à l'adresse exacte, sans confusion
+        # avec la Maison municipale d'arrondissement Saint-André :
+        # https://tofromfrance.com/en/lieu/bibliotheque-saint-andre
+        "city": "Marseille", "aliases": ["Bibliothèque Saint-André"],
+        "lat": 43.35741, "lng": 5.34259,
+        "official": "https://www.marseille-tourisme.com/offres/bibliotheque-saint-andre-marseille-16eme-fr-3382594/",
+        "geo_source": "https://tofromfrance.com/en/lieu/bibliotheque-saint-andre",
+    },
+    {
         "city": "Nantes", "aliases": ["Théâtre de Jeanne"],
         "lat": 47.20457, "lng": -1.57551,
         "official": "https://www.theatre-jeanne.com/infos-pratiques/",
