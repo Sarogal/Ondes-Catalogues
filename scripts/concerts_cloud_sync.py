@@ -4685,12 +4685,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Lot national : nouveau groupe possiblement déjà référencé")
     elif (event.get("venueId") == "la-laiterie-strasbourg"
           and reviewer == "automated-official-recheck"):
-        # Do not weaken the historic individually signed La Laiterie lists.
-        # This independent official recheck only accepts ONE previously known
-        # canonical artist and its exact Artefact concert detail page.
+        # Keep the previously signed single-artist rule. Multi-bills need
+        # a distinct first-party header + all named artist sections.
         require(laiterie_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "La Laiterie"
-                and len(ids) == 1 and new_artists == []
+                and 1 <= len(ids) <= 4 and new_artists == []
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "La Laiterie automatique : concert hors périmètre")
         proof = evidence[0]
@@ -4698,18 +4697,35 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and proof.get("proofType") == "official-organizer-or-venue"
                 and proof.get("checkedAt") == reviewed_at.isoformat()
                 and proof.get("checkedFields") ==
-                    ["artists", "date", "venue", "genre"]
-                and proof.get("sourceStructure") ==
-                    "artefact-single-artist-header-and-artist-section"
-                and proof.get("officialArtistNames") == [event.get("title")],
-                "La Laiterie automatique : artiste ou fiche non corroborés")
-        artist = known_artist_ids.get(ids[0])
-        require(isinstance(artist, dict) and
-                norm(artist.get("name")) == norm(event.get("title"))
-                and event_id == (
-                    "go-c-" + event["date"].replace("-", "") +
-                    "-strasbourg-" + ids[0]),
-                "La Laiterie automatique : identité artiste ou ID incohérent")
+                    ["artists", "date", "venue", "genre"],
+                "La Laiterie automatique : preuve officielle incorrecte")
+        names = proof.get("officialArtistNames")
+        if len(ids) == 1:
+            require(proof.get("sourceStructure") ==
+                        "artefact-single-artist-header-and-artist-section"
+                    and names == [event.get("title")],
+                    "La Laiterie automatique : artiste ou fiche non corroborés")
+        else:
+            require(proof.get("sourceStructure") ==
+                        "artefact-multi-artist-header-and-sections"
+                    and isinstance(names, list) and len(names) == len(ids)
+                    and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                            and not re.search(
+                                r"(?<![a-z0-9])(?:guests?|invites?|"
+                                r"1ere partie|1re partie|tba|a confirmer|"
+                                r"festival|annule|reporte)(?![a-z0-9])",
+                                norm(n)) for n in names)
+                    and len({norm(n) for n in names}) == len(ids)
+                    and event.get("title") == " + ".join(names),
+                    "La Laiterie multi : programmation nominative non vérifiée")
+        require(all(
+            isinstance(known_artist_ids.get(aid), dict)
+            and norm(known_artist_ids[aid].get("name")) == norm(name)
+            for aid, name in zip(ids, names))
+            and event_id == (
+                "go-c-" + event["date"].replace("-", "") +
+                "-strasbourg-" + ids[0]),
+            "La Laiterie automatique : identité artiste ou ID incohérent")
         require(norm_date(event.get("date")) > today
                 and event.get("time") is None
                 and len(event.get("genres") or []) == 1
