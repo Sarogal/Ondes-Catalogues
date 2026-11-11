@@ -63,6 +63,35 @@ class DailyProofTests(unittest.TestCase):
         self.assertFalse(official_openagenda_explicit_month_day(
             event, page.replace("Mercredi 10", "Jeudi 10")))
 
+    def test_openagenda_exact_day_accepts_official_french_hour_notation(self):
+        from proof_text import official_openagenda_explicit_month_day
+        event = {
+            "source_url": "https://openagenda.com/bibliotheques-de-marseille/events/fiche",
+            "date_start": "2026-11-25", "date_end": "2026-11-25",
+            "time": "14:30",
+        }
+        # Typical French schedules print "14h30", not "14:30".
+        official = ("Novembre 2026 Mercredi 25 14h30 - 15h10 "
+                    "Samedi 28 10h30 - 11h10")
+        self.assertTrue(official_openagenda_explicit_month_day(event, official))
+        self.assertTrue(official_openagenda_explicit_month_day(
+            event, official.replace("14h30", "14 h 30")))
+        # A following day's 14h30 must never verify the current day's time.
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, "Novembre 2026 Mercredi 25 10h30 Samedi 28 14h30"))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, official.replace("14h30", "14h00")))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, official.replace("2026", "2027")))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, date_start="2026-11-26", date_end="2026-11-26"),
+            official))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, source_url="https://example.net/fiche"), official))
+        # A mismatched weekday, even with the exact year/day/time, fails.
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, official.replace("Mercredi 25", "Jeudi 25")))
+
     def test_exact_openagenda_month_day_with_independent_venue(self):
         event = {
             "source_url": "https://openagenda.com/nantesmetropole/events/77081258_jeune-public",
