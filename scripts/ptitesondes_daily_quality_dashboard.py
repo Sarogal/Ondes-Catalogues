@@ -9,9 +9,6 @@ from collections import Counter
 from datetime import date, timedelta
 import json
 from pathlib import Path
-import re
-
-DAY_NAME = re.compile(r"\d{4}-\d{2}-\d{2}\.json\Z")
 REASON_CODES = frozenset((
     "already_published", "schema", "official_page_dynamic",
     "official_page_unavailable", "organizer_proof", "venue_or_gps",
@@ -90,10 +87,10 @@ def daily_dashboard(reports_dir, catalogue, today, window=7):
             checked = nonnegative(q.get("checked"))
             accepted = nonnegative(q.get("accepted_preflight"))
             rejected = nonnegative(q.get("rejected"))
-            if total != row["backlog"] or eligible > total or accepted + rejected != checked:
+            if eligible > total or accepted + rejected != checked:
                 raise ValueError("Rapports de qualification non réconciliés")
-            if row["eligible"] is not None and row["eligible"] != eligible:
-                raise ValueError("Lots avec candidats admissibles contradictoires")
+            # A backlog can legitimately grow between scheduled slots.
+            # Never treat a previous slot snapshot as an immutable daily total.
             row["eligible"] = eligible
             row["qualification_slots"] += 1
             row["checks"] += checked
