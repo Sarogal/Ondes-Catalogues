@@ -173,12 +173,12 @@ FR_YEAR_BEFORE = re.compile(
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
 # Three explicitly printed days (e.g. "19, 20 & 21 aout 2027") must not
 # be shortened into the last two days by the two-day date grammar.
-DAY = r"(?:[1-9]|[12]\\d|3[01])"
+DAY = r"(?:[1-9]|[12]\d|3[01])"
 FR_DATE_AFTER_THREE = re.compile(
-    rf"(?<!\\d)(?P<start>{DAY}) (?P<middle>{DAY}) (?P<end>{DAY})"
-    rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\\d)(?!\\d)")
+    rf"(?<!\d)(?P<start>{DAY}) (?P<middle>{DAY}) (?P<end>{DAY})"
+    rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
 FR_YEAR_BEFORE_THREE = re.compile(
-    rf"(?<!\\d)(?P<year>20[2-4]\\d) (?P<start>{DAY})"
+    rf"(?<!\d)(?P<year>20[2-4]\d) (?P<start>{DAY})"
     rf" (?P<middle>{DAY}) (?P<end>{DAY})"
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
 
@@ -214,11 +214,11 @@ def visible_future_date_hints(name, html, today, target_year):
     output = {}
     for occurrence in re.finditer(identity_pattern, text):
         local = text[occurrence.end():occurrence.end() + 200]
-        first_year = re.search(r"(?<!\\d)(20[2-4]\\d)(?!\\d)", local[:65])
+        first_year = re.search(r"(?<!\d)(20[2-4]\d)(?!\d)", local[:65])
         if not first_year or int(first_year.group(1)) != target_year:
             continue
         before_year = local[:first_year.end()]
-        labels = re.findall(r"\\b(hiver|winter|ete|summer)\\b", before_year)
+        labels = re.findall(r"\b(hiver|winter|ete|summer)\b", before_year)
         season_names = {"hiver": "winter", "winter": "winter",
                         "ete": "summer", "summer": "summer"}
         seasons = {season_names[label] for label in labels}
@@ -232,8 +232,8 @@ def visible_future_date_hints(name, html, today, target_year):
         after_year = first_year.end()
         boundaries = [len(local)]
         for pattern in (identity_pattern,
-                        r"\\b(?:hiver|winter|ete|summer) 20[2-4]\\d\\b",
-                        r"\\b(?:autre festival|autre evenement|prochain festival)\\b"):
+                        r"\b(?:hiver|winter|ete|summer) 20[2-4]\d\b",
+                        r"\b(?:autre festival|autre evenement|prochain festival)\b"):
             new_section = re.search(pattern, local[after_year:])
             if new_section:
                 boundaries.append(after_year + new_section.start())
