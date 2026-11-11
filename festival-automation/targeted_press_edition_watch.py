@@ -259,6 +259,10 @@ def main():
     if report.get("schema") != REPORT_SCHEMA or report.get("date") != today:
         raise ValueError("invalid private daily report")
     approved, integrity = load_sources(today)
+    if not approved:
+        # Fail closed on archive divergence: never reuse a prior positive
+        # article observation after the archive identity gate has failed.
+        state["press_edition_observations_private"] = {}
     results = scan(state, approved, today, limit=args.limit) if approved else []
     current = validated_observations(state, today)
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n",
