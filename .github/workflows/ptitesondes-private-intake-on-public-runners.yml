@@ -323,6 +323,24 @@ jobs:
               push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
             fi
           done
+          # Dashboard redacted, stored in PRIVATE state only. Its failure never
+          # prevents intake collection, qualification, or recovery.
+          if [[ "$RUN_MODE" == "write" ]]; then
+            if python public/scripts/ptitesondes_daily_quality_dashboard.py \
+              --reports-dir "$STATE/reports" \
+              --catalogue public/docs/ptitesondes/sorties.json \
+              --date "$DAY" \
+              --output "$STATE/reports/dashboard.json" \
+              --markdown "$STATE/reports/dashboard.md" \
+              > "$LOG/dashboard.log" 2>&1; then
+              git -C state add -- \
+                automation-intake/ptitesondes/reports/dashboard.json \
+                automation-intake/ptitesondes/reports/dashboard.md
+              push_private 'data(ptitesondes): résumer la veille en tableau privé'
+            else
+              echo "::warning::Tableau de bord privé non disponible ; collecte et garde-fous préservés."
+            fi
+          fi
           echo "Une collecte sorties réalisée, ${#REVIEW_SLOTS[@]} lots indépendants vérifiés ou rattrapés ; aucune écriture publique." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
