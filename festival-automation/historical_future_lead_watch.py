@@ -175,11 +175,11 @@ FR_YEAR_BEFORE = re.compile(
 # be shortened into the last two days by the two-day date grammar.
 DAY = r"(?:[1-9]|[12]\d|3[01])"
 FR_DATE_AFTER_THREE = re.compile(
-    rf"(?<!\d)(?P<start>{DAY}) (?P<middle>{DAY}) (?P<end>{DAY})"
+    rf"(?<!\d)(?P<start>{DAY}) (?:et )?(?P<middle>{DAY}) (?:et |au |a )?(?P<end>{DAY})"
     rf" (?P<month>{MONTH_PATTERN}) (?P<year>20[2-4]\d)(?!\d)")
 FR_YEAR_BEFORE_THREE = re.compile(
     rf"(?<!\d)(?P<year>20[2-4]\d) (?P<start>{DAY})"
-    rf" (?P<middle>{DAY}) (?P<end>{DAY})"
+    rf" (?:et )?(?P<middle>{DAY}) (?:et |au |a )?(?P<end>{DAY})"
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
 
 
