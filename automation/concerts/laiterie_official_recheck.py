@@ -183,7 +183,7 @@ def verify(candidate, html, catalogue, today):
             raise ValueError("Identité canonique ambiguë")
         if matches:
             performers.append(matches[0])
-        elif guest and not added:
+        elif guest and not added and name == named_parts[0]:
             # A new lead is accepted only when the first-party event header
             # AND Artistes section independently identify its proper name.
             artist_id = canonical_words(name).replace(" ", "-")
