@@ -130,6 +130,52 @@ class EditorialReconciliationTests(unittest.TestCase):
         self.assertEqual(result["editorial_drafts_count"], 0)
         self.assertEqual(result["publications"], 0)
 
+    def test_old_edition_organizer_and_place_are_review_hints_not_2027_proofs(self):
+        f = fixtures()
+        f[4]["knownFestivals"][0].update(
+            organizer="Association des Amis du Metal",
+            department="57", venue="Parc des concerts",
+        )
+        dossier = review(f)["dossiers"][0]
+        historical = dossier["archive_identity_hints"][0]
+        self.assertEqual(historical["last_known_year"], 2026)
+        self.assertEqual(historical["prior_edition_organizer_review_only"],
+                         "Association des Amis du Metal")
+        self.assertEqual(historical["prior_edition_department_review_only"], "57")
+        self.assertEqual(historical["prior_edition_city_review_only"], "Insming")
+        self.assertEqual(historical["prior_edition_venue_review_only"],
+                         "Parc des concerts")
+        self.assertFalse(historical["organizer_verified_for_future"])
+        self.assertFalse(historical["venue_verified_for_future"])
+        self.assertFalse(historical["future_edition_verified"])
+        self.assertIn("organizer_identity", dossier["missing_checks"])
+        self.assertIn("venue_and_department", dossier["missing_checks"])
+        self.assertFalse(dossier["publication_authorized"])
+        self.assertFalse(dossier["safe_to_publish"])
+
+    def test_malformed_old_metadata_is_not_exported_as_research_hint(self):
+        f = fixtures()
+        f[4]["knownFestivals"][0].update(
+            organizer="<script>fake organizer</script>",
+            department="63/69", venue="Festival\nForged",
+        )
+        archival = review(f)["dossiers"][0]["archive_identity_hints"][0]
+        self.assertIsNone(archival["prior_edition_organizer_review_only"])
+        self.assertIsNone(archival["prior_edition_department_review_only"])
+        self.assertIsNone(archival["prior_edition_venue_review_only"])
+        self.assertFalse(archival["organizer_verified_for_future"])
+
+    def test_incorrect_archive_city_and_year_never_borrow_metadata(self):
+        f = fixtures()
+        f[4]["knownFestivals"][0].update(
+            city="Other city", organizer="False Organizer", department="69")
+        self.assertEqual(review(f)["dossiers"][0]["archive_identity_hints"], [])
+        f = fixtures()
+        f[4]["knownFestivals"][0].update(
+            lastKnownYear=2027, startDate="2027-07-23",
+            endDate="2027-07-25", organizer="False Organizer")
+        self.assertEqual(review(f)["dossiers"][0]["archive_identity_hints"], [])
+
     def test_archive_other_region_or_city_not_a_match(self):
         f = fixtures()
         f[4]["knownFestivals"][0]["region"] = "Bretagne"
