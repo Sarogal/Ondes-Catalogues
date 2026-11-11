@@ -351,6 +351,7 @@ def build_review(queue, detail, state, leads, public, history, today):
                             "venue_name_hint": obs["venue"],
                             "official_home": obs["official_home"],
                             "official_home_future_dates_visible": obs["primary_same_dates"],
+                            "organizer_name_home_review_only": obs["organizer_name_on_home_review_only"],
                             "provider_claim": obs["provider"],
                             "institutional_source_url": obs["institutional_url"],
                             "observed_at": obs["last"],

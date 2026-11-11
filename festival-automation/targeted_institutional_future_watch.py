@@ -43,6 +43,7 @@ SOURCES = {
         "city": "Saint-Macaire-en-Mauges",
         "venue": "Salle Thomas Dupouet",
         "provider": "Pôle Tourisme ôsezMauges",
+        "organizer": "Association Mac’N’Roll Metallicus",
     },
 }
 
@@ -71,6 +72,7 @@ def _approved_history(history, today):
         if (row.get("name") != expected["name"]
                 or row.get("region") != expected["region"]
                 or row.get("officialSite") != expected["official_home"]
+                or normalized(row.get("organizer")) != normalized(expected["organizer"])
                 or type(row.get("lastKnownYear")) is not int
                 or row["lastKnownYear"] != expected["archive_year"]
                 or not first <= end < now or end.year != expected["archive_year"]):
@@ -149,6 +151,23 @@ def _exact_dates_near_name(html, source):
     }
 
 
+def _organizer_visible_on_home(html, source):
+    """Explicit current-site organizer phrase; never proof of the 2027 edition.
+
+    Read only the visible body of the already fetched, pinned first-party URL.
+    Exact expected wording is manually reviewed, not supplied by private state.
+    """
+    if source != SOURCES["mauges-pit-fest"]:
+        return False
+    try:
+        text = _archive_visible_text(html)
+    except (TypeError, ValueError):
+        return False  # an unreadable page is not an organizer observation
+    expected = "association mac n roll metallicus presente le mauges pit fest"
+    return re.search(r"(?<![a-z0-9])" + re.escape(expected) +
+                     r"(?![a-z0-9])", text) is not None
+
+
 def _recent(start, end, today):
     try:
         first, last, now = (
@@ -185,6 +204,7 @@ def validated_observations(state, today):
                 or row.get("independence_verified") is not False
                 or row.get("organizer_verified") is not False
                 or type(row.get("first_party_current_date_match")) is not bool
+                or type(row.get("organizer_name_visible_on_home_review_only", False)) is not bool
                 or row.get("provider_claim") != source["provider"]
                 or not _recent(row.get("firstSeen"), row.get("lastSeen"), today)
                 or not isinstance(row.get("visible_text_sha256"), str)
@@ -201,6 +221,9 @@ def validated_observations(state, today):
             "venue": row["venue_name_hint"],
             "first": row["firstSeen"], "last": row["lastSeen"],
             "primary_same_dates": row["first_party_current_date_match"],
+            "organizer_name_on_home_review_only": (
+                source["organizer"] if row.get("organizer_name_visible_on_home_review_only", False)
+                else None),
             "provider": source["provider"],
         })
     return sorted(result, key=lambda x: x["slug"])
@@ -234,12 +257,14 @@ def scan(state, sources, today, fetch=get_page, limit=MAX_CHECKS):
                 continue  # one attempt per festival per day
         observations.pop(slug, None)
         first_party = False
+        organizer_visible = False
         official_status = "NOT_FETCHED"
         inst_status = "UNAVAILABLE"
         try:
             # First-party site is *allowed* but may still advertise 2026.
             primary_html = fetch(source["official_home"])
             first_party = _exact_dates_near_name(primary_html, source) is not None
+            organizer_visible = _organizer_visible_on_home(primary_html, source)
             official_status = ("SAME_DATE_VISIBLE_UNVERIFIED"
                                if first_party else "FUTURE_DATE_NOT_VISIBLE")
         except (OSError, ValueError, UnicodeError, TypeError):
@@ -270,6 +295,7 @@ def scan(state, sources, today, fetch=get_page, limit=MAX_CHECKS):
                 "visible_text_sha256": candidate["visible_text_sha256"],
                 "firstSeen": first, "lastSeen": today,
                 "first_party_current_date_match": first_party,
+                "organizer_name_visible_on_home_review_only": organizer_visible,
                 "provider_claim": source["provider"],
                 "status": STATUS, "publication_authorized": False,
                 "safe_to_publish": False, "festival_verified": False,
