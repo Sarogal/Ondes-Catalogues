@@ -4144,8 +4144,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             not parsed_url.username and not parsed_url.password and
             not parsed_url.port and not parsed_url.query and
             not parsed_url.fragment and
-            event.get("time") is None and
-            not (approval.get("newArtists") or [])
+            event.get("time") is None
         )
         rockstore_auto = (
             venue == "rockstore-montpellier" and
@@ -4685,11 +4684,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Lot national : nouveau groupe possiblement déjà référencé")
     elif (event.get("venueId") == "la-laiterie-strasbourg"
           and reviewer == "automated-official-recheck"):
-        # Keep the previously signed single-artist rule. Multi-bills need
-        # a distinct first-party header + all named artist sections.
         require(laiterie_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "La Laiterie"
-                and 1 <= len(ids) <= 4 and new_artists == []
+                and 1 <= len(ids) <= 4
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "La Laiterie automatique : concert hors périmètre")
         proof = evidence[0]
@@ -4700,32 +4697,59 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     ["artists", "date", "venue", "genre"],
                 "La Laiterie automatique : preuve officielle incorrecte")
         names = proof.get("officialArtistNames")
-        if len(ids) == 1:
-            require(proof.get("sourceStructure") ==
-                        "artefact-single-artist-header-and-artist-section"
-                    and names == [event.get("title")],
-                    "La Laiterie automatique : artiste ou fiche non corroborés")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                        for n in names)
+                and len({norm(n) for n in names}) == len(ids)
+                and event.get("title") == " + ".join(names),
+                "La Laiterie : noms d'artistes officiels incomplets")
+        structure = proof.get("sourceStructure")
+        if structure == "artefact-confirmed-artists-with-unannounced-support":
+            # The missing guest is not an artist. It is not listed in the
+            # public event or silently invented from a slug/biography.
+            require(proof.get("unannouncedSupportLabel") in {
+                        "guest", "special guest", "invite", "invite surprise",
+                        "artiste surprise", "premiere partie", "1ere partie",
+                        "1re partie", "support", "a confirmer", "tba",
+                    }
+                    and len(new_artists) <= 1
+                    and proof.get("verifiedNewArtists") ==
+                        [a["name"] for a in new_artists],
+                    "La Laiterie : invité annoncé ou artiste nouveau non corroboré")
+            known_aliases = {norm(alias)
+                             for a in known_artist_ids.values()
+                             for alias in (a.get("aliases") or [])
+                             if isinstance(alias, str)}
+            require(all(
+                norm(artist["name"]) not in known_aliases
+                and artist["id"] == norm(artist["name"]).replace(" ", "-")
+                for artist in new_artists),
+                "La Laiterie : artiste nouveau en conflit avec une identité existante")
         else:
-            require(proof.get("sourceStructure") ==
-                        "artefact-multi-artist-header-and-sections"
-                    and isinstance(names, list) and len(names) == len(ids)
-                    and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
-                            and not re.search(
-                                r"(?<![a-z0-9])(?:guests?|invites?|"
-                                r"1ere partie|1re partie|tba|a confirmer|"
-                                r"festival|annule|reporte)(?![a-z0-9])",
-                                norm(n)) for n in names)
-                    and len({norm(n) for n in names}) == len(ids)
-                    and event.get("title") == " + ".join(names),
-                    "La Laiterie multi : programmation nominative non vérifiée")
+            require(new_artists == []
+                    and proof.get("unannouncedSupportLabel") is None
+                    and proof.get("verifiedNewArtists") is None,
+                    "La Laiterie : nouveaux artistes non corroborés")
+            if len(ids) == 1:
+                require(structure ==
+                            "artefact-single-artist-header-and-artist-section",
+                        "La Laiterie automatique : artiste ou fiche non corroborés")
+            else:
+                require(structure ==
+                            "artefact-multi-artist-header-and-sections",
+                        "La Laiterie multi : programmation nominative non vérifiée")
         require(all(
-            isinstance(known_artist_ids.get(aid), dict)
-            and norm(known_artist_ids[aid].get("name")) == norm(name)
+            not re.search(
+                r"(?<![a-z0-9])(?:guests?|invites?|surprise|"
+                r"1ere partie|1re partie|premiere partie|tba|a confirmer|"
+                r"festival|annule|reporte)(?![a-z0-9])", norm(name))
+            and isinstance((added.get(aid) or known_artist_ids.get(aid)), dict)
+            and norm((added.get(aid) or known_artist_ids.get(aid))["name"]) ==
+                norm(name)
             for aid, name in zip(ids, names))
-            and event_id == (
-                "go-c-" + event["date"].replace("-", "") +
-                "-strasbourg-" + ids[0]),
-            "La Laiterie automatique : identité artiste ou ID incohérent")
+            and event_id == ("go-c-" + event["date"].replace("-", "") +
+                             "-strasbourg-" + ids[0]),
+            "La Laiterie : identité artiste ou ID incohérent")
         require(norm_date(event.get("date")) > today
                 and event.get("time") is None
                 and len(event.get("genres") or []) == 1
