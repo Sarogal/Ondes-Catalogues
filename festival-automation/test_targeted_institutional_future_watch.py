@@ -4,6 +4,7 @@ import unittest
 
 from targeted_institutional_future_watch import (
     SOURCES, STATUS, _approved_history, _exact_dates_near_name,
+    _organizer_visible_on_home,
     load_sources, scan, validated_observations,
 )
 from national_discovery_queue import build_queue
@@ -23,7 +24,8 @@ INSTITUTIONAL_HTML = (
 OFFICIAL_2026 = (
     "<main><h1>Mauges Pit Fest</h1>"
     "<p>Le 02 octobre 2026 et le 03 octobre 2026 à "
-    "Saint-Macaire-en-Mauges. Programme de 2026, 13 artistes.</p></main>"
+    "Saint-Macaire-en-Mauges. Programme de 2026, 13 artistes.</p>"
+    "<p>L’association Mac’N’Roll Metallicus présente le Mauges Pit Fest.</p></main>"
 )
 OFFICIAL_2027 = (
     "<main><h1>Mauges Pit Fest VI</h1>"
@@ -38,7 +40,8 @@ def history():
          "region": SOURCE["region"], "officialSite": SOURCE["official_home"],
          "lastKnownYear": SOURCE["archive_year"],
          "startDate": "2026-10-02", "endDate": "2026-10-03",
-         "city": SOURCE["city"], "department": "49", "aliases": ["Mauges Pit Fest V"]},
+         "city": SOURCE["city"], "department": "49",
+         "organizer": SOURCE["organizer"], "aliases": ["Mauges Pit Fest V"]},
     ]}
 
 
@@ -103,11 +106,26 @@ class InstitutionalPilotTests(unittest.TestCase):
             {"region": "Normandie"},
             {"lastKnownYear": 2027},
             {"endDate": "2027-10-09"},
+            {"organizer": "Other Association"},
         ):
             altered = history()
             altered["knownFestivals"][0].update(patch)
             with self.subTest(patch=patch), self.assertRaises(ValueError):
                 _approved_history(altered, TODAY)
+
+    def test_current_official_home_names_organizer_without_confirming_2027(self):
+        # The primary homepage still announces 2026 while attributing the
+        # festival to the reviewed association. These are separate facts.
+        self.assertTrue(_organizer_visible_on_home(OFFICIAL_2026, SOURCE))
+        self.assertIsNone(_exact_dates_near_name(OFFICIAL_2026, SOURCE))
+        self.assertFalse(_organizer_visible_on_home(
+            "<main><h1>Mauges Pit Fest</h1><p>Festival 2026.</p>"
+            "<footer>Association Mac'N'Roll Metallicus présente le Mauges Pit Fest</footer>"
+            "</main>", SOURCE))
+        self.assertFalse(_organizer_visible_on_home(
+            "<main><h1>Un autre événement</h1>"
+            "<p>Une autre association présente un autre festival.</p></main>",
+            SOURCE))
 
     def test_visible_named_2027_dates_and_stale_primary_2026(self):
         event = _exact_dates_near_name(INSTITUTIONAL_HTML, SOURCE)
@@ -136,6 +154,7 @@ class InstitutionalPilotTests(unittest.TestCase):
         hints = validated_observations(s, TODAY)
         self.assertEqual(len(hints), 1)
         self.assertFalse(hints[0]["primary_same_dates"])
+        self.assertEqual(hints[0]["organizer_name_on_home_review_only"], SOURCE["organizer"])
         queue, editorial = full_review(s)
         self.assertEqual(queue["candidate_dossiers_count"], 1)
         self.assertEqual(queue["institutional_future_date_dossiers_private"], 1)
@@ -146,6 +165,8 @@ class InstitutionalPilotTests(unittest.TestCase):
         self.assertEqual(row["region_hint"], SOURCE["region"])
         self.assertEqual(row["city_hint"], SOURCE["city"])
         self.assertEqual(row["date_hints"], [])
+        self.assertEqual(row["institutional_future_date_hints_review_only"][0]
+                         ["organizer_name_home_review_only"], SOURCE["organizer"])
         self.assertEqual(row["sources"][0]["kind"],
                          "INSTITUTIONAL_FUTURE_DATE_HINT")
         self.assertFalse(row["publication_authorized"])
@@ -155,6 +176,9 @@ class InstitutionalPilotTests(unittest.TestCase):
         dossier = editorial["dossiers"][0]
         self.assertEqual(dossier["status"],
                          "INSTITUTIONAL_ONLY_FUTURE_DATE_REVIEW")
+        self.assertEqual(dossier["institutional_future_date_hints_review_only"][0]
+                         ["organizer_name_home_review_only"], SOURCE["organizer"])
+        self.assertIn("organizer_identity", dossier["missing_checks"])
         self.assertIn("organizer_site_not_yet_confirming_future_dates",
                       dossier["missing_checks"])
         self.assertIn("institutional_syndication_not_independent_confirmation",
@@ -226,6 +250,7 @@ class InstitutionalPilotTests(unittest.TestCase):
             {"city_name_hint": "Lyon"},
             {"provider_claim": "Official Organizer"},
             {"visible_text_sha256": {"not": "a digest"}},
+            {"organizer_name_visible_on_home_review_only": "FORGED ORGANIZER"},
         ):
             with self.subTest(patch=patch):
                 s["institutional_future_date_observations_private"] = deepcopy(pristine)
