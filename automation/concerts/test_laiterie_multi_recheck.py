@@ -69,8 +69,6 @@ class LaiterieMultiTests(unittest.TestCase):
 
     def test_unidentified_unsupported_and_contradictory_bills_are_held(self):
         variants = [
-            TWO.replace("+ 7WEEKS", "+ Guest").replace("<h2>7WEEKS</h2>",
-                                                           "<h2>Guest</h2>"),
             TWO.replace("+ 7WEEKS", "+ 1ère partie").replace("<h2>7WEEKS</h2>",
                                                               "<h2>1ère partie</h2>"),
             TWO.replace("<h2>7WEEKS</h2><h2>On vous recommande",
@@ -87,6 +85,57 @@ class LaiterieMultiTests(unittest.TestCase):
         for page in variants:
             with self.subTest(page=page[:100]), self.assertRaises(ValueError):
                 verifier.verify(candidate(), page, two_catalogue(), TODAY)
+
+
+    def test_partial_unknown_guest_creates_only_headliner_when_new(self):
+        page = TWO.replace(
+            "<h1>PETER HOOK & THE LIGHT</h1><h2>+ 7WEEKS</h2>",
+            "<h1>ARCHIVE</h1><h2>+ Guest</h2>",
+        ).replace("<h2>PETER HOOK & THE LIGHT</h2>",
+                  "<h2>ARCHIVE</h2>").replace(
+            "<h2>7WEEKS</h2><h2>On vous recommande</h2>",
+            "<h2>Guest</h2><h2>On vous recommande</h2>",
+        )
+        cat = catalogue()  # ARCHIVE deliberately absent from artists.
+        row = adapter.details(page, URL, SOURCE, TODAY.isoformat())
+        row.update({"reviewBucket": "genre_tag_review",
+                    "possibleExistingConcert": False})
+        approval = verifier.verify(row, page, cat, TODAY)
+        self.assertEqual(approval["event"]["artistIds"], ["archive"])
+        self.assertEqual(approval["event"]["title"], "ARCHIVE")
+        self.assertEqual(approval["newArtists"], [{"id": "archive", "name": "ARCHIVE"}])
+        self.assertEqual(approval["officialEvidence"][0]["verifiedNewArtists"],
+                         ["ARCHIVE"])
+        published, new_artists = publisher.validate_approval(
+            approval, {v["id"]: v for v in cat["venues"]},
+            {a["id"]: a for a in cat["artists"]}, TODAY)
+        self.assertEqual(published["title"], "ARCHIVE")
+        self.assertEqual(list(new_artists), ["archive"])
+
+    def test_guest_placeholder_does_not_hide_a_real_missing_artist(self):
+        page = TWO.replace("+ 7WEEKS", "+ Guest").replace(
+            "<h2>7WEEKS</h2><h2>On vous recommande",
+            "<h2>7WEEKS</h2><h2>Guest</h2><h2>On vous recommande",
+        )
+        with self.assertRaises(ValueError):
+            verifier.verify(candidate(page), page, two_catalogue(), TODAY)
+
+    def test_guest_proof_tampering_rejected_by_real_publisher(self):
+        page = TWO.replace("+ 7WEEKS", "+ Guest").replace(
+            "<h2>7WEEKS</h2><h2>On vous recommande",
+            "<h2>Guest</h2><h2>On vous recommande",
+        )
+        approval = verifier.verify(candidate(page), page, two_catalogue(), TODAY)
+        for field, value in (
+            ("sourceStructure", verifier.STRUCTURE),
+            ("unannouncedSupportLabel", "festival"),
+            ("officialArtistNames", ["Peter Hook and The Light", "Guest"]),
+            ("verifiedNewArtists", ["Ghost"]),
+        ):
+            row = copy.deepcopy(approval)
+            row["officialEvidence"][0][field] = value
+            with self.subTest(field=field), self.assertRaises((ValueError, KeyError)):
+                publisher_check(row)
 
     def test_unknown_artist_and_existing_event_are_not_silently_added(self):
         c = two_catalogue()
