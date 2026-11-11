@@ -1,7 +1,7 @@
-"""Strict independent recheck of La Laiterie first-party single-artist concerts.
+"""Strict independent recheck of La Laiterie named first-party concert bills.
 
 Only a second retrieval of the EXACT official detail page may sign a date:
-one canonical EXISTING artist, no undisclosed support or guest, a single
+one to four canonical EXISTING artists, no undisclosed support or guest, a single
 official event date and an explicit relevant genre. Never infer door times.
 """
 from __future__ import annotations
@@ -15,8 +15,9 @@ import triage
 SOURCE = "agenda_officiel_laiterie_detail_review"
 VENUE_ID = "la-laiterie-strasbourg"
 STRUCTURE = "artefact-single-artist-header-and-artist-section"
+MULTI_STRUCTURE = "artefact-multi-artist-header-and-sections"
 UNKNOWN = re.compile(
-    r"(?<![a-z0-9])(?:guest|invite|special guest|first part|premiere partie|"
+    r"(?<![a-z0-9])(?:guests?|invites?|special guests?|first part|premiere partie|1ere partie|1re partie|"
     r"support|featuring|feat|ft|tba|a confirmer|festival|dj set|tribute|"
     r"annule|report[eé]|postponed|cancelled)(?![a-z0-9])", re.I
 )
@@ -53,7 +54,8 @@ def explicit_genre(tag):
     raise ValueError("Genre rock/punk/metal explicite absent de la fiche")
 
 
-def official_single_artist_section(html):
+def official_artist_sections(html):
+    """Read only the Artistes section, not biography or recommendations."""
     doc = source._Extract()
     doc.feed(html)
     headings = [(kind, title) for kind, title, _ in doc.headings]
@@ -68,9 +70,23 @@ def official_single_artist_section(html):
                     "on vous recommande", "nos recommandations", "a decouvrir",
                 )), len(headings))
     lineup = [t for k, t in headings[begin:end] if k == "h2" and t.strip()]
-    if len(lineup) != 1:
+    normalized = [canonical_words(name) for name in lineup]
+    if (not 1 <= len(lineup) <= 4
+            or len(set(normalized)) != len(lineup)
+            or any(not 3 <= len(name) <= 100
+                   or UNKNOWN.search(triage.words(raw))
+                   for name, raw in zip(normalized, lineup))):
+        raise ValueError("Programmation officielle incomplète, ambiguë ou non nominative")
+    return lineup
+
+
+def official_single_artist_section(html):
+    """Keep the existing single-artist contract available."""
+    names = official_artist_sections(html)
+    if len(names) != 1:
         raise ValueError("Plusieurs artistes ou programmation incomplète")
-    return lineup[0]
+    return names[0]
+
 
 
 def verify(candidate, html, catalogue, today):
@@ -104,39 +120,55 @@ def verify(candidate, html, catalogue, today):
     if fresh["date"] <= today.isoformat() or fresh.get("localTime") is not None:
         raise ValueError("Date passée ou horaire non fiable")
     title = fresh["name"]
-    if (re.search(r"\s+\+\s+|\s+/\s+|\s+with\s+", title, re.I)
-            or UNKNOWN.search(triage.words(title))):
-        raise ValueError("Plusieurs artistes ou invité non identifié")
-    if canonical_words(official_single_artist_section(html)) != canonical_words(title):
-        raise ValueError("L'artiste officiel ne correspond pas à l'affiche")
+    if UNKNOWN.search(triage.words(title)):
+        raise ValueError("Invité, première partie ou statut non identifié")
+    # Only split explicit event-header "+" separators, never band-name "&".
+    parts = [name.strip() for name in re.split(r"\s+\+\s+", title)]
+    normalized = [canonical_words(name) for name in parts]
+    if (not 1 <= len(parts) <= 4 or any(len(name) < 3 for name in normalized)
+            or len(set(normalized)) != len(parts)
+            or normalized[0] != canonical_words(fresh["leadArtist"])):
+        raise ValueError("Affiche officielle incomplète ou artistes ambigus")
+    # All names must be repeated in the event's own Artistes H2s, in order.
+    sections = official_artist_sections(html)
+    if (len(sections) != len(parts)
+            or any(canonical_words(a) != canonical_words(b)
+                   for a, b in zip(parts, sections))):
+        raise ValueError("Programmation nominative non corroborée dans la fiche")
     if not isinstance(catalogue, dict) or any(
         not isinstance(catalogue.get(x), list)
         for x in ("venues", "events", "artists")
     ):
         raise ValueError("Catalogue incomplet")
-    matches = [x for x in catalogue["artists"]
-               if canonical_words(x.get("name")) == canonical_words(title)
-               and isinstance(x.get("id"), str)]
-    if len(matches) != 1:
-        raise ValueError("Un artiste canonique déjà connu est obligatoire")
-    performer = matches[0]
+    performers = []
+    for name in parts:
+        matches = [a for a in catalogue["artists"]
+                   if canonical_words(a.get("name")) == canonical_words(name)
+                   and isinstance(a.get("id"), str)]
+        if len(matches) != 1:
+            raise ValueError("Un artiste canonique déjà connu est obligatoire")
+        performers.append(matches[0])
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
     if (len(venues) != 1 or triage.words(venues[0].get("city")) != "strasbourg"
             or not all(venues[0].get(x) is not None
                        for x in ("latitude", "longitude"))):
         raise ValueError("Salle et géolocalisation officielles ambiguës")
     genre = explicit_genre(fresh["classification"][0])
-    artist_id = performer["id"]
-    if (not re.fullmatch(r"[a-z0-9-]{3,100}", artist_id)
+    ids = [a["id"] for a in performers]
+    if (len(set(ids)) != len(ids)
+            or any(not re.fullmatch(r"[a-z0-9-]{3,100}", artist_id)
+                   for artist_id in ids)
             or any(e.get("officialUrl") == url or
                    (e.get("date") == fresh["date"]
                     and e.get("venueId") == VENUE_ID
-                    and artist_id in e.get("artistIds", []))
+                    and set(ids) & set(e.get("artistIds") or []))
                    for e in catalogue["events"])):
         raise ValueError("Identité artistique invalide ou concert déjà connu")
-    event_id = "go-c-" + fresh["date"].replace("-", "") + "-strasbourg-" + artist_id
+    event_id = "go-c-" + fresh["date"].replace("-", "") + "-strasbourg-" + ids[0]
     if len(event_id) > 150 or any(e.get("id") == event_id for e in catalogue["events"]):
         raise ValueError("Collision d'identifiant")
+    names = [a["name"] for a in performers]
+    bill_title = " + ".join(names)
     return {
         "reviewDecision": "approved",
         "reviewedBy": "automated-official-recheck",
@@ -146,13 +178,13 @@ def verify(candidate, html, catalogue, today):
             "proofType": "official-organizer-or-venue",
             "checkedAt": today.isoformat(),
             "checkedFields": ["artists", "date", "venue", "genre"],
-            "officialArtistNames": [performer["name"]],
-            "sourceStructure": STRUCTURE,
+            "officialArtistNames": names,
+            "sourceStructure": STRUCTURE if len(ids) == 1 else MULTI_STRUCTURE,
         }],
         "event": {
-            "id": event_id, "title": performer["name"],
+            "id": event_id, "title": bill_title,
             "date": fresh["date"], "time": None,
-            "artistIds": [artist_id], "venueId": VENUE_ID,
+            "artistIds": ids, "venueId": VENUE_ID,
             "genres": [genre], "status": "confirmed",
             "officialUrl": url, "sourceType": "salle",
             "organizer": "La Laiterie",
