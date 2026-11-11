@@ -3,7 +3,9 @@ import datetime as dt
 import sys
 import unittest
 from pathlib import Path
-sys.path.insert(0,str(Path(__file__).resolve().parent))
+the_path = Path(__file__).resolve().parent
+sys.path.insert(0, str(the_path))
+sys.path.insert(0, str(the_path.parents[1] / "scripts"))
 import molotov_official as m
 
 PAGE = """<article>
@@ -79,9 +81,61 @@ class MolotovRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             m.verify(candidate(),PAGE.replace("Band Alpha + Band Beta",
                     "Festival Band Alpha + Band Beta"),catalogue(),dt.date(2026,11,1))
-        with self.assertRaises(ValueError):
-            m.verify(candidate(),PAGE.replace("Band Alpha + Band Beta",
-                    "Band Alpha + Guest"),catalogue(),dt.date(2026,11,1))
+
+
+    def test_known_headliner_and_guest_are_approvable_as_main_act(self):
+        from concerts_cloud_sync import validate_approval
+        page = PAGE.replace("Band Alpha + Band Beta", "Band Alpha + Guest")
+        item = candidate()
+        item["name"] = "Band Alpha + Guest"
+        cat = catalogue()
+        checked = m.verify(item, page, cat, dt.date(2026, 11, 1))
+        self.assertEqual(checked["event"]["artistIds"], ["band-alpha"])
+        self.assertEqual(checked["event"]["title"], "Band Alpha")
+        self.assertEqual(checked["newArtists"], [])
+        self.assertEqual(
+            checked["officialEvidence"][0]["unannouncedSupportLabel"], "guest")
+        approved, added = validate_approval(
+            checked, {x["id"]: x for x in cat["venues"]},
+            {x["id"]: x for x in cat["artists"]}, dt.date(2026, 11, 1))
+        self.assertEqual(approved["artistIds"], ["band-alpha"])
+        self.assertEqual(added, {})
+
+    def test_guest_in_the_middle_and_unconfirmed_headliner_fail(self):
+        for title in ("Guest + Band Alpha",
+                      "Band Alpha + Guest + Band Beta",
+                      "Festival Band Alpha + Guest"):
+            page = PAGE.replace("Band Alpha + Band Beta", title)
+            item = candidate()
+            item["name"] = title
+            with self.subTest(title=title), self.assertRaises(ValueError):
+                m.verify(item, page, catalogue(), dt.date(2026, 11, 1))
+        page = PAGE.replace("Band Alpha + Band Beta", "Unknown Main + Guest")
+        item = candidate()
+        item["name"] = "Unknown Main + Guest"
+        with self.assertRaisesRegex(ValueError, "Artiste absent"):
+            m.verify(item, page, catalogue(), dt.date(2026, 11, 1))
+
+    def test_publisher_rejects_guest_proof_tampering(self):
+        import copy
+        from concerts_cloud_sync import validate_approval
+        page = PAGE.replace("Band Alpha + Band Beta", "Band Alpha + Guest")
+        item = candidate()
+        item["name"] = "Band Alpha + Guest"
+        cat = catalogue()
+        row = m.verify(item, page, cat, dt.date(2026, 11, 1))
+        for key, value in (
+                ("unannouncedSupportLabel", "festival"),
+                ("sourceStructure", "generic-event"),
+                ("officialArtistNames", ["Guest"]),
+        ):
+            wrong = copy.deepcopy(row)
+            wrong["officialEvidence"][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                validate_approval(
+                    wrong, {x["id"]: x for x in cat["venues"]},
+                    {x["id"]: x for x in cat["artists"]},
+                    dt.date(2026, 11, 1))
 
     def test_duplicate_is_held(self):
         c=catalogue();c["events"]=[{"id":"already","date":"2026-11-13",

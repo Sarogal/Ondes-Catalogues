@@ -26,6 +26,33 @@ ALLOWED = GENRES | {"alt metal", "melodic death metal", "modern metal",
                     "punk hxc", "grunge", "progressive metal", "groove metal"}
 
 
+
+UNANNOUNCED_SUPPORT = frozenset({
+    "guest", "special guest", "invite", "invite surprise", "artiste surprise",
+    "premiere partie", "1ere partie", "1re partie", "support",
+    "a confirmer", "tba", "surprise",
+})
+PARTIAL_STRUCTURE = "molotov-first-party-bill-with-unannounced-support"
+
+
+def confirmed_bill(title):
+    """Keep only named artists, and omit an exact trailing guest placeholder."""
+    # Only a + separator may introduce an unknown guest, never a text
+    # fragment of a band's proper name. This is NOT a generic title cleaner.
+    parts = [x.strip() for x in re.split(r"\s+\+\s+", title)]
+    unknown = norm(parts[-1]) if len(parts) >= 2 else None
+    if unknown in UNANNOUNCED_SUPPORT:
+        named = parts[:-1]
+        if (not 1 <= len(named) <= 4
+                or len({norm(x) for x in named}) != len(named)
+                or any(len(norm(x)) < 3 or BANNED.search(norm(x))
+                       for x in named)):
+            raise ValueError("Affiche principale invalide ou invitée ambiguë")
+        return named, unknown
+    # Retain the established strict path for fully named official bills.
+    return artist_names(title), None
+
+
 class Headings(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -113,9 +140,7 @@ def verify(candidate, page, catalogue, today):
         raise ValueError("Date modifiée, passée ou imminente")
     if not (detail["genreTags"] & {norm(g) for g in candidate.get("classification") or []}):
         raise ValueError("Genres contradictoires")
-    if BANNED.search(norm(detail["title"])):
-        raise ValueError("Affiche incomplète, annulée ou festival")
-    parts = artist_names(detail["title"])
+    parts, unannounced = confirmed_bill(detail["title"])
     artists_by_norm = {}
     for artist in catalogue.get("artists", []):
         artists_by_norm.setdefault(norm(artist["name"]), []).append(artist["id"])
@@ -137,16 +162,24 @@ def verify(candidate, page, catalogue, today):
     event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + slug(parts[0])
     if any(e["id"] == event_id for e in catalogue.get("events", [])):
         raise ValueError("Identifiant d'événement déjà utilisé")
+    proof = {
+        "url": url, "proofType": "official-organizer-or-venue",
+        "checkedAt": today.isoformat(),
+        "checkedFields": ["artists", "date", "venue", "genre"],
+        "notes": "Fiche individuelle officielle Molotov : titre, date, salle et genres vérifiés.",
+    }
+    if unannounced:
+        proof.update({
+            "officialArtistNames": [next(a["name"] for a in catalogue["artists"]
+                                         if a["id"] == artist_id) for artist_id in ids],
+            "sourceStructure": PARTIAL_STRUCTURE,
+            "unannouncedSupportLabel": unannounced,
+        })
     return {
         "reviewDecision": "approved", "reviewedBy": "automated-official-recheck",
         "reviewedAt": today.isoformat(),
-        "officialEvidence": [{
-            "url": url, "proofType": "official-organizer-or-venue",
-            "checkedAt": today.isoformat(),
-            "checkedFields": ["artists", "date", "venue", "genre"],
-            "notes": "Fiche officielle Molotov : titre, date, salle et genres vérifiés séparément."
-        }],
-        "event": {"id": event_id, "title": detail["title"],
+        "officialEvidence": [proof],
+        "event": {"id": event_id, "title": " + ".join(proof["officialArtistNames"]) if unannounced else detail["title"],
                   "date": detail["date"], "time": None,
                   "artistIds": ids, "venueId": VENUE,
                   "genres": detail["genres"], "status": "confirmed",
