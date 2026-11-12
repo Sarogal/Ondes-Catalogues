@@ -124,6 +124,55 @@ class YieldTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             diagnose(self.state(), current, TODAY, old)
 
+    def test_new_first_party_date_clues_are_private_progress(self):
+        from targeted_first_party_edition_watch import SOURCES as OFFICIAL
+        old = self.comparable("2026-11-08")
+        current = self.comparable()
+        row = current["dossiers"][0]
+        official = OFFICIAL["les-gueules-de-bois"]
+        row["first_party_edition_date_claims_review_only"] = [{
+            "source_url": official["url"], "observed_at": TODAY,
+            "claims": [{
+                "claim_id": "winter",
+                "start_date_hint": "2027-02-13",
+                "end_date_hint": "2027-02-13",
+                "season_hint": "winter", "review_only": True,
+                "edition_dates_verified": False, "organizer_verified": False,
+                "independence_verified": False, "publication_authorized": False,
+            }],
+            "review_only": True, "edition_dates_verified": False,
+            "organizer_verified": False, "independence_verified": False,
+            "publication_authorized": False,
+        }]
+        progress = diagnose(self.state(), current, TODAY, old)[
+            "progress_since_previous_review"]
+        self.assertEqual(progress["evidence_gained_dossiers"], 1)
+        self.assertEqual(progress["changed_dossiers"][0]["evidence_added"],
+                         ["first_party_website_date_claim"])
+        self.assertEqual(progress["blockers_removed_dossiers"], 0)
+        self.assertFalse(current["dossiers"][0]["publication_authorized"])
+
+    def test_unapproved_official_date_confirmation_fails_closed(self):
+        from targeted_first_party_edition_watch import SOURCES as OFFICIAL
+        old = self.comparable("2026-11-08")
+        current = self.comparable()
+        old["dossiers"][0]["first_party_edition_date_claims_review_only"] = [{
+            "source_url": OFFICIAL["les-gueules-de-bois"]["url"],
+            "observed_at": TODAY,
+            "claims": [{
+                "start_date_hint": "2027-02-13",
+                "end_date_hint": "2027-02-13",
+                "season_hint": "winter", "review_only": True,
+                "edition_dates_verified": True, "organizer_verified": False,
+                "independence_verified": False, "publication_authorized": False,
+            }],
+            "review_only": True, "edition_dates_verified": False,
+            "organizer_verified": False, "independence_verified": False,
+            "publication_authorized": False,
+        }]
+        with self.assertRaises(ValueError):
+            diagnose(self.state(), current, TODAY, old)
+
     def test_repeat_observation_date_is_not_progress(self):
         old = self.comparable("2026-11-08")
         current = self.comparable()

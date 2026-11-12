@@ -133,6 +133,36 @@ def _signals(row):
             if field.startswith("institutional") and hint.get(
                     "organizer_name_home_review_only"):
                 research.add(("current_home_organizer_name_hint",))
+    first_party = row.get("first_party_edition_date_claims_review_only", [])
+    if not isinstance(first_party, list) or len(first_party) > 2:
+        raise ValueError("invalid private first-party claim list")
+    from targeted_first_party_edition_watch import SOURCES as APPROVED_FIRST_PARTY
+    official_urls = {item["url"] for item in APPROVED_FIRST_PARTY.values()}
+    for source in first_party:
+        if (not isinstance(source, dict)
+                or source.get("source_url") not in official_urls
+                or source.get("review_only") is not True
+                or source.get("edition_dates_verified") is not False
+                or source.get("organizer_verified") is not False
+                or source.get("independence_verified") is not False
+                or source.get("publication_authorized") is not False):
+            raise ValueError("unsafe first-party source for comparison")
+        claims = source.get("claims")
+        if not isinstance(claims, list) or len(claims) > 2:
+            raise ValueError("invalid first-party claims")
+        for claim in claims:
+            if (not isinstance(claim, dict)
+                    or claim.get("review_only") is not True
+                    or claim.get("edition_dates_verified") is not False
+                    or claim.get("organizer_verified") is not False
+                    or claim.get("independence_verified") is not False
+                    or claim.get("publication_authorized") is not False):
+                raise ValueError("unsafe first-party claim")
+            start, end = claim.get("start_date_hint"), claim.get("end_date_hint")
+            date.fromisoformat(start)
+            date.fromisoformat(end)
+            evidence.add(("first_party_website_date_claim", source["source_url"],
+                          start, end, claim.get("season_hint")))
     press = row.get("press_date_observations_review_only", [])
     if not isinstance(press, list) or len(press) > 4:
         raise ValueError("invalid private press evidence")

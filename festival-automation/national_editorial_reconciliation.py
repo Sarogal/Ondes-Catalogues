@@ -327,6 +327,10 @@ def build_review(queue, detail, state, leads, public, history, today):
     # evidence of independently established provenance or publication approval.
     from targeted_press_edition_watch import validated_observations as press_observations
     private_press = press_observations(state, today)
+    from targeted_first_party_edition_watch import (
+        validated_observations as first_party_observations,
+    )
+    private_first_party = first_party_observations(state, today)
     result, proposed, seen = [], [], set()
     for dossier in queue["dossiers"]:
         if (not isinstance(dossier, dict)
@@ -362,6 +366,38 @@ def build_review(queue, detail, state, leads, public, history, today):
                 and any(int(claim["start_date_hint"][:4]) ==
                         dossier["edition_year_hint"] for claim in item["claims"]))
         ]
+        first_party_reviews = [
+            {
+                "source_url": item["url"],
+                "observed_at": item["observed_at"],
+                "claims": item["claims"],
+                "review_only": True,
+                "edition_dates_verified": False,
+                "organizer_verified": False,
+                "independence_verified": False,
+                "publication_authorized": False,
+            }
+            for item in private_first_party
+            if (item["slug"] in archive_slugs
+                and item["name"] == dossier["name_hint"]
+                and item["region"] == dossier["region_hint"]
+                and item["year"] == dossier["edition_year_hint"])
+        ]
+        primary_dates = {
+            (claim["start_date_hint"], claim["end_date_hint"])
+            for item in first_party_reviews for claim in item["claims"]
+        }
+        press_dates = {
+            (claim["start_date_hint"], claim["end_date_hint"])
+            for item in press_review for claim in item["claims"]
+        }
+        # A generic same-year public match cannot swallow a second season.
+        uncovered_first_party_dates = _uncovered_homepage_dates(
+            dossier, [claim for item in first_party_reviews
+                      for claim in item["claims"]], public["festivals"])
+        concordant_dates = sorted(primary_dates & press_dates)
+        conflicting_press_dates = bool(
+            primary_dates and press_dates and press_dates - primary_dates)
         exact, conflicting = _public_matches(dossier, public["festivals"])
         city_variants = _published_city_variants(dossier, public["festivals"])
         primary = _primary_proof(dossier, leads, state, today)
@@ -431,7 +467,8 @@ def build_review(queue, detail, state, leads, public, history, today):
         event_clues = [hint for row in detail_clues
                        for hint in row.get("structured_event_clues_private", [])]
         ambiguous_history = len(archival) > 1
-        if exact and (uncovered_archive_dates or uncovered_institutional):
+        if exact and (uncovered_archive_dates or uncovered_institutional
+                      or uncovered_first_party_dates):
             status = "POTENTIAL_CONFLICT_REVIEW"
         elif exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
@@ -446,6 +483,12 @@ def build_review(queue, detail, state, leads, public, history, today):
                       if any(x["official_home_future_dates_visible"]
                              for x in accepted_institutional)
                       else "INSTITUTIONAL_ONLY_FUTURE_DATE_REVIEW")
+        elif first_party_reviews:
+            status = ("FIRST_PARTY_AND_PRESS_DATE_REVIEW"
+                      if concordant_dates and not conflicting_press_dates
+                      else "FIRST_PARTY_DATE_CONFLICT_REVIEW"
+                      if conflicting_press_dates
+                      else "FIRST_PARTY_VISIBLE_DATE_REVIEW")
         elif accepted_archive_hints:
             status = "ARCHIVAL_VISIBLE_DATE_HINT_REVIEW"
         elif press_review:
@@ -455,10 +498,14 @@ def build_review(queue, detail, state, leads, public, history, today):
         blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
                   "independent_date_confirmation", "coordinates_review",
                   "lineup_review", "ticketing_review", "duplicate_review"]
-        if not primary:
+        if not primary and not first_party_reviews:
             blocks.append("first_party_date_observation_missing")
-        if not detail_clues and not primary:
+        if not detail_clues and not primary and not first_party_reviews:
             blocks.append("edition_detail_proof_missing")
+        if first_party_reviews:
+            blocks.append("first_party_website_claim_requires_editorial_confirmation")
+        if conflicting_press_dates:
+            blocks.append("press_and_first_party_dates_conflict_review")
         if accepted_institutional:
             blocks.append("institutional_syndication_not_independent_confirmation")
             blocks.append("institutional_future_dates_require_editorial_review")
@@ -475,7 +522,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("edition_year_unknown")
         if exact:
             blocks.append("already_published_edition")
-        if exact and (uncovered_archive_dates or uncovered_institutional):
+        if exact and (uncovered_archive_dates or uncovered_institutional
+                      or uncovered_first_party_dates):
             blocks.append("published_same_year_may_hide_other_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
@@ -500,6 +548,15 @@ def build_review(queue, detail, state, leads, public, history, today):
             "regional_detail_observations": detail_clues,
             "historical_homepage_date_hints_review_only": accepted_archive_hints,
             "press_date_observations_review_only": press_review,
+            "first_party_edition_date_claims_review_only": first_party_reviews,
+            "first_party_uncovered_date_claims_review_only": uncovered_first_party_dates,
+            "first_party_press_same_dates_review_only": [
+                {"start_date_hint": start, "end_date_hint": end,
+                 "independence_verified": False,
+                 "edition_dates_verified": False,
+                 "publication_authorized": False}
+                for start, end in concordant_dates
+            ],
             "historical_homepage_uncovered_dates_review_only": uncovered_archive_dates,
             "institutional_future_date_hints_review_only": accepted_institutional,
             "institutional_future_uncovered_dates_review_only": uncovered_institutional,
@@ -554,6 +611,15 @@ def build_review(queue, detail, state, leads, public, history, today):
         "historical_homepage_uncovered_date_hints_private": sum(
             len(x["historical_homepage_uncovered_dates_review_only"])
             for x in result),
+        "first_party_date_claim_dossiers_private": sum(
+            bool(x["first_party_edition_date_claims_review_only"]) for x in result),
+        "first_party_date_claims_private": sum(
+            len(obs["claims"]) for row in result
+            for obs in row["first_party_edition_date_claims_review_only"]),
+        "first_party_press_agreement_dates_private": sum(
+            len(x["first_party_press_same_dates_review_only"]) for x in result),
+        "first_party_uncovered_date_claims_private": sum(
+            len(x["first_party_uncovered_date_claims_review_only"]) for x in result),
         "press_date_claim_dossiers_private": sum(
             bool(x["press_date_observations_review_only"]) for x in result),
         "press_date_claims_private": sum(
