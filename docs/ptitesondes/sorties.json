@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-12T18:37:23+01:00",
+  "updated_at": "2026-11-12T20:30:28+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -11063,6 +11063,26 @@
       "geo_precision": "venue",
       "lat": 43.3686591,
       "lng": 5.3520638
+    },
+    {
+      "id": "openagenda-72564039-2027-01-16",
+      "title": "Éveil musical",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2027-01-16",
+      "date_end": "2027-01-16",
+      "time": "09:15",
+      "city": "Marseille",
+      "department": "Bouches-du-Rhône",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "venue": "Bibliothèque des Cinq-Avenues",
+      "source_url": "https://openagenda.com/fr/bibliotheques-de-territoire-marseille/events/72564039_eveil-musical-5308743",
+      "source_label": "Bibliothèques de territoire - Ville de Marseille",
+      "verified_at": "2026-11-12",
+      "geo_verified_at": "2026-11-12",
+      "geo_precision": "venue",
+      "lat": 43.302307,
+      "lng": 5.396262
     }
   ]
 }
