@@ -284,7 +284,7 @@ class MolotovRecheckTests(unittest.TestCase):
                          [2, 2])
         checked, new = validate_approval(
             row, {x["id"]:x for x in c["venues"]}, {}, dt.date(2026,11,12))
-        self.assertEqual(checked["artistIds"], ["prish", "mirabelle"])
+        self.assertEqual(checked["artistIds"], ["paerish", "mirabelle"])
         self.assertEqual(set(new), {"paerish", "mirabelle"})
         self.assertIsNone(checked["time"])
 
