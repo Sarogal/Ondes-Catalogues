@@ -54,7 +54,21 @@ jobs:
               print("STAGE schema_checked", "pass" if ok else "fail")
               if not ok: raise ValueError("schéma public refusé : "+why)
               ok,why=verify_event(event,baseline["events"])
-              print("STAGE organizer_checked", "pass" if ok else "fail")
+              safe_reasons = (
+                ("preuve secondaire inaccessible", "secondary_network"),
+                ("titre du spectacle absent", "secondary_heading"),
+                ("destination jeune public", "secondary_audience"),
+                ("adresse et ville", "secondary_address"),
+                ("séance datée et horaire", "secondary_date"),
+                ("musique ou conditions", "secondary_music_price"),
+                ("séance hors saison", "secondary_season"),
+                ("jour ou heure", "secondary_time"),
+                ("page", "source_page"),
+                ("URL", "source_url"),
+              )
+              code=next((tag for pattern,tag in safe_reasons
+                        if pattern.casefold() in str(why).casefold()), "other")
+              print("STAGE organizer_checked", "pass" if ok else "fail", code)
               if not ok: raise ValueError("preuve organisateur refusée : "+why)
           print("2 preuves strictes de dates contrôlées, sans publication")
           PY
