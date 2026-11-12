@@ -65,6 +65,66 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["exclusiveBlockingReasons"]["verified_adapter_not_available"], 1)
         self.assertEqual(out["readyForIndependentRecheck"], 0)
 
+    def test_molotov_rex_backstage_do_not_require_discovery_detail_flag(self):
+        # Their actual recheck contracts fetch the official individual page;
+        # the registry's discovery-only flag must not hide them as blockers.
+        sources = (
+            "agenda_officiel_molotov_genre",
+            "agenda_officiel_rex_genre",
+            "agenda_officiel_backstage_detail",
+        )
+        r, a, c = fixtures(*(row("candidate-" + str(i), source=source,
+                                  officialDetailFound=False)
+                              for i, source in enumerate(sources)))
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        self.assertEqual(out["readyForIndependentRecheck"], 3)
+        self.assertEqual(out["stableCandidatesInSupportedSourceQueue"], 3)
+        self.assertEqual(out["privateApprovedEventsTotal"], 0)
+        for source in sources:
+            self.assertEqual(out["sourceBlockingReasons"][source],
+                             {"ready_for_independent_recheck": 1})
+        self.assertNotIn("missing_first_party_detail_evidence",
+                         out["exclusiveBlockingReasons"])
+
+    def test_detail_required_adapters_stay_held_without_discovery_flag(self):
+        sources = sorted(f.DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES)
+        r, a, c = fixtures(*(row("required-" + str(i), source=source,
+                                  officialDetailFound=False)
+                              for i, source in enumerate(sources)))
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        self.assertEqual(out["readyForIndependentRecheck"], 0)
+        self.assertEqual(
+            out["exclusiveBlockingReasons"]["missing_first_party_detail_evidence"],
+            len(sources))
+        for source in sources:
+            self.assertEqual(out["sourceBlockingReasons"][source],
+                             {"missing_first_party_detail_evidence": 1})
+
+    def test_private_source_blocker_matrix_is_exclusive_and_anonymized(self):
+        r, a, c = fixtures(
+            row("private-molotov-123",
+                source="agenda_officiel_molotov_genre",
+                officialDetailFound=False),
+            row("private-rex-456",
+                source="agenda_officiel_rex_genre",
+                reviewBucket="genre_unknown"),
+            row("private-molotov-789",
+                source="agenda_officiel_molotov_genre",
+                _record={"stableObservations": 1}),
+        )
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        matrix = out["sourceBlockingReasons"]
+        self.assertEqual(sum(sum(k.values()) for k in matrix.values()), 3)
+        self.assertEqual(matrix["agenda_officiel_molotov_genre"],
+                         {"ready_for_independent_recheck": 1,
+                          "awaiting_distinct_day_stability": 1})
+        self.assertEqual(matrix["agenda_officiel_rex_genre"],
+                         {"musical_genre_unconfirmed": 1})
+        self.assertEqual(out["readyForIndependentRecheck"], 1)
+        self.assertNotIn("private-molotov-123", str(matrix))
+        self.assertNotIn("official.example", str(matrix))
+        self.assertIs(out["publicationAllowed"], False)
+
     def test_bateau_official_recheck_is_counted_after_adapter_activation(self):
         r, a, c = fixtures(row("bateau", source="bateau_ivre_official_detail_review"))
         out = f.build(r, a, c, dt.date(2026, 11, 9))
