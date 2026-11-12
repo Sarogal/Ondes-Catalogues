@@ -391,6 +391,10 @@ def build_review(queue, detail, state, leads, public, history, today):
             (claim["start_date_hint"], claim["end_date_hint"])
             for item in press_review for claim in item["claims"]
         }
+        # A generic same-year public match cannot swallow a second season.
+        uncovered_first_party_dates = _uncovered_homepage_dates(
+            dossier, [claim for item in first_party_reviews
+                      for claim in item["claims"]], public["festivals"])
         concordant_dates = sorted(primary_dates & press_dates)
         conflicting_press_dates = bool(
             primary_dates and press_dates and press_dates - primary_dates)
@@ -463,7 +467,8 @@ def build_review(queue, detail, state, leads, public, history, today):
         event_clues = [hint for row in detail_clues
                        for hint in row.get("structured_event_clues_private", [])]
         ambiguous_history = len(archival) > 1
-        if exact and (uncovered_archive_dates or uncovered_institutional):
+        if exact and (uncovered_archive_dates or uncovered_institutional
+                      or uncovered_first_party_dates):
             status = "POTENTIAL_CONFLICT_REVIEW"
         elif exact:
             status = "PUBLISHED_EDITION_MATCH_REVIEW"
@@ -517,7 +522,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             blocks.append("edition_year_unknown")
         if exact:
             blocks.append("already_published_edition")
-        if exact and (uncovered_archive_dates or uncovered_institutional):
+        if exact and (uncovered_archive_dates or uncovered_institutional
+                      or uncovered_first_party_dates):
             blocks.append("published_same_year_may_hide_other_edition")
         if conflicting:
             blocks.append("same_name_year_region_city_conflict")
@@ -543,6 +549,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "historical_homepage_date_hints_review_only": accepted_archive_hints,
             "press_date_observations_review_only": press_review,
             "first_party_edition_date_claims_review_only": first_party_reviews,
+            "first_party_uncovered_date_claims_review_only": uncovered_first_party_dates,
             "first_party_press_same_dates_review_only": [
                 {"start_date_hint": start, "end_date_hint": end,
                  "independence_verified": False,
@@ -611,6 +618,8 @@ def build_review(queue, detail, state, leads, public, history, today):
             for obs in row["first_party_edition_date_claims_review_only"]),
         "first_party_press_agreement_dates_private": sum(
             len(x["first_party_press_same_dates_review_only"]) for x in result),
+        "first_party_uncovered_date_claims_private": sum(
+            len(x["first_party_uncovered_date_claims_review_only"]) for x in result),
         "press_date_claim_dossiers_private": sum(
             bool(x["press_date_observations_review_only"]) for x in result),
         "press_date_claims_private": sum(
