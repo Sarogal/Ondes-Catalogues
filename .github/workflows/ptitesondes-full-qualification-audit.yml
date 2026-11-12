@@ -1,13 +1,6 @@
 name: "P'tites Ondes — audit exhaustif de qualification (manuel, privé)"
 
 on:
-  push:
-    # Déclencheur provisoire pour le test de la branche dédiée.
-    branches: [feat/ptitesondes-full-qualification-audit-20261112]
-    paths:
-      - 'scripts/ptitesondes_full_candidate_audit.py'
-      - 'tests/test_ptitesondes_full_candidate_audit.py'
-      - '.github/workflows/ptitesondes-full-qualification-audit.yml'
   pull_request:
     paths:
       - 'scripts/ptitesondes_full_candidate_audit.py'
@@ -44,8 +37,7 @@ jobs:
     needs: tests
     if: >-
       github.repository == 'Sarogal/Ondes-Catalogues' &&
-      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
-       (github.event_name == 'push' && github.ref == 'refs/heads/feat/ptitesondes-full-qualification-audit-20261112'))
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-24.04
     timeout-minutes: 75
     env:
