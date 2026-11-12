@@ -14,12 +14,12 @@ REPORT=Path("/tmp/ptitesondes-sync-report.json")
 def public_summary(report):
     """Résumé agrégé uniquement : aucune piste privée ni motif détaillé dans Actions."""
     return (
-        "### P'tites Ondes — contrôle de publication\\n\\n"
-        f"- Catalogue avant : {report['initial']}\\n"
-        f"- Catalogue simulé : {report['final']}\\n"
-        f"- Nouvelles fiches conformes : {report['ajoutes']}\\n"
-        f"- Propositions différées : {len(report['attente'])}\\n"
-        "- Le déploiement est décidé séparément par le workflow.\\n"
+        "### P'tites Ondes — contrôle de publication\n\n"
+        f"- Catalogue avant : {report['initial']}\n"
+        f"- Catalogue simulé : {report['final']}\n"
+        f"- Nouvelles fiches conformes : {report['ajoutes']}\n"
+        f"- Propositions différées : {len(report['attente'])}\n"
+        "- Le déploiement est décidé séparément par le workflow.\n"
     )
 
 
