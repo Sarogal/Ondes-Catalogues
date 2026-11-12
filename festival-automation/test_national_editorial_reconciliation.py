@@ -145,7 +145,8 @@ class EditorialReconciliationTests(unittest.TestCase):
                        "programmée les 19, 20 et 21 août 2027.</p></main>"))
         report = {"schema": "grossesondes.source-watch-report.v1",
                   "date": TODAY, "source_reference_leads_review_only": [],
-                  "historical_future_watch_archive_status_private": "CONSISTENT"}
+                  "historical_future_watch_archive_status_private": "CONSISTENT",
+                  "press_edition_archive_integrity_private": "CONSISTENT"}
         queue = build_queue(state, report, leads, TODAY)
         editorial = build_review(queue, details, state, leads, public, archive, TODAY)
         row = next(x for x in editorial["dossiers"] if x["name_hint"] == name)
