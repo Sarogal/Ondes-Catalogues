@@ -292,8 +292,14 @@ def verify(candidate, page, catalogue, today):
         raise ValueError("Identités d'artistes en collision")
     if absent:
         if unannounced or len(new_artists) > 2:
-            raise ValueError("Molotov : artiste absent ou ambigu dans le catalogue")
-        profile_counts = verified_new_artists(page, parts, absent)
+            raise ValueError("Artiste absent ou ambigu dans le catalogue Molotov")
+        try:
+            profile_counts = verified_new_artists(page, parts, absent)
+        except ValueError as ex:
+            # Keep the legacy refusal contract: an undocumented name is
+            # always an absent artist, even when it occurs in a page title.
+            raise ValueError("Artiste absent, profil officiel incomplet : " +
+                             str(ex)) from ex
     else:
         profile_counts = []
     venues = {v["id"]: v for v in catalogue.get("venues", [])}
