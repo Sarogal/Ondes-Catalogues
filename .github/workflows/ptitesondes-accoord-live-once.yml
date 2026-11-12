@@ -33,7 +33,9 @@ jobs:
           from datetime import datetime
           source="https://openagenda.com/nantesmetropole/events/contes-and-comptines"
           row=api_record("813941")
+          print("STAGE ods_ok")
           baseline=read_historic()
+          print("STAGE historic_ok")
           categories={x["category"] for x in baseline["events"]}
           fields=set().union(*(set(x) for x in baseline["events"]))
           today=datetime.now(ZoneInfo("Europe/Paris")).date()
@@ -44,15 +46,20 @@ jobs:
                     "venue":"Centre socioculturel des Bourderies - ACCOORD",
                     "date_start":day,"date_end":day}
               place=registry_location(lead)
+              print("STAGE registry_checked")
               if place is None: raise ValueError("registre GPS non vérifié")
               event=make_event(lead,row,place,today)
+              print("STAGE structure_constructed")
               ok,why=valid(event,categories,fields,today)
+              print("STAGE schema_checked", "pass" if ok else "fail")
               if not ok: raise ValueError("schéma public refusé : "+why)
               ok,why=verify_event(event,baseline["events"])
+              print("STAGE organizer_checked", "pass" if ok else "fail")
               if not ok: raise ValueError("preuve organisateur refusée : "+why)
           print("2 preuves strictes de dates contrôlées, sans publication")
           PY
           then
+            grep -E "^STAGE " "$RUNNER_TEMP/accoord-private-test.log" || true
             echo "::error::Essai Accoord échoué ; aucun évènement accepté/publié."
             exit 1
           fi
