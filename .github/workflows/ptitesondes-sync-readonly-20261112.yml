@@ -25,9 +25,10 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY'
-          import contextlib, io, json
+          import contextlib, io, json, sys
           from pathlib import Path
-          from scripts import run_cloud_sync
+          sys.path.insert(0, str(Path("scripts").resolve()))
+          import run_cloud_sync
           before = json.loads(Path("docs/ptitesondes/sorties.json").read_text())
           output = io.StringIO()
           try:
