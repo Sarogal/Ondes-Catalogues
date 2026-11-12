@@ -1,0 +1,72 @@
+name: P'tites Ondes — controle ponctuel publication sans ecriture
+on:
+  push:
+    branches:
+      - ci/ptitesondes-sync-readonly-20261112
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Charger uniquement le code public stable
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Simuler le synchroniseur officiel sans commit ni deploy
+        env:
+          PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import contextlib, io, json
+          from pathlib import Path
+          from scripts import run_cloud_sync
+          before = json.loads(Path("docs/ptitesondes/sorties.json").read_text())
+          output = io.StringIO()
+          try:
+              with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
+                  run_cloud_sync.main()
+          except Exception as error:
+              words = str(error).lower()
+              classes = (
+                  ("référence", "reference_incompatible"),
+                  ("historique", "historique_incompatible"),
+                  ("collision", "collision"),
+                  ("doublon", "doublon"),
+                  ("secret", "missing_secret"),
+                  ("veille", "private_patch"),
+                  ("source", "source"),
+                  ("preuve", "proof_failure"),
+                  ("date", "date"),
+                  ("gps", "geolocation"),
+              )
+              reason = next((label for needle, label in classes if needle in words), "other")
+              print(json.dumps({"outcome":"blocked","error_type":type(error).__name__,
+                                "reason_family":reason}, ensure_ascii=False))
+              raise SystemExit(1)
+          report = json.loads(Path("/tmp/ptitesondes-sync-report.json").read_text())
+          after = json.loads(Path("docs/ptitesondes/sorties.json").read_text())
+          initial = {e["id"]: e for e in before["events"]}
+          after_by_id = {e["id"]: e for e in after["events"]}
+          preserved = all(after_by_id.get(uid) == old for uid, old in initial.items())
+          if not preserved or len(after_by_id) != len(after["events"]):
+              raise RuntimeError("Invariance catalogue non satisfaite")
+          reasons = {}
+          for rec in report.get("attente",[]):
+              # Never expose event IDs, URLs or source evidence in public logs.
+              family = str(rec.get("raison","")).split(":")[0][:30]
+              reasons[family] = reasons.get(family,0) + 1
+          print(json.dumps({"outcome":"dry_run_only","initial":report["initial"],
+                            "final":report["final"],"approved":report["ajoutes"],
+                            "waiting":len(report.get("attente",[])),
+                            "existing_preserved":preserved,
+                            "remote_writes":0,"pages_deployments":0},
+                           ensure_ascii=False))
+          PY
