@@ -1,0 +1,59 @@
+name: "P'tites Ondes — essai ponctuel Accoord (lecture seule)"
+on:
+  push:
+    branches: [feat/ptitesondes-accoord-independent-schedule-20261112]
+    paths:
+      - '.github/workflows/ptitesondes-accoord-live-once.yml'
+permissions:
+  contents: read
+jobs:
+  proof:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Preuve du programme ACCOORD, UID public fixe, sans ecriture"
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! PYTHONPATH=scripts python - <<'PY' > "$RUNNER_TEMP/accoord-private-test.log" 2>&1
+          from datetime import date
+          from ptitesondes_candidate_promotion import (
+              api_record, make_event, registry_location)
+          from ptitesondes_full_candidate_audit import read_historic
+          from merge_policy import valid
+          from proof_text import verify_event
+          from zoneinfo import ZoneInfo
+          from datetime import datetime
+          source="https://openagenda.com/nantesmetropole/events/contes-and-comptines"
+          row=api_record("813941")
+          baseline=read_historic()
+          categories={x["category"] for x in baseline["events"]}
+          fields=set().union(*(set(x) for x in baseline["events"]))
+          today=datetime.now(ZoneInfo("Europe/Paris")).date()
+          for day in ("2026-11-18","2026-11-25"):
+              lead={"collector":"opendatasoft-index", "external_id":"813941",
+                    "source_url":source, "title":"Contes & comptines",
+                    "city":"Nantes",
+                    "venue":"Centre socioculturel des Bourderies - ACCOORD",
+                    "date_start":day,"date_end":day}
+              place=registry_location(lead)
+              if place is None: raise ValueError("registre GPS non vérifié")
+              event=make_event(lead,row,place,today)
+              ok,why=valid(event,categories,fields,today)
+              if not ok: raise ValueError("schéma public refusé : "+why)
+              ok,why=verify_event(event,baseline["events"])
+              if not ok: raise ValueError("preuve organisateur refusée : "+why)
+          print("2 preuves strictes de dates contrôlées, sans publication")
+          PY
+          then
+            echo "::error::Essai Accoord échoué ; aucun évènement accepté/publié."
+            exit 1
+          fi
+          echo "Deux dates futures ont passé toutes les étapes métier sans publication."
