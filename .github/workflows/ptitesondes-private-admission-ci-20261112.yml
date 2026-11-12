@@ -1,0 +1,23 @@
+name: P'tites Ondes — controle prive des refus et lieux GPS
+on:
+  push:
+    branches: [ci/ptitesondes-private-admission-20261112]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ptitesondes-persist-private-admission-20261112
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester le rapport prive et ses garde-fous
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_private_qualification_diagnostics.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
