@@ -506,6 +506,40 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
                 rejected.append(dict(evidence, status="rejected_schema", reason=reason))
                 continue
             checked, reason = verifier(event, baseline["events"])
+            if (not checked and reason in (
+                    "date complète non confirmée sur la fiche officielle",
+                    "page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript")):
+                # The ODS index can supply an unreadable bare-slug mirror,
+                # while the SAME immutable UID's verified Marseille origin
+                # page contains the actual dated organizer schedule. Never
+                # count two OA collector URLs as independent sources.
+                for option in lead.get("_same_uid_date_alternatives", ()):
+                    if option.get("collector") != "openagenda-v2":
+                        continue
+                    try:
+                        alternative = make_event(
+                            option, record, registry_location(option), today)
+                    except (ValueError, TypeError, KeyError):
+                        continue
+                    # Only the audited origin/aggregate pair, not other
+                    # aliases or a similarity-based substitute.
+                    if not alternative["source_url"].startswith(
+                            "https://openagenda.com/fr/bibliotheques-de-territoire-marseille/events/"):
+                        continue
+                    if (alternative["source_url"], alternative["date_start"]) in urls:
+                        continue
+                    if (dict(event, source_url=alternative["source_url"]) !=
+                            alternative or
+                            (canonical_event_title(alternative), norm(alternative["city"]),
+                             norm(alternative["venue"]), alternative["date_start"]) != signature):
+                        continue
+                    alt_structural, _ = valid(alternative, categories, fields, today)
+                    if not alt_structural:
+                        continue
+                    alt_checked, alt_reason = verifier(alternative, baseline["events"])
+                    if alt_checked:
+                        event, checked, reason = alternative, True, alt_reason
+                        break
             if not checked:
                 rejected.append(dict(evidence, status="unverified", reason=reason))
                 continue
