@@ -1,0 +1,119 @@
+name: "P'tites Ondes — diagnostic privé des causes de qualification"
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_qualification_rootcause.py'
+      - 'tests/test_ptitesondes_qualification_rootcause.py'
+      - '.github/workflows/ptitesondes-qualification-rootcause.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+jobs:
+  test:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests de la qualification et de la confidentialité
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_qualification_rootcause.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_full_candidate_audit.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_private_qualification_diagnostics.py' -v
+          python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
+
+  diagnosis:
+    needs: test
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      READ: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+      WRITE: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+    steps:
+      - name: Valider les autorisations sans divulgation
+        run: |
+          test -n "$READ" && test -n "$WRITE"
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: code
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+          path: published
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Classer les refus par UID et causes indépendamment, sans publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          DAY="$(TZ=Europe/Paris date +%F)"
+          STATE="state/automation-intake/ptitesondes"
+          FILE="$STATE/reports/rootcause-$DAY.json"
+          test -s "$STATE/backlog.json"
+          test -s published/docs/ptitesondes/sorties.json
+          mkdir -p "$STATE/reports"
+          if ! PYTHONPATH=code/scripts python - <<'PY' > "$RUNNER_TEMP/ptitesondes-historical.json" 2> "$RUNNER_TEMP/ptitesondes-historical-errors.log"
+          import json
+          from ptitesondes_full_candidate_audit import read_historic
+          json.dump(read_historic(), __import__("sys").stdout, ensure_ascii=False)
+          PY
+          then
+            echo "::error::Référence historique inaccessible, diagnostic non effectué."
+            exit 1
+          fi
+          if ! PYTHONPATH=code/scripts python code/scripts/ptitesondes_qualification_rootcause.py \
+            --backlog-file "$STATE/backlog.json" \
+            --reference-file "$RUNNER_TEMP/ptitesondes-historical.json" \
+            --catalogue-file published/docs/ptitesondes/sorties.json \
+            --output "$FILE" > "$RUNNER_TEMP/ptitesondes-rootcause.log" 2>&1; then
+            echo "::error::Diagnostic interrompu, aucune preuve diffusée."
+            exit 1
+          fi
+          test -s "$FILE"
+          FILE="$FILE" PYTHONPATH=code/scripts python - <<'PY'
+          import json,os
+          from ptitesondes_qualification_rootcause import public_summary
+          doc=json.load(open(os.environ["FILE"],encoding="utf-8"))
+          print("Compte rendu numérique, aucun identifiant :",json.dumps(public_summary(doc),sort_keys=True))
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as out:
+              out.write("## Diagnostic des causes — sans approbation ni publication\n\n")
+              out.write("Le détail des causes et UID reste privé.\n\n")
+              out.write("`"+json.dumps(public_summary(doc),sort_keys=True)+"`\n")
+          PY
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state add -- "automation-intake/ptitesondes/reports/rootcause-$DAY.json"
+          if ! git -C state diff --cached --quiet; then
+            git -C state commit -m "data(ptitesondes): conserver diagnostic prive ODS et audience" > "$RUNNER_TEMP/ptitesondes-rootcause-commit.log" 2>&1
+            AUTH="$(printf 'x-access-token:%s' "$WRITE" | base64 -w0)"
+            if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+              push origin HEAD:automation/ptitesondes-intake > "$RUNNER_TEMP/ptitesondes-rootcause-push.log" 2>&1; then
+              echo "::error::Échec de la persistance privée, diagnostic non confirmé."
+              exit 1
+            fi
+          fi
