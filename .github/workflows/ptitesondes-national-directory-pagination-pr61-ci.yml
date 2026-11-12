@@ -1,0 +1,31 @@
+name: P'tites Ondes — tests pagination annuaire national (runner public)
+on:
+  push:
+    branches:
+      - ci/ptitesondes-national-directory-pagination-20261112
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Charger uniquement les tests approuvés du dépôt privé
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: feat/ptitesondes-national-directory-pagination-20261112
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: src
+          sparse-checkout: automation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester le recensement borné et ses garde-fous
+        run: |
+          python -m unittest discover -s src/automation -p 'test_national_agenda_probe.py' -v
+          python -m unittest discover -s src/automation -p 'test_national_agenda_pilot.py' -v
+          python -m unittest discover -s src/automation -p 'test_outings_intake.py' -v
+          python -m unittest discover -s src/automation -p 'test_merge_verified.py' -v
+          python -m unittest discover -s src/automation -p 'test_oa_v2_backlog_binding.py' -v
