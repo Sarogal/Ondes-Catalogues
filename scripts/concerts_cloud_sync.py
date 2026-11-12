@@ -4714,8 +4714,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
             # block for EVERY billed act, including the newly introduced bands.
             names = proof.get("officialArtistNames")
             counts = proof.get("officialArtistProfileLinkCounts")
+            unannounced_label = proof.get("unannouncedSupportLabel")
             require(1 <= len(new_artists) <= 2 and 1 <= len(ids) <= 4
-                    and proof.get("unannouncedSupportLabel") is None
+                    and (unannounced_label is None or
+                         unannounced_label in {
+                            "guest", "special guest", "invite", "invite surprise",
+                            "artiste surprise", "premiere partie", "1ere partie",
+                            "1re partie", "support", "a confirmer", "tba", "surprise",
+                         })
                     and isinstance(names, list) and len(names) == len(ids)
                     and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
                             for n in names)
