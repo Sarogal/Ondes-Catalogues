@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from merge_policy import merge,validate_patch,valid,safe_published_event
+from run_cloud_sync import public_summary
 from proof import norm,names,meters,LD,proof
 
 TODAY=date(2026,10,29)
@@ -24,6 +25,26 @@ def fixture():
     return b,p
 
 class TestsCloud(unittest.TestCase):
+    def test_public_sync_summary_never_reveals_private_ids_or_reasons(self):
+        private_id = "openagenda-private-unpublished-2027-03-01"
+        private_reason = "Lien organisateur secret avec preuve non publiable"
+        report = {"initial":514,"final":514,"ajoutes":0,
+                  "attente":[{"id":private_id,"raison":private_reason}]}
+        summary = public_summary(report)
+        self.assertIn("514", summary)
+        self.assertIn("Propositions différées : 1", summary)
+        self.assertNotIn(private_id, summary)
+        self.assertNotIn(private_reason, summary)
+        self.assertNotIn("openagenda-private", summary)
+
+    def test_public_sync_summary_only_counts_approved(self):
+        report = {"initial":514,"final":517,"ajoutes":3,"attente":[]}
+        summary = public_summary(report)
+        self.assertIn("Nouvelles fiches conformes : 3", summary)
+        self.assertIn("Catalogue simulé : 517", summary)
+        self.assertIn("déploiement est décidé séparément", summary)
+
+
     def test_add_with_proof(self):
         b,p=fixture()
         out,r=merge(b,b,p,TODAY,checker=lambda e,ref:(True,"preuve"))

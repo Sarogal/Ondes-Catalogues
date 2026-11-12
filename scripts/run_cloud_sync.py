@@ -11,6 +11,18 @@ from private_intake import latest
 CATALOGUE=Path("docs/ptitesondes/sorties.json")
 REPORT=Path("/tmp/ptitesondes-sync-report.json")
 
+def public_summary(report):
+    """Résumé agrégé uniquement : aucune piste privée ni motif détaillé dans Actions."""
+    return (
+        "### P'tites Ondes — contrôle de publication\n\n"
+        f"- Catalogue avant : {report['initial']}\n"
+        f"- Catalogue simulé : {report['final']}\n"
+        f"- Nouvelles fiches conformes : {report['ajoutes']}\n"
+        f"- Propositions différées : {len(report['attente'])}\n"
+        "- Le déploiement est décidé séparément par le workflow.\n"
+    )
+
+
 def main():
     secret=os.getenv("PRIVATE_INTAKE_READ_TOKEN","")
     if not secret:
@@ -35,8 +47,11 @@ def main():
             file.write("changed="+str(changed).lower()+"\n")
     print("Catalogue :",report["initial"],"->",report["final"],
           " | admis :",report["ajoutes"]," | en attente :",len(report["attente"]))
-    for item in report["attente"]:
-        print("DIFFERE:",item["id"],"|",item["raison"])
+    # Ne jamais exposer les IDs et motifs privés dans les journaux publics.
+    summary_path=os.getenv("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with open(summary_path,"a",encoding="utf-8") as summary:
+            summary.write(public_summary(report))
     print("Aucune suppression ni correction automatique.")
 
 if __name__=="__main__":
