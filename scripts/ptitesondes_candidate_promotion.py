@@ -265,6 +265,13 @@ def reconciled_openagenda_url(lead, row):
     pinned_pairs = {
         ("operanationalbordeaux", "ville-de-bordeaux"),
         ("bibliotheque-lalcazar-marseille", "bibliotheques-de-marseille"),
+        # Official OpenAgenda aggregation explicitly identifies its origin as
+        # "Bibliothèques de territoire - Ville de Marseille" and relays the
+        # exact same source UID under "Bibliothèques de Marseille".
+        # https://openagenda.com/fr/bibliotheques-de-marseille/events/84874552_decouverte-des-services-en-ligne-des-bibliotheques-3983726
+        # (Concédant / Relayé par / agenda d'origine)
+        # https://doc.openagenda.com/fr/article/le-reseau-des-bibliotheques-de-la-ville-de-marseille-mgblk9/
+        ("bibliotheques-de-territoire-marseille", "bibliotheques-de-marseille"),
     }
     same_agenda = source_parts[0] == target_parts[0]
     reviewed_syndication = (source_parts[0], target_parts[0]) in pinned_pairs
@@ -273,6 +280,17 @@ def reconciled_openagenda_url(lead, row):
             not (same_agenda or reviewed_syndication) or
             source_parts[1] != expected_source_slug):
         raise ValueError("URL canonique différente")
+    if (source_parts[0], target_parts[0]) == (
+            "bibliotheques-de-territoire-marseille", "bibliotheques-de-marseille"):
+        # Live runner proof (12 Nov): canonical bare slug loads only a title,
+        # whereas the exact UID-prefixed ORIGINAL French agenda page contains
+        # the session's date, time, venue and family-audience wording.
+        # Keep all checks; verify the more complete, same-UID official page.
+        # No arbitrary language redirect, inferred slug, or cross-agenda URL.
+        if not re.fullmatch(r"[a-z0-9-]+", target_parts[1]):
+            raise ValueError("Slug de source officielle invalide")
+        return ("https://openagenda.com/fr/" + source_parts[0] +
+                "/events/" + source_parts[1])
     return canonical
 
 
@@ -349,18 +367,30 @@ def covered_by_published_range(lead, published_events):
                 norm(lead.get("venue")))
     if any(not value for value in identity):
         return False
+    uid = lead.get("external_id")
+    exact_uid = uid if isinstance(uid, str) and re.fullmatch(r"[0-9]{1,12}", uid) else None
     for item in published_events:
-        if not isinstance(item, dict) or (
-                norm(item.get("title")), norm(item.get("city")),
-                norm(item.get("venue"))) != identity:
+        if not isinstance(item, dict) or (norm(item.get("city")),
+                norm(item.get("venue"))) != identity[1:]:
             continue
         try:
             start = date.fromisoformat(item["date_start"])
             end = date.fromisoformat(item.get("date_end") or item["date_start"])
         except (KeyError, ValueError, TypeError):
             continue
-        if start <= day <= end:
+        if not start <= day <= end:
+            continue
+        if norm(item.get("title")) == identity[0]:
             return True
+        # A human-curated title may add a venue qualifier (e.g. "Éveil
+        # musical – Cinq-Avenues"). For a SAME venue/date, the immutable OA
+        # UID is safer than a fuzzy title match. Keep strict official source
+        # hostname and UID-prefixed event path; never compare mere keywords.
+        if exact_uid:
+            parts = openagenda_path_parts(item.get("source_url"))
+            if parts is not None and re.fullmatch(
+                    re.escape(exact_uid) + r"_[a-z0-9-]+", parts[1]):
+                return True
     return False
 
 
@@ -488,6 +518,40 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
                 rejected.append(dict(evidence, status="rejected_schema", reason=reason))
                 continue
             checked, reason = verifier(event, baseline["events"])
+            if (not checked and reason in (
+                    "date complète non confirmée sur la fiche officielle",
+                    "page OpenAgenda dynamique : dates et horaires illisibles sans JavaScript")):
+                # The ODS index can supply an unreadable bare-slug mirror,
+                # while the SAME immutable UID's verified Marseille origin
+                # page contains the actual dated organizer schedule. Never
+                # count two OA collector URLs as independent sources.
+                for option in lead.get("_same_uid_date_alternatives", ()):
+                    if option.get("collector") != "openagenda-v2":
+                        continue
+                    try:
+                        alternative = make_event(
+                            option, record, registry_location(option), today)
+                    except (ValueError, TypeError, KeyError):
+                        continue
+                    # Only the audited origin/aggregate pair, not other
+                    # aliases or a similarity-based substitute.
+                    if not alternative["source_url"].startswith(
+                            "https://openagenda.com/fr/bibliotheques-de-territoire-marseille/events/"):
+                        continue
+                    if (alternative["source_url"], alternative["date_start"]) in urls:
+                        continue
+                    if (dict(event, source_url=alternative["source_url"]) !=
+                            alternative or
+                            (canonical_event_title(alternative), norm(alternative["city"]),
+                             norm(alternative["venue"]), alternative["date_start"]) != signature):
+                        continue
+                    alt_structural, _ = valid(alternative, categories, fields, today)
+                    if not alt_structural:
+                        continue
+                    alt_checked, alt_reason = verifier(alternative, baseline["events"])
+                    if alt_checked:
+                        event, checked, reason = alternative, True, alt_reason
+                        break
             if not checked:
                 rejected.append(dict(evidence, status="unverified", reason=reason))
                 continue
