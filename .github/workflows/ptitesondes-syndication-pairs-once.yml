@@ -1,0 +1,140 @@
+name: "P'tites Ondes — diagnostic ponctuel des syndications privées"
+on:
+  push:
+    branches: [ci/ptitesondes-syndication-pairs-20261112]
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+jobs:
+  inspect:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    env:
+      READ: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+      WRITE: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: public
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          path: state
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les correspondances structurales sans jamais les approuver
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ -n "$READ" && -n "$WRITE" ]] || exit 1
+          if ! PYTHONPATH=public/scripts python - <<'PY' > "$RUNNER_TEMP/ptitesondes-private-pairs.log" 2>&1
+          import json
+          from collections import Counter, defaultdict
+          from datetime import datetime
+          from pathlib import Path
+          from zoneinfo import ZoneInfo
+          from ptitesondes_candidate_promotion import (
+              unique_review_candidates, api_record,
+              reconciled_openagenda_url, openagenda_path_parts)
+          now=datetime.now(ZoneInfo("Europe/Paris")).date()
+          root=Path("state/automation-intake/ptitesondes")
+          leads=json.loads((root/"backlog.json").read_text(encoding="utf-8"))
+          candidates, eligible, duplicates, conflicts=unique_review_candidates(
+              leads,now,with_alternatives=True)
+          if len(candidates)>200:raise ValueError("Diagnostic trop volumineux")
+          grouped=defaultdict(lambda: {"n":0,"examples":[]})
+          states=Counter()
+          for candidate in candidates:
+              try:
+                  record=api_record(candidate["external_id"])
+                  canonical=record.get("canonicalurl")
+                  target=openagenda_path_parts(canonical)
+                  options=(candidate,*candidate.get("_same_uid_date_alternatives",()))
+                  errors=[]
+                  matched=False
+                  for option in options:
+                      try:
+                          reconciled_openagenda_url(option,record)
+                          matched=True
+                          break
+                      except ValueError as err:
+                          errors.append(str(err))
+                  if matched:
+                      states["canonical_matched"]+=1
+                  elif "URL canonique différente" in errors:
+                      states["canonical_conflict"]+=1
+                      source=openagenda_path_parts(candidate["source_url"])
+                      pair=((source or ("invalid",))[0],(target or ("invalid",))[0])
+                      entry=grouped[pair]
+                      entry["n"]+=1
+                      if len(entry["examples"])<3:
+                          entry["examples"].append({
+                              "uid":candidate["external_id"],
+                              "date":candidate["date_start"],
+                              "source_url":candidate["source_url"],
+                              "canonical_url":canonical,
+                              "alternatives":[a["source_url"] for a in
+                                 candidate.get("_same_uid_date_alternatives",())],
+                          })
+                  else:
+                      states["other_canonical_error"]+=1
+              except (ValueError,TypeError,KeyError,OSError):
+                  states["ods_unavailable_or_invalid"]+=1
+          doc={
+              "schema":"ptitesondes.private_syndication_pairs.v1",
+              "date":str(now),"mode":"diagnostic_no_publication",
+              "backlog_total":len(leads),"unique_admissible":len(candidates),
+              "states":dict(sorted(states.items())),
+              "canonical_conflict_pairs":[
+                  {"source_agenda":a,"canonical_agenda":b,**v}
+                  for (a,b),v in sorted(grouped.items(),
+                      key=lambda e:(-e[1]["n"],e[0]))
+              ],
+              "public_writes":0,"private_patch_approvals":0
+          }
+          if sum(states.values())!=len(candidates):
+              raise ValueError("Candidats incomplets")
+          out=root/"reports"/("syndication-diagnostic-"+str(now)+".json")
+          out.parent.mkdir(parents=True,exist_ok=True)
+          out.write_text(json.dumps(doc,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
+          PY
+          then
+            echo "::error::Diagnostic de syndication interrompu ; aucun détail exposé."
+            exit 1
+          fi
+          DATE="$(TZ=Europe/Paris date +%F)"
+          FILE="automation-intake/ptitesondes/reports/syndication-diagnostic-$DATE.json"
+          test -s "state/$FILE"
+          FILE="state/$FILE" python - <<'PY'
+          import json,os
+          data=json.load(open(os.environ["FILE"],encoding="utf-8"))
+          print("Diagnostic privé achevé :", json.dumps({
+              "unique_admissible":data["unique_admissible"],
+              "canonical_conflicts":data["states"].get("canonical_conflict",0),
+              "other_errors":data["states"].get("ods_unavailable_or_invalid",0),
+              "public_writes":0
+          },sort_keys=True))
+          PY
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state add -- "$FILE"
+          if ! git -C state diff --cached --quiet; then
+            git -C state commit -m "data(ptitesondes): synthetiser les paires de syndication (prive)" > "$RUNNER_TEMP/ptitesondes-private-commit.log" 2>&1
+            AUTH="$(printf 'x-access-token:%s' "$WRITE" | base64 -w0)"
+            if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" push origin HEAD:automation/ptitesondes-intake > "$RUNNER_TEMP/ptitesondes-private-push.log" 2>&1; then
+              echo "::error::Enregistrement privé de la syndication indisponible."
+              exit 1
+            fi
+          fi
