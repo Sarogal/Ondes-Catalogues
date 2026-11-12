@@ -28,6 +28,15 @@ jobs:
           path: state
           sparse-checkout: automation-intake/ptitesondes
           persist-credentials: false
+      - name: Charger le registre GPS public verifie
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: public
+          sparse-checkout: |
+            scripts
+            docs/ptitesondes
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -46,6 +55,8 @@ jobs:
           from datetime import date
           sys.path.insert(0,str(Path("src/automation").resolve()))
           import outings_intake as mod
+          sys.path.insert(0,str(Path("public/scripts").resolve()))
+          from ptitesondes_candidate_promotion import unique_review_candidates
           config=json.loads(Path("src/automation/sources.json").read_text())
           agendas=config.get("openagenda_agendas",[])
           if len(agendas)!=15 or len(set(agendas))!=15:
@@ -68,8 +79,14 @@ jobs:
                   with contextlib.redirect_stdout(io.StringIO()):
                       report=mod.run(folder,Path(tmp),config,date(2026,11,12),
                                      oa_key=os.environ["OPENAGENDA_READ_KEY"])
+                  virtual_backlog=json.loads((Path(tmp)/"backlog.json").read_text())
           finally:
               mod.collect_openagenda=original
+          day=date(2026,11,12)
+          old_candidates,old_eligible_raw,old_dup,old_conflicts=unique_review_candidates(backlog,day)
+          new_candidates,new_eligible_raw,new_dup,new_conflicts=unique_review_candidates(virtual_backlog,day)
+          old_uids={(c["external_id"],c["date_start"]) for c in old_candidates}
+          current_uids={(c["external_id"],c["date_start"]) for c in new_candidates}
           older=stats[:8]
           newer=stats[8:]
           oldsig=set().union(*(s["unique"] for s in older))
@@ -92,6 +109,13 @@ jobs:
               "all_new_leads":report["decouvertes_nouvelles_en_attente"],
               "all_backlog_after_simulation":report["en_attente_total"],
               "total_failures":len(report["sources_en_echec"]),
+              "eligible_previous_unique":len(old_candidates),
+              "eligible_simulated_unique":len(new_candidates),
+              "eligible_new_uid_day":len(current_uids-old_uids),
+              "eligible_previous_raw":old_eligible_raw,
+              "eligible_simulated_raw":new_eligible_raw,
+              "review_duplicates_skipped":new_dup,
+              "review_conflicting_uid_days":new_conflicts,
               "remote_writes":0,"published_events":0}
           print(json.dumps(summary,ensure_ascii=False))
           PY
