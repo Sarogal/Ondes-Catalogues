@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_candidate_promotion import (
-    reconciled_openagenda_url, registry_location, make_event
+    reconciled_openagenda_url, registry_location, make_event, evaluate
 )
 from proof_text import verify_event
 
@@ -48,6 +48,24 @@ def record(**overrides):
         "status": {"id": 1},
     }
     return dict(base, **overrides)
+
+
+def baseline():
+    location = registry_location(lead())
+    events = []
+    for i in range(100):
+        events.append({
+            "id": "historic-" + str(i), "title": "Autre atelier " + str(i),
+            "category": "eveil-musical", "category_label": "Éveil musical",
+            "date_start": "2026-11-13", "date_end": "2026-11-13",
+            "time": "09:00", "city": "Marseille", "venue": "Bibliothèque des Cinq-Avenues",
+            "department": "Bouches-du-Rhône", "region": "Provence-Alpes-Côte d'Azur",
+            "source_url": CANONICAL, "source_label": "Catalogue de test",
+            "verified_at": "2026-11-12", "geo_verified_at": "2026-11-12",
+            "geo_precision": "venue", "lat": location["lat"], "lng": location["lng"],
+        })
+    return {"version": 3, "updated_at": "2026-10-22T21:00:00+02:00",
+            "events": events}
 
 
 class MarseilleMunicipalSyndicationTests(unittest.TestCase):
@@ -119,6 +137,62 @@ class MarseilleMunicipalSyndicationTests(unittest.TestCase):
             with self.subTest(altered=altered[:70]):
                 with patch("proof_text.read", return_value=(altered, "")):
                     self.assertFalse(verify_event(event, [])[0])
+
+    def test_exact_origin_is_verified_only_after_mirror_date_failure(self):
+        ref = baseline()
+        primary = lead(collector="opendatasoft-index", source_url=CANONICAL)
+        secondary = lead()
+        checked_sources = []
+        def verifier(event, originals):
+            checked_sources.append(event["source_url"])
+            if event["source_url"] == CANONICAL:
+                return False, "date complète non confirmée sur la fiche officielle"
+            return event["source_url"] == VERIFIED_ORIGIN, "fiche officielle contrôlée"
+        patch, report = evaluate([primary, secondary], ref, ref,
+                                 date(2026, 11, 12),
+                                 fetch=lambda uid: record(), verifier=verifier)
+        self.assertEqual(report["accepted_preflight"], 1)
+        self.assertEqual(report["duplicate_collector_leads_skipped"], 1)
+        self.assertEqual(checked_sources, [CANONICAL, VERIFIED_ORIGIN])
+        self.assertEqual(len(patch["additions"]), 1)
+        self.assertEqual(patch["additions"][0]["source_url"], VERIFIED_ORIGIN)
+        self.assertFalse(patch["safe_to_publish"])
+
+    def test_fallback_never_overrides_nondate_failure_or_nonverified_proof(self):
+        ref = baseline()
+        original = lead(collector="opendatasoft-index", source_url=CANONICAL)
+        secondary = lead()
+        calls = []
+        def wrong_title(event, originals):
+            calls.append(event["source_url"])
+            return False, "titre non confirmé en en-tête de la fiche officielle"
+        patch, report = evaluate([original, secondary], ref, ref,
+                                 date(2026, 11, 12), fetch=lambda uid: record(),
+                                 verifier=wrong_title)
+        self.assertEqual(patch["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+        self.assertEqual(calls, [CANONICAL])
+        def still_missing(event, originals):
+            return False, "date complète non confirmée sur la fiche officielle"
+        patch, report = evaluate([original, secondary], ref, ref,
+                                 date(2026, 11, 12), fetch=lambda uid: record(),
+                                 verifier=still_missing)
+        self.assertEqual(patch["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+
+    def test_unreviewed_cross_agenda_cannot_be_fallback(self):
+        ref = baseline()
+        original = lead(collector="opendatasoft-index", source_url=CANONICAL)
+        forged = lead(source_url=ORIGIN.replace(
+            "bibliotheques-de-territoire-marseille", "unknown-venue-agenda"))
+        patch, report = evaluate(
+            [original, forged], ref, ref, date(2026, 11, 12),
+            fetch=lambda uid: record(),
+            verifier=lambda event, originals: (
+                False, "date complète non confirmée sur la fiche officielle"
+            ))
+        self.assertEqual(patch["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
 
     def test_school_or_cancelled_occurrences_stay_blocked(self):
         with self.assertRaisesRegex(ValueError, "Statut"):
