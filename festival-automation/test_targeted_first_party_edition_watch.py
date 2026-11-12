@@ -181,6 +181,113 @@ class FirstPartyResearchTests(unittest.TestCase):
                     "les-gueules-de-bois"].update(patch)
                 self.assertEqual(len(validated_observations(st, TODAY)), 1)
 
+    def test_first_party_dates_reconcile_with_press_but_stay_private(self):
+        from targeted_press_edition_watch import (
+            SOURCES as PRESS, scan as press_scan,
+        )
+        from historical_future_lead_watch import (
+            APPROVED as HISTORIC, scan as historical_scan,
+        )
+        from national_discovery_queue import build_queue
+        from national_editorial_reconciliation import build_review
+        st = state()
+        scan(st, SOURCES, TODAY, fetch=fetch)
+        press_html = (
+            "<main><h1>Les Gueules de Bois en 2027</h1>"
+            "<p>Premier rendez-vous le samedi 13 février 2027.</p>"
+            "<p>Les bénévoles préparent la septième édition du festival, "
+            "programmée les 19, 20 et 21 août 2027.</p></main>"
+        )
+        press_scan(st, {"gueules-progres": PRESS["gueules-progres"]},
+                   TODAY, fetch=lambda _: press_html)
+        slug = "le-gros-tonneau"
+        historic_name, historic_region, historic_url = HISTORIC[slug]
+        historical_scan(st, {slug: {
+            "slug": slug, "name": historic_name, "region": historic_region,
+            "url": historic_url, "last_known_year": 2026,
+        }}, TODAY, fetch=lambda _: (
+            "<main><h1>Le Gros Tonneau 2027</h1>"
+            "<p>07 et 08 mai 2027 à Artonne.</p></main>"
+        ))
+        report = {
+            "schema": "grossesondes.source-watch-report.v1", "date": TODAY,
+            "source_reference_leads_review_only": [],
+            "historical_future_watch_archive_status_private": "CONSISTENT",
+            "press_edition_archive_integrity_private": "CONSISTENT",
+        }
+        queue = build_queue(st, report, [], TODAY)
+        self.assertEqual(queue["candidate_dossiers_count"], 2)
+        detail = {
+            "schema": "grossesondes.national-detail-qualification-private.v1",
+            "as_of": TODAY, "review_only": True,
+            "publication_authorized": False, "safe_to_publish": False,
+            "observations": [],
+        }
+        archives = {
+            "schema": 2, "knownFestivals": [
+                {
+                    "slug": "les-gueules-de-bois",
+                    "name": "Les Gueules de Bois",
+                    "region": "Bourgogne-Franche-Comté", "city": "Légna",
+                    "lastKnownYear": 2026,
+                    "startDate": "2026-08-20",
+                    "endDate": "2026-08-22",
+                    "officialSite": SOURCES["les-gueules-de-bois"]["url"],
+                },
+                {
+                    "slug": "le-gros-tonneau", "name": "Le Gros Tonneau",
+                    "region": "Auvergne-Rhône-Alpes", "city": "Artonne",
+                    "lastKnownYear": 2026,
+                    "startDate": "2026-05-07",
+                    "endDate": "2026-05-08",
+                    "officialSite": SOURCES["le-gros-tonneau"]["url"],
+                },
+            ],
+        }
+        review = build_review(
+            queue, detail, st, [], {"schema": 1, "festivals": []},
+            archives, TODAY,
+        )
+        self.assertEqual(review["dossiers_count"], 2)
+        self.assertEqual(review["first_party_date_claim_dossiers_private"], 2)
+        self.assertEqual(review["first_party_date_claims_private"], 3)
+        self.assertEqual(review["first_party_press_agreement_dates_private"], 2)
+        self.assertEqual(review["publications"], 0)
+        gueules = next(x for x in review["dossiers"] if
+                       x["name_hint"] == "Les Gueules de Bois")
+        tonneau = next(x for x in review["dossiers"] if
+                       x["name_hint"] == "Le Gros Tonneau")
+        self.assertEqual(gueules["status"], "FIRST_PARTY_AND_PRESS_DATE_REVIEW")
+        self.assertEqual(tonneau["status"], "FIRST_PARTY_VISIBLE_DATE_REVIEW")
+        self.assertEqual(len(gueules["first_party_press_same_dates_review_only"]), 2)
+        self.assertEqual(len(gueules["first_party_edition_date_claims_review_only"][0]
+                             ["claims"]), 2)
+        self.assertEqual(len(tonneau["first_party_edition_date_claims_review_only"][0]
+                             ["claims"]), 1)
+        for dossier in (gueules, tonneau):
+            self.assertNotIn("first_party_date_observation_missing",
+                             dossier["missing_checks"])
+            self.assertIn("independent_date_confirmation",
+                          dossier["missing_checks"])
+            self.assertIn("organizer_identity", dossier["missing_checks"])
+            self.assertIn("editorial_approval", dossier["missing_checks"])
+            self.assertIn("first_party_website_claim_requires_editorial_confirmation",
+                          dossier["missing_checks"])
+            self.assertFalse(dossier["future_edition_confirmed"])
+            self.assertFalse(dossier["publication_authorized"])
+            self.assertFalse(dossier["safe_to_publish"])
+        # Poisoned private evidence cannot survive reconciliation.
+        st["first_party_edition_observations_private"]["les-gueules-de-bois"][
+            "edition_dates_verified"] = True
+        poisoned = build_review(queue, detail, st, [],
+                                {"schema": 1, "festivals": []}, archives, TODAY)
+        restored = next(x for x in poisoned["dossiers"]
+                        if x["name_hint"] == "Les Gueules de Bois")
+        self.assertEqual(restored["status"], "PRESS_DATE_CLAIM_REVIEW")
+        self.assertIn("first_party_date_observation_missing",
+                      restored["missing_checks"])
+        self.assertEqual(poisoned["publications"], 0)
+
     def test_stale_observations_expire(self):
         st = state()
         scan(st, SOURCES, TODAY, fetch=fetch)
