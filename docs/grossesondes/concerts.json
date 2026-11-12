@@ -2176,6 +2176,16 @@
       "id": "archive",
       "name": "ARCHIVE",
       "aliases": []
+    },
+    {
+      "id": "orchestre-tout-puissant-marcel-duchamp",
+      "name": "Orchestre tout puissant Marcel Duchamp",
+      "aliases": []
+    },
+    {
+      "id": "tachycardie",
+      "name": "TACHYCARDIE",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14153,6 +14163,68 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261217-marseille-when-venus-weeps",
+      "title": "When Venus Weeps + Lifeboats",
+      "date": "2026-12-17",
+      "artistIds": [
+        "when-venus-weeps",
+        "lifeboats"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Alt Metal",
+        "Metalcore",
+        "Punk HxC"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/events/when-venus-weeps-lifeboats-guests/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Molotov",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270121-tours-orchestre-tout-puissant-marcel-duchamp",
+      "title": "Orchestre tout puissant Marcel Duchamp + TACHYCARDIE",
+      "date": "2027-01-21",
+      "artistIds": [
+        "orchestre-tout-puissant-marcel-duchamp",
+        "tachycardie"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/orchestre-tout-puissant-marcel-duchamp/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
       "ticketUrl": null,
       "lastVerified": "2026-11-12",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
