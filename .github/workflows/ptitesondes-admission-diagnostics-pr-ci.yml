@@ -1,0 +1,24 @@
+name: P'tites Ondes — validation diagnostics admissibilite prives
+on:
+  push:
+    branches:
+      - ci/ptitesondes-admission-diagnostics-20261112
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/ptitesondes-private-eligibility-diagnostics-20261112
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester sans reseau l'admissibilite et la preuve
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_cloud_policy.py' -v
+          python -m unittest discover -s tests -p 'test_daily_outings_proof.py' -v
