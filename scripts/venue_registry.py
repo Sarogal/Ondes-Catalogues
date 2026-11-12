@@ -8,6 +8,46 @@ from ptitesondes_public_place_venues import lookup_public_venue
 
 VENUES = [
     {
+        # Réseau municipal : 26 rue Famelart, 59200 Tourcoing.
+        # https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-andre-malraux
+        # IGN BAN : adresse exacte n°26, score 0.972, 50.716502 / 3.160323.
+        # https://data.geopf.fr/geocodage/search?q=26%20rue%20Famelart%2C%2059200%20Tourcoing&limit=1
+        # Index OA UID 54303466 : 50.716504 / 3.159680 ; écart ~45 m.
+        # Deux intitulés exacts répertoriés ; ne pas les généraliser.
+        "city": "Tourcoing",
+        "aliases": ["Médiathèque André Malraux",
+                    "Tourcoing/Médiathèque André Malraux"],
+        "lat": 50.716502, "lng": 3.160323,
+        "official": "https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-andre-malraux",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=26%20rue%20Famelart%2C%2059200%20Tourcoing&limit=1",
+    },
+    {
+        # Accoord : 2A rue de Saint-Brévin, 44100 Nantes.
+        # https://www.accoord.fr/lieux/centre-socioculturel-bourderies/
+        # Nantes Métropole Open Data : coordonnées du CSC à cette adresse :
+        # 47.206759863397714 / -1.5961453442574385.
+        # https://data.nantesmetropole.fr/explore/dataset/244400404_lieux-mediation-numerique-nantes-metropole/
+        # BAN : 2A rue de Saint-Brévin à ~20 m ; OA UID 813941 à ~6 m.
+        "city": "Nantes",
+        "aliases": ["Centre socioculturel des Bourderies - ACCOORD"],
+        "lat": 47.206759863397714, "lng": -1.5961453442574385,
+        "official": "https://www.accoord.fr/lieux/centre-socioculturel-bourderies/",
+        "geo_source": "https://data.nantesmetropole.fr/explore/dataset/244400404_lieux-mediation-numerique-nantes-metropole/",
+    },
+    {
+        # Réseau municipal : médiathèque Aimé-Césaire, 285 bd Descat.
+        # https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-aime-cesaire
+        # IGN BAN : numéro exact 285 bd Constantin Descat,
+        # 50.695480 / 3.151547 ; OA UID 16515082 ~9 m de ce point.
+        # https://data.geopf.fr/geocodage/search?q=285%20boulevard%20Descat%2C%2059200%20Tourcoing&limit=1
+        "city": "Tourcoing",
+        "aliases": ["Médiathèque Aimé Césaire",
+                    "Tourcoing/Médiathèque Aimé Césaire"],
+        "lat": 50.695480, "lng": 3.151547,
+        "official": "https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-aime-cesaire",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=285%20boulevard%20Descat%2C%2059200%20Tourcoing&limit=1",
+    },
+    {
         # Adresse officielle 1 rue Eugene Thomas, 44300 Nantes :
         # https://metropole.nantes.fr/lieu/mediatheque-luce-courville
         # OSM way 84294254 (amenity=library, building=civic) :
