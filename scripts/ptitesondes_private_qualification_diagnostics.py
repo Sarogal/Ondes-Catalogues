@@ -60,6 +60,65 @@ def reason_bucket(detail):
     return "other"
 
 
+ADMISSION_CODES = frozenset({
+    "eligible", "collector", "uid", "source_url", "session_date",
+    "missing_identity", "missing_venue", "venue_gps_unverified",
+    "invalid_metadata",
+})
+
+
+def checked_private_admission(data, backlog, eligible_raw):
+    """Validate the detailed first-stage gate, private branch ONLY."""
+    if not isinstance(data, dict) or set(data) != {
+            "scope", "raw_leads", "reason_counts", "top_unverified_venues"}:
+        raise ValueError("Diagnostic d'admissibilité privé malformé")
+    if (data.get("scope") != "private_raw_backlog_only_no_publication" or
+            type(data.get("raw_leads")) is not int or
+            data["raw_leads"] != backlog):
+        raise ValueError("Périmètre du diagnostic privé incohérent")
+    counts = data.get("reason_counts")
+    if not isinstance(counts, dict) or not set(counts).issubset(ADMISSION_CODES):
+        raise ValueError("Motifs d'admissibilité privés non autorisés")
+    if any(type(n) is not int or n < 0 for n in counts.values()):
+        raise ValueError("Compteurs de refus d'admissibilité invalides")
+    if (sum(counts.values()) != backlog or
+            counts.get("eligible", 0) != eligible_raw):
+        raise ValueError("Total d'admissibilité différent du backlog")
+    rows = data.get("top_unverified_venues")
+    if not isinstance(rows, list) or len(rows) > 20:
+        raise ValueError("Liste de lieux GPS privés trop longue")
+    seen, last = set(), backlog + 1
+    for row in rows:
+        if not isinstance(row, dict) or set(row) != {
+                "city", "venue", "lead_occurrences"}:
+            raise ValueError("Ligne de lieu GPS privé malformée")
+        city, venue, n = row["city"], row["venue"], row["lead_occurrences"]
+        if (not isinstance(city, str) or not city.strip() or len(city) > 120 or
+                not isinstance(venue, str) or not venue.strip() or
+                len(venue) > 180 or type(n) is not int or not 1 <= n <= last or
+                any(marker in city + venue for marker in ("\\n", "\\r", "://", "<", ">"))):
+            raise ValueError("Lieu non documentable ou non borné")
+        key = (city.casefold(), venue.casefold())
+        if key in seen:
+            raise ValueError("Lieu GPS privé répété")
+        seen.add(key)
+        last = n
+    if sum(row["lead_occurrences"] for row in rows) > counts.get(
+            "venue_gps_unverified", 0):
+        raise ValueError("Lieux GPS privés incompatibles avec les motifs")
+    # Keep only the explicit, bounded private fields: no raw UID, URL or proof.
+    return {
+        "scope": data["scope"],
+        "raw_leads": backlog,
+        "reason_counts": dict(sorted(counts.items())),
+        "top_unverified_venues": [
+            {"city": row["city"], "venue": row["venue"],
+             "lead_occurrences": row["lead_occurrences"]}
+            for row in rows
+        ],
+    }
+
+
 def summarise(report, expected_day, expected_slot):
     if not isinstance(report, dict):
         raise ValueError("Rapport de prévalidation absent")
@@ -98,8 +157,13 @@ def summarise(report, expected_day, expected_slot):
     counts = Counter(reason_bucket(x) for x in details)
     if not set(counts).issubset(BUCKETS):
         raise ValueError("Catégorie de diagnostic hors contrat")
-    # Explicitly do NOT emit details, reasons, source links, titles, or UID.
-    return {
+    # Only the specifically validated optional venue triage enters PRIVATE reports.
+    admission = None
+    if "admission_diagnostics" in report:
+        admission = checked_private_admission(
+            report["admission_diagnostics"], backlog, raw_eligible)
+    # Explicitly do NOT emit event details, source links, titles or UID.
+    result = {
         "schema": "ptitesondes.private_qualification_summary.v1",
         "day": expected_day.isoformat(), "slot": expected_slot,
         "backlog_total": backlog, "eligible": eligible,
@@ -113,6 +177,9 @@ def summarise(report, expected_day, expected_slot):
         "reason_groups": dict(sorted(counts.items())),
         "publications": 0, "mode": "private_diagnostic_only"
     }
+    if admission is not None:
+        result["admission_diagnostics"] = admission
+    return result
 
 
 def main():

@@ -63,6 +63,62 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, out)
 
+    def test_private_admission_venues_survive_only_in_private_summary(self):
+        report = raw_report()
+        report["admission_diagnostics"] = {
+            "scope": "private_raw_backlog_only_no_publication",
+            "raw_leads": 229,
+            "reason_counts": {"eligible": 40, "venue_gps_unverified": 185,
+                              "session_date": 4},
+            "top_unverified_venues": [
+                {"city": "Tourcoing", "venue": "Médiathèque André Malraux",
+                 "lead_occurrences": 29},
+                {"city": "Nantes", "venue": "Centre socioculturel des Bourderies - ACCOORD",
+                 "lead_occurrences": 26},
+            ]
+        }
+        result = summarise(report, TODAY, 2)
+        private = result["admission_diagnostics"]
+        self.assertEqual(private["raw_leads"], 229)
+        self.assertEqual(private["reason_counts"]["venue_gps_unverified"], 185)
+        self.assertEqual(private["top_unverified_venues"][0]["lead_occurrences"], 29)
+        self.assertEqual(result["publications"], 0)
+        self.assertNotIn("source_url", json.dumps(result))
+
+    def test_admission_diagnostics_cannot_claim_more_than_private_backlog(self):
+        src = raw_report()
+        valid = {"scope": "private_raw_backlog_only_no_publication",
+                 "raw_leads": 229,
+                 "reason_counts": {"eligible": 40, "venue_gps_unverified": 189},
+                 "top_unverified_venues": [
+                     {"city": "Tourcoing", "venue": "Médiathèque André Malraux",
+                      "lead_occurrences": 29}]}
+        bad = (
+            dict(valid, raw_leads=230),
+            dict(valid, reason_counts={"eligible": 41, "venue_gps_unverified": 188}),
+            dict(valid, reason_counts={"eligible": 40, "venue_gps_unverified": 188}),
+            dict(valid, top_unverified_venues=[
+                {"city": "Tourcoing", "venue": "Médiathèque André Malraux",
+                 "lead_occurrences": 190}]),
+            dict(valid, top_unverified_venues=[
+                {"city": "Tourcoing", "venue": "Médiathèque André Malraux",
+                 "lead_occurrences": 20},
+                {"city": "Tourcoing", "venue": "Médiathèque André Malraux",
+                 "lead_occurrences": 20}]),
+            dict(valid, top_unverified_venues=[
+                {"city": "Ville", "venue": "https://private.example/secret",
+                 "lead_occurrences": 1}]),
+            dict(valid, top_unverified_venues=[
+                {"city": "Ville", "venue": "A" * 181,
+                 "lead_occurrences": 1}]),
+            dict(valid, reason_counts={"eligible": 40, "unknown": 189}),
+            dict(valid, raw_leads=True),
+        )
+        for case in bad:
+            with self.subTest(case=str(case)[:80]):
+                with self.assertRaises(ValueError):
+                    summarise(dict(src, admission_diagnostics=case), TODAY, 2)
+
     def test_rejects_inconsistent_counts_and_identity(self):
         source = raw_report()
         changes = (
