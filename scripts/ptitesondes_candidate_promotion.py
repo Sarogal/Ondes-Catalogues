@@ -280,6 +280,17 @@ def reconciled_openagenda_url(lead, row):
             not (same_agenda or reviewed_syndication) or
             source_parts[1] != expected_source_slug):
         raise ValueError("URL canonique différente")
+    if (source_parts[0], target_parts[0]) == (
+            "bibliotheques-de-territoire-marseille", "bibliotheques-de-marseille"):
+        # Live runner proof (12 Nov): canonical bare slug loads only a title,
+        # whereas the exact UID-prefixed ORIGINAL French agenda page contains
+        # the session's date, time, venue and family-audience wording.
+        # Keep all checks; verify the more complete, same-UID official page.
+        # No arbitrary language redirect, inferred slug, or cross-agenda URL.
+        if not re.fullmatch(r"[a-z0-9-]+", target_parts[1]):
+            raise ValueError("Slug de source officielle invalide")
+        return ("https://openagenda.com/fr/" + source_parts[0] +
+                "/events/" + source_parts[1])
     return canonical
 
 
