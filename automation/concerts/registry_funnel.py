@@ -30,6 +30,18 @@ AUTOMATIC_RECHECK_SOURCES = frozenset({
     "agenda_officiel_rockstore_detail_review",
     "bateau_ivre_official_detail_review",
 })
+# Only these verifiers require discovery's officialDetailFound=True. The Rex,
+# Molotov and Backstage independently fetch and verify the first-party detail;
+# a discovery flag is not required by their actual recheck contracts.
+# This affects PRIVATE DIAGNOSTICS ONLY, not qualification or publication.
+DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES = frozenset({
+    "agenda_officiel_ferrailleur_genre",
+    "agenda_officiel_atabal_detail",
+    "agenda_officiel_blacklab_detail_review",
+    "agenda_officiel_laiterie_detail_review",
+    "agenda_officiel_rockstore_detail_review",
+    "bateau_ivre_official_detail_review",
+})
 TERMINAL_STATUSES = frozenset({"approved", "rejected", "superseded"})
 EXCLUDED_BUCKETS = frozenset({
     "cancellation_watch", "excluded_nonconcert", "festival_overlap_review",
@@ -115,6 +127,7 @@ def build(registry, approvals, catalogue, as_of):
     date_counts = Counter()
     dispositions = Counter()
     source_counts = defaultdict(Counter)
+    source_dispositions = defaultdict(Counter)
     identities = Counter()
     eligible_stable = 0
     recheck_ready = 0
@@ -188,7 +201,8 @@ def build(registry, approvals, catalogue, as_of):
             disposition = "musical_genre_unconfirmed"
         elif not item.get("sourceUrl", "").startswith("https://"):
             disposition = "source_url_invalid"
-        elif not official_detail:
+        elif (source in DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES
+              and not official_detail):
             disposition = "missing_first_party_detail_evidence"
         elif not first_party:
             disposition = "first_party_status_not_established"
@@ -199,6 +213,7 @@ def build(registry, approvals, catalogue, as_of):
         else:
             disposition = "ready_for_independent_recheck"
         dispositions[disposition] += 1
+        source_dispositions[source][disposition] += 1
 
         # Review queue potential is not an automatically approvable concert.
         if (date_status == "future" and genre_tag and official_detail and first_party
@@ -251,12 +266,20 @@ def build(registry, approvals, catalogue, as_of):
             name: dict(sorted(counts.items()))
             for name, counts in sorted(source_counts.items())
         },
+        # Private aggregate only: show which source is blocked by which
+        # exclusive reason, without candidate IDs, names or official URLs.
+        "sourceBlockingReasons": {
+            name: dict(sorted(counts.items()))
+            for name, counts in sorted(source_dispositions.items())
+        },
         "notes": [
             "All source data and this diagnostic stay private.",
             "Textual identity collisions are advisory, never deduplicated for publication.",
             "Approved/published totals are full snapshots, not a single-cohort funnel.",
             "Public first-history-date metric is not the cloud sync event delta.",
             "Official detail flags and genre tags are discovery claims, not independent proof.",
+            "The discovery detail flag is required only by verifiers that enforce it.",
+            "Per-source blocking counts are diagnostics, never automatic approvals.",
             "Two distinct-day identity-stable observations remain mandatory.",
             "Only independently rechecked events pass preflight and public cloud sync.",
         ],
