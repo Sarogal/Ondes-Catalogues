@@ -1411,11 +1411,98 @@ def cargo_corrected_reference_events(reference, events, event_ids=()):
     return fixed
 
 
-def corrected_reference_event_state(reference, legacy=False, cargo_ids=()):
+
+# Individually signed correction for one immutable baseline event.
+# The artist's own official tour page explicitly marks 27 June 2027 at
+# Secret Place as CONCERT ANNULÉ (checked 2026-11-12). Vendor aggregators
+# still list stale tickets; never treat those as overriding the band's notice.
+SECRET_PLACE_CANCELLED_EVENT_ID = "go-c-20270627-secret-place-les-ramoneurs-de-menhir"
+SECRET_PLACE_CANCELLED_DATE = "2026-11-12"
+SECRET_PLACE_CANCELLED_SOURCE = "https://www.ramoneursdemenhirs.bzh/"
+SECRET_PLACE_CANCELLED_PATCH = {
+    "status": "cancelled",
+    "lastVerified": SECRET_PLACE_CANCELLED_DATE,
+    "cancellationSourceUrl": SECRET_PLACE_CANCELLED_SOURCE,
+}
+SECRET_PLACE_CANCELLED_HISTORY = {
+    "date": SECRET_PLACE_CANCELLED_DATE,
+    "change": ("Concert du 27 juin 2027 à Secret Place annoncé annulé "
+               "dans les dates officielles des Ramoneurs de Menhirs."),
+    "sourceUrl": SECRET_PLACE_CANCELLED_SOURCE,
+}
+
+
+def secret_place_cancelled_reference_events(reference, events):
+    """Patch only the known immutable event; preserve all original metadata."""
+    indices = [i for i, item in enumerate(reference["events"])
+               if item.get("id") == SECRET_PLACE_CANCELLED_EVENT_ID]
+    require(len(indices) == 1, "Ramoneurs : date historique non localisée")
+    index = indices[0]
+    original = reference["events"][index]
+    require(
+        original.get("title") ==
+            "Les Ramoneurs de Menhir + Les Tardigrades + Emo Prolapse"
+        and original.get("date") == "2027-06-27"
+        and original.get("venueId") == "secret-place-saint-jean-de-vedas"
+        and original.get("artistIds") == [
+            "les-ramoneurs-de-menhir", "les-tardigrades", "emo-prolapse"]
+        and original.get("status") == "confirmed"
+        and original.get("officialUrl") ==
+            "https://r.shotgun.live/fr/venues/secret-place"
+        and original.get("sourceType") == "organisateur"
+        and original.get("lastVerified") == "2026-11-01"
+        and isinstance(original.get("history"), list)
+        and len(original["history"]) == 1,
+        "Ramoneurs : fiche de référence différente de la date officielle annulée"
+    )
+    require(events[index] == original,
+            "Ramoneurs : correction impossible sur une autre fiche")
+    corrected = copy.deepcopy(original)
+    corrected.update(copy.deepcopy(SECRET_PLACE_CANCELLED_PATCH))
+    corrected["history"].append(copy.deepcopy(SECRET_PLACE_CANCELLED_HISTORY))
+    events[index] = corrected
+    return events
+
+
+def validate_secret_place_cancellation(approvals, reference, today):
+    """Require one independently approved, dated first-party cancellation proof."""
+    rows = approvals.get("referenceEventStatusCorrections", [])
+    require(isinstance(rows, list) and len(rows) <= 1,
+            "Ramoneurs : liste de corrections historiques de statut invalide")
+    if not rows:
+        return None
+    row = rows[0]
+    require(isinstance(row, dict)
+            and row.get("eventId") == SECRET_PLACE_CANCELLED_EVENT_ID
+            and row.get("reviewDecision") == "approved"
+            and row.get("reviewedBy") == "independent-official-verifier"
+            and row.get("reviewedAt") == SECRET_PLACE_CANCELLED_DATE
+            and row.get("eventPatch") == SECRET_PLACE_CANCELLED_PATCH,
+            "Ramoneurs : correction d'annulation non approuvée")
+    require(norm_date(row["reviewedAt"]) <= today,
+            "Ramoneurs : vérification officielle datée dans le futur")
+    evidence = row.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 1
+            and isinstance(evidence[0], dict)
+            and evidence[0].get("url") == SECRET_PLACE_CANCELLED_SOURCE
+            and evidence[0].get("proofType") == "official-artist-tour-calendar"
+            and evidence[0].get("checkedAt") == SECRET_PLACE_CANCELLED_DATE
+            and evidence[0].get("checkedFields") ==
+                ["artists", "date", "venue", "cancellation"]
+            and evidence[0].get("observedStatus") == "concert annule",
+            "Ramoneurs : annulation nominative, date ou lieu non corroborés")
+    secret_place_cancelled_reference_events(
+        reference, copy.deepcopy(reference["events"]))
+    return row
+
+def corrected_reference_event_state(reference, legacy=False, cargo_ids=(),
+                                    cancel_secret_place=False):
     """Generate only allowable combinations; leave the base reference untouched."""
     events = (legacy_corrected_events(reference) if legacy
               else copy.deepcopy(reference["events"]))
-    return cargo_corrected_reference_events(reference, events, cargo_ids)
+    events = cargo_corrected_reference_events(reference, events, cargo_ids)
+    return (secret_place_cancelled_reference_events(reference, events)
+            if cancel_secret_place else events)
 
 
 def validate_cargo_reference_time_corrections(approvals, reference, today):
@@ -1554,8 +1641,10 @@ def protect_reference(reference, current):
                 for mask in range(1 << len(cargo_ids)):
                     chosen = tuple(event_id for i, event_id in enumerate(cargo_ids)
                                    if mask & (1 << i))
-                    permitted.append(corrected_reference_event_state(
-                        reference, legacy=legacy, cargo_ids=chosen))
+                    for cancelled in (False, True):
+                        permitted.append(corrected_reference_event_state(
+                            reference, legacy=legacy, cargo_ids=chosen,
+                            cancel_secret_place=cancelled))
             require(now[:len(initial)] in permitted,
                     "Concert historique modifié hors exceptions nominatives vérifiées")
         elif kind == "venues":
@@ -7008,6 +7097,8 @@ def merge(reference, current, approvals, today):
     correction = validate_legacy_correction(approvals, reference, today)
     cargo_time_corrections = validate_cargo_reference_time_corrections(
         approvals, reference, today)
+    status_correction = validate_secret_place_cancellation(
+        approvals, reference, today)
     current_prefix = current["events"][:len(reference["events"])]
     # Previously applied changes also need a persistent signed private proof.
     signed_ids = sorted(cargo_time_corrections)
@@ -7016,12 +7107,15 @@ def merge(reference, current, approvals, today):
         for mask in range(1 << len(signed_ids)):
             subset = tuple(event_id for i, event_id in enumerate(signed_ids)
                            if mask & (1 << i))
-            permissible_prior.append(corrected_reference_event_state(
-                reference, legacy=legacy, cargo_ids=subset))
+            for cancelled in ((False, True) if status_correction else (False,)):
+                permissible_prior.append(corrected_reference_event_state(
+                    reference, legacy=legacy, cargo_ids=subset,
+                    cancel_secret_place=cancelled))
     require(current_prefix in permissible_prior,
             "Concert historique corrigé sans preuve privée persistante")
     desired = corrected_reference_event_state(
-        reference, legacy=bool(correction), cargo_ids=signed_ids)
+        reference, legacy=bool(correction), cargo_ids=signed_ids,
+        cancel_secret_place=bool(status_correction))
     corrected_count = sum(old != new for old, new
                           in zip(current_prefix, desired))
     if corrected_count:
