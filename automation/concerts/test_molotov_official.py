@@ -340,13 +340,35 @@ class MolotovRecheckTests(unittest.TestCase):
                                   {x["id"]:x for x in c["venues"]},
                                   {}, dt.date(2026,11,12))
 
-    def test_new_artist_and_guest_does_not_bypass_stability_rules(self):
+    def test_new_named_artist_and_unannounced_guest_publish_without_fake_artist(self):
+        from concerts_cloud_sync import validate_approval
         c = {"artists": [], "venues": catalogue()["venues"], "events": []}
         candidate = self.newly_documented_candidate()
         candidate["name"] = "PÆRISH + mirabelle + Guest"
         page = self.newly_documented_molotov_page(title=candidate["name"])
+        row = m.verify(candidate, page, c, dt.date(2026,11,12))
+        self.assertEqual(row["event"]["artistIds"], ["paerish", "mirabelle"])
+        self.assertEqual(row["event"]["title"], "PÆRISH + mirabelle")
+        self.assertEqual(row["officialEvidence"][0]["unannouncedSupportLabel"],
+                         "guest")
+        self.assertEqual(row["officialEvidence"][0]["sourceStructure"],
+                         m.VERIFIED_NEW_STRUCTURE)
+        event, new = validate_approval(
+            row, {x["id"]:x for x in c["venues"]},
+            {}, dt.date(2026,11,12))
+        self.assertEqual(event["title"], "PÆRISH + mirabelle")
+        self.assertEqual(set(new), {"paerish", "mirabelle"})
+        self.assertNotIn("guest", event["title"].lower())
+
+        incomplete = self.newly_documented_molotov_page(
+            title=candidate["name"], second_socials=False)
         with self.assertRaises(ValueError):
-            m.verify(candidate, page, c, dt.date(2026,11,12))
+            m.verify(candidate, incomplete, c, dt.date(2026,11,12))
+        unconfirmed_first = self.newly_documented_molotov_page(
+            title="Guest + PÆRISH")
+        candidate["name"] = "Guest + PÆRISH"
+        with self.assertRaises(ValueError):
+            m.verify(candidate, unconfirmed_first, c, dt.date(2026,11,12))
 
 
 if __name__=="__main__":
