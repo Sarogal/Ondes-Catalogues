@@ -2196,6 +2196,16 @@
       "id": "toxic-frogs",
       "name": "TOXIC FROGS",
       "aliases": []
+    },
+    {
+      "id": "paerish",
+      "name": "PÆRISH",
+      "aliases": []
+    },
+    {
+      "id": "mirabelle",
+      "name": "mirabelle",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14265,6 +14275,39 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270131-marseille-paerish",
+      "title": "PÆRISH + mirabelle",
+      "date": "2027-01-31",
+      "artistIds": [
+        "paerish",
+        "mirabelle"
+      ],
+      "venueId": "le-molotov-marseille",
+      "genres": [
+        "Alt Rock",
+        "Emo",
+        "Post Hardcore",
+        "Shoegaze"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://lemolotov.com/events/paerish/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Molotov",
       "ticketUrl": null,
       "lastVerified": "2026-11-12",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
