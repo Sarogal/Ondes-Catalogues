@@ -135,6 +135,9 @@ def artist_names(title):
 
 
 def verify(candidate, html_text, catalogue, today):
+    if candidate.get("source") == "bateau_ivre_official_detail_review":
+        import bateau_ivre_official_recheck
+        return bateau_ivre_official_recheck.verify(candidate, html_text, catalogue, today)
     if candidate.get("source") == "agenda_officiel_rockstore_detail_review":
         import rockstore_official_recheck
         return rockstore_official_recheck.verify(candidate, html_text, catalogue, today)
@@ -245,7 +248,7 @@ def download_official(url, robots_cache):
         raise ValueError("robots.txt interdit la récupération")
     response = Request(url, headers={"User-Agent": discover.AGENT})
     with urlopen(response, timeout=12) as r:
-        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr"):
+        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop"):
             raise ValueError("Redirection hors domaine officiel")
         raw = r.read(500_001)
         if len(raw) > 500_000:
@@ -283,7 +286,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                    "agenda_officiel_atabal_detail",
                    "agenda_officiel_blacklab_detail_review",
                    "agenda_officiel_laiterie_detail_review",
-                   "agenda_officiel_rockstore_detail_review") and
+                   "agenda_officiel_rockstore_detail_review",
+                   "bateau_ivre_official_detail_review") and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
