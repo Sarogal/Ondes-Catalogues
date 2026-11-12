@@ -160,6 +160,100 @@ class TargetedPressArticleTests(unittest.TestCase):
             self.assertTrue(all(not c["edition_dates_verified"]
                                 for c in row["claims"]))
 
+    def test_validated_press_starts_private_dossiers_without_homepage_hint(self):
+        from national_discovery_queue import build_queue
+        st = state()
+        scan(st, SOURCES, TODAY, fetch=fetch)
+        report = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+            "press_edition_archive_integrity_private": "CONSISTENT",
+            "historical_future_watch_archive_status_private": "CONSISTENT",
+        }
+        queue = build_queue(st, report, [], TODAY)
+        self.assertEqual(queue["candidate_dossiers_count"], 2)
+        self.assertEqual(queue["press_article_research_dossiers_private"], 2)
+        self.assertEqual(queue["historical_homepage_date_hints_private"], 0)
+        for dossier in queue["dossiers"]:
+            self.assertEqual(dossier["date_hints"], [])
+            self.assertEqual(dossier["historical_homepage_date_hints_review_only"], [])
+            self.assertEqual(len(dossier["sources"]), 1)
+            self.assertEqual(dossier["sources"][0]["kind"],
+                             "PRESS_ARTICLE_DATE_CLAIM_REVIEW")
+            self.assertEqual(dossier["sources"][0]["discovered_via"],
+                             dossier["sources"][0]["url"])
+            self.assertFalse(dossier["sources"][0]["independence_verified"])
+            self.assertFalse(dossier["publication_authorized"])
+            self.assertFalse(dossier["safe_to_publish"])
+            self.assertIn("editorial_signoff", dossier["missing_checks"])
+
+    def test_press_only_queue_fails_closed_if_archives_diverge(self):
+        from national_discovery_queue import build_queue
+        st = state()
+        scan(st, SOURCES, TODAY, fetch=fetch)
+        initial = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+        }
+        for integrity in (None, "DIVERGENT", "UNAVAILABLE_OR_INVALID"):
+            with self.subTest(integrity=integrity):
+                rep = dict(initial)
+                if integrity is not None:
+                    rep["press_edition_archive_integrity_private"] = integrity
+                out = build_queue(st, rep, [], TODAY)
+                self.assertEqual(out["candidate_dossiers_count"], 0)
+                self.assertEqual(out["press_article_research_dossiers_private"], 0)
+
+    def test_press_queue_does_not_trust_forged_state_or_more_urls(self):
+        from national_discovery_queue import build_queue
+        st = state()
+        scan(st, {"gueules-progres": SOURCES["gueules-progres"]},
+             TODAY, fetch=fetch)
+        rep = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+            "press_edition_archive_integrity_private": "CONSISTENT",
+        }
+        original = deepcopy(st["press_edition_observations_private"]["gueules-progres"])
+        for patch in (
+                {"article_url": "https://evil.example/reassign"},
+                {"publication_authorized": True},
+                {"independence_verified": True},
+                {"observed_claim_ids": ["unknown-2027"]},
+                {"observed_at": "2027-01-01"}):
+            with self.subTest(patch=patch):
+                st["press_edition_observations_private"]["gueules-progres"] = dict(
+                    original, **patch)
+                self.assertEqual(build_queue(st, rep, [], TODAY)[
+                    "press_article_research_dossiers_private"], 0)
+
+    def test_repeated_press_witness_does_not_create_duplicate_dossiers(self):
+        from national_discovery_queue import build_queue
+        from historical_future_lead_watch import scan as historic_scan
+        from historical_future_lead_watch import APPROVED as HIST
+        st = state()
+        scan(st, {"gueules-progres": SOURCES["gueules-progres"]},
+             TODAY, fetch=fetch)
+        name, region, url = HIST["les-gueules-de-bois"]
+        historic_scan(st, {"les-gueules-de-bois": {
+            "slug": "les-gueules-de-bois", "name": name,
+            "region": region, "url": url, "last_known_year": 2026}},
+            TODAY, fetch=lambda _: (
+                "<main><h1>Les Gueules de Bois hiver 2027</h1>"
+                "<p>Samedi 13 février 2027 à Légna.</p></main>"))
+        rep = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+            "historical_future_watch_archive_status_private": "CONSISTENT",
+            "press_edition_archive_integrity_private": "CONSISTENT",
+        }
+        q = build_queue(st, rep, [], TODAY)
+        self.assertEqual(q["candidate_dossiers_count"], 1)
+        self.assertEqual(q["press_article_research_dossiers_private"], 1)
+        self.assertEqual(q["historical_homepage_dossiers_private"], 1)
+        self.assertEqual(len(q["dossiers"][0]["sources"]), 2)
+        self.assertEqual(q["publications"], 0)
+
     def test_source_injection_never_causes_an_unreviewed_fetch(self):
         st = state()
         fake = dict(SOURCES["mauges-angers"],
