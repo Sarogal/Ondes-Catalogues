@@ -276,6 +276,31 @@ class FirstPartyResearchTests(unittest.TestCase):
             self.assertFalse(dossier["future_edition_confirmed"])
             self.assertFalse(dossier["publication_authorized"])
             self.assertFalse(dossier["safe_to_publish"])
+        # Generic same-year coverage of one edition MUST NOT hide another.
+        for start, end, other in (
+                ("2027-02-13", "2027-02-13", "2027-08-19"),
+                ("2027-08-19", "2027-08-21", "2027-02-13")):
+            with self.subTest(published_start=start):
+                same_year = build_review(
+                    queue, detail, st, [],
+                    {"schema": 1, "festivals": [{
+                        "slug": "les-gueules-de-bois-one-2027",
+                        "name": "Les Gueules de Bois", "region":
+                            "Bourgogne-Franche-Comté", "city": "Légna",
+                        "startDate": start, "endDate": end,
+                    }]}, archives, TODAY)
+                existing = next(x for x in same_year["dossiers"]
+                                if x["name_hint"] == "Les Gueules de Bois")
+                self.assertEqual(existing["status"], "POTENTIAL_CONFLICT_REVIEW")
+                self.assertEqual(len(
+                    existing["first_party_uncovered_date_claims_review_only"]), 1)
+                self.assertEqual(
+                    existing["first_party_uncovered_date_claims_review_only"][0]
+                    ["start_date_hint"], other)
+                self.assertIn("published_same_year_may_hide_other_edition",
+                              existing["missing_checks"])
+                self.assertEqual(same_year["publications"], 0)
+
         # Poisoned private evidence cannot survive reconciliation.
         st["first_party_edition_observations_private"]["les-gueules-de-bois"][
             "edition_dates_verified"] = True
