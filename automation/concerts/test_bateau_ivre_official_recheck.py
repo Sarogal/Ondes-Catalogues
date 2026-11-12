@@ -167,5 +167,53 @@ class BateauIndependentRecheck(unittest.TestCase):
                 v["id"]: v for v in catalogue()["venues"]}, {}, TODAY)
 
 
+    def test_sold_out_is_not_an_artist_in_official_two_band_bill(self):
+        url = (discovery.BASE + "/%C3%A9v%C3%A8nements/"
+               "les-ramoneurs-de-menhirs-toxic-frogs/")
+        title = "[COMPLET] LES RAMONEURS DE MENHIRS + TOXIC FROGS"
+        html = ("""<html><main><article class="events type-events status-publish">
+          <header><h1 class="entry-title">""" + title +
+          """</h1>Vendredi 20 Nov 2026<br>20h</header>
+          <div class="mobileView"><h1 class="entry-title">""" + title +
+          """</h1>Vendredi 20 Nov 2026<br>20h</div>
+          <div class="singleEvententry-content">
+            <h2 class="wp-block-post-title">""" + title +
+          """</h2><p>Concert punk rock et musique celtique punk.</p>
+            <h2 class="wp-block-heading">LES RAMONEURS DE MENHIRS</h2>
+            <p>Une formation punk bretonne en concert.</p>
+            <h2 class="wp-block-heading">TOXIC FROGS</h2>
+            <p>Groupe de rock celtique punk français.</p>
+          </div></article></main></html>""")
+        lead = discovery.candidate(html, url, SOURCE, TODAY.isoformat())
+        self.assertEqual(lead["name"], title)
+        lead = {**lead, "reviewBucket": "genre_tag_review",
+                "possibleExistingConcert": False}
+        approval = check.verify(lead, html, catalogue(), TODAY)
+        self.assertEqual(approval["event"]["title"],
+                         "LES RAMONEURS DE MENHIRS + TOXIC FROGS")
+        self.assertEqual(approval["event"]["artistIds"],
+                         ["les-ramoneurs-de-menhirs", "toxic-frogs"])
+        self.assertEqual(len(approval["newArtists"]), 2)
+        self.assertNotIn("complet", approval["event"]["title"].lower())
+        self.assertIsNone(approval["event"]["time"])
+        validated, artists = validate_approval(
+            approval, {x["id"]: x for x in catalogue()["venues"]}, {}, TODAY)
+        self.assertEqual(validated["title"], approval["event"]["title"])
+        self.assertEqual(len(artists), 2)
+
+        for suspicious in ("[ANNULÉ] ", "[REPORTÉ] ", "[UNKNOWN] "):
+            replaced = html.replace("[COMPLET] ", suspicious)
+            replaced_lead = discovery.candidate(
+                replaced, url, SOURCE, TODAY.isoformat()) if suspicious == "[UNKNOWN] " else None
+            if replaced_lead is not None:
+                replaced_lead.update({"reviewBucket": "genre_tag_review",
+                                      "possibleExistingConcert": False})
+                with self.assertRaises(ValueError):
+                    check.verify(replaced_lead, replaced, catalogue(), TODAY)
+            else:
+                with self.assertRaises(ValueError):
+                    discovery.candidate(replaced, url, SOURCE, TODAY.isoformat())
+
+
 if __name__ == "__main__":
     unittest.main()
