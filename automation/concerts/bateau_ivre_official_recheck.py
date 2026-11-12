@@ -97,8 +97,11 @@ def exact_names(fresh, page):
     if (doc.count != 1 or not doc.status_ok or len(doc.h1) not in (1, 2)
             or len({normalized(x) for x in doc.h1}) != 1):
         raise ValueError("Bateau Ivre : un événement officiel publié et unique exigé")
-    title = fresh.get("name", "")
-    names = [x.strip() for x in re.split(r"\s+\+\s+", title)]
+    raw_title = fresh.get("name", "")
+    # Only the exact first-party bracketed sold-out marker is presentation
+    # status, not part of any artist's name. All other prefixes fail closed.
+    title = re.sub(r"^\\[COMPLET\\]\\s+", "", raw_title, count=1, flags=re.I)
+    names = [x.strip() for x in re.split(r"\\s+\\+\\s+", title)]
     if not 1 <= len(names) <= 4:
         raise ValueError("Bateau Ivre : plateau non délimité avec certitude")
     known = [normalized(x) for x in names]
@@ -107,7 +110,9 @@ def exact_names(fresh, page):
         raise ValueError("Bateau Ivre : noms d'artistes ambigus")
     # Original header may name only the headliner, while the official H2
     # subtitle and body artist sections document the supporting artists.
-    if normalized(doc.h1[0]) not in (known[0], normalized(title)):
+    normalized_h1 = normalized(
+        re.sub(r"^\\[COMPLET\\]\\s+", "", doc.h1[0], count=1, flags=re.I))
+    if normalized_h1 not in (known[0], normalized(title)):
         raise ValueError("Bateau Ivre : tête d'affiche non concordante")
     sections = {normalized(x.lstrip("+ ").strip()) for x in doc.named_sections}
     # The genre must be described before individual artist biographies,
