@@ -274,8 +274,8 @@ class MolotovRecheckTests(unittest.TestCase):
         row = m.verify(self.newly_documented_candidate(),
                        self.newly_documented_molotov_page(), c, dt.date(2026,11,12))
         self.assertEqual(row["event"]["title"], "PÆRISH + mirabelle")
-        self.assertEqual(row["event"]["id"], "go-c-20270131-marseille-prish")
-        self.assertEqual(row["event"]["artistIds"], ["prish", "mirabelle"])
+        self.assertEqual(row["event"]["id"], "go-c-20270131-marseille-paerish")
+        self.assertEqual(row["event"]["artistIds"], ["paerish", "mirabelle"])
         self.assertEqual([a["name"] for a in row["newArtists"]],
                          ["PÆRISH", "mirabelle"])
         self.assertEqual(row["officialEvidence"][0]["sourceStructure"],
@@ -285,7 +285,7 @@ class MolotovRecheckTests(unittest.TestCase):
         checked, new = validate_approval(
             row, {x["id"]:x for x in c["venues"]}, {}, dt.date(2026,11,12))
         self.assertEqual(checked["artistIds"], ["prish", "mirabelle"])
-        self.assertEqual(set(new), {"prish", "mirabelle"})
+        self.assertEqual(set(new), {"paerish", "mirabelle"})
         self.assertIsNone(checked["time"])
 
     def test_molotov_new_artist_has_two_socials_and_individual_section_per_act(self):
@@ -316,10 +316,13 @@ class MolotovRecheckTests(unittest.TestCase):
              "venues": catalogue()["venues"], "events": []}
         with self.assertRaises(ValueError):
             m.verify(candidate, page, c, dt.date(2026,11,12))
+        c["artists"] = [{"id": "other", "name": "PAERISH", "aliases": []}]
+        with self.assertRaises(ValueError):
+            m.verify(candidate, page, c, dt.date(2026,11,12))
         c["artists"] = []
         c["events"] = [{"officialUrl": candidate["sourceUrl"],
                         "date": "2027-01-31",
-                        "venueId": m.VENUE, "artistIds": ["prish"]}]
+                        "venueId": m.VENUE, "artistIds": ["paerish"]}]
         with self.assertRaisesRegex(ValueError, "déjà référencé"):
             m.verify(candidate, page, c, dt.date(2026,11,12))
         c["events"] = []
