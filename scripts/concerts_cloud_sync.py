@@ -4060,6 +4060,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
+    bateau_auto = False
     laiterie_auto = False
     rockstore_auto = False
     if reviewer == "automated-official-recheck":
@@ -4132,6 +4133,18 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event.get("time") is None and
             not (approval.get("newArtists") or [])
         )
+        bateau_auto = (
+            venue == "le-bateau-ivre-tours" and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "www.bateauivre.coop" and
+            bool(re.fullmatch(
+                r"/%C3%A9v%C3%A8nements/[a-z0-9-]{3,140}/",
+                parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None
+        )
         laiterie_auto = (
             venue == "la-laiterie-strasbourg" and
             event_id not in LAITERIE_OFFICIAL_VERIFIED and
@@ -4164,7 +4177,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         )
         require(bool(rex or molotov or ferrailleur or backstage
                      or atabal_pilot or atabal_multi or blacklab_auto
-                     or laiterie_auto or rockstore_auto)
+                     or laiterie_auto or rockstore_auto or bateau_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -4843,6 +4856,63 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(norm(x["name"]) not in {norm(y["name"]) for y in known_artist_ids.values()}
                         for x in new_artists),
                 "La Laiterie : nouveaux artistes non vérifiés ou identité discordante")
+    elif (event.get("venueId") == "le-bateau-ivre-tours"
+          and reviewer == "automated-official-recheck"):
+        # Independent publisher gate: no generic agenda cards or inferred
+        # guests may bypass the per-artist section verification.
+        require(bateau_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "Le Bateau Ivre"
+                and 1 <= len(ids) <= 4 and len(new_artists) <= 3
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Bateau Ivre : profil de publication non autorisé")
+        proof = evidence[0]
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("checkedFields") ==
+                    ["artists", "date", "venue", "genre"]
+                and proof.get("sourceStructure") ==
+                    "bateau-ivre-first-party-named-artist-sections"
+                and proof.get("sourcePage") in (
+                    "https://www.bateauivre.coop/2027/?post_type=events",
+                    "https://www.bateauivre.coop/agenda-2/")
+                and proof.get("verifiedNewArtists") ==
+                    [x["name"] for x in new_artists],
+                "Bateau Ivre : attestation individuelle ou liste d'artistes incorrecte")
+        names = proof.get("officialArtistNames")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                        for n in names)
+                and len({norm(n) for n in names}) == len(names)
+                and event.get("title") == " + ".join(names),
+                "Bateau Ivre : plateau incomplet, ambigu ou altéré")
+        for name, aid in zip(names, ids):
+            artist = added.get(aid) or known_artist_ids.get(aid)
+            require(isinstance(artist, dict)
+                    and norm(artist.get("name")) == norm(name),
+                    "Bateau Ivre : identifiant non concordant avec l'artiste")
+        existing_names = {norm(a["name"]) for a in known_artist_ids.values()}
+        existing_aliases = {norm(alias)
+                            for a in known_artist_ids.values()
+                            for alias in (a.get("aliases") or [])
+                            if isinstance(alias, str)}
+        require(all(norm(a["name"]) not in existing_names | existing_aliases
+                    and a["id"] == norm(a["name"]).replace(" ", "-")[:90].strip("-")
+                    for a in new_artists),
+                "Bateau Ivre : nouvel artiste déjà répertorié ou identifiant non canonique")
+        require(event_id == ("go-c-" + event["date"].replace("-", "") +
+                            "-tours-" + ids[0])
+                and norm_date(event["date"]) > today
+                and event.get("time") is None,
+                "Bateau Ivre : date, lieu ou début musical non confirmés")
+        require(len(event.get("genres") or []) == 1
+                and norm(event["genres"][0]) in {
+                    "rock", "punk", "metal", "grunge", "shoegaze",
+                    "stoner", "sludge", "doom", "post rock", "post punk",
+                    "hardcore", "noise rock", "garage rock",
+                    "hard rock", "ska punk",
+                },
+                "Bateau Ivre : genre explicite insuffisant")
     elif (event.get("venueId") == "the-black-lab-wasquehal"
           and reviewer == "automated-official-recheck"):
         # This independent gate mirrors the Black Lab's only permitted
