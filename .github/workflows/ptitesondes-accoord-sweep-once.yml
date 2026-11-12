@@ -1,0 +1,65 @@
+name: "P'tites Ondes — mesure unique de rendement Accoord"
+on:
+  push:
+    branches: [feat/ptitesondes-accoord-independent-schedule-20261112]
+    paths:
+      - '.github/workflows/ptitesondes-accoord-sweep-once.yml'
+permissions:
+  contents: read
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+jobs:
+  measure:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+    steps:
+      - name: Refuser le contrôle si le jeton privé de lecture est absent
+        run: |
+          test -n "$READ_TOKEN"
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: public
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: state
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Qualifier tous les UID/jours et publier exclusivement des compteurs agreges
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! PYTHONPATH=public/scripts python public/scripts/ptitesondes_full_candidate_audit.py \
+            --backlog-file state/automation-intake/ptitesondes/backlog.json \
+            --catalogue-file public/docs/ptitesondes/sorties.json \
+            --output "$RUNNER_TEMP/accoord-full-audit.json" \
+            > "$RUNNER_TEMP/accoord-full-audit-private.log" 2>&1; then
+            echo "::error::Balayage strict incomplet ; aucun dossier n'a été autorisé."
+            exit 1
+          fi
+          PYTHONPATH=public/scripts python - <<'PY'
+          import json, os
+          from ptitesondes_full_candidate_audit import public_summary
+          path = os.environ["RUNNER_TEMP"] + "/accoord-full-audit.json"
+          data = json.load(open(path, encoding="utf-8"))
+          public = public_summary(data)
+          assert data["public_writes"] == 0
+          assert data["private_patch_approvals"] == 0
+          assert public["checked"] == public["accepted_preflight_decisions"] + public["rejected_decisions"]
+          print("Prévalidation exhaustive sans publication :", json.dumps(public, sort_keys=True))
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("## Audit complet après règle Accoord — aucun patch approuvé\n\n")
+              f.write("`" + json.dumps(public, sort_keys=True) + "`\n")
+          PY
