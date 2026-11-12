@@ -23,12 +23,14 @@ MONTHS = {
 # Genre labels in the HTML must be explicit; broad venue descriptions are ignored.
 ALLOWED = GENRES | {"alt metal", "melodic death metal", "modern metal",
                     "blackened hardcore", "post punk", "street punk",
-                    "punk hxc", "grunge", "progressive metal", "groove metal"}
+                    "punk hxc", "grunge", "progressive metal", "groove metal",
+                    "post hardcore"}
 
 
 
 UNANNOUNCED_SUPPORT = frozenset({
-    "guest", "special guest", "invite", "invite surprise", "artiste surprise",
+    "guest", "guests", "special guest", "special guests", "invite",
+    "invite surprise", "artiste surprise",
     "premiere partie", "1ere partie", "1re partie", "support",
     "a confirmer", "tba", "surprise",
 })
@@ -48,7 +50,8 @@ def confirmed_bill(title):
                 or any(len(norm(x)) < 3 or BANNED.search(norm(x))
                        for x in named)):
             raise ValueError("Affiche principale invalide ou invitée ambiguë")
-        return named, unknown
+        # Canonical singular proof label keeps the publishing policy strict.
+        return named, "guest" if unknown in {"guests", "special guests"} else unknown
     # Retain the established strict path for fully named official bills.
     return artist_names(title), None
 
@@ -61,12 +64,18 @@ class Headings(HTMLParser):
         self.collect = None
         self.depth = 0
         self.text_parts = []
+        self.div_ids = []
+        self.scopes = []
+        self.current_scope = None
 
     def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
         if tag == "article":
             self.article += 1
         if not self.article:
             return
+        if tag == "div":
+            self.div_ids.append(attrs.get("id"))
         if self.collect and tag in ("br", "hr", "img", "input"):
             self.text_parts.append(" ")
         elif self.collect:
@@ -75,14 +84,25 @@ class Headings(HTMLParser):
             self.collect = tag
             self.depth = 1
             self.text_parts = []
+            self.current_scope = (
+                "entry-title" if tag == "h1" and
+                "entry-title" in attrs.get("class", "").split()
+                else "event-card" if tag == "h1" and
+                "eveCardsolo" in self.div_ids and "eveName" in self.div_ids
+                else None
+            )
 
     def handle_endtag(self, tag):
         if self.collect:
             self.depth -= 1
             if self.depth == 0:
                 self.rows.append((self.collect, " ".join(" ".join(self.text_parts).split())))
+                self.scopes.append(self.current_scope)
                 self.collect = None
+                self.current_scope = None
                 self.text_parts = []
+        if tag == "div" and self.article and self.div_ids:
+            self.div_ids.pop()
         if tag == "article":
             self.article = max(0, self.article - 1)
 
@@ -96,9 +116,18 @@ def parse_detail(page):
     parser.feed(page)
     rows = parser.rows
     title_at = [(n, text) for n, (tag, text) in enumerate(rows) if tag == "h1" and text]
-    if len(title_at) != 1:
+    if len(title_at) == 1:
+        pos, title = title_at[0]
+    elif (len(title_at) == 2
+          and parser.scopes[title_at[0][0]] == "entry-title"
+          and parser.scopes[title_at[1][0]] == "event-card"
+          and norm(title_at[0][1]) == norm(title_at[1][1])):
+        # The live Molotov WordPress template repeats ONE identical title in
+        # the article header and inside #eveCardsolo > #eveName.
+        # Select the card title so the complete date/address precede it.
+        pos, title = title_at[1]
+    else:
         raise ValueError("Une seule affiche officielle détaillée est nécessaire")
-    pos, title = title_at[0]
     before = rows[:pos]
     # Require exactly one date and the venue and street address in detail
     days = [v for k, v in before if k == "h2" and re.fullmatch(r"\d{1,2}", v)]
