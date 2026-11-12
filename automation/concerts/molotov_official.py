@@ -308,7 +308,7 @@ def verify(candidate, page, catalogue, today):
     if len(set(ids)) != len(ids):
         raise ValueError("Identités d'artistes en collision")
     if absent:
-        if unannounced or len(new_artists) > 2:
+        if len(new_artists) > 2:
             raise ValueError("Artiste absent ou ambigu dans le catalogue Molotov")
         try:
             profile_counts = verified_new_artists(page, parts, absent)
@@ -346,12 +346,16 @@ def verify(candidate, page, catalogue, today):
             "officialArtistProfileLinkCounts": profile_counts,
         })
     if unannounced:
-        proof.update({
-            "officialArtistNames": [next(a["name"] for a in catalogue["artists"]
-                                         if a["id"] == artist_id) for artist_id in ids],
-            "sourceStructure": PARTIAL_STRUCTURE,
-            "unannouncedSupportLabel": unannounced,
-        })
+        # A genuine but unnamed guest never becomes an artist. New named
+        # performers remain eligible only with their own complete profile
+        # proof; legacy known-artist bills retain the older strict structure.
+        proof["unannouncedSupportLabel"] = unannounced
+        if not new_artists:
+            proof.update({
+                "officialArtistNames": [next(a["name"] for a in catalogue["artists"]
+                                             if a["id"] == artist_id) for artist_id in ids],
+                "sourceStructure": PARTIAL_STRUCTURE,
+            })
     return {
         "reviewDecision": "approved", "reviewedBy": "automated-official-recheck",
         "reviewedAt": today.isoformat(),
