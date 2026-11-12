@@ -2186,6 +2186,16 @@
       "id": "tachycardie",
       "name": "TACHYCARDIE",
       "aliases": []
+    },
+    {
+      "id": "les-ramoneurs-de-menhirs",
+      "name": "LES RAMONEURS DE MENHIRS",
+      "aliases": []
+    },
+    {
+      "id": "toxic-frogs",
+      "name": "TOXIC FROGS",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14221,6 +14231,36 @@
       ],
       "status": "confirmed",
       "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/orchestre-tout-puissant-marcel-duchamp/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Bateau Ivre",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261120-tours-les-ramoneurs-de-menhirs",
+      "title": "LES RAMONEURS DE MENHIRS + TOXIC FROGS",
+      "date": "2026-11-20",
+      "artistIds": [
+        "les-ramoneurs-de-menhirs",
+        "toxic-frogs"
+      ],
+      "venueId": "le-bateau-ivre-tours",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.bateauivre.coop/%C3%A9v%C3%A8nements/les-ramoneurs-de-menhirs-toxic-frogs/",
       "sourceType": "salle",
       "time": null,
       "timeMeaning": "non confirmé",
