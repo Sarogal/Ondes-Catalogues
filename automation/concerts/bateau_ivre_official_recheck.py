@@ -48,6 +48,8 @@ class EventSections(HTMLParser):
         self.buffer = []
         self.h1 = []
         self.named_sections = []
+        self.intro_parts = []
+        self.in_biography_sections = False
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
@@ -60,6 +62,8 @@ class EventSections(HTMLParser):
             )
         if not self.in_article or self.count != 1:
             return
+        if tag == "h2" and "wp-block-heading" in attrs.get("class", "").split():
+            self.in_biography_sections = True
         if self.collect and tag == "br":
             self.buffer.append(" ")
         elif self.collect is None and tag in ("h1", "h2"):
@@ -67,6 +71,8 @@ class EventSections(HTMLParser):
             self.buffer = []
 
     def handle_data(self, data):
+        if self.in_article and not self.in_biography_sections:
+            self.intro_parts.append(data)
         if self.in_article and self.collect is not None:
             self.buffer.append(data)
 
@@ -104,6 +110,11 @@ def exact_names(fresh, page):
     if normalized(doc.h1[0]) not in (known[0], normalized(title)):
         raise ValueError("Bateau Ivre : tête d'affiche non concordante")
     sections = {normalized(x.lstrip("+ ").strip()) for x in doc.named_sections}
+    # The genre must be described before individual artist biographies,
+    # not in adjacent recommendations or a later unrelated act section.
+    intro = adapter.fold(" ".join(doc.intro_parts))[:7000]
+    if not adapter.GENRE.search(intro):
+        raise ValueError("Bateau Ivre : genre pertinent absent de l'affiche")
     for support in known[1:]:
         if support not in sections:
             raise ValueError("Bateau Ivre : première partie non corroborée dans sa section")
@@ -155,10 +166,13 @@ def verify(candidate, page, catalogue, today):
         raise ValueError("Bateau Ivre : coordonnées non certifiées")
 
     existing = {}
+    aliases = set()
     reserved = set()
     for artist in catalogue["artists"]:
         reserved.add(artist["id"])
         existing.setdefault(normalized(artist.get("name")), []).append(artist)
+        aliases.update(normalized(x) for x in (artist.get("aliases") or [])
+                       if isinstance(x, str))
     ids, new = [], []
     for name in names:
         key = normalized(name)
@@ -172,6 +186,8 @@ def verify(candidate, page, catalogue, today):
             # a description mentioning a band is not evidence for adding it.
             if key not in sections:
                 raise ValueError("Bateau Ivre : artiste nouveau sans section nominative")
+            if key in aliases:
+                raise ValueError("Bateau Ivre : artiste déjà connu sous un alias")
             ident = key.replace(" ", "-")[:90].strip("-")
             if len(ident) < 3 or ident in reserved:
                 raise ValueError("Bateau Ivre : nouvel identifiant en collision")
