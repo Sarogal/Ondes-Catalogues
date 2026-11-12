@@ -82,7 +82,8 @@ def roster(today, fetch_archive=load_verified_roster):
             if (tuple(reference[key] for key in ("name", "region", "url"))
                     != (source["name"], source["region"], source["url"])
                     or not permitted_url(source["url"])
-                    or source["year"] <= date.fromisoformat(today).year):
+                    or not any(date.fromisoformat(spec["end"]) >= date.fromisoformat(today)
+                               for spec in source["claims"].values())):
                 raise ValueError("festival identity no longer approved")
             selected[slug] = source
     except (KeyError, ValueError, TypeError):
@@ -153,7 +154,9 @@ def validated_observations(state, today):
                 or re.fullmatch(r"[0-9a-f]{64}", row["sha256"]) is None
                 or not isinstance(ids, list) or not ids
                 or ids != sorted(set(ids))
-                or any(cid not in source["claims"] for cid in ids)):
+                or any(cid not in source["claims"] or
+                       date.fromisoformat(source["claims"][cid]["end"])
+                       < date.fromisoformat(today) for cid in ids)):
             continue
         result.append({
             "slug": slug, "name": source["name"], "region": source["region"],
@@ -204,6 +207,9 @@ def scan(state, approved, today, fetch=get_page, limit=MAX_CHECKS):
         result = "UNAVAILABLE_OR_INCONCLUSIVE"
         try:
             claim_ids, digest = inspect_homepage(fetch(source["url"]), source)
+            claim_ids = [cid for cid in claim_ids if
+                         date.fromisoformat(source["claims"][cid]["end"])
+                         >= date.fromisoformat(today)]
             if claim_ids:
                 observations[slug] = {
                     "status": STATUS, "url": source["url"], "slug": slug,
