@@ -1,0 +1,114 @@
+name: "P'tites Ondes — audit exhaustif de qualification (manuel, privé)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_full_candidate_audit.py'
+      - 'tests/test_ptitesondes_full_candidate_audit.py'
+      - '.github/workflows/ptitesondes-full-qualification-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests du contrôle exhaustif (hors réseau)
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_full_candidate_audit.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_private_qualification_diagnostics.py' -v
+
+  audit:
+    needs: tests
+    if: >-
+      github.repository == 'Sarogal/Ondes-Catalogues' &&
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    env:
+      STATE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+      STATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+    steps:
+      - name: Refuser toute exécution sans accès privé nécessaire
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$STATE_READ_TOKEN" || -z "$STATE_WRITE_TOKEN" ]]; then
+            echo "::error::Accès privé indisponible ; aucun audit, aucune écriture."
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: public
+      - uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Examiner tous les UID/jours admissibles sans jamais publier
+        shell: bash
+        run: |
+          set -euo pipefail
+          DATE="$(TZ=Europe/Paris date +%F)"
+          FILE="state/automation-intake/ptitesondes/reports/full-audit-$DATE.json"
+          test -s state/automation-intake/ptitesondes/backlog.json
+          test -s public/docs/ptitesondes/sorties.json
+          mkdir -p state/automation-intake/ptitesondes/reports
+          if ! PYTHONPATH=public/scripts python public/scripts/ptitesondes_full_candidate_audit.py \
+            --backlog-file state/automation-intake/ptitesondes/backlog.json \
+            --catalogue-file public/docs/ptitesondes/sorties.json \
+            --output "$FILE" \
+            > "$RUNNER_TEMP/ptitesondes-audit-private.log" 2>&1; then
+            echo "::error::Vérification indépendante incomplète, aucune donnée écrite."
+            exit 1
+          fi
+          test -s "$FILE"
+          FILE="$FILE" PYTHONPATH=public/scripts python - <<'PY'
+          import json, os
+          from ptitesondes_full_candidate_audit import public_summary
+          doc = json.load(open(os.environ["FILE"], encoding="utf-8"))
+          line = json.dumps(public_summary(doc), sort_keys=True)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+              f.write("## Audit exhaustif — chiffres seuls, aucune publication\n\n")
+              f.write("Historique, UID, pages sources et motifs détaillés : branche privée exclusivement.\n\n")
+              f.write("`" + line + "`\n")
+          print("Audit complet et compteur public restreint :", line)
+          PY
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state add -- "automation-intake/ptitesondes/reports/full-audit-$DATE.json"
+          if ! git -C state diff --cached --quiet; then
+            git -C state commit -m "data(ptitesondes): audit complet et confidentiel des qualifications"               > "$RUNNER_TEMP/ptitesondes-audit-commit.log" 2>&1
+            AUTH="$(printf 'x-access-token:%s' "$STATE_WRITE_TOKEN" | base64 -w0)"
+            if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+              push origin HEAD:automation/ptitesondes-intake               > "$RUNNER_TEMP/ptitesondes-audit-push.log" 2>&1; then
+              echo "::error::Persistance privée non confirmée, aucun résultat publié."
+              exit 1
+            fi
+          fi
