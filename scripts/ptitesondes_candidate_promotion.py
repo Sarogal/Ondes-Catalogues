@@ -233,6 +233,28 @@ def category_for(title, description):
     return None
 
 
+
+def reviewed_accoord_category(lead, row):
+    """One audited music+children series; never broaden generic category rules.
+
+    The organizers' dated first-party programme (www.accoord.fr/agenda/
+    contes-comptines/) confirms singing/music for toddlers, dates and venue.
+    Admission still requires the independent organizer page on *each run*.
+    Pin immutable OA UID + canonical agenda + title/city/venue, and keep the
+    rest of the public merge-policy, GPS and date validations unchanged.
+    """
+    if (lead.get("collector") != "opendatasoft-index" or
+            lead.get("external_id") != "813941" or
+            lead.get("source_url") !=
+                "https://openagenda.com/nantesmetropole/events/contes-and-comptines" or
+            norm(row.get("title_fr")) != norm("Contes & comptines") or
+            norm(row.get("location_city")) != norm("Nantes") or
+            norm(row.get("location_name")) !=
+                norm("Centre socioculturel des Bourderies - ACCOORD")):
+        return None
+    return "conte-musical", "Conte musical"
+
+
 # Official organizer evidence: these slots are exclusively school/group sessions,
 # not publicly bookable family outings; other sessions of the same show remain.
 # https://www.opera-bordeaux.com/famille-orchestre-momo-lenfant-peche-86301
@@ -388,7 +410,8 @@ def make_event(lead, row, location, today):
     # description does not independently classify its family audience.
     day = lead["date_start"]
     performance_time = confirmed_session(row.get("timings"), day, lead["external_id"])
-    category = category_for(row["title_fr"], row.get("description_fr") or "")
+    category = (category_for(row["title_fr"], row.get("description_fr") or "")
+                or reviewed_accoord_category(lead, row))
     if not category:
         raise ValueError("Destination familiale musicale insuffisamment explicite")
     department = row.get("location_department")
