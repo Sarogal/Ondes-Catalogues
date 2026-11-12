@@ -4,6 +4,7 @@ on:
     branches: [feat/ptitesondes-accoord-independent-schedule-20261112]
     paths:
       - '.github/workflows/ptitesondes-accoord-live-once.yml'
+      - 'scripts/proof.py'
 permissions:
   contents: read
 jobs:
