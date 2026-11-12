@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-09",
+  "updatedAt": "2026-11-12",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2170,6 +2170,11 @@
     {
       "id": "kill-kill-diana",
       "name": "Kill!Kill!Diana",
+      "aliases": []
+    },
+    {
+      "id": "archive",
+      "name": "ARCHIVE",
       "aliases": []
     }
   ],
@@ -14098,6 +14103,64 @@
       "history": [
         {
           "date": "2026-11-09",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270320-strasbourg-ayron-jones",
+      "title": "Ayron Jones",
+      "date": "2027-03-20",
+      "artistIds": [
+        "ayron-jones"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Grunge"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/ayron-jones2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270907-strasbourg-archive",
+      "title": "ARCHIVE",
+      "date": "2027-09-07",
+      "artistIds": [
+        "archive"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Shoegaze"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/archive-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-12",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-12",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
