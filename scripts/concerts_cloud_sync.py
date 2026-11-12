@@ -4741,12 +4741,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and norm(resolved[aid].get("name")) == norm(name)
                 for aid, name in zip(ids, names)),
                 "Le Molotov : identité du plateau différente des noms officiels")
-            old_names = {norm(a["name"]) for a in known_artist_ids.values()}
-            old_aliases = {norm(alias) for a in known_artist_ids.values()
+            # An Æ/Œ ligature must not create a second identity for
+            # the same existing artist's AE/OE spelling.
+            def molotov_identity(value):
+                return norm(str(value).replace("Æ", "AE").replace("æ", "ae")
+                            .replace("Œ", "OE").replace("œ", "oe"))
+            old_names = {molotov_identity(a["name"])
+                         for a in known_artist_ids.values()}
+            old_aliases = {molotov_identity(alias)
+                           for a in known_artist_ids.values()
                            for alias in (a.get("aliases") or [])
                            if isinstance(alias, str)}
-            require(all(norm(a["name"]) not in old_names | old_aliases
-                        and a["id"] == norm(a["name"]).replace(" ", "-")[:72]
+            require(all(molotov_identity(a["name"]) not in old_names | old_aliases
+                        and a["id"] == molotov_identity(a["name"]).replace(" ", "-")[:72]
                         for a in new_artists),
                     "Le Molotov : artistes inconnus ou alias en conflit")
             require(event_id == ("go-c-" + event["date"].replace("-", "") +
