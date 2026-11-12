@@ -100,8 +100,8 @@ def exact_names(fresh, page):
     raw_title = fresh.get("name", "")
     # Only the exact first-party bracketed sold-out marker is presentation
     # status, not part of any artist's name. All other prefixes fail closed.
-    title = re.sub(r"^\\[COMPLET\\]\\s+", "", raw_title, count=1, flags=re.I)
-    names = [x.strip() for x in re.split(r"\\s+\\+\\s+", title)]
+    title = re.sub(r"^\[COMPLET\]\s+", "", raw_title, count=1, flags=re.I)
+    names = [x.strip() for x in re.split(r"\s+\+\s+", title)]
     if not 1 <= len(names) <= 4:
         raise ValueError("Bateau Ivre : plateau non délimité avec certitude")
     known = [normalized(x) for x in names]
@@ -111,7 +111,7 @@ def exact_names(fresh, page):
     # Original header may name only the headliner, while the official H2
     # subtitle and body artist sections document the supporting artists.
     normalized_h1 = normalized(
-        re.sub(r"^\\[COMPLET\\]\\s+", "", doc.h1[0], count=1, flags=re.I))
+        re.sub(r"^\[COMPLET\]\s+", "", doc.h1[0], count=1, flags=re.I))
     if normalized_h1 not in (known[0], normalized(title)):
         raise ValueError("Bateau Ivre : tête d'affiche non concordante")
     sections = {normalized(x.lstrip("+ ").strip()) for x in doc.named_sections}
