@@ -13,6 +13,18 @@ import re
 from proof import norm
 
 PROGRAMS = {
+    # Accoord owns the first-party session calendar, independently from
+    # OpenAgenda's Nantes-Metropole syndication. The page enumerates every
+    # date individually with the time, venue address and toddler audience.
+    # https://www.accoord.fr/agenda/contes-comptines/
+    "https://openagenda.com/nantesmetropole/events/contes-and-comptines": {
+        "organizer_url": "https://www.accoord.fr/agenda/contes-comptines/",
+        "official_title": "Contes & comptines",
+        "city": "Nantes",
+        "venue": "Centre socioculturel des Bourderies - ACCOORD",
+        "category": "conte-musical", "rule": "accoord-bourderies-2026-2027",
+        "age": "animation livre et chanson pour les 0 3 ans",
+    },
     "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/jeune-public-concert-quand-le-chat-nest-pas-laca-part-en-live": {
         "organizer_url": "https://www.theatre-jeanne.com/spectacle/quand-le-chat-nest-pas-laca-part-en-live/2027-01-13/",
         "official_title": "QUAND LE CHAT N’EST PAS LÀ…ça part en LIVE !",
@@ -66,7 +78,13 @@ def reviewed_schedule(event, heading, text):
     expected = norm(info["official_title"])
     if expected not in head:
         return False, "titre du spectacle absent de la page organisateur"
-    if norm(info["venue"]) not in body or norm(info["city"]) not in body:
+    if info["rule"] == "accoord-bourderies-2026-2027":
+        # The organizer's event page identifies this precise street address,
+        # rather than repeating OpenAgenda's full name with its ACCOORD suffix.
+        if (norm("2A Rue de Saint Brévin") not in body or
+                norm(info["city"]) not in body):
+            return False, "adresse et ville non confirmées par Accoord"
+    elif norm(info["venue"]) not in body or norm(info["city"]) not in body:
         return False, "ville ou lieu non confirmé par l'organisateur"
     if info["age"] not in body or "enfant" not in body:
         return False, "destination jeune public non prouvée"
@@ -81,7 +99,25 @@ def reviewed_schedule(event, heading, text):
     time = event.get("time")
     if not isinstance(time, str) or not re.fullmatch(r"\d{2}:\d{2}", time):
         return False, "heure de séance ambiguë"
-    if info["rule"] == "jan-2027-chat":
+    if info["rule"] == "accoord-bourderies-2026-2027":
+        # Require the organizer's explicit, current, per-date listing.
+        # Never infer that every Wednesday in the range is programmed.
+        if not date(2026, 9, 23) <= day <= date(2027, 6, 30):
+            return False, "séance hors saison Accoord vérifiée"
+        if day.weekday() != 2 or time != "10:00":
+            return False, "jour ou heure incompatible avec Accoord"
+        months = ("", "janvier", "fevrier", "mars", "avril", "mai", "juin",
+                  "juillet", "aout", "septembre", "octobre", "novembre",
+                  "decembre")
+        exact = (r"\\bmercredi " + str(day.day) + r" " + months[day.month] +
+                 r" " + str(day.year) + r" de 10h a 11h30\\b")
+        if not re.search(exact, body):
+            return False, "séance datée et horaire absents du programme Accoord"
+        if ("temps sont accompagnes de musique" not in body or
+                "gratuit" not in body or
+                "adhesion accoord requise" not in body):
+            return False, "musique ou conditions d'inscription non prouvées"
+    elif info["rule"] == "jan-2027-chat":
         if day not in (date(2027, 1, 13), date(2027, 1, 14),
                        date(2027, 1, 20)):
             return False, "séance de janvier absente du programme homologué"
