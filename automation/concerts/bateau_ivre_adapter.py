@@ -234,6 +234,15 @@ def candidate(html, detail_url, source, today):
             raise ValueError("Ambiguous first-party named support artist")
         if fold(name) not in header_title and name not in supports:
             supports.append(name)
+    # These are placeholders, not performers. The heading may announce a
+    # first part while withholding the actual band name.
+    unannounced = {
+        "premiere partie", "1ere partie", "1re partie", "guest", "guests",
+        "special guest", "special guests", "invite", "invite surprise",
+        "support", "a confirmer", "tba", "surprise",
+    }
+    supports = [name for name in supports if
+                " ".join(re.findall(r"[a-z0-9]+", fold(name))) not in unannounced]
     if len(supports) > 3:
         raise ValueError("More than three support artists, review the programme")
     full_title = title
