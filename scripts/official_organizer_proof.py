@@ -109,8 +109,8 @@ def reviewed_schedule(event, heading, text):
         months = ("", "janvier", "fevrier", "mars", "avril", "mai", "juin",
                   "juillet", "aout", "septembre", "octobre", "novembre",
                   "decembre")
-        exact = (r"\\bmercredi " + str(day.day) + r" " + months[day.month] +
-                 r" " + str(day.year) + r" de 10h a 11h30\\b")
+        exact = (r"\bmercredi " + str(day.day) + r" " + months[day.month] +
+                 r" " + str(day.year) + r" de 10h a 11h30\b")
         if not re.search(exact, body):
             return False, "séance datée et horaire absents du programme Accoord"
         if ("temps sont accompagnes de musique" not in body or
