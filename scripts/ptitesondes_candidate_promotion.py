@@ -92,6 +92,71 @@ def permitted(lead, today):
                 registry_location(lead) is not None)
 
 
+
+def admission_failure_group(lead, today):
+    """Diagnostic seulement : aucune modification à la décision permitted()."""
+    try:
+        if permitted(lead, today):
+            return "eligible"
+    except (ValueError, TypeError, KeyError):
+        return "invalid_metadata"
+    if (not isinstance(lead, dict) or
+            lead.get("collector") not in ("opendatasoft-index", "openagenda-v2")):
+        return "collector"
+    uid = lead.get("external_id")
+    if not isinstance(uid, str) or not re.fullmatch(r"[0-9]{1,12}", uid):
+        return "uid"
+    source = lead.get("source_url")
+    try:
+        url = urlparse(source) if isinstance(source, str) else None
+    except ValueError:
+        url = None
+    if (url is None or url.scheme != "https" or
+            url.hostname != "openagenda.com" or url.username or url.password or
+            not url.path.startswith("/") or url.query or url.fragment):
+        return "source_url"
+    try:
+        scheduled_day = date.fromisoformat(lead["date_start"])
+        if (not today <= scheduled_day <=
+                date.fromordinal(today.toordinal() + 184) or
+                lead.get("date_end") != scheduled_day.isoformat()):
+            return "session_date"
+    except (ValueError, TypeError, KeyError):
+        return "session_date"
+    if not lead.get("title") or not lead.get("city"):
+        return "missing_identity"
+    if not lead.get("venue"):
+        return "missing_venue"
+    return "venue_gps_unverified"
+
+
+def private_admission_diagnostics(leads, today):
+    """Comptages et lieux à documenter pour le rapport privé, jamais les logs."""
+    from collections import Counter
+    reasons = Counter()
+    unlocated = Counter()
+    for item in leads:
+        why = admission_failure_group(item, today)
+        reasons[why] += 1
+        if why == "venue_gps_unverified" and isinstance(item, dict):
+            # Ces intitulés de lieux ne quittent jamais le rapport privé.
+            city, venue = item.get("city"), item.get("venue")
+            if isinstance(city, str) and isinstance(venue, str):
+                if city.strip() and venue.strip():
+                    unlocated[(city.strip()[:120], venue.strip()[:180])] += 1
+    prioritized = sorted(unlocated.items(),
+                         key=lambda entry: (-entry[1], entry[0][0], entry[0][1]))
+    return {
+        "scope": "private_raw_backlog_only_no_publication",
+        "raw_leads": len(leads),
+        "reason_counts": dict(sorted(reasons.items())),
+        "top_unverified_venues": [
+            {"city": city, "venue": venue, "lead_occurrences": count}
+            for (city, venue), count in prioritized[:20]
+        ],
+    }
+
+
 def api_record(uid, get=None):
     """Retrieve by immutable OpenAgenda UID; never trust an unbounded title search."""
     if not re.fullmatch(r"[0-9]{1,12}", str(uid)):
@@ -586,6 +651,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         "review_slot": slot, "review_batch": page + 1 if pages else 0,
         "review_batches": pages,
         "checked": assessed, "accepted_preflight": len(accepted),
+        "admission_diagnostics": private_admission_diagnostics(leads, today),
         "deferred_or_duplicates": len(rejected), "details": rejected,
     }
     return patch, report

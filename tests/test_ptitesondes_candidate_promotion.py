@@ -13,6 +13,7 @@ from ptitesondes_candidate_promotion import (
     api_record, category_for, confirmed_session, evaluate, main, make_event,
     permitted, reconciled_openagenda_url, registry_location, scheduled,
     covered_by_published_range, public_run_summary,
+    admission_failure_group, private_admission_diagnostics,
 )
 from merge_policy import ORIGIN, merge
 from venue_registry import VENUES
@@ -130,6 +131,48 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertFalse(permitted(dict(lead(), source_url=URL + "?token=fake"), TODAY))
         self.assertFalse(permitted(dict(lead(), external_id="../../secret"), TODAY))
         self.assertFalse(permitted(dict(lead(), date_start="2025-02-10"), TODAY))
+
+    def test_private_admission_diagnostics_are_exact_and_never_authority(self):
+        valid_lead = lead()
+        bad_venue = lead(venue="Médiathèque fictive de test")
+        cases = [
+            (valid_lead, "eligible"),
+            (bad_venue, "venue_gps_unverified"),
+            (dict(bad_venue, venue=""), "missing_venue"),
+            (dict(valid_lead, collector="untrusted"), "collector"),
+            (dict(valid_lead, external_id="../fake"), "uid"),
+            (dict(valid_lead, source_url="http://openagenda.com/fake"), "source_url"),
+            (dict(valid_lead, date_start="2025-11-01"), "session_date"),
+            (dict(valid_lead, city=""), "missing_identity"),
+        ]
+        for entry, expected in cases:
+            with self.subTest(expected=expected):
+                self.assertEqual(admission_failure_group(entry, TODAY), expected)
+                self.assertEqual(permitted(entry, TODAY), expected == "eligible")
+        report = private_admission_diagnostics([x for x, _ in cases] +
+                                               [dict(bad_venue)], TODAY)
+        self.assertEqual(report["raw_leads"], 9)
+        self.assertEqual(report["reason_counts"]["venue_gps_unverified"], 2)
+        self.assertEqual(report["reason_counts"]["eligible"], 1)
+        self.assertEqual(report["top_unverified_venues"][0]["lead_occurrences"], 2)
+        self.assertEqual(report["top_unverified_venues"][0]["city"], "Nantes")
+        self.assertEqual(report["top_unverified_venues"][0]["venue"],
+                         "Médiathèque fictive de test")
+
+    def test_private_venue_diagnostics_never_leak_through_public_allowlist(self):
+        report = {"date": "2026-11-12", "backlog_total": 366,
+                  "eligible_with_reviewed_venue": 53, "checked": 15,
+                  "accepted_preflight": 0,
+                  "admission_diagnostics": {
+                      "top_unverified_venues": [
+                          {"city": "VILLE PRIVEE TEST", "venue": "LIEU PRIVE TEST"}
+                      ]},
+                  "reason_counts": {"private evidence": 1}}
+        safe = json.dumps(public_run_summary(report), ensure_ascii=False)
+        self.assertNotIn("VILLE PRIVEE TEST", safe)
+        self.assertNotIn("LIEU PRIVE TEST", safe)
+        self.assertNotIn("admission_diagnostics", safe)
+        self.assertNotIn("private evidence", safe)
 
     def test_categorization_rejects_adult_music(self):
         self.assertEqual(category_for(lead()["title"], "")[0], "conte-musical")
