@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_candidate_promotion import (
-    reconciled_openagenda_url, registry_location, make_event, evaluate
+    reconciled_openagenda_url, registry_location, make_event, evaluate,
+    covered_by_published_range,
 )
 from proof_text import verify_event
 
@@ -193,6 +194,53 @@ class MarseilleMunicipalSyndicationTests(unittest.TestCase):
             ))
         self.assertEqual(patch["additions"], [])
         self.assertEqual(report["accepted_preflight"], 0)
+
+    def test_exact_uid_blocks_old_human_title_variant_without_fuzzy_match(self):
+        published = {
+            "id": "marseille-eveil-musical-cinq-avenues-2026-11-27",
+            "title": "Éveil musical – Cinq-Avenues",
+            "city": "Marseille", "venue": "Bibliothèque des Cinq-Avenues",
+            "date_start": "2026-11-27", "date_end": "2026-11-27",
+            "source_url": ("https://openagenda.com/fr/bibliotheques-de-marseille/"
+                           "events/24285475_eveil-musical-8687467"),
+        }
+        self.assertTrue(covered_by_published_range(lead(), [published]))
+        self.assertFalse(covered_by_published_range(
+            lead(external_id="99999999"), [published]))
+        self.assertFalse(covered_by_published_range(
+            lead(date_start="2026-11-28", date_end="2026-11-28"), [published]))
+        self.assertFalse(covered_by_published_range(
+            lead(venue="Autre bibliothèque"), [published]))
+        self.assertFalse(covered_by_published_range(
+            lead(city="Lyon"), [published]))
+        self.assertFalse(covered_by_published_range(
+            lead(), [dict(published, source_url=published["source_url"].replace(
+                "openagenda.com", "malicious.example"))]))
+        self.assertFalse(covered_by_published_range(
+            lead(), [dict(published, source_url=published["source_url"].replace(
+                "24285475_", "99999999_"))]))
+
+    def test_full_promotion_skips_old_uid_regardless_of_curated_title(self):
+        ref = baseline()
+        published = dict(ref, events=list(ref["events"]) + [{
+            "id": "marseille-eveil-musical-cinq-avenues-2026-11-27",
+            "title": "Éveil musical – Cinq-Avenues",
+            "city": "Marseille", "venue": "Bibliothèque des Cinq-Avenues",
+            "date_start": "2026-11-27", "date_end": "2026-11-27",
+            "source_url": ("https://openagenda.com/fr/bibliotheques-de-marseille/"
+                           "events/24285475_eveil-musical-8687467"),
+        }])
+        attempts = []
+        patch, report = evaluate([
+            lead(collector="opendatasoft-index", source_url=CANONICAL),
+            lead(),
+        ], ref, published, date(2026, 11, 12),
+            fetch=lambda uid: attempts.append(uid),
+            verifier=lambda event, originals: (True, "would approve"))
+        self.assertEqual(attempts, [])
+        self.assertEqual(patch["additions"], [])
+        self.assertEqual(report["accepted_preflight"], 0)
+        self.assertEqual(report["details"][0]["status"], "already_published")
 
     def test_school_or_cancelled_occurrences_stay_blocked(self):
         with self.assertRaisesRegex(ValueError, "Statut"):
