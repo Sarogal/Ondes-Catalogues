@@ -106,6 +106,12 @@ def inspect_homepage(html, config):
     hero = re.split(r"\b(?:retour sur l edition 2026|dans le retro|"
                     r"les editions precedentes|ils nous soutiennent)\b",
                     text, maxsplit=1)[0][:1250]
+    # A brand only present in the retrospective section must not validate
+    # another event's future dates displayed above it.
+    if (normalized(config["name"]).replace("les ", "", 1) not in hero
+            or re.search(r"\b(?:autre festival|another festival|"
+                         r"autre evenement)\b", hero)):
+        return [], sha256(text.encode("utf-8")).hexdigest()
     matched = sorted(cid for cid, spec in config["claims"].items()
                      if re.search(spec["pattern"], hero))
     return matched, sha256(text.encode("utf-8")).hexdigest()
