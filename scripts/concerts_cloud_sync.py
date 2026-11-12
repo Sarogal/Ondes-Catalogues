@@ -4079,7 +4079,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                                      parsed_url.path)) and
                    not parsed_url.username and not parsed_url.password and
                    not parsed_url.port and not parsed_url.query and
-                   not parsed_url.fragment and event.get("time") is None)
+                   not parsed_url.fragment)
         ferrailleur = (
             venue == FERRAILLEUR_VENUE_ID and
             parsed_url.hostname in ("www.leferrailleur.fr", "leferrailleur.fr") and
@@ -4788,6 +4788,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and proof.get("checkedFields") ==
                         ["artists", "date", "venue", "genre"],
                     "Le Molotov : invité non nommé ou artistes publiés non corroborés")
+        else:
+            # Historical fully named Molotov approvals can retain their
+            # previously reviewed concert time, but must never introduce
+            # artists without the new named-profile evidence structure.
+            require(new_artists == [],
+                    "Le Molotov : nouveaux artistes sans preuve nominative")
     elif (event.get("venueId") == "la-laiterie-strasbourg"
           and reviewer == "automated-official-recheck"):
         require(laiterie_auto and event.get("status") == "confirmed"
