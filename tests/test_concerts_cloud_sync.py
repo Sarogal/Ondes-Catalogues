@@ -39,6 +39,106 @@ def approval(event_id="go-c-20270201-nantes-groupe-essai"):
     }
 
 
+class SignedSecretPlaceCancellationTests(unittest.TestCase):
+    """Single first-party cancellation; no generic status mutation permitted."""
+
+    def signed(self):
+        from concerts_cloud_sync import (
+            SECRET_PLACE_CANCELLED_DATE, SECRET_PLACE_CANCELLED_SOURCE,
+            SECRET_PLACE_CANCELLED_EVENT_ID, SECRET_PLACE_CANCELLED_PATCH,
+        )
+        return {
+            "schema": "grossesondes.concert.approvals.v1",
+            "approvals": [],
+            "referenceEventStatusCorrections": [{
+                "eventId": SECRET_PLACE_CANCELLED_EVENT_ID,
+                "reviewDecision": "approved",
+                "reviewedBy": "independent-official-verifier",
+                "reviewedAt": SECRET_PLACE_CANCELLED_DATE,
+                "eventPatch": copy.deepcopy(SECRET_PLACE_CANCELLED_PATCH),
+                "officialEvidence": [{
+                    "url": SECRET_PLACE_CANCELLED_SOURCE,
+                    "proofType": "official-artist-tour-calendar",
+                    "checkedAt": SECRET_PLACE_CANCELLED_DATE,
+                    "checkedFields": ["artists", "date", "venue", "cancellation"],
+                    "observedStatus": "concert annule",
+                }],
+            }],
+        }
+
+    def test_signed_cancellation_is_idempotent_and_retains_original_event(self):
+        from concerts_cloud_sync import (
+            SECRET_PLACE_CANCELLED_EVENT_ID, SECRET_PLACE_CANCELLED_SOURCE,
+            SECRET_PLACE_CANCELLED_HISTORY, SECRET_PLACE_CANCELLED_DATE,
+        )
+        today = __import__("datetime").date(2026, 11, 12)
+        signed = self.signed()
+        changed, stats = merge(BASE, BASE, signed, today)
+        self.assertEqual(stats["correctedEvents"], 1)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(len(changed["events"]), len(BASE["events"]))
+        before = next(e for e in BASE["events"]
+                      if e["id"] == SECRET_PLACE_CANCELLED_EVENT_ID)
+        after = next(e for e in changed["events"]
+                     if e["id"] == SECRET_PLACE_CANCELLED_EVENT_ID)
+        self.assertEqual(after["status"], "cancelled")
+        self.assertEqual(after["lastVerified"], SECRET_PLACE_CANCELLED_DATE)
+        self.assertEqual(after["cancellationSourceUrl"],
+                         SECRET_PLACE_CANCELLED_SOURCE)
+        self.assertEqual(after["history"], before["history"] +
+                         [SECRET_PLACE_CANCELLED_HISTORY])
+        self.assertEqual(
+            [(e["id"], e) for e in changed["events"] if e["id"] != after["id"]],
+            [(e["id"], e) for e in BASE["events"] if e["id"] != after["id"]])
+        protect_reference(BASE, changed)
+        repeated, stats2 = merge(BASE, changed, signed, today)
+        self.assertEqual(stats2["correctedEvents"], 0)
+        self.assertEqual(repeated, changed)
+
+    def test_cancellation_without_persistent_private_signature_fails(self):
+        today = __import__("datetime").date(2026, 11, 12)
+        valid, _ = merge(BASE, BASE, self.signed(), today)
+        with self.assertRaisesRegex(ValueError, "historique corrigé sans preuve"):
+            merge(BASE, valid,
+                  {"schema": "grossesondes.concert.approvals.v1",
+                   "approvals": []}, today)
+
+    def test_wrong_signer_date_source_and_proof_cannot_cancel(self):
+        today = __import__("datetime").date(2026, 11, 12)
+        variants = ("reviewer", "checked", "source", "fields",
+                    "wrong-date", "wrong-id", "false-status")
+        for variant in variants:
+            with self.subTest(variant=variant):
+                signed = self.signed()
+                row = signed["referenceEventStatusCorrections"][0]
+                proof = row["officialEvidence"][0]
+                if variant == "reviewer":
+                    row["reviewedBy"] = "automated-official-recheck"
+                elif variant == "checked":
+                    proof["checkedAt"] = "2026-11-11"
+                elif variant == "source":
+                    proof["url"] = "https://example.org/unsigned"
+                elif variant == "fields":
+                    proof["checkedFields"].remove("cancellation")
+                elif variant == "wrong-date":
+                    row["reviewedAt"] = "2026-11-13"
+                elif variant == "wrong-id":
+                    row["eventId"] = "another-concert"
+                else:
+                    row["eventPatch"]["status"] = "confirmed"
+                with self.assertRaises((ValueError, KeyError, TypeError)):
+                    merge(BASE, BASE, signed, today)
+
+    def test_unapproved_metadata_change_of_reference_event_stays_blocked(self):
+        from concerts_cloud_sync import SECRET_PLACE_CANCELLED_EVENT_ID
+        changed = copy.deepcopy(BASE)
+        event = next(e for e in changed["events"]
+                     if e["id"] == SECRET_PLACE_CANCELLED_EVENT_ID)
+        event["status"] = "cancelled"
+        with self.assertRaises(ValueError):
+            protect_reference(BASE, changed)
+
+
 class ConcertsCloudSyncTests(unittest.TestCase):
     def test_regional_orleans_rouen_six_official_approvals_only(self):
         """Six precise bills, no invented start, secondary proof by its real origin."""
