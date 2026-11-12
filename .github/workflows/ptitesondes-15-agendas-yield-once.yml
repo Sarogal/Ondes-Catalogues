@@ -1,0 +1,99 @@
+name: P'tites Ondes — bilan ponctuel 15 agendas sans ecriture
+on:
+  push:
+    branches:
+      - ci/ptitesondes-15-agendas-yield-20261112
+permissions:
+  contents: read
+jobs:
+  observe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Charger code prive stable
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: main
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: src
+          sparse-checkout: automation
+          persist-credentials: false
+      - name: Charger backlog prive en lecture seule
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: state
+          sparse-checkout: automation-intake/ptitesondes
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Comparer rendement des 8 anciens et 7 nouveaux agendas sans publication
+        shell: bash
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "$OPENAGENDA_READ_KEY" ]; then
+            echo '::error::Cle de lecture absente'; exit 1
+          fi
+          python - <<'PY'
+          import contextlib, io, json, os, sys, tempfile
+          from pathlib import Path
+          from datetime import date
+          sys.path.insert(0,str(Path("src/automation").resolve()))
+          import outings_intake as mod
+          config=json.loads(Path("src/automation/sources.json").read_text())
+          agendas=config.get("openagenda_agendas",[])
+          if len(agendas)!=15 or len(set(agendas))!=15:
+              raise ValueError("Les 15 agendas attendus doivent etre presents une fois")
+          folder=Path("state/automation-intake/ptitesondes")
+          backlog=json.loads((folder/"backlog.json").read_text())
+          public=mod.http_json(mod.PUBLIC_URL)
+          previous={mod.signature(x) for x in backlog+public["events"]}
+          stats=[]
+          original=mod.collect_openagenda
+          def track(source,key,start,end,get=mod.http_json):
+              events, count=original(source,key,start,end,get)
+              uid=source["openagenda_agendas"][0]
+              signatures={mod.signature(x) for x in events}
+              stats.append({"uid":uid,"count":len(events),"unique":signatures})
+              return events,count
+          mod.collect_openagenda=track
+          try:
+              with tempfile.TemporaryDirectory() as tmp:
+                  with contextlib.redirect_stdout(io.StringIO()):
+                      report=mod.run(folder,Path(tmp),config,date(2026,11,12),
+                                     oa_key=os.environ["OPENAGENDA_READ_KEY"])
+          finally:
+              mod.collect_openagenda=original
+          older=stats[:8]
+          newer=stats[8:]
+          oldsig=set().union(*(s["unique"] for s in older))
+          newsig=set().union(*(s["unique"] for s in newer))
+          # Comparaison relative aux pistes deja enregistrees et au catalogue en ligne.
+          summary={"mode":"read_only_no_private_or_public_writes",
+              "agendas_configured":len(agendas),
+              "agendas_responded":len(stats),
+              "agendas_failed":report["openagenda_agendas_en_echec"],
+              "old_eight_raw":sum(s["count"] for s in older),
+              "old_eight_distinct":len(oldsig),
+              "new_seven_raw":sum(s["count"] for s in newer),
+              "new_seven_distinct":len(newsig),
+              "new_seven_overlap_old_eight":len(newsig & oldsig),
+              "new_seven_not_previously_in_backlog_or_catalogue":len(newsig-previous),
+              "new_seven_not_in_older_feeds_or_previous":len(newsig-previous-oldsig),
+              "all_sources_requests":report["sources_interrogees"],
+              "all_examined":report["evenements_examines"],
+              "all_sessions":report["seances_pertinentes"],
+              "all_new_leads":report["decouvertes_nouvelles_en_attente"],
+              "all_backlog_after_simulation":report["en_attente_total"],
+              "total_failures":len(report["sources_en_echec"]),
+              "remote_writes":0,"published_events":0}
+          print(json.dumps(summary,ensure_ascii=False))
+          PY
+          git -C state diff --quiet
+          git -C src diff --quiet
