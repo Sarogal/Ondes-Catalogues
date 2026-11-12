@@ -220,5 +220,156 @@ class MolotovRecheckTests(unittest.TestCase):
         self.assertEqual(row["event"]["date"], "2026-11-13")
 
 
+    @staticmethod
+    def newly_documented_molotov_page(
+            title="PÆRISH + mirabelle", two_profiles=True,
+            first_socials=True, second_socials=True):
+        artist1 = (
+            "<p><strong>PÆRISH<br/>[Alt rock / Shoegaze / Emo | France]</strong></p>"
+            "<p>Le groupe PÆRISH présente son album RITA.</p>"
+            + ('<p><em>Socials:</em><a href="https://www.facebook.com/paerish/">'
+               'Facebook</a><a href="https://www.instagram.com/paerish/">'
+               'Instagram</a></p>' if first_socials else "")
+        )
+        artist2 = (
+            "<p><strong>MIRABELLE<br/>[Heavy pop-punk | France]</strong></p>"
+            "<p>mirabelle. est un quatuor de heavy pop-punk parisien.</p>"
+            + ('<p><em>Socials:</em>'
+               '<a href="https://www.facebook.com/mirabelle.band/">Facebook</a>'
+               '<a href="https://open.spotify.com/artist/5TMUjYIR8pxt2p1JIJeEl0/">'
+               'Spotify</a></p>' if second_socials else "")
+        )
+        return (
+            '<article class="post-4719 event type-event status-publish">'
+            '<header class="entry-header"><h1 class="entry-title">' +
+            title + '</h1></header>'
+            '<div id="eveCardsolo"><div class="eveDate">'
+            '<h2>31</h2><h3>Jan</h3><h3>2027</h3></div>'
+            '<div class="evePlusolo"><h4>@ Le Molotov</h4>'
+            '<h4>3 Place Paul Cézanne</h4><h4>20:30</h4></div>'
+            '<div id="eveName"><h1>' + title +
+            '</h1><h2>Alt Rock, Emo, Post Hardcore, Shoegaze</h2>'
+            '</div></div>'
+            + artist1 + (artist2 if two_profiles else "")
+            + '</article>'
+        )
+
+    @staticmethod
+    def newly_documented_candidate():
+        return {
+            "candidateId": "molotov:2027-01-31:prish-mirabelle",
+            "source": "agenda_officiel_molotov_genre",
+            "sourceUrl": "https://lemolotov.com/events/paerish/",
+            "name": "PÆRISH + mirabelle", "date": "2027-01-31",
+            "venue": "Le Molotov", "city": "Marseille",
+            "classification": ["Alt Rock", "Emo", "Post Hardcore", "Shoegaze"],
+            "reviewBucket": "genre_tag_review",
+            "possibleExistingConcert": False,
+            "reviewRequired": True, "publicationAllowed": False,
+        }
+
+    def test_new_artists_with_two_independent_bio_profiles_approve_through_publisher(self):
+        from concerts_cloud_sync import validate_approval
+        c = {"artists": [], "venues": catalogue()["venues"], "events": []}
+        row = m.verify(self.newly_documented_candidate(),
+                       self.newly_documented_molotov_page(), c, dt.date(2026,11,12))
+        self.assertEqual(row["event"]["title"], "PÆRISH + mirabelle")
+        self.assertEqual(row["event"]["id"], "go-c-20270131-marseille-paerish")
+        self.assertEqual(row["event"]["artistIds"], ["paerish", "mirabelle"])
+        self.assertEqual([a["name"] for a in row["newArtists"]],
+                         ["PÆRISH", "mirabelle"])
+        self.assertEqual(row["officialEvidence"][0]["sourceStructure"],
+                         m.VERIFIED_NEW_STRUCTURE)
+        self.assertEqual(row["officialEvidence"][0]["officialArtistProfileLinkCounts"],
+                         [2, 2])
+        checked, new = validate_approval(
+            row, {x["id"]:x for x in c["venues"]}, {}, dt.date(2026,11,12))
+        self.assertEqual(checked["artistIds"], ["paerish", "mirabelle"])
+        self.assertEqual(set(new), {"paerish", "mirabelle"})
+        self.assertIsNone(checked["time"])
+
+    def test_molotov_new_artist_has_two_socials_and_individual_section_per_act(self):
+        c = {"artists": [], "venues": catalogue()["venues"], "events": []}
+        for page in (
+            self.newly_documented_molotov_page(two_profiles=False),
+            self.newly_documented_molotov_page(first_socials=False),
+            self.newly_documented_molotov_page(second_socials=False),
+            self.newly_documented_molotov_page().replace(
+                "MIRABELLE<br/>", "UNRELATED<br/>"),
+            self.newly_documented_molotov_page().replace(
+                "class=\"post-4719 event type-event status-publish\"",
+                "class=\"post-4719 event type-event status-draft\""),
+            self.newly_documented_molotov_page().replace(
+                "<strong>MIRABELLE", "<strong>Guest"),
+        ):
+            with self.subTest(page=page[-180:]), self.assertRaises(ValueError):
+                m.verify(self.newly_documented_candidate(),
+                         page, c, dt.date(2026,11,12))
+
+    def test_molotov_new_artist_alias_existing_event_and_tampering_blocked(self):
+        import copy
+        from concerts_cloud_sync import validate_approval
+        candidate = self.newly_documented_candidate()
+        page = self.newly_documented_molotov_page()
+        c = {"artists": [{"id":"other","name":"Another",
+                          "aliases":["mirabelle"]}],
+             "venues": catalogue()["venues"], "events": []}
+        with self.assertRaises(ValueError):
+            m.verify(candidate, page, c, dt.date(2026,11,12))
+        c["artists"] = [{"id": "other", "name": "PAERISH", "aliases": []}]
+        with self.assertRaises(ValueError):
+            m.verify(candidate, page, c, dt.date(2026,11,12))
+        c["artists"] = []
+        c["events"] = [{"officialUrl": candidate["sourceUrl"],
+                        "date": "2027-01-31",
+                        "venueId": m.VENUE, "artistIds": ["paerish"]}]
+        with self.assertRaisesRegex(ValueError, "déjà référencé"):
+            m.verify(candidate, page, c, dt.date(2026,11,12))
+        c["events"] = []
+        row = m.verify(candidate, page, c, dt.date(2026,11,12))
+        for key, value in (
+            ("officialArtistNames", ["OTHER BAND", "mirabelle"]),
+            ("verifiedNewArtists", ["mirabelle"]),
+            ("officialArtistProfileLinkCounts", [0, 0]),
+            ("sourceStructure", "generic-artist-card"),
+        ):
+            changed = copy.deepcopy(row)
+            changed["officialEvidence"][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                validate_approval(changed,
+                                  {x["id"]:x for x in c["venues"]},
+                                  {}, dt.date(2026,11,12))
+
+    def test_new_named_artist_and_unannounced_guest_publish_without_fake_artist(self):
+        from concerts_cloud_sync import validate_approval
+        c = {"artists": [], "venues": catalogue()["venues"], "events": []}
+        candidate = self.newly_documented_candidate()
+        candidate["name"] = "PÆRISH + mirabelle + Guest"
+        page = self.newly_documented_molotov_page(title=candidate["name"])
+        row = m.verify(candidate, page, c, dt.date(2026,11,12))
+        self.assertEqual(row["event"]["artistIds"], ["paerish", "mirabelle"])
+        self.assertEqual(row["event"]["title"], "PÆRISH + mirabelle")
+        self.assertEqual(row["officialEvidence"][0]["unannouncedSupportLabel"],
+                         "guest")
+        self.assertEqual(row["officialEvidence"][0]["sourceStructure"],
+                         m.VERIFIED_NEW_STRUCTURE)
+        event, new = validate_approval(
+            row, {x["id"]:x for x in c["venues"]},
+            {}, dt.date(2026,11,12))
+        self.assertEqual(event["title"], "PÆRISH + mirabelle")
+        self.assertEqual(set(new), {"paerish", "mirabelle"})
+        self.assertNotIn("guest", event["title"].lower())
+
+        incomplete = self.newly_documented_molotov_page(
+            title=candidate["name"], second_socials=False)
+        with self.assertRaises(ValueError):
+            m.verify(candidate, incomplete, c, dt.date(2026,11,12))
+        unconfirmed_first = self.newly_documented_molotov_page(
+            title="Guest + PÆRISH")
+        candidate["name"] = "Guest + PÆRISH"
+        with self.assertRaises(ValueError):
+            m.verify(candidate, unconfirmed_first, c, dt.date(2026,11,12))
+
+
 if __name__=="__main__":
     unittest.main()

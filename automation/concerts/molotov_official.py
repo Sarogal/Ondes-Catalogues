@@ -35,6 +35,106 @@ UNANNOUNCED_SUPPORT = frozenset({
     "a confirmer", "tba", "surprise",
 })
 PARTIAL_STRUCTURE = "molotov-first-party-bill-with-unannounced-support"
+VERIFIED_NEW_STRUCTURE = "molotov-first-party-named-artist-profiles"
+def identity_key(name):
+    """Normalize French/Latin ligatures before new-artist identity checks.
+
+    The common NFKD+ASCII fold loses Æ entirely, making PÆRISH become
+    'prish' and potentially duplicating an existing PAERISH identity.
+    """
+    return norm(str(name).replace("Æ", "AE").replace("æ", "ae")
+               .replace("Œ", "OE").replace("œ", "oe"))
+
+
+SOCIAL_HOSTS = frozenset({
+    "facebook.com", "www.facebook.com",
+    "instagram.com", "www.instagram.com",
+    "open.spotify.com", "soundcloud.com", "www.soundcloud.com",
+    "www.youtube.com", "youtube.com", "linktr.ee",
+})
+
+
+class NamedArtistProfiles(HTMLParser):
+    """Record artist identity headings and associated social links in ONE event.
+
+    The Molotov template prints <strong>Artist<br/>[Genre | Country]</strong>
+    followed by that artist's first-party description and social profiles.
+    An event title alone cannot create a catalogue artist.
+    """
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.article_count = 0
+        self.article_open = False
+        self.published = False
+        self.in_strong = 0
+        self.strong_parts = []
+        self.profiles = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "article":
+            self.article_count += 1
+            self.article_open = self.article_count == 1
+            self.published = self.published or (
+                self.article_open and
+                "status-publish" in attrs.get("class", "").split() and
+                "event" in attrs.get("class", "").split())
+        if not self.article_open:
+            return
+        if tag == "strong":
+            self.in_strong += 1
+            if self.in_strong == 1:
+                self.strong_parts = []
+        if tag == "br" and self.in_strong:
+            self.strong_parts.append("\n")
+        if tag == "a" and self.profiles:
+            u = urlsplit(attrs.get("href", ""))
+            host = (u.hostname or "").lower()
+            if (u.scheme == "https" and not u.username and not u.password
+                    and not u.port and u.path.strip("/") and
+                    (host in SOCIAL_HOSTS or host.endswith(".bandcamp.com"))):
+                self.profiles[-1]["links"].add(host)
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+
+    def handle_data(self, data):
+        if self.article_open and self.in_strong:
+            self.strong_parts.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "strong" and self.article_open and self.in_strong:
+            self.in_strong -= 1
+            if not self.in_strong:
+                label = "".join(self.strong_parts)
+                match = re.fullmatch(
+                    r"\s*([^\n\[\]]{3,100})\s*\n\s*\[([^\]]{3,140})\]\s*",
+                    label)
+                if match and "|" in match[2]:
+                    name = " ".join(match[1].split())
+                    self.profiles.append({"name": name, "links": set()})
+                self.strong_parts = []
+        if tag == "article" and self.article_open:
+            self.article_open = False
+
+
+def verified_new_artists(page, names, missing):
+    """Require both name/genre first-party blocks and distinct social sources."""
+    p = NamedArtistProfiles()
+    p.feed(page)
+    if p.article_count != 1 or not p.published:
+        raise ValueError("Molotov : article officiel publié et unique exigé")
+    if len(p.profiles) != len(names):
+        raise ValueError("Molotov : une biographie individuelle par artiste exigée")
+    if [norm(x["name"]) for x in p.profiles] != [norm(x) for x in names]:
+        raise ValueError("Molotov : identité ou ordre des biographies discordant")
+    counts = []
+    for name, section in zip(names, p.profiles):
+        if len(section["links"]) < 2:
+            raise ValueError("Molotov : liens officiels d'artiste insuffisants")
+        counts.append(len(section["links"]))
+    return counts
+
 
 
 def confirmed_bill(title):
@@ -160,7 +260,10 @@ def verify(candidate, page, catalogue, today):
         raise ValueError("Le lieu est différent de Le Molotov")
     url = candidate.get("sourceUrl") or ""
     parsed = urlsplit(url)
-    if parsed.scheme != "https" or parsed.hostname != HOST or not re.fullmatch(r"/events/[^/]+/?", parsed.path):
+    if (parsed.scheme != "https" or parsed.hostname != HOST
+            or parsed.username or parsed.password or parsed.port
+            or parsed.query or parsed.fragment
+            or not re.fullmatch(r"/events/[a-z0-9-]{3,160}/", parsed.path)):
         raise ValueError("Page événement individuelle officielle obligatoire")
     detail = parse_detail(page)
     if norm(detail["title"]) != norm(candidate.get("name")):
@@ -173,22 +276,60 @@ def verify(candidate, page, catalogue, today):
     artists_by_norm = {}
     for artist in catalogue.get("artists", []):
         artists_by_norm.setdefault(norm(artist["name"]), []).append(artist["id"])
-    ids = []
+    ids, new_artists = [], []
+    aliases = {norm(alias)
+               for artist in catalogue.get("artists", [])
+               for alias in (artist.get("aliases") or [])
+               if isinstance(alias, str)}
+    reserved = {artist["id"] for artist in catalogue.get("artists", [])}
+    canonical_names = {identity_key(a["name"])
+                       for a in catalogue.get("artists", [])}
+    canonical_aliases = {identity_key(alias)
+                         for a in catalogue.get("artists", [])
+                         for alias in (a.get("aliases") or [])
+                         if isinstance(alias, str)}
+    absent = []
     for name in parts:
         match = artists_by_norm.get(norm(name), [])
-        if len(match) != 1:
+        if len(match) > 1:
             raise ValueError("Artiste absent ou ambigu dans le catalogue")
-        ids.append(match[0])
+        if match:
+            ids.append(match[0])
+        else:
+            absent.append(name)
+            aid = identity_key(name).replace(" ", "-")[:72]
+            if (not aid or aid in reserved or norm(name) in aliases
+                    or identity_key(name) in canonical_names | canonical_aliases
+                    or BANNED.search(norm(name))):
+                raise ValueError("Molotov : nouvel artiste ambigu ou alias déjà connu")
+            ids.append(aid)
+            new_artists.append({"id": aid, "name": name})
+            reserved.add(aid)
     if len(set(ids)) != len(ids):
         raise ValueError("Identités d'artistes en collision")
+    if absent:
+        if len(new_artists) > 2:
+            raise ValueError("Artiste absent ou ambigu dans le catalogue Molotov")
+        try:
+            profile_counts = verified_new_artists(page, parts, absent)
+        except ValueError as ex:
+            # Keep the legacy refusal contract: an undocumented name is
+            # always an absent artist, even when it occurs in a page title.
+            raise ValueError("Artiste absent, profil officiel incomplet : " +
+                             str(ex)) from ex
+    else:
+        profile_counts = []
     venues = {v["id"]: v for v in catalogue.get("venues", [])}
     if VENUE not in venues or norm(venues[VENUE].get("city")) != "marseille":
         raise ValueError("Salle absente ou incohérente du catalogue")
     for event in catalogue.get("events", []):
+        if event.get("officialUrl") == url:
+            raise ValueError("Concert déjà référencé par son URL officielle")
         if event.get("date") == detail["date"] and event.get("venueId") == VENUE:
             if set(event.get("artistIds", [])) & set(ids):
                 raise ValueError("Concert déjà référencé sur la même scène et même date")
-    event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + slug(parts[0])
+    lead_id = ids[0] if any(a["id"] == ids[0] for a in new_artists) else slug(parts[0])
+    event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + lead_id
     if any(e["id"] == event_id for e in catalogue.get("events", [])):
         raise ValueError("Identifiant d'événement déjà utilisé")
     proof = {
@@ -197,13 +338,24 @@ def verify(candidate, page, catalogue, today):
         "checkedFields": ["artists", "date", "venue", "genre"],
         "notes": "Fiche individuelle officielle Molotov : titre, date, salle et genres vérifiés.",
     }
-    if unannounced:
+    if new_artists:
         proof.update({
-            "officialArtistNames": [next(a["name"] for a in catalogue["artists"]
-                                         if a["id"] == artist_id) for artist_id in ids],
-            "sourceStructure": PARTIAL_STRUCTURE,
-            "unannouncedSupportLabel": unannounced,
+            "officialArtistNames": parts,
+            "sourceStructure": VERIFIED_NEW_STRUCTURE,
+            "verifiedNewArtists": [x["name"] for x in new_artists],
+            "officialArtistProfileLinkCounts": profile_counts,
         })
+    if unannounced:
+        # A genuine but unnamed guest never becomes an artist. New named
+        # performers remain eligible only with their own complete profile
+        # proof; legacy known-artist bills retain the older strict structure.
+        proof["unannouncedSupportLabel"] = unannounced
+        if not new_artists:
+            proof.update({
+                "officialArtistNames": [next(a["name"] for a in catalogue["artists"]
+                                             if a["id"] == artist_id) for artist_id in ids],
+                "sourceStructure": PARTIAL_STRUCTURE,
+            })
     return {
         "reviewDecision": "approved", "reviewedBy": "automated-official-recheck",
         "reviewedAt": today.isoformat(),
@@ -214,5 +366,5 @@ def verify(candidate, page, catalogue, today):
                   "genres": detail["genres"], "status": "confirmed",
                   "officialUrl": url, "sourceType": "salle",
                   "organizer": "Le Molotov"},
-        "newArtists": []
+        "newArtists": new_artists
     }
