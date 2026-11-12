@@ -187,6 +187,88 @@ class TargetedPressArticleTests(unittest.TestCase):
             self.assertFalse(dossier["safe_to_publish"])
             self.assertIn("editorial_signoff", dossier["missing_checks"])
 
+    def test_press_only_editorial_dossiers_remain_unverified(self):
+        from national_discovery_queue import build_queue
+        from national_editorial_reconciliation import build_review
+        st = state()
+        scan(st, SOURCES, TODAY, fetch=fetch)
+        report = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+            "press_edition_archive_integrity_private": "CONSISTENT",
+        }
+        q = build_queue(st, report, [], TODAY)
+        detail = {
+            "schema": "grossesondes.national-detail-qualification-private.v1",
+            "as_of": TODAY, "review_only": True,
+            "safe_to_publish": False, "publication_authorized": False,
+            "observations": [],
+        }
+        public = {"schema": 1, "festivals": []}
+        review = build_review(q, detail, st, [], public, history(), TODAY)
+        self.assertEqual(review["dossiers_count"], 2)
+        self.assertEqual(review["press_date_claims_private"], 3)
+        self.assertEqual(review["press_date_claim_dossiers_private"], 2)
+        for d in review["dossiers"]:
+            self.assertEqual(d["status"], "PRESS_DATE_CLAIM_REVIEW")
+            self.assertEqual(d["historical_homepage_date_hints_review_only"], [])
+            self.assertIn("independent_date_confirmation", d["missing_checks"])
+            self.assertIn("first_party_date_observation_missing", d["missing_checks"])
+            self.assertIn("press_article_origin_requires_editorial_review",
+                          d["missing_checks"])
+            self.assertIn("editorial_approval", d["missing_checks"])
+            self.assertFalse(d["publication_authorized"])
+            self.assertFalse(d["safe_to_publish"])
+            self.assertFalse(d["future_edition_confirmed"])
+        self.assertEqual(review["publications"], 0)
+        self.assertEqual(review["editorial_drafts_count"], 0)
+
+    def test_bad_winter_summer_homepage_record_does_not_hide_fresh_press(self):
+        from historical_future_lead_watch import validated_hints
+        from national_discovery_queue import build_queue
+        st = state()
+        scan(st, {"gueules-progres": SOURCES["gueules-progres"]},
+             TODAY, fetch=fetch)
+        name, region, url = (
+            "Les Gueules de Bois", "Bourgogne-Franche-Comté",
+            "https://festivalgueulesdebois.com/",
+        )
+        st["historical_future_edition_hints_private"] = {
+            "les-gueules-de-bois": {
+                "name_hint": name, "region_hint": region, "source_url": url,
+                "edition_year_hint": 2027, "firstSeen": TODAY,
+                "lastSeen": TODAY, "status":
+                    "UNVERIFIED_ARCHIVE_HOMEPAGE_YEAR_MENTION",
+                "visible_text_sha256": "b"*64,
+                "publication_authorized": False,
+                "safe_to_publish": False, "edition_dates_verified": False,
+                "organizer_verified": False, "independence_verified": False,
+                "date_hints_review_only": [{
+                    "start_date_hint": "2027-02-13",
+                    "end_date_hint": "2027-02-13",
+                    "season_hint": "summer",
+                    "status": "UNVERIFIED_VISIBLE_DATE_PHRASE",
+                    "edition_dates_verified": False, "organizer_verified": False,
+                    "independence_verified": False, "publication_authorized": False,
+                    "review_only": True,
+                }],
+            },
+        }
+        self.assertEqual(validated_hints(st, TODAY), [])
+        report = {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": TODAY, "source_reference_leads_review_only": [],
+            "historical_future_watch_archive_status_private": "CONSISTENT",
+            "press_edition_archive_integrity_private": "CONSISTENT",
+        }
+        q = build_queue(st, report, [], TODAY)
+        self.assertEqual(q["candidate_dossiers_count"], 1)
+        self.assertEqual(q["press_article_research_dossiers_private"], 1)
+        self.assertEqual(q["historical_homepage_year_hints_private"], 0)
+        self.assertEqual(q["historical_homepage_date_hints_private"], 0)
+        self.assertFalse(q["dossiers"][0]["publication_authorized"])
+        self.assertEqual(q["dossiers"][0]["date_hints"], [])
+
     def test_press_only_queue_fails_closed_if_archives_diverge(self):
         from national_discovery_queue import build_queue
         st = state()
