@@ -15,6 +15,9 @@ from urllib.parse import urlsplit
 from curated_future_lead_watch import load_leads
 from historical_future_lead_watch import validated_hints
 from targeted_institutional_future_watch import validated_observations as validated_institutional
+from targeted_press_edition_watch import (
+    SOURCES as APPROVED_PRESS, validated_observations as validated_press,
+)
 from curated_secondary_discovery import clean_queue
 from curated_targeted_secondary import APPROVED_ALL, validated_targets
 from regional_festival_discovery import APPROVED
@@ -151,6 +154,16 @@ def build_queue(state, report, curated, today):
                            == "CONSISTENT" else [])
     approved_institutional_urls = {entry["institutional_url"]
                                    for entry in institutional_hints}
+    # A validated press article is an independently observed *research lead*,
+    # NOT a verified independent publisher or date.  It must not depend on an
+    # older homepage hint surviving a stricter date/season validation.
+    press_hints = (validated_press(state, today)
+                   if report.get("press_edition_archive_integrity_private")
+                   == "CONSISTENT" else [])
+    approved_press_urls = {
+        item["url"] for item in press_hints
+        if item["url"] in {cfg["url"] for cfg in APPROVED_PRESS.values()}
+    }
     dossiers = {}
     rejected = 0
     observed_sources = 0
@@ -172,7 +185,10 @@ def build_queue(state, report, curated, today):
                     and url in approved_archive_urls and origin == url) or (
                     isinstance(url, str)
                     and kind == "INSTITUTIONAL_FUTURE_DATE_HINT"
-                    and url in approved_institutional_urls and origin == url)
+                    and url in approved_institutional_urls and origin == url) or (
+                    isinstance(url, str)
+                    and kind == "PRESS_ARTICLE_DATE_CLAIM_REVIEW"
+                    and url in approved_press_urls and origin == url)
         if (ident is None or not region or not isinstance(url, str)
                 or not (safe or _safe_origin_link(url, origin))
                 or not _recent(first, last, today)):
@@ -288,6 +304,25 @@ def build_queue(state, report, curated, today):
                 "publication_authorized": False, "review_only": True,
                 "independence_verified": False, "edition_dates_verified": False,
             })
+
+    # The publisher's article may keep an existing-edition RESEARCH dossier
+    # alive when old, contradictory homepage dates are quarantined.  Only an
+    # exact, previously pinned article can seed it, after the public historical
+    # archive-integrity gate.  No claim enters `date_hints` or approval fields.
+    for article in press_hints:
+        years = {int(claim["start_date_hint"][:4]) for claim in article["claims"]}
+        if (len(years) != 1
+                or any(claim["end_date_hint"][:4] != claim["start_date_hint"][:4]
+                       for claim in article["claims"])):
+            continue
+        year = next(iter(years))
+        if not date.fromisoformat(today).year < year <= date.fromisoformat(today).year + 2:
+            continue
+        add(article["name"], year, article["region"],
+            article["url"], article["url"],
+            "PRESS_ARTICLE_DATE_CLAIM_REVIEW",
+            article["observed_at"], article["observed_at"],
+            archive_slug=article["slug"])
 
     regional = state.get("regional_festival_candidates_review_only", {})
     if not isinstance(regional, dict):
@@ -427,6 +462,9 @@ def build_queue(state, report, curated, today):
                 for s in row["sources"]) for row in rows),
         "historical_homepage_date_hints_private": sum(
             len(row["historical_homepage_date_hints_review_only"]) for row in rows),
+        "press_article_research_dossiers_private": sum(
+            any(source["kind"] == "PRESS_ARTICLE_DATE_CLAIM_REVIEW"
+                for source in row["sources"]) for row in rows),
         "institutional_future_date_dossiers_private": sum(
             bool(row["institutional_future_date_hints_review_only"]) for row in rows),
         "non_curated_dossiers_count": sum(
@@ -462,6 +500,8 @@ def main():
         review["historical_homepage_dossiers_private"])
     report["national_discovery_institutional_future_dossiers_private"] = (
         review["institutional_future_date_dossiers_private"])
+    report["national_discovery_press_research_dossiers_private"] = (
+        review["press_article_research_dossiers_private"])
     report["national_discovery_sources_private"] = review["candidate_sources_count"]
     report["national_discovery_new_sources_private"] = review["newly_discovered_sources_count"]
     report["national_discovery_non_curated_dossiers_private"] = review["non_curated_dossiers_count"]
