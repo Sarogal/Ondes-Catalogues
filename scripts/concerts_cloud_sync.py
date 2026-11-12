@@ -4073,9 +4073,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
                parsed_url.hostname == "www.lerextoulouse.com" and
                re.fullmatch(r"/fr/programmation/[^/]+/?", parsed_url.path))
         molotov = (venue == "le-molotov-marseille" and
+                   parsed_url.scheme == "https" and
                    parsed_url.hostname == "lemolotov.com" and
-                   re.fullmatch(r"/events/[^/]+/?", parsed_url.path) and
-                   not (approval.get("newArtists") or []))
+                   bool(re.fullmatch(r"/events/[a-z0-9-]{3,160}/",
+                                     parsed_url.path)) and
+                   not parsed_url.username and not parsed_url.password and
+                   not parsed_url.port and not parsed_url.query and
+                   not parsed_url.fragment and event.get("time") is None)
         ferrailleur = (
             venue == FERRAILLEUR_VENUE_ID and
             parsed_url.hostname in ("www.leferrailleur.fr", "leferrailleur.fr") and
@@ -4704,7 +4708,52 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 isinstance(evidence[0], dict),
                 "Le Molotov : source ou preuve officielle ambiguë")
         proof = evidence[0]
-        if ("unannouncedSupportLabel" in proof or
+        if proof.get("sourceStructure") == (
+                "molotov-first-party-named-artist-profiles"):
+            # Event card plus a separate, named and social-linked biography
+            # block for EVERY billed act, including the newly introduced bands.
+            names = proof.get("officialArtistNames")
+            counts = proof.get("officialArtistProfileLinkCounts")
+            require(1 <= len(new_artists) <= 2 and 1 <= len(ids) <= 4
+                    and proof.get("unannouncedSupportLabel") is None
+                    and isinstance(names, list) and len(names) == len(ids)
+                    and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                            for n in names)
+                    and len({norm(n) for n in names}) == len(names)
+                    and isinstance(counts, list) and len(counts) == len(ids)
+                    and all(isinstance(count, int) and count >= 2
+                            for count in counts)
+                    and proof.get("verifiedNewArtists") ==
+                        [a["name"] for a in new_artists]
+                    and event.get("title") == " + ".join(names)
+                    and event.get("genres") and event.get("time") is None
+                    and event.get("status") == "confirmed"
+                    and event.get("organizer") == "Le Molotov"
+                    and proof.get("url") == official_url
+                    and proof.get("checkedAt") == reviewed_at.isoformat()
+                    and proof.get("checkedFields") ==
+                        ["artists", "date", "venue", "genre"],
+                    "Le Molotov : nouveaux artistes sans fiches nominatives complètes")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(all(
+                isinstance(resolved.get(aid), dict)
+                and norm(resolved[aid].get("name")) == norm(name)
+                for aid, name in zip(ids, names)),
+                "Le Molotov : identité du plateau différente des noms officiels")
+            old_names = {norm(a["name"]) for a in known_artist_ids.values()}
+            old_aliases = {norm(alias) for a in known_artist_ids.values()
+                           for alias in (a.get("aliases") or [])
+                           if isinstance(alias, str)}
+            require(all(norm(a["name"]) not in old_names | old_aliases
+                        and a["id"] == norm(a["name"]).replace(" ", "-")[:72]
+                        for a in new_artists),
+                    "Le Molotov : artistes inconnus ou alias en conflit")
+            require(event_id == ("go-c-" + event["date"].replace("-", "") +
+                                 "-marseille-" + ids[0])
+                    and norm_date(event.get("date")) > today,
+                    "Le Molotov : concert nouveau hors date ou identifiant attendu")
+        elif ("unannouncedSupportLabel" in proof or
                 "sourceStructure" in proof):
             require(proof.get("sourceStructure") ==
                         "molotov-first-party-bill-with-unannounced-support"
