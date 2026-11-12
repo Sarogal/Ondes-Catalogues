@@ -16,7 +16,8 @@ from ptitesondes_candidate_promotion import (
     admission_failure_group, private_admission_diagnostics,
 )
 from merge_policy import ORIGIN, merge
-from venue_registry import VENUES
+from venue_registry import VENUES, verified_location
+from proof import meters
 
 TODAY = date(2026, 11, 4)
 DAY = "2027-02-10"
@@ -116,6 +117,37 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertEqual(registry_location(lead())["city"], "Nantes")
         self.assertIsNone(registry_location(lead(venue="Théâtre de Jeanne imaginaire")))
         self.assertFalse(permitted(lead(venue="Théâtre de Jeanne imaginaire"), TODAY))
+
+
+    def test_three_official_venues_from_new_agendas_require_exact_identity(self):
+        audited = (
+            ("Tourcoing", "Médiathèque André Malraux",
+             50.716504, 3.159680),
+            ("Tourcoing", "Tourcoing/Médiathèque André Malraux",
+             50.716504, 3.159680),
+            ("Nantes", "Centre socioculturel des Bourderies - ACCOORD",
+             47.206794, -1.596206),
+            ("Tourcoing", "Tourcoing/Médiathèque Aimé Césaire",
+             50.695554, 3.151515),
+        )
+        for city, venue, source_lat, source_lng in audited:
+            with self.subTest(city=city, venue=venue):
+                item = {"city": city, "venue": venue}
+                location = registry_location(item)
+                self.assertIsNotNone(location)
+                self.assertLessEqual(
+                    meters((source_lat, source_lng),
+                           (location["lat"], location["lng"])), 65)
+                self.assertTrue(verified_location(
+                    dict(item, lat=location["lat"], lng=location["lng"]))[0])
+                self.assertIsNone(registry_location(dict(
+                    item, venue=venue + " autre bâtiment")))
+        # IGN BAN est à ~90 m du point OA Andrée Chedid : ne pas admettre.
+        self.assertIsNone(registry_location({
+            "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid"}))
+        self.assertFalse(verified_location({
+            "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid",
+            "lat": 50.729135, "lng": 3.145110})[0])
 
     def test_only_official_openagenda_leads(self):
         self.assertTrue(permitted(lead(), TODAY))
