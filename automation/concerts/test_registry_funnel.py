@@ -65,6 +65,13 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["exclusiveBlockingReasons"]["verified_adapter_not_available"], 1)
         self.assertEqual(out["readyForIndependentRecheck"], 0)
 
+    def test_bateau_official_recheck_is_counted_after_adapter_activation(self):
+        r, a, c = fixtures(row("bateau", source="bateau_ivre_official_detail_review"))
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        self.assertEqual(out["readyForIndependentRecheck"], 1)
+        self.assertEqual(out["stableCandidatesInSupportedSourceQueue"], 1)
+        self.assertIs(out["publicationAllowed"], False)
+
     def test_exact_url_date_published_or_approved_takes_precedence(self):
         r, a, c = fixtures(row("one"), row("two"), row("three"))
         a["approvals"].append({
