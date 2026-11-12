@@ -265,6 +265,13 @@ def reconciled_openagenda_url(lead, row):
     pinned_pairs = {
         ("operanationalbordeaux", "ville-de-bordeaux"),
         ("bibliotheque-lalcazar-marseille", "bibliotheques-de-marseille"),
+        # Official OpenAgenda aggregation explicitly identifies its origin as
+        # "Bibliothèques de territoire - Ville de Marseille" and relays the
+        # exact same source UID under "Bibliothèques de Marseille".
+        # https://openagenda.com/fr/bibliotheques-de-marseille/events/84874552_decouverte-des-services-en-ligne-des-bibliotheques-3983726
+        # (Concédant / Relayé par / agenda d'origine)
+        # https://doc.openagenda.com/fr/article/le-reseau-des-bibliotheques-de-la-ville-de-marseille-mgblk9/
+        ("bibliotheques-de-territoire-marseille", "bibliotheques-de-marseille"),
     }
     same_agenda = source_parts[0] == target_parts[0]
     reviewed_syndication = (source_parts[0], target_parts[0]) in pinned_pairs
