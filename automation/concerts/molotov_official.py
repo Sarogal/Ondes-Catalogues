@@ -36,6 +36,16 @@ UNANNOUNCED_SUPPORT = frozenset({
 })
 PARTIAL_STRUCTURE = "molotov-first-party-bill-with-unannounced-support"
 VERIFIED_NEW_STRUCTURE = "molotov-first-party-named-artist-profiles"
+def identity_key(name):
+    """Normalize French/Latin ligatures before new-artist identity checks.
+
+    The common NFKD+ASCII fold loses Æ entirely, making PÆRISH become
+    'prish' and potentially duplicating an existing PAERISH identity.
+    """
+    return norm(str(name).replace("Æ", "AE").replace("æ", "ae")
+               .replace("Œ", "OE").replace("œ", "oe"))
+
+
 SOCIAL_HOSTS = frozenset({
     "facebook.com", "www.facebook.com",
     "instagram.com", "www.instagram.com",
@@ -272,6 +282,12 @@ def verify(candidate, page, catalogue, today):
                for alias in (artist.get("aliases") or [])
                if isinstance(alias, str)}
     reserved = {artist["id"] for artist in catalogue.get("artists", [])}
+    canonical_names = {identity_key(a["name"])
+                       for a in catalogue.get("artists", [])}
+    canonical_aliases = {identity_key(alias)
+                         for a in catalogue.get("artists", [])
+                         for alias in (a.get("aliases") or [])
+                         if isinstance(alias, str)}
     absent = []
     for name in parts:
         match = artists_by_norm.get(norm(name), [])
@@ -281,8 +297,9 @@ def verify(candidate, page, catalogue, today):
             ids.append(match[0])
         else:
             absent.append(name)
-            aid = slug(name)
+            aid = identity_key(name).replace(" ", "-")[:72]
             if (not aid or aid in reserved or norm(name) in aliases
+                    or identity_key(name) in canonical_names | canonical_aliases
                     or BANNED.search(norm(name))):
                 raise ValueError("Molotov : nouvel artiste ambigu ou alias déjà connu")
             ids.append(aid)
@@ -306,10 +323,13 @@ def verify(candidate, page, catalogue, today):
     if VENUE not in venues or norm(venues[VENUE].get("city")) != "marseille":
         raise ValueError("Salle absente ou incohérente du catalogue")
     for event in catalogue.get("events", []):
+        if event.get("officialUrl") == url:
+            raise ValueError("Concert déjà référencé par son URL officielle")
         if event.get("date") == detail["date"] and event.get("venueId") == VENUE:
             if set(event.get("artistIds", [])) & set(ids):
                 raise ValueError("Concert déjà référencé sur la même scène et même date")
-    event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + slug(parts[0])
+    lead_id = ids[0] if any(a["id"] == ids[0] for a in new_artists) else slug(parts[0])
+    event_id = "go-c-" + detail["date"].replace("-", "") + "-marseille-" + lead_id
     if any(e["id"] == event_id for e in catalogue.get("events", [])):
         raise ValueError("Identifiant d'événement déjà utilisé")
     proof = {
