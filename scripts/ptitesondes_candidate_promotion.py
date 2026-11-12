@@ -367,18 +367,30 @@ def covered_by_published_range(lead, published_events):
                 norm(lead.get("venue")))
     if any(not value for value in identity):
         return False
+    uid = lead.get("external_id")
+    exact_uid = uid if isinstance(uid, str) and re.fullmatch(r"[0-9]{1,12}", uid) else None
     for item in published_events:
-        if not isinstance(item, dict) or (
-                norm(item.get("title")), norm(item.get("city")),
-                norm(item.get("venue"))) != identity:
+        if not isinstance(item, dict) or (norm(item.get("city")),
+                norm(item.get("venue"))) != identity[1:]:
             continue
         try:
             start = date.fromisoformat(item["date_start"])
             end = date.fromisoformat(item.get("date_end") or item["date_start"])
         except (KeyError, ValueError, TypeError):
             continue
-        if start <= day <= end:
+        if not start <= day <= end:
+            continue
+        if norm(item.get("title")) == identity[0]:
             return True
+        # A human-curated title may add a venue qualifier (e.g. "Éveil
+        # musical – Cinq-Avenues"). For a SAME venue/date, the immutable OA
+        # UID is safer than a fuzzy title match. Keep strict official source
+        # hostname and UID-prefixed event path; never compare mere keywords.
+        if exact_uid:
+            parts = openagenda_path_parts(item.get("source_url"))
+            if parts is not None and re.fullmatch(
+                    re.escape(exact_uid) + r"_[a-z0-9-]+", parts[1]):
+                return True
     return False
 
 
