@@ -58,7 +58,8 @@ def state():
 def report(day=TODAY, integrity="CONSISTENT"):
     return {"schema": "grossesondes.source-watch-report.v1",
             "date": day, "source_reference_leads_review_only": [],
-            "institutional_future_archive_status_private": integrity}
+            "institutional_future_archive_status_private": integrity,
+            "press_edition_archive_integrity_private": "CONSISTENT"}
 
 
 def fake_fetch(url):
