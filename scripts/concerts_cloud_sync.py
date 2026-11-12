@@ -6546,7 +6546,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Big Band Café : 20h affiché ne prouve pas le début musical")
     # Tours: a named official page AND the year-aware first-party index.
     # The 19h30/20h printed by the venue is DOOR time, never music start.
-    if (event_id in BATEAU_IVRE_SIGNED_20261104
+    # Preserve the old signed dossier but also admit a separately validated
+    # automated official recheck. Never override/resign legacy reserved IDs.
+    if (event.get("venueId") == "le-bateau-ivre-tours"
+            and reviewer == "automated-official-recheck" and bateau_auto):
+        require(event_id not in BATEAU_IVRE_SIGNED_20261104
+                and official_url not in BATEAU_IVRE_URL_IDS,
+                "Bateau Ivre : dossier manuel réservé")
+    elif (event_id in BATEAU_IVRE_SIGNED_20261104
             or event.get("venueId") == "le-bateau-ivre-tours"
             or official_url in BATEAU_IVRE_URL_IDS):
         spec = BATEAU_IVRE_SIGNED_20261104.get(event_id)
