@@ -59,9 +59,9 @@ def explicit_reason(detail):
         return "ods_uid_unresolved"
     if "http error 429" in msg:
         return "ods_http_429"
-    if re.search(r"http error 5\\d\\d", msg):
+    if re.search(r"http error 5\d\d", msg):
         return "ods_http_5xx"
-    if re.search(r"http error 4\\d\\d", msg):
+    if re.search(r"http error 4\d\d", msg):
         return "ods_http_4xx"
     if "timed out" in msg or "urlopen error" in msg or "name or service not known" in msg:
         return "ods_network_error"
