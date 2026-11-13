@@ -26,10 +26,25 @@ OFFICIAL_PAGE = (
 )
 
 
+def unpublished_catalogue():
+    """Test the pre-publication proof, independently of today's live releases.
+
+    The duplicate gate has a separate regression test below. Only the venue
+    registry and existing unrelated artists come from the public catalogue.
+    """
+    catalogue = json.loads(
+        (ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+    catalogue["events"] = []
+    catalogue["artists"] = [
+        artist for artist in catalogue["artists"]
+        if artist.get("id") != "greenleaf"
+    ]
+    return catalogue
+
+
 class PublisherGreenleafGuestTests(unittest.TestCase):
     def test_official_headliner_passes_exact_same_publisher_validation(self):
-        catalogue = json.loads(
-            (ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        catalogue = unpublished_catalogue()
         original_count = len(catalogue["events"])
         existing_venues = {v["id"]: v for v in catalogue["venues"]}
         existing_artists = {a["id"]: a for a in catalogue["artists"]}
@@ -61,9 +76,29 @@ class PublisherGreenleafGuestTests(unittest.TestCase):
         self.assertIsNone(evt["time"])
         self.assertEqual(len(catalogue["events"]), original_count)
 
+    def test_real_same_day_published_event_is_still_rejected(self):
+        catalogue = unpublished_catalogue()
+        catalogue["artists"].append({"id": "greenleaf", "name": "GREENLEAF"})
+        catalogue["events"].append({
+            "id": "go-c-20261214-paris-greenleaf",
+            "title": "GREENLEAF", "date": "2026-12-14",
+            "venueId": "backstage-by-the-mill-paris",
+            "artistIds": ["greenleaf"]
+        })
+        candidate = {
+            "source": "agenda_officiel_backstage_detail",
+            "sourceUrl": URL, "name": "GREENLEAF + GUEST",
+            "date": "2026-12-14", "venue": "Backstage By The Mill",
+            "city": "Paris", "classification": ["stoner rock"],
+            "reviewBucket": "genre_tag_review",
+            "possibleExistingConcert": False,
+            "reviewRequired": True, "publicationAllowed": False,
+        }
+        with self.assertRaisesRegex(ValueError, "Concert déjà publié"):
+            backstage_recheck.verify(candidate, OFFICIAL_PAGE, catalogue, DATE)
+
     def test_publisher_rejects_forged_guest_artist_from_same_page(self):
-        catalogue = json.loads(
-            (ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
+        catalogue = unpublished_catalogue()
         candidate = {
             "source": "agenda_officiel_backstage_detail",
             "sourceUrl": URL, "name": "GREENLEAF + GUEST",
