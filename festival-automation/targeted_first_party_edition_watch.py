@@ -179,19 +179,41 @@ def validated_observations(state, today):
     return sorted(result, key=lambda row: row["slug"])
 
 
-def scan(state, approved, today, fetch=get_page, limit=MAX_CHECKS):
+def scan(state, approved, today, fetch=get_page, limit=MAX_CHECKS, phase="primary"):
     if (not isinstance(state, dict) or state.get("schema") != STATE_SCHEMA
             or not isinstance(approved, dict)
             or any(slug not in SOURCES or source != SOURCES[slug]
                    for slug, source in approved.items())
-            or type(limit) is not int or not 0 <= limit <= MAX_CHECKS):
+            or type(limit) is not int or not 0 <= limit <= MAX_CHECKS
+            or phase not in ("primary", "catchup")):
         raise ValueError("unauthorized first-party watch")
     checks = state.setdefault("first_party_edition_checks_private", {})
     observations = state.setdefault("first_party_edition_observations_private", {})
     if not isinstance(checks, dict) or not isinstance(observations, dict):
         raise ValueError("invalid private first-party watch state")
+    # Existing public workflow already runs primary and catchup. Track both
+    # phases to notice same-day official announcements without adding cron jobs.
+    # Keep the legacy per-day date register for backwards compatibility.
+    phase_checks = state.setdefault("first_party_edition_phase_checks_private", {})
+    if (not isinstance(phase_checks, dict) or len(phase_checks) > len(SOURCES)):
+        raise ValueError("invalid private first-party phase register")
+    for slug, mark in phase_checks.items():
+        if (slug not in SOURCES or not isinstance(mark, dict)
+                or set(mark) != {"date", "phases"}
+                or not isinstance(mark["date"], str)
+                or not isinstance(mark["phases"], list)
+                or mark["phases"] != sorted(set(mark["phases"]))
+                or any(p not in ("primary", "catchup") for p in mark["phases"])):
+            raise ValueError("invalid first-party phase mark")
+        try:
+            if date.fromisoformat(mark["date"]) > date.fromisoformat(today):
+                raise ValueError("future first-party phase mark")
+        except (ValueError, TypeError):
+            raise ValueError("invalid first-party phase date") from None
     outcomes = []
     for slug, source in sorted(approved.items())[:limit]:
+        mark = phase_checks.get(slug)
+        checked_today = (mark["phases"] if mark and mark["date"] == today else [])
         previous = checks.get(slug)
         if previous is not None:
             try:
@@ -200,8 +222,12 @@ def scan(state, approved, today, fetch=get_page, limit=MAX_CHECKS):
                 raise ValueError("invalid last first-party attempt") from None
             if previous_date > date.fromisoformat(today):
                 raise ValueError("future first-party attempt")
-            if previous_date == date.fromisoformat(today):
+            if (previous_date == date.fromisoformat(today)
+                    and phase == "primary" and mark is None):
+                # First run after upgrade: old same-day attempt is primary.
                 continue
+        if phase in checked_today:
+            continue
         # A failed fetch or changed page invalidates a previous positive.
         observations.pop(slug, None)
         result = "UNAVAILABLE_OR_INCONCLUSIVE"
@@ -226,6 +252,9 @@ def scan(state, approved, today, fetch=get_page, limit=MAX_CHECKS):
         except (ValueError, TypeError, UnicodeError, OSError):
             pass
         checks[slug] = today
+        phase_checks[slug] = {
+            "date": today, "phases": sorted(set([*checked_today, phase])),
+        }
         outcomes.append({"slug": slug, "status": result,
                          "publication_authorized": False})
     return outcomes
@@ -236,6 +265,8 @@ def main():
     parser.add_argument("--intake", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=MAX_CHECKS)
+    parser.add_argument("--phase", choices=("primary", "catchup"),
+                        default="primary")
     args = parser.parse_args()
     today = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
     state_path = args.intake / "source-watch-state.json"
@@ -246,7 +277,8 @@ def main():
     approved, integrity = roster(today)
     if not approved:
         state["first_party_edition_observations_private"] = {}
-    results = scan(state, approved, today, limit=args.limit) if approved else []
+    results = (scan(state, approved, today, limit=args.limit,
+                    phase=args.phase) if approved else [])
     current = validated_observations(state, today)
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n",
                           encoding="utf-8")
