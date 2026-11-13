@@ -43,6 +43,9 @@ on:
   # Re-execute this already-existing PUBLIC publisher after private PR #304
   # signed the independently verified Secret Place cancellation (27/06/2027).
   # No approval gate, scheduling, token scope or workflow logic is changed.
+  # Synchronisation du 13/11/2026 après relecture officielle et preflight privé validés :
+  # GREENLEAF Paris 14/12, UUHAI Wasquehal 20/03, DARVAZA Paris 10/12.
+  # Déclenche le PUBLISHER EXISTANT ; ne touche pas aux règles ni aux secrets.
   schedule:
     - cron: '17 */3 * * *'
   push:
