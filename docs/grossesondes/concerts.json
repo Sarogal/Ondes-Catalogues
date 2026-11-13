@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-12",
+  "updatedAt": "2026-11-13",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -7148,10 +7148,10 @@
         "Rock"
       ],
       "organizer": "La TAF",
-      "status": "confirmed",
+      "status": "cancelled",
       "officialUrl": "https://r.shotgun.live/fr/venues/secret-place",
       "ticketUrl": null,
-      "lastVerified": "2026-11-01",
+      "lastVerified": "2026-11-12",
       "confidence": "programmation publiée par la salle / organisateur ou par sa billetterie; nuances signalées",
       "sourceType": "organisateur",
       "sourceLabel": "Secret Place / Tout à Fond (programmation ou billetterie officielle)",
@@ -7160,8 +7160,14 @@
         {
           "date": "2026-11-01",
           "change": "Ajout vérifié auprès de la programmation de Secret Place et/ou de son compte billetterie. Line-up connu enregistré."
+        },
+        {
+          "date": "2026-11-12",
+          "change": "Concert du 27 juin 2027 à Secret Place annoncé annulé dans les dates officielles des Ramoneurs de Menhirs.",
+          "sourceUrl": "https://www.ramoneursdemenhirs.bzh/"
         }
-      ]
+      ],
+      "cancellationSourceUrl": "https://www.ramoneursdemenhirs.bzh/"
     },
     {
       "id": "go-c-20270701-secret-place-les-tambours-du-bronx",
