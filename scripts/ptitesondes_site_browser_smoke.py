@@ -6,6 +6,8 @@ The browser report distinguishes delivered JSON, JS ingestion, search results,
 and WebGL tile rendering (which may be limited on a headless runner).
 """
 import json
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import os
 from pathlib import Path
 import re
@@ -143,8 +145,12 @@ def run():
             page.wait_for_timeout(900)
             report["frontend_counter"] = page.locator("#outings-count").inner_text()
             report["frontend_map"] = map_snapshot(page)
-            if report["frontend_map"]["mapContainer"] is None:
-                raise AssertionError("Missing #outings-map container")
+            container = report["frontend_map"]["mapContainer"]
+            canvas = report["frontend_map"]["canvas"]
+            if not container or not canvas or canvas["width"] < 100 or canvas["height"] < 100:
+                raise AssertionError("MapLibre canvas absent or not dimensioned")
+            if report["frontend_map"]["mapErrorTextVisible"]:
+                raise AssertionError("Visible map load error fallback")
 
             search = page.get_by_label("Ville, département ou mot-clé")
             if search.count() == 0:
@@ -170,7 +176,26 @@ def run():
             # A list match is not proof that the geographic marker is shown.
             # Preserve a distinct screenshot while the Accoord filter is active.
             page.locator("#outings-map").scroll_into_view_if_needed(timeout=12000)
-            page.wait_for_timeout(2200)
+            future_count = sum(
+                1 for event in source["events"]
+                if event.get("id") in EXPECTED
+                and event.get("date_start", "") >=
+                datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
+            )
+            report["expected_future_accoord_on_map"] = future_count
+            if future_count:
+                # Recenter and source updates are asynchronous; do not inspect
+                # the transient "0 sortie visible" before map movement settles.
+                page.wait_for_function(
+                    """minimum => [...document.querySelectorAll('strong,span,p,div')]
+                      .filter(el => !el.children.length)
+                      .some(el => {
+                        const m = el.textContent.trim().match(
+                          /^(\\d+) sorties? visibles?$/i);
+                        return m && Number(m[1]) >= minimum;
+                      })""",
+                    arg=future_count, timeout=15000,
+                )
             report["filtered_map"] = map_snapshot(page)
             report["filtered_visible_counters"] = page.evaluate(
                 """() => [...document.querySelectorAll('strong, span, p, div')]
