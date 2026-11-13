@@ -358,6 +358,9 @@ class CandidatePromotionTests(unittest.TestCase):
             self.fail("A published multi-day range must stop the query upstream")
         patch_doc, report = evaluate([lead()], ref, public, TODAY, fetch=never_fetch)
         self.assertEqual(patch_doc["additions"], [])
+        # Full/forensic audits intentionally retain their old semantics:
+        # only the scheduled intake opts into pre-batch skipping.
+        self.assertEqual(report["already_published_before_batch"], 0)
         self.assertEqual(report["details"][0]["status"], "already_published")
         self.assertIn("couverte", report["details"][0]["reason"])
 
