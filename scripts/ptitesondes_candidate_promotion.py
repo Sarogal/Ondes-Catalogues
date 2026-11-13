@@ -552,7 +552,8 @@ def rotating_batch(candidates, today, limit, slot=0):
 
 
 def evaluate(leads, baseline, published, today, fetch=api_record,
-             verifier=verify_event, limit=MAX_FETCH, slot=0):
+             verifier=verify_event, limit=MAX_FETCH, slot=0,
+             skip_published_prebatch=False):
     historic = byid(baseline)
     existing = byid(published)
     if any(k not in existing or not historical_event_unchanged(v, existing[k])
@@ -576,8 +577,9 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     already_published_before_batch = 0
     for lead in candidates:
         public_id = "openagenda-" + lead["external_id"] + "-" + lead["date_start"]
-        if (public_id in existing or
-                covered_by_published_range(lead, published["events"])):
+        if (skip_published_prebatch and
+                (public_id in existing or
+                 covered_by_published_range(lead, published["events"]))):
             already_published_before_batch += 1
         else:
             reviewable.append(lead)
@@ -725,6 +727,9 @@ def main():
                     default=Path("/tmp/ptitesondes-promotion"))
     ap.add_argument("--limit", type=int, default=MAX_FETCH)
     ap.add_argument("--slot", type=int, default=0, choices=range(4))
+    # Production scheduling may skip exact already-public occurrences; the
+    # read-only full/forensic audits intentionally retain the complete sample.
+    ap.add_argument("--skip-published-prebatch", action="store_true")
     ap.add_argument("--backlog-file", type=Path)
     ap.add_argument("--reference-file", type=Path)
     ap.add_argument("--catalogue-file", type=Path,
@@ -751,7 +756,8 @@ def main():
         baseline = json.loads(raw)
     published = json.loads(args.catalogue_file.read_text(encoding="utf-8"))
     patch, report = evaluate(leads, baseline, published, today,
-                             limit=args.limit, slot=args.slot)
+                             limit=args.limit, slot=args.slot,
+                             skip_published_prebatch=args.skip_published_prebatch)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "preview-patch.json").write_text(
         json.dumps(patch, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
