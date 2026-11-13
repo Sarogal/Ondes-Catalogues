@@ -25,6 +25,19 @@ class PrivateIntakeHandoffTests(unittest.TestCase):
         self.assertIn("sparse-checkout-cone-mode: false", self.workflow)
         self.assertNotIn("pull_request_target:", self.workflow)
 
+    def test_trusted_main_rechecker_merges_trigger_intake_without_pr_secrets(self):
+        trigger = self.workflow.split("on:\n", 1)[1].split("\npermissions:", 1)[0]
+        self.assertIn("push:", trigger)
+        self.assertIn("branches: [main]", trigger)
+        for path in ("automation/concerts/official_recheck.py",
+                     "automation/concerts/backstage_recheck.py",
+                     ".github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml"):
+            self.assertIn("'" + path + "'", trigger)
+        self.assertNotIn("pull_request:", trigger)
+        self.assertNotIn("pull_request_target:", trigger)
+        self.assertIn("github.ref == 'refs/heads/main'", self.workflow)
+        self.assertIn("cancel-in-progress: false", self.workflow)
+
     def test_promisor_objects_auth_before_stage_and_push(self):
         step = self.commit_step
         self.assertIn("INTAKE_PUSH_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}", step)
