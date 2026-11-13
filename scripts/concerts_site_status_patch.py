@@ -88,6 +88,8 @@ if(e.status!=='cancelled'&&e.ticketUrl)
 
 
 def patch_css(original: str) -> str:
+    if ".cancelled{" in original or ".postponed{" in original:
+        raise ValueError("Patch Concerts refusé : statuts CSS déjà modifiés")
     return replace_once(
         original,
         ".confirmed{font-size:11px;font-weight:800;color:#76d9a0}",
