@@ -15,6 +15,8 @@ class PrivateQualificationBridgeTests(unittest.TestCase):
         self.assertIn('--reports-dir "$STATE/reports"', body)
         self.assertIn('--output "$VERIFIED/review-slots.txt"', body)
         self.assertIn("--slot \"$REVIEW_SLOT\"", body)
+        self.assertIn("--skip-published-prebatch", body)
+        self.assertIn("ptitesondes_candidate_promotion.py", body)
         self.assertIn('--report "$WORK/report.json"', body)
         self.assertIn('--output "$WORK/qualification-summary.json"', body)
         self.assertIn('if [[ "$RUN_MODE" == "write" ]]; then', body)
