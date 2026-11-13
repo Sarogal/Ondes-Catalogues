@@ -16,6 +16,14 @@ on:
     - cron: '20 12 * * *'
     - cron: '20 16 * * *'
     - cron: '20 20 * * *'
+  # Complément événementiel aux cron GitHub, qui peuvent être retardés ou ignorés.
+  # Le workflow privé s'exécute sur un runner du dépôt public ; aucune donnée
+  # de sa sortie n'est reprise ici. Le synchroniseur relit et revérifie le patch.
+  workflow_run:
+    workflows:
+      - "P'tites Ondes — moteurs privés sur runners publics (bascule pilote)"
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       mode:
@@ -39,7 +47,7 @@ concurrency:
 
 jobs:
   prepare:
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled' }}
+    if: ${{ (github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main')) && (github.event_name == 'push' || github.event_name == 'workflow_dispatch' || vars.PTITESONDES_CLOUD_SYNC == 'enabled') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -113,7 +121,7 @@ jobs:
           USER_MODE: ${{ inputs.mode }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
-          if { [ "$CHANGED" = "true" ] || [ "$APPROVED_HISTORY_PAGES_CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ] || [ "$PLACE_RELEASE_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$USER_MODE" = "publish" ]; }; then
+          if { [ "$CHANGED" = "true" ] || [ "$APPROVED_HISTORY_PAGES_CHANGED" = "true" ] || [ "$PLACES_CHANGED" = "true" ] || [ "$PLACE_RELEASE_CHANGED" = "true" ]; } && [ "$CLOUD_ENABLED" = "enabled" ] && { [ "$EVENT_NAME" = "schedule" ] || [ "$EVENT_NAME" = "push" ] || [ "$EVENT_NAME" = "workflow_run" ] || [ "$USER_MODE" = "publish" ]; }; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           else
             echo "deploy=false" >> "$GITHUB_OUTPUT"
