@@ -166,6 +166,20 @@ def run():
 
             report["title_visible_after_search"] = search_count > 0
             page.screenshot(path=str(OUT / "site-search.png"), full_page=False)
+
+            # A list match is not proof that the geographic marker is shown.
+            # Preserve a distinct screenshot while the Accoord filter is active.
+            page.locator("#outings-map").scroll_into_view_if_needed(timeout=12000)
+            page.wait_for_timeout(2200)
+            report["filtered_map"] = map_snapshot(page)
+            report["filtered_visible_counters"] = page.evaluate(
+                """() => [...document.querySelectorAll('strong, span, p, div')]
+                  .filter(x => !x.children.length).map(x => x.textContent.trim())
+                  .filter(x => /^\\d+ sorties? visibles?$/i.test(x)).slice(0, 6)"""
+            )
+            page.screenshot(
+                path=str(OUT / "site-bourderies-map.png"), full_page=False
+            )
             search.fill("")
             page.wait_for_timeout(700)
             page.locator("#outings-map").scroll_into_view_if_needed(timeout=12000)
