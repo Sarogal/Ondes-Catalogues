@@ -1,0 +1,33 @@
+name: Grosses Ondes — contrôle hors ligne du correctif affichage Concerts
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/concerts_site_status_patch.py'
+      - 'tests/test_concerts_site_status_patch.py'
+      - '.github/workflows/grossesondes-concerts-site-patch-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/concerts_site_status_patch.py'
+      - 'tests/test_concerts_site_status_patch.py'
+      - '.github/workflows/grossesondes-concerts-site-patch-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  site-patch-safety:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier le patch Infomaniak sans accès privé ni déploiement
+        run: python -m unittest discover -s tests -p 'test_concerts_site_status_patch.py' -v
+      - name: Vérifier syntaxe du préparateur
+        run: python -m py_compile scripts/concerts_site_status_patch.py
