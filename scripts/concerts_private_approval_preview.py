@@ -39,60 +39,121 @@ def read_json(path):
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-def append_only(previous, proposed, published):
-    """Accept only a small, cumulative, independently signed *data* append."""
+def approved_delta(previous, proposed, published):
+    """Inspect a single append-only change. The trusted publisher is the authority."""
     require(isinstance(previous, dict) and isinstance(proposed, dict))
     require(previous.keys() == proposed.keys(),
             "Structure d'approbations altérée")
-    require(all(previous[k] == proposed[k]
-                for k in previous if k != "approvals"),
-            "Données ou validation de salle modifiées")
+    permitted = {"approvals", "referenceEventStatusCorrections"}
+    require(all(previous[k] == proposed[k] for k in previous if k not in permitted),
+            "Données historiques ou validations de salle modifiées")
+
     old = previous.get("approvals")
     new = proposed.get("approvals")
     require(isinstance(old, list) and isinstance(new, list))
     require(new[:len(old)] == old, "Historique des signatures modifié")
     fresh = new[len(old):]
-    require(1 <= len(fresh) <= sync.MAX_NEW_EVENTS_PER_SYNC,
-            "Lot nouveau trop important ou vide")
-    all_ids = [r.get("event", {}).get("id") for r in new]
+    require(len(fresh) <= sync.MAX_NEW_EVENTS_PER_SYNC,
+            "Lot nouveau trop important")
+
+    old_status = previous.get("referenceEventStatusCorrections", [])
+    new_status = proposed.get("referenceEventStatusCorrections", [])
+    require(isinstance(old_status, list) and isinstance(new_status, list)
+            and new_status[:len(old_status)] == old_status,
+            "Historique des corrections de statut modifié")
+    added_status = new_status[len(old_status):]
+    require(len(added_status) <= 1 and bool(fresh) != bool(added_status),
+            "Une seule catégorie de modification, non vide, est autorisée")
+    all_ids = [r.get("event", {}).get("id") if isinstance(r, dict) else None
+               for r in new]
     require(len(all_ids) == len(set(all_ids))
             and all(isinstance(i, str) and i for i in all_ids),
             "Identifiants d'approbation en double")
-    require(all(r.get("reviewDecision") == "approved"
-                and r.get("reviewedBy") == "independent-official-verifier"
-                and r.get("newArtists") == []
-                and len(r.get("officialEvidence") or []) >= 2
-                and isinstance(r.get("event"), dict)
-                for r in fresh),
-            "Lot privé sans signatures indépendantes ou changement d'artiste")
+    require(all(
+        isinstance(r, dict)
+        and r.get("reviewDecision") == "approved"
+        and r.get("reviewedBy") in (
+            "independent-official-verifier", "automated-official-recheck")
+        and isinstance(r.get("officialEvidence"), list)
+        and bool(r["officialEvidence"])
+        and isinstance(r.get("event"), dict)
+        and isinstance(r.get("newArtists", []), list)
+        for r in fresh
+    ), "Lot privé sans approbation ou preuve officielle")
     current_ids = {r.get("id") for r in published.get("events", [])}
     require(all(r["event"]["id"] not in current_ids for r in fresh),
             "Concert déjà publié sous le même identifiant")
-    return [r["event"]["id"] for r in fresh]
+    require(all(
+        isinstance(r, dict)
+        and isinstance(r.get("eventId"), str)
+        and r["eventId"] in current_ids
+        and r.get("reviewDecision") == "approved"
+        and r.get("reviewedBy") == "independent-official-verifier"
+        and isinstance(r.get("eventPatch"), dict)
+        and isinstance(r.get("officialEvidence"), list)
+        and bool(r["officialEvidence"])
+        for r in added_status
+    ), "Correction de statut sans signature indépendante")
+    # No other correction is authorized here; the real sync.merge() verifies
+    # the exact signed event, provenance and permitted immutable-state change.
+    return [r["event"]["id"] for r in fresh], added_status
+
+
+def append_only(previous, proposed, published):
+    """Backwards-compatible API used by the original safety tests."""
+    ids, _ = approved_delta(previous, proposed, published)
+    return ids
 
 
 def audit(previous, proposed, reference, published, today):
-    fresh_ids = append_only(previous, proposed, published)
+    fresh_ids, added_status = approved_delta(previous, proposed, published)
     merged, counts = sync.merge(reference, published, proposed, today)
+    expected_artists = [
+        a.get("id") if isinstance(a, dict) else None
+        for row in proposed["approvals"][len(previous["approvals"]):]
+        for a in row.get("newArtists", [])
+    ]
+    require(all(isinstance(a, str) and a for a in expected_artists)
+            and len(expected_artists) == len(set(expected_artists)),
+            "Nouveaux artistes non identifiés")
     require(counts.get("newEvents") == len(fresh_ids)
-            and counts.get("newArtists") == 0
+            and counts.get("newArtists") == len(expected_artists)
             and counts.get("newVenues") == 0
-            and counts.get("correctedEvents") == 0
+            and counts.get("correctedEvents") == len(added_status)
             and counts.get("correctedVenues") == 0
             and not counts.get("held"),
             "Simulation de publication différente du lot approuvé")
-    require([e["id"] for e in merged["events"][len(published["events"]):]]
-            == fresh_ids, "L'ordre et les IDs des événements changent")
-    require(merged["events"][:len(published["events"])]
-            == published["events"], "Concert historique ou publié altéré")
-    require(merged["artists"] == published["artists"]
-            and merged["venues"] == published["venues"],
-            "Identité artistique ou géolocalisation modifiée")
-    require(len(merged["events"]) == len(published["events"]) + len(fresh_ids),
-            "Nombre d'événements inattendu")
+    old_events = published["events"]
+    new_events = merged["events"]
+    require(len(new_events) == len(old_events) + len(fresh_ids)
+            and [e["id"] for e in new_events[len(old_events):]] == fresh_ids,
+            "Ordre, identifiants ou nombre d'événements modifiés")
+    if added_status:
+        target = added_status[0]["eventId"]
+        changed = [(old, new) for old, new in zip(old_events, new_events)
+                   if old != new]
+        require(len(changed) == 1
+                and changed[0][0]["id"] == changed[0][1]["id"] == target,
+                "Correction d'un événement non signé")
+        old, new = changed[0]
+        allowed = {"status", "lastVerified", "cancellationSourceUrl", "history"}
+        require(all(old.get(k) == new.get(k)
+                    for k in set(old) | set(new) if k not in allowed),
+                "Correction de statut modifiant des données immuables")
+    else:
+        require(new_events[:len(old_events)] == old_events,
+                "Concert historique ou publié altéré")
+    old_artists = published["artists"]
+    new_artists = merged["artists"]
+    require(new_artists[:len(old_artists)] == old_artists
+            and [a["id"] for a in new_artists[len(old_artists):]]
+                == expected_artists,
+            "Identités artistiques différentes des signatures")
+    require(merged["venues"] == published["venues"],
+            "Géolocalisation ou salle modifiée")
     sync.protect_reference(reference, merged)
     sync.validate_catalogue(merged)
-    return len(fresh_ids)
+    return len(fresh_ids) + len(added_status)
 
 
 def github_json(path, token):
@@ -174,7 +235,7 @@ def main():
         print("PREVIEW_STAGE=UNEXPECTED", file=sys.stderr)
         return 1
     print("Prévalidation privée réussie en lecture seule : "
-          + str(checked) + " nouveaux concerts, sans publication.")
+          + str(checked) + " modification(s) vérifiée(s), sans publication.")
     return 0
 
 
