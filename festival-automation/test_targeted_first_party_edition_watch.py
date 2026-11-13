@@ -313,6 +313,62 @@ class FirstPartyResearchTests(unittest.TestCase):
                       restored["missing_checks"])
         self.assertEqual(poisoned["publications"], 0)
 
+    def test_primary_and_catchup_each_check_once_per_day(self):
+        st = state()
+        seen = []
+
+        def recording_fetch(url):
+            seen.append(url)
+            return fetch(url)
+
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=recording_fetch, phase="primary")), 2)
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=recording_fetch, phase="primary")), 0)
+        self.assertEqual(len(seen), 2)
+        # Existing evening cron checks the same two approved sites again.
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=recording_fetch, phase="catchup")), 2)
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=recording_fetch, phase="catchup")), 0)
+        self.assertEqual(len(seen), 4)
+        self.assertEqual(sum(len(x["claims"]) for x in
+                             validated_observations(st, TODAY)), 3)
+        self.assertEqual(len(scan(st, SOURCES, TOMORROW,
+                                  fetch=recording_fetch, phase="primary")), 2)
+        self.assertEqual(len(seen), 6)
+
+    def test_evening_failure_invalidates_morning_evidence(self):
+        st = state()
+        scan(st, SOURCES, TODAY, fetch=fetch, phase="primary")
+        self.assertEqual(len(validated_observations(st, TODAY)), 2)
+
+        def unavailable(_):
+            raise OSError("temporary network failure")
+
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=unavailable, phase="catchup")), 2)
+        self.assertEqual(validated_observations(st, TODAY), [])
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=unavailable, phase="catchup")), 0)
+
+    def test_legacy_daily_check_and_poisoned_phases_fail_closed(self):
+        # The private register is allowed to lack phase stamps on upgrade.
+        st = state()
+        st["first_party_edition_checks_private"] = {
+            slug: TODAY for slug in SOURCES
+        }
+        self.assertEqual(scan(st, SOURCES, TODAY,
+                              fetch=fetch, phase="primary"), [])
+        self.assertEqual(len(scan(st, SOURCES, TODAY,
+                                  fetch=fetch, phase="catchup")), 2)
+        with self.assertRaises(ValueError):
+            scan(st, SOURCES, TODAY, fetch=fetch, phase="third")
+        st["first_party_edition_phase_checks_private"][
+            "les-gueules-de-bois"]["phases"] = ["catchup", "catchup"]
+        with self.assertRaises(ValueError):
+            scan(st, SOURCES, TODAY, fetch=fetch, phase="primary")
+
     def test_stale_observations_expire(self):
         st = state()
         scan(st, SOURCES, TODAY, fetch=fetch)
