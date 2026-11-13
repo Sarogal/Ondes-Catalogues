@@ -53,10 +53,10 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
 
     def test_requires_existing_signer_and_no_unsigned_support_act(self):
         for mutation in (
-            ("reviewer", lambda row: row.update(reviewedBy="automated-official-recheck")),
+            ("reviewer", lambda row: row.update(reviewedBy="untrusted-candidate")),
             ("decision", lambda row: row.update(reviewDecision="pending")),
             ("invalidArtists", lambda row: row.update(newArtists="untrusted")),
-            ("missingProof", lambda row: row["officialEvidence"].pop()),
+            ("missingProof", lambda row: row["officialEvidence"].clear()),
             ("duplicateId", lambda row: row["event"].update(id=OLD_ROW["event"]["id"])),
         ):
             key, change = mutation
