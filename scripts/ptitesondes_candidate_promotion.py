@@ -567,7 +567,21 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
             for e in published["events"]}
     candidates, eligible_raw, duplicates, conflicts = unique_review_candidates(
         leads, today, with_alternatives=True)
-    selected, page, pages = rotating_batch(candidates, today, limit, slot)
+    # Consume the bounded daily review budget ONLY on sessions not yet public.
+    # This is an exact pre-existing duplicate gate moved before pagination,
+    # NOT a relaxation of official source, time, venue, GPS or audience checks.
+    # The same published-range check also remains inside the review loop, so a
+    # single candidate never bypasses it due to a later change in selection.
+    reviewable = []
+    already_published_before_batch = 0
+    for lead in candidates:
+        public_id = "openagenda-" + lead["external_id"] + "-" + lead["date_start"]
+        if (public_id in existing or
+                covered_by_published_range(lead, published["events"])):
+            already_published_before_batch += 1
+        else:
+            reviewable.append(lead)
+    selected, page, pages = rotating_batch(reviewable, today, limit, slot)
     accepted, rejected, assessed = [], [], 0
     for lead in selected:
         assessed += 1
@@ -667,7 +681,8 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     report = {
         "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
-        "backlog_total": len(leads), "eligible_with_reviewed_venue": len(candidates),
+        "backlog_total": len(leads), "eligible_with_reviewed_venue": len(reviewable),
+        "already_published_before_batch": already_published_before_batch,
         "eligible_raw": eligible_raw,
         "duplicate_collector_leads_skipped": duplicates,
         "conflicting_uid_days_deferred": conflicts,
@@ -685,6 +700,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
 # local to the job and are persisted only in the private intake branch.
 PUBLIC_COUNT_KEYS = (
     "backlog_total", "eligible_with_reviewed_venue", "eligible_raw",
+    "already_published_before_batch",
     "duplicate_collector_leads_skipped", "conflicting_uid_days_deferred",
     "review_slot", "review_batch", "review_batches",
     "checked", "accepted_preflight", "deferred_or_duplicates",
