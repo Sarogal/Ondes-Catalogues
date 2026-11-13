@@ -284,5 +284,24 @@ class TestsCloud(unittest.TestCase):
         p.feed('<script type="application/ld+json">{"@type":"Event","name":"Concert"}</script>')
         self.assertEqual(len(p.blocks),1)
 
+
+class TestsPrivateIntakeEventBridge(unittest.TestCase):
+    def test_private_intake_success_triggers_independent_public_sync(self):
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/ptitesondes-cloud-sync.yml").read_text(
+                        encoding="utf-8")
+        self.assertIn("  workflow_run:", workflow)
+        self.assertIn(
+            '- "P\'tites Ondes — moteurs privés sur runners publics (bascule pilote)"',
+            workflow)
+        self.assertIn("    types: [completed]", workflow)
+        self.assertIn("    branches: [main]", workflow)
+        self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
+        self.assertIn("github.event.workflow_run.head_branch == 'main'", workflow)
+        self.assertIn('[ "$EVENT_NAME" = "workflow_run" ]', workflow)
+        self.assertIn("  queue: max", workflow)
+        self.assertIn("run: python scripts/run_cloud_sync.py", workflow)
+        self.assertNotIn("PRIVATE_INTAKE_WRITE_TOKEN", workflow)
+
 if __name__=="__main__":
     unittest.main()
