@@ -299,7 +299,7 @@ class TestsPrivateIntakeEventBridge(unittest.TestCase):
         self.assertIn("github.event.workflow_run.conclusion == 'success'", workflow)
         self.assertIn("github.event.workflow_run.head_branch == 'main'", workflow)
         self.assertIn('[ "$EVENT_NAME" = "workflow_run" ]', workflow)
-        self.assertIn("    queue: max", workflow)
+        self.assertIn("  queue: max", workflow)
         self.assertIn("run: python scripts/run_cloud_sync.py", workflow)
         self.assertNotIn("PRIVATE_INTAKE_WRITE_TOKEN", workflow)
 
