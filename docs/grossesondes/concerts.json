@@ -2206,6 +2206,11 @@
       "id": "mirabelle",
       "name": "mirabelle",
       "aliases": []
+    },
+    {
+      "id": "greenleaf",
+      "name": "GREENLEAF",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14322,6 +14327,96 @@
       "history": [
         {
           "date": "2026-11-12",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261214-paris-greenleaf",
+      "title": "GREENLEAF",
+      "date": "2026-12-14",
+      "artistIds": [
+        "greenleaf"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Stoner Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/greenleaf-2/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-13",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-13",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270320-wasquehal-uuhai",
+      "title": "Uuhai",
+      "date": "2027-03-20",
+      "artistIds": [
+        "uuhai"
+      ],
+      "venueId": "the-black-lab-wasquehal",
+      "genres": [
+        "metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://theblacklab.fr/agenda/uuhai-2/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "The Black Lab",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-13",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-13",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261210-paris-darvaza",
+      "title": "DARVAZA + MERRIMACK + HELLERUIN + DETRESSE",
+      "date": "2026-12-10",
+      "artistIds": [
+        "darvaza",
+        "merrimack",
+        "helleruin",
+        "detresse"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/darvaza-merrimack-helleruin-detresse/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-13",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-13",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
