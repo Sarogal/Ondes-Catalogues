@@ -358,9 +358,8 @@ class CandidatePromotionTests(unittest.TestCase):
             self.fail("A published multi-day range must stop the query upstream")
         patch_doc, report = evaluate([lead()], ref, public, TODAY, fetch=never_fetch)
         self.assertEqual(patch_doc["additions"], [])
-        self.assertEqual(report["already_published_before_batch"], 1)
-        self.assertEqual(report["checked"], 0)
-        self.assertEqual(report["details"], [])
+        self.assertEqual(report["details"][0]["status"], "already_published")
+        self.assertIn("couverte", report["details"][0]["reason"])
 
     def test_prebatch_skip_frees_slot_for_future_unpublished_date(self):
         # Five already-published dates used to waste the entire small review
@@ -383,7 +382,7 @@ class CandidatePromotionTests(unittest.TestCase):
             candidates, ref, public, TODAY,
             fetch=lambda uid: record(),
             verifier=lambda event, originals: (True, "official proof"),
-            limit=1, slot=0)
+            limit=1, slot=0, skip_published_prebatch=True)
         self.assertEqual(report["eligible_raw"], 6)
         self.assertEqual(report["already_published_before_batch"], 5)
         self.assertEqual(report["eligible_with_reviewed_venue"], 1)
@@ -449,9 +448,7 @@ class CandidatePromotionTests(unittest.TestCase):
                              fetch=lambda uid: record(),
                              verifier=lambda event, originals: (True, "verified"))
         self.assertEqual(len(p["additions"]), 0)
-        self.assertEqual(report["already_published_before_batch"], 1)
-        self.assertEqual(report["checked"], 0)
-        self.assertEqual(report["details"], [])
+        self.assertEqual(report["details"][0]["status"], "already_published")
         self.assertEqual(len(public["events"]), 101)
 
     def test_exact_momo_historical_time_fix_preserves_preflight(self):
