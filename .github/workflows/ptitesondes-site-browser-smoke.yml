@@ -1,0 +1,49 @@
+name: P'tites Ondes — contrôle navigateur Sorties (lecture seule)
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_site_browser_smoke.py'
+      - '.github/workflows/ptitesondes-site-browser-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_site_browser_smoke.py'
+      - '.github/workflows/ptitesondes-site-browser-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Diagnostic ponctuel, sans cron et sans permission de publier sur Pages.
+concurrency:
+  group: ptitesondes-site-browser-smoke
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier la syntaxe du test
+        run: python -m py_compile scripts/ptitesondes_site_browser_smoke.py
+      - name: Préparer le navigateur sans secret
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
+          python -m playwright install --with-deps chromium
+      - name: Contrôler Pages, ingestion du site, recherche Accoord et MapLibre
+        env:
+          PTITESONDES_SMOKE_OUTPUT: ${{ runner.temp }}/ptitesondes-site-smoke
+        run: python scripts/ptitesondes_site_browser_smoke.py
+      - name: Conserver le rapport et les captures pour diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ptitesondes-site-browser-smoke
+          path: ${{ runner.temp }}/ptitesondes-site-smoke/
+          if-no-files-found: warn
+          retention-days: 7
