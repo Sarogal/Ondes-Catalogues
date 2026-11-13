@@ -1277,13 +1277,31 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         protect_reference(BASE,live)
         validate_catalogue(live)
         self.assertGreaterEqual(len(live["events"]),127)
-        from concerts_cloud_sync import corrected_reference_event_state, CARGO_REFERENCE_TIME_FIXES
+        from concerts_cloud_sync import (
+            corrected_reference_event_state, CARGO_REFERENCE_TIME_FIXES,
+            SECRET_PLACE_CANCELLED_EVENT_ID, SECRET_PLACE_CANCELLED_SOURCE)
         ids=tuple(sorted(CARGO_REFERENCE_TIME_FIXES))
+        # The 27/06/2027 Secret Place cancellation has a signed, exact
+        # historical exception. All OTHER 126 originals remain untouched
+        # except for their independently approved legacy/time fixes.
         self.assertIn(live["events"][:127], tuple(
             corrected_reference_event_state(
                 BASE, legacy=legacy,
-                cargo_ids=tuple(key for i,key in enumerate(ids) if mask & (1 << i)))
-            for legacy in (False,True) for mask in range(1 << len(ids))))
+                cargo_ids=tuple(key for i,key in enumerate(ids) if mask & (1 << i)),
+                cancel_secret_place=cancelled)
+            for legacy in (False,True)
+            for mask in range(1 << len(ids))
+            for cancelled in (False,True)))
+        cancelled=next(e for e in live["events"]
+                       if e["id"]==SECRET_PLACE_CANCELLED_EVENT_ID)
+        self.assertEqual(cancelled["status"],"cancelled")
+        self.assertEqual(cancelled["cancellationSourceUrl"],
+                         SECRET_PLACE_CANCELLED_SOURCE)
+        baseline=next(e for e in BASE["events"]
+                      if e["id"]==SECRET_PLACE_CANCELLED_EVENT_ID)
+        self.assertEqual(cancelled["artistIds"],baseline["artistIds"])
+        self.assertEqual(cancelled["date"],baseline["date"])
+        self.assertEqual(cancelled["venueId"],baseline["venueId"])
 
     def test_approved_addition_only(self):
         new, stats=merge(BASE,BASE,{"schema":"grossesondes.concert.approvals.v1",
