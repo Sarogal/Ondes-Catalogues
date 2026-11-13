@@ -283,6 +283,7 @@ jobs:
             mkdir -p "$WORK"
             if ! python public/scripts/ptitesondes_candidate_promotion.py \
               --date "$DAY" --limit 15 --slot "$REVIEW_SLOT" \
+              --skip-published-prebatch \
               --backlog-file "$STATE/backlog.json" \
               --catalogue-file public/docs/ptitesondes/sorties.json \
               --output-dir "$WORK" \

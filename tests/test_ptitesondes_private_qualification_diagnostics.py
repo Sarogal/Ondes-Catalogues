@@ -63,6 +63,22 @@ class PrivateQualificationDiagnosticsTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, out)
 
+    def test_prebatch_published_skips_are_counted_without_ids_or_proofs(self):
+        src = dict(raw_report(), eligible_with_reviewed_venue=27,
+                   already_published_before_batch=5)
+        summary = summarise(src, TODAY, 2)
+        self.assertEqual(summary["already_published_before_batch"], 5)
+        self.assertEqual(summary["eligible"], 27)
+        self.assertEqual(summary["checked"], 2)
+        safe = json.dumps(summary)
+        self.assertNotIn("secret-id", safe)
+        self.assertNotIn("TOPSECRET", safe)
+        for count in (-1, True, 230, 6, "5"):
+            with self.subTest(count=count):
+                with self.assertRaises(ValueError):
+                    summarise(dict(src, already_published_before_batch=count),
+                              TODAY, 2)
+
     def test_private_admission_venues_survive_only_in_private_summary(self):
         report = raw_report()
         report["admission_diagnostics"] = {

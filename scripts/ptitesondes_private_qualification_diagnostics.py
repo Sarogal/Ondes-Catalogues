@@ -134,6 +134,11 @@ def summarise(report, expected_day, expected_slot):
         raise ValueError("Compteurs invalides")
     (backlog, eligible, raw_eligible, duplicates, conflicts, batch, batches,
      checked, accepted, rejected) = (report[k] for k in fields)
+    pre_batch_skipped = report.get("already_published_before_batch", 0)
+    if (type(pre_batch_skipped) is not int or
+            not 0 <= pre_batch_skipped <= backlog or
+            eligible + pre_batch_skipped + duplicates + conflicts > raw_eligible):
+        raise ValueError("Dédoublonnage antérieur à la rotation incohérent")
     if (not 0 <= backlog <= 4000 or not 0 <= eligible <= backlog
             or not 0 <= raw_eligible <= backlog
             or not 0 <= duplicates <= raw_eligible
@@ -171,6 +176,7 @@ def summarise(report, expected_day, expected_slot):
         "not_eligible_for_review": backlog - raw_eligible,
         "duplicate_collector_leads_skipped": duplicates,
         "conflicting_uid_days_deferred": conflicts,
+        "already_published_before_batch": pre_batch_skipped,
         "batch": batch, "batches": batches,
         "checked": checked, "accepted_preflight": accepted,
         "rejected": rejected,

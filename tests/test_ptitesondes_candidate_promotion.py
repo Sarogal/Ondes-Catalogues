@@ -358,8 +358,55 @@ class CandidatePromotionTests(unittest.TestCase):
             self.fail("A published multi-day range must stop the query upstream")
         patch_doc, report = evaluate([lead()], ref, public, TODAY, fetch=never_fetch)
         self.assertEqual(patch_doc["additions"], [])
+        # Full/forensic audits intentionally retain their old semantics:
+        # only the scheduled intake opts into pre-batch skipping.
+        self.assertEqual(report["already_published_before_batch"], 0)
         self.assertEqual(report["details"][0]["status"], "already_published")
         self.assertIn("couverte", report["details"][0]["reason"])
+
+    def test_prebatch_skip_frees_slot_for_future_unpublished_date(self):
+        # Five already-published dates used to waste the entire small review
+        # window. Their identity must remain strict; the distinct 10 February
+        # performance retains the same independent proof chain.
+        ref = base()
+        published_days = [
+            (date(2027, 1, 6) + timedelta(days=i)).isoformat()
+            for i in range(5)
+        ]
+        known = [
+            dict(ref["events"][i], id="published-family-" + str(i),
+                 title=lead()["title"], venue="Théâtre de Jeanne",
+                 date_start=day, date_end=day)
+            for i, day in enumerate(published_days)
+        ]
+        public = dict(ref, events=ref["events"] + known)
+        candidates = [lead(day=day) for day in published_days] + [lead()]
+        patch_doc, report = evaluate(
+            candidates, ref, public, TODAY,
+            fetch=lambda uid: record(),
+            verifier=lambda event, originals: (True, "official proof"),
+            limit=1, slot=0, skip_published_prebatch=True)
+        self.assertEqual(report["eligible_raw"], 6)
+        self.assertEqual(report["already_published_before_batch"], 5)
+        self.assertEqual(report["eligible_with_reviewed_venue"], 1)
+        self.assertEqual(report["checked"], 1)
+        self.assertEqual(report["accepted_preflight"], 1)
+        self.assertEqual(report["deferred_or_duplicates"], 0)
+        self.assertEqual([item["date_start"] for item in patch_doc["additions"]],
+                         [DAY])
+        self.assertFalse(patch_doc["safe_to_publish"])
+
+    def test_prebatch_cannot_mask_new_date_or_different_venue(self):
+        published = [{"id": "openagenda-77081258-2027-02-09",
+                      "title": lead()["title"], "city": "Nantes",
+                      "venue": "Théâtre de Jeanne", "date_start": "2027-02-09",
+                      "date_end": "2027-02-09"}]
+        self.assertFalse(covered_by_published_range(lead(), published))
+        self.assertFalse(covered_by_published_range(
+            lead(day="2027-02-09", venue="Autre salle"), published))
+        self.assertFalse(covered_by_published_range(
+            dict(lead(), title="Titre différent", date_start="2027-02-09"),
+            published))
 
     def test_range_dedup_checks_date_title_city_and_venue_exactly(self):
         existing = {"title":"Momo, l’enfant pêche", "city":"Bordeaux",
