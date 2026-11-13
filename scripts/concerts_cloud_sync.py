@@ -4305,6 +4305,44 @@ def validate_approval(approval, venues, known_artist_ids, today):
         added[aid] = {"id": aid, "name": name, "aliases": []}
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
+    if reviewer == "automated-official-recheck" and backstage:
+        # An unannounced guest may be OMITTED from the proposed bill, but
+        # may never become a fabricated artist in the publisher.
+        proof = next((item for item in evidence if isinstance(item, dict)
+                      and item.get("url") == official_url
+                      and item.get("checkedAt") == reviewed_at.isoformat()
+                      and {"artists", "date", "venue", "genre"}.issubset(
+                          set(item.get("checkedFields") or []))), None)
+        require(proof is not None, "Backstage : preuve officielle absente")
+        names = proof.get("officialArtistNames")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and 1 <= len(names) <= 5
+                and all(isinstance(name, str) and 3 <= len(norm(name)) <= 100
+                        for name in names)
+                and len({norm(name) for name in names}) == len(names)
+                and all(norm(name) not in
+                        {"guest", "guests", "tba", "a confirmer", "surprise"}
+                        for name in names),
+                "Backstage : artiste fictif ou liste officielle non identifiée")
+        displayed = re.split(r"\s+\+\s+", event["title"])
+        require(len(displayed) == len(names)
+                and all(norm(x) == norm(y)
+                        for x, y in zip(displayed, names)),
+                "Backstage : affiche différente des noms réellement approuvés")
+        for aid, name in zip(ids, names):
+            resolved = added.get(aid) or known_artist_ids.get(aid)
+            require(bool(resolved) and norm(resolved["name"]) == norm(name),
+                    "Backstage : identité artiste non corroborée")
+        existing = {norm(a["name"]) for a in known_artist_ids.values()}
+        aliases = {norm(alias)
+                   for a in known_artist_ids.values()
+                   for alias in a.get("aliases", [])
+                   if isinstance(alias, str)}
+        require(len(added) <= 2 and all(
+            norm(a["name"]) not in existing | aliases
+            and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
+            for a in new_artists),
+            "Backstage : nouveau nom en collision ou non identifié")
     if reviewer == "automated-official-recheck" and ferrailleur:
         proof = next((item for item in evidence if isinstance(item,dict)
                       and item.get("url")==official_url and
