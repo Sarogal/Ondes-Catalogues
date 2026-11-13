@@ -1,6 +1,11 @@
 name: Concerts — valider une PR d'approbations privées sur runner public
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-concerts-private-approval-preview.yml'
+      - 'scripts/concerts_private_approval_preview.py'
+      - 'tests/test_concerts_private_approval_preview.py'
   push:
     branches: [main]
     paths:
@@ -13,7 +18,6 @@ on:
         description: SHA exact de la révision de PR privée à contrôler
         required: true
         type: string
-        default: '8c2acf4c3d87dd5d6f4cb8d09fdcecd850847ae8'
 
 permissions:
   contents: read
@@ -23,9 +27,24 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Untrusted PR code is tested WITHOUT access to any private token.
+  preview-unit-tests:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester les corrections et signatures sans secret
+        run: python -m unittest discover -s tests -p 'test_concerts_private_approval_preview.py' -v
+
   private-approval-check:
     # Only the trusted main branch can read private data. No pull_request trigger.
-    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -41,10 +60,14 @@ jobs:
       - name: Valider les approbations privées sans publier ni divulguer les sources
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
-          PRIVATE_HEAD_SHA: ${{ inputs.private_head_sha || '8c2acf4c3d87dd5d6f4cb8d09fdcecd850847ae8' }}
+          PRIVATE_HEAD_SHA: ${{ inputs.private_head_sha }}
         shell: bash
         run: |
           set -euo pipefail
+          if [[ -z "$PRIVATE_HEAD_SHA" || ! "$PRIVATE_HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::SHA de PR privée absent ou invalide."
+            exit 1
+          fi
           if [[ -z "$GROSSES_ONDES_INTAKE_READ_TOKEN" ]]; then
             echo "::error::Accès privé de lecture absent : prévalidation impossible."
             exit 1
@@ -63,7 +86,7 @@ jobs:
             echo "::error::Prévalidation privée refusée ; aucun contenu privé divulgué."
             exit 1
           fi
-          echo "Prévalidation sûre : historique conservé, nouvelles fiches vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
+          echo "Prévalidation sûre : historiques conservés, modifications approuvées vérifiées par le synchroniseur, aucune publication." >> "$GITHUB_STEP_SUMMARY"
           echo "Runner public ; lecture des approbations via un jeton privé de portée limitée." >> "$GITHUB_STEP_SUMMARY"
       - name: Confirmer l'absence totale d'écriture ou d'artefact privé
         shell: bash
