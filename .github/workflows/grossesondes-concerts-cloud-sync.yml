@@ -155,6 +155,25 @@ jobs:
           git add -- docs/grossesondes/concerts.json
           git diff --cached --quiet && exit 1
           git commit -m "data(concerts): publier uniquement les concerts officiellement approuvés"
+          # A concurrent main commit (e.g. on another catalog or site tooling)
+          # must not make publication fail on a simple non-fast-forward. Never
+          # rebase across a newer concert catalog, baseline, publisher code or
+          # its security tests: those require a FRESH preflight and workflow run.
+          git fetch --no-tags origin main
+          REMOTE_HEAD="$(git rev-parse FETCH_HEAD)"
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" "$REMOTE_HEAD"; then
+            echo "::error::Main a été réécrit : publication interrompue"
+            exit 1
+          fi
+          if ! git diff --quiet "$GITHUB_SHA" "$REMOTE_HEAD" -- \
+            scripts/concerts_cloud_sync.py \
+            tests/test_concerts_cloud_sync.py \
+            docs/grossesondes/concerts.json \
+            docs/grossesondes/concerts-reference.json; then
+            echo "::error::Le catalogue ou ses garde-fous ont changé : relancer la revue sur main"
+            exit 1
+          fi
+          git rebase "$REMOTE_HEAD"
           git push origin HEAD:main
 
       - name: Préparer GitHub Pages (tous les catalogues existants préservés)
