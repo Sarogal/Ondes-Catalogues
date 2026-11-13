@@ -40,6 +40,9 @@ on:
   # l'éditeur (Molotov 17/12 et Bateau Ivre 21/01). Ce commentaire
   # déclenche uniquement le publisher EXISTANT ; aucun contrôle ou
   # horaire de synchronisation n'est modifié.
+  # Re-execute this already-existing PUBLIC publisher after private PR #304
+  # signed the independently verified Secret Place cancellation (27/06/2027).
+  # No approval gate, scheduling, token scope or workflow logic is changed.
   schedule:
     - cron: '17 */3 * * *'
   push:
