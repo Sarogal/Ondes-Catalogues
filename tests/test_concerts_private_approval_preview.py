@@ -55,7 +55,7 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
         for mutation in (
             ("reviewer", lambda row: row.update(reviewedBy="automated-official-recheck")),
             ("decision", lambda row: row.update(reviewDecision="pending")),
-            ("newArtist", lambda row: row.update(newArtists=[{"id": "a", "name": "A"}])),
+            ("invalidArtists", lambda row: row.update(newArtists="untrusted")),
             ("missingProof", lambda row: row["officialEvidence"].pop()),
             ("duplicateId", lambda row: row["event"].update(id=OLD_ROW["event"]["id"])),
         ):
@@ -129,7 +129,7 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
         self.assertEqual(inspect.call_args.args[1], "fake-token")
         self.assertIsInstance(inspect.call_args.args[2], dt.date)
         self.assertNotIn("fake-token", output.getvalue())
-        self.assertIn("4 nouveaux concerts", output.getvalue())
+        self.assertIn("4 modification(s) vérifiée(s)", output.getvalue())
 
     def test_only_pinned_sha_and_main_json_are_requested(self):
         refs = []
@@ -142,6 +142,105 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
             self.assertEqual(ci.preview("a" * 40, "fake-token",
                                         dt.date(2026, 11, 6)), 1)
         self.assertEqual(refs, ["main", "a" * 40])
+
+
+    def test_new_artists_accepted_only_when_publisher_adds_exact_signed_ids(self):
+        proposal = copy.deepcopy(AFTER)
+        proposal["approvals"][-1]["newArtists"] = [
+            {"id": "official-new-band", "name": "Official New Band"}]
+        proposal["approvals"][-1]["officialEvidence"] = [
+            {"url": "https://venue.example/verified",
+             "proofType": "official-organizer-or-venue"}]
+        self.assertEqual(ci.approved_delta(BEFORE, proposal, PUBLISHED)[0],
+                         [NEW_ROW["event"]["id"]])
+        result = copy.deepcopy(PUBLISHED)
+        result["events"].append({"id": NEW_ROW["event"]["id"]})
+        result["artists"].append({"id": "official-new-band",
+                                  "name": "Official New Band"})
+        with (patch.object(ci.sync, "merge",
+                           return_value=(result, dict(COUNT, newArtists=1))),
+              patch.object(ci.sync, "protect_reference"),
+              patch.object(ci.sync, "validate_catalogue")):
+            self.assertEqual(ci.audit(BEFORE, proposal, {}, PUBLISHED,
+                                      dt.date(2026, 11, 13)), 1)
+        for altered in (
+            dict(COUNT, newArtists=0),
+            dict(COUNT, newArtists=2),
+        ):
+            with (patch.object(ci.sync, "merge",
+                               return_value=(result, altered)),
+                  self.assertRaises(ValueError)):
+                ci.audit(BEFORE, proposal, {}, PUBLISHED,
+                         dt.date(2026, 11, 13))
+        swapped = copy.deepcopy(result)
+        swapped["artists"][0]["id"] = "unreviewed"
+        with (patch.object(ci.sync, "merge",
+                           return_value=(swapped, dict(COUNT, newArtists=1))),
+              self.assertRaises(ValueError)):
+            ci.audit(BEFORE, proposal, {}, PUBLISHED,
+                     dt.date(2026, 11, 13))
+
+    def test_status_correction_is_append_only_exactly_one_event(self):
+        row = {
+            "eventId": OLD_ROW["event"]["id"],
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "reviewedAt": "2026-11-12",
+            "eventPatch": {"status": "cancelled"},
+            "officialEvidence": [{"url": "https://artist.example/tour",
+                                  "proofType": "official-artist-tour-calendar"}],
+        }
+        before = dict(BEFORE, referenceEventStatusCorrections=[])
+        after = dict(before, referenceEventStatusCorrections=[row])
+        self.assertEqual(ci.approved_delta(before, after, PUBLISHED),
+                         ([], [row]))
+        updated = copy.deepcopy(PUBLISHED)
+        updated["events"][0]["status"] = "cancelled"
+        count = dict(COUNT, newEvents=0, correctedEvents=1)
+        with (patch.object(ci.sync, "merge", return_value=(updated, count)),
+              patch.object(ci.sync, "protect_reference"),
+              patch.object(ci.sync, "validate_catalogue")):
+            self.assertEqual(ci.audit(before, after, {}, PUBLISHED,
+                                      dt.date(2026, 11, 13)), 1)
+        for bad in (
+            dict(after, approvals=AFTER["approvals"]),
+            dict(after, referenceEventStatusCorrections=[row, row]),
+            dict(after, referenceEventStatusCorrections=[
+                dict(row, reviewedBy="untrusted")]),
+            dict(after, referenceEventStatusCorrections=[
+                dict(row, eventId="unknown-id")]),
+            dict(after, venueApprovals=[]),
+        ):
+            with self.subTest(bad=str(bad)[:100]), self.assertRaises(ValueError):
+                ci.approved_delta(before, bad, PUBLISHED)
+        tampered = copy.deepcopy(updated)
+        tampered["events"][0]["title"] = "Altered lineup"
+        with (patch.object(ci.sync, "merge", return_value=(tampered, count)),
+              self.assertRaises(ValueError)):
+            ci.audit(before, after, {}, PUBLISHED, dt.date(2026, 11, 13))
+        wrong_count = dict(count, correctedEvents=0)
+        with (patch.object(ci.sync, "merge",
+                           return_value=(updated, wrong_count)),
+              self.assertRaises(ValueError)):
+            ci.audit(before, after, {}, PUBLISHED, dt.date(2026, 11, 13))
+
+    def test_status_append_cannot_mutate_prior_signature_or_add_venues(self):
+        prior = {"eventId": "historical", "reviewDecision": "approved"}
+        before = dict(BEFORE, referenceEventStatusCorrections=[prior])
+        new_row = {
+            "eventId": OLD_ROW["event"]["id"],
+            "reviewDecision": "approved",
+            "reviewedBy": "independent-official-verifier",
+            "eventPatch": {"status": "cancelled"},
+            "officialEvidence": [{"url": "https://artist.example/tour"}],
+        }
+        altered = dict(before, referenceEventStatusCorrections=[
+            dict(prior, reviewDecision="modified"), new_row])
+        with self.assertRaises(ValueError):
+            ci.approved_delta(before, altered, PUBLISHED)
+        altered = dict(before, referenceEventStatusCorrections=[new_row])
+        with self.assertRaises(ValueError):
+            ci.approved_delta(before, altered, PUBLISHED)
 
 
 if __name__ == "__main__":
