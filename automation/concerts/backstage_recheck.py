@@ -39,6 +39,9 @@ ALLOWED_GENRES = {
 }
 UNSAFE = re.compile(r"\b(?:guest|guests|tba|a confirmer|festival|annule|"
                     r"annulee|reporte|reportee|postponed|cancelled)\b")
+# The official headline may explicitly announce an unnamed support act.
+# Recognize ONLY this exact trailing marker; it is never an artist identity.
+UNNAMED_GUEST_SUFFIX = re.compile(r"\s+\+\s+GUEST\s*$", re.I)
 
 
 def norm(value):
@@ -111,7 +114,9 @@ def verify(candidate, html_text, catalogue, today):
     title, pos = page.headings[0]
     if norm(title) != norm(candidate.get("name")):
         raise ValueError("Titre officiel différent de la découverte")
-    if UNSAFE.search(norm(title)):
+    unnamed_guest = UNNAMED_GUEST_SUFFIX.search(title) is not None
+    signed_title = UNNAMED_GUEST_SUFFIX.sub("", title).strip() if unnamed_guest else title
+    if UNSAFE.search(norm(signed_title)) or not signed_title:
         raise ValueError("Affiche partielle, annulée ou reportée")
     # No page-footer/recommendation/artist biography can supply the event
     # date, category or venue. All must occur immediately after the H1.
@@ -134,9 +139,14 @@ def verify(candidate, html_text, catalogue, today):
              or "o sullivans by the mill" in place)
             or "clichy" not in place or "paris" not in place):
         raise ValueError("Lieu nominatif de la fiche officielle absent")
-    if UNSAFE.search(norm(" ".join(header_tokens[:8]))):
+    status_header = norm(" ".join(header_tokens[:8]))
+    # GUEST in the corroborating official page is not an event cancellation.
+    # All other uncertainty, postponement and cancellation markers remain fatal.
+    if unnamed_guest:
+        status_header = re.sub(r"\bguest\b", "", status_header)
+    if UNSAFE.search(status_header):
         raise ValueError("Événement annulé, reporté ou à confirmer")
-    names = [x.strip() for x in re.split(r"\s+\+\s+", title)]
+    names = [x.strip() for x in re.split(r"\s+\+\s+", signed_title)]
     if not 1 <= len(names) <= 5 or any(len(norm(n)) < 3 for n in names):
         raise ValueError("Programmation non nominative")
     if len({norm(n) for n in names}) != len(names):
@@ -178,10 +188,12 @@ def verify(candidate, html_text, catalogue, today):
             "checkedAt": today.isoformat(),
             "checkedFields": ["artists", "date", "venue", "genre"],
             "officialArtistNames": names,
-            "notes": "Fiche nominative officielle revérifiée en lecture seule; aucune heure supposée."
+            "notes": ("Fiche nominative officielle revérifiée en lecture seule; aucune heure supposée."
+                      + (" Première partie 'GUEST' non annoncée : aucun artiste inventé."
+                         if unnamed_guest else ""))
         }],
         "event": {
-            "id": event_id, "title": title, "date": date.isoformat(),
+            "id": event_id, "title": signed_title, "date": date.isoformat(),
             "time": None, "artistIds": artist_ids, "venueId": VENUE_ID,
             "genres": [genre], "status": "confirmed", "officialUrl": url,
             "sourceType": "salle", "organizer": "Backstage By The Mill"
