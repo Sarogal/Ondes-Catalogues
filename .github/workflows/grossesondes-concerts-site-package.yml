@@ -1,0 +1,86 @@
+name: Grosses Ondes — préparer correctif Concerts pour Infomaniak (sans déploiement)
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-concerts-site-package.yml'
+      - 'scripts/concerts_site_status_patch.py'
+      - 'tests/test_concerts_site_status_patch.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-concerts-site-package.yml'
+      - 'scripts/concerts_site_status_patch.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les garde-fous du préparateur
+        run: |
+          python -m unittest discover -s tests -p 'test_concerts_site_status_patch.py' -v
+          python -m py_compile scripts/concerts_site_status_patch.py
+      - name: Lire les fichiers publics, conserver les originaux, produire un patch strict
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="$RUNNER_TEMP/grossesondes-concerts-package"
+          mkdir -p "$base/originaux" "$base/a-deployer" "$base/artefacts"
+          for filename in app.js styles.css index.html; do
+            url="https://grosses-ondes.fr/concerts/$filename"
+            curl --fail --silent --show-error --location --retry 2 \
+              --proto '=https' --proto-redir '=https' \
+              --max-time 30 --output "$base/originaux/$filename" "$url"
+            test -s "$base/originaux/$filename"
+            test "$(wc -c < "$base/originaux/$filename")" -le 250000
+          done
+          # Le patch refuse toute source divergente, double modification,
+          # ou remplacement d'un historique/catalogue. Il n'écrit qu'en local.
+          python scripts/concerts_site_status_patch.py \
+            --app "$base/originaux/app.js" \
+            --css "$base/originaux/styles.css" \
+            --index "$base/originaux/index.html" \
+            --out "$base/a-deployer"
+          node --check "$base/a-deployer/app.js"
+          test "$(find "$base/a-deployer" -maxdepth 1 -type f | wc -l)" -eq 3
+          (
+            cd "$base/a-deployer"
+            sha256sum app.js styles.css index.html > "$base/artefacts/sha256-deploiement.txt"
+            zip -q "$base/artefacts/CONCERTS-A-DEPLOYER.zip" app.js styles.css index.html
+          )
+          (
+            cd "$base/originaux"
+            sha256sum app.js styles.css index.html > "$base/artefacts/sha256-originaux.txt"
+            zip -q "$base/artefacts/CONCERTS-SAUVEGARDE-ORIGINAUX.zip" app.js styles.css index.html
+          )
+          printf '%s\n' \
+            'Aucun fichier Infomaniak n a été modifié par GitHub Actions.' \
+            'CONCERTS-A-DEPLOYER.zip contient uniquement les trois fichiers patchés.' \
+            'CONCERTS-SAUVEGARDE-ORIGINAUX.zip contient les sauvegardes de restauration.' \
+            'Toujours vérifier le contenu avant le transfert manuel WebFTP.' \
+            > "$base/artefacts/LISEZ-MOI.txt"
+          cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
+          ### Grosses Ondes Concerts — paquet prêt
+          Les fichiers publics ont été téléchargés, les ancres contrôlées,
+          le JavaScript vérifié et les deux ZIP préparés **sans aucun déploiement**.
+          L'artefact est disponible après le run sur `main`.
+          EOF
+      - name: Conserver le paquet et la sauvegarde pour récupération manuelle
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: grossesondes-concerts-infomaniak-correctif-20261113
+          path: ${{ runner.temp }}/grossesondes-concerts-package/artefacts/
+          if-no-files-found: error
+          retention-days: 14
