@@ -1,4 +1,4 @@
-"""Offline, fail-closed Cernunnos 2027 official two-page evidence tests."""
+"""Offline, fail-closed Cernunnos 2027 proof tests; never infer days."""
 import sys
 from pathlib import Path
 import unittest
@@ -47,18 +47,16 @@ def groups():
 
 
 class OfficialRunningOrderTests(unittest.TestCase):
-    def test_accepted_five_new_artists_and_25_dated_slots(self):
+    def test_accepted_five_new_artists_without_unverified_days(self):
         old = published()
         updated = revalidate(old, running(), groups(), TODAY)
         self.assertIsNotNone(updated)
         self.assertEqual(updated["lineup"][:20], old["lineup"])
         self.assertEqual(updated["lineup"][20:], list(NEW_LINEUP))
         self.assertEqual(updated["bands"], 25)
-        self.assertEqual(updated["lineupByDate"], {
-            day: list(names) for day, names in DAYS.items()
-        })
+        self.assertNotIn("lineupByDate", updated)
         self.assertNotIn("surprise", updated["lineup"])
-        self.assertNotIn("lineupByDate", old)
+        self.assertIn("jours discordants", updated["notes"])
         self.assertIsNone(revalidate(updated, running(), groups(), TODAY))
 
     def test_missing_names_or_year_in_either_page_block(self):
