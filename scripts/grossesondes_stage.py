@@ -31,6 +31,7 @@ from grossesondes_noel_2026 import (
     PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
     noel_2026_update,
 )
+from grossesondes_cernunnos_running_order import RUNNING_ORDER_URL
 # The frozen 2026-10-30 certificate remains tested separately; the live
 # preview is reconciled against the integrity-pinned published head.
 from grossesondes_field_proof import (
@@ -46,6 +47,7 @@ ALLOWED={
     "https://www.billetweb.fr/autfest-anniversaire",
     "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/",
     CERNUNNOS_HOME_URL, CERNUNNOS_GROUPS_URL, CERNUNNOS_INFO_URL,
+    RUNNING_ORDER_URL,
     FANTASMAGORIK_TICKET_URL, FANTASMAGORIK_DATE_URL,
     IN_YOUR_FACE_TICKET_URL,
     *NOEL_PROOF_SOURCES.values(),

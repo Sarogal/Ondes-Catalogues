@@ -34,6 +34,10 @@ from grossesondes_noel_2026 import (
     SLUG as NOEL_SLUG,
 )
 from grossesondes_calendar_approval import approved_calendar, merge_staged_with_approved
+from grossesondes_cernunnos_running_order import (
+    RUNNING_ORDER_URL, GROUPS_URL, FIELDS as CERNUNNOS_LIVE_FIELDS,
+    revalidate as revalidate_cernunnos_running_order,
+)
 
 MANIFEST=ROOT/"reference-manifest.json"
 PUBLISHED_HEAD=Path("reviews/grossesondes-published-head.json")
@@ -172,6 +176,27 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         reference = approved_calendar(snapshot["festivals.json"])
         target = merge_staged_with_approved(snapshot["festivals.json"], proven, reference)
         report["trusted_calendar_base"] = "publication_approuvee_124"
+    # Only two pinned current-edition organizer pages can add the verified
+    # Cernunnos 2027 daily running order. The private cumulative patch is
+    # never trusted as proof of any new band or appearance date.
+    for position, row in enumerate(target["festivals"]):
+        if row.get("slug") != "cernunnos-pagan-fest":
+            continue
+        updated = revalidate_cernunnos_running_order(
+            row, official_sources.get("cernunnos_running_order", ""),
+            official_sources.get("cernunnos_groups", ""), today
+        )
+        if updated is not None:
+            target["festivals"][position] = updated
+            # This is a real, independently rechecked content change.
+            # Do not leave generatedAt at the previous publication date.
+            target["generatedAt"] = today
+            report["accepted_updates"].append({
+                "slug": "cernunnos-pagan-fest",
+                "fields": list(CERNUNNOS_LIVE_FIELDS),
+            })
+            report["source_proofs"].extend([GROUPS_URL, RUNNING_ORDER_URL])
+        break
     changed=safe_target(reference,target,published["festivals.json"])
     report["candidate_total"] = len(target["festivals"])
     if not changed:
@@ -305,12 +330,14 @@ def main():
        ("vouziers","https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"),
        ("cernunnos_home",CERNUNNOS_HOME_URL),
        ("cernunnos_groups",CERNUNNOS_GROUPS_URL),
+       ("cernunnos_running_order",RUNNING_ORDER_URL),
        ("cernunnos_info",CERNUNNOS_INFO_URL),
        ("fantasmagorik_ticket",FANTASMAGORIK_TICKET_URL),
        ("fantasmagorik_date",FANTASMAGORIK_DATE_URL),
        ("in_your_face_ticket",IN_YOUR_FACE_TICKET_URL)
     ]:
-        try:sources[key]=official_text(url)
+        try:sources[key]=official_text(
+            url, raw=(key=="cernunnos_running_order"))
         except Exception as exc:
             if key=="in_your_face_ticket":
                 # This is a PINNED observation dated 2026-11-01 only;
