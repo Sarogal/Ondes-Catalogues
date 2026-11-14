@@ -26,6 +26,19 @@ class PrivateQualificationBridgeTests(unittest.TestCase):
         self.assertNotIn("git push origin HEAD:main", body)
         self.assertNotIn("deploy-pages", body)
 
+    def test_accoord_date_report_only_in_private_state(self):
+        body = BRIDGE.read_text(encoding="utf-8")
+        self.assertIn("public/scripts/ptitesondes_accoord_status.py", body)
+        self.assertIn('--previous "$STATE/reports/accoord-status.json"', body)
+        self.assertIn('--output "$STATE/reports/accoord-status.json"', body)
+        self.assertIn('"automation-intake/ptitesondes/reports/accoord-status.json"', body)
+        self.assertIn('--report "$WORK/report.json"', body)
+        self.assertIn('--preview "$WORK/preview-patch.json"', body)
+        self.assertIn('if [[ "$RUN_MODE" == "write" ]]; then', body)
+        self.assertNotIn('cat "$STATE/reports/accoord-status.json"', body)
+        self.assertNotIn('cp "$STATE/reports/accoord-status.json" public/', body)
+        self.assertNotIn('upload-artifact', body)
+
     def test_no_original_private_report_is_emitted_as_public_output(self):
         body = BRIDGE.read_text(encoding="utf-8")
         self.assertNotIn('cat "$WORK/report.json" >>', body)
