@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-05",
+  "generatedAt": "2026-11-14",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -4055,7 +4055,7 @@
       "department": "77",
       "region": "Île-de-France",
       "styles": "Pagan / Folk / Metal",
-      "bands": 20,
+      "bands": 25,
       "days": "3",
       "capacity": null,
       "price": "Tarifs affichés sur le site officiel pour 2027 : vendredi 45 €, samedi ou dimanche 60 €, pass 3 jours 130 € en prévente ; sur place, journée samedi/dimanche 65 €, pass 2 jours 100 €. État d'ouverture de la billetterie non établi.",
@@ -4064,19 +4064,20 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://www.cernunnospaganfest.fr/infos-pratiques/",
-      "lastVerified": "2026-10-30",
-      "notes": "Édition 2027 du 12 au 14 février à la Ferme du Buisson, Noisiel. 20 artistes nommément affichés sur la page officielle des groupes. Répartition par journée non publiée. Les tarifs indiqués sont ceux de la page officielle d'informations pratiques, sans confirmation de disponibilité immédiate des billets.",
+      "lastVerified": "2026-11-14",
+      "notes": "Cernunnos Pagan Fest 2027 à la Ferme du Buisson, Noisiel, du 12 au 14 février. 25 artistes nommés sur les pages officielles. Répartition par journée non certifiée : les pages officielles donnent des jours discordants pour XIV Dark Centuries. Un invité surprise reste non nommé et n'est pas compté. Horaires individuels à confirmer.",
       "lat": 48.8461,
       "lon": 2.6187,
       "geoPrecision": "commune",
       "venue": "La Ferme du Buisson, allée de la Ferme, 77186 Noisiel",
-      "sourceConfidence": "Site officiel : noms des groupes et grille tarifaire ; aucune déduction de programmation par jour.",
+      "sourceConfidence": "25 noms corroborés par les pages officielles running-order et groupes ; dates de passage non publiées en raison d'un conflit.",
       "auditSources": [
         "https://www.cernunnospaganfest.fr/infos-pratiques/",
         "https://www.cernunnospaganfest.fr/groupes/",
         "https://www.cernunnospaganfest.fr/en/info/",
         "https://www.cernunnospaganfest.fr/billetterie/",
-        "https://www.cernunnospaganfest.fr/"
+        "https://www.cernunnospaganfest.fr/",
+        "https://www.cernunnospaganfest.fr/running-order/"
       ],
       "lineup": [
         "Adfeilion",
@@ -4098,9 +4099,14 @@
         "Glyphe",
         "Askemåne",
         "Keltania",
-        "Ruadh"
+        "Ruadh",
+        "Albaluna",
+        "Lili Refrain",
+        "Vreid",
+        "Waldkauz",
+        "Fianna Bán"
       ],
-      "verificationStatus": "20 artistes vérifiés sur le site officiel ; autres annonces et répartition par jour en attente."
+      "verificationStatus": "25 artistes 2027 confirmés sur les pages officielles ; jours de passage en attente de résolution d'une contradiction."
     },
     {
       "slug": "shred-fest-2027-limoges",
