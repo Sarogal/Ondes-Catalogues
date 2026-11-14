@@ -188,6 +188,9 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         )
         if updated is not None:
             target["festivals"][position] = updated
+            # This is a real, independently rechecked content change.
+            # Do not leave generatedAt at the previous publication date.
+            target["generatedAt"] = today
             report["accepted_updates"].append({
                 "slug": "cernunnos-pagan-fest",
                 "fields": list(CERNUNNOS_LIVE_FIELDS),
