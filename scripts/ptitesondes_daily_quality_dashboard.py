@@ -9,6 +9,8 @@ from collections import Counter
 from datetime import date, timedelta
 import json
 from pathlib import Path
+from ptitesondes_regional_coverage import regional_coverage
+
 REASON_CODES = frozenset((
     "already_published", "schema", "official_page_dynamic",
     "official_page_unavailable", "organizer_proof", "venue_or_gps",
@@ -119,6 +121,7 @@ def daily_dashboard(reports_dir, catalogue, today, window=7):
         "public_catalogue": {
             "events": len(events), "updated_at": updated,
         },
+        "regional_coverage": regional_coverage(events, today),
         "days": rows,
         "notes": {
             "checks": "décisions de vérification; un candidat peut être revu plusieurs fois",
@@ -162,7 +165,32 @@ def markdown_status(status):
             lines.extend(["", "**Motifs du dernier jour contrôlé (" +
                           row["day"] + ") :** " + (breakdown or "aucun rejet")])
             break
+    coverage = status["regional_coverage"]
     lines.extend([
+        "",
+        "## Couverture régionale (lecture seule du catalogue Git)",
+        "",
+        "**" + str(coverage["future_events"]) +
+        " fiches à venir**, dont " + str(coverage["missing_region"]) +
+        " sans région et " + str(coverage["unrecognized_region"]) +
+        " avec un libellé non reconnu. " +
+        str(coverage["regions_with_zero_events"]) +
+        " régions à zéro sortie.",
+        "",
+        "| Région | Sorties à venir |",
+        "|---|---:|",
+    ])
+    lines.extend(
+        "| " + entry["region"] + " | " + str(entry["future_events"]) + " |"
+        for entry in coverage["regions"]
+    )
+    lines.extend([
+        "",
+        "Les graphies approuvées sont regroupées **uniquement pour ces comptes** "
+        "(" + str(coverage["alias_spellings_collapsed"]) +
+        " occurrences), sans réécriture des anciennes fiches. "
+        "Une région manquante n'est jamais déduite de la ville. "
+        "Il s'agit du catalogue Git et non d'une confirmation sur le site.",
         "",
         "**Attention :** les décisions ne sont pas des candidats uniques. "
         "La dernière mise à jour Git représente le catalogue de référence "
