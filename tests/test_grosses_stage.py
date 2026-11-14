@@ -54,6 +54,62 @@ class StageTests(unittest.TestCase):
         text="Festival Metal Vouziers 31 octobre 2026 Prévente 50 Sur place 55"
         self.assertTrue(eligible_vouziers(changes,norm(text)))
         self.assertFalse(eligible_vouziers(changes,norm(text).replace("31 octobre 2026","31 octobre 2025")))
+    def test_official_text_flag_returns_text_or_exact_html(self):
+        from unittest.mock import patch
+        from grossesondes_stage import official_text
+
+        html = ('<main><h1>Féstival Métal Vouziers</h1>'
+                '<p>31 octobre 2026, prévente 50 € ; sur place 55 €.</p>'
+                '<script type="application/ld+json">'
+                '{"@type":"MusicEvent","name":"FAUSSE AFFICHE 2027"}'
+                '</script><style>.hidden { content: "2027"; }</style>'
+                '</main>')
+        url = "https://www.sudardennes.fr/fete-manifestation/festival-metal-vouziers/"
+
+        class FakeResponse:
+            status = 200
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def geturl(self):
+                return url
+            def read(self, limit):
+                self.seen_limit = limit
+                return html.encode("utf-8")
+
+        with patch("grossesondes_stage.urlopen", return_value=FakeResponse()):
+            text = official_text(url)
+            self.assertEqual(
+                text, "festival metal vouziers 31 octobre 2026 prevente 50 sur place 55"
+            )
+            self.assertNotIn("fausse affiche", text)
+            raw_html = official_text(url, raw=True)
+            self.assertEqual(raw_html, html)
+            self.assertIn('type="application/ld+json"', raw_html)
+
+    def test_official_text_rejects_untrusted_or_redirected_urls(self):
+        from unittest.mock import patch
+        from grossesondes_stage import official_text
+
+        url = "https://muscadeath.fr/"
+        class Redirected:
+            status = 200
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def geturl(self):
+                return "https://example.org/evil"
+            def read(self, limit):
+                return b"<main>Forged festival dates</main>"
+
+        with self.assertRaises(ValueError):
+            official_text("https://example.org/evil")
+        with patch("grossesondes_stage.urlopen", return_value=Redirected()):
+            with self.assertRaises(ValueError):
+                official_text(url)
+
     def test_stage_retains_every_existing_record(self):
         c,h,p=fixtures()
         sources={"muscadeath":"muscadeath rendez vous en 2027",
