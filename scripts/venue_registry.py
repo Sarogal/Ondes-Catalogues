@@ -183,6 +183,40 @@ VENUES = [
         "official": "https://www.cabries.fr/lieux/auditorium-pierre-malbosc/",
         "geo_source": "https://mapcarta.com/fr/W67540122",
     },
+    {
+        # Identité officielle et adresse : réseau municipal de Tourcoing,
+        # 156 avenue de la Fin de la Guerre, 59200 Tourcoing.
+        # https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-andree-chedid
+        # Point indépendant : OpenStreetMap way 78512642, amenity=library,
+        # même numéro/avenue et nom du lieu.
+        # https://mapcarta.com/fr/W78512642
+        "city": "Tourcoing", "aliases": ["Médiathèque Andrée Chedid"],
+        "lat": 50.72973, "lng": 3.14418,
+        "official": "https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-andree-chedid",
+        "geo_source": "https://mapcarta.com/fr/W78512642",
+    },
+    {
+        # Adresse de l'organisateur : Centre Mandapa, 6 rue Wurtz,
+        # 75013 Paris. La salle est également appelée Théâtre Mandapa.
+        # https://www.centre-mandapa.fr/infos-pratiques
+        # OSM node 4405707193 : Centre Mandapa, amenity=theatre.
+        # https://mapcarta.com/N4405707193
+        "city": "Paris", "aliases": ["Théâtre Mandapa"],
+        "lat": 48.82762, "lng": 2.34518,
+        "official": "https://www.centre-mandapa.fr/infos-pratiques",
+        "geo_source": "https://mapcarta.com/N4405707193",
+    },
+    {
+        # Paul B = Centre culturel Paul Bailliart, 6 allée de Québec,
+        # 91300 Massy, identité et adresse confirmées par la salle.
+        # https://paul-b.fr/infos-pratiques/
+        # OSM way 70691345, arts_centre et nom alternatif exact « Paul B ».
+        # https://mapcarta.com/fr/W70691345
+        "city": "Massy", "aliases": ["Paul B"],
+        "lat": 48.73090, "lng": 2.28287,
+        "official": "https://paul-b.fr/infos-pratiques/",
+        "geo_source": "https://mapcarta.com/fr/W70691345",
+    },
 ]
 
 def verified_location(event):
