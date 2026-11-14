@@ -85,12 +85,16 @@ def official_text(url, registered=False, raw=False):
     with urlopen(req,timeout=25) as r:
         require(r.status==200,"source officielle inaccessible")
         require(urlparse(r.geturl()).hostname==p.hostname,"redirection vers un autre domaine")
-        raw=r.read(1_400_001)
-    require(len(raw)<=1_400_000,"source trop volumineuse")
+        body=r.read(1_400_001)
+    require(len(body)<=1_400_000,"source trop volumineuse")
+    html=body.decode("utf-8",errors="replace")
+    # The parameter controls the representation; do not shadow it with
+    # response bytes. Structured edition/roster proofs need raw JSON-LD,
+    # while text-only checks must ignore scripts, styles and markup.
     if raw:
-        return raw.decode("utf-8",errors="replace")
+        return html
     parser=TextOnly()
-    parser.feed(raw.decode("utf-8",errors="replace"))
+    parser.feed(html)
     return norm(" ".join(parser.parts))
 
 def can_add_muscadeath(entry,source):
