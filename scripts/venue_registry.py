@@ -8,6 +8,30 @@ from ptitesondes_public_place_venues import lookup_public_venue
 
 VENUES = [
     {
+        # Salle L'Impromptu : 8 cours de la Marne, 33800 Bordeaux.
+        # Agenda officiel Bordeaux Métropole : identité du lieu et adresse.
+        # https://www.bordeaux-metropole.fr/agenda/31198327_cine-concert-sur-des-films-de-charlie-chaplin-8305480
+        # OpenStreetMap node 13175174077 (amenity=theatre), même adresse.
+        # https://mapcarta.com/N13175174077
+        # Ce registre ne vaut jamais preuve de date, d'horaire ou d'âge.
+        "city": "Bordeaux", "aliases": ["L'Impromptu"],
+        "lat": 44.83066, "lng": -0.57144,
+        "official": "https://www.bordeaux-metropole.fr/agenda/31198327_cine-concert-sur-des-films-de-charlie-chaplin-8305480",
+        "geo_source": "https://mapcarta.com/N13175174077",
+    },
+    {
+        # Bibliothèque municipale Pierre Veilletet : 21 rue Domion, Bordeaux.
+        # Annuaire institutionnel Gironde : adresse, nom et géolocalisation.
+        # https://mednum.gironde.fr/site/showInfos/341
+        # OSM way 604935301 : emprise exacte de la bibliothèque.
+        # https://mapcarta.com/fr/W604935301
+        # Aucune séance déduite du statut permanent du bâtiment.
+        "city": "Bordeaux", "aliases": ["Bibliothèque Pierre Veilletet"],
+        "lat": 44.85744, "lng": -0.62340,
+        "official": "https://mednum.gironde.fr/site/showInfos/341",
+        "geo_source": "https://mapcarta.com/fr/W604935301",
+    },
+    {
         # Réseau municipal : 26 rue Famelart, 59200 Tourcoing.
         # https://mediatheques.tourcoing.fr/les-mediatheques/mediatheque-andre-malraux
         # IGN BAN : adresse exacte n°26, score 0.972, 50.716502 / 3.160323.
