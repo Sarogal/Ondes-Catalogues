@@ -142,12 +142,21 @@ class CandidatePromotionTests(unittest.TestCase):
                     dict(item, lat=location["lat"], lng=location["lng"]))[0])
                 self.assertIsNone(registry_location(dict(
                     item, venue=venue + " autre bâtiment")))
-        # IGN BAN est à ~90 m du point OA Andrée Chedid : ne pas admettre.
-        self.assertIsNone(registry_location({
-            "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid"}))
+        # La nouvelle preuve indépendante est le bâtiment OSM 78512642.
+        # L'ancien point BAN (~90 m plus loin) reste REFUSÉ : une identité
+        # exacte ne permet jamais d'accepter des coordonnées approximatives.
+        chedid = registry_location({
+            "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid"})
+        self.assertIsNotNone(chedid)
+        self.assertEqual(
+            (chedid["lat"], chedid["lng"]), (50.72973, 3.14418))
+        self.assertEqual(
+            chedid["geo_source"], "https://mapcarta.com/fr/W78512642")
         self.assertFalse(verified_location({
             "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid",
             "lat": 50.729135, "lng": 3.145110})[0])
+        self.assertIsNone(registry_location({
+            "city": "Tourcoing", "venue": "Médiathèque Andrée Chedid annexe"}))
 
     def test_only_official_openagenda_leads(self):
         self.assertTrue(permitted(lead(), TODAY))
