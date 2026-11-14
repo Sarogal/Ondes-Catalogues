@@ -317,6 +317,22 @@ jobs:
             if [[ "$RUN_MODE" == "write" ]]; then
               cp "$LOG/fusion-verifiee-slot$REVIEW_SLOT.log" "$STATE/reports/verification-$DAY.json"
               cp "$WORK/qualification-summary.json" "$STATE/reports/qualification-$DAY-slot$REVIEW_SLOT.json"
+              # Bilan privé Accoord par occurrence. Aucune donnée de preuve ni
+              # URL n'est copiée ; le diagnostic ne sert jamais à approuver.
+              if python public/scripts/ptitesondes_accoord_status.py \
+                --date "$DAY" \
+                --backlog "$STATE/backlog.json" \
+                --catalogue public/docs/ptitesondes/sorties.json \
+                --patch "$STATE/patch-$DAY.json" \
+                --preview "$WORK/preview-patch.json" \
+                --report "$WORK/report.json" \
+                --previous "$STATE/reports/accoord-status.json" \
+                --output "$STATE/reports/accoord-status.json" \
+                > "$LOG/accoord-status-slot$REVIEW_SLOT.log" 2>&1; then
+                git -C state add -- "automation-intake/ptitesondes/reports/accoord-status.json"
+              else
+                echo "::warning::Diagnostic privé des séances Accoord indisponible ; aucune validation affectée."
+              fi
               git -C state add -- \
                 "automation-intake/ptitesondes/patch-$DAY.json" \
                 "automation-intake/ptitesondes/reports/verification-$DAY.json" \
