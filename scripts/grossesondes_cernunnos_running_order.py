@@ -2,7 +2,8 @@
 
 A public stage may add ONLY five explicitly named artists confirmed on BOTH
 pinned 2027 organizer pages, after checking the existing 20 published artists
-against the dated running order. This never infers an unnamed surprise act.
+against the dated running order. This never infers an unnamed surprise act,
+or publishes conflicting per-day assignments.
 No private patch, new domain, geolocation or calendar date can influence it.
 """
 from datetime import date
@@ -40,7 +41,7 @@ MARKERS = (
     "vendredi 12 fevrier", "samedi 13 fevrier", "dimanche 14 fevrier",
 )
 FIELDS = (
-    "lineup", "bands", "lineupByDate", "notes", "verificationStatus",
+    "lineup", "bands", "notes", "verificationStatus",
     "sourceConfidence", "auditSources", "lastVerified",
 )
 
@@ -150,27 +151,30 @@ def revalidate(entry, running_html, groups_text, today):
                 return None
             if any(_has_word(sections[j], name) for j in range(3) if j != i):
                 return None
-    by_date = {day: list(names) for day, names in DAYS.items()}
-    if existing == complete and entry.get("lineupByDate") == by_date:
+    # Do NOT export a date map yet: as of 14 November the organizer's
+    # /groupes/ page lists XIV Dark Centuries on Sunday, whereas the
+    # /running-order/ page lists it on Saturday. Both attest the group;
+    # neither is independently safe as a performance-date source.
+    if existing == complete:
         return None  # Idempotent: no artificial daily generatedAt updates.
     updated = dict(entry)
     updated["lineup"] = complete
     updated["bands"] = len(complete)
-    updated["lineupByDate"] = by_date
     updated["notes"] = (
         "Cernunnos Pagan Fest 2027 à la Ferme du Buisson, Noisiel, "
-        "du 12 au 14 février. 25 artistes nommés et répartis par "
-        "journée sur le running order officiel 2027 ; un invité surprise "
-        "est annoncé sans nom et n'est pas compté. "
-        "Les horaires individuels restent à confirmer."
+        "du 12 au 14 février. 25 artistes nommés sur les pages "
+        "officielles. Répartition par journée non certifiée : les pages "
+        "officielles donnent des jours discordants pour XIV Dark "
+        "Centuries. Un invité surprise reste non nommé et n'est pas "
+        "compté. Horaires individuels à confirmer."
     )
     updated["verificationStatus"] = (
-        "25 artistes 2027 identifiés sur les pages officielles ; "
-        "répartition par journée vérifiée, horaires encore inconnus."
+        "25 artistes 2027 confirmés sur les pages officielles ; "
+        "jours de passage en attente de résolution d'une contradiction."
     )
     updated["sourceConfidence"] = (
-        "Programmation et jours observés sur les pages officielles "
-        "running-order et groupes ; aucune déduction depuis 2026."
+        "25 noms corroborés par les pages officielles running-order "
+        "et groupes ; dates de passage non publiées en raison d'un conflit."
     )
     updated["auditSources"] = list(dict.fromkeys(
         entry.get("auditSources", []) + [GROUPS_URL, RUNNING_ORDER_URL]
