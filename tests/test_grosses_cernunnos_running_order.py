@@ -90,5 +90,47 @@ class OfficialRunningOrderTests(unittest.TestCase):
         self.assertIsNone(revalidate(old, running(), groups(), "2027-04-01"))
 
 
+    def test_cloud_candidate_stamps_real_change_but_not_noop(self):
+        from copy import deepcopy
+        from unittest.mock import patch
+        from grossesondes_cloud_sync import build_candidate
+
+        initial = {
+            "schema": 1,
+            "generatedAt": "2026-11-05",
+            "festivals": [published()],
+        }
+        history = {"schema": 2, "knownFestivals": []}
+        records = {"festivals.json": initial,
+                   "festival-history.json": history}
+        report = {"accepted_additions": [], "accepted_updates": [],
+                  "held": [], "source_proofs": [],
+                  "automatic_publication": False}
+        def altered(reference, candidate, live):
+            return candidate["festivals"] != live["festivals"]
+        with patch("grossesondes_cloud_sync.stage",
+                   return_value=(deepcopy(initial), report)), \
+             patch("grossesondes_cloud_sync.validate_history_extension"), \
+             patch("grossesondes_cloud_sync.merge_staged_with_approved",
+                   side_effect=lambda *args: deepcopy(initial)), \
+             patch("grossesondes_cloud_sync.safe_target",
+                   side_effect=altered):
+            changed, changed_report = build_candidate(
+                records, records, {},
+                {"cernunnos_running_order": running(),
+                 "cernunnos_groups": groups()},
+                TODAY, trusted_published=True
+            )
+            self.assertTrue(changed_report["changed"])
+            self.assertEqual(changed["generatedAt"], TODAY)
+            self.assertEqual(changed["festivals"][0]["bands"], 25)
+            unmodified, old_report = build_candidate(
+                records, records, {}, {}, TODAY, trusted_published=True
+            )
+            self.assertFalse(old_report["changed"])
+            self.assertEqual(unmodified["generatedAt"], "2026-11-05")
+            self.assertEqual(unmodified["festivals"][0]["bands"], 20)
+
+
 if __name__ == "__main__":
     unittest.main()
