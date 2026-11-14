@@ -60,6 +60,35 @@ class DailyDashboardTests(unittest.TestCase):
             self.assertIn("244", doc)
             self.assertNotIn("https://", doc)
 
+    def test_readonly_regional_coverage_is_in_private_dashboard_and_markdown(self):
+        with tempfile.TemporaryDirectory() as temp:
+            folder = Path(temp)
+            doc = catalogue()
+            doc["events"] = [
+                {"id": "one", "date_start": "2026-11-11",
+                 "date_end": "2026-11-11",
+                 "region": "Provence-Alpes-Côte d'Azur"},
+                {"id": "two", "date_start": "2026-11-11",
+                 "date_end": "2026-11-11",
+                 "region": "Provence-Alpes-Côte d’Azur"},
+                {"id": "three", "date_start": "2026-11-11",
+                 "date_end": "2026-11-11", "region": None,
+                 "city": "Montpellier"},
+            ]
+            original = json.dumps(doc, sort_keys=True)
+            report = daily_dashboard(folder, doc, date(2026, 11, 11))
+            self.assertEqual(json.dumps(doc, sort_keys=True), original)
+            coverage = report["regional_coverage"]
+            self.assertEqual(coverage["future_events"], 3)
+            self.assertEqual(coverage["missing_region"], 1)
+            self.assertEqual(coverage["alias_spellings_collapsed"], 1)
+            self.assertEqual(coverage["regions_with_zero_events"], 17)
+            summary = markdown_status(report)
+            self.assertIn("Couverture régionale", summary)
+            self.assertIn("Provence-Alpes-Côte d’Azur", summary)
+            self.assertNotIn("Montpellier", summary)
+            self.assertNotIn("https://", summary)
+
     def test_missing_reports_are_unknown_not_approved(self):
         with tempfile.TemporaryDirectory() as temp:
             folder = Path(temp)
