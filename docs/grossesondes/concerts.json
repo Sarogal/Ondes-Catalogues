@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-13",
+  "updatedAt": "2026-11-14",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2210,6 +2210,11 @@
     {
       "id": "greenleaf",
       "name": "GREENLEAF",
+      "aliases": []
+    },
+    {
+      "id": "half-me",
+      "name": "HALF ME",
       "aliases": []
     }
   ],
@@ -14417,6 +14422,35 @@
       "history": [
         {
           "date": "2026-11-13",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261208-paris-half-me",
+      "title": "HALF ME",
+      "date": "2026-12-08",
+      "artistIds": [
+        "half-me"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/half-me/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-14",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-14",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
