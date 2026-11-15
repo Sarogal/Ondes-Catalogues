@@ -290,6 +290,48 @@ void main() {
     }
   });
 
+  test('unknown catalog envelope fields are rejected', () async {
+    final doc = catalog([station(1)])..['injected_field'] = 'unexpected';
+    await expectLater(validatePayload(jsonBytes(doc)),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('duplicate Radio Browser UUIDs are rejected', () async {
+    final s = station(1);
+    final ids = (s['radio_browser_uuids'] as List);
+    ids.add({'uuid': 'legacy-1', 'state': 'historical'});
+    await expectLater(validatePayload(jsonBytes(catalog([s]))),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('bad logo dimensions cannot enter local snapshot', () async {
+    final s = station(1);
+    final digest = List.filled(64, 'a').join();
+    s['logo'] = {
+      'asset_id': 'sha256:$digest',
+      'revision': 1,
+      'url': 'https://example.org/logo.png',
+      'sha256': digest,
+      'byte_size': 1000,
+      'width': 0,
+      'height': 512,
+      'mime_type': 'image/png'
+    };
+    await expectLater(validatePayload(jsonBytes(catalog([s]))),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('bad genre and fake timestamp are rejected', () async {
+    final s = station(1);
+    s['genres'] = ['Heavy', 'Heavy'];
+    await expectLater(validatePayload(jsonBytes(catalog([s]))),
+        throwsA(isA<CentralCatalogException>()));
+    s['genres'] = ['Heavy'];
+    (s['status'] as Map<String, dynamic>)['changed_at'] = 'not-a-date';
+    await expectLater(validatePayload(jsonBytes(catalog([s]))),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
   test('untrusted key prevents even the catalog HTTP request', () async {
     final tmp = await Directory.systemTemp.createTemp('go-radio-dart-fail-');
     try {
