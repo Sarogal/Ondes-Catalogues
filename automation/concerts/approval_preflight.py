@@ -18,6 +18,18 @@ import tempfile
 from zoneinfo import ZoneInfo
 
 
+class PublisherRejections(ValueError):
+    """Private diagnostics for proposed events held by the real publisher."""
+
+    def __init__(self, rejections):
+        self.rejections = rejections
+        super().__init__(
+            "At least one proposed approval was held or modified by the publisher: "
+            + str(len(rejections)) + " rejected; IDs="
+            + ",".join(row["eventId"] for row in rejections)
+        )
+
+
 def require(condition, message):
     if not condition:
         raise ValueError(message)
@@ -80,33 +92,37 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             "An automated approval ID is already in the public catalogue")
     candidate, stats = publisher(reference, current, proposed, today)
     published = {e["id"]: e for e in candidate["events"]}
+    rejected = []
     for approval in appended:
         event = approval["event"]
         published_event = published.get(event["id"])
-        if published_event is None or any(
-                published_event.get(field) != value for field, value in event.items()):
-            # The public workflow redirects stdout/stderr to a private temp log;
-            # its catch step persists only the short ValueError in the PRIVATE
-            # approval-preflight.json. Never print proof URLs or candidate data.
-            reasons = [
-                str(row.get("reason", ""))
-                for row in (stats.get("held") or [])
-                if isinstance(row, dict) and row.get("candidateId") == event["id"]
-            ]
-            if published_event is None:
-                detail = "not emitted by publisher"
-            else:
-                differing = sorted(
-                    field for field, value in event.items()
-                    if published_event.get(field) != value
-                )
-                detail = "changed fields: " + ", ".join(differing)
-            if reasons and reasons[0]:
-                detail += "; publisher reason: " + reasons[0][:120]
-            raise ValueError(
-                "At least one proposed approval was held or modified by the publisher: "
-                + str(event["id"]) + " (" + detail + ")"
+        if published_event is not None and all(
+                published_event.get(field) == value for field, value in event.items()):
+            continue
+        # ONLY identifiers, field names and publisher text; never full proposed
+        # approvals, source HTML or evidence URLs. Stored in private intake.
+        reasons = [
+            str(row.get("reason", ""))
+            for row in (stats.get("held") or [])
+            if isinstance(row, dict) and row.get("candidateId") == event["id"]
+        ]
+        if published_event is None:
+            detail = "not emitted by publisher"
+            differing = []
+        else:
+            differing = sorted(
+                field for field, value in event.items()
+                if published_event.get(field) != value
             )
+            detail = "changed fields: " + ", ".join(differing)
+        rejected.append({
+            "eventId": event["id"],
+            "publisherResult": detail,
+            "changedFields": differing,
+            "publisherReason": reasons[0][:160].replace("\\n", " ") if reasons else None,
+        })
+    if rejected:
+        raise PublisherRejections(rejected)
     require(len(candidate["events"]) - len(current["events"]) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
@@ -148,9 +164,23 @@ def main():
     root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(root / "scripts"))
     import concerts_cloud_sync
-    stats = validate_proposal(
-        original, proposed, reference, current, today,
-        concerts_cloud_sync.merge)
+    try:
+        stats = validate_proposal(
+            original, proposed, reference, current, today,
+            concerts_cloud_sync.merge)
+    except PublisherRejections as exc:
+        # A blocked batch cannot modify approvals. Preserve detailed reasons
+        # in the PRIVATE report before the public runner's catch step.
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(json.dumps({
+            "status": "blocked",
+            "validatedByPublisher": False,
+            "applied": False,
+            "rejected": exc.rejections,
+            "reason": str(exc)[:300],
+            "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        raise
     stats["applied"] = bool(args.apply and stats["newApprovals"])
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
