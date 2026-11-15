@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_client.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_core.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_projection.dart';
+import 'package:go_radio_catalog_client_lab/central_catalog_migration_gate.dart';
 import 'package:test/test.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
@@ -437,6 +438,130 @@ void main() {
         throwsUnsupportedError);
     expect(() => result.playableStations.first.legacyAliases.clear(),
         throwsUnsupportedError);
+  });
+
+  test('coverage of supplied V64 identities passes but never approves release',
+      () async {
+    final source = station(1);
+    (source['legacy_aliases'] as List).add('variant-1');
+    final trusted = await validatePayload(jsonBytes(catalog([source])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1',
+            historicalIds: {'legacy-1', 'variant-1'}),
+      ],
+      legacyFavoriteIds: ['variant-1', 'legacy-1'],
+      sourceLabel: 'synthetic-supplied-cache',
+    );
+    expect(report.matchesObservedBaseline, isTrue);
+    expect(report.observedLegacyStations, 1);
+    expect(report.mappedLegacyStations, 1);
+    expect(report.readyForRelease, isFalse);
+  });
+
+  test('legacy station missing from the central identities blocks coverage',
+      () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'forgotten-uuid',
+            historicalIds: {'forgotten-uuid'}),
+      ],
+      legacyFavoriteIds: [],
+      sourceLabel: 'synthetic-v64',
+    );
+    expect(report.matchesObservedBaseline, isFalse);
+    expect(report.missingPrimaryMediaIds, ['forgotten-uuid']);
+  });
+
+  test('unmapped stream variant blocks coverage even if primary is mapped',
+      () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1',
+            historicalIds: {'legacy-1', 'forgotten-variant'}),
+      ],
+      legacyFavoriteIds: [],
+      sourceLabel: 'synthetic-v64',
+    );
+    expect(report.matchesObservedBaseline, isFalse);
+    expect(report.unmappedHistoricalIds, ['forgotten-variant']);
+  });
+
+  test('V64 merged station mixing two GO identities is marked ambiguous',
+      () async {
+    final trusted = await validatePayload(
+        jsonBytes(catalog([station(1), station(2)])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1',
+            historicalIds: {'legacy-1', 'legacy-2'}),
+      ],
+      legacyFavoriteIds: [],
+      sourceLabel: 'synthetic-v64',
+    );
+    expect(report.matchesObservedBaseline, isFalse);
+    expect(report.ambiguousPrimaryMediaIds, ['legacy-1']);
+  });
+
+  test('unknown favorite ID prevents a clean migration report', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1', historicalIds: {'legacy-1'})
+      ],
+      legacyFavoriteIds: ['legacy-1', 'unknown-favorite'],
+      sourceLabel: 'synthetic-v64',
+    );
+    expect(report.unresolvedFavoriteIds, ['unknown-favorite']);
+    expect(report.matchesObservedBaseline, isFalse);
+    expect(report.readyForRelease, isFalse);
+  });
+
+  test('duplicate primary IDs block the supplied-baseline comparison',
+      () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final report = const CentralCatalogMigrationGate().audit(
+      catalog: trusted,
+      legacyStations: [
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1', historicalIds: {'legacy-1'}),
+        CentralLegacyObservation(
+            primaryMediaId: 'legacy-1', historicalIds: {'legacy-1'}),
+      ],
+      legacyFavoriteIds: [],
+      sourceLabel: 'synthetic-v64',
+    );
+    expect(report.matchesObservedBaseline, isFalse);
+    expect(report.duplicatePrimaryMediaIds, ['legacy-1']);
+  });
+
+  test('empty or anonymous source is never a coverage approval', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    expect(
+      () => const CentralCatalogMigrationGate().audit(
+        catalog: trusted,
+        legacyStations: [],
+        legacyFavoriteIds: [],
+        sourceLabel: '',
+      ),
+      throwsA(isA<CentralCatalogException>()),
+    );
+    final result = const CentralCatalogMigrationGate().audit(
+      catalog: trusted, legacyStations: [], legacyFavoriteIds: [],
+      sourceLabel: 'empty synthetic observation');
+    expect(result.matchesObservedBaseline, isFalse);
   });
 
   test('untrusted key prevents even the catalog HTTP request', () async {
