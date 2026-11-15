@@ -739,6 +739,56 @@ void main() {
     expect(valid.stations.length, 2);
   });
 
+  test('authenticated snapshot bytes cannot be changed through exposed buffers', () async {
+    final payload = jsonBytes(catalog([station(1)]));
+    final pointer = await signedPointer(payload, 1);
+    final verified = await verifier.verify(
+      pointerBytes: pointer, catalogBytes: payload);
+    final firstPointerByte = verified.pointerBytes.first;
+    final firstCatalogByte = verified.catalogBytes.first;
+    // Both the original inputs and public getters are independently mutable,
+    // but none of them must alter the authenticated snapshot.
+    pointer[0] = 0;
+    payload[0] = 0;
+    verified.pointerBytes[0] = 0;
+    verified.catalogBytes[0] = 0;
+    expect(verified.pointerBytes.first, firstPointerByte);
+    expect(verified.catalogBytes.first, firstCatalogByte);
+    final tmp = await Directory.systemTemp.createTemp('go-auth-buffer-');
+    try {
+      final disk = CentralCatalogDiskStore(tmp);
+      await disk.persist(verified);
+      expect((await disk.loadLatest(verifier))!.stations, hasLength(1));
+    } finally {
+      await tmp.delete(recursive: true);
+    }
+  });
+
+  test('a signed update cannot reinterpret an existing logo SHA', () async {
+    final first = station(1);
+    final digest = List.filled(64, 'a').join();
+    final logo = <String, dynamic>{
+      'asset_id': 'sha256:$digest', 'revision': 1,
+      'url': 'https://example.org/official.png',
+      'sha256': digest, 'byte_size': 128,
+      'width': 512, 'height': 512, 'mime_type': 'image/png'
+    };
+    first['logo'] = logo;
+    final original = await validatePayload(jsonBytes(catalog([first])));
+    final changed = station(1);
+    changed['logo'] = {...logo, 'revision': 2, 'width': 1024};
+    await expectLater(
+      validatePayload(jsonBytes(catalog([changed], sequence: 2)),
+          sequence: 2, previous: original),
+      throwsA(isA<CentralCatalogException>()),
+    );
+    changed['logo'] = {...logo, 'revision': 2, 'url': 'https://example.org/moved.png'};
+    final updated = await validatePayload(
+      jsonBytes(catalog([changed], sequence: 2)),
+      sequence: 2, previous: original);
+    expect(updated.stations.length, 1);
+  });
+
   test('untrusted key prevents even the catalog HTTP request', () async {
     final tmp = await Directory.systemTemp.createTemp('go-radio-dart-fail-');
     try {

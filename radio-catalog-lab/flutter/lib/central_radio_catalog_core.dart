@@ -103,12 +103,26 @@ class CentralCatalogPointer {
 }
 
 class ValidatedCentralCatalog {
-  const ValidatedCentralCatalog(this.pointer, this.pointerBytes,
-      this.catalogBytes, this.stations, this.aliasOwners, this.goIds,
-      this.activeIds);
+  ValidatedCentralCatalog(
+    this.pointer,
+    Uint8List pointerBytes,
+    Uint8List catalogBytes,
+    this.stations,
+    this.aliasOwners,
+    this.goIds,
+    this.activeIds,
+  ) : _pointerBytes = Uint8List.fromList(pointerBytes),
+      _catalogBytes = Uint8List.fromList(catalogBytes);
+
   final CentralCatalogPointer pointer;
-  final Uint8List pointerBytes;
-  final Uint8List catalogBytes;
+  final Uint8List _pointerBytes;
+  final Uint8List _catalogBytes;
+
+  // Do not expose mutable buffers as part of an authenticated snapshot.
+  // Persisting or consuming a snapshot always receives a defensive copy.
+  Uint8List get pointerBytes => Uint8List.fromList(_pointerBytes);
+  Uint8List get catalogBytes => Uint8List.fromList(_catalogBytes);
+
   final List<Map<String, dynamic>> stations;
   final Map<String, String> aliasOwners;
   final Set<String> goIds;
@@ -334,6 +348,22 @@ class CentralCatalogVerifier {
     }
 
     if (previous != null) {
+      // A content digest is permanent across releases. A new signed pointer
+      // cannot reinterpret the dimensions or MIME of an older verified SHA.
+      for (final oldStation in previous.stations) {
+        final oldLogo = oldStation['logo'];
+        if (oldLogo is! Map<String, dynamic>) continue;
+        final digest = oldLogo['sha256'] as String?;
+        if (digest == null) continue;
+        final now = logoContentMetadata[digest];
+        if (now == null) continue;
+        final old = "${oldLogo['byte_size']}|${oldLogo['width']}|${oldLogo['height']}|${oldLogo['mime_type']}";
+        if (now != old) {
+          throw const CentralCatalogException(
+            'Logo SHA metadata changed across signed releases',
+          );
+        }
+      }
       if (!goIds.containsAll(previous.goIds)) {
         throw const CentralCatalogException('Historical GO identity lost');
       }
