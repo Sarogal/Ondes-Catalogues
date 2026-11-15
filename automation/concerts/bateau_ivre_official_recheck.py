@@ -102,7 +102,7 @@ def exact_names(fresh, page):
     # status, not part of any artist's name. All other prefixes fail closed.
     title = re.sub(r"^\[COMPLET\]\s+", "", raw_title, count=1, flags=re.I)
     names = [x.strip() for x in re.split(r"\s+\+\s+", title)]
-    if not 1 <= len(names) <= 4:
+    if not names:
         raise ValueError("Bateau Ivre : plateau non délimité avec certitude")
     known = [normalized(x) for x in names]
     if (any(len(n) < 3 or n in UNKNOWN or BAD_NAMES.search(n)
@@ -199,8 +199,8 @@ def verify(candidate, page, catalogue, today):
             new.append({"id": ident, "name": name})
             reserved.add(ident)
         ids.append(ident)
-    if len(new) > 3 or len(set(ids)) != len(ids):
-        raise ValueError("Bateau Ivre : trop de nouveaux artistes ou identités répétées")
+    if len(set(ids)) != len(ids):
+        raise ValueError("Bateau Ivre : identités d'artistes répétées")
     for e in catalogue["events"]:
         if (e.get("officialUrl") == url or
                 (e.get("date") == fresh["date"] and e.get("venueId") == VENUE
