@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import datetime as dt
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -17,6 +18,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "automation" / "concerts"))
 
 import concerts_cloud_sync as publisher
+import approval_preflight as preflight
 import official_recheck as engine
 from test_rockstore_official_recheck import (
     PAGE as ROCKSTORE_HTML, candidate as rockstore_candidate,
@@ -124,6 +126,42 @@ class ThreeConcertBatchContractTests(unittest.TestCase):
         self.assertEqual(added_artists, ["blackgold"])
         self.assertNotIn("guest", known_artists)
         self.assertEqual((cat, registry), saved)
+
+    def test_entire_three_event_batch_passes_real_merge_and_fail_closed_preflight(self):
+        # A modified public fixture is used as BOTH baseline and current.
+        # This is not a production snapshot, and it contains NO private
+        # approval queue. The Backstage venue is copied from the public
+        # catalogue solely to make the fixture's venue structurally complete.
+        reference = json.loads(
+            (ROOT / "docs" / "grossesondes" /
+             "concerts-reference.json").read_text(encoding="utf-8"))
+        published = json.loads(
+            (ROOT / "docs" / "grossesondes" /
+             "concerts.json").read_text(encoding="utf-8"))
+        actual_backstage = next(v for v in published["venues"]
+                                if v["id"] == "backstage-by-the-mill-paris")
+        reference["venues"].append(copy.deepcopy(actual_backstage))
+        current = copy.deepcopy(reference)
+        registry, sources = proof_batch()
+        reviewed, report, _ = review(current, registry, sources)
+        self.assertEqual(len(report["newApprovals"]), 3)
+        self.assertEqual(report["held"], [])
+
+        before = {"schema": "grossesondes.concert.approvals.v1",
+                  "approvals": []}
+        current_saved = copy.deepcopy(current)
+        ref_saved = copy.deepcopy(reference)
+        queued, stats = publisher.merge(reference, current, reviewed, NOW)
+        self.assertEqual(stats["held"], [])
+        self.assertEqual(stats["newEvents"], 3)
+        self.assertEqual(len(queued["events"]) - len(current["events"]), 3)
+
+        preflight_stats = preflight.validate_proposal(
+            before, reviewed, reference, current, NOW, publisher.merge)
+        self.assertEqual(preflight_stats["publishableEvents"], 3)
+        self.assertIs(preflight_stats["validatedByPublisher"], True)
+        self.assertEqual(current, current_saved)
+        self.assertEqual(reference, ref_saved)
 
     def test_one_incorrect_publisher_proof_stays_rejected_without_contaminating_others(self):
         cat = catalogue()
