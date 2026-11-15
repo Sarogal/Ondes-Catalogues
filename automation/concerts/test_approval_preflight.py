@@ -70,6 +70,31 @@ class PreflightTests(unittest.TestCase):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, hold)
 
+    def test_private_failure_identifies_the_blocked_event_and_publisher_reason(self):
+        def hold(reference, current, approvals, today):
+            return copy.deepcopy(current), {
+                "newEvents": 0,
+                "held": [{
+                    "candidateId": event()["id"],
+                    "reason": "Official genre not independently confirmed",
+                }],
+            }
+        with self.assertRaisesRegex(
+                ValueError,
+                r"go-c-20270401-example.*Official genre not independently confirmed"):
+            gate.validate_proposal(
+                self.before, self.after, {}, self.catalogue, TODAY, hold)
+
+    def test_private_failure_lists_only_differing_field_names(self):
+        def changed(reference, current, approvals, today):
+            return {"events": [{**event(), "date": "2027-04-02"}]}, {
+                "newEvents": 1, "held": []
+            }
+        with self.assertRaisesRegex(
+                ValueError, r"go-c-20270401-example.*changed fields: date"):
+            gate.validate_proposal(
+                self.before, self.after, {}, self.catalogue, TODAY, changed)
+
     def test_publisher_cannot_silently_change_event_fields(self):
         def change(reference, current, approvals, today):
             return {"events": [{**event(), "date": "2027-04-02"}]}, {}
