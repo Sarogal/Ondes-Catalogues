@@ -3981,8 +3981,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    # A 20-artist official bill necessarily has a longer title than a
+    # single-headliner concert. Bound length by the number of artist IDs,
+    # not by an arbitrary 220-character ceiling; each ID and named artist
+    # still passes the strict checks below and the venue-specific proof.
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -4359,7 +4366,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(proof is not None, "Liste officielle d'artistes non vérifiée")
         names = proof.get("officialArtistNames")
         require(isinstance(names,list) and len(names)==len(ids) and
-                1<=len(names)<=5 and
+                bool(names) and
                 all(isinstance(n,str) and 3<=len(norm(n))<=100 for n in names) and
                 len({norm(n) for n in names})==len(names),
                 "Liste officielle d'artistes absente ou ambiguë")
@@ -4367,7 +4374,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(len(displayed)==len(names) and
                 all(norm(a)==norm(b) for a,b in zip(displayed,names)),
                 "Affiche différente de la liste officielle")
-        require(len(added)<=2 and
+        require(len(added)<=len(names) and
                 proof.get("verifiedNewArtists")==[x["name"] for x in new_artists],
                 "Artistes nouveaux non documentés exactement")
         # Each ID has to point to the exact named act, not another known act.
