@@ -119,7 +119,7 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             "eventId": event["id"],
             "publisherResult": detail,
             "changedFields": differing,
-            "publisherReason": reasons[0][:160].replace("\\n", " ") if reasons else None,
+            "publisherReason": reasons[0][:160].replace("\n", " ").replace("\r", " ") if reasons else None,
         })
     if rejected:
         raise PublisherRejections(rejected)
@@ -179,7 +179,7 @@ def main():
             "rejected": exc.rejections,
             "reason": str(exc)[:300],
             "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-        }, ensure_ascii=False, indent=2) + "\\n", encoding="utf-8")
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         raise
     stats["applied"] = bool(args.apply and stats["newApprovals"])
     args.report.parent.mkdir(parents=True, exist_ok=True)
