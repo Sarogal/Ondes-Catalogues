@@ -83,9 +83,30 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     for approval in appended:
         event = approval["event"]
         published_event = published.get(event["id"])
-        require(published_event is not None and all(
-            published_event.get(field) == value for field, value in event.items()),
-            "At least one proposed approval was held or modified by the publisher")
+        if published_event is None or any(
+                published_event.get(field) != value for field, value in event.items()):
+            # The public workflow redirects stdout/stderr to a private temp log;
+            # its catch step persists only the short ValueError in the PRIVATE
+            # approval-preflight.json. Never print proof URLs or candidate data.
+            reasons = [
+                str(row.get("reason", ""))
+                for row in (stats.get("held") or [])
+                if isinstance(row, dict) and row.get("candidateId") == event["id"]
+            ]
+            if published_event is None:
+                detail = "not emitted by publisher"
+            else:
+                differing = sorted(
+                    field for field, value in event.items()
+                    if published_event.get(field) != value
+                )
+                detail = "changed fields: " + ", ".join(differing)
+            if reasons and reasons[0]:
+                detail += "; publisher reason: " + reasons[0][:120]
+            raise ValueError(
+                "At least one proposed approval was held or modified by the publisher: "
+                + str(event["id"]) + " (" + detail + ")"
+            )
     require(len(candidate["events"]) - len(current["events"]) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
