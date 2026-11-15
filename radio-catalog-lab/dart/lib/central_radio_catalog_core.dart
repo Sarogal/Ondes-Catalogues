@@ -83,8 +83,9 @@ class CentralCatalogPointer {
       throw const CentralCatalogException('Invalid Ed25519 signature size');
     }
     return CentralCatalogPointer._(
-        decoded, sequence, digest, length, path,
-        sig['key_id'] as String, signatureBytes);
+        _freezeCentralJson(decoded) as Map<String, dynamic>,
+        sequence, digest, length, path,
+        sig['key_id'] as String, List<int>.unmodifiable(signatureBytes));
   }
 
   /// Canonical v1 signing contract. Every mutable pointer field is covered.
@@ -187,6 +188,7 @@ class CentralCatalogVerifier {
     final goIds = <String>{};
     final active = <String>{};
     final stations = <Map<String, dynamic>>[];
+    final logoContentMetadata = <String, String>{};
     for (final raw in records) {
       final item = _object(raw, 'station');
       const stationFields = {
@@ -308,8 +310,16 @@ class CentralCatalogVerifier {
             !{'image/png', 'image/jpeg', 'image/webp'}.contains(l['mime_type'])) {
           throw const CentralCatalogException('Invalid logo metadata');
         }
+        // One content hash represents exactly one immutable image. URLs and
+        // editorial revisions may differ, but its bytes/dimensions/MIME cannot.
+        final metadata = "${l['byte_size']}|${l['width']}|${l['height']}|${l['mime_type']}";
+        final previousMetadata = logoContentMetadata[digest];
+        if (previousMetadata != null && previousMetadata != metadata) {
+          throw const CentralCatalogException('Conflicting metadata for shared logo SHA');
+        }
+        logoContentMetadata[digest] = metadata;
       }
-      stations.add(item);
+      stations.add(_freezeCentralJson(item) as Map<String, dynamic>);
     }
     for (final raw in tombstones) {
       final item = _object(raw, 'tombstone');
@@ -408,4 +418,18 @@ class CentralCatalogVerifier {
     }
     return true;
   }
+}
+
+// Signing and structural verification must never hand mutable JSON trees to
+// projections: changing a nested stream or status would bypass the signature.
+dynamic _freezeCentralJson(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return Map<String, dynamic>.unmodifiable(value.map(
+      (key, child) => MapEntry(key, _freezeCentralJson(child)),
+    ));
+  }
+  if (value is List) {
+    return List<dynamic>.unmodifiable(value.map(_freezeCentralJson));
+  }
+  return value;
 }
