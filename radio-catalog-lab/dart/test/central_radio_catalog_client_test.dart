@@ -7,6 +7,7 @@ import 'package:go_radio_catalog_client_lab/central_radio_catalog_client.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_core.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_projection.dart';
 import 'package:go_radio_catalog_client_lab/central_catalog_migration_gate.dart';
+import 'package:go_radio_catalog_client_lab/central_catalog_media_identity.dart';
 import 'package:test/test.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
@@ -562,6 +563,132 @@ void main() {
       catalog: trusted, legacyStations: [], legacyFavoriteIds: [],
       sourceLabel: 'empty synthetic observation');
     expect(result.matchesObservedBaseline, isFalse);
+  });
+
+  test('Android Auto resolves old bookmark, keeps browse context and original primary ID', () async {
+    final base = station(1);
+    (base['legacy_aliases'] as List).add('old-aa-bookmark');
+    final trusted = await validatePayload(jsonBytes(catalog([base])));
+    final preview = const CentralCatalogProjector().preview(
+      catalog: trusted,
+      legacyFavoriteIds: ['old-aa-bookmark'],
+      preferredLegacyMediaIds: {'go-station-000001': 'legacy-1'},
+    );
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final id = 'go:auto:station:old-aa-bookmark|go%3Aauto%3Afavorites';
+    final match = resolver.resolveMediaId(id);
+    expect(match.status, CentralMediaStatus.playable);
+    expect(match.goStationId, 'go-station-000001');
+    expect(match.browseContext, 'go:auto:favorites');
+    expect(match.station!.displayName, 'Fictional station 1');
+    expect(match.canonicalMediaId, 'go:auto:station:legacy-1|go%3Aauto%3Afavorites');
+  });
+
+  test('GO station ID also resolves without legacy ID', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final preview = const CentralCatalogProjector().preview(
+      catalog: trusted, legacyFavoriteIds: []);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final match = resolver.resolveMediaId('go:auto:station:go-station-000001');
+    expect(match.playable, isTrue);
+    expect(match.station!.goStationId, 'go-station-000001');
+    expect(match.canonicalMediaId, 'go:auto:station:go-station-000001');
+  });
+
+  test('quarantined station bookmark is not playable', () async {
+    final q = station(2, status: 'quarantined');
+    (q['status'] as Map<String, dynamic>)['reason_code'] = 'review';
+    q['streams'] = <Map<String,dynamic>>[];
+    final trusted = await validatePayload(jsonBytes(catalog([station(1), q])));
+    final preview = const CentralCatalogProjector().preview(
+      catalog: trusted, legacyFavoriteIds: ['legacy-2']);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final result = resolver.resolveMediaId('go:auto:station:legacy-2|go%3Aauto%3Arecent');
+    expect(result.status, CentralMediaStatus.quarantined);
+    expect(result.playable, isFalse);
+    expect(result.station, isNull);
+    expect(result.goStationId, 'go-station-000002');
+  });
+
+  test('retired tombstone bookmark cannot play even when previously favorited', () async {
+    final tomb = {
+      'go_station_id': 'go-station-000004',
+      'legacy_aliases': ['retired-uuid'],
+      'reason_code': 'voluntary_retirement',
+      'retired_at': '2026-11-15T18:00:00Z',
+    };
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)], tombstones: [tomb])));
+    final preview = const CentralCatalogProjector().preview(
+      catalog: trusted, legacyFavoriteIds: ['retired-uuid']);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final result = resolver.resolveMediaId('go:auto:station:retired-uuid');
+    expect(result.status, CentralMediaStatus.retired);
+    expect(result.canonicalMediaId, isNull);
+    expect(result.playable, isFalse);
+  });
+
+  test('unknown bookmark cannot be matched by a shared stream URL', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final preview = const CentralCatalogProjector().preview(catalog: trusted, legacyFavoriteIds: []);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final unknown = resolver.resolveMediaId('go:auto:station:unknown');
+    expect(unknown.status, CentralMediaStatus.unknown);
+    expect(unknown.station, isNull);
+  });
+
+  test('malformed Android Auto IDs are rejected without throws', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final preview = const CentralCatalogProjector().preview(catalog: trusted, legacyFavoriteIds: []);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    for (final input in [
+      'go:auto:genres',
+      'go:auto:station:',
+      'go:auto:station:legacy-1|',
+      'go:auto:station:%XY',
+      'go:auto:station:legacy-1|go:auto:all',
+      'go:auto:station:legacy-1|a|b',
+      'go:auto:station:legacy-1%0A',
+    ]) {
+      final match = resolver.resolveMediaId(input);
+      expect(match.status, CentralMediaStatus.malformed, reason: input);
+      expect(match.playable, isFalse);
+    }
+  });
+
+  test('properly encoded spaces and genre contexts survive media-ID roundtrip', () async {
+    final s = station(1);
+    (s['legacy_aliases'] as List).add('legacy player');
+    final trusted = await validatePayload(jsonBytes(catalog([s])));
+    final preview = const CentralCatalogProjector().preview(
+      catalog: trusted, legacyFavoriteIds: []);
+    final resolver = CentralMediaIdentityResolver(catalog: trusted, preview: preview);
+    final match = resolver.resolveMediaId(
+        'go:auto:station:legacy%20player|go%3Aauto%3Agenre%3AHard%2520Rock');
+    expect(match.playable, isTrue);
+    expect(match.browseContext, 'go:auto:genre:Hard%20Rock');
+    expect(match.canonicalMediaId,
+        'go:auto:station:go-station-000001|go%3Aauto%3Agenre%3AHard%2520Rock');
+  });
+
+  test('invalid projection preferred ID cannot impersonate another station', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1),station(2)])));
+    final good = const CentralCatalogProjector().preview(
+      catalog: trusted, legacyFavoriteIds: []);
+    // Constructor validates trusted identity mapping of every projected GO ID.
+    final bad = CentralCatalogPreview(
+      stationsByGoId: {
+        'go-station-000001': CentralProjectedStation(
+          goStationId: 'go-station-000001', legacyMediaId: 'legacy-2',
+          legacyAliases: const ['legacy-1'], displayName: 'Bad',
+          genres: const ['Heavy'], tags: const ['heavy metal'], countryCode: 'FR',
+          homepage: '', status: 'active', verifiedStreams:
+              good.playableStations.first.verifiedStreams, logoSha256: null),
+      },
+      playableStations: good.playableStations,
+      favorites: good.favorites,
+    );
+    expect(() => CentralMediaIdentityResolver(catalog: trusted, preview: bad),
+        throwsA(isA<CentralCatalogException>()));
   });
 
   test('untrusted key prevents even the catalog HTTP request', () async {
