@@ -125,11 +125,6 @@ class CentralCatalogVerifier {
   static final _sha = RegExp(r'^[a-f0-9]{64}$');
 
   Future<CentralCatalogPointer> verifyPointer(Uint8List pointerBytes) async {
-    final pointer = await verifyPointer(pointerBytes);
-    return pointer;
-  }
-
-  Future<CentralCatalogPointer> verifyPointer(Uint8List pointerBytes) async {
     final pointer = CentralCatalogPointer.parse(pointerBytes);
     final key = trustedKeys[pointer.keyId];
     if (key == null || key.type != KeyPairType.ed25519) {
