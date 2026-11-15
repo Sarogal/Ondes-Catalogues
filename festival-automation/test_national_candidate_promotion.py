@@ -3,6 +3,7 @@ from copy import deepcopy
 import unittest
 
 from national_candidate_promotion import build_review, APPROVED, SCHEMA
+from test_map_reference import FR as MAPS_FR, EN as MAPS_EN
 
 SPEC = APPROVED["mozhell-open-air-2027"]
 DAY = "2026-11-15"
@@ -48,12 +49,16 @@ def web_sources():
 
 
 class CandidatePromotionTests(unittest.TestCase):
-    def run_review(self, edits=None, sources=None, fetcher=None):
+    def run_review(self, edits=None, sources=None, fetcher=None, map_html=None):
         data = list(inputs())
         if edits:
             edits(data)
         pages = web_sources() if sources is None else sources
-        return build_review(*data, DAY, fetcher=fetcher or pages.__getitem__)
+        html = {SPEC["access_fr_url"]: MAPS_FR, SPEC["access_en_url"]: MAPS_EN}
+        if map_html is not None:
+            html = map_html
+        return build_review(*data, DAY, fetcher=fetcher or pages.__getitem__,
+                            html_fetcher=html.__getitem__)
 
     def test_live_first_party_fields_rechecked_but_no_publication(self):
         report = self.run_review()
@@ -108,6 +113,68 @@ class CandidatePromotionTests(unittest.TestCase):
         row = self.run_review(sources=pages)["dossiers"][0]
         self.assertFalse(row["crosschecks_private"]["press_independence_verified"])
         self.assertFalse(row["publication_authorized"])
+
+    def test_private_preview_contains_poi_but_is_never_published(self):
+        report = self.run_review()
+        row = report["dossiers"][0]
+        maps = row["map_reference_private"]
+        self.assertEqual(maps["geo_precision"], "organizer_linked_poi")
+        self.assertEqual(maps["coordinates"]["lat"], 48.9580091)
+        self.assertTrue(maps["official_addresses_disagree"])
+        draft = row["candidate_preview_private"]
+        self.assertEqual(draft["schema"],
+                         "grossesondes.national-festival-preview-private.v1")
+        self.assertEqual(draft["candidate"]["slug"], "mozhell-open-air-2027")
+        self.assertEqual(draft["candidate"]["lineup"],
+                         ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
+        self.assertEqual(draft["candidate"]["geoPrecision"], "commune")
+        self.assertFalse(draft["candidate"]["futureVenueConfirmed"])
+        self.assertFalse(draft["candidate"]["showOnMap"])
+        self.assertFalse(draft["publication_authorized"])
+        self.assertFalse(draft["publication_ready"])
+        self.assertFalse(report["publication_authorized"])
+        self.assertEqual(report["publications"], 0)
+
+    def test_2026_access_page_is_not_sufficient_for_map_reference(self):
+        html = {SPEC["access_fr_url"]:
+                MAPS_FR.replace("Vendredi 23 juillet", "Vendredi 24 juillet"),
+                SPEC["access_en_url"]: MAPS_EN}
+        row = self.run_review(map_html=html)["dossiers"][0]
+        self.assertEqual(row["map_reference_private"]["status"],
+                         "MAPS_REFERENCE_UNCONFIRMED")
+        self.assertNotIn("candidate_preview_private", row)
+        self.assertEqual(row["status"], "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE")
+
+    def test_maps_down_does_not_block_primary_date_review(self):
+        html = {SPEC["access_fr_url"]: MAPS_FR}
+        row = self.run_review(map_html=html)["dossiers"][0]
+        self.assertEqual(row["status"], "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE")
+        self.assertEqual(row["map_reference_private"]["status"],
+                         "MAPS_REFERENCE_UNCONFIRMED")
+        self.assertFalse(row["publication_authorized"])
+
+    def test_maps_lookalike_domain_does_not_produce_candidate(self):
+        html = {
+            SPEC["access_fr_url"]: MAPS_FR.replace(
+                "www.google.com", "www.google.com.attacker.invalid"),
+            SPEC["access_en_url"]: MAPS_EN,
+        }
+        row = self.run_review(map_html=html)["dossiers"][0]
+        self.assertNotIn("candidate_preview_private", row)
+        self.assertIn("venue_coordinates_confirmation", row["missing_checks"])
+
+    def test_consistent_postal_address_still_not_future_venue_proof(self):
+        html = {
+            SPEC["access_fr_url"]: MAPS_FR,
+            SPEC["access_en_url"]: MAPS_EN.replace(
+                "13 rue de l'Albe", "5 rue de l'Albe"),
+        }
+        row = self.run_review(map_html=html)["dossiers"][0]
+        self.assertFalse(
+            row["map_reference_private"]["official_addresses_disagree"])
+        self.assertFalse(
+            row["map_reference_private"]["future_edition_exact_venue_confirmed"])
+        self.assertFalse(row["candidate_preview_private"]["candidate"]["showOnMap"])
 
     def test_old_year_is_not_a_future_confirmation(self):
         source = web_sources()
