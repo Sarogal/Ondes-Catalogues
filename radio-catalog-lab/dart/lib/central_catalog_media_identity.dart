@@ -127,6 +127,9 @@ class CentralMediaIdentityResolver {
       return resolveStationId(id, context: context);
     } on FormatException {
       return _invalid(CentralMediaStatus.malformed, null, null);
+    } on ArgumentError {
+      // Uri.decodeComponent throws ArgumentError for malformed percent escapes.
+      return _invalid(CentralMediaStatus.malformed, null, null);
     }
   }
 
