@@ -209,6 +209,51 @@ void main() {
     );
   });
 
+  test('verified old cache file can be copied without deleting it or HTTP',
+      () async {
+    final image = bytes(14);
+    final old = File('${temp.path}/old-logo.img');
+    await old.writeAsBytes(image, flush: true);
+    final newDir = Directory('${temp.path}/central');
+    final store = CentralLogoAssetStore(directory: newDir, decoder: decode);
+    final descriptor = spec(image);
+    final adopted = await store.importVerifiedLegacyFile(
+      target: descriptor, source: old);
+    expect(adopted, isNotNull);
+    expect(adopted!.path, isNot(old.path));
+    expect(await old.readAsBytes(), image);
+    expect(await adopted.readAsBytes(), image);
+
+    var fetches = 0;
+    final reopened = CentralLogoAssetStore(
+        directory: newDir, decoder: decode);
+    final result = await reopened.ensure(
+      target: descriptor,
+      fetch: (uri, maxBytes) async {
+        fetches++;
+        return image;
+      },
+    );
+    expect(result.status, CentralLogoCacheStatus.cacheHit);
+    expect(fetches, 0);
+  });
+
+  test('legacy import rejects mismatched SHA without mutating either cache',
+      () async {
+    final original = bytes(15);
+    final expected = bytes(16);
+    final old = File('${temp.path}/old-logo.img');
+    await old.writeAsBytes(original, flush: true);
+    final centralDir = Directory('${temp.path}/central');
+    final cache = CentralLogoAssetStore(
+        directory: centralDir, decoder: decode);
+    final copied = await cache.importVerifiedLegacyFile(
+      target: spec(expected), source: old);
+    expect(copied, isNull);
+    expect(await old.readAsBytes(), original);
+    expect(await cache.findVerified(spec(expected)), isNull);
+  });
+
   test('signed catalog station without a logo makes no asset request',
       () async {
     expect(CentralLogoDescriptor.fromSignedStation(

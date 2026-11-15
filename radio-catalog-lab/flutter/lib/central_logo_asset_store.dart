@@ -134,6 +134,70 @@ class CentralLogoAssetStore {
     }
   }
 
+  /// Optional, network-free migration from an existing URL-keyed V64 logo.
+  /// The source is read only, and is NEVER moved or removed. A copied object
+  /// is activated only when SHA, exact byte count and decoded image all match
+  /// the signed central descriptor. The old cache remains the rollback source.
+  ///
+  /// A corrupt or competing destination is not overwritten by this importer:
+  /// the explicit central updater can repair it separately.
+  Future<File?> importVerifiedLegacyFile({
+    required CentralLogoDescriptor target,
+    required File source,
+  }) async {
+    final cached = await findVerified(target);
+    if (cached != null) return cached;
+
+    // Do not interfere with a simultaneous explicit central download.
+    final pending = _inFlight[target.sha256];
+    if (pending != null) {
+      await pending;
+      return findVerified(target);
+    }
+
+    File? temporary;
+    try {
+      if (!await source.exists() || await source.length() != target.byteSize) {
+        return null;
+      }
+      final bytes = await source.readAsBytes();
+      if (bytes.length != target.byteSize ||
+          crypto.sha256.convert(bytes).toString() != target.sha256) {
+        return null;
+      }
+      final decoded = await decoder(bytes);
+      if (decoded.width != target.width ||
+          decoded.height != target.height ||
+          decoded.mimeType != target.mimeType) {
+        return null;
+      }
+
+      await directory.create(recursive: true);
+      final destination = _image(target);
+      if (await destination.exists()) return null;
+      temporary = File(
+        '${destination.path}.pending.legacy.$pid.${_clock().microsecondsSinceEpoch}',
+      );
+      await temporary.create(exclusive: true);
+      await temporary.writeAsBytes(bytes, flush: true);
+      if (await destination.exists()) {
+        return findVerified(target);
+      }
+      await temporary.rename(destination.path);
+      return findVerified(target);
+    } catch (_) {
+      return null;
+    } finally {
+      if (temporary != null) {
+        try {
+          if (await temporary.exists()) await temporary.delete();
+        } catch (_) {
+          // The original legacy cache is untouched even after I/O failures.
+        }
+      }
+    }
+  }
+
   Future<CentralLogoCacheResult> ensure({
     required CentralLogoDescriptor target,
     CentralLogoDescriptor? previous,
