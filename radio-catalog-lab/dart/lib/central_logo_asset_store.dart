@@ -197,7 +197,10 @@ class CentralLogoAssetStore {
             image: winner, usedOlderLogo: false);
       }
       if (await output.exists()) {
-        throw const CentralCatalogException('Conflicting cached SHA filename');
+        // The canonical filename contains invalid bytes. Preserve a forensic
+        // copy, but do not let corruption permanently block verified repair.
+        final rejected = File('${output.path}.invalid.${pid}.${_clock().microsecondsSinceEpoch}');
+        await output.rename(rejected.path);
       }
 
       final temp = File('${output.path}.pending.${pid}.${_clock().microsecondsSinceEpoch}');
