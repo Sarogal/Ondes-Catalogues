@@ -11,6 +11,9 @@ from pathlib import Path
 import re
 import sys
 import unicodedata
+from map_reference import (
+    assess_mozhell_organizer_maps, MOZHELL_ACCESS_FR, MOZHELL_ACCESS_EN,
+)
 
 SCHEMA = "grossesondes.national-candidate-promotion-private.v1"
 EDITORIAL_SCHEMA = "grossesondes.national-editorial-reconciliation-private.v1"
@@ -30,6 +33,8 @@ APPROVED = {
         # Exact reviewed 2027 pages. Press agreement is NOT source independence.
         "locality_url": "https://www.mozhell.fr/fr/devenir-exposant",
         "press_url": "https://www.hardrockmag.fr/mozhell-open-air-2027-trois-premiers-groupes-devoiles/",
+        "access_fr_url": MOZHELL_ACCESS_FR,
+        "access_en_url": MOZHELL_ACCESS_EN,
     }
 }
 
@@ -56,6 +61,75 @@ def _source_fetch(url):
     return official_text(url, registered=True, raw=False)
 
 
+def _source_fetch_html(url):
+    # The official organizer page itself is the anchor of the Google Maps
+    # reference. We do not contact Maps, accept freeform URLs or geocode.
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from grossesondes_stage import official_text
+    return official_text(url, registered=True, raw=True)
+
+
+def _private_candidate_preview(spec, entry, maps, today):
+    """Complete proposal to inspect, never a publishable approval/patch.
+
+    The map coordinates are a linked POI reference. The public map flag stays
+    off until a distinct publication gate revalidates the *2027* site.
+    """
+    if (entry.get("status") != "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE"
+            or not isinstance(maps, dict)
+            or maps.get("status") != "ORGANIZER_LINKED_MAPS_POI_REVIEW_ONLY"):
+        return None
+    fields = entry["verified_fields_private"]
+    return {
+        "schema": "grossesondes.national-festival-preview-private.v1",
+        "review_only": True, "safe_to_publish": False,
+        "publication_authorized": False,
+        "publication_ready": False,
+        "map_reference_is_future_venue_proof": False,
+        "candidate": {
+            "slug": "mozhell-open-air-2027",
+            "name": fields["name"],
+            "startDate": fields["startDate"],
+            "endDate": fields["endDate"],
+            "city": fields["city"], "department": fields["department"],
+            "region": fields["region"],
+            "venue": None,
+            "styles": "Metal / Rock",
+            "bands": fields["bands"], "days": "3",
+            "capacity": None, "price": None,
+            "organizer": fields["organizer"],
+            "officialSite": "https://www.mozhell.fr/fr/",
+            "social": None,
+            "status": "Annoncé",
+            "source": spec["dates_url"],
+            "lastVerified": today,
+            "notes": (
+                "Du 23 au 25 juillet 2027 à Insming ; trois premiers "
+                "groupes annoncés. Repère Google Maps relié au site officiel ; "
+                "les pages FR/EN divergent (5 et 13 rue de l'Albe). "
+                "Emplacement exact 2027 à confirmer, programmation incomplète."
+            ),
+            "lat": maps["coordinates"]["lat"],
+            "lon": maps["coordinates"]["lon"],
+            "geoPrecision": "commune",
+            "geoCity": "Insming",
+            "geoSource": maps["maps_url"],
+            "futureVenueConfirmed": False,
+            "showOnMap": False,
+            "dateRangeIsContinuous": True,
+            "sourceConfidence": "organisateur (dates/artistes, lieu en revue)",
+            "verificationStatus": (
+                "Édition datée ; repère Maps organisateur à confirmer pour 2027"
+            ),
+            "lineup": list(fields["lineup"]),
+            "auditSources": [
+                spec["dates_url"], spec["lineup_url"], spec["locality_url"],
+                spec["access_fr_url"], spec["access_en_url"],
+            ],
+        },
+    }
+
+
 def _collision(dossier, spec, published, history):
     name = normalized(spec["dossier_name"])
     year = str(spec["year"])
@@ -75,7 +149,7 @@ def _collision(dossier, spec, published, history):
     return None
 
 
-def build_review(editorial, published, history, today, fetcher=None):
+def build_review(editorial, published, history, today, fetcher=None, html_fetcher=None):
     if (not isinstance(editorial, dict)
             or editorial.get("schema") != EDITORIAL_SCHEMA
             or editorial.get("review_only") is not True
@@ -89,6 +163,7 @@ def build_review(editorial, published, history, today, fetcher=None):
         raise ValueError("Input schemas or private fail-closed flags invalid")
     today_date = date.fromisoformat(today)
     fetch = fetcher or _source_fetch
+    fetch_html = html_fetcher or _source_fetch_html
     rows = []
     for dossier in editorial["dossiers"]:
         if not isinstance(dossier, dict) or not isinstance(dossier.get("id"), str):
@@ -196,6 +271,24 @@ def build_review(editorial, published, history, today, fetcher=None):
         except Exception:
             crosscheck["press_agreement"] = "SOURCE_UNAVAILABLE"
         entry["crosschecks_private"] = crosscheck
+        try:
+            fr_html = fetch_html(spec["access_fr_url"])
+            en_html = fetch_html(spec["access_en_url"])
+            maps = assess_mozhell_organizer_maps(fr_html, en_html)
+        except Exception:
+            # Failure must never be turned into a favorable location claim.
+            maps = None
+        entry["map_reference_private"] = maps or {
+            "status": "MAPS_REFERENCE_UNCONFIRMED",
+            "publication_authorized": False,
+        }
+        if maps:
+            entry["checked_official_urls"].extend([
+                spec["access_fr_url"], spec["access_en_url"],
+            ])
+            entry["candidate_preview_private"] = _private_candidate_preview(
+                spec, entry, maps, today
+            )
         # Even both positive crosschecks must never remove these blockers.
         entry["missing_checks"] = sorted(set(BASE_BLOCKERS))
         rows.append(entry)
