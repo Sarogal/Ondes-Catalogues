@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-14T15:49:45+01:00",
+  "updated_at": "2026-11-15T08:49:09+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -11520,6 +11520,26 @@
       "source_label": "Accoord",
       "verified_at": "2026-11-14",
       "geo_verified_at": "2026-11-14",
+      "geo_precision": "venue",
+      "lat": 47.206759863397714,
+      "lng": -1.5961453442574385
+    },
+    {
+      "id": "openagenda-813941-2026-11-18",
+      "title": "Contes & comptines",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2026-11-18",
+      "date_end": "2026-11-18",
+      "time": "10:00",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Centre socioculturel des Bourderies - ACCOORD",
+      "source_url": "https://openagenda.com/nantesmetropole/events/contes-and-comptines",
+      "source_label": "Accoord",
+      "verified_at": "2026-11-15",
+      "geo_verified_at": "2026-11-15",
       "geo_precision": "venue",
       "lat": 47.206759863397714,
       "lng": -1.5961453442574385
