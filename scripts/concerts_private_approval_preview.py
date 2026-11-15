@@ -165,9 +165,11 @@ def github_json(path, token):
             "X-GitHub-Api-Version": "2022-11-28",
             "User-Agent": "GrossesOndes-private-approval-readonly-preview",
         })
+    # Base64 adds ~33% to a 20 MB private ledger. Do not lower the
+    # signed-approval capacity merely because the JSON transport grew.
     with urllib.request.urlopen(req, timeout=25) as response:
-        raw = response.read(3_000_001)
-    require(len(raw) < 3_000_001, "Réponse API anormalement volumineuse")
+        raw = response.read(28_000_001)
+    require(len(raw) < 28_000_001, "Réponse API anormalement volumineuse")
     return json.loads(raw)
 
 
@@ -176,10 +178,27 @@ def github_approval(ref, token):
             "Référence Git inconnue")
     meta = github_json("/contents/" + FILE + "?ref=" +
                        urllib.parse.quote(ref, safe=""), token)
-    require(meta.get("type") == "file" and meta.get("encoding") == "base64",
-            "Fichier d'approbations introuvable")
-    content = base64.b64decode(meta["content"], validate=False)
-    require(len(content) <= 2_000_000, "Approbations excessivement volumineuses")
+    require(meta.get("type") == "file", "Fichier d'approbations introuvable")
+    size = meta.get("size")
+    require(isinstance(size, int) and
+            0 < size <= sync.MAX_PRIVATE_APPROVAL_FILE_BYTES,
+            "Taille du registre privé invalide ou excessive")
+    if meta.get("encoding") == "none":
+        # Retrieve only the SHA from the trusted private GitHub API, never
+        # follow a download_url supplied by a PR-controlled metadata object.
+        sha = meta.get("sha")
+        require(isinstance(sha, str) and SHA.fullmatch(sha),
+                "Blob privé non identifié")
+        blob = github_json("/git/blobs/" + sha, token)
+        require(blob.get("sha") == sha, "Blob de prévalidation divergent")
+        payload = blob
+    else:
+        payload = meta
+    require(payload.get("encoding") == "base64" and
+            isinstance(payload.get("content"), str),
+            "Approbations privées non encodées")
+    content = base64.b64decode(payload["content"], validate=False)
+    require(len(content) == size, "Blob privé tronqué ou altéré")
     return json.loads(content.decode("utf-8"))
 
 
