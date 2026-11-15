@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_client.dart';
 import 'package:go_radio_catalog_client_lab/central_radio_catalog_core.dart';
+import 'package:go_radio_catalog_client_lab/central_radio_catalog_projection.dart';
 import 'package:test/test.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
@@ -330,6 +331,112 @@ void main() {
     (s['status'] as Map<String, dynamic>)['changed_at'] = 'not-a-date';
     await expectLater(validatePayload(jsonBytes(catalog([s]))),
         throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('projection preserves every original favorite ID and groups aliases', () async {
+    final original = station(1);
+    (original['legacy_aliases'] as List).add('former-media-1');
+    final payload = jsonBytes(catalog([original]));
+    final trusted = await validatePayload(payload);
+    final result = const CentralCatalogProjector().preview(
+      catalog: trusted,
+      legacyFavoriteIds: ['former-media-1', 'legacy-1', 'missing-uuid', 'legacy-1'],
+      preferredLegacyMediaIds: {'go-station-000001': 'legacy-1'},
+    );
+    expect(result.playableStations.length, 1);
+    expect(result.playableStations.single.legacyMediaId, 'legacy-1');
+    expect(result.playableStations.single.goStationId, 'go-station-000001');
+    expect(result.favorites.projectedGoIds, ['go-station-000001']);
+    expect(result.favorites.originalIdsUnchanged,
+        ['former-media-1', 'legacy-1', 'missing-uuid', 'legacy-1']);
+    expect(result.favorites.unresolvedOriginalIds, ['missing-uuid']);
+    expect(result.favorites.unavailableFavorites, isEmpty);
+  });
+
+  test('quarantined stations and retired tombstones remain favorites, not playable', () async {
+    final quarantined = station(2, status: 'quarantined');
+    (quarantined['status'] as Map<String, dynamic>)['reason_code'] = 'manual_review';
+    quarantined['streams'] = <Map<String, dynamic>>[];
+    final tomb = {
+      'go_station_id': 'go-station-000003',
+      'legacy_aliases': ['legacy-3'],
+      'reason_code': 'editorial_retirement',
+      'retired_at': '2026-11-15T18:00:00Z',
+    };
+    final trusted = await validatePayload(jsonBytes(
+      catalog([station(1), quarantined], tombstones: [tomb])));
+    final preview = const CentralCatalogProjector().preview(
+        catalog: trusted, legacyFavoriteIds: ['legacy-3', 'legacy-2', 'legacy-1']);
+    expect(preview.playableStations.map((s) => s.goStationId),
+        ['go-station-000001']);
+    expect(preview.favorites.projectedGoIds,
+        ['go-station-000003', 'go-station-000002', 'go-station-000001']);
+    expect(preview.favorites.unavailableFavorites.map((f) => f.status),
+        ['retired', 'quarantined']);
+    expect(preview.favorites.unavailableFavorites.first.displayName, isNull);
+    expect(preview.stationsByGoId['go-station-000002']!.playable, isFalse);
+  });
+
+  test('bad historical MediaItem preference is rejected', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    expect(
+        () => const CentralCatalogProjector().preview(
+          catalog: trusted,
+          legacyFavoriteIds: ['legacy-1'],
+          preferredLegacyMediaIds: {'go-station-000001': 'unrelated-old-id'},
+        ),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('projection includes only verified streams, retaining priority ordering', () async {
+    final source = station(1);
+    (source['streams'] as List).add({
+      'stream_id': 'candidate-secondary',
+      'url': 'https://example.org/candidate.mp3',
+      'priority': 2,
+      'protocol': 'https',
+      'state': 'candidate',
+    });
+    (source['streams'] as List).add({
+      'stream_id': 'verified-secondary',
+      'url': 'https://example.org/verified.mp3',
+      'priority': 1,
+      'protocol': 'https',
+      'state': 'verified',
+      'codec': 'aac',
+      'bitrate_kbps': 96,
+    });
+    final trusted = await validatePayload(jsonBytes(catalog([source])));
+    final item = const CentralCatalogProjector().preview(
+        catalog: trusted, legacyFavoriteIds: []).playableStations.single;
+    expect(item.verifiedStreams.map((s) => s.id),
+        ['stream-1', 'verified-secondary']);
+    expect(item.verifiedStreams.any((s) => s.id == 'candidate-secondary'),
+        isFalse);
+  });
+
+  test('GO primary ID is stable for new station without historical preference', () async {
+    final trusted = await validatePayload(jsonBytes(catalog([station(1)])));
+    final result = const CentralCatalogProjector().preview(
+        catalog: trusted, legacyFavoriteIds: ['go-station-000001']);
+    expect(result.playableStations.single.legacyMediaId, 'go-station-000001');
+    expect(result.favorites.projectedGoIds, ['go-station-000001']);
+  });
+
+  test('preview immutable and never changes station source JSON', () async {
+    final source = station(1);
+    final payload = jsonBytes(catalog([source]));
+    final trusted = await validatePayload(payload);
+    final before = jsonEncode(source);
+    final result = const CentralCatalogProjector().preview(
+        catalog: trusted, legacyFavoriteIds: ['legacy-1']);
+    expect(jsonEncode(source), before);
+    expect(() => result.stationsByGoId.clear(), throwsUnsupportedError);
+    expect(() => result.playableStations.clear(), throwsUnsupportedError);
+    expect(() => result.favorites.originalIdsUnchanged.clear(),
+        throwsUnsupportedError);
+    expect(() => result.playableStations.first.legacyAliases.clear(),
+        throwsUnsupportedError);
   });
 
   test('untrusted key prevents even the catalog HTTP request', () async {
