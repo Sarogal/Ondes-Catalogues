@@ -36,7 +36,7 @@ void main() {
     final image = bytes(1);
     final descriptor = spec(image);
     var fetchCalls = 0;
-    Future<Uint8List> fetch(Uri _, int _) async {
+    Future<Uint8List> fetch(Uri ignoredUrl, int ignoredMaxBytes) async {
       fetchCalls++;
       return image;
     }
