@@ -27,6 +27,9 @@ APPROVED = {
         "organizer_url": "https://www.mozhell.fr/fr/association-mozhell-prod",
         "organizer": "MOZHELL PROD",
         "bands": ["Ultra Vomit", "THE ARRS", "LocoMuerte"],
+        # Exact reviewed 2027 pages. Press agreement is NOT source independence.
+        "locality_url": "https://www.mozhell.fr/fr/devenir-exposant",
+        "press_url": "https://www.hardrockmag.fr/mozhell-open-air-2027-trois-premiers-groupes-devoiles/",
     }
 }
 
@@ -162,6 +165,38 @@ def build_review(editorial, published, history, today, fetcher=None):
         # The organizer's three pages are NOT independent corroborations.
         # Neither an address from a prior edition nor city-centroid GPS is
         # automatically a proven location for the 2027 event.
+        # Distinguish organizer location wording from an exact 2027 venue.
+        # A media article that repeats a press release cannot prove independence.
+        crosscheck = {
+            "organizer_2027_locality": "NOT_RECHECKED",
+            "exact_2027_venue_verified": False,
+            "press_agreement": "NOT_RECHECKED",
+            "press_independence_verified": False,
+        }
+        try:
+            locality = normalized(fetch(spec["locality_url"]))
+            entry["checked_official_urls"].append(spec["locality_url"])
+            if (normalized("au coeur du village d'Insming") in locality
+                    and normalized("23 24 et 25 juillet 2027") in locality):
+                crosscheck["organizer_2027_locality"] = "INSMING_VILLAGE_ONLY"
+            else:
+                crosscheck["organizer_2027_locality"] = "CLAIM_NOT_RECONFIRMED"
+        except Exception:
+            crosscheck["organizer_2027_locality"] = "SOURCE_UNAVAILABLE"
+        try:
+            press = normalized(fetch(spec["press_url"]))
+            entry["checked_external_urls_private"] = [spec["press_url"]]
+            if (normalized("MozHell Open Air 2027") in press
+                    and normalized("23 au 25 juillet") in press
+                    and normalized("Insming") in press
+                    and all(normalized(b) in press for b in spec["bands"])):
+                crosscheck["press_agreement"] = "SAME_CLAIMS_PROVENANCE_UNVERIFIED"
+            else:
+                crosscheck["press_agreement"] = "CLAIM_NOT_RECONFIRMED"
+        except Exception:
+            crosscheck["press_agreement"] = "SOURCE_UNAVAILABLE"
+        entry["crosschecks_private"] = crosscheck
+        # Even both positive crosschecks must never remove these blockers.
         entry["missing_checks"] = sorted(set(BASE_BLOCKERS))
         rows.append(entry)
     return {
