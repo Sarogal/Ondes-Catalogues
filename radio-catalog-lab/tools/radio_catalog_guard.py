@@ -206,6 +206,11 @@ def validate_catalog(document, *, mode="staging", previous=None):
             if owner != goid:
                 issues.append(prefix + f" alias reassigned {alias} ({owner}/{goid})")
 
+    # A later publication without its predecessor would silently bypass
+    # historical ID, alias and bulk-shrink checks. Only sequence 1 is initial.
+    if mode == "publish" and previous is None and document.get("release_sequence") != 1:
+        issues.append("non-initial publication requires the previous catalog")
+
     if previous is not None:
         before = previous.get("stations", []) + previous.get("tombstones", [])
         for old in before:
