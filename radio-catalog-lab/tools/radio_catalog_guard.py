@@ -161,13 +161,23 @@ def validate_catalog(document, *, mode="staging", previous=None):
                 if type(logo.get("byte_size")) is not int or not 0 < logo["byte_size"] <= 8 * 1024 * 1024:
                     issues.append(prefix + " invalid logo byte_size")
         editorial = station.get("editorial")
-        decision = editorial.get("admission_state") if isinstance(editorial, dict) else None
+        editorial_fields = editorial if isinstance(editorial, dict) else {}
+        decision = editorial_fields.get("admission_state")
         if decision not in ("approved", "legacy_preserved"):
             issues.append(prefix + " invalid editorial approval state")
+        if mode == "publish" and state in ("quarantined", "retired"):
+            if decision != "approved":
+                issues.append(prefix + " unavailable station not editorially approved")
+            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
+                issues.append(prefix + " unavailable station missing editorial review timestamp")
+            if not isinstance(status.get("reason_code"), str) or not status["reason_code"].strip():
+                issues.append(prefix + " unavailable station missing status reason")
+            if not isinstance(status.get("changed_at"), str) or not status["changed_at"].strip():
+                issues.append(prefix + " unavailable station missing change timestamp")
         if mode == "publish" and state == "active":
             if decision != "approved":
                 issues.append(prefix + " active station not approved for publication")
-            if not isinstance(editorial.get("reviewed_at"), str) or not editorial["reviewed_at"].strip():
+            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
                 issues.append(prefix + " missing editorial review timestamp")
             if verified < 1:
                 issues.append(prefix + " active station has no verified stream")
@@ -209,6 +219,25 @@ def validate_catalog(document, *, mode="staging", previous=None):
             new_aliases = set(id_map[oldid].get("legacy_aliases", []))
             for lost in sorted(old_aliases - new_aliases):
                 issues.append(f"historical alias lost for {oldid}: {lost}")
+        if mode == "publish":
+            # Even with valid per-station approval, large simultaneous removals
+            # require a separate audited release protocol (not implemented in v1).
+            previous_active = {
+                row.get("go_station_id") for row in previous.get("stations", [])
+                if isinstance(row, dict) and isinstance(row.get("status"), dict)
+                and row["status"].get("state") == "active"
+            }
+            current_active = {
+                row.get("go_station_id") for row in stations
+                if isinstance(row, dict) and isinstance(row.get("status"), dict)
+                and row["status"].get("state") == "active"
+            }
+            inactive = previous_active - current_active
+            if len(previous_active) >= 200 and len(inactive) >= 25 and len(inactive) * 100 >= len(previous_active) * 12:
+                issues.append(
+                    f"bulk station shrink requires independent editorial release review: "
+                    f"{len(inactive)} of {len(previous_active)} previously active stations"
+                )
         if mode == "publish" and type(previous.get("release_sequence")) is int:
             if document.get("release_sequence", 0) <= previous["release_sequence"]:
                 issues.append("release_sequence did not increase")
