@@ -1,0 +1,36 @@
+name: "Grosses Ondes — Flutter radio catalog isolated tests"
+
+on:
+  push:
+    branches:
+      - audit/radio-catalog-contract-ci-20261115
+    paths:
+      - "radio-catalog-lab/flutter/**"
+      - ".github/workflows/radio-catalog-flutter-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "go-radio-flutter-isolated-test"
+  cancel-in-progress: true
+
+jobs:
+  flutter-tests:
+    name: "Flutter engine + central catalog tests, no deployment"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: radio-catalog-lab/flutter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: "Analyze generic isolated Flutter sources"
+        run: flutter analyze --fatal-infos
+      - name: "Run real Flutter engine tests"
+        run: flutter test --reporter expanded
