@@ -119,7 +119,7 @@ class BackstageMultiBandPublisherTests(unittest.TestCase):
         proposal["newArtists"].append({
             "id": "imaginary-fourth", "name": "Imaginary Fourth"
         })
-        with self.assertRaisesRegex(ValueError, "nouveau nom en collision"):
+        with self.assertRaisesRegex(ValueError, "non liés au plateau approuvé"):
             publisher_check(proposal)
 
     def test_mismatched_proof_does_not_pass_publisher(self):
