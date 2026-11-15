@@ -330,7 +330,10 @@
           ]
         },
         "reviewed_at": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "format": "date-time"
         },
         "evidence_refs": {
