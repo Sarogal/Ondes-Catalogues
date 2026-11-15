@@ -164,7 +164,7 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
         self.assertEqual(
             approval["newArtists"],
             [{"id": "peter-hook-and-the-light",
-              "name": "Peter Hook and The Light"}],
+              "name": "PETER HOOK & THE LIGHT"}],
         )
         from concerts_cloud_sync import validate_approval
         event, added = validate_approval(
