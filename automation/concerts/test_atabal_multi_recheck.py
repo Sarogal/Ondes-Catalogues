@@ -57,12 +57,16 @@ class StrictMultiBillTests(unittest.TestCase):
             "<h2>Pussy Miel ~ Kill!Kill!Diana</h2>",
             "<h2>" + " ~ ".join(named[1:]) + "</h2>",
         )
+        # Keep the original page's line breaks between independently
+        # named sections; replace the two old sections separately.
         html = html.replace(
-            '<h2>PUSSY MIEL</h2><p>Rock garage, stoner</p><h5>PUNK ROCK</h5>'
+            '<h2>PUSSY MIEL</h2><p>Rock garage, stoner</p><h5>PUNK ROCK</h5>',
+            "")
+        html = html.replace(
             '<h2>Kill!Kill!Diana</h2><p>Post hardcore</p><h5>POST H-CORE</h5>',
             "".join('<h2>' + artist + '</h2><p>Hardcore punk</p>'
-                    '<h5>POST H-CORE</h5>' for artist in named[1:]),
-        )
+                    '<h5>POST H-CORE</h5>' for artist in named[1:]))
+
         return named, html
 
     def test_two_named_bands_and_six_ten_twenty_pass_real_publisher(self):
