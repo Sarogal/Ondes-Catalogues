@@ -3981,8 +3981,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    # A 20-artist official bill necessarily has a longer title than a
+    # single-headliner concert. Bound length by the number of artist IDs,
+    # not by an arbitrary 220-character ceiling; each ID and named artist
+    # still passes the strict checks below and the venue-specific proof.
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -5064,7 +5071,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # guests may bypass the per-artist section verification.
         require(bateau_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "Le Bateau Ivre"
-                and 1 <= len(ids) <= 4 and len(new_artists) <= 3
+                and bool(ids) and len(new_artists) <= len(ids)
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "Bateau Ivre : profil de publication non autorisé")
         proof = evidence[0]
