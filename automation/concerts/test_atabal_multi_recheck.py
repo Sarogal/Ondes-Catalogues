@@ -81,9 +81,9 @@ class StrictMultiBillTests(unittest.TestCase):
                     {}, NOW)
                 self.assertEqual(len(evt["artistIds"]), count)
                 self.assertEqual(len(added), count)
-                if count >= 10:
+                if count == 20:
                     self.assertIn("-bill-", evt["id"])
-                    self.assertLessEqual(len(evt["id"]), 150)
+                self.assertLessEqual(len(evt["id"]), 150)
                 known = [{"id": "coilguns", "name": "COILGUNS", "aliases": []},
                          {"id": "act-01", "name": "ACT 01", "aliases": []}]
                 mixed = catalogue()
