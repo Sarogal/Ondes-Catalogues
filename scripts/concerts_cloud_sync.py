@@ -4305,6 +4305,17 @@ def validate_approval(approval, venues, known_artist_ids, today):
         added[aid] = {"id": aid, "name": name, "aliases": []}
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
+    if reviewer == "automated-official-recheck" and rex:
+        # A final unnamed guest may be omitted by the independent verifier.
+        # It must NEVER be added to the published title or artist identities
+        # as if it were a named artist. This does not bypass the normal
+        # first-party event/date/genre/provenance checks above.
+        placeholder = re.compile(r"\\b(?:guest|invites?|surprise|tba)\\b", re.I)
+        require(not placeholder.search(norm(event.get("title", ""))) and
+                not any(placeholder.search(norm(
+                    (known_artist_ids.get(aid) or added[aid])["name"]))
+                    for aid in ids),
+                "Le Rex automatique : artiste guest non nommé interdit")
     if reviewer == "automated-official-recheck" and backstage:
         # An unannounced guest may be OMITTED from the proposed bill, but
         # may never become a fabricated artist in the publisher.
