@@ -3981,8 +3981,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -4849,7 +4852,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             names = proof.get("officialArtistNames")
             counts = proof.get("officialArtistProfileLinkCounts")
             unannounced_label = proof.get("unannouncedSupportLabel")
-            require(1 <= len(new_artists) <= 2 and 1 <= len(ids) <= 4
+            require(1 <= len(new_artists) <= len(ids) and bool(ids)
                     and (unannounced_label is None or
                          unannounced_label in {
                             "guest", "special guest", "invite", "invite surprise",

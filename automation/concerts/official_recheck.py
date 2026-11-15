@@ -127,7 +127,7 @@ def artist_names(title):
     if BANNED.search(norm(title)):
         raise ValueError("Intitulé incomplet, annulé ou de type festival")
     parts = [p.strip() for p in re.split(r"\s+(?:[+&]|et)\s+", title, flags=re.I)]
-    if not 1 <= len(parts) <= 5 or any(len(norm(x)) < 3 for x in parts):
+    if not parts or any(len(norm(x)) < 3 for x in parts):
         raise ValueError("Affiche impossible à séparer avec certitude")
     if len({norm(p) for p in parts}) != len(parts):
         raise ValueError("Artistes en double")
