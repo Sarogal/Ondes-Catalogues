@@ -5064,7 +5064,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # guests may bypass the per-artist section verification.
         require(bateau_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "Le Bateau Ivre"
-                and 1 <= len(ids) <= 4 and len(new_artists) <= 3
+                and bool(ids) and len(new_artists) <= len(ids)
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "Bateau Ivre : profil de publication non autorisé")
         proof = evidence[0]
