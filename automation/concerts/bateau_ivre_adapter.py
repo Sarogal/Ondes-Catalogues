@@ -207,7 +207,7 @@ def candidate(html, detail_url, source, today):
     if len(named) != 1:
         raise ValueError("Conflicting first-party event headings")
     title = p.headings[0][0]
-    if not 4 <= len(title) <= 170 or EXCLUDED.search(fold(title)):
+    if len(title) < 4 or EXCLUDED.search(fold(title)):
         raise ValueError("No named valid musical event masthead")
     header_title = fold(title)
     # Independent first-party support H2s may be placed BETWEEN the official
@@ -216,7 +216,10 @@ def candidate(html, detail_url, source, today):
     # Only "+ ARTIST" H2 headings in this narrow event-header region count.
     first_end = p.headings[0][1]
     next_h1 = p.headings[1][1] if len(p.headings) > 1 else len(p.parts)
-    bound = min(next_h1, first_end + 18, len(p.parts))
+    # The first full event date closes the support roster. An arbitrary
+    # number of preceding, separately named H2 supports is not a reason to
+    # discard the programme; later recommendations remain outside this scope.
+    bound = min(next_h1, len(p.parts))
     first_date_end = next((
         pos for pos in range(first_end, bound)
         if DATE.search(fold(" ".join(p.parts[first_end:pos+1])))
@@ -243,13 +246,9 @@ def candidate(html, detail_url, source, today):
     }
     supports = [name for name in supports if
                 " ".join(re.findall(r"[a-z0-9]+", fold(name))) not in unannounced]
-    if len(supports) > 3:
-        raise ValueError("More than three support artists, review the programme")
     full_title = title
     if supports:
         full_title += " + " + " + ".join(supports)
-        if len(full_title) > 200:
-            raise ValueError("Official lineup longer than expected")
     # Read only the immediate text after EACH actual H1, not the first
     # ten snippets from <main> (which may contain navigation or hidden
     # header duplicates). Ignore years in artist bios or unrelated cards.
