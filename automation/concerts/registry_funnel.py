@@ -12,6 +12,8 @@ import datetime as dt
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
+from statistics import median
+from zoneinfo import ZoneInfo
 
 REGISTRY_SCHEMA = "grossesondes.concert.intake.v1"
 APPROVALS_SCHEMA = "grossesondes.concert.approvals.v1"
@@ -66,6 +68,19 @@ def _future_date(value, as_of):
     return "future" if parsed >= as_of else "expired"
 
 
+def _first_seen_paris_day(value):
+    """A trusted UTC timestamp for an approximate Paris-calendar-day lag."""
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(ZoneInfo("Europe/Paris")).date()
+
+
 def _identity(item):
     """A *diagnostic* collision key, never an authoritative event dedupe."""
     normalized = lambda v: " ".join(str(v or "").casefold().split())
@@ -116,12 +131,15 @@ def build(registry, approvals, catalogue, as_of):
         _event_pair(a.get("event") or {}) in published_pairs
         for a in automatic_approvals_this_week
     )
-    first_recorded_this_week = sum(
-        isinstance(e.get("history"), list) and bool(e["history"])
-        and isinstance(e["history"][0], dict)
-        and within_week(e["history"][0].get("date"))
-        for e in catalogue["events"]
-    )
+    first_recorded_by_day = Counter()
+    for event in catalogue["events"]:
+        history = event.get("history")
+        if not isinstance(history, list) or not history or not isinstance(history[0], dict):
+            continue
+        first_date = history[0].get("date")
+        if within_week(first_date):
+            first_recorded_by_day[first_date] += 1
+    first_recorded_this_week = sum(first_recorded_by_day.values())
     bucket_counts = Counter()
     status_counts = Counter()
     date_counts = Counter()
@@ -135,6 +153,8 @@ def build(registry, approvals, catalogue, as_of):
     unique_future = set()
     signature_missing = 0
     sources_with_new_potential = Counter()
+    effective_states = Counter()
+    first_seen_by_published_pair = {}
 
     for record in registry["items"].values():
         if not isinstance(record, dict) or not isinstance(record.get("candidate"), dict):
@@ -161,6 +181,21 @@ def build(registry, approvals, catalogue, as_of):
         pair = _pair(item.get("sourceUrl"), item.get("date"))
         published = pair in published_pairs
         approved = pair in approved_pairs
+        # Derived reporting states only. Never edit the permanent private
+        # decision, which remains append-only and is managed separately.
+        if published:
+            effective_states["published_exact_url_date"] += 1
+            first_day = _first_seen_paris_day(record.get("firstSeenAt"))
+            if first_day is not None:
+                previous_first_day = first_seen_by_published_pair.get(pair)
+                if previous_first_day is None or first_day < previous_first_day:
+                    first_seen_by_published_pair[pair] = first_day
+        elif approved:
+            effective_states["approved_not_published_exact_url_date"] += 1
+        elif status in TERMINAL_STATUSES:
+            effective_states["privately_decided_not_exactly_matched"] += 1
+        else:
+            effective_states["pending_not_exactly_matched"] += 1
         stable = isinstance(record.get("stableObservations"), int) and (
             record["stableObservations"] >= 2
         )
@@ -228,6 +263,39 @@ def build(registry, approvals, catalogue, as_of):
         if disposition == "ready_for_independent_recheck":
             recheck_ready += 1
 
+    # Approximate delay: first *archived* observation to the earliest
+    # publisher-authored history date, never an exact real-time publication
+    # duration. A repeated official URL/date is ambiguous and excluded.
+    events_by_pair = defaultdict(list)
+    for event in catalogue["events"]:
+        events_by_pair[_event_pair(event)].append(event)
+    measured_lag_days = []
+    excluded_ambiguous = 0
+    excluded_non_publisher_history = 0
+    published_before_first_seen = 0
+    for pair, first_day in first_seen_by_published_pair.items():
+        matches = events_by_pair.get(pair, [])
+        if len(matches) != 1:
+            excluded_ambiguous += 1
+            continue
+        history = matches[0].get("history")
+        if (not isinstance(history, list) or not history
+                or not isinstance(history[0], dict)
+                or history[0].get("change") != "Ajout après revue des preuves officielles"):
+            excluded_non_publisher_history += 1
+            continue
+        try:
+            publication_day = dt.date.fromisoformat(history[0]["date"])
+        except (KeyError, TypeError, ValueError):
+            excluded_non_publisher_history += 1
+            continue
+        if publication_day < first_day:
+            # Some discovery sources only found a concert after publication.
+            # A negative lag cannot be a true time-to-publication measurement.
+            published_before_first_seen += 1
+        else:
+            measured_lag_days.append((publication_day - first_day).days)
+
     return {
         "schema": OUTPUT_SCHEMA,
         "asOf": as_of.isoformat(),
@@ -251,12 +319,26 @@ def build(registry, approvals, catalogue, as_of):
             # Historical first record is an indicator; the cloud sync's
             # per-run newEvents remains the authoritative publication delta.
             "publicEventsFirstRecordedInHistory": first_recorded_this_week,
+            "publicEventsFirstRecordedInHistoryByDay": dict(sorted(first_recorded_by_day.items())),
             "authoritativePublicDeltaSource": "grossesondes-concerts-cloud-sync",
         },
         "legacyRowsWithoutStabilityProof": signature_missing,
         "candidateDateStatus": dict(sorted(date_counts.items())),
         "candidateReviewBuckets": dict(sorted(bucket_counts.items())),
         "candidatePrivateStatuses": dict(sorted(status_counts.items())),
+        "effectiveCandidateStates": dict(sorted(effective_states.items())),
+        "discoveryToFirstRecordedPublication": {
+            "estimated": True,
+            "unit": "whole Paris calendar days",
+            "method": "private firstSeenAt to publisher first history date, exact URL+date only",
+            "measuredDistinctEvents": len(measured_lag_days),
+            "minDays": min(measured_lag_days) if measured_lag_days else None,
+            "medianDays": median(measured_lag_days) if measured_lag_days else None,
+            "maxDays": max(measured_lag_days) if measured_lag_days else None,
+            "publishedBeforeRegistryFirstSeen": published_before_first_seen,
+            "excludedNonPublisherHistory": excluded_non_publisher_history,
+            "excludedAmbiguousUrlDate": excluded_ambiguous,
+        },
         "exclusiveBlockingReasons": dict(sorted(dispositions.items())),
         "documentedOfficialGenreLeadsPendingFreshVerification": evidence_leads,
         "stableCandidatesInSupportedSourceQueue": eligible_stable,
@@ -276,6 +358,8 @@ def build(registry, approvals, catalogue, as_of):
             "All source data and this diagnostic stay private.",
             "Textual identity collisions are advisory, never deduplicated for publication.",
             "Approved/published totals are full snapshots, not a single-cohort funnel.",
+            "Effective candidate states reconcile exact source URL+date only and never edit registry status.",
+            "Discovery-to-history lag is an approximate subset, not actual GitHub Pages deployment time.",
             "Public first-history-date metric is not the cloud sync event delta.",
             "Official detail flags and genre tags are discovery claims, not independent proof.",
             "The discovery detail flag is required only by verifiers that enforce it.",
