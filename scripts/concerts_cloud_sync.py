@@ -4359,7 +4359,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(proof is not None, "Liste officielle d'artistes non vérifiée")
         names = proof.get("officialArtistNames")
         require(isinstance(names,list) and len(names)==len(ids) and
-                1<=len(names)<=5 and
+                bool(names) and
                 all(isinstance(n,str) and 3<=len(norm(n))<=100 for n in names) and
                 len({norm(n) for n in names})==len(names),
                 "Liste officielle d'artistes absente ou ambiguë")
@@ -4367,7 +4367,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(len(displayed)==len(names) and
                 all(norm(a)==norm(b) for a,b in zip(displayed,names)),
                 "Affiche différente de la liste officielle")
-        require(len(added)<=2 and
+        require(len(added)<=len(names) and
                 proof.get("verifiedNewArtists")==[x["name"] for x in new_artists],
                 "Artistes nouveaux non documentés exactement")
         # Each ID has to point to the exact named act, not another known act.
