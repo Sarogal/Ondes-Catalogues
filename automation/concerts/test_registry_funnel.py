@@ -163,6 +163,85 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(counts["possible_duplicate_requires_reconciliation"], 1)
         self.assertEqual(sum(counts.values()), 4)
 
+    def test_effective_states_and_approximate_discovery_lag_are_private_aggregates(self):
+        r, a, c = fixtures(
+            row("published", _record={"firstSeenAt": "2026-11-10T12:00:00+00:00"}),
+            row("published-same-day", _record={"firstSeenAt": "2026-11-13T09:00:00+00:00"}),
+            row("approved"),
+            row("pending"),
+            row("rejected", _record={"status": "rejected"}),
+        )
+        a["approvals"] = [{
+            "reviewDecision": "approved",
+            "event": {"date": "2027-03-11",
+                      "officialUrl": "https://official.example/events/approved"}
+        }]
+        def published_event(id_, history_day):
+            return {
+                "id": "go-c-" + id_,
+                "date": "2027-03-11",
+                "officialUrl": "https://official.example/events/" + id_,
+                "history": [{"date": history_day,
+                             "change": "Ajout après revue des preuves officielles"}],
+            }
+        c["events"] = [published_event("published", "2026-11-12"),
+                       published_event("published-same-day", "2026-11-13")]
+        saved = copy.deepcopy((r, a, c))
+        report = f.build(r, a, c, dt.date(2026, 11, 15))
+        self.assertEqual(report["candidatePrivateStatuses"], {
+            "pending_review": 4, "rejected": 1})
+        self.assertEqual(report["effectiveCandidateStates"], {
+            "approved_not_published_exact_url_date": 1,
+            "pending_not_exactly_matched": 1,
+            "privately_decided_not_exactly_matched": 1,
+            "published_exact_url_date": 2,
+        })
+        delays = report["discoveryToFirstRecordedPublication"]
+        self.assertTrue(delays["estimated"])
+        self.assertEqual(delays["measuredDistinctEvents"], 2)
+        self.assertEqual((delays["minDays"], delays["medianDays"], delays["maxDays"]),
+                         (0, 1, 2))
+        self.assertEqual(report["lastSevenDaysInclusive"][
+            "publicEventsFirstRecordedInHistoryByDay"],
+            {"2026-11-12": 1, "2026-11-13": 1})
+        self.assertEqual((r, a, c), saved)
+        self.assertNotIn("official.example", str(delays))
+        self.assertNotIn("published-same-day", str(report["effectiveCandidateStates"]))
+
+    def test_time_zone_and_unreliable_publication_history_are_excluded(self):
+        r, a, c = fixtures(
+            row("paris-midnight", _record={
+                "firstSeenAt": "2026-11-10T23:40:00+00:00"}),
+            row("first-seen-later", _record={
+                "firstSeenAt": "2026-11-15T10:00:00+00:00"}),
+            row("legacy", _record={
+                "firstSeenAt": "2026-11-10T10:00:00+00:00"}),
+            row("invalid-timestamp", _record={
+                "firstSeenAt": "not-a-timestamp"}),
+        )
+        for name, history_day, change in (
+            ("paris-midnight", "2026-11-11",
+             "Ajout après revue des preuves officielles"),
+            ("first-seen-later", "2026-11-14",
+             "Ajout après revue des preuves officielles"),
+            ("legacy", "2026-11-11", "Ajout historique"),
+            ("invalid-timestamp", "2026-11-14",
+             "Ajout après revue des preuves officielles"),
+        ):
+            c["events"].append({
+                "date": "2027-03-11",
+                "officialUrl": "https://official.example/events/" + name,
+                "history": [{"date": history_day, "change": change}],
+            })
+        report = f.build(r, a, c, dt.date(2026, 11, 15))
+        self.assertEqual(report["effectiveCandidateStates"][
+            "published_exact_url_date"], 4)
+        metric = report["discoveryToFirstRecordedPublication"]
+        self.assertEqual(metric["measuredDistinctEvents"], 1)
+        self.assertEqual(metric["minDays"], 0)  # Paris local date is Nov 11
+        self.assertEqual(metric["publishedBeforeRegistryFirstSeen"], 1)
+        self.assertEqual(metric["excludedNonPublisherHistory"], 1)
+
     def test_collisions_are_diagnostic_only(self):
         r, a, c = fixtures(row("one"), row("two"))
         out = f.build(r, a, c, dt.date(2026, 11, 9))
