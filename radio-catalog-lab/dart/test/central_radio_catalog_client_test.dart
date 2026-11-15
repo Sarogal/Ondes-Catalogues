@@ -96,7 +96,7 @@ Future<ValidatedCentralCatalog> validatePayload(Uint8List payload,
 void main() {
   setUpAll(() async {
     signingPair = await Ed25519().newKeyPair();
-    signingPublicKey = await signingPair.extractPublicKey();
+    signingPublicKey = (await signingPair.extractPublicKey()) as SimplePublicKey;
     verifier = CentralCatalogVerifier(trustedKeys: {'test-only': signingPublicKey});
   });
 
