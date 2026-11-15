@@ -79,21 +79,58 @@ class PreflightTests(unittest.TestCase):
                     "reason": "Official genre not independently confirmed",
                 }],
             }
-        with self.assertRaisesRegex(
-                ValueError,
-                r"go-c-20270401-example.*Official genre not independently confirmed"):
+        with self.assertRaises(gate.PublisherRejections) as context:
             gate.validate_proposal(
                 self.before, self.after, {}, self.catalogue, TODAY, hold)
+        self.assertEqual(context.exception.rejections, [{
+            "eventId": event()["id"],
+            "publisherResult": "not emitted by publisher",
+            "changedFields": [],
+            "publisherReason": "Official genre not independently confirmed",
+        }])
+        self.assertIn("go-c-20270401-example", str(context.exception))
+        self.assertNotIn("official.example", str(context.exception))
 
     def test_private_failure_lists_only_differing_field_names(self):
         def changed(reference, current, approvals, today):
             return {"events": [{**event(), "date": "2027-04-02"}]}, {
                 "newEvents": 1, "held": []
             }
-        with self.assertRaisesRegex(
-                ValueError, r"go-c-20270401-example.*changed fields: date"):
+        with self.assertRaises(gate.PublisherRejections) as context:
             gate.validate_proposal(
                 self.before, self.after, {}, self.catalogue, TODAY, changed)
+        self.assertEqual(context.exception.rejections, [{
+            "eventId": event()["id"],
+            "publisherResult": "changed fields: date",
+            "changedFields": ["date"],
+            "publisherReason": None,
+        }])
+        self.assertNotIn("2027-04-02", str(context.exception))
+
+    def test_collects_all_publisher_rejections_without_partial_approval(self):
+        proposed = copy.deepcopy(self.after)
+        additional = row("go-c-20270402-second")
+        additional["event"]["date"] = "2027-04-02"
+        additional["event"]["officialUrl"] = "https://example.org/agenda/second"
+        additional["officialEvidence"][0]["url"] = "https://example.org/agenda/second"
+        proposed["approvals"].append(additional)
+        before = copy.deepcopy(proposed)
+        def hold_all(reference, current, approvals, today):
+            return copy.deepcopy(current), {"newEvents": 0, "held": [
+                {"candidateId": event()["id"],
+                 "reason": "No official rock genre"},
+                {"candidateId": "go-c-20270402-second",
+                 "reason": "Guest \nnot named"},
+            ]}
+        with self.assertRaises(gate.PublisherRejections) as context:
+            gate.validate_proposal(self.before, proposed, {}, self.catalogue,
+                                   TODAY, hold_all)
+        rejected = context.exception.rejections
+        self.assertEqual([row["eventId"] for row in rejected],
+                         [event()["id"], "go-c-20270402-second"])
+        self.assertEqual([row["publisherReason"] for row in rejected],
+                         ["No official rock genre", "Guest  not named"])
+        self.assertEqual(proposed, before)
 
     def test_publisher_cannot_silently_change_event_fields(self):
         def change(reference, current, approvals, today):
