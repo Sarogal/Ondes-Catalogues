@@ -129,11 +129,7 @@ class CentralCatalogVerifier {
     return pointer;
   }
 
-  Future<ValidatedCentralCatalog> verify({
-    required Uint8List pointerBytes,
-    required Uint8List catalogBytes,
-    ValidatedCentralCatalog? previous,
-  }) async {
+  Future<CentralCatalogPointer> verifyPointer(Uint8List pointerBytes) async {
     final pointer = CentralCatalogPointer.parse(pointerBytes);
     final key = trustedKeys[pointer.keyId];
     if (key == null || key.type != KeyPairType.ed25519) {
@@ -146,6 +142,15 @@ class CentralCatalogVerifier {
     if (!validSignature) {
       throw const CentralCatalogException('Invalid pointer signature');
     }
+    return pointer;
+  }
+
+  Future<ValidatedCentralCatalog> verify({
+    required Uint8List pointerBytes,
+    required Uint8List catalogBytes,
+    ValidatedCentralCatalog? previous,
+  }) async {
+    final pointer = await verifyPointer(pointerBytes);
     if (catalogBytes.length != pointer.length ||
         crypto.sha256.convert(catalogBytes).toString() != pointer.sha256) {
       throw const CentralCatalogException('Catalog digest or length mismatch');
