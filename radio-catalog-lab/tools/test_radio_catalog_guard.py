@@ -171,5 +171,15 @@ class GuardContractTest(unittest.TestCase):
         self.assertEqual(validate_catalog(after, mode="publish", previous=before), [])
 
 
+    def test_later_publication_requires_previous_catalog(self):
+        s = station(approved=True, verified=True)
+        proposed = catalog(s, sequence=2)
+        self.assertTrue(any("requires the previous catalog" in e
+                            for e in validate_catalog(proposed, mode="publish")))
+        self.assertEqual(validate_catalog(proposed, mode="publish",
+                                          previous=catalog(copy.deepcopy(s), sequence=1)), [])
+
+
+
 if __name__ == "__main__":
     unittest.main()
