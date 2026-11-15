@@ -8,6 +8,7 @@ This module never writes approvals or public catalogue data.
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 from html.parser import HTMLParser
 import re
 from urllib.parse import urlsplit
@@ -21,11 +22,20 @@ STRUCTURE = "event-header-and-named-artist-sections"
 BAD_HEADLINE = re.compile(
     r"\b(?:guest|special guest|surprise|tba|a confirmer|festival|"
     r"annule|annulee|reporte|reportee|cancelled|postponed)\b")
-MAX_ACTS = 4
-
 
 def slug(name):
     return source.norm(name).replace(" ", "-")[:72].strip("-")
+
+
+def concert_id(day, names):
+    """Keep historic short event IDs; hash a full long signed roster."""
+    slugs = [slug(name) for name in names]
+    full_id = "go-c-" + day.strftime("%Y%m%d") + "-biarritz-" + "-".join(slugs)
+    if len(full_id) <= 150:
+        return full_id
+    digest = hashlib.sha256("|".join(slugs).encode("utf-8")).hexdigest()[:20]
+    return ("go-c-" + day.strftime("%Y%m%d") + "-biarritz-" +
+            slugs[0] + "-bill-" + digest)
 
 
 class FirstArticleHeadings(HTMLParser):
@@ -91,11 +101,11 @@ def exact_names(page):
         raise ValueError("Atabal: titre principal absent ou incomplet")
     lead = p.h1[0]
     h2 = p.h2
-    if not h2 or not re.search(r"\s+~\s+", h2[0]):
+    if not h2 or not h2[0].strip():
         raise ValueError("Atabal: plateau multi-artistes explicite absent")
     supporting = [x.strip() for x in re.split(r"\s+~\s+", h2[0])]
     names = [lead] + supporting
-    if not 3 <= len(names) <= MAX_ACTS:
+    if len(names) < 2:
         raise ValueError("Atabal: nombre de groupes non pris en charge")
     normalized = [source.norm(n) for n in names]
     if (any(len(n) < 3 for n in normalized)
@@ -181,10 +191,7 @@ def verify(candidate, page, catalogue, today):
         ids.append(aid)
     if len(set(ids)) != len(ids):
         raise ValueError("Atabal: groupes ou identifiants en doublon")
-    event_id = ("go-c-" + d.strftime("%Y%m%d") +
-                "-biarritz-" + "-".join(slug(n) for n in names))
-    if len(event_id) > 150:
-        raise ValueError("Atabal: identifiant concert trop long")
+    event_id = concert_id(d, names)
     if any(e.get("id") == event_id or
            (e.get("date") == d.isoformat() and e.get("venueId") == VENUE
             and set(e.get("artistIds", [])) & set(ids)) or
