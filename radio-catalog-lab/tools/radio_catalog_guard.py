@@ -167,6 +167,8 @@ def validate_catalog(document, *, mode="staging", previous=None):
         if mode == "publish" and state == "active":
             if decision != "approved":
                 issues.append(prefix + " active station not approved for publication")
+            if not isinstance(editorial.get("reviewed_at"), str) or not editorial["reviewed_at"].strip():
+                issues.append(prefix + " missing editorial review timestamp")
             if verified < 1:
                 issues.append(prefix + " active station has no verified stream")
 
