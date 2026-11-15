@@ -42,6 +42,8 @@ def web_sources():
         SPEC["dates_url"]: "Le MozHell Open Air revient les 23, 24 et 25 juillet 2027 à Insming",
         SPEC["lineup_url"]: "MozHell 2027 Ultra Vomit THE ARRS LocoMuerte",
         SPEC["organizer_url"]: "L'Association MOZHELL PROD présente le festival",
+        SPEC["locality_url"]: "Le festival se déroulera au cœur du village d'Insming les 23 24 et 25 juillet 2027.",
+        SPEC["press_url"]: "MozHell Open Air 2027 trois premiers groupes Ultra Vomit THE ARRS LocoMuerte du 23 au 25 juillet à Insming",
     }
 
 
@@ -69,6 +71,43 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertIn("independent_date_confirmation", row["missing_checks"])
         self.assertNotIn("venue", row["verified_fields_private"])
         self.assertNotIn("lat", row["verified_fields_private"])
+
+    def test_village_location_and_press_agreement_not_independent(self):
+        row = self.run_review()["dossiers"][0]
+        self.assertEqual(row["crosschecks_private"]["organizer_2027_locality"],
+                         "INSMING_VILLAGE_ONLY")
+        self.assertEqual(row["crosschecks_private"]["press_agreement"],
+                         "SAME_CLAIMS_PROVENANCE_UNVERIFIED")
+        self.assertFalse(row["crosschecks_private"]["exact_2027_venue_verified"])
+        self.assertFalse(row["crosschecks_private"]["press_independence_verified"])
+        self.assertIn("independent_date_confirmation", row["missing_checks"])
+        self.assertIn("edition_2027_venue_confirmation", row["missing_checks"])
+        self.assertNotIn("lat", row["verified_fields_private"])
+        self.assertFalse(row["publication_authorized"])
+
+    def test_old_year_locality_does_not_certify_venue(self):
+        pages = web_sources()
+        pages[SPEC["locality_url"]] = "au cœur du village d'Insming 24 25 et 26 juillet 2026"
+        row = self.run_review(sources=pages)["dossiers"][0]
+        self.assertEqual(row["crosschecks_private"]["organizer_2027_locality"],
+                         "CLAIM_NOT_RECONFIRMED")
+        self.assertFalse(row["crosschecks_private"]["exact_2027_venue_verified"])
+
+    def test_press_unavailable_does_not_erase_confirmed_first_party(self):
+        pages = web_sources()
+        del pages[SPEC["press_url"]]
+        row = self.run_review(sources=pages)["dossiers"][0]
+        self.assertEqual(row["status"], "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE")
+        self.assertEqual(row["crosschecks_private"]["press_agreement"], "SOURCE_UNAVAILABLE")
+        self.assertFalse(row["safe_to_publish"])
+        self.assertEqual(row["verified_fields_private"]["bands"], 3)
+
+    def test_press_looks_independent_but_is_never_treated_as_such(self):
+        pages = web_sources()
+        pages[SPEC["press_url"]] = ("Enquête exclusive: " + pages[SPEC["press_url"]])
+        row = self.run_review(sources=pages)["dossiers"][0]
+        self.assertFalse(row["crosschecks_private"]["press_independence_verified"])
+        self.assertFalse(row["publication_authorized"])
 
     def test_old_year_is_not_a_future_confirmation(self):
         source = web_sources()
