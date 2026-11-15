@@ -1,0 +1,35 @@
+name: "Grosses Ondes — Dart central catalog client isolated tests"
+
+on:
+  push:
+    branches:
+      - audit/radio-catalog-contract-ci-20261115
+    paths:
+      - "radio-catalog-lab/dart/**"
+      - ".github/workflows/radio-catalog-client-dart-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "go-radio-dart-isolated-test"
+  cancel-in-progress: true
+
+jobs:
+  dart-core:
+    name: "Dart verifier/store/client, no deployment"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: radio-catalog-lab/dart
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: "Analyze isolated generic Dart sources"
+        run: dart analyze --fatal-infos
+      - name: "Run deterministic signed-catalog and offline tests"
+        run: dart test --reporter expanded
