@@ -232,6 +232,22 @@ VENUES = [
         "official": "https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125",
         "geo_source": "https://mapcarta.com/fr/W125054083",
     },
+    {
+        # CINOR public library network: 1 allee des Pierres de Lune,
+        # 97400 Saint-Denis, Reunion; same building on OSM way 543425791.
+        # https://lecturepublique.cinor.org/cms/www.main.cls?surl=reseau-horaires
+        # https://mapcarta.com/fr/W543425791
+        # OpenAgenda's CINOR programme names this venue but each individual
+        # child session must still pass all independent publication checks.
+        "city": "Saint-Denis",
+        "aliases": [
+            "Bibliothèque Intercommunale Alain Lorraine",
+            "Bibliothèque Alain Lorraine",
+        ],
+        "lat": -20.89270, "lng": 55.45130,
+        "official": "https://lecturepublique.cinor.org/cms/www.main.cls?surl=reseau-horaires",
+        "geo_source": "https://mapcarta.com/fr/W543425791",
+    },
 ]
 
 def verified_location(event):
