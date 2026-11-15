@@ -691,6 +691,54 @@ void main() {
         throwsA(isA<CentralCatalogException>()));
   });
 
+
+  test('signed pointer and nested stations are immutable after validation', () async {
+    final verified = await validatePayload(jsonBytes(catalog([station(1)])));
+    expect(
+      () => verified.pointer.raw['release_sequence'] = 500,
+      throwsA(isA<UnsupportedError>()),
+    );
+    expect(
+      () => (verified.pointer.raw['signature'] as Map<String, dynamic>)['key_id'] = 'forged',
+      throwsA(isA<UnsupportedError>()),
+    );
+    final stationRecord = verified.stations.first;
+    expect(
+      () => (stationRecord['status'] as Map<String, dynamic>)['state'] = 'retired',
+      throwsA(isA<UnsupportedError>()),
+    );
+    expect(
+      () => ((stationRecord['streams'] as List).first as Map<String, dynamic>)['url'] =
+          'https://example.org/forged.mp3',
+      throwsA(isA<UnsupportedError>()),
+    );
+  });
+
+  test('stations cannot disagree on dimensions for the same logo SHA', () async {
+    final a = station(1);
+    final b = station(2);
+    final digest = List.filled(64, 'a').join();
+    final descriptor = <String, dynamic>{
+      'asset_id': 'sha256:$digest',
+      'revision': 1,
+      'url': 'https://example.org/official.png',
+      'sha256': digest,
+      'byte_size': 256,
+      'width': 512,
+      'height': 512,
+      'mime_type': 'image/png',
+    };
+    a['logo'] = descriptor;
+    b['logo'] = {...descriptor, 'width': 1024};
+    await expectLater(
+      validatePayload(jsonBytes(catalog([a, b]))),
+      throwsA(isA<CentralCatalogException>()),
+    );
+    b['logo'] = {...descriptor, 'revision': 2, 'url': 'https://example.org/new.png'};
+    final valid = await validatePayload(jsonBytes(catalog([a, b])));
+    expect(valid.stations.length, 2);
+  });
+
   test('untrusted key prevents even the catalog HTTP request', () async {
     final tmp = await Directory.systemTemp.createTemp('go-radio-dart-fail-');
     try {
