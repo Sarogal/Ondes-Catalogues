@@ -152,7 +152,7 @@ class CentralLogoAssetStore {
     final pending = _inFlight[target.sha256];
     if (pending != null) {
       await pending;
-      return findVerified(target);
+      return await findVerified(target);
     }
 
     File? temporary;
@@ -181,10 +181,10 @@ class CentralLogoAssetStore {
       await temporary.create(exclusive: true);
       await temporary.writeAsBytes(bytes, flush: true);
       if (await destination.exists()) {
-        return findVerified(target);
+        return await findVerified(target);
       }
       await temporary.rename(destination.path);
-      return findVerified(target);
+      return await findVerified(target);
     } catch (_) {
       return null;
     } finally {
