@@ -198,7 +198,7 @@ class LaiterieMultiTests(unittest.TestCase):
         c["artists"] = c["artists"][:1]
         approved = verifier.verify(candidate(), TWO, c, TODAY)
         self.assertEqual(approved["newArtists"],
-                         [{"id": "7weeks", "name": "7Weeks"}])
+                         [{"id": "7weeks", "name": "7WEEKS"}])
         public, added = publisher.validate_approval(
             approved, {v["id"]: v for v in c["venues"]},
             {a["id"]: a for a in c["artists"]}, TODAY)
