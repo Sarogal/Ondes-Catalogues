@@ -108,4 +108,50 @@ void main() {
       await temp.delete(recursive: true);
     }
   });
+
+  test('real PNG migrates from old URL cache with no HTTP or source mutation', () async {
+    final raw = await _realPng();
+    final temp = await Directory.systemTemp.createTemp('go-flutter-legacy-real-');
+    try {
+      final old = File('${temp.path}/old-v64-logo.img');
+      await old.writeAsBytes(raw, flush: true);
+      final descriptor = CentralLogoDescriptor(
+        sha256: crypto.sha256.convert(raw).toString(),
+        byteSize: raw.length,
+        revision: 2,
+        url: 'https://example.org/new-asset.png',
+        width: 3,
+        height: 4,
+        mimeType: 'image/png',
+      );
+      final store = CentralLogoAssetStore(
+        directory: Directory('${temp.path}/central'),
+        decoder: decodeCentralFlutterLogo,
+      );
+      final migrated = await store.importVerifiedLegacyFile(
+        target: descriptor,
+        source: old,
+      );
+      expect(migrated, isNotNull);
+      expect(migrated!.path, isNot(old.path));
+      expect(await old.readAsBytes(), raw);
+      var attempts = 0;
+      final second = CentralLogoAssetStore(
+        directory: Directory('${temp.path}/central'),
+        decoder: decodeCentralFlutterLogo,
+      );
+      final result = await second.ensure(
+        target: descriptor,
+        fetch: (uri, size) async {
+          attempts++;
+          return raw;
+        },
+      );
+      expect(result.status, CentralLogoCacheStatus.cacheHit);
+      expect(attempts, 0);
+    } finally {
+      await temp.delete(recursive: true);
+    }
+  });
+
 }
