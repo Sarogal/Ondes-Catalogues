@@ -49,6 +49,12 @@ class GuardContractTest(unittest.TestCase):
         self.assertTrue(any("no verified stream" in e for e in errors))
         self.assertEqual(validate_catalog(catalog(station(approved=True, verified=True)), mode="publish"), [])
 
+    def test_approved_stations_require_actual_review_date(self):
+        s = station(approved=True, verified=True)
+        s["editorial"]["reviewed_at"] = None
+        self.assertTrue(any("missing editorial review timestamp" in e
+                            for e in validate_catalog(catalog(s), mode="publish")))
+
     def test_collision_between_two_station_aliases_is_blocked(self):
         first = station()
         second = station(goid="go-station-000002")
