@@ -176,7 +176,7 @@ def build_review(editorial, published, history, today, fetcher=None):
         try:
             locality = normalized(fetch(spec["locality_url"]))
             entry["checked_official_urls"].append(spec["locality_url"])
-            if (normalized("au coeur du village d'Insming") in locality
+            if (normalized("au cœur du village d'Insming") in locality
                     and normalized("23 24 et 25 juillet 2027") in locality):
                 crosscheck["organizer_2027_locality"] = "INSMING_VILLAGE_ONLY"
             else:
