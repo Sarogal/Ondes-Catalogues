@@ -145,7 +145,7 @@ def confirmed_bill(title):
     unknown = norm(parts[-1]) if len(parts) >= 2 else None
     if unknown in UNANNOUNCED_SUPPORT:
         named = parts[:-1]
-        if (not 1 <= len(named) <= 4
+        if (not named
                 or len({norm(x) for x in named}) != len(named)
                 or any(len(norm(x)) < 3 or BANNED.search(norm(x))
                        for x in named)):
@@ -308,8 +308,6 @@ def verify(candidate, page, catalogue, today):
     if len(set(ids)) != len(ids):
         raise ValueError("Identités d'artistes en collision")
     if absent:
-        if len(new_artists) > 2:
-            raise ValueError("Artiste absent ou ambigu dans le catalogue Molotov")
         try:
             profile_counts = verified_new_artists(page, parts, absent)
         except ValueError as ex:
