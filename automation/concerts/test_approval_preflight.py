@@ -1,7 +1,12 @@
 """Offline fail-closed tests: private approval preflight never publishes by itself."""
 import copy
 import datetime as dt
+import json
+import tempfile
+import types
 from pathlib import Path
+from unittest.mock import patch
+from zoneinfo import ZoneInfo
 import sys
 import unittest
 
@@ -69,6 +74,117 @@ class PreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "held or modified"):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, hold)
+
+    def test_private_failure_identifies_the_blocked_event_and_publisher_reason(self):
+        def hold(reference, current, approvals, today):
+            return copy.deepcopy(current), {
+                "newEvents": 0,
+                "held": [{
+                    "candidateId": event()["id"],
+                    "reason": "Official genre not independently confirmed",
+                }],
+            }
+        with self.assertRaises(gate.PublisherRejections) as context:
+            gate.validate_proposal(
+                self.before, self.after, {}, self.catalogue, TODAY, hold)
+        self.assertEqual(context.exception.rejections, [{
+            "eventId": event()["id"],
+            "publisherResult": "not emitted by publisher",
+            "changedFields": [],
+            "publisherReason": "Official genre not independently confirmed",
+        }])
+        self.assertIn("go-c-20270401-example", str(context.exception))
+        self.assertNotIn("official.example", str(context.exception))
+
+    def test_private_failure_lists_only_differing_field_names(self):
+        def changed(reference, current, approvals, today):
+            return {"events": [{**event(), "date": "2027-04-02"}]}, {
+                "newEvents": 1, "held": []
+            }
+        with self.assertRaises(gate.PublisherRejections) as context:
+            gate.validate_proposal(
+                self.before, self.after, {}, self.catalogue, TODAY, changed)
+        self.assertEqual(context.exception.rejections, [{
+            "eventId": event()["id"],
+            "publisherResult": "changed fields: date",
+            "changedFields": ["date"],
+            "publisherReason": None,
+        }])
+        self.assertNotIn("2027-04-02", str(context.exception))
+
+    def test_collects_all_publisher_rejections_without_partial_approval(self):
+        proposed = copy.deepcopy(self.after)
+        additional = row("go-c-20270402-second")
+        additional["event"]["date"] = "2027-04-02"
+        additional["event"]["officialUrl"] = "https://example.org/agenda/second"
+        additional["officialEvidence"][0]["url"] = "https://example.org/agenda/second"
+        proposed["approvals"].append(additional)
+        before = copy.deepcopy(proposed)
+        def hold_all(reference, current, approvals, today):
+            return copy.deepcopy(current), {"newEvents": 0, "held": [
+                {"candidateId": event()["id"],
+                 "reason": "No official rock genre"},
+                {"candidateId": "go-c-20270402-second",
+                 "reason": "Guest \nnot named"},
+            ]}
+        with self.assertRaises(gate.PublisherRejections) as context:
+            gate.validate_proposal(self.before, proposed, {}, self.catalogue,
+                                   TODAY, hold_all)
+        rejected = context.exception.rejections
+        self.assertEqual([row["eventId"] for row in rejected],
+                         [event()["id"], "go-c-20270402-second"])
+        self.assertEqual([row["publisherReason"] for row in rejected],
+                         ["No official rock genre", "Guest  not named"])
+        self.assertEqual(proposed, before)
+
+    def test_blocked_main_persists_private_diagnostics_without_approval_write(self):
+        today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
+        previous = prior()
+        proposed = copy.deepcopy(previous)
+        proposed_row = row()
+        proposed_row["reviewedAt"] = today.isoformat()
+        proposed["approvals"].append(proposed_row)
+
+        def real_publisher_refuses(reference, current, approvals, as_of):
+            self.assertEqual(as_of, today)
+            return copy.deepcopy(current), {"newEvents": 0, "held": [
+                {"candidateId": event()["id"],
+                 "reason": "Genre non confirmé sur détail officiel"}
+            ]}
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before, candidate, reference, catalogue, report = (
+                root / name for name in
+                ("approved.json", "proposed.json", "reference.json",
+                 "catalogue.json", "approval-preflight.json"))
+            for filename, data in (
+                (before, previous), (candidate, proposed),
+                (reference, {"events": []}), (catalogue, {"events": []})):
+                filename.write_text(
+                    json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            argv = ["approval_preflight.py", "--before", str(before),
+                    "--candidate", str(candidate), "--reference",
+                    str(reference), "--catalogue", str(catalogue),
+                    "--report", str(report), "--apply"]
+            with patch("sys.argv", argv), patch.dict(
+                    sys.modules, {
+                        "concerts_cloud_sync": types.SimpleNamespace(
+                            merge=real_publisher_refuses)}):
+                with self.assertRaises(gate.PublisherRejections):
+                    gate.main()
+            self.assertEqual(json.loads(before.read_text(encoding="utf-8")),
+                             previous)
+            saved = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(saved["status"], "blocked")
+            self.assertIs(saved["applied"], False)
+            self.assertIs(saved["validatedByPublisher"], False)
+            self.assertEqual(len(saved["rejected"]), 1)
+            self.assertEqual(saved["rejected"][0]["eventId"], event()["id"])
+            self.assertIn("Genre non confirmé",
+                          saved["rejected"][0]["publisherReason"])
+            self.assertNotIn("https://", str(saved["rejected"]))
+            self.assertFalse((root / ".approved-preflight.json").exists())
 
     def test_publisher_cannot_silently_change_event_fields(self):
         def change(reference, current, approvals, today):
