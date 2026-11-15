@@ -223,7 +223,23 @@ class CentralCatalogVerifier {
       if (item['display_name'] is! String ||
           (item['display_name'] as String).trim().isEmpty ||
           (country != null && (country is! String ||
-              !RegExp(r'^[A-Z]{2}
+              !RegExp(r'^[A-Z]{2}$').hasMatch(country))) ||
+          genres.isEmpty ||
+          genres.any((g) => g is! String || (g as String).trim().isEmpty ||
+              !uniqueGenres.add(g))) {
+        throw const CentralCatalogException('Invalid station identity');
+      }
+      if (item['homepage'] != null &&
+          !_safePublicUrl(item['homepage'], allowHttp: true)) {
+        throw const CentralCatalogException('Invalid station homepage');
+      }
+      if (item.containsKey('tags')) {
+        final tags = _list(item['tags'], 'tags');
+        if (tags.any((t) => t is! String || t.trim().isEmpty) ||
+            tags.toSet().length != tags.length) {
+          throw const CentralCatalogException('Invalid station tags');
+        }
+      }
       final status = _object(item['status'], 'status');
       final state = status['state'];
       if (status['changed_at'] is! String ||
@@ -304,176 +320,6 @@ class CentralCatalogVerifier {
           item['retired_at'] is! String ||
           DateTime.tryParse(item['retired_at'] as String) == null) {
         throw const CentralCatalogException('Missing retirement reason or date');
-      }
-    }
-
-    if (previous != null) {
-      if (!goIds.containsAll(previous.goIds)) {
-        throw const CentralCatalogException('Historical GO identity lost');
-      }
-      for (final entry in previous.aliasOwners.entries) {
-        if (aliases[entry.key] != entry.value) {
-          throw const CentralCatalogException('Historical alias lost or reassigned');
-        }
-      }
-      final lost = previous.activeIds.difference(active).length;
-      if (previous.activeIds.length >= 200 && lost >= 25 &&
-          lost * 100 >= previous.activeIds.length * 12) {
-        throw const CentralCatalogException('Bulk active station shrink');
-      }
-    }
-
-    return ValidatedCentralCatalog(
-        pointer, Uint8List.fromList(pointerBytes),
-        Uint8List.fromList(catalogBytes),
-        List<Map<String, dynamic>>.unmodifiable(stations),
-        Map<String, String>.unmodifiable(aliases),
-        Set<String>.unmodifiable(goIds),
-        Set<String>.unmodifiable(active));
-  }
-
-  static Map<String, dynamic> _object(dynamic value, String label) {
-    if (value is! Map<String, dynamic>) {
-      throw CentralCatalogException('$label must be an object');
-    }
-    return value;
-  }
-
-  static List<dynamic> _list(dynamic value, String label) {
-    if (value is! List) {
-      throw CentralCatalogException('$label must be a list');
-    }
-    return value;
-  }
-
-  static String _goStationId(Map<String, dynamic> item, Set<String> seen) {
-    final id = item['go_station_id'];
-    if (id is! String || !_goId.hasMatch(id) || !seen.add(id)) {
-      throw const CentralCatalogException('Duplicate or invalid permanent station ID');
-    }
-    return id;
-  }
-
-  static Set<String> _aliases(dynamic raw, String label) {
-    final values = _list(raw, label);
-    final result = <String>{};
-    for (final value in values) {
-      if (value is! String || value.trim().isEmpty || !result.add(value)) {
-        throw const CentralCatalogException('Duplicate or invalid legacy alias');
-      }
-    }
-    return result;
-  }
-
-  static void _assignAliases(
-      Map<String, String> aliases, String owner, Set<String> keys) {
-    for (final id in keys) {
-      if (aliases.containsKey(id) && aliases[id] != owner) {
-        throw const CentralCatalogException('Legacy alias reassignment');
-      }
-      aliases[id] = owner;
-    }
-  }
-
-  static bool _safePublicUrl(dynamic raw, {required bool allowHttp}) {
-    if (raw is! String) return false;
-    final uri = Uri.tryParse(raw);
-    if (uri == null || !uri.hasAuthority || uri.host.isEmpty ||
-        uri.userInfo.isNotEmpty || uri.hasFragment ||
-        !(uri.scheme == 'https' || (allowHttp && uri.scheme == 'http'))) {
-      return false;
-    }
-    final h = uri.host.toLowerCase().replaceAll(RegExp(r'\.$'), '');
-    if (h == 'localhost' || h.endsWith('.local') ||
-        h.endsWith('.internal') || !h.contains('.') ||
-        h.contains(':') ||
-        RegExp(r'^[0-9.]+$').hasMatch(h)) {
-      return false;
-    }
-    return true;
-  }
-}
-).hasMatch(country))) ||
-          genres.isEmpty ||
-          genres.any((g) => g is! String || (g as String).trim().isEmpty ||
-              !uniqueGenres.add(g))) {
-        throw const CentralCatalogException('Invalid station identity');
-      }
-      if (item['homepage'] != null &&
-          !_safePublicUrl(item['homepage'], allowHttp: true)) {
-        throw const CentralCatalogException('Invalid station homepage');
-      }
-      if (item.containsKey('tags')) {
-        final tags = _list(item['tags'], 'tags');
-        if (tags.any((t) => t is! String || t.trim().isEmpty) ||
-            tags.toSet().length != tags.length) {
-          throw const CentralCatalogException('Invalid station tags');
-        }
-      }
-      final status = _object(item['status'], 'status');
-      final state = status['state'];
-      if (!{'active', 'quarantined', 'retired'}.contains(state)) {
-        throw const CentralCatalogException('Invalid station status');
-      }
-      final editorial = _object(item['editorial'], 'editorial');
-      if (editorial['admission_state'] != 'approved' ||
-          editorial['reviewed_at'] is! String ||
-          DateTime.tryParse(editorial['reviewed_at'] as String) == null) {
-        throw const CentralCatalogException('Unreviewed catalog entry');
-      }
-      if (state != 'active' &&
-          (status['reason_code'] is! String ||
-              (status['reason_code'] as String).trim().isEmpty)) {
-        throw const CentralCatalogException('Unexplained station suspension');
-      }
-      final streams = _list(item['streams'], 'streams');
-      final streamIds = <String>{};
-      final priorities = <int>{};
-      var verified = 0;
-      for (final rawStream in streams) {
-        final stream = _object(rawStream, 'stream');
-        final streamId = stream['stream_id'];
-        final priority = stream['priority'];
-        final url = stream['url'];
-        final stateName = stream['state'];
-        if (streamId is! String || streamId.isEmpty ||
-            !streamIds.add(streamId) ||
-            priority is! int || priority < 0 || !priorities.add(priority) ||
-            !_safePublicUrl(url, allowHttp: true) ||
-            Uri.parse(url as String).scheme != stream['protocol'] ||
-            !{'candidate', 'candidate_verified', 'verified',
-                'suspected_unavailable', 'disabled'}.contains(stateName)) {
-          throw const CentralCatalogException('Invalid stream');
-        }
-        if (stateName == 'verified') verified++;
-      }
-      if (state == 'active') {
-        active.add(id);
-        if (verified == 0) {
-          throw const CentralCatalogException('Active station lacks verified stream');
-        }
-      }
-      final logo = item['logo'];
-      if (logo != null) {
-        final l = _object(logo, 'logo');
-        final digest = l['sha256'];
-        if (digest is! String || !_sha.hasMatch(digest) ||
-            l['asset_id'] != 'sha256:$digest' ||
-            !_safePublicUrl(l['url'], allowHttp: false) ||
-            l['byte_size'] is! int || (l['byte_size'] as int) < 1 ||
-            (l['byte_size'] as int) > 8 * 1024 * 1024) {
-          throw const CentralCatalogException('Invalid logo metadata');
-        }
-      }
-      stations.add(item);
-    }
-    for (final raw in tombstones) {
-      final item = _object(raw, 'tombstone');
-      final id = _goStationId(item, goIds);
-      _assignAliases(aliases, id, _aliases(item['legacy_aliases'], 'tombstone.aliases'));
-      if (item['reason_code'] is! String ||
-          (item['reason_code'] as String).trim().isEmpty) {
-        throw const CentralCatalogException('Missing retirement reason');
       }
     }
 
