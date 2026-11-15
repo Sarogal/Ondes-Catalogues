@@ -217,6 +217,21 @@ VENUES = [
         "official": "https://paul-b.fr/infos-pratiques/",
         "geo_source": "https://mapcarta.com/fr/W70691345",
     },
+    {
+        # BnF Catalogue collectif de France: Mediatheque Raoul Georges Nicolo,
+        # Boulevard Amedee Clara, 97190 Le Gosier (Guadeloupe).
+        # https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125
+        # Official municipal programme independently names the same library:
+        # https://www.villedugosier.fr/actualites/evenement/programme-des-animations-du-mois-de-la-mediatheque-raoul-georges-nicolo?date_event=2026-11-04
+        # OSM way 125054083: exact named library building, amenity=library.
+        # https://mapcarta.com/fr/W125054083
+        # GPS proves this building only, NEVER a specific children's session.
+        "city": "Le Gosier",
+        "aliases": ["Médiathèque Raoul Georges Nicolo"],
+        "lat": 16.20547, "lng": -61.48950,
+        "official": "https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125",
+        "geo_source": "https://mapcarta.com/fr/W125054083",
+    },
 ]
 
 def verified_location(event):
