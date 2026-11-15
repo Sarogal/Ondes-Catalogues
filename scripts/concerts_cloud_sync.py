@@ -4291,8 +4291,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 for x in ids),
             "Artistes non identifiés")
     new_artists = approval.get("newArtists") or []
-    require(isinstance(new_artists, list) and len(new_artists) <= 15,
-            "Trop d'artistes nouveaux")
+    # A new artist is accepted only when included in the approved event bill.
+    # Do not cap the number of documented first-party artists per event.
+    require(isinstance(new_artists, list) and len(new_artists) <= len(ids),
+            "Artistes nouveaux non liés au plateau approuvé")
     added = {}
     for artist in new_artists:
         aid = artist.get("id")
@@ -4316,7 +4318,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(proof is not None, "Backstage : preuve officielle absente")
         names = proof.get("officialArtistNames")
         require(isinstance(names, list) and len(names) == len(ids)
-                and 1 <= len(names) <= 5
+                and bool(names)
                 and all(isinstance(name, str) and 3 <= len(norm(name)) <= 100
                         for name in names)
                 and len({norm(name) for name in names}) == len(names)
@@ -4338,11 +4340,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                    for a in known_artist_ids.values()
                    for alias in a.get("aliases", [])
                    if isinstance(alias, str)}
-        # A first-party bill can contain up to five verified bands, all new
-        # to the catalogue (e.g. BLACKGOLD + SUMO CYCO + HYRO THE HERO).
-        # Every proposed new artist MUST be in the verified bill: never
-        # create unrelated or fabricated artists through an approval.
-        require(len(added) <= len(names) <= 5
+        # Every new artist must belong to the exact verified first-party bill.
+        # A headlining tour or a large multi-band night can introduce any
+        # number of names as long as each one is individually identified.
+        require(len(added) <= len(names)
             and set(added).issubset(set(ids))
             and all(
                 norm(a["name"]) not in existing | aliases
@@ -6225,7 +6226,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Backstage auto : date, genre, lieu ou origine non attestés")
             names = proof.get("officialArtistNames")
             displayed = re.split(r"\s+\+\s+", event.get("title", ""))
-            require(isinstance(names, list) and 1 <= len(names) <= 5
+            require(isinstance(names, list) and bool(names)
                     and all(isinstance(n, str) and len(norm(n)) >= 3 for n in names)
                     and len({norm(n) for n in names}) == len(names)
                     and len(displayed) == len(names)
