@@ -3981,8 +3981,12 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    # An official bill has one independently identified artist per slot.
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -4932,7 +4936,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
           and reviewer == "automated-official-recheck"):
         require(laiterie_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "La Laiterie"
-                and 1 <= len(ids) <= 4
+                and bool(ids)
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "La Laiterie automatique : concert hors périmètre")
         proof = evidence[0]
@@ -4958,7 +4962,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         "artiste surprise", "premiere partie", "1ere partie",
                         "1re partie", "support", "a confirmer", "tba",
                     }
-                    and len(new_artists) <= 1
+                    and len(new_artists) <= len(ids)
                     and proof.get("verifiedNewArtists") ==
                         [a["name"] for a in new_artists],
                     "La Laiterie : invité annoncé ou artiste nouveau non corroboré")
@@ -4972,9 +4976,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 for artist in new_artists),
                 "La Laiterie : artiste nouveau en conflit avec une identité existante")
         else:
-            require(new_artists == []
-                    and proof.get("unannouncedSupportLabel") is None
-                    and proof.get("verifiedNewArtists") is None,
+            # Historical pre-upgrade, known-only proofs omitted this field.
+            # New proofs must pin the complete list of new named artists.
+            legacy_known_only = (not new_artists and
+                                 proof.get("verifiedNewArtists") is None)
+            require(proof.get("unannouncedSupportLabel") is None
+                    and (legacy_known_only or
+                         proof.get("verifiedNewArtists") ==
+                             [a["name"] for a in new_artists]),
                     "La Laiterie : nouveaux artistes non corroborés")
             if len(ids) == 1:
                 require(structure ==
