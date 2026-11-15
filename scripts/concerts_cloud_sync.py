@@ -4338,10 +4338,16 @@ def validate_approval(approval, venues, known_artist_ids, today):
                    for a in known_artist_ids.values()
                    for alias in a.get("aliases", [])
                    if isinstance(alias, str)}
-        require(len(added) <= 2 and all(
-            norm(a["name"]) not in existing | aliases
-            and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
-            for a in new_artists),
+        # A first-party bill can contain up to five verified bands, all new
+        # to the catalogue (e.g. BLACKGOLD + SUMO CYCO + HYRO THE HERO).
+        # Every proposed new artist MUST be in the verified bill: never
+        # create unrelated or fabricated artists through an approval.
+        require(len(added) <= len(names) <= 5
+            and set(added).issubset(set(ids))
+            and all(
+                norm(a["name"]) not in existing | aliases
+                and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                for a in new_artists),
             "Backstage : nouveau nom en collision ou non identifié")
     if reviewer == "automated-official-recheck" and ferrailleur:
         proof = next((item for item in evidence if isinstance(item,dict)
