@@ -1,0 +1,64 @@
+name: "Grosses Ondes — catalogue radio, tests de contrat isolés"
+
+on:
+  push:
+    branches:
+      - audit/radio-catalog-contract-ci-20261115
+    paths:
+      - "radio-catalog-lab/**"
+      - ".github/workflows/radio-catalog-contract-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: radio-catalog-contract-audit
+  cancel-in-progress: true
+
+jobs:
+  contract-tests-only:
+    name: "Python et JSON Schema, aucun déploiement"
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: "Installer uniquement la bibliothèque de validation JSON Schema"
+        run: python -m pip install --disable-pip-version-check "jsonschema==4.23.0"
+      - name: "Tests unitaires prédiagnostic et intégrité du catalogue"
+        run: python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_*.py" -v
+      - name: "JSON Schema validité et fixtures de synthèse"
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import sys
+          from jsonschema import Draft202012Validator, FormatChecker, ValidationError
+          sys.path.insert(0, "radio-catalog-lab/tools")
+          from test_radio_catalog_guard import station, catalog
+          root = Path("radio-catalog-lab/schemas")
+          schema = json.loads((root/"radio_catalog_v1.schema.json").read_text())
+          pointer_schema = json.loads((root/"radio_catalog_pointer_v1.schema.json").read_text())
+          for s in (schema,pointer_schema):
+              Draft202012Validator.check_schema(s)
+          Draft202012Validator(schema,format_checker=FormatChecker()).validate(catalog(station()))
+          try:
+              Draft202012Validator(schema).validate(dict(catalog(station()), schema_version=99))
+          except ValidationError:
+              pass
+          else:
+              raise AssertionError("schema_version=99 must be rejected")
+          import hashlib
+          blob = json.dumps(catalog(station()),sort_keys=True).encode()
+          digest = hashlib.sha256(blob).hexdigest()
+          pointer = {
+              "schema_version":1,"catalog_id":"grosses-ondes-radio",
+              "release_sequence":1,"published_at":"2026-11-15T09:00:00Z",
+              "content_sha256":digest, "content_length":len(blob),
+              "content_path":f"releases/{digest}.json"
+          }
+          Draft202012Validator(pointer_schema,format_checker=FormatChecker()).validate(pointer)
+          print("Two v1 JSON schemas valid; synthetic good/bad fixtures checked")
+          PY
