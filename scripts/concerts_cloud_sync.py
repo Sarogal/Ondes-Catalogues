@@ -11,6 +11,7 @@ import argparse
 import base64
 import copy
 import datetime as dt
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -3981,8 +3982,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -5614,7 +5618,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             proof = evidence[0]
             names = proof.get("officialArtistNames")
             require(isinstance(names, list) and
-                    3 <= len(names) <= 4 and
+                    len(names) >= 2 and
                     all(isinstance(n, str) and
                         3 <= len(norm(n)) <= 100 for n in names) and
                     len({norm(n) for n in names}) == len(names),
@@ -5641,10 +5645,22 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         ["Heavy Metal"], ["Grindcore"], ["Stoner"],
                         ["Doom"], ["Thrash"]),
                     "Atabal multi : affiche, genre, heure ou statut non approuvés")
+            # The verifier and this publisher independently compute the
+            # same short ID for legacy bills and a deterministic digest for
+            # long, individually signed 10/20-artist programmes.
+            normalized_slugs = [
+                norm(n).replace(" ", "-")[:72].strip("-")
+                for n in names
+            ]
             expected_id = ("go-c-" + url_day.strftime("%Y%m%d") +
-                           "-biarritz-" + "-".join(
-                               norm(n).replace(" ", "-")[:72].strip("-")
-                               for n in names))
+                           "-biarritz-" + "-".join(normalized_slugs))
+            if len(expected_id) > 150:
+                digest = hashlib.sha256(
+                    "|".join(normalized_slugs).encode("utf-8")
+                ).hexdigest()[:20]
+                expected_id = ("go-c-" + url_day.strftime("%Y%m%d") +
+                               "-biarritz-" + normalized_slugs[0] +
+                               "-bill-" + digest)
             require(event_id == expected_id and len(ids) == len(names),
                     "Atabal multi : ID d'affiche ou nombre d'artistes divergent")
             resolved = dict(known_artist_ids)
