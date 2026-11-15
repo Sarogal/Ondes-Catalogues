@@ -118,5 +118,58 @@ class GuardContractTest(unittest.TestCase):
                             for e in validate_catalog(same, mode="publish", previous=prev)))
 
 
+    def test_quarantine_requires_human_review_and_reason_in_publish(self):
+        s = station(approved=False, verified=True)
+        s["status"]["state"] = "quarantined"
+        issues = validate_catalog(catalog(s), mode="publish")
+        self.assertTrue(any("not editorially approved" in e for e in issues))
+        self.assertTrue(any("missing status reason" in e for e in issues))
+        s["editorial"]["admission_state"] = "approved"
+        s["status"]["reason_code"] = "verified_manual_quarantine"
+        self.assertEqual(validate_catalog(catalog(s), mode="publish"), [])
+
+    def test_retired_station_requires_review_date(self):
+        s = station(approved=True, verified=False)
+        s["status"]["state"] = "retired"
+        s["status"]["reason_code"] = "editorial_retirement"
+        s["editorial"]["reviewed_at"] = None
+        self.assertTrue(any("missing editorial review timestamp" in e
+                            for e in validate_catalog(catalog(s), mode="publish")))
+
+    def test_invalid_editorial_object_fails_closed_without_crash(self):
+        s = station(approved=False, verified=True)
+        s["editorial"] = None
+        issues = validate_catalog(catalog(s), mode="publish")
+        self.assertTrue(any("invalid editorial approval state" in e for e in issues))
+        self.assertTrue(any("not approved" in e for e in issues))
+
+    def test_bulk_shrink_blocked_even_when_each_retirement_approved(self):
+        prior_stations = [
+            station(f"go-station-{i:06d}", f"synthetic-alias-{i}", approved=True, verified=True)
+            for i in range(1, 251)
+        ]
+        before = catalog(*prior_stations, sequence=3)
+        next_stations = copy.deepcopy(prior_stations)
+        for s in next_stations[:40]:
+            s["status"]["state"] = "retired"
+            s["status"]["reason_code"] = "editorial_retirement"
+        after = catalog(*next_stations, sequence=4)
+        issues = validate_catalog(after, mode="publish", previous=before)
+        self.assertTrue(any("bulk station shrink" in e for e in issues))
+
+    def test_small_reviewed_retirement_does_not_trigger_bulk_guard(self):
+        prior_stations = [
+            station(f"go-station-{i:06d}", f"synthetic-alias-{i}", approved=True, verified=True)
+            for i in range(1, 211)
+        ]
+        before = catalog(*prior_stations, sequence=1)
+        updated = copy.deepcopy(prior_stations)
+        for s in updated[:10]:
+            s["status"]["state"] = "retired"
+            s["status"]["reason_code"] = "editorial_retirement"
+        after = catalog(*updated, sequence=2)
+        self.assertEqual(validate_catalog(after, mode="publish", previous=before), [])
+
+
 if __name__ == "__main__":
     unittest.main()
