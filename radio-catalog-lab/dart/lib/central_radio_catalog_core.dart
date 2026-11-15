@@ -225,7 +225,7 @@ class CentralCatalogVerifier {
           (country != null && (country is! String ||
               !RegExp(r'^[A-Z]{2}$').hasMatch(country))) ||
           genres.isEmpty ||
-          genres.any((g) => g is! String || (g as String).trim().isEmpty ||
+          genres.any((g) => g is! String || g.trim().isEmpty ||
               !uniqueGenres.add(g))) {
         throw const CentralCatalogException('Invalid station identity');
       }
