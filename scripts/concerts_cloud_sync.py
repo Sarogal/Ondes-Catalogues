@@ -4310,7 +4310,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # It must NEVER be added to the published title or artist identities
         # as if it were a named artist. This does not bypass the normal
         # first-party event/date/genre/provenance checks above.
-        placeholder = re.compile(r"\\b(?:guest|invites?|surprise|tba)\\b", re.I)
+        placeholder = re.compile(r"\b(?:guest|invites?|surprise|tba)\b", re.I)
         require(not placeholder.search(norm(event.get("title", ""))) and
                 not any(placeholder.search(norm(
                     (known_artist_ids.get(aid) or added[aid])["name"]))
