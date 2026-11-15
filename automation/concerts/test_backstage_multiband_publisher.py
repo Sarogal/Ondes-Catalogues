@@ -92,19 +92,27 @@ class BackstageMultiBandPublisherTests(unittest.TestCase):
         self.assertEqual(list(new), ["blackgold", "sumo-cyco", "hyro-the-hero"])
         self.assertEqual(proposal, original)
 
-    def test_five_documented_new_groups_respect_verified_bill_limit(self):
-        names = ["ACT ONE", "ACT TWO", "ACT THREE", "ACT FOUR", "ACT FIVE"]
-        proposal = signed_bill(names, date="2027-01-20", slug="five-verified-acts")
+    def test_twenty_officially_named_new_groups_have_no_arbitrary_cap(self):
+        # A real label must be validated act by act, even if all 20 acts
+        # are absent from a still-incomplete national catalogue.
+        names = [f"ACT{i:02d}" for i in range(1, 21)]
+        proposal = signed_bill(names, date="2027-01-20",
+                               slug="twenty-verified-acts")
+        self.assertEqual(len(proposal["newArtists"]), 20)
         emitted, new = publisher_check(proposal)
-        self.assertEqual(len(emitted["artistIds"]), 5)
-        self.assertEqual(len(new), 5)
+        self.assertEqual(len(emitted["artistIds"]), 20)
+        self.assertEqual(len(new), 20)
+        self.assertEqual([new[aid]["name"] for aid in emitted["artistIds"]],
+                         names)
 
-    def test_six_groups_do_not_enter_the_publisher(self):
+    def test_six_named_groups_pass_verifier_and_publisher(self):
         names = ["ACT ONE", "ACT TWO", "ACT THREE",
                  "ACT FOUR", "ACT FIVE", "ACT SIX"]
-        lead, html = checked_bill(names, date="2027-01-20", slug="six-acts")
-        with self.assertRaisesRegex(ValueError, "Programmation non nominative"):
-            verifier.verify(lead, html, catalogue(), TODAY)
+        proposal = signed_bill(names, date="2027-01-20",
+                               slug="six-verified-acts")
+        emitted, new = publisher_check(proposal)
+        self.assertEqual(len(emitted["artistIds"]), 6)
+        self.assertEqual(len(new), 6)
 
     def test_extra_artist_outside_official_lineup_is_rejected(self):
         proposal = signed_bill(["BLACKGOLD", "SUMO CYCO", "HYRO THE HERO"])
