@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ferrailleur_official as f
+from concerts_cloud_sync import FERRAILLEUR_LOCATION_FIX
 
 PAGE = """<html><body>
 <div>samedi 19 décembre 2026</div>
@@ -46,7 +47,8 @@ def catalogue():
             "id": "le-ferrailleur-nantes", "name": "Le Ferrailleur",
             "city": "Nantes", "address": "Quai des Antilles", "postalCode": "44200",
             "latitude": 47.20058, "longitude": -1.57365,
-            "geoSource": "Adresse officielle ; OpenStreetMap node 373218467"
+            # The real publisher requires the exact signed GPS source.
+            **FERRAILLEUR_LOCATION_FIX
         }],
         "events": []
     }
