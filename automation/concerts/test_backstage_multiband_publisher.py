@@ -131,10 +131,17 @@ class BackstageMultiBandPublisherTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "collision"):
             publisher_check(proposal, cat)
 
-    def test_unannounced_guest_never_creates_artist(self):
+    def test_unannounced_guest_keeps_headliner_without_fabricated_artist(self):
         lead, html = checked_bill(["BLACKGOLD", "Guest"])
-        with self.assertRaises(ValueError):
-            verifier.verify(lead, html, catalogue(), TODAY)
+        proposal = verifier.verify(lead, html, catalogue(), TODAY)
+        self.assertEqual(proposal["event"]["title"], "BLACKGOLD")
+        self.assertEqual(proposal["event"]["artistIds"], ["blackgold"])
+        self.assertEqual(proposal["newArtists"],
+                         [{"id": "blackgold", "name": "BLACKGOLD"}])
+        emitted, new = publisher_check(proposal)
+        self.assertEqual(emitted["artistIds"], ["blackgold"])
+        self.assertEqual(list(new), ["blackgold"])
+        self.assertNotIn("guest", new)
 
 
 if __name__ == "__main__":
