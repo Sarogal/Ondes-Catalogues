@@ -35,10 +35,14 @@ def _pinned_catalogues(reference, current, reference_sha256, current_sha256):
     if (canonical_sha256(reference) != reference_sha256
             or canonical_sha256(current) != current_sha256):
         raise ValueError("catalogue_changed_since_private_review")
-    if len(cur_idx) < len(ref_idx) or any(
-        key not in cur_idx or cur_idx[key] != before
-        for key, before in ref_idx.items()
-    ):
+    if (len(cur_idx) < len(ref_idx)
+            or current["events"][:len(reference["events"])] != reference["events"]
+            or any(
+                key not in cur_idx or cur_idx[key] != before
+                for key, before in ref_idx.items()
+            )):
+        # Reordering the original rows is also a forbidden historical edit:
+        # publication must remain strictly append-only in the original order.
         raise ValueError("historical_catalogue_modified_or_deleted")
     # New published events may legitimately be present. Every private review
     # must explicitly bind to the current pinned snapshot, NOT the old one.
