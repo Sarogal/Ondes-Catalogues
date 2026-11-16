@@ -48,6 +48,12 @@ on:
   # Déclenche le PUBLISHER EXISTANT ; ne touche pas aux règles ni aux secrets.
   # Rattrapage du 13/11 : relancer sur HEAD après l'intégration du paquet de
   # préparation Infomaniak ; même dossier privé et mêmes garde-fous, sans édition JSON.
+  # Publish promptly after a trusted, successful intake; retain the cron
+  # as an independent periodic fallback. This never reads PR artifacts.
+  workflow_run:
+    workflows:
+      - Grosses Ondes — Concerts nationaux sur runner public, revue privée
+    types: [completed]
   schedule:
     - cron: '17 */3 * * *'
   push:
@@ -71,6 +77,9 @@ concurrency:
 
 jobs:
   prepare:
+    # Workflow-run has write access: only the default-branch intake result is
+    # trusted; never process an untrusted PR or a failed precursor.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     outputs:
