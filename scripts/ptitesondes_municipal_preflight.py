@@ -232,6 +232,10 @@ def access_is_honest(candidate, condition, html):
     without = bool(re.search(r"\b(?:sans inscription|sans reservation)\b", text))
     price = condition.get("price_evidence")
     reg = condition.get("registration_evidence")
+    if has_free and has_price:
+        return False, "conflicting_price_on_official_page"
+    if requires and without:
+        return False, "conflicting_registration_on_official_page"
     if price == "explicit_free" and not has_free:
         return False, "unverified_free"
     if price == "explicit_price" and not has_price:
@@ -258,6 +262,7 @@ def audit_municipal(review, access, catalogue, today, get=read_official):
     access_by_id = {row["review_id"]: row for row in access["reviewed"]}
     previous_by_id = {row["review_id"]: row for row in base["details_for_private_review_only"]}
     results = []
+    checks_attempted = 0
     for candidate in review["candidates"]:
         uid = candidate["review_id"]
         expected_day = date.fromisoformat(candidate["date_start"])
@@ -269,6 +274,7 @@ def audit_municipal(review, access, catalogue, today, get=read_official):
             reasons.append("untrusted_event_host")
         if not reasons:
             try:
+                checks_attempted += 1
                 event_html = get(candidate["official_event_url"])
                 calendar_html = get(candidate["calendar_url"])
                 if not official_event_verified(candidate, event_html):
@@ -288,7 +294,7 @@ def audit_municipal(review, access, catalogue, today, get=read_official):
                         "private_approval": False, "public_writes": 0})
     return {"schema": SCHEMA, "mode": "independent_readonly_no_patch",
             "examined": len(results),
-            "source_checks_executed": len(results),
+            "source_checks_executed": checks_attempted,
             "needs_private_review": len(results),
             "approved": 0, "publication_ready": 0, "public_writes": 0,
             "details_private_only": results}
