@@ -88,6 +88,26 @@ class OfficialRecheckTests(unittest.TestCase):
             v.verify(candidate, incomplete, catalogue(),
                      dt.date(2026, 11, 16))
 
+    def test_sold_out_notice_is_not_a_cancellation(self):
+        # Ticket availability does not invalidate a venue-announced show.
+        sold_out = PAGE.replace("</body></html>",
+                                "<p>Sold out</p></body></html>")
+        approval = v.verify(
+            record(), sold_out, catalogue(), dt.date(2026, 11, 1))
+        self.assertEqual(
+            approval["event"]["artistIds"], ["example-band", "another-band"])
+        self.assertEqual(approval["event"]["date"], "2027-05-06")
+        self.assertIsNone(approval["event"]["time"])
+
+    def test_cancellation_or_postponement_still_blocks_sold_out_page(self):
+        for marker in ("Concert annulé", "Concert reporté"):
+            with self.subTest(marker=marker):
+                markup = PAGE.replace("</body></html>",
+                    "<p>Sold out</p><p>" + marker + "</p></body></html>")
+                with self.assertRaisesRegex(
+                        ValueError, "annulation ou de festival"):
+                    v.verify(record(), markup, catalogue(), dt.date(2026, 11, 1))
+
     def test_official_title_only_for_existing_artists(self):
         page = PAGE.replace("<p>✘ EXAMPLE BAND (Death metal)</p>", "").replace(
             "<p>✘ ANOTHER BAND (Metalcore)</p>", "")
