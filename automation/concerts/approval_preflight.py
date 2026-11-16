@@ -124,7 +124,15 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
         })
     if rejected:
         raise PublisherRejections(rejected)
-    require(len(candidate["events"]) - len(current["events"]) == len(appended),
+    # A numerically unchanged result is not necessarily append-only:
+    # deletion of a published event plus insertion of an unrelated one can
+    # balance the count. Check exact IDs *after* collecting held diagnostics.
+    candidate_ids = [event["id"] for event in candidate["events"]]
+    require(len(candidate_ids) == len(set(candidate_ids)),
+            "Publisher returned duplicate event IDs")
+    require(set(candidate_ids) == already | incoming,
+            "Publisher removed a published concert or added an unsigned one")
+    require(len(candidate_ids) - len(current["events"]) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
             "publishableEvents": len(appended),
