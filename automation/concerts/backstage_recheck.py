@@ -23,6 +23,8 @@ ALLOWED_GENRES = {
     "death metal": "Death Metal",
     "melodic death metal": "Melodic Death Metal",
     "metalcore": "Metalcore",
+    # Explicit first-party Backstage category for extreme metal bands.
+    "deathcore": "Deathcore",
     "industrial metal": "Industrial Metal",
     "progressive metal": "Progressive Metal",
     "heavy metal": "Heavy Metal",
@@ -147,6 +149,37 @@ def verify(candidate, html_text, catalogue, today):
     if UNSAFE.search(status_header):
         raise ValueError("Événement annulé, reporté ou à confirmer")
     names = [x.strip() for x in re.split(r"\s+\+\s+", signed_title)]
+    # Some venue details use a short H1 and put the COMPLETE named lineup
+    # into an explicit promoter-controlled announcement immediately below it.
+    # Never infer unnamed supports from a biography or from ticketing.
+    # The special tour text is a title annotation, NOT another artist.
+    if len(names) == 1:
+        after_h1 = page.tokens[pos+1:pos+75]
+        promoter_phrase = re.compile(r"^GARMONBOZIA\s+présente\s+", re.I)
+        notices = [x for x in after_h1 if promoter_phrase.match(x)]
+        if (not notices
+                and promoter_phrase.search(" ".join(after_h1))):
+            raise ValueError("Programmation organisateur morcelée ou ambiguë")
+        if len(notices) > 1:
+            raise ValueError("Plusieurs affiches organisateur incompatibles")
+        if notices:
+            # Exact first-party bill of the format:
+            # GARMONBOZIA présente HEADLINER « Tour title » + ACT + ACT...
+            # Requiring the official H1 to equal the announced lead prevents
+            # grabbing recommendations or an unrelated tour.
+            bill = re.fullmatch(
+                r"GARMONBOZIA\s+présente\s+(.+?)\s+«\s*[^»]{3,100}\s*»\s+\+\s+(.+)",
+                notices[0], flags=re.I)
+            if not bill or norm(bill[1]) != norm(signed_title):
+                raise ValueError("Programmation nominative organisateur non corroborée")
+            supports = [x.strip() for x in re.split(r"\s+\+\s+", bill[2])]
+            if (not supports or any(not x or len(norm(x)) < 3
+                                    for x in supports)
+                    or any(re.search(r"\b(?:guest|tba|surprise|inconnu)\b",
+                                     norm(x)) for x in supports)):
+                raise ValueError("Premières parties officielles incomplètes")
+            names = [signed_title] + supports
+            signed_title = " + ".join(names)
     # Verify every individually named act; no editorial cap on bill size.
     # The official H1, exact title, genre, venue, date and identity checks
     # below still apply to every member of the announced lineup.
