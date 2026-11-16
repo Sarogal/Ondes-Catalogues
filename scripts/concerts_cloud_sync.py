@@ -7263,7 +7263,8 @@ def merge(reference, current, approvals, today):
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
               "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
-              "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
+              "alreadyPublished": 0, "alreadyRegisteredVenues": 0,
+              "deferredUnprocessed": 0, "held": []}
     for entry in venue_approvals:
         try:
             incoming = validate_venue_approval(entry, today)
@@ -7295,6 +7296,15 @@ def merge(reference, current, approvals, today):
                              "status", "officialUrl", "sourceType")),
                         "Approbation existante ne correspond pas à la fiche publiée")
                 counts["alreadyPublished"] += 1
+                continue
+            # FIFO batching: a full, separately validated and signed batch
+            # is one atomic catalogue update. Leave later approved entries
+            # untouched for the next guarded workflow pass, using the public
+            # event IDs as the durable resume cursor (no second mutable DB).
+            # Do not validate or count these as "held" before their turn.
+            if (counts["newEvents"] >= MAX_NEW_EVENTS_PER_SYNC
+                    and entry.get("reviewDecision") == "approved"):
+                counts["deferredUnprocessed"] += 1
                 continue
             evt, new_artists = validate_approval(entry, venues, artists, today)
             # Aucune collision non déclarée sur le même lieu, jour et artiste.
@@ -7328,8 +7338,9 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
-    # A large first-party intake must be split into reviewed batches.
-    # If the delta is unexpectedly high, stop rather than silently truncate.
+    # Invariant: no run can publish above the atomically reviewed batch size.
+    # The remaining approvals are not discarded and cannot circumvent
+    # validate_approval: the next run checks them before publishing.
     require(counts["newEvents"] <= MAX_NEW_EVENTS_PER_SYNC,
             "Trop de nouveaux concerts en une seule synchronisation")
     require(counts["newVenues"] <= MAX_NEW_VENUES_PER_SYNC,

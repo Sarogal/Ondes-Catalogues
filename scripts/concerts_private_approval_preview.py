@@ -105,8 +105,102 @@ def append_only(previous, proposed, published):
     return ids
 
 
+def audit_backlog(previous, proposed, reference, published, today,
+                  fresh_ids, added_status):
+    """Read-only replay of signed FIFO batches when earlier approvals await publication.
+
+    The simulation uses the *real* publisher for every batch. It never
+    commits any state and never exposes private proof details to public CI.
+    """
+    expected_artists = [
+        a.get("id") if isinstance(a, dict) else None
+        for row in proposed["approvals"][len(previous["approvals"]):]
+        for a in row.get("newArtists", [])
+    ]
+    require(all(isinstance(a, str) and a for a in expected_artists)
+            and len(set(expected_artists)) == len(expected_artists),
+            "Nouveaux artistes non identifiés")
+    current = published
+    baseline_ids = {e["id"] for e in published["events"]}
+    source_ids = {
+        row["event"]["id"] for row in proposed["approvals"]
+        if isinstance(row, dict) and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+    }
+    corrected = 0
+    # An entirely rejected batch cannot hang the preview: the lack of
+    # publication progress or an actual held approval fails closed.
+    maximum = (len(proposed["approvals"]) // sync.MAX_NEW_EVENTS_PER_SYNC) + 3
+    for _ in range(maximum):
+        updated, counts = sync.merge(reference, current, proposed, today)
+        require(counts.get("newEvents", 0) <= sync.MAX_NEW_EVENTS_PER_SYNC
+                and counts.get("newVenues") == 0
+                and counts.get("correctedVenues") == 0
+                and not counts.get("held"),
+                "Prévalidation d'un lot privé refusée")
+        require(updated["venues"] == published["venues"],
+                "Géolocalisation ou salle modifiée")
+        require(updated["artists"][:len(published["artists"])] ==
+                published["artists"],
+                "Artistes publics historiques modifiés")
+        added_events = updated["events"][len(published["events"]):]
+        require(all(e["id"] in source_ids and e["id"] not in baseline_ids
+                    for e in added_events),
+                "Concert hors registre signé ajouté en simulation")
+        corrected += counts.get("correctedEvents", 0)
+        current = updated
+        complete = all(fid in {e["id"] for e in current["events"]}
+                       for fid in fresh_ids)
+        if complete and corrected == len(added_status):
+            old_events = published["events"]
+            new_events = current["events"]
+            if added_status:
+                target = added_status[0]["eventId"]
+                changed = [(old, new) for old, new
+                           in zip(old_events, new_events) if old != new]
+                require(len(changed) == 1
+                        and changed[0][0]["id"] == changed[0][1]["id"] == target,
+                        "Correction historique non signée")
+                old, new = changed[0]
+                allowed = {"status", "lastVerified", "cancellationSourceUrl",
+                           "history"}
+                require(all(old.get(k) == new.get(k)
+                            for k in set(old) | set(new) if k not in allowed),
+                        "Correction historique non autorisée")
+            else:
+                require(new_events[:len(old_events)] == old_events,
+                        "Concert historique ou publié altéré")
+            appended_ids = [e["id"] for e in added_events]
+            require((not fresh_ids or appended_ids[-len(fresh_ids):] ==
+                     fresh_ids), "Ordre des nouvelles signatures modifié")
+            added_artists = [a["id"] for a in
+                             current["artists"][len(published["artists"]):]]
+            require(not expected_artists or
+                    added_artists[-len(expected_artists):] == expected_artists,
+                    "Artistes nouveaux différents des signatures")
+            sync.protect_reference(reference, current)
+            sync.validate_catalogue(current)
+            return len(fresh_ids) + len(added_status)
+        require(updated["events"] != published["events"] or corrected,
+                "Aucune progression possible du lot privé")
+        # A valid older approval must make incremental progress each pass.
+        if counts.get("newEvents") == 0:
+            raise ValueError("File privée bloquée sans publication validée")
+    raise ValueError("Prévalidation FIFO au-delà du nombre de lots prévu")
+
+
 def audit(previous, proposed, reference, published, today):
     fresh_ids, added_status = approved_delta(previous, proposed, published)
+    existing_ids = {e.get("id") for e in published.get("events", [])}
+    backlog = any(
+        isinstance(row, dict) and row.get("reviewDecision") == "approved"
+        and isinstance(row.get("event"), dict)
+        and row["event"].get("id") not in existing_ids
+        for row in previous["approvals"]
+    )
+    if backlog:
+        return audit_backlog(previous, proposed, reference, published, today,
+                             fresh_ids, added_status)
     merged, counts = sync.merge(reference, published, proposed, today)
     expected_artists = [
         a.get("id") if isinstance(a, dict) else None

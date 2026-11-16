@@ -33,7 +33,7 @@ class CumulativeApprovalCapacityTests(TestCase):
         self.assertEqual(report["newEvents"], 0)
         self.assertEqual(len(report["held"]), 401)
 
-    def test_new_event_delta_fails_closed_instead_of_truncating(self):
+    def test_17_approved_events_publish_in_16_plus_1_idempotent_batches(self):
         self.assertEqual(sync.MAX_NEW_EVENTS_PER_SYNC,16)
         # Stubs isolate the batch guard; production still requires every
         # individually reviewed signature and strict event-specific source.
@@ -57,9 +57,35 @@ class CumulativeApprovalCapacityTests(TestCase):
         }
         def signed_stub(row, venues, artists, today):
             return row["event"], {}
-        with mock.patch.object(sync,"validate_approval",side_effect=signed_stub):
-            with self.assertRaisesRegex(ValueError,"Trop de nouveaux concerts"):
-                sync.merge(BASE, BASE, sample, DAY)
+        with mock.patch.object(sync, "validate_approval", side_effect=signed_stub):
+            first, stats = sync.merge(BASE, BASE, sample, DAY)
+            self.assertEqual(stats["newEvents"], 16)
+            self.assertEqual(stats["deferredUnprocessed"], 1)
+            self.assertEqual(len(first["events"]) - len(BASE["events"]), 16)
+            self.assertEqual(len(stats["held"]), 0)
+            second, next_stats = sync.merge(BASE, first, sample, DAY)
+            self.assertEqual(next_stats["newEvents"], 1)
+            self.assertEqual(next_stats["deferredUnprocessed"], 0)
+            self.assertEqual(len(second["events"]) - len(BASE["events"]), 17)
+            self.assertEqual(len(next_stats["held"]), 0)
+            again, last_stats = sync.merge(BASE, second, sample, DAY)
+            self.assertEqual(again, second)
+            self.assertEqual(last_stats["newEvents"], 0)
+            self.assertEqual(last_stats["alreadyPublished"], 17)
+
+        # A signed-looking but malformed 17th record is not validated early,
+        # nor silently dropped. It is explicitly held when its batch arrives.
+        def reject_last(row, venues, artists, today):
+            if row["event"]["id"].endswith("17-test-capacity"):
+                raise ValueError("Preuve officielle 17 non corroborée")
+            return signed_stub(row, venues, artists, today)
+        with mock.patch.object(sync, "validate_approval", side_effect=reject_last):
+            first, _ = sync.merge(BASE, BASE, sample, DAY)
+            blocked, stats = sync.merge(BASE, first, sample, DAY)
+            self.assertEqual(blocked, first)
+            self.assertEqual(stats["newEvents"], 0)
+            self.assertEqual(len(stats["held"]), 1)
+            self.assertIn("non corroborée", stats["held"][0]["reason"])
 
     def test_venue_total_capacity_and_delta_guard(self):
         self.assertEqual(sync.MAX_CUMULATIVE_VENUE_APPROVALS,100)
