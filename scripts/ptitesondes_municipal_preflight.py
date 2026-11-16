@@ -94,14 +94,21 @@ class OfficialPage(HTMLParser):
 
 
 class CalendarCards(HTMLParser):
-    """Retain only individual SPIP media-eve cards, not adjacent activities."""
+    """Keep date, hours, links and SPIP IDs inside each independent event card.
+
+    Crucially, recurrent weekly events can share a title/venue but NOT a date.
+    Their day, month and year must come from exact scoped SPIP fields.
+    """
+    FIELDS = {"jour": "day", "mois": "month", "annee": "year", "horraires": "hours"}
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.cards = []
         self.depth = 0
         self.card = None
         self.skip = 0
-        self.in_hours = False
+        self.field = None
+        self.field_depth = 0
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style", "noscript"):
@@ -113,7 +120,10 @@ class CalendarCards(HTMLParser):
         classes = (attributes.get("class") or "").split()
         if self.card is None:
             if tag == "div" and "media-eve" in classes:
-                self.card = {"words": [], "title_ids": [], "venue_ids": [], "links": [], "hours": []}
+                self.card = {
+                    "words": [], "title_ids": [], "venue_ids": [],
+                    "links": [], "day": [], "month": [], "year": [], "hours": [],
+                }
                 self.depth = 1
             return
         if tag == "div":
@@ -122,8 +132,14 @@ class CalendarCards(HTMLParser):
             href = attributes.get("href")
             if isinstance(href, str):
                 self.card["links"].append(urljoin(HOST + "/", href))
-        if tag == "span" and "horraires" in classes:
-            self.in_hours = True
+        if tag == "span":
+            if self.field is not None:
+                self.field_depth += 1
+            else:
+                matches = [self.FIELDS[c] for c in classes if c in self.FIELDS]
+                if len(matches) == 1:
+                    self.field = matches[0]
+                    self.field_depth = 1
         for name, key in (("evenement-titre-", "title_ids"),
                           ("evenement-lieu-", "venue_ids")):
             for cls in classes:
@@ -136,20 +152,42 @@ class CalendarCards(HTMLParser):
             return
         if self.skip or self.card is None:
             return
-        if tag == "span" and self.in_hours:
-            self.in_hours = False
+        if tag == "span" and self.field is not None:
+            self.field_depth -= 1
+            if self.field_depth <= 0:
+                self.field = None
+                self.field_depth = 0
         if tag == "div":
             self.depth -= 1
             if self.depth == 0:
                 self.cards.append(self.card)
                 self.card = None
-                self.in_hours = False
+                self.field = None
+                self.field_depth = 0
 
     def handle_data(self, data):
         if self.card is not None and not self.skip and data.strip():
             self.card["words"].append(data.strip())
-            if self.in_hours:
-                self.card["hours"].append(data.strip())
+            if self.field is not None:
+                self.card[self.field].append(data.strip())
+
+
+MONTH_SHORT = ("", "janv", "fev", "mars", "avr", "mai", "juin", "juil",
+               "aout", "sept", "oct", "nov", "dec")
+
+
+def calendar_card_date_matches(card, day):
+    """Exact SPIP day/month/year triple, never inferred from adjacent cards."""
+    if not isinstance(card, dict) or type(day) is not date:
+        return False
+    for key in ("day", "month", "year"):
+        if not isinstance(card.get(key), list):
+            return False
+    tokens = {key: norm(" ".join(card[key])) for key in ("day", "month", "year")}
+    return (tokens["day"] in {str(day.day), str(day.day).zfill(2)}
+            and tokens["month"] in {MONTHS[day.month], MONTH_SHORT[day.month]}
+            and tokens["year"] == str(day.year))
+
 
 
 def local_time_present(text, clock):
@@ -230,17 +268,15 @@ def official_calendar_verified(candidate, html):
     except (KeyError, TypeError, ValueError):
         return False
     wanted_id = candidate.get("source_event_id")
-    matching = [c for c in cards.cards
-                if c["title_ids"] == [wanted_id] and c["venue_ids"] == [wanted_id]]
+    matching = [
+        c for c in cards.cards
+        if c["title_ids"] == [wanted_id]
+        and c["venue_ids"] == [wanted_id]
+        and calendar_card_date_matches(c, day)
+    ]
     if len(matching) != 1:
         return False
     content = norm(" ".join(matching[0]["words"]))
-    # Day, month AND year must be in the very same SPIP card.
-    if not (re.search(rf"\b{day.day}\b", content)
-            and str(day.year) in content
-            and (MONTHS[day.month] in content or
-                 MONTHS[day.month][:3] in content)):
-        return False
     if (norm(candidate.get("title")) not in content or
             norm(candidate.get("venue")) not in content):
         return False
