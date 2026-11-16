@@ -89,67 +89,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
-
-      # CONTROLE TEMPORAIRE EN PR : code prive epingle, aucune ecriture.
-      - name: Essai exceptionnel des dossiers municipaux en lecture seule
-        uses: actions/checkout@v4
-        with:
-          repository: Sarogal/PtitesOndes
-          ref: b122eef117170d0a8ebff1b40c51884c2c95928b
-          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
-          path: private-proof
-          sparse-checkout: |
-            automation
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Tester sept cas adversariaux et auditer les neuf dossiers reels sans publication
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m unittest discover -s private-proof/automation -p 'test_gosier_review_candidates.py' -v
-          git fetch --no-tags --depth=1 origin d5cfbfca2bd046a94719d34c9c461ba95e48f323
-          mkdir -p "$RUNNER_TEMP/gosier-review"
-          python private-proof/automation/municipal_gosier_discovery.py --days 14 --output "$RUNNER_TEMP/gosier-review/discovery.json"
-          python - <<'PY'
-          import json,os,subprocess
-          from pathlib import Path
-          raw = subprocess.check_output(['git','show','d5cfbfca2bd046a94719d34c9c461ba95e48f323:scripts/venue_registry.py'])
-          import ast
-          import re
-          t=raw.decode('utf-8')
-          # Non-dynamic extraction of exact reviewed building provenance.
-          match=re.search(r'"city": "Le Gosier"[\s\S]{0,280}?"geo_source": "https://mapcarta.com/fr/W125054083"',t)
-          assert match is not None
-          d={"city":"Le Gosier","aliases":["Médiathèque Raoul Georges Nicolo"],
-             "lat":16.20547,"lng":-61.48950,
-             "official":"https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125",
-             "geo_source":"https://mapcarta.com/fr/W125054083"}
-          target=Path(os.environ["RUNNER_TEMP"])/"gosier-review"/"venue.json"
-          target.write_text(json.dumps(d),encoding="utf-8")
-          PY
-          python private-proof/automation/gosier_qualification.py --discovery "$RUNNER_TEMP/gosier-review/discovery.json" --catalogue docs/ptitesondes/sorties.json --venue-registry-entry "$RUNNER_TEMP/gosier-review/venue.json" --output "$RUNNER_TEMP/gosier-review/qualified.json"
-          python private-proof/automation/gosier_review_candidates.py --qualification "$RUNNER_TEMP/gosier-review/qualified.json" --catalogue docs/ptitesondes/sorties.json --output "$RUNNER_TEMP/gosier-review/review.json"
-          python - <<'PY'
-          import json,os
-          from pathlib import Path
-          base=Path(os.environ["RUNNER_TEMP"])/"gosier-review"
-          d=json.loads((base/"discovery.json").read_text())
-          q=json.loads((base/"qualified.json").read_text())
-          r=json.loads((base/"review.json").read_text())
-          assert (len(d["leads"]),q["evidence_checked"],len(r["candidates"])) == (9,9,9)
-          assert not d["sources_failed"] and q["approved"]==q["published"]==0
-          assert r["approved"]==r["published"]==0 and "additions" not in r
-          from collections import Counter
-          print("GOSIER_LIVE_PRIVATE_REVIEW",json.dumps({
-              "discovered":len(d["leads"]), "evidence_checked":q["evidence_checked"],
-              "review_only":len(r["candidates"]),
-              "categories":dict(Counter(c["category_proposal"] for c in r["candidates"])),
-              "approved":0,"published":0
-          },sort_keys=True))
-          PY
-
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
