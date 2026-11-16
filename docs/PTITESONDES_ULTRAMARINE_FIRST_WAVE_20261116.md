@@ -35,7 +35,7 @@ Sources officielles :
 - Aucun événement expiré au 16 novembre ; refaire l'examen des éventuelles annulations, reports, complet et sources indisponibles immédiatement avant tout accord.
 - Doublons : la simulation #330 a testé **un puis deux ajouts hypothétiques** face à 548 fiches historiques, pas les neuf séances en une seule publication. Un contrôle exhaustif des neuf identités et des autres sources reste indispensable, sur le catalogue **réel au moment de la publication**.
 
-**Décision : 9 dossiers à proposer à une revue éditoriale, 0 dossier publiable** tant que les informations manquantes, la validation humaine et le raccordement technique ne sont pas arbitrés. Ne pas retirer ces dossiers du moteur de collecte à cause d'un prix inconnu.
+**Décision : 9 dossiers à proposer à une revue éditoriale, 0 dossier publiable.** Si l'organisateur ne précise toujours ni tarif ni inscription, un second commentaire d'approbation privée strictement authentifié peut approuver l'affichage **« Voir conditions » uniquement**, sans affirmer gratuité ni dispense d'inscription. Aucun tel commentaire n'a été obtenu. Le raccordement technique et l'autorisation finale restent distincts. Ne pas retirer ces dossiers du moteur de collecte à cause d'un prix inconnu.
 
 ## La Réunion — CINOR, bibliothèque intercommunale Alain Lorraine
 
@@ -52,6 +52,6 @@ Sources officielles :
 
 1. Conserver les neuf dossiers municipaux et le dossier CINOR séparément, avec leurs sources et fuseaux.
 2. Finaliser la validation/admission hors production et le registre de lieux #305.
-3. Obtenir les arbitrages éditoriaux sur les conditions **inconnues**, puis chaque accord privé authentifié (jamais déduit d'un statut de collecteur).
+3. Obtenir pour chaque séance l'accord privé authentifié sur le dossier et, si les conditions demeurent **inconnues**, un **second** accord privé explicite de simple renvoi « Voir conditions » (révocable, lié au SHA exact et aux preuves). Jamais un statut de collecteur.
 4. Valider le frontend v173 #327 et les filtres géographiques, puis proposer une intégration du synchroniseur strictement bornée à ces catégories et types de preuve.
 5. Recontrôler les preuves et doublons immédiatement avant une proposition de publication. Aucune fusion, aucune publication ni déploiement sans accord explicite.
