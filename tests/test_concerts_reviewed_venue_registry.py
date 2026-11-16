@@ -126,6 +126,9 @@ class ReviewableVenueRegistryTests(unittest.TestCase):
             ("metadata-override", lambda s: s.update(unknownField="attack")),
             ("GPS-lie", lambda s: s["venue"].update(latitude=181.0)),
             ("geo-source-mismatch", lambda s: s["venue"].update(geoSource="https://other.example.org/map")),
+            ("same-host-fake-independent", lambda s: (
+                s.update(locationUrl="https://venue.example.org/location"),
+                s["venue"].update(geoSource="https://venue.example.org/location"))),
             ("identity-mismatch", lambda s: s["venue"].update(id="other")),
             ("extra-location-field", lambda s: s["venue"].update(hidden="value")),
         ):
