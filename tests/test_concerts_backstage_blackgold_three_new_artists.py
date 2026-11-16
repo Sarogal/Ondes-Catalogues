@@ -46,7 +46,7 @@ CANDIDATE = {
 
 
 def empty_concerts_with_real_venue():
-    result = json.loads((ROOT / "docs/grossesondes/concerts-reference.json").read_text(encoding="utf-8"))
+    result = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(encoding="utf-8"))
     result["events"] = []
     result["artists"] = [
         item for item in result["artists"]
