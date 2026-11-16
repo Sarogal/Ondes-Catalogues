@@ -41,6 +41,17 @@
 - Le rapport détaillé et les refus privés restent uniquement dans le stockage éphémère du runner ; il n'est jamais attaché à une exécution publique.
 - Ce changement concerne **uniquement le texte récapitulatif** du workflow. Ni calendrier, ni condition de publication, ni jeton, ni JSON public ne sont modifiés.
 
+## Nouveau registre de salles approuvées par revue Git — étape préparatoire v1
+- **Verrou découvert :** `validate_venue_approval` rejetait toute salle absente de `PILOT_VENUES`, une liste écrite à même le code du publisher. Ce point empêche la croissance nationale au fil des découvertes.
+- La proposition ajoute `automation/concerts/reviewed_venue_specs_v1.json`, un registre **initialement vide**, à schéma strict. Aucun nouvel établissement réel n'est ajouté ou autorisé par défaut.
+- Pour une salle absente de l'ancienne liste, **deux contrôles indépendants doivent converger** : (1) identité/adresse/GPS exacts dans ce fichier public versionné et *revu avant intégration sur main* ; (2) approbation privée indépendante avec première source officielle nom/adresse et deuxième source de géolocalisation nominative de type exact. Les dates de vérification et les champs sont exigés.
+- Les anciennes fiches `PILOT_VENUES` sont conservées sans conversion ni assouplissement, y compris l'exception du MeM nécessitant une photo indépendante.
+- Le registre refuse les doublons avec les salles historiques, les IDs incohérents, les champs inattendus, les URL non HTTPS et les coordonnées impossibles. Chaque changement de référence peut invalider une approbation privée et bloque alors la synchronisation : pas de réécriture silencieuse des salles déjà publiées.
+- Le workflow public doit réagir aux changements de ce registre et interdire un rebase d'une publication calculée sur une version antérieure de ces références.
+- **Limite de confiance :** cette v1 est une *porte de sortie du code source*, **pas** une autorisation automatique de nouvelles salles issues d'une seule source. Il faudra ensuite industrialiser l'alimentation du registre avec preuves effectivement revues et règles de protection de branche. Ne jamais auto-fusionner les propositions de salles sans ces garanties.
+- Tests entièrement synthétiques : nouveau lieu sans entrée publique rejeté ; profil ajouté au registre + dossier signé accepté ; fausses adresses et fausses coordonnées rejetées ; registre tronqué/incohérent rejeté ; intégration du lieu dans un catalogue candidat isolé.
+- Aucune modification du JSON de production ni des salles existantes.
+
 ## Étape suivante AVANT généralisation des gros lots
 La file privée actuelle est un JSON cumulatif. Sur la **branche expérimentale**, l'éditeur traite au plus 16 approbations admissibles par passage et laisse les suivantes dans la file, sans les perdre ni les publier sans contrôle. La reprise est reconstruite depuis les identifiants d'événements effectivement publiés. Ce mécanisme n'est **pas encore fusionné** ; la limite de 16 publications par transaction reste obligatoire.
 
