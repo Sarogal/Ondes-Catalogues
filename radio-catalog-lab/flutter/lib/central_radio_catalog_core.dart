@@ -347,6 +347,17 @@ class CentralCatalogVerifier {
       }
     }
 
+    // Permanent GO IDs are first-class identities, not ordinary aliases.
+    // An alias on a different station must never shadow a permanent GO ID,
+    // including a retired/tombstoned ID appearing later in this release.
+    for (final entry in aliases.entries) {
+      if (goIds.contains(entry.key) && entry.key != entry.value) {
+        throw const CentralCatalogException(
+          'Legacy alias conflicts with another permanent GO station ID',
+        );
+      }
+    }
+
     if (previous != null) {
       // A content digest is permanent across releases. A new signed pointer
       // cannot reinterpret the dimensions or MIME of an older verified SHA.

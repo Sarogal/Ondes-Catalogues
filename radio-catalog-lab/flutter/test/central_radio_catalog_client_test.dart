@@ -111,6 +111,32 @@ void main() {
     expect(verified.aliasOwners['legacy-1'], 'go-station-000001');
   });
 
+  test('legacy aliases cannot shadow another permanent GO station ID',
+      () async {
+    final first = station(1);
+    final second = station(2);
+    second['legacy_aliases'] = <String>[
+      'legacy-2', 'go-station-000001',
+    ];
+    final payload = jsonBytes(catalog([first, second]));
+    await expectLater(validatePayload(payload),
+      throwsA(isA<CentralCatalogException>()));
+
+    // A tombstone also retains permanent ownership of its GO identity.
+    final retired = <String, dynamic>{
+      'go_station_id': 'go-station-000003',
+      'legacy_aliases': <String>['legacy-3'],
+      'reason_code': 'retired_by_editorial_review',
+      'retired_at': '2026-11-15T18:00:00Z',
+    };
+    second['legacy_aliases'] = <String>[
+      'legacy-2', 'go-station-000003',
+    ];
+    await expectLater(validatePayload(jsonBytes(catalog(
+      [first, second], tombstones: [retired],
+    ))), throwsA(isA<CentralCatalogException>()));
+  });
+
   test('missing production key fails closed', () async {
     final bytes = jsonBytes(catalog([station(1)]));
     final pointer = await signedPointer(bytes, 1);
