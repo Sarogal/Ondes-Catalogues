@@ -21,6 +21,14 @@
 - **Limite importante :** les preuves expirées restent refusées lors de leur tour. Une longue attente exige une revérification officielle signée, sans prolonger artificiellement les dates.
 - **Statut :** uniquement sur la branche expérimentale, non fusionnée. Aucun changement de calendrier d'exécution ni de production.
 
+## Reprise des validations de salles — branche isolée du 16 novembre 2026
+- Le plafond de **100 salles approuvées dans le registre privé** est supprimé. Tous les dossiers conservés sont indexés par identifiant ; les doublons d'ID et les dossiers incomplets restent refusés.
+- Au maximum **six nouvelles salles par exécution** : les demandes restantes deviennent `deferredVenues`, sans supprimer d'approbations ni assimiler les salles différées à un refus.
+- À chaque passage, les salles déjà publiées sont **revalidées** contre la preuve privée persistante ; les dossiers non encore publiés sont vérifiés lorsque leur tour arrive.
+- Les concerts liés à une salle différée restent bloqués jusqu'à la vérification et la publication de cette salle : aucune latitude, longitude ou localisation de substitution n'est inventée.
+- Couverture de test : 101 demandes, lots successifs de six jusqu'à épuisement, redémarrage idempotent, septième preuve invalide différée puis refusée, doublon de salle.
+- La limite technique de **20 Mo** sur la taille du registre demeure ; prévoir sa segmentation avant de la rencontrer. **Aucune activation en production ni nouvelle approbation réelle.**
+
 ## Étape suivante AVANT généralisation des gros lots
 La file privée actuelle est un JSON cumulatif. Sur la **branche expérimentale**, l'éditeur traite au plus 16 approbations admissibles par passage et laisse les suivantes dans la file, sans les perdre ni les publier sans contrôle. La reprise est reconstruite depuis les identifiants d'événements effectivement publiés. Ce mécanisme n'est **pas encore fusionné** ; la limite de 16 publications par transaction reste obligatoire.
 
