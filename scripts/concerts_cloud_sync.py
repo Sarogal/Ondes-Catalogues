@@ -32,7 +32,6 @@ SCHEMA = "grossesondes.concert.approvals.v1"
 # grow beyond 400 records; each published concert still needs its signed entry.
 # A 20 MB resource guard is a file-transport limit, NOT an event/artist quota.
 MAX_PRIVATE_APPROVAL_FILE_BYTES = 20_000_000
-MAX_CUMULATIVE_VENUE_APPROVALS = 100
 MAX_NEW_EVENTS_PER_SYNC = 16
 MAX_NEW_VENUES_PER_SYNC = 6
 
@@ -7248,8 +7247,8 @@ def merge(reference, current, approvals, today):
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
     venue_approvals = approvals.get("venueApprovals", [])
-    require(isinstance(venue_approvals, list) and len(venue_approvals) <= MAX_CUMULATIVE_VENUE_APPROVALS,
-            "Liste d'approbations de salles inattendue ou excessive")
+    require(isinstance(venue_approvals, list),
+            "Liste d'approbations de salles inattendue")
     approved_venues = {x["venue"]["id"]: x for x in venue_approvals
                        if isinstance(x,dict) and isinstance(x.get("venue"),dict)
                        and isinstance(x["venue"].get("id"), str)}
@@ -7264,9 +7263,18 @@ def merge(reference, current, approvals, today):
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
               "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0,
-              "deferredUnprocessed": 0, "held": []}
+              "deferredUnprocessed": 0, "deferredVenues": 0, "held": []}
     for entry in venue_approvals:
         try:
+            # Resume approved venue registrations in deterministic small
+            # batches. Existing published venues are always revalidated;
+            # unseen venues after the limit remain in the immutable ledger
+            # and face their full evidence check on the following run.
+            v_id = entry["venue"]["id"]
+            if (counts["newVenues"] >= MAX_NEW_VENUES_PER_SYNC
+                    and v_id not in venues):
+                counts["deferredVenues"] += 1
+                continue
             incoming = validate_venue_approval(entry, today)
             v_id = incoming["id"]
             if v_id in venues:
