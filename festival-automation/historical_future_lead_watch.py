@@ -236,6 +236,7 @@ def _preposed_poster_hints(text, position, today, target_year):
             "bienvenue", "festival", "metal", "rock", "nouvelle",
             "aquitaine", "edition", "officiel", "site", "prochain",
             "prochaine", "pour", "sur", "notre", "grand", "retour",
+            "reserver",
         }
         if len(between) > 90 or any(word not in allowed
                                    for word in between.split()):
