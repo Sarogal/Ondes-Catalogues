@@ -90,21 +90,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
-
-      # TEST PONCTUEL PR PUBLIQUE uniquement, a retirer apres verdict.
-      - name: Charger la proposition de contrat non musical epinglee
-        uses: actions/checkout@v4
-        with:
-          ref: af3044482cbbd9e88076a3a96afe37a8a3d19eed
-          path: candidate-contract
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Tester le contrat non musical en lecture seule
-        run: |
-          python -m unittest discover -s candidate-contract/tests -p 'test_ptitesondes_nonmusic_release_contract.py' -v
-
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
