@@ -68,10 +68,11 @@ Réservation
 class FerrailleurTests(unittest.TestCase):
     def test_novembre_decembre(self):
         rows=f.extract_ferrailleur(TEXT,URL,VENUE,"2026-11-01")
-        self.assertEqual(len(rows),3) # Storm, Poison Ruin, Arkona; seven bands ambiguous skip
+        self.assertEqual(len(rows),4) # Seven-band bill remains an unapproved candidate
         self.assertEqual([x["date"] for x in rows],
-                         ["2026-11-05","2026-11-09","2026-12-19"])
+                         ["2026-11-05","2026-11-09","2026-11-27","2026-12-19"])
         self.assertTrue(all(x["publicationAllowed"] is False for x in rows))
+        self.assertEqual(len(rows[2]["name"].split(" + ")), 7)
 
     def test_champs_html_separes_artistes_et_annee(self):
         page=(

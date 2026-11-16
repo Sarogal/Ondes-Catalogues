@@ -146,7 +146,7 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             verifier.verify(row, page, catalogue(), TODAY)
 
-    def test_discovery_duplicate_and_new_artist_never_pass(self):
+    def test_discovery_spoofing_never_passes_but_proven_new_artist_does(self):
         for key, value in (
             ("reviewBucket", "possible_duplicate"),
             ("possibleExistingConcert", True),
@@ -160,8 +160,17 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
                 verifier.verify(altered, PAGE, catalogue(), TODAY)
         c = catalogue()
         c["artists"] = []
-        with self.assertRaisesRegex(ValueError, "canonique"):
-            verifier.verify(candidate(), PAGE, c, TODAY)
+        approval = verifier.verify(candidate(), PAGE, c, TODAY)
+        self.assertEqual(
+            approval["newArtists"],
+            [{"id": "peter-hook-and-the-light",
+              "name": "PETER HOOK & THE LIGHT"}],
+        )
+        from concerts_cloud_sync import validate_approval
+        event, added = validate_approval(
+            approval, {v["id"]: v for v in c["venues"]}, {}, TODAY)
+        self.assertEqual(event["artistIds"], ["peter-hook-and-the-light"])
+        self.assertEqual(list(added), ["peter-hook-and-the-light"])
 
     def test_already_published_or_same_venue_day_artist_is_held(self):
         c = catalogue()

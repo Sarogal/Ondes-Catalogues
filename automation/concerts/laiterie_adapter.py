@@ -159,8 +159,6 @@ def details(html, url, source, day):
         raise ValueError("No explicit rock or metal genre tag")
     name = title if not support else title + " " + support
     name = " ".join(name.replace(" + ", " + ").split())
-    if len(name) > 200:
-        raise ValueError("Unreasonably long concert title")
     # No times are extracted. The individual pages label them as door times.
     return {
         "candidateId": f"laiterie:{date.isoformat()}:{valid_detail(url)}",

@@ -55,6 +55,7 @@ on:
     paths:
       - '.github/workflows/grossesondes-concerts-cloud-sync.yml'
       - 'scripts/concerts_cloud_sync.py'
+      - 'automation/concerts/reviewed_venue_specs_v1.json'
       - 'tests/test_concerts_cloud_sync.py'
       - 'docs/grossesondes/concerts.json'
       - 'docs/grossesondes/concerts-reference.json'
@@ -112,13 +113,25 @@ jobs:
               f"Nouvelles fiches : {d['newEvents']} ; nouveaux artistes : {d['newArtists']}",
               f"Salles géolocalisées après revue : {d.get('correctedVenues', 0)}",
               f"Approbations déjà publiées : {d['alreadyPublished']}",
+              f"Nouvelles salles : {d.get('newVenues', 0)} ; "
+              f"salles déjà enregistrées : {d.get('alreadyRegisteredVenues', 0)}",
+              f"En attente du prochain cycle : "
+              f"{d.get('deferredUnprocessed', 0)} concerts ; "
+              f"{d.get('deferredVenues', 0)} salles",
               f"Approbations retenues : {len(d['held'])}",
               f"Flux privé accessible : {'oui' if d['privateApprovalFeedReadable'] else 'non'}",
           ]
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as report:
               report.write("\n".join(lines)+"\n")
+          waiting_events = d.get('deferredUnprocessed', 0)
+          waiting_venues = d.get('deferredVenues', 0)
+          if waiting_events or waiting_venues:
+              print("::notice title=Concerts — reprise au prochain passage::"
+                    f"{waiting_events} concert(s) et {waiting_venues} salle(s) "
+                    "restent dans la file privée signée ; aucune preuve individuelle "
+                    "n'est publiée dans les logs.")
           if d['held']:
-              print(f"::warning title=Concerts — validations retenues::{len(d['held'])} approbation(s) non publiées : consulter l'artefact du rapport privé.")
+              print(f"::warning title=Concerts — validations retenues::{len(d['held'])} approbation(s) non publiées : consulter le rapport privé éphémère du runner.")
           if not d['privateApprovalFeedReadable']:
               print("::warning title=Concerts — flux d'approbation absent::Le catalogue est conservé sans nouveaux ajouts.")
           PY
@@ -167,6 +180,7 @@ jobs:
           fi
           if ! git diff --quiet "$GITHUB_SHA" "$REMOTE_HEAD" -- \
             scripts/concerts_cloud_sync.py \
+            automation/concerts/reviewed_venue_specs_v1.json \
             tests/test_concerts_cloud_sync.py \
             docs/grossesondes/concerts.json \
             docs/grossesondes/concerts-reference.json; then
