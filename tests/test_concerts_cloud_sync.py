@@ -1360,6 +1360,52 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         self.assertEqual(stats["held"],[])
         self.assertEqual(out["events"][-1]["venueId"],"le-rex-toulouse")
 
+    def test_rex_unnamed_guest_can_be_omitted_but_never_published_as_a_band(self):
+        # The producer verified the official headline and omitted + GUEST.
+        artist = BASE["artists"][0]
+        event_id = "go-c-20270201-toulouse-" + artist["id"]
+        official_url = "https://www.lerextoulouse.com/fr/programmation/" + artist["id"] + "/"
+        approved = approval(event_id)
+        approved["reviewedBy"] = "automated-official-recheck"
+        approved["event"].update({
+            "title": artist["name"],
+            "artistIds": [artist["id"]],
+            "date": "2027-02-01",
+            "time": None,
+            "venueId": "le-rex-toulouse",
+            "officialUrl": official_url,
+            "sourceType": "salle",
+        })
+        approved["newArtists"] = []
+        approved["officialEvidence"][0].update({
+            "url": official_url,
+            "checkedFields": ["artists", "date", "venue", "genre"],
+        })
+        queue = {"schema": "grossesondes.concert.approvals.v1",
+                 "approvals": [approved]}
+        result, report = merge(BASE, BASE, queue, NOW)
+        self.assertEqual(report["newEvents"], 1)
+        self.assertEqual(report["newArtists"], 0)
+        self.assertEqual(report["held"], [])
+        self.assertEqual(result["events"][-1]["title"], artist["name"])
+        self.assertEqual(result["events"][-1]["artistIds"], [artist["id"]])
+
+        # No textual 'guest' in a title, no fabricated artist even if a
+        # compromised producer attempts to append a plausible artist ID.
+        for altered in ("guest-in-title", "fabricated-guest-artist"):
+            with self.subTest(altered=altered):
+                forged = copy.deepcopy(approved)
+                if altered == "guest-in-title":
+                    forged["event"]["title"] = artist["name"] + " + GUEST"
+                else:
+                    forged["event"]["artistIds"].append("guest")
+                    forged["newArtists"] = [{"id": "guest", "name": "Guest"}]
+                _, stats = merge(BASE, BASE, {
+                    "schema": "grossesondes.concert.approvals.v1",
+                    "approvals": [forged]}, NOW)
+                self.assertEqual(stats["newEvents"], 0)
+                self.assertTrue(stats["held"])
+
     def test_automated_recheck_rejects_missing_fields(self):
         a=approval("go-c-20270201-toulouse-groupe-essai")
         a["reviewedBy"]="automated-official-recheck"
