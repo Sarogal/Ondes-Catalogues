@@ -55,6 +55,7 @@ on:
     paths:
       - '.github/workflows/grossesondes-concerts-cloud-sync.yml'
       - 'scripts/concerts_cloud_sync.py'
+      - 'automation/concerts/reviewed_venue_specs_v1.json'
       - 'tests/test_concerts_cloud_sync.py'
       - 'docs/grossesondes/concerts.json'
       - 'docs/grossesondes/concerts-reference.json'
@@ -179,6 +180,7 @@ jobs:
           fi
           if ! git diff --quiet "$GITHUB_SHA" "$REMOTE_HEAD" -- \
             scripts/concerts_cloud_sync.py \
+            automation/concerts/reviewed_venue_specs_v1.json \
             tests/test_concerts_cloud_sync.py \
             docs/grossesondes/concerts.json \
             docs/grossesondes/concerts-reference.json; then
