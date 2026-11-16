@@ -233,13 +233,17 @@ def main():
     stats["rejected"] = rejected
     stats["status"] = ("partially_validated" if rejected else
                        "validated" if stats["newApprovals"] else "no_changes")
-    stats["applied"] = bool(args.apply and stats["newApprovals"])
+    # Never claim an approval was applied before the atomic ledger write
+    # succeeds. If storage fails, the caller must see an error, and the
+    # private workflow records a blocked diagnostic rather than success.
+    stats["applied"] = False
+    if args.apply and stats["newApprovals"]:
+        atomic_store(args.before, selected)
+        stats["applied"] = True
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
-    if stats["applied"]:
-        atomic_store(args.before, selected)
     print("Official approval preflight: checked; see private report.")
 
 
