@@ -249,6 +249,23 @@ class YieldTests(unittest.TestCase):
         self.assertEqual(result["blocking_reason_counts"]["organizer_missing"], 2)
         self.assertEqual(result["publications"], 0)
 
+    def test_enrichments_reported_separately_from_publication_blockers(self):
+        review = self.review()
+        review["dossiers"][0]["optional_enrichment_pending_review_only"] = [
+            "lineup_if_announced", "ticketing_if_announced"]
+        review["dossiers"][1]["optional_enrichment_pending_review_only"] = [
+            "lineup_if_announced"]
+        result = diagnose(self.state(), review, TODAY)
+        self.assertEqual(result["optional_enrichment_reason_counts"],
+                         {"lineup_if_announced": 2, "ticketing_if_announced": 1})
+        self.assertNotIn("lineup_if_announced",
+                         result["blocking_reason_counts"])
+        self.assertEqual(result["publications"], 0)
+        review["dossiers"][0]["optional_enrichment_pending_review_only"] = [
+            "editorial_approval"]
+        with self.assertRaises(ValueError):
+            diagnose(self.state(), review, TODAY)
+
     def test_observed_attempts(self):
         state = self.state()
         state["institutional_future_checks_private"] = {
