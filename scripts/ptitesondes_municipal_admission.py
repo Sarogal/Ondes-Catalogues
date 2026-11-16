@@ -13,7 +13,10 @@ import json
 from merge_policy import byid, valid
 from ptitesondes_nonmusic_release_contract import TYPES, matching_category
 from ptitesondes_municipal_preflight import audit_municipal, read_official
-from ptitesondes_municipal_human_decision import audit_human_decision, github_read
+from ptitesondes_municipal_human_decision import (
+    API, APPROVER, audit_human_decision, github_read, request_digest,
+    review_comments,
+)
 from ptitesondes_municipal_appendonly_dryrun import (
     _event_from_proposal, _overlaps_publication, canonical_sha256,
 )
@@ -31,6 +34,50 @@ EXPECTED_PREVIEW_BLOCKERS = frozenset({
     "editorial_conditions_required",
     "conditions_explicit_recheck_required",
 })
+
+
+def editorial_decision_line(manifest, verb):
+    """Exact private-PR statement for deliberately unknown access details.
+
+    This is not a waiver of a known contradictory price or registration rule.
+    It only accepts displaying a source link without making any price claim.
+    """
+    if verb not in ("SOURCE_ONLY", "REVOKE"):
+        raise ValueError("unsupported_editorial_decision")
+    return ("PTITESONDES-MUNICIPAL-UNKNOWN-ACCESS-" + verb + "-V1 "
+            + manifest["review_id"] + " "
+            + request_digest(manifest) + " " + manifest["head_sha"])
+
+
+def authenticated_source_only_decision(manifest, token, get):
+    """Read latest owner decision from the private PR, including revocation.
+
+    Caller must first run audit_human_decision, which validates PR SHA, source
+    evidence, permissions and the exact immutable manifest.
+    """
+    comments = review_comments(manifest, token, get)
+    yes = editorial_decision_line(manifest, "SOURCE_ONLY")
+    revoke = editorial_decision_line(manifest, "REVOKE")
+    decisions = []
+    for item in comments:
+        if not isinstance(item, dict) or item.get("body") not in (yes, revoke):
+            continue
+        actor = item.get("user")
+        if (not isinstance(actor, dict)
+                or actor.get("login") != APPROVER
+                or actor.get("type") != "User"
+                or item.get("author_association") != "OWNER"
+                or type(item.get("id")) is not int):
+            continue
+        decisions.append(item)
+    if not decisions:
+        return False
+    rights = get(API + "/collaborators/" + APPROVER + "/permission", token)
+    if (not isinstance(rights, dict)
+            or rights.get("permission") not in ("admin", "maintain")):
+        raise ValueError("editorial_actor_permission_not_verified")
+    decisions.sort(key=lambda x: x["id"])
+    return decisions[-1]["body"] == yes
 
 
 def explicit_municipal_category_valid(event, catalogue, today):
@@ -98,13 +145,12 @@ def inspect_municipal_admission(catalogue, review, access, manifest, today,
         blockers.add("duplicate_published_across_sources")
     if candidate.get("review_id") != condition.get("review_id"):
         blockers.add("candidate_access_occurrence_mismatch")
-    # Unknown prices/registration may be displayed ONLY as conditions unknown.
-    # A genuine private approval alone does not silently resolve the separate
-    # editorial question of how to present missing conditions.
-    if (condition.get("price_evidence") == "not_stated"
-            or condition.get("registration_evidence") == "not_stated"):
-        blockers.add("editorial_unknown_conditions_pending")
-
+    # Unknown prices/registration may never be displayed as "free" or
+    # "without registration". The *distinct* SOURCE_ONLY decision below can
+    # authorize a neutral link, while leaving actual conditions unknown.
+    access_unknown = (condition.get("price_evidence") == "not_stated"
+                      or condition.get("registration_evidence") == "not_stated")
+    source_only_editorial = False
     approved_by_human = False
     if not blockers:
         try:
@@ -119,6 +165,14 @@ def inspect_municipal_admission(catalogue, review, access, manifest, today,
                 approved_by_human = human["human_approval_evidence"] is True
                 if not approved_by_human:
                     blockers.add("authenticated_private_approval_absent_or_revoked")
+                elif access_unknown:
+                    # No "approved: true" field, title similarity or ordinary
+                    # APPROVE comment can stand in for this separate decision.
+                    source_only_editorial = authenticated_source_only_decision(
+                        manifest, token, github_get
+                    )
+                    if not source_only_editorial:
+                        blockers.add("editorial_unknown_conditions_pending")
         except (KeyError, ValueError, TypeError, OSError):
             blockers.add("private_evidence_or_decision_unverified")
 
@@ -151,6 +205,7 @@ def inspect_municipal_admission(catalogue, review, access, manifest, today,
         "historical_preserved": len(catalogue["events"]),
         "historical_unchanged": True,
         "authenticated_human_evidence": approved_by_human,
+        "authenticated_unknown_access_source_only_decision": source_only_editorial,
         "technical_admission_diagnostic_passed": not blockers,
         "blockers": sorted(blockers),
         "production_category_policy_unchanged": True,
