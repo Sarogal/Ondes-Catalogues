@@ -2351,12 +2351,16 @@ class ConcertsCloudSyncTests(unittest.TestCase):
                 self.assertEqual(after["events"][:len(BASE["events"])],
                                  BASE["events"])
 
-    def test_cumulative_approval_limit_rejects_instead_of_silent_truncation(self):
+    def test_more_than_400_rejected_records_are_accounted_for(self):
         day=__import__("datetime").date(2026,11,2)
         q={"schema":"grossesondes.concert.approvals.v1",
-           "approvals":[{} for _ in range(401)]}
-        with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
-            merge(BASE,BASE,q,day)
+           "approvals":[{"reviewDecision":"rejected",
+                         "event":{"id":f"go-c-20280101-held-{i:03d}"}}
+                        for i in range(401)]}
+        result, stats = merge(BASE,BASE,q,day)
+        self.assertEqual(result, BASE)
+        self.assertEqual(stats["newEvents"], 0)
+        self.assertEqual(len(stats["held"]), 401)
 
     def test_fifty_two_approvals_are_processed_without_silent_limit(self):
         today=__import__("datetime").date(2026,11,2)
@@ -2813,12 +2817,12 @@ class RockstoreBlackLabOfficialSafetyTests(unittest.TestCase):
         protect_reference(BASE, out)
         validate_catalogue(out)
 
-    def test_queue_ceiling_is_still_enforced_at_400(self):
+    def test_duplicate_signed_ids_rejected_even_after_400_records(self):
         from concerts_cloud_sync import ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED
         event_id, spec = next(iter(
             ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED.items()))
         row = self.row(spec, event_id)
-        with self.assertRaisesRegex(ValueError, "Trop d.approbations"):
+        with self.assertRaisesRegex(ValueError, "doublon"):
             merge(
                 BASE, BASE,
                 {"schema": "grossesondes.concert.approvals.v1",

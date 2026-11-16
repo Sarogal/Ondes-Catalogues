@@ -12,8 +12,8 @@ DAY=dt.date(2026,11,4)
 SCHEMA=sync.SCHEMA
 
 class CumulativeApprovalCapacityTests(TestCase):
-    def test_capacity_extends_beyond_150_but_not_beyond_400(self):
-        self.assertEqual(sync.MAX_CUMULATIVE_EVENT_APPROVALS,400)
+    def test_more_than_400_approval_records_are_audited_individually(self):
+        self.assertEqual(sync.MAX_NEW_EVENTS_PER_SYNC, 16)
         approved={
             "schema":SCHEMA,
             "approvals":[{"reviewDecision":"rejected",
@@ -28,8 +28,10 @@ class CumulativeApprovalCapacityTests(TestCase):
             {"reviewDecision":"rejected","event":{"id":f"go-c-20270302-extra-{i:03d}"}}
             for i in range(250)
         )
-        with self.assertRaisesRegex(ValueError,"Trop d.approbations"):
-            sync.merge(BASE, BASE, approved, DAY)
+        result, report = sync.merge(BASE, BASE, approved, DAY)
+        self.assertEqual(result, BASE)
+        self.assertEqual(report["newEvents"], 0)
+        self.assertEqual(len(report["held"]), 401)
 
     def test_new_event_delta_fails_closed_instead_of_truncating(self):
         self.assertEqual(sync.MAX_NEW_EVENTS_PER_SYNC,16)

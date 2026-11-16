@@ -27,9 +27,10 @@ APPROVAL_URL = (
     "automation/concerts/approved.json?ref=main"
 )
 SCHEMA = "grossesondes.concert.approvals.v1"
-# Capacity for cumulative, still individually signed records. Limit the delta
-# per workflow run separately to prevent accidental mass publication.
-MAX_CUMULATIVE_EVENT_APPROVALS = 400
+# Keep a strict publication delta. The private append-only approval ledger may
+# grow beyond 400 records; each published concert still needs its signed entry.
+# A 20 MB resource guard is a file-transport limit, NOT an event/artist quota.
+MAX_PRIVATE_APPROVAL_FILE_BYTES = 20_000_000
 MAX_CUMULATIVE_VENUE_APPROVALS = 100
 MAX_NEW_EVENTS_PER_SYNC = 16
 MAX_NEW_VENUES_PER_SYNC = 6
@@ -1595,8 +1596,43 @@ def read_approvals(token):
     with urlopen(req, timeout=18) as response:
         require(response.status == 200, "Approbations privées indisponibles")
         payload = json.load(response)
-    require(payload.get("encoding") == "base64", "Format réponse GitHub inattendu")
-    return json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
+    require(isinstance(payload, dict) and
+            payload.get("type") == "file",
+            "Fichier d'approbations privé inattendu")
+    size = payload.get("size")
+    require(isinstance(size, int) and
+            0 < size <= MAX_PRIVATE_APPROVAL_FILE_BYTES,
+            "Taille du registre privé invalide ou excessive")
+    if payload.get("encoding") == "none":
+        # GitHub's Contents API omits Base64 at >1 MB. Read the exact,
+        # content-addressed blob from the same private repo, never a raw
+        # untrusted URL or a redirect controlled by the JSON metadata.
+        sha = payload.get("sha")
+        require(isinstance(sha, str) and
+                re.fullmatch(r"[0-9a-f]{40}", sha),
+                "SHA du registre d'approbations invalide")
+        blob_url = ("https://api.github.com/repos/Sarogal/GrossesOndes/"
+                    "git/blobs/" + sha)
+        blob_request = Request(blob_url, headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "GrossesOndesConcertsCloud/1.0",
+        })
+        with urlopen(blob_request, timeout=18) as response:
+            require(response.status == 200, "Blob d'approbations indisponible")
+            content = json.load(response)
+        require(isinstance(content, dict) and content.get("sha") == sha
+                and content.get("size") == size,
+                "Blob privé ne correspond pas au registre signé")
+    else:
+        content = payload
+    require(content.get("encoding") == "base64" and
+            isinstance(content.get("content"), str),
+            "Base64 des approbations privées absent")
+    decoded = base64.b64decode(content["content"], validate=False)
+    require(len(decoded) == size,
+            "Taille du registre privé différente de sa métadonnée")
+    return json.loads(decoded.decode("utf-8"))
 
 
 def validate_catalogue(data):
@@ -7074,8 +7110,15 @@ def merge(reference, current, approvals, today):
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
-    require(len(approvals["approvals"]) <= MAX_CUMULATIVE_EVENT_APPROVALS,
-            "Trop d’approbations cumulées")
+    # Signed approval IDs must be unique even after the historical queue
+    # exceeds 400 records. Duplicating a signature cannot mask a conflict.
+    ledger_ids = [
+        row["event"]["id"] for row in approvals["approvals"]
+        if isinstance(row, dict) and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+    ]
+    require(len(ledger_ids) == len(set(ledger_ids)),
+            "Identifiants d'approbations en doublon")
     # Une modification manuelle d'un concert CLOUD ne peut contourner
     # la file privée des approbations et les champs documentés.
     approved_ids = {
