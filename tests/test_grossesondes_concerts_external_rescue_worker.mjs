@@ -11,8 +11,13 @@ const MORNING = ms(DAY + "T07:18:00Z");
 const NOW = ms(DAY + "T16:28:00Z");
 const TOKEN = "TEST_TOKEN_ONLY_WITH_NO_PERMISSIONS_12345";
 const run = (event, at, extra={}) => ({
-  event, created_at: new Date(at).toISOString(), head_branch:"main", ...extra,
+  event, created_at: new Date(at).toISOString(), head_branch:"main",
+  ...(event === "schedule" ? {display_title:"Concerts intake schedule=18 7 * * *"} : {}),
+  ...extra,
 });
+const after = (slot, cron, minutes=15, extra={}) =>
+  run("schedule", slot + minutes*60*1000,
+      {display_title:"Concerts intake schedule=" + cron, ...extra});
 
 test("UTC slot identity and nine-hour-ten-minute grace including previous day", () => {
   assert.equal(expectedSlot(MORNING_RESCUE_CRON, NOW), MORNING);
@@ -38,6 +43,50 @@ test("missing slot only, no replay of successful OR failed scheduled run", () =>
                               MORNING, NOW), true);
   assert.equal(shouldDispatch([run("schedule", MORNING - 90*1000)],
                               MORNING, NOW), false);
+});
+
+test("different scheduled slots cannot hide an actually missed collection", () => {
+  const afternoon = ms(DAY + "T13:11:00Z");
+  const evening = ms(DAY + "T20:11:00Z");
+  const afternoonRescue = ms(DAY + "T22:21:00Z");
+  const eveningRescue = ms("2026-11-17T05:21:00Z");
+  // The afternoon run occurs before the morning rescue, but the 07:18
+  // collection is still missing. A generic event='schedule' was insufficient.
+  assert.equal(shouldDispatch([
+    after(afternoon,"11 13 * * *")
+  ], MORNING, NOW), true);
+  // Likewise, the evening run must not erase the missing afternoon slot.
+  assert.equal(shouldDispatch([
+    after(evening,"11 20 * * *")
+  ], afternoon, afternoonRescue), true);
+  // A genuine delayed morning run remains attributed to morning even if
+  // it starts after the next cron's normal wall-clock time.
+  assert.equal(shouldDispatch([
+    after(MORNING,"18 7 * * *",7*60)
+  ], MORNING, NOW), false);
+  // Independent slots can coexist: no replay of a known failed morning.
+  assert.equal(shouldDispatch([
+    after(MORNING,"18 7 * * *",3*60,{conclusion:"failure"}),
+    after(afternoon,"11 13 * * *")
+  ], MORNING, NOW), false);
+  assert.equal(shouldDispatch([
+    after(evening,"11 20 * * *")
+  ], evening, eveningRescue), false);
+});
+
+test("unlabelled legacy and forged schedule titles fail closed", () => {
+  const afternoon = ms(DAY + "T13:11:00Z");
+  assert.throws(() => shouldDispatch([
+    after(afternoon,"11 13,20 * * *")
+  ], MORNING, NOW), /cannot be authenticated/);
+  assert.throws(() => shouldDispatch([
+    run("schedule",MORNING+120000,{display_title:""})
+  ], MORNING, NOW), /cannot be authenticated/);
+  assert.throws(() => shouldDispatch([
+    after(MORNING,"11 13 * * *")
+  ], MORNING, NOW + 1000), /cannot be authenticated/);
+  assert.throws(() => shouldDispatch([], ms(DAY + "T08:00:00Z"), NOW),
+                /Unknown original GitHub concert slot/);
 });
 
 test("malformed, truncated, or premature API observation fails closed", () => {
