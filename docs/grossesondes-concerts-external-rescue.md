@@ -40,7 +40,23 @@ P'tites Ondes si son secours est mis en service.
 
 Le Worker utilise le jeton limité `GITHUB_DISPATCH_TOKEN` pour **lire
 uniquement les métadonnées de runs** du workflow public, jamais le dépôt
-privé. Il refuse d'appeler l'API de relance si :
+privé. **Séparation indispensable des créneaux** : une veille de 13:11 UTC
+peut démarrer avant le contrôle de la veille de 07:18 UTC (16:28 UTC).
+Tester uniquement `event=schedule` confond alors la veille ultérieure avec
+celle qui manque. Le correctif de cette PR prépare trois expressions GitHub
+uniques (`18 7 * * *`, `11 13 * * *`, `11 20 * * *`) et
+un `run-name` contenant `github.event.schedule` ; aucune fréquence
+supplémentaire n'est ajoutée. Le Worker confronte ce titre exact au
+créneau attendu, même si GitHub démarre la veille en retard.
+
+**Migration sécurisée** : les anciens runs sans titre de créneau authentifiable
+ou utilisant l'ancien cron combiné `11 13,20 * * *`, visibles dans la fenêtre
+de contrôle, entraînent un échec fermé (aucune relance). Le secours ne doit
+être activé qu'après déploiement autorisé de cette nouvelle convention sur
+`main` et vérification de ses titres dans les métadonnées GitHub réelles.
+Les exécutions manuelles empêchent toujours un rattrapage dans la fenêtre.
+
+Il refuse d'appeler l'API de relance si :
 
 - une exécution `schedule` existe déjà pour le créneau, même en
   conclusion `failure` ; un refus de preuve est un garde-fou, pas une
