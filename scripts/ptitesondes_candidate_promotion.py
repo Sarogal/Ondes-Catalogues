@@ -402,6 +402,10 @@ def reconciled_openagenda_url(lead, row):
         and str(row.get("originagenda_uid")) == "9278749"
         and norm(row.get("originagenda_title")) ==
             norm("Réseau de Lecture Publique de la CINOR")
+        and norm(row.get("title_fr")) == norm("Activité manuelle")
+        and norm(row.get("location_city")) == norm("Saint-Denis")
+        and norm(row.get("location_name")) ==
+            norm("Bibliothèque Intercommunale Alain Lorraine")
     )
     expected_source_slug = lead["external_id"] + "_" + target_parts[1]
     if (lead.get("collector") != "openagenda-v2" or
