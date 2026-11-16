@@ -137,6 +137,333 @@ class PreflightTests(unittest.TestCase):
                          ["No official rock genre", "Guest  not named"])
         self.assertEqual(proposed, before)
 
+    def test_partial_batch_is_reverified_exactly_before_selecting_two_good_rows(self):
+        proposed = copy.deepcopy(self.after)
+        for number, day in ((2, "2027-04-02"), (3, "2027-04-03")):
+            new = row(f"go-c-2027040{number}-candidate-{number}")
+            new["event"]["date"] = day
+            new["event"]["officialUrl"] = f"https://example.org/agenda/{number}"
+            new["officialEvidence"][0]["url"] = f"https://example.org/agenda/{number}"
+            proposed["approvals"].append(new)
+        rejected_id = proposed["approvals"][1]["event"]["id"]
+        calls = []
+
+        def partial_publisher(reference, current, approvals, today):
+            ids = [r["event"]["id"] for r in approvals["approvals"]]
+            calls.append(ids)
+            kept = [r for r in approvals["approvals"]
+                    if r["event"]["id"] != rejected_id]
+            out = copy.deepcopy(current)
+            out["events"].extend(
+                [{**r["event"], "confidence": "official"} for r in kept])
+            return out, {
+                "newEvents": len(kept),
+                "held": ([{"candidateId": rejected_id,
+                          "reason": "Première partie non corroborée"}]
+                         if rejected_id in ids else []),
+            }
+
+        stats, safe, refusals = gate.select_exact_publishable_subset(
+            self.before, proposed, {}, self.catalogue, TODAY,
+            partial_publisher)
+        self.assertEqual(stats["newApprovals"], 2)
+        self.assertTrue(stats["validatedByPublisher"])
+        self.assertEqual(len(safe["approvals"]), 2)
+        self.assertEqual([r["event"]["id"] for r in safe["approvals"]],
+                         [proposed["approvals"][0]["event"]["id"],
+                          proposed["approvals"][2]["event"]["id"]])
+        self.assertEqual(len(refusals), 1)
+        self.assertEqual(refusals[0]["eventId"], rejected_id)
+        self.assertEqual([len(ids) for ids in calls], [3, 2])
+        self.assertEqual(len(proposed["approvals"]), 3)
+        self.assertEqual(self.before["approvals"], [])
+
+    def test_partial_batch_preserves_large_private_history_and_correct_order(self):
+        # Production-like queue size without loading any private approvals.
+        previous = prior()
+        previous["approvals"] = [
+            row(f"go-c-20261201-historic-{i:03d}") for i in range(237)
+        ]
+        current = {"events": [
+            copy.deepcopy(r["event"]) for r in previous["approvals"]
+        ]}
+        proposed = copy.deepcopy(previous)
+        ids = [
+            "go-c-20261204-paris-employed-to-serve",
+            "go-c-20261203-paris-blackgold",
+            "go-c-20270521-montpellier-vulves-assassines",
+        ]
+        for i, identity in enumerate(ids):
+            item = row(identity)
+            item["event"]["officialUrl"] = f"https://example.org/agenda/live-{i}"
+            item["officialEvidence"][0]["url"] = item["event"]["officialUrl"]
+            item["event"]["date"] = f"2027-04-0{i+1}"
+            proposed["approvals"].append(item)
+        original = copy.deepcopy(previous)
+        full = copy.deepcopy(proposed)
+        attempts = []
+
+        def selective_publisher(reference, catalogue, candidate, today):
+            additions = candidate["approvals"][len(previous["approvals"]):]
+            attempts.append([r["event"]["id"] for r in additions])
+            output = copy.deepcopy(catalogue)
+            accepted = [
+                r for r in additions if r["event"]["id"] != ids[1]
+            ]
+            output["events"].extend({
+                **r["event"], "confidence": "official"
+            } for r in accepted)
+            return output, {"held": [
+                {"candidateId": ids[1], "reason": "Identité non établie"}
+            ] if len(accepted) != len(additions) else []}
+
+        stats, safe, rejections = gate.select_exact_publishable_subset(
+            previous, proposed, {}, current, TODAY, selective_publisher)
+        self.assertEqual(attempts, [ids, [ids[0], ids[2]]])
+        self.assertEqual(stats["newApprovals"], 2)
+        self.assertEqual(safe["approvals"][:237], original["approvals"])
+        self.assertEqual([r["event"]["id"] for r in safe["approvals"][237:]],
+                         [ids[0], ids[2]])
+        self.assertEqual([r["eventId"] for r in rejections], [ids[1]])
+        self.assertEqual(previous, original)
+        self.assertEqual(proposed, full)
+        self.assertEqual(len(current["events"]), 237)
+
+    def test_partial_batch_dry_run_does_not_change_private_approvals(self):
+        today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
+        before_data = prior()
+        before_data["approvals"].append(row("go-c-20260101-previous"))
+        candidate_data = copy.deepcopy(before_data)
+        ids = ["go-c-20270401-first", "go-c-20270402-rejected",
+               "go-c-20270403-third"]
+        for i, identity in enumerate(ids):
+            item = row(identity)
+            item["reviewedAt"] = today.isoformat()
+            item["event"]["date"] = f"2027-04-0{i+1}"
+            item["event"]["officialUrl"] = f"https://example.org/live-{i}"
+            item["officialEvidence"][0]["url"] = item["event"]["officialUrl"]
+            candidate_data["approvals"].append(item)
+        current = {"events": [copy.deepcopy(before_data["approvals"][0]["event"])]}
+        calls = []
+
+        def fake_publisher(reference, catalogue, candidate, as_of):
+            self.assertEqual(as_of, today)
+            appended = candidate["approvals"][1:]
+            calls.append([item["event"]["id"] for item in appended])
+            accepted = [r for r in appended if r["event"]["id"] != ids[1]]
+            output = copy.deepcopy(catalogue)
+            output["events"].extend(
+                {**r["event"], "confidence": "official"} for r in accepted)
+            return output, {"held": [
+                {"candidateId": ids[1], "reason": "Refus officiel"}
+            ] if len(accepted) != len(appended) else []}
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            paths = [root / x for x in (
+                "approved.json", "candidate.json", "reference.json",
+                "catalogue.json", "report.json")]
+            before, candidate, reference, catalogue, report = paths
+            for path, data in (
+                (before, before_data), (candidate, candidate_data),
+                (reference, {"events": []}), (catalogue, current)):
+                path.write_text(json.dumps(data), encoding="utf-8")
+            argv = [
+                "approval_preflight.py", "--before", str(before),
+                "--candidate", str(candidate), "--reference", str(reference),
+                "--catalogue", str(catalogue), "--report", str(report),
+            ]  # No --apply: preflight validation must stay read-only.
+            with patch("sys.argv", argv), patch.dict(sys.modules, {
+                "concerts_cloud_sync": types.SimpleNamespace(merge=fake_publisher)
+            }):
+                gate.main()
+            result = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(json.loads(before.read_text(encoding="utf-8")),
+                             before_data)
+            self.assertEqual(result["status"], "partially_validated")
+            self.assertEqual(result["newApprovals"], 2)
+            self.assertEqual(result["rejectedCount"], 1)
+            self.assertEqual(result["rejected"][0]["eventId"], ids[1])
+            self.assertFalse(result["applied"])
+            self.assertEqual(calls, [ids, [ids[0], ids[2]]])
+
+    def test_publisher_must_reprove_subset_after_mixed_rejection(self):
+        proposed = copy.deepcopy(self.after)
+        second = row("go-c-20270402-second")
+        second["event"]["date"] = "2027-04-02"
+        second["event"]["officialUrl"] = "https://example.org/agenda/second"
+        second["officialEvidence"][0]["url"] = second["event"]["officialUrl"]
+        proposed["approvals"].append(second)
+        calls = []
+
+        def untrustworthy_publisher(reference, current, approvals, today):
+            calls.append(len(approvals["approvals"]))
+            out = copy.deepcopy(current)
+            if len(approvals["approvals"]) == 2:
+                out["events"].append({**self.after["approvals"][0]["event"]})
+                return out, {"newEvents": 1, "held": [
+                    {"candidateId": second["event"]["id"],
+                     "reason": "Genre non corroboré"}
+                ]}
+            # A second pass with only the good item mysteriously changes
+            # its date: the old blanket-allow approach would miss this.
+            tampered = copy.deepcopy(self.after["approvals"][0]["event"])
+            tampered["date"] = "2027-04-09"
+            out["events"].append(tampered)
+            return out, {"newEvents": 1, "held": []}
+
+        with self.assertRaises(gate.PublisherRejections):
+            gate.select_exact_publishable_subset(
+                self.before, proposed, {}, self.catalogue, TODAY,
+                untrustworthy_publisher)
+        self.assertEqual(calls, [2, 1])
+        self.assertEqual(self.before["approvals"], [])
+
+    def test_all_rejected_batch_still_fails_without_safe_subset(self):
+        proposed = copy.deepcopy(self.after)
+        def always_reject(reference, current, approvals, today):
+            return copy.deepcopy(current), {"newEvents": 0, "held": [
+                {"candidateId": event()["id"], "reason": "Pas de source"}
+            ]}
+        with self.assertRaises(gate.PublisherRejections):
+            gate.select_exact_publishable_subset(
+                self.before, proposed, {}, self.catalogue, TODAY,
+                always_reject)
+
+    def test_first_refusal_keeps_later_two_approvals_in_original_order(self):
+        proposed = copy.deepcopy(self.after)
+        first_id = proposed["approvals"][0]["event"]["id"]
+        for index in (2, 3):
+            approval = row(f"go-c-2027040{index}-after-refusal")
+            approval["event"]["date"] = f"2027-04-0{index}"
+            approval["event"]["officialUrl"] = (
+                f"https://example.org/agenda/after-refusal-{index}")
+            approval["officialEvidence"][0]["url"] = (
+                approval["event"]["officialUrl"])
+            proposed["approvals"].append(approval)
+        expected = [r["event"]["id"] for r in proposed["approvals"][1:]]
+        attempts = []
+
+        def publisher(reference, current, proposal, today):
+            candidate_ids = [r["event"]["id"] for r in proposal["approvals"]]
+            attempts.append(candidate_ids)
+            accepted = [r for r in proposal["approvals"]
+                        if r["event"]["id"] != first_id]
+            result = copy.deepcopy(current)
+            result["events"].extend(
+                {**r["event"], "confidence": "official"} for r in accepted)
+            return result, {"newEvents": len(accepted), "held": (
+                [{"candidateId": first_id,
+                  "reason": "Identité principale non corroborée"}]
+                if first_id in candidate_ids else [])}
+
+        stats, selected, rejections = gate.select_exact_publishable_subset(
+            self.before, proposed, {}, self.catalogue, TODAY, publisher)
+        self.assertEqual(attempts, [
+            [first_id, *expected], expected])
+        self.assertEqual([r["event"]["id"] for r in selected["approvals"]],
+                         expected)
+        self.assertEqual(stats["newApprovals"], 2)
+        self.assertTrue(stats["validatedByPublisher"])
+        self.assertEqual([r["eventId"] for r in rejections], [first_id])
+        self.assertEqual(self.before["approvals"], [])
+
+    def test_failed_atomic_store_never_reports_successful_apply(self):
+        today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
+        original = prior()
+        proposed = copy.deepcopy(self.after)
+        proposed["approvals"][0]["reviewedAt"] = today.isoformat()
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before, candidate, reference, catalogue, report = (
+                root / name for name in
+                ("approved.json", "proposal.json", "reference.json",
+                 "catalogue.json", "preflight.json"))
+            for path, data in (
+                (before, original), (candidate, proposed),
+                (reference, {"events": []}), (catalogue, {"events": []})):
+                path.write_text(json.dumps(data), encoding="utf-8")
+            argv = ["approval_preflight.py", "--before", str(before),
+                    "--candidate", str(candidate), "--reference",
+                    str(reference), "--catalogue", str(catalogue),
+                    "--report", str(report), "--apply"]
+            with patch("sys.argv", argv), patch.dict(
+                sys.modules, {"concerts_cloud_sync": types.SimpleNamespace(
+                    merge=publisher_accept)}), patch.object(
+                    gate, "atomic_store",
+                    side_effect=OSError("Simulated private disk failure")):
+                with self.assertRaisesRegex(OSError, "disk failure"):
+                    gate.main()
+            self.assertEqual(json.loads(before.read_text(encoding="utf-8")),
+                             original)
+            # The confidential workflow will write a BLOCKED fallback, not
+            # accept a success report whose ledger was never persisted.
+            self.assertFalse(report.exists())
+
+    def test_main_apply_writes_only_second_pass_accepted_rows(self):
+        today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
+        original = prior()
+        proposed = copy.deepcopy(original)
+        first = row("go-c-20270401-first")
+        first["reviewedAt"] = today.isoformat()
+        second = row("go-c-20270402-blocked")
+        second["reviewedAt"] = today.isoformat()
+        second["event"]["date"] = "2027-04-02"
+        second["event"]["officialUrl"] = "https://example.org/agenda/blocked"
+        second["officialEvidence"][0]["url"] = second["event"]["officialUrl"]
+        third = row("go-c-20270403-third")
+        third["reviewedAt"] = today.isoformat()
+        third["event"]["date"] = "2027-04-03"
+        third["event"]["officialUrl"] = "https://example.org/agenda/third"
+        third["officialEvidence"][0]["url"] = third["event"]["officialUrl"]
+        proposed["approvals"] = [first, second, third]
+        blocked_id = second["event"]["id"]
+        attempts = []
+
+        def exact_publisher(reference, current, approvals, as_of):
+            self.assertEqual(as_of, today)
+            attempts.append(len(approvals["approvals"]))
+            out = copy.deepcopy(current)
+            accepted = [r for r in approvals["approvals"]
+                        if r["event"]["id"] != blocked_id]
+            out["events"] += [{**r["event"], "confidence": "official"}
+                              for r in accepted]
+            return out, {"newEvents": len(accepted), "held": (
+                [{"candidateId": blocked_id, "reason": "Fausse date"}]
+                if len(accepted) != len(approvals["approvals"]) else [])}
+
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            before, candidate, reference, catalogue, report = (
+                folder / name for name in
+                ("approved.json", "proposal.json", "reference.json",
+                 "catalogue.json", "preflight.json"))
+            for path, data in (
+                (before, original), (candidate, proposed),
+                (reference, {"events": []}), (catalogue, {"events": []})):
+                path.write_text(json.dumps(data), encoding="utf-8")
+            args = ["approval_preflight.py", "--before", str(before),
+                    "--candidate", str(candidate), "--reference",
+                    str(reference), "--catalogue", str(catalogue),
+                    "--report", str(report), "--apply"]
+            with patch("sys.argv", args), patch.dict(
+                    sys.modules, {"concerts_cloud_sync": types.SimpleNamespace(
+                        merge=exact_publisher)}):
+                gate.main()
+            saved = json.loads(before.read_text(encoding="utf-8"))
+            result = json.loads(report.read_text(encoding="utf-8"))
+            self.assertEqual(len(saved["approvals"]), 2)
+            self.assertEqual(saved["approvals"][0], first)
+            self.assertEqual(saved["approvals"][1], third)
+            self.assertEqual(result["status"], "partially_validated")
+            self.assertEqual(result["proposedApprovals"], 3)
+            self.assertEqual(result["newApprovals"], 2)
+            self.assertEqual(result["rejectedCount"], 1)
+            self.assertEqual(result["rejected"][0]["eventId"], blocked_id)
+            self.assertTrue(result["applied"])
+            self.assertEqual(attempts, [3, 2])
+
     def test_blocked_main_persists_private_diagnostics_without_approval_write(self):
         today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
         previous = prior()
@@ -196,9 +523,50 @@ class PreflightTests(unittest.TestCase):
     def test_publisher_cannot_return_unexpected_number_of_events(self):
         def extra(reference, current, approvals, today):
             return {"events": [event(), {"id": "other"}]}, {}
-        with self.assertRaisesRegex(ValueError, "Unexpected number"):
+        with self.assertRaisesRegex(ValueError, "unsigned one"):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, extra)
+
+    def test_publisher_cannot_balance_a_deleted_event_with_unsigned_event(self):
+        current = {"events": [
+            {"id": "go-old-first", "date": "2026-12-04"},
+            {"id": "go-old-second", "date": "2026-12-05"},
+        ]}
+        def replacement(reference, catalogue, proposed, today):
+            # Three rows total, exactly the expected old length plus one.
+            # But the publisher silently deletes an old show and adds a
+            # different unsigned show. The old count-only guard passed.
+            return {"events": [
+                copy.deepcopy(current["events"][1]),
+                {**event(), "confidence": "official"},
+                {"id": "go-unsigned-extra", "date": "2027-04-04"},
+            ]}, {"newEvents": 1}
+        with self.assertRaisesRegex(ValueError, "unsigned"):
+            gate.validate_proposal(
+                self.before, self.after, {}, current, TODAY, replacement)
+
+    def test_publisher_duplicate_event_ids_cannot_balance_output_count(self):
+        current = {"events": [{"id": "go-old-first", "date": "2026-12-04"}]}
+        def duplicate(reference, catalogue, proposed, today):
+            return {"events": [
+                {**event(), "confidence": "official"},
+                {**event(), "confidence": "official"},
+            ]}, {"newEvents": 1}
+        with self.assertRaisesRegex(ValueError, "duplicate event IDs"):
+            gate.validate_proposal(
+                self.before, self.after, {}, current, TODAY, duplicate)
+
+    def test_existing_published_event_metadata_correction_is_not_blocked(self):
+        current = {"events": [{"id": "go-old-first",
+                               "status": "confirmed"}]}
+        def corrected(reference, catalogue, proposed, today):
+            return {"events": [
+                {"id": "go-old-first", "status": "cancelled"},
+                {**event(), "confidence": "official"},
+            ]}, {"newEvents": 1}
+        stats = gate.validate_proposal(
+            self.before, self.after, {}, current, TODAY, corrected)
+        self.assertEqual(stats["publishableEvents"], 1)
 
     def test_already_published_event_is_refused(self):
         with self.assertRaisesRegex(ValueError, "already in the public"):
@@ -228,6 +596,29 @@ class PreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "metadata changed"):
             gate.check_append_only(self.before, proposed, TODAY)
 
+    def test_new_id_cannot_reuse_historical_official_url_and_date(self):
+        previous = prior()
+        previous["approvals"] = [row("go-c-20270401-historic")]
+        proposed = copy.deepcopy(previous)
+        # A distinct ID and artist do not make the same official page/date
+        # a distinct concert. This bypassed the old appended-only pair set.
+        repeated = row("go-c-20270401-new-identity")
+        repeated["event"]["artistIds"] = ["different-new-artist"]
+        proposed["approvals"].append(repeated)
+        with self.assertRaisesRegex(ValueError, "Duplicate official URL"):
+            gate.check_append_only(previous, proposed, TODAY)
+        self.assertEqual(len(previous["approvals"]), 1)
+
+    def test_historical_official_url_with_distinct_date_remains_eligible(self):
+        previous = prior()
+        previous["approvals"] = [row("go-c-20270401-historic")]
+        proposed = copy.deepcopy(previous)
+        next_date = row("go-c-20270402-other-date")
+        next_date["event"]["date"] = "2027-04-02"
+        proposed["approvals"].append(next_date)
+        self.assertEqual(
+            gate.check_append_only(previous, proposed, TODAY), [next_date])
+
     def test_duplicate_approval_ids_are_rejected(self):
         proposed = copy.deepcopy(self.after)
         proposed["approvals"].append(copy.deepcopy(row()))
@@ -239,6 +630,22 @@ class PreflightTests(unittest.TestCase):
         proposed["approvals"] = [row(f"go-c-20270401-example-{i}") for i in range(17)]
         with self.assertRaisesRegex(ValueError, "Too many"):
             gate.check_append_only(self.before, proposed, TODAY)
+
+    def test_trusted_main_merge_of_preflight_triggers_one_public_runner_pass(self):
+        workflow = (
+            Path(__file__).resolve().parents[2] / ".github" / "workflows"
+            / "grossesondes-concerts-private-intake-on-public-runners.yml"
+        ).read_text(encoding="utf-8")
+        # The exact preflight edit must not wait for an unreliable schedule.
+        self.assertIn("branches: [main]", workflow)
+        self.assertIn(
+            "      - 'automation/concerts/approval_preflight.py'", workflow)
+        # PR changes are tested by the public-safe parity CI, without the
+        # private credentials of this trusted-main intake job.
+        self.assertNotIn("\n  pull_request:", workflow)
+        self.assertIn(
+            "github.ref == 'refs/heads/main'", workflow)
+        self.assertIn("permissions:\n  contents: read", workflow)
 
     def test_no_change_to_source_documents(self):
         previous = copy.deepcopy(self.before)

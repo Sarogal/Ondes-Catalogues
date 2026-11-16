@@ -9,6 +9,7 @@ No private record is uploaded to a public workflow artifact or printed.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import os
@@ -58,7 +59,16 @@ def check_append_only(previous, proposed, today):
     existing_ids = {a.get("event", {}).get("id") for a in old
                     if isinstance(a, dict) and isinstance(a.get("event"), dict)}
     added_ids = set()
-    pairs = set()
+    # A new event may not reuse a first-party page for the SAME date under a
+    # different ID. Include the immutable private history, not just this batch.
+    # A genuinely new date at an unchanged official URL remains eligible.
+    pairs = {
+        (a["event"]["officialUrl"], a["event"]["date"])
+        for a in old
+        if isinstance(a, dict) and isinstance(a.get("event"), dict)
+        and all(isinstance(a["event"].get(key), str) and a["event"][key]
+                for key in ("officialUrl", "date"))
+    }
     for approval in appended:
         require(isinstance(approval, dict)
                 and approval.get("reviewDecision") == "approved"
@@ -123,11 +133,56 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
         })
     if rejected:
         raise PublisherRejections(rejected)
-    require(len(candidate["events"]) - len(current["events"]) == len(appended),
+    # A numerically unchanged result is not necessarily append-only:
+    # deletion of a published event plus insertion of an unrelated one can
+    # balance the count. Check exact IDs *after* collecting held diagnostics.
+    candidate_ids = [event["id"] for event in candidate["events"]]
+    require(len(candidate_ids) == len(set(candidate_ids)),
+            "Publisher returned duplicate event IDs")
+    require(set(candidate_ids) == already | incoming,
+            "Publisher removed a published concert or added an unsigned one")
+    require(len(candidate_ids) - len(current["events"]) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
             "publishableEvents": len(appended),
             "validatedByPublisher": True}
+
+
+def select_exact_publishable_subset(previous, proposed, reference,
+                                    current, today, publisher):
+    """Keep independently valid signatures; NEVER trust the first partial merge.
+
+    First run the exact publisher against the whole signed proposal to
+    identify failures. If there are failures, build an append-only proposal
+    that excludes ONLY the rejected new event IDs. Re-run the same publisher
+    on that exact subset, with the same catalogue, reference and review day.
+    No rejected record is written to the private approval file.
+    """
+    try:
+        stats = validate_proposal(
+            previous, proposed, reference, current, today, publisher)
+        return stats, proposed, []
+    except PublisherRejections as failure:
+        additions = check_append_only(previous, proposed, today)
+        failed = {r["eventId"] for r in failure.rejections}
+        expected_ids = {r["event"]["id"] for r in additions}
+        require(bool(failed) and failed.issubset(expected_ids),
+                "Publisher rejected an unknown or previously signed event")
+        accepted = [r for r in additions if r["event"]["id"] not in failed]
+        if not accepted:
+            # Existing fail-closed behavior for wholly invalid batches.
+            raise
+        safe = copy.deepcopy(proposed)
+        safe["approvals"] = (
+            copy.deepcopy(previous["approvals"]) + copy.deepcopy(accepted)
+        )
+        stats = validate_proposal(
+            previous, safe, reference, current, today, publisher)
+        require(stats["validatedByPublisher"] is True
+                and stats["newApprovals"] == len(accepted)
+                and stats["publishableEvents"] == len(accepted),
+                "Independent accepted subset not reproduced by publisher")
+        return stats, safe, failure.rejections
 
 
 def atomic_store(path, data):
@@ -165,7 +220,7 @@ def main():
     sys.path.insert(0, str(root / "scripts"))
     import concerts_cloud_sync
     try:
-        stats = validate_proposal(
+        stats, selected, rejected = select_exact_publishable_subset(
             original, proposed, reference, current, today,
             concerts_cloud_sync.merge)
     except PublisherRejections as exc:
@@ -181,13 +236,23 @@ def main():
             "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
         }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         raise
-    stats["applied"] = bool(args.apply and stats["newApprovals"])
+    stats["proposedApprovals"] = (len(proposed["approvals"]) -
+                                  len(original["approvals"]))
+    stats["rejectedCount"] = len(rejected)
+    stats["rejected"] = rejected
+    stats["status"] = ("partially_validated" if rejected else
+                       "validated" if stats["newApprovals"] else "no_changes")
+    # Never claim an approval was applied before the atomic ledger write
+    # succeeds. If storage fails, the caller must see an error, and the
+    # private workflow records a blocked diagnostic rather than success.
+    stats["applied"] = False
+    if args.apply and stats["newApprovals"]:
+        atomic_store(args.before, selected)
+        stats["applied"] = True
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
-    if stats["applied"]:
-        atomic_store(args.before, proposed)
     print("Official approval preflight: checked; see private report.")
 
 
