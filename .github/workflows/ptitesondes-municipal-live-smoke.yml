@@ -13,6 +13,7 @@ jobs:
   gosier-readonly-check:
     # Only the explicitly isolated draft branch can run this network probe
     # during PR review; never a scheduled or production publisher job.
+    # Validate exact SPIP day/month/year metadata for 9 occurrences.
     if: >-
       github.repository == 'Sarogal/Ondes-Catalogues' &&
       github.event_name == 'pull_request' &&
