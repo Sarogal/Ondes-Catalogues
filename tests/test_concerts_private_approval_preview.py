@@ -102,6 +102,17 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
             self.assertEqual(ci.audit(old, proposed, base, base,
                                       dt.date(2026, 11, 16)), 1)
 
+        # The 17th *old* signature may expire while queued. That refusal
+        # remains held but must not veto an independent, valid 18th signature.
+        def stale_seventeenth(row, venues, artists, today):
+            if row["event"]["id"] == rows[-2]["event"]["id"]:
+                raise ValueError("Ancienne preuve officielle expirée")
+            return proven(row, venues, artists, today)
+        with patch.object(ci.sync, "validate_approval",
+                          side_effect=stale_seventeenth):
+            self.assertEqual(ci.audit(old, proposed, base, base,
+                                      dt.date(2026, 11, 16)), 1)
+
         def forged_last(row, venues, artists, today):
             if row["event"]["id"] == rows[-1]["event"]["id"]:
                 raise ValueError("Source non corroborée")
