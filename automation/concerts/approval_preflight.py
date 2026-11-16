@@ -59,7 +59,16 @@ def check_append_only(previous, proposed, today):
     existing_ids = {a.get("event", {}).get("id") for a in old
                     if isinstance(a, dict) and isinstance(a.get("event"), dict)}
     added_ids = set()
-    pairs = set()
+    # A new event may not reuse a first-party page for the SAME date under a
+    # different ID. Include the immutable private history, not just this batch.
+    # A genuinely new date at an unchanged official URL remains eligible.
+    pairs = {
+        (a["event"]["officialUrl"], a["event"]["date"])
+        for a in old
+        if isinstance(a, dict) and isinstance(a.get("event"), dict)
+        and all(isinstance(a["event"].get(key), str) and a["event"][key]
+                for key in ("officialUrl", "date"))
+    }
     for approval in appended:
         require(isinstance(approval, dict)
                 and approval.get("reviewDecision") == "approved"
