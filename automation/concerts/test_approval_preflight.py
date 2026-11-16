@@ -330,6 +330,77 @@ class PreflightTests(unittest.TestCase):
                 self.before, proposed, {}, self.catalogue, TODAY,
                 always_reject)
 
+    def test_first_refusal_keeps_later_two_approvals_in_original_order(self):
+        proposed = copy.deepcopy(self.after)
+        first_id = proposed["approvals"][0]["event"]["id"]
+        for index in (2, 3):
+            approval = row(f"go-c-2027040{index}-after-refusal")
+            approval["event"]["date"] = f"2027-04-0{index}"
+            approval["event"]["officialUrl"] = (
+                f"https://example.org/agenda/after-refusal-{index}")
+            approval["officialEvidence"][0]["url"] = (
+                approval["event"]["officialUrl"])
+            proposed["approvals"].append(approval)
+        expected = [r["event"]["id"] for r in proposed["approvals"][1:]]
+        attempts = []
+
+        def publisher(reference, current, proposal, today):
+            candidate_ids = [r["event"]["id"] for r in proposal["approvals"]]
+            attempts.append(candidate_ids)
+            accepted = [r for r in proposal["approvals"]
+                        if r["event"]["id"] != first_id]
+            result = copy.deepcopy(current)
+            result["events"].extend(
+                {**r["event"], "confidence": "official"} for r in accepted)
+            return result, {"newEvents": len(accepted), "held": (
+                [{"candidateId": first_id,
+                  "reason": "Identité principale non corroborée"}]
+                if first_id in candidate_ids else [])}
+
+        stats, selected, rejections = gate.select_exact_publishable_subset(
+            self.before, proposed, {}, self.catalogue, TODAY, publisher)
+        self.assertEqual(attempts, [
+            [first_id, *expected], expected])
+        self.assertEqual([r["event"]["id"] for r in selected["approvals"]],
+                         expected)
+        self.assertEqual(stats["newApprovals"], 2)
+        self.assertTrue(stats["validatedByPublisher"])
+        self.assertEqual([r["eventId"] for r in rejections], [first_id])
+        self.assertEqual(self.before["approvals"], [])
+
+    def test_failed_atomic_store_never_reports_successful_apply(self):
+        today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
+        original = prior()
+        proposed = copy.deepcopy(self.after)
+        proposed["approvals"][0]["reviewedAt"] = today.isoformat()
+
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            before, candidate, reference, catalogue, report = (
+                root / name for name in
+                ("approved.json", "proposal.json", "reference.json",
+                 "catalogue.json", "preflight.json"))
+            for path, data in (
+                (before, original), (candidate, proposed),
+                (reference, {"events": []}), (catalogue, {"events": []})):
+                path.write_text(json.dumps(data), encoding="utf-8")
+            argv = ["approval_preflight.py", "--before", str(before),
+                    "--candidate", str(candidate), "--reference",
+                    str(reference), "--catalogue", str(catalogue),
+                    "--report", str(report), "--apply"]
+            with patch("sys.argv", argv), patch.dict(
+                sys.modules, {"concerts_cloud_sync": types.SimpleNamespace(
+                    merge=publisher_accept)}), patch.object(
+                    gate, "atomic_store",
+                    side_effect=OSError("Simulated private disk failure")):
+                with self.assertRaisesRegex(OSError, "disk failure"):
+                    gate.main()
+            self.assertEqual(json.loads(before.read_text(encoding="utf-8")),
+                             original)
+            # The confidential workflow will write a BLOCKED fallback, not
+            # accept a success report whose ledger was never persisted.
+            self.assertFalse(report.exists())
+
     def test_main_apply_writes_only_second_pass_accepted_rows(self):
         today = dt.datetime.now(ZoneInfo("Europe/Paris")).date()
         original = prior()
