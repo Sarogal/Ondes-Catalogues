@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
+from proof import norm
 
 SCHEMA = "ptitesondes.nonmusic_release_readiness.v1"
 REVIEW_SCHEMA = "ptitesondes.gosier_private_review_candidates.v1"
@@ -25,6 +26,40 @@ TYPES = {
 GOSIER = "Le Gosier"
 VENUE = "Médiathèque Raoul Georges Nicolo"
 LOCATION = (16.20547, -61.48950)
+
+SERIES = {
+    "mon doudou raconte": "lecture-jeunesse",
+    "les rendez vous du numerique": "atelier-numerique",
+    "la magie des histoires": "lecture-jeunesse",
+    "le rendez vous des p tits racoons": "lecture-cinema",
+    "les jeux du samedi": "jeux-famille",
+}
+
+
+def matching_category(title, category):
+    name = norm(title)
+    matches = [key for prefix, key in SERIES.items() if name.startswith(prefix)]
+    return len(matches) == 1 and matches[0] == category
+
+
+def explicit_age_matches(candidate):
+    token = candidate.get("audience_evidence")
+    lo, hi = candidate.get("age_min_proposal"), candidate.get("age_max_proposal")
+    label = candidate.get("age_label_proposal")
+    if token == "tous_ages_familles":
+        return label == "En famille" and lo is None and hi is None
+    if not isinstance(token, str):
+        return False
+    m = re.fullmatch(r"jusqua_(\d{1,2})_ans", token)
+    if m:
+        n = int(m.group(1))
+        return n <= 17 and lo is None and hi == n and label == f"Jusqu’à {n} ans"
+    m = re.fullmatch(r"des_(\d{1,2})_ans", token)
+    if m:
+        n = int(m.group(1))
+        return n <= 17 and lo == n and hi is None and label == f"Dès {n} ans"
+    return False
+
 UID = re.compile(r"municipal-gosier-([1-9]\d{0,11})-(\d{4}-\d{2}-\d{2})\Z")
 CODE = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 TIME = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d\Z")
@@ -115,10 +150,10 @@ def audit(review, access, catalogue, today):
                 and c["start_local"] < c["end_local"], "candidate_identity")
         category = c.get("category_proposal")
         require(category in TYPES
-                and c.get("category_label_proposal") == TYPES[category],
+                and c.get("category_label_proposal") == TYPES[category]
+                and matching_category(c.get("title"), category),
                 "category_unreviewed")
-        require(c.get("age_label_proposal") and
-                c.get("audience_evidence"), "age_missing")
+        require(explicit_age_matches(c), "age_not_bound_to_official_cue")
         for key in ("age_min_proposal", "age_max_proposal"):
             value = c.get(key)
             require(value is None or (type(value) is int and 0 <= value <= 17),
@@ -140,6 +175,21 @@ def audit(review, access, catalogue, today):
             blockers.append("category_not_accepted_by_current_public_contract")
         if identifier in published_ids:
             blockers.append("already_public")
+        for ev in catalogue["events"]:
+            if not isinstance(ev, dict):
+                continue
+            try:
+                first = date.fromisoformat(ev["date_start"])
+                last = date.fromisoformat(ev.get("date_end") or ev["date_start"])
+            except (ValueError, TypeError, KeyError):
+                continue
+            if first <= day <= last and (
+                    ev.get("source_url") == c.get("official_event_url") or
+                    (norm(ev.get("title")) == norm(c.get("title"))
+                     and norm(ev.get("city")) == norm(c.get("city"))
+                     and norm(ev.get("venue")) == norm(c.get("venue")))):
+                blockers.append("already_public_semantic_or_range")
+                break
         if a.get("access_status") == "cancelled_or_unavailable":
             blockers.append("cancelled_or_unavailable")
         elif a.get("access_status") == "official_session_no_longer_confirmed":
