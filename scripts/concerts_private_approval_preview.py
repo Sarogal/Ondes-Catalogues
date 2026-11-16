@@ -122,6 +122,21 @@ def audit_backlog(previous, proposed, reference, published, today,
             "Nouveaux artistes non identifiés")
     current = published
     baseline_ids = {e["id"] for e in published["events"]}
+    # Stale or rejected older, still-unpublished signatures are independent
+    # of this NEW signed proposal. Their failures must not veto a sound
+    # candidate. Any failure involving the proposed IDs or a previously
+    # published ID remains an unconditional preflight rejection.
+    old_pending_ids = {
+        row["event"]["id"] for row in previous["approvals"]
+        if isinstance(row, dict) and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+        and row["event"]["id"] not in baseline_ids
+    }
+    venue_ids = {
+        row["venue"]["id"] for row in proposed.get("venueApprovals", [])
+        if isinstance(row, dict) and isinstance(row.get("venue"), dict)
+        and isinstance(row["venue"].get("id"), str)
+    }
     source_ids = {
         row["event"]["id"] for row in proposed["approvals"]
         if isinstance(row, dict) and isinstance(row.get("event"), dict)
@@ -133,11 +148,23 @@ def audit_backlog(previous, proposed, reference, published, today,
     maximum = (len(proposed["approvals"]) // sync.MAX_NEW_EVENTS_PER_SYNC) + 3
     for _ in range(maximum):
         updated, counts = sync.merge(reference, current, proposed, today)
-        require(counts.get("newEvents", 0) <= sync.MAX_NEW_EVENTS_PER_SYNC
-                and counts.get("newVenues") == 0
-                and counts.get("correctedVenues") == 0
-                and not counts.get("held"),
-                "Prévalidation d'un lot privé refusée")
+        held = counts.get("held") or []
+        require(
+            counts.get("newEvents", 0) <= sync.MAX_NEW_EVENTS_PER_SYNC
+            and counts.get("newVenues") == 0
+            and counts.get("correctedVenues") == 0
+            and isinstance(held, list)
+            and all(
+                isinstance(item, dict)
+                and item.get("candidateId") in old_pending_ids
+                and item.get("candidateId") not in venue_ids
+                for item in held
+            ),
+            "Prévalidation privée refusée : nouvelle signature, salle "
+            "ou fiche déjà publiée non conforme")
+        # An old unpublishable approval remains held for independent review;
+        # it never acquires acceptance, and the NEW signed IDs still have to
+        # appear exactly in the verified candidate catalogue.
         require(updated["venues"] == published["venues"],
                 "Géolocalisation ou salle modifiée")
         require(updated["artists"][:len(published["artists"])] ==
