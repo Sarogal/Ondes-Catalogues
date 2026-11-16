@@ -91,6 +91,11 @@ def inspect_municipal_admission(catalogue, review, access, manifest, today,
         raise ValueError("independent_preflight_identity_mismatch")
 
     blockers = set(rows[0]["reasons"]) - EXPECTED_PREVIEW_BLOCKERS
+    # The earlier read-only prevalidator already detects cross-feed
+    # semantic/period collisions. Preserve its blocking reason and expose
+    # one consistent admission-level duplicate code for downstream review.
+    if blockers & {"already_public", "already_public_semantic_or_range"}:
+        blockers.add("duplicate_published_across_sources")
     if candidate.get("review_id") != condition.get("review_id"):
         blockers.add("candidate_access_occurrence_mismatch")
     # Unknown prices/registration may be displayed ONLY as conditions unknown.
