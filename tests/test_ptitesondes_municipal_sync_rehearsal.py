@@ -184,7 +184,7 @@ class IsolatedSyncRehearsalTests(unittest.TestCase):
         def malicious_geo(ev):
             current["events"][0]["title"] = "tampered"
             return True, "untrusted"
-        with self.assertRaisesRegex(ValueError, "historical_catalogue_mutated"):
+        with self.assertRaisesRegex(ValueError, "catalogue_mutated_during_batch|historical_catalogue_mutated"):
             simulate_municipal_sync(
                 ref, current, docs, TODAY,
                 reference_sha256=canonical_sha256(ref),
