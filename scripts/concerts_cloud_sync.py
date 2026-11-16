@@ -1621,7 +1621,8 @@ def read_approvals(token):
         with urlopen(blob_request, timeout=18) as response:
             require(response.status == 200, "Blob d'approbations indisponible")
             content = json.load(response)
-        require(isinstance(content, dict) and content.get("sha") == sha,
+        require(isinstance(content, dict) and content.get("sha") == sha
+                and content.get("size") == size,
                 "Blob privé ne correspond pas au registre signé")
     else:
         content = payload
@@ -7109,6 +7110,15 @@ def merge(reference, current, approvals, today):
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
+    # Signed approval IDs must be unique even after the historical queue
+    # exceeds 400 records. Duplicating a signature cannot mask a conflict.
+    ledger_ids = [
+        row["event"]["id"] for row in approvals["approvals"]
+        if isinstance(row, dict) and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+    ]
+    require(len(ledger_ids) == len(set(ledger_ids)),
+            "Identifiants d'approbations en doublon")
     # Une modification manuelle d'un concert CLOUD ne peut contourner
     # la file privée des approbations et les champs documentés.
     approved_ids = {
