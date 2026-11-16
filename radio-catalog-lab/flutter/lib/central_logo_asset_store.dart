@@ -109,6 +109,7 @@ class CentralLogoAssetStore {
   final DateTime Function() _clock;
   final Duration failedDownloadBackoff;
   final Map<String, Future<CentralLogoCacheResult>> _inFlight = {};
+  final Map<String, Future<File?>> _importsInFlight = {};
 
   File _image(CentralLogoDescriptor spec) =>
       File('${directory.path}${Platform.pathSeparator}${spec.sha256}.img');
@@ -144,17 +145,29 @@ class CentralLogoAssetStore {
   Future<File?> importVerifiedLegacyFile({
     required CentralLogoDescriptor target,
     required File source,
+  }) {
+    // Capture the first operation synchronously, before the first async I/O.
+    // An import started after an explicit download must not compete with it.
+    final currentImport = _importsInFlight[target.sha256];
+    if (currentImport != null) return currentImport;
+    final download = _inFlight[target.sha256];
+    if (download != null) {
+      return download.then((_) => findVerified(target));
+    }
+
+    final task = _importVerifiedLegacyFile(target: target, source: source);
+    _importsInFlight[target.sha256] = task;
+    return task.whenComplete(() {
+      _importsInFlight.remove(target.sha256);
+    });
+  }
+
+  Future<File?> _importVerifiedLegacyFile({
+    required CentralLogoDescriptor target,
+    required File source,
   }) async {
     final cached = await findVerified(target);
     if (cached != null) return cached;
-
-    // Do not interfere with a simultaneous explicit central download.
-    final pending = _inFlight[target.sha256];
-    if (pending != null) {
-      await pending;
-      return await findVerified(target);
-    }
-
     File? temporary;
     try {
       if (!await source.exists() || await source.length() != target.byteSize) {
@@ -217,6 +230,10 @@ class CentralLogoAssetStore {
     required CentralLogoDescriptor? previous,
     required CentralLogoBytesFetcher? fetch,
   }) async {
+    // If a verified V64 copy is already being installed, let it finish
+    // before deciding whether an HTTP request is necessary.
+    final importing = _importsInFlight[target.sha256];
+    if (importing != null) await importing;
     final cached = await findVerified(target);
     if (cached != null) {
       return CentralLogoCacheResult(

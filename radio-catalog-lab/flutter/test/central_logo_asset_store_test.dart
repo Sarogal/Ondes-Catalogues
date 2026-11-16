@@ -254,6 +254,71 @@ void main() {
     expect(await cache.findVerified(spec(expected)), isNull);
   });
 
+  test('concurrent legacy imports and ensure share one SHA installation',
+      () async {
+    final image = bytes(17);
+    final descriptor = spec(image);
+    final source = File('${temp.path}/old-for-race.img');
+    await source.writeAsBytes(image, flush: true);
+    final store = CentralLogoAssetStore(
+      directory: Directory('${temp.path}/central-race'),
+      decoder: (raw) async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return decode(raw);
+      },
+    );
+    var networkRequests = 0;
+    final responses = await Future.wait<Object?>([
+      store.importVerifiedLegacyFile(target: descriptor, source: source),
+      store.importVerifiedLegacyFile(target: descriptor, source: source),
+      store.ensure(
+        target: descriptor,
+        fetch: (url, maxBytes) async {
+          networkRequests++;
+          return image;
+        },
+      ),
+    ]);
+    expect(responses[0], isA<File>());
+    expect(responses[1], isA<File>());
+    expect((responses[0] as File).path, (responses[1] as File).path);
+    expect((responses[2] as CentralLogoCacheResult).status,
+        CentralLogoCacheStatus.cacheHit);
+    expect(networkRequests, 0);
+    expect(await source.readAsBytes(), image);
+    expect(await store.findVerified(descriptor), isNotNull);
+  });
+
+  test('legacy import waits for an existing same-SHA download',
+      () async {
+    final image = bytes(18);
+    final descriptor = spec(image);
+    final source = File('${temp.path}/old-during-download.img');
+    await source.writeAsBytes(image, flush: true);
+    final store = CentralLogoAssetStore(
+      directory: Directory('${temp.path}/central-downloading'),
+      decoder: decode,
+    );
+    var networkRequests = 0;
+    final download = store.ensure(
+      target: descriptor,
+      fetch: (url, maxBytes) async {
+        networkRequests++;
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+        return image;
+      },
+    );
+    final imported = store.importVerifiedLegacyFile(
+      target: descriptor, source: source);
+    final results = await Future.wait<Object?>([download, imported]);
+    expect((results[0] as CentralLogoCacheResult).status,
+        CentralLogoCacheStatus.downloaded);
+    expect(results[1], isA<File>());
+    expect(networkRequests, 1);
+    expect(await source.readAsBytes(), image);
+    expect(await store.findVerified(descriptor), isNotNull);
+  });
+
   test('signed catalog station without a logo makes no asset request',
       () async {
     expect(CentralLogoDescriptor.fromSignedStation(
