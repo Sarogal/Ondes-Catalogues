@@ -67,9 +67,21 @@ class LiveGosierPublicSessionTests(unittest.TestCase):
                             *(norm(" ".join(card[key]))
                               for key in ("day", "month", "year", "hours", "words")),
                         )
+                    def same(field):
+                        return len({tuple(c[field]) for c in matching}) == 1
                     print("PUBLIC_GOSIER_CARD_DIAGNOSTIC",
                           "matches=", len(matching),
-                          "byte_equivalent=", len({fingerprint(c) for c in matching}) == 1)
+                          "identical_card=", len({fingerprint(c) for c in matching}) == 1,
+                          "same_uid=", same("title_ids"),
+                          "same_venue_uid=", same("venue_ids"),
+                          "same_day=", same("day"),
+                          "same_month=", same("month"),
+                          "same_year=", same("year"),
+                          "same_hours=", same("hours"),
+                          "same_links=", same("links"),
+                          "same_words=", same("words"),
+                          "links_per_card=", [len(c["links"]) for c in matching],
+                          "words_per_card=", [len(c["words"]) for c in matching])
                 self.assertEqual(len(matching), 1, "ambiguous or absent municipal card")
                 card = matching[0]
                 links = {url for url in card["links"] if safe_event_url(url)}
