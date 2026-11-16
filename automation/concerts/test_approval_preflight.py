@@ -452,7 +452,7 @@ class PreflightTests(unittest.TestCase):
     def test_publisher_cannot_return_unexpected_number_of_events(self):
         def extra(reference, current, approvals, today):
             return {"events": [event(), {"id": "other"}]}, {}
-        with self.assertRaisesRegex(ValueError, "Unexpected number"):
+        with self.assertRaisesRegex(ValueError, "unsigned one"):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, extra)
 
