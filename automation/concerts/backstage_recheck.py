@@ -159,8 +159,10 @@ def verify(candidate, html_text, catalogue, today):
         after_h1 = page.tokens[pos+1:pos+75]
         promoter_phrase = re.compile(r"^GARMONBOZIA\s+présente\s+", re.I)
         notices = [x for x in after_h1 if promoter_phrase.match(x)]
-        if (not notices
-                and promoter_phrase.search(" ".join(after_h1))):
+        if (not notices and re.search(
+                r"\bGARMONBOZIA\s+présente\b",
+                " ".join(after_h1), flags=re.I)):
+            # A split DOM text node must not silently lose named supports.
             raise ValueError("Programmation organisateur morcelée ou ambiguë")
         if len(notices) > 1:
             raise ValueError("Plusieurs affiches organisateur incompatibles")
