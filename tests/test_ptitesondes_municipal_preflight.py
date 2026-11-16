@@ -26,7 +26,7 @@ Enfants jusqu'à 3 ans.
 CALENDAR = f"""<div class="media-eve">
 <span class="jour">25</span><span class="mois">nov</span>
 <span class="annee">2026</span>
-<h2 class="eve-heading evenement-titre-3067">{TITLE}</h2>
+<h2 class="eve-heading evenement-titre-3067"><a href="{URL}">{TITLE}</a></h2>
 <span class="evenement-lieu-3067">Médiathèque Raoul Georges Nicolo</span>
 <span class="horraires">mer. 25 nov. 09h00 - 09h30</span>
 </div>"""
@@ -88,6 +88,26 @@ class MunicipalPreflightTests(unittest.TestCase):
                 result = check(event=html)
                 self.assertIn("official_event_not_reconfirmed",
                               result["details_private_only"][0]["reasons"])
+
+    def test_event_hours_must_belong_to_same_date_clause(self):
+        bad = EVENT.replace(
+            "mercredi 25 novembre de 9h à 9h30",
+            "mercredi 25 novembre. Autres créneaux : 9h puis 9h30")
+        self.assertFalse(official_event_verified(candidate(), bad))
+        self.assertIn("official_event_not_reconfirmed",
+                      check(event=bad)["details_private_only"][0]["reasons"])
+
+    def test_calendar_exact_official_event_link_required(self):
+        wrong = CALENDAR.replace(URL, "https://www.villedugosier.fr/evenement/autre-3068")
+        self.assertFalse(official_calendar_verified(candidate(), wrong))
+        self.assertFalse(official_calendar_verified(
+            candidate(), CALENDAR.replace('<a href="' + URL + '">', "<a>")))
+
+    def test_calendar_exact_time_pair_cannot_be_scattered(self):
+        broken = CALENDAR.replace("09h00 - 09h30", "09h00 puis 09h30")
+        self.assertFalse(official_calendar_verified(candidate(), broken))
+        self.assertIn("calendar_occurrence_not_reconfirmed",
+                      check(calendar=broken)["details_private_only"][0]["reasons"])
 
     def test_municipal_calendar_must_be_same_card_same_id_year_hour(self):
         bad = [
