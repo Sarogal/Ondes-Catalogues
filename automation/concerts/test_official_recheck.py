@@ -52,6 +52,62 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(a["newArtists"], [{"id": "another-band", "name": "Another Band"}])
         self.assertIsNone(a["event"]["time"])  # Official start time meaning not assumed.
 
+    def test_eight_independently_named_metal_bands_without_editorial_cap(self):
+        # A lineup is never capped at five acts or two new artists.
+        # All eight names must independently appear on the single official
+        # detail page, never inferred from a discovery card alone.
+        acts = [f"Verified Metal Group {i:02d}" for i in range(8)]
+        title = " & ".join(acts)
+        page = ("<html><body><p>jeu 6 mai 2027 - 19H30</p>"
+                "<h2>" + title.replace("&", "&amp;") + "</h2>"
+                "<p>Metal, Metalcore</p>"
+                + "".join(f"<p>✘ {name} (Metal)</p>" for name in acts)
+                + "<p>15 avenue Honoré Serres<br/>31000 Toulouse</p>"
+                "</body></html>")
+        candidate = record()
+        candidate["name"] = title
+        candidate["sourceUrl"] = (
+            "https://www.lerextoulouse.com/fr/programmation/"
+            "verified-eight-metal-bands/"
+        )
+        approved = v.verify(
+            candidate, page, catalogue(), dt.date(2026, 11, 16))
+        expected_ids = [
+            "verified-metal-group-" + f"{i:02d}" for i in range(8)
+        ]
+        self.assertEqual(approved["event"]["artistIds"], expected_ids)
+        self.assertEqual(len(approved["newArtists"]), 8)
+        self.assertEqual(
+            [a["name"] for a in approved["newArtists"]], acts)
+        self.assertIsNone(approved["event"]["time"])
+        # No real official source or private approval was created: synthetic
+        # fixtures exist only in this offline regression test.
+        incomplete = page.replace(
+            "<p>✘ " + acts[-1] + " (Metal)</p>", "")
+        with self.assertRaisesRegex(ValueError, "non corroborée"):
+            v.verify(candidate, incomplete, catalogue(),
+                     dt.date(2026, 11, 16))
+
+    def test_sold_out_notice_is_not_a_cancellation(self):
+        # Ticket availability does not invalidate a venue-announced show.
+        sold_out = PAGE.replace("</body></html>",
+                                "<p>Sold out</p></body></html>")
+        approval = v.verify(
+            record(), sold_out, catalogue(), dt.date(2026, 11, 1))
+        self.assertEqual(
+            approval["event"]["artistIds"], ["example-band", "another-band"])
+        self.assertEqual(approval["event"]["date"], "2027-05-06")
+        self.assertIsNone(approval["event"]["time"])
+
+    def test_cancellation_or_postponement_still_blocks_sold_out_page(self):
+        for marker in ("Concert annulé", "Concert reporté"):
+            with self.subTest(marker=marker):
+                markup = PAGE.replace("</body></html>",
+                    "<p>Sold out</p><p>" + marker + "</p></body></html>")
+                with self.assertRaisesRegex(
+                        ValueError, "annulation ou de festival"):
+                    v.verify(record(), markup, catalogue(), dt.date(2026, 11, 1))
+
     def test_official_title_only_for_existing_artists(self):
         page = PAGE.replace("<p>✘ EXAMPLE BAND (Death metal)</p>", "").replace(
             "<p>✘ ANOTHER BAND (Metalcore)</p>", "")
