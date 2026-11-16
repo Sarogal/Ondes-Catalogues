@@ -83,7 +83,7 @@ test("unlabelled legacy and forged schedule titles fail closed", () => {
     run("schedule",MORNING+120000,{display_title:""})
   ], MORNING, NOW), /cannot be authenticated/);
   assert.throws(() => shouldDispatch([
-    after(MORNING,"11 13 * * *")
+    after(MORNING,"11 14 * * *")
   ], MORNING, NOW + 1000), /cannot be authenticated/);
   assert.throws(() => shouldDispatch([], ms(DAY + "T08:00:00Z"), NOW),
                 /Unknown original GitHub concert slot/);
