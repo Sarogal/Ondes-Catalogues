@@ -33,6 +33,12 @@ PASS_PATTERN = re.compile(
 )
 
 
+MEDIA_ITEM_PATTERN = re.compile(
+    r"GO_CENTRAL_MEDIA_ITEM PASS sha=([a-f0-9]{64}) "
+    r"station=diagnostic-legacy-1 uri=(content://[^\s]+)"
+)
+
+
 class ProbeError(Exception):
     pass
 
@@ -123,6 +129,9 @@ def verify_content(adb_path: str, serial: str, log: str, expected: bytes) -> str
     expected_uri = f"content://{AUTHORITY}/central/{digest}.img"
     if not match or match.group(1) != digest or match.group(2) != expected_uri:
         raise ProbeError("Flutter debug success does not match expected SHA or URI")
+    media_match = MEDIA_ITEM_PATTERN.search(log)
+    if not media_match or media_match.group(1) != digest or media_match.group(2) != expected_uri:
+        raise ProbeError("MediaItem.artUri SHA attestation absent or inconsistent")
     result = adb(
         adb_path, serial, "exec-out", "content", "read",
         "--uri", expected_uri,
@@ -131,6 +140,7 @@ def verify_content(adb_path: str, serial: str, log: str, expected: bytes) -> str
         raise ProbeError("Kotlin ContentProvider bytes differ from bundled PNG")
     print(f"PASS: Flutter signed catalog -> SHA cache -> native provider SHA={digest[:16]}")
     print("PASS: one injected fetch for two radios; offline cache hit on repeat")
+    print("PASS: real DEBUG MediaItem.artUri uses verified SHA; disabled fallback intact")
     return digest
 
 

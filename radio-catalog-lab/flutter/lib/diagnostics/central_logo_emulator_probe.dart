@@ -5,6 +5,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
@@ -12,6 +13,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../android_auto_artwork_uris.dart';
+import '../central_android_auto_artwork_index.dart';
+import '../central_android_auto_media_item_artwork_adapter.dart';
 import '../central_flutter_logo_decoder.dart';
 import '../central_logo_android_auto_bridge.dart';
 import '../central_logo_asset_store.dart';
@@ -215,6 +219,49 @@ Future<void> _runIsolatedProbe() async {
   if (local == null || !await local.exists()) {
     throw StateError('Verified permanent image not on disk');
   }
+  // Real audio_service MediaItem, but no AudioService session or playback.
+  // Debug-only proof of the signed catalog's SHA flowing into artUri.
+  final index = await const CentralAndroidAutoArtworkIndexBuilder().prepare(
+    catalog: snapshot,
+    store: reloadedStore,
+  );
+  if (index.mappedIds != 4 ||
+      index.verifiedCentralForStationId('diagnostic-legacy-1') != uri ||
+      index.verifiedCentralForStationId('diagnostic-legacy-2') != uri) {
+    throw StateError('Verified SHA not mapped to both historical stations');
+  }
+  final fallback = AndroidAutoArtworkUris.forGenre('Punk');
+  final original = MediaItem(
+    id: 'go:auto:station:diagnostic-legacy-1|'
+        '${Uri.encodeComponent('go:auto:favorites')}',
+    title: 'Debug-only radio 1',
+    playable: true,
+    artUri: fallback,
+    extras: const <String, dynamic>{
+      'stationId': 'diagnostic-legacy-1',
+      'browseContext': 'go:auto:favorites',
+    },
+  );
+  final disabled = CentralAndroidAutoMediaItemArtworkAdapter(index: index);
+  final enabled = CentralAndroidAutoMediaItemArtworkAdapter(
+    index: index,
+    enabled: true,
+  );
+  final updated = enabled.apply(original);
+  final mismatch = original.copyWith(id: 'go:auto:station:diagnostic-legacy-2');
+  if (!identical(disabled.apply(original), original) ||
+      updated.artUri != uri ||
+      updated.id != original.id ||
+      updated.title != original.title ||
+      updated.extras?['stationId'] != 'diagnostic-legacy-1' ||
+      original.artUri != fallback ||
+      !identical(enabled.apply(mismatch), mismatch) ||
+      requests != 1) {
+    throw StateError('DEBUG MediaItem SHA or fallback contract violated');
+  }
+  debugPrint('GO_CENTRAL_MEDIA_ITEM PASS sha=$digest '
+      'station=diagnostic-legacy-1 uri=$uri');
+
   // The separate host-side probe reads these same bytes from Kotlin's provider.
   debugPrint('GO_CENTRAL_PROBE PASS sha=$digest requests=$requests stations=2 uri=$uri');
 }

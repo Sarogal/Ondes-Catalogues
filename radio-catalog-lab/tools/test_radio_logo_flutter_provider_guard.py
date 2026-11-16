@@ -53,11 +53,25 @@ class FlutterProviderProbeGuardTests(unittest.TestCase):
             arguments = [call.args for call in remote.call_args_list]
             self.assertTrue(all("rm" not in parts for parts in arguments))
 
+    def test_mediaitem_attestation_required_before_provider_reads(self):
+        expected = b"synthetic-debug-image-bytes"
+        digest = hashlib.sha256(expected).hexdigest()
+        uri = f"content://{probe.AUTHORITY}/central/{digest}.img"
+        log = f"GO_CENTRAL_PROBE PASS sha={digest} requests=1 stations=2 uri={uri}"
+        with patch.object(probe, "adb") as remote:
+            with self.assertRaises(probe.ProbeError):
+                probe.verify_content("adb", "emulator-5554", log, expected)
+            remote.assert_not_called()
+
     def test_provider_bytes_must_match_exact_test_png(self):
         expected = b"\x89PNG\r\n\x1a\n" + b"synthetic-debug-probe"
         digest = hashlib.sha256(expected).hexdigest()
         uri = f"content://{probe.AUTHORITY}/central/{digest}.img"
-        log = f"GO_CENTRAL_PROBE PASS sha={digest} requests=1 stations=2 uri={uri}"
+        log = (
+            f"GO_CENTRAL_MEDIA_ITEM PASS sha={digest} "
+            f"station=diagnostic-legacy-1 uri={uri}\n"
+            f"GO_CENTRAL_PROBE PASS sha={digest} requests=1 stations=2 uri={uri}"
+        )
         with patch.object(probe, "adb", return_value=command(expected)):
             self.assertEqual(
                 probe.verify_content("adb", "emulator-5554", log, expected),
