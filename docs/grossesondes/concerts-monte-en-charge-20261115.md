@@ -29,6 +29,12 @@
 - Couverture de test : 101 demandes, lots successifs de six jusqu'à épuisement, redémarrage idempotent, septième preuve invalide différée puis refusée, doublon de salle.
 - La limite technique de **20 Mo** sur la taille du registre demeure ; prévoir sa segmentation avant de la rencontrer. **Aucune activation en production ni nouvelle approbation réelle.**
 
+## Isolement des refus historiques dans la prévalidation privée
+- Une approbation **ancienne, non publiée et devenue invalide** est conservée comme refus/attente ; elle ne doit pas paralyser la prévalidation d'une nouvelle date indépendante et correctement signée.
+- Le prévalidateur ne tolère ce cas que si l'ID retenu appartient à un dossier `previous.approvals` **encore absent du catalogue public**. Un ID de nouvelle approbation, de salle ou de concert déjà publié en erreur fait **toujours échouer** la prévalidation.
+- L'événement nouvellement approuvé doit effectivement apparaître dans le catalogue simulé, avec le bon ordre et les artistes signés ; le contrôle officiel individuel reste obligatoire.
+- Simulation : 16 dates publiées, 17e preuve ancienne expirée, 18e date valide acceptée ; 18e preuve fausse toujours refusée. **Aucune approbation privée effective n'est créée.**
+
 ## Étape suivante AVANT généralisation des gros lots
 La file privée actuelle est un JSON cumulatif. Sur la **branche expérimentale**, l'éditeur traite au plus 16 approbations admissibles par passage et laisse les suivantes dans la file, sans les perdre ni les publier sans contrôle. La reprise est reconstruite depuis les identifiants d'événements effectivement publiés. Ce mécanisme n'est **pas encore fusionné** ; la limite de 16 publications par transaction reste obligatoire.
 
