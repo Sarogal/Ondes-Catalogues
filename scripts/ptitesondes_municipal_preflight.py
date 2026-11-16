@@ -274,22 +274,37 @@ def official_calendar_verified(candidate, html):
         and c["venue_ids"] == [wanted_id]
         and calendar_card_date_matches(c, day)
     ]
-    if len(matching) != 1:
+    if not matching:
         return False
-    content = norm(" ".join(matching[0]["words"]))
-    if (norm(candidate.get("title")) not in content or
-            norm(candidate.get("venue")) not in content):
-        return False
-    if candidate.get("official_event_url") not in matching[0]["links"]:
-        return False
-    # The start/end clocks must be together in the SPIP horraires field.
-    hours_text = norm(" ".join(matching[0]["hours"]))
+    title = norm(candidate.get("title"))
+    venue = norm(candidate.get("venue"))
+    source = candidate.get("official_event_url")
     start = time_token_pattern(candidate.get("start_local"))
     end = time_token_pattern(candidate.get("end_local"))
-    if not start or not end:
+    if not title or not venue or not safe_event_url(source) or not start or not end:
         return False
-    return bool(re.search(r"\b" + start + r"\s+" + end + r"\b", hours_text))
-
+    # Some municipal layouts repeat a dated card verbatim in a sidebar.
+    # Permit only proof-identical duplicates, never a second occurrence
+    # with a divergent UID, date, time, destination or status.
+    identities = set()
+    for card in matching:
+        content = norm(" ".join(card["words"]))
+        if title not in content or venue not in content:
+            return False
+        if re.search(r"\b(?:annule|annulee|reporte|reportee|complet|reserve aux scolaires)\b",
+                     content):
+            return False
+        if card["links"] != [source]:
+            return False
+        hours_text = norm(" ".join(card["hours"]))
+        if not re.search(r"\b" + start + r"\s+" + end + r"\b", hours_text):
+            return False
+        identities.add((
+            tuple(card["title_ids"]), tuple(card["venue_ids"]),
+            norm(" ".join(card["day"])), norm(" ".join(card["month"])),
+            norm(" ".join(card["year"])), hours_text, tuple(card["links"]),
+        ))
+    return len(identities) == 1
 
 def access_is_honest(candidate, condition, html):
     page = OfficialPage()
