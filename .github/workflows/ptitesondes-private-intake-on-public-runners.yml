@@ -296,19 +296,19 @@ jobs:
             GOSIER_REVIEW="$OUT/gosier-review.json"
             GOSIER_GEO_OK=0
             if python - "$GOSIER_VENUE" > "$LOG/gosier-geo.log" 2>&1 <<'PY'
-import json
-import sys
-from pathlib import Path
-sys.path.insert(0, "public/scripts")
-from venue_registry import VENUES
-matches = [p for p in VENUES
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "public/scripts")
+          from venue_registry import VENUES
+          matches = [p for p in VENUES
            if p.get("city") == "Le Gosier"
            and "Médiathèque Raoul Georges Nicolo" in p.get("aliases", ())]
-if len(matches) != 1:
-    raise ValueError("reviewed_building_unavailable")
-Path(sys.argv[1]).write_text(
-    json.dumps(matches[0], ensure_ascii=False), encoding="utf-8")
-PY
+          if len(matches) != 1:
+              raise ValueError("reviewed_building_unavailable")
+          Path(sys.argv[1]).write_text(
+              json.dumps(matches[0], ensure_ascii=False), encoding="utf-8")
+          PY
             then
               GOSIER_GEO_OK=1
             fi
@@ -324,19 +324,19 @@ PY
                   --output "$GOSIER_REVIEW" > "$LOG/gosier-review.log" 2>&1 && \
                python - "$GOSIER_PROOF" "$GOSIER_REVIEW" \
                   > "$LOG/gosier-review-contract.log" 2>&1 <<'PY'
-import json
-import sys
-evidence, review = [json.load(open(p, encoding="utf-8")) for p in sys.argv[1:]]
-assert evidence["schema"] == "ptitesondes.gosier_private_evidence.v1"
-assert review["schema"] == "ptitesondes.gosier_private_review_candidates.v1"
-assert evidence["approved"] == evidence["published"] == 0
-assert review["approved"] == review["published"] == 0
-assert review["mode"] == "private_review_only_no_patch_no_publication"
-assert len(review["candidates"]) == review["needs_category_and_access_review"]
-assert all(c["safe_to_publish"] is False and c["approved"] is False
+          import json
+          import sys
+          evidence, review = [json.load(open(p, encoding="utf-8")) for p in sys.argv[1:]]
+          assert evidence["schema"] == "ptitesondes.gosier_private_evidence.v1"
+          assert review["schema"] == "ptitesondes.gosier_private_review_candidates.v1"
+          assert evidence["approved"] == evidence["published"] == 0
+          assert review["approved"] == review["published"] == 0
+          assert review["mode"] == "private_review_only_no_patch_no_publication"
+          assert len(review["candidates"]) == review["needs_category_and_access_review"]
+          assert all(c["safe_to_publish"] is False and c["approved"] is False
            and c["published"] is False for c in review["candidates"])
-assert "additions" not in review and "updates" not in review
-PY
+          assert "additions" not in review and "updates" not in review
+          PY
             then
               if [[ "$RUN_MODE" == "write" ]]; then
                 cp "$GOSIER_PROOF" "$STATE/reports/municipal-gosier-evidence-$GOSIER_DAY.json"
