@@ -112,6 +112,24 @@ jobs:
           python -m unittest discover -s proof-private/automation -p 'test_gosier_qualification.py' -v
           python -m unittest discover -s proof-private/automation -p 'test_resolve_cinor_agenda.py' -v
 
+      - name: Charger la branche CINOR jeunesse epinglee
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: 5752abfbaa4e94cdb2eceb13f2db4b953749dea7
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: proof-cinor
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+      - name: Tester CINOR et les protections du filtre territorial
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s proof-cinor/automation -p 'test_cinor_source_registration.py' -v
+          python -m unittest discover -s proof-cinor/automation -p 'test_overseas_openagenda_country_gate.py' -v
+          python -m unittest discover -s proof-cinor/automation -p 'test_cinor_child_creative_discovery.py' -v
+
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
