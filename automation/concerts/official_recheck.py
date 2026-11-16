@@ -42,11 +42,12 @@ BANNED = re.compile(r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|ope
 UNNAMED_GUEST_SUFFIX = re.compile(
     r"\s+(?:\+|&|et)\s+(?:guest(?:\s+surprise|\s*\(\s*surprise\s*\))?|"
     r"special guest|invité(?:e)? surprise|artiste surprise|surprise)\s*$", re.I)
-# Keep cancellation, uncertainty and festival blockers; only guest terms are
-# removed from the page-wide status scan.
+# Keep cancellation, uncertainty and festival blockers; guest terms
+# are handled by the named-lineup verifier. Sold out is availability, not
+# cancellation, and must not block a verified concert.
 BANNED_STATUS = re.compile(
     r"\b(?:tba|a confirmer|festival|fest|open air|annule|annulee|"
-    r"reporte|postponed|cancelled|sold out)\b", re.I)
+    r"reporte|postponed|cancelled)\b", re.I)
 
 
 def norm(text):
