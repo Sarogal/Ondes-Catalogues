@@ -137,8 +137,8 @@ def parse_detail(html_text):
 # Le Rex sometimes writes an announced support band as "(+ GROUP) !". It is
 # a named artist, not a guest placeholder. No blanket parenthesis stripping.
 REX_NAMED_SUPPORT = re.compile(
-    r"^(?P<lead>[^()]{3,100}?)\\s+\\(\\s*\\+\\s*"
-    r"(?P<support>[^()]{3,100}?)\\s*\\)\\s*!?\\s*$", re.I)
+    r"^(?P<lead>[^()]{3,100}?)\s+\(\s*\+\s*"
+    r"(?P<support>[^()]{3,100}?)\s*\)\s*!?\s*$", re.I)
 
 
 def artist_names(title):
@@ -148,7 +148,7 @@ def artist_names(title):
     parts = ([named_support.group("lead").strip(),
               named_support.group("support").strip()]
              if named_support else
-             [p.strip() for p in re.split(r"\\s+(?:[+&]|et)\\s+", title, flags=re.I)])
+             [p.strip() for p in re.split(r"\s+(?:[+&]|et)\s+", title, flags=re.I)])
     if not parts or any(len(norm(x)) < 3 for x in parts):
         raise ValueError("Affiche impossible à séparer avec certitude")
     if len({norm(p) for p in parts}) != len(parts):
@@ -168,17 +168,17 @@ def rex_promoter_confirms_bill(paragraphs, parts):
         return " ".join(unicodedata.normalize("NFKD", str(value).casefold())
                         .encode("ascii", "ignore").decode("ascii").split())
     exact_bill = re.compile(
-        r"(?<![a-z0-9])" + r"\\s*\\+\\s*".join(
+        r"(?<![a-z0-9])" + r"\s*\+\s*".join(
             re.escape(fold(name)) for name in parts) + r"(?![a-z0-9])")
     promoter = re.compile(
-        r"\\b(?:invite|invitent|presente|presentent|annonce|annoncent)\\b")
+        r"\b(?:invite|invitent|presente|presentent|annonce|annoncent)\b")
     for paragraph in paragraphs:
         content = fold(paragraph)
         for match in exact_bill.finditer(content):
             # The producer must introduce this exact, ordered, plus-separated
             # lineup in the same sentence, not in an unrelated historic bio.
             prefix = content[max(0, match.start() - 140):match.start()]
-            if promoter.search(prefix) and not re.search(r"[.!?]\\s", prefix):
+            if promoter.search(prefix) and not re.search(r"[.!?]\s", prefix):
                 return True
     return False
 

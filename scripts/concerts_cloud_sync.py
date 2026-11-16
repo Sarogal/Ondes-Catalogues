@@ -4419,6 +4419,40 @@ def validate_approval(approval, venues, known_artist_ids, today):
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
     if reviewer == "automated-official-recheck" and rex:
+        # Rex time on public pages refers to admission, not proven concert start.
+        require(event.get("time") is None,
+                "Le Rex automatique : heure musicale non corroborée")
+        # A newly introduced named (+ support) must match the exact promoter
+        # proof emitted by the independent first-party detail verifier.
+        if " (+" in event.get("title", "") and new_artists:
+            rex_proof = next((item for item in evidence
+                              if isinstance(item, dict)
+                              and item.get("sourceStructure") ==
+                              "rex-promoter-exact-bill"), None)
+            names = rex_proof.get("officialArtistNames") if rex_proof else None
+            require(isinstance(names, list) and len(names) == len(ids)
+                    and len(names) >= 2
+                    and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                            for n in names)
+                    and len({norm(n) for n in names}) == len(names)
+                    and norm(event["title"]) ==
+                    " ".join(norm(n) for n in names),
+                    "Le Rex : plateau nominatif du promoteur absent ou altéré")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(all(aid in resolved and
+                        norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, names)),
+                    "Le Rex : identité des artistes différente de la preuve")
+            existing_aliases = {norm(alias)
+                                for artist in known_artist_ids.values()
+                                for alias in (artist.get("aliases") or [])
+                                if isinstance(alias, str)}
+            require(all(norm(a["name"]) not in existing_aliases
+                        and a["id"] ==
+                        norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                        for a in new_artists),
+                    "Le Rex : alias existant ou nouvel identifiant non canonique")
         # A final unnamed guest may be omitted by the independent verifier.
         # It must NEVER be added to the published title or artist identities
         # as if it were a named artist. This does not bypass the normal

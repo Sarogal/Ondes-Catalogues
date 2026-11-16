@@ -104,9 +104,12 @@ class RexPromoterBillTests(unittest.TestCase):
             self.verified(cand=wrong)
 
     def test_unapproved_third_group_and_placeholder_stay_held(self):
+        changed_title = "Spicy Box + Mooan Exis + New Band"
+        changed_candidate = candidate()
+        changed_candidate["name"] = changed_title
         with self.assertRaisesRegex(ValueError, "Affiche sans détail"):
             self.verified(HTML.replace("Spicy Box (+ Mooan Exis) !",
-                                       "Spicy Box + Mooan Exis + New Band"))
+                                       changed_title), cand=changed_candidate)
         with self.assertRaises(ValueError):
             self.verified(HTML.replace("Spicy Box (+ Mooan Exis) !",
                                        "Spicy Box (+ Guest) !"))
