@@ -266,14 +266,17 @@ jobs:
           # The approved private main branch, never a PR branch, supplies code.
           # Reports are stored on the private state branch only, never in Pages
           # or the public GitHub Actions logs. No new schedule or permissions.
-          if [[ -s src/automation/municipal_gosier_discovery.py ]]; then
+          # Cache each successful daily probe in the private state branch:
+          # avoid 14 redundant municipal requests at every collection slot.
+          GOSIER_DAY="$(TZ=America/Guadeloupe date +%F)"
+          if [[ -s src/automation/municipal_gosier_discovery.py ]] && \
+             [[ "$RUN_MODE" != "write" || ! -s "$STATE/reports/municipal-gosier-$GOSIER_DAY.json" ]]; then
             if python src/automation/municipal_gosier_discovery.py \
                 --days 14 --output "$OUT/gosier-discovery.json" \
                 > "$LOG/gosier-discovery.log" 2>&1 && \
                python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["schema"]=="ptitesondes.municipal_gosier_leads.v1"; assert r["approved"]==r["published"]==0; assert len(r["leads"])<=100; assert all(x["safe_to_publish"] is False and x["openagenda_uid"] is None for x in r["leads"])' \
                 "$OUT/gosier-discovery.json" > "$LOG/gosier-contract.log" 2>&1; then
               if [[ "$RUN_MODE" == "write" ]]; then
-                GOSIER_DAY="$(TZ=America/Guadeloupe date +%F)"
                 cp "$OUT/gosier-discovery.json" "$STATE/reports/municipal-gosier-$GOSIER_DAY.json"
                 git -C state add -- "automation-intake/ptitesondes/reports/municipal-gosier-$GOSIER_DAY.json"
               fi
@@ -281,15 +284,17 @@ jobs:
               echo "::warning::Veille municipale ultramarine incomplète ; aucune piste promue."
             fi
           fi
-          if [[ -s src/automation/resolve_cinor_agenda.py && -n "$OPENAGENDA_READ_KEY" ]]; then
+          CINOR_DAY="$(TZ=Indian/Reunion date +%F)"
+          if [[ -s src/automation/resolve_cinor_agenda.py && -n "$OPENAGENDA_READ_KEY" ]] && \
+             [[ "$RUN_MODE" != "write" || ! -s "$STATE/reports/cinor-agenda-review-$CINOR_DAY.json" ]]; then
             if python src/automation/resolve_cinor_agenda.py \
                 --output "$OUT/cinor-directory-review.json" \
                 > "$LOG/cinor-directory.log" 2>&1 && \
                python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["schema"]=="ptitesondes.cinor_agenda_probe.v1"; assert r["automatically_admitted"] is False; assert r["published"]==0' \
                 "$OUT/cinor-directory-review.json" > "$LOG/cinor-contract.log" 2>&1; then
               if [[ "$RUN_MODE" == "write" ]]; then
-                cp "$OUT/cinor-directory-review.json" "$STATE/reports/cinor-agenda-review.json"
-                git -C state add -- "automation-intake/ptitesondes/reports/cinor-agenda-review.json"
+                cp "$OUT/cinor-directory-review.json" "$STATE/reports/cinor-agenda-review-$CINOR_DAY.json"
+                git -C state add -- "automation-intake/ptitesondes/reports/cinor-agenda-review-$CINOR_DAY.json"
               fi
             else
               echo "::warning::Identité de l'agenda CINOR non certifiée ; aucun UID activé."
