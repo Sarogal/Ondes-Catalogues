@@ -131,18 +131,56 @@ def parse_detail(html_text):
         if m:
             artists.append(m.group(1).strip())
     return {"title": title, "date": date, "genres": labels, "acceptedGenreTags": tags,
-            "artists": artists}
+            "artists": artists, "descriptionParagraphs": following[1:]}
+
+
+# Le Rex sometimes writes an announced support band as "(+ GROUP) !". It is
+# a named artist, not a guest placeholder. No blanket parenthesis stripping.
+REX_NAMED_SUPPORT = re.compile(
+    r"^(?P<lead>[^()]{3,100}?)\\s+\\(\\s*\\+\\s*"
+    r"(?P<support>[^()]{3,100}?)\\s*\\)\\s*!?\\s*$", re.I)
 
 
 def artist_names(title):
     if BANNED.search(norm(title)):
         raise ValueError("Intitulé incomplet, annulé ou de type festival")
-    parts = [p.strip() for p in re.split(r"\s+(?:[+&]|et)\s+", title, flags=re.I)]
+    named_support = REX_NAMED_SUPPORT.fullmatch(title)
+    parts = ([named_support.group("lead").strip(),
+              named_support.group("support").strip()]
+             if named_support else
+             [p.strip() for p in re.split(r"\\s+(?:[+&]|et)\\s+", title, flags=re.I)])
     if not parts or any(len(norm(x)) < 3 for x in parts):
         raise ValueError("Affiche impossible à séparer avec certitude")
     if len({norm(p) for p in parts}) != len(parts):
         raise ValueError("Artistes en double")
     return parts
+
+
+def rex_promoter_confirms_bill(paragraphs, parts):
+    """Require one explicit first-party promoter announcement of the FULL bill.
+
+    Biographies, isolated name mentions and title-only discovery are never
+    sufficient to introduce a previously unknown artist.
+    """
+    if len(parts) < 2 or not isinstance(paragraphs, list):
+        return False
+    def fold(value):
+        return " ".join(unicodedata.normalize("NFKD", str(value).casefold())
+                        .encode("ascii", "ignore").decode("ascii").split())
+    exact_bill = re.compile(
+        r"(?<![a-z0-9])" + r"\\s*\\+\\s*".join(
+            re.escape(fold(name)) for name in parts) + r"(?![a-z0-9])")
+    promoter = re.compile(
+        r"\\b(?:invite|invitent|presente|presentent|annonce|annoncent)\\b")
+    for paragraph in paragraphs:
+        content = fold(paragraph)
+        for match in exact_bill.finditer(content):
+            # The producer must introduce this exact, ordered, plus-separated
+            # lineup in the same sentence, not in an unrelated historic bio.
+            prefix = content[max(0, match.start() - 140):match.start()]
+            if promoter.search(prefix) and not re.search(r"[.!?]\\s", prefix):
+                return True
+    return False
 
 
 def verify(candidate, html_text, catalogue, today):
@@ -205,25 +243,32 @@ def verify(candidate, html_text, catalogue, today):
     parts = artist_names(verified_title)
     lineup = {norm(a) for a in detail["artists"]}
     known_names = {norm(a["name"]) for a in catalogue["artists"]}
+    promoter_bill = (not lineup and rex_promoter_confirms_bill(
+        detail["descriptionParagraphs"], parts))
     # Some first-party pages expose the complete named lineup only as their H2.
     # That is acceptable only if EVERY band name is already identified in the
     # catalogue, removing the risk of inventing a new artist from an event title.
     if lineup:
         if any(norm(a) not in lineup for a in parts):
             raise ValueError("Programmation non corroborée dans la fiche détaillée")
-    elif any(norm(a) not in known_names for a in parts):
+    elif any(norm(a) not in known_names for a in parts) and not promoter_bill:
         raise ValueError("Affiche sans détail d'artistes et artiste inconnu du catalogue")
     venue = next((v for v in catalogue["venues"] if v["id"] == REX_VENUE), None)
     if not venue or norm(venue.get("city")) != "toulouse":
         raise ValueError("Salle inconnue du catalogue")
     artists = {}
+    aliases = set()
     for a in catalogue["artists"]:
         artists.setdefault(norm(a["name"]), []).append(a)
+        aliases.update(norm(alias) for alias in a.get("aliases", [])
+                       if isinstance(alias, str) and norm(alias))
     ids, fresh = [], []
     for name in parts:
         matches = artists.get(norm(name), [])
         if len(matches) > 1:
             raise ValueError("Identité d'artiste ambiguë")
+        if not matches and norm(name) in aliases:
+            raise ValueError("Alias déjà répertorié : revue nominative nécessaire")
         aid = matches[0]["id"] if matches else slug(name)
         if not aid or (not matches and any(a["id"] == aid for a in catalogue["artists"])):
             raise ValueError("Collision d'identifiant artiste")
@@ -248,7 +293,9 @@ def verify(candidate, html_text, catalogue, today):
             "checkedAt": today.isoformat(), "checkedFields": ["artists", "date", "venue", "genre"],
             "notes": ("Relecture automatisée d'une fiche individuelle officielle; dates, genres et programmation réconciliés."
                       + (" Guest non nommé omis : aucun artiste créé ou présumé."
-                         if unnamed_guest else ""))
+                         if unnamed_guest else "")),
+            **({"sourceStructure": "rex-promoter-exact-bill",
+                "officialArtistNames": parts} if promoter_bill else {})
         }],
         "event": {
             "id": event_id, "title": verified_title, "date": detail["date"],
