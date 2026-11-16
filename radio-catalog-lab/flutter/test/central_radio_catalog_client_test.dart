@@ -8,6 +8,7 @@ import 'package:go_radio_flutter_lab/central_radio_catalog_core.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_projection.dart';
 import 'package:go_radio_flutter_lab/central_catalog_migration_gate.dart';
 import 'package:go_radio_flutter_lab/central_catalog_media_identity.dart';
+import 'package:go_radio_flutter_lab/central_verified_stream_plan.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:crypto/crypto.dart' as crypto;
 
@@ -810,4 +811,60 @@ void main() {
       await tmp.delete(recursive: true);
     }
   });
+  test('central fallback keeps identical-quality verified mirrors', () async {
+    final old = station(1);
+    old['streams'] = <Map<String, dynamic>>[
+      {
+        'stream_id': 'mirror-b', 'url': 'https://b.example.org/live',
+        'priority': 1, 'protocol': 'https', 'codec': 'mp3',
+        'bitrate_kbps': 192, 'state': 'verified'
+      },
+      {
+        'stream_id': 'mirror-a', 'url': 'https://a.example.org/live',
+        'priority': 0, 'protocol': 'https', 'codec': 'mp3',
+        'bitrate_kbps': 192, 'state': 'verified'
+      },
+      {
+        'stream_id': 'not-yet-verified',
+        'url': 'https://c.example.org/live',
+        'priority': 2, 'protocol': 'https', 'codec': 'mp3',
+        'bitrate_kbps': 192, 'state': 'candidate'
+      },
+    ];
+    final quarantine = station(2, status: 'quarantined');
+    final verified = await validatePayload(
+      jsonBytes(catalog([old, quarantine])),
+    );
+    final preview = const CentralCatalogProjector().preview(
+      catalog: verified,
+      legacyFavoriteIds: ['legacy-1', 'legacy-2', 'unknown'],
+      preferredLegacyMediaIds: {'go-station-000001': 'legacy-1'},
+    );
+    final selector = CentralVerifiedStreamPlan(
+      media: CentralMediaIdentityResolver(catalog: verified, preview: preview),
+    );
+    final primary = selector.forStationId('legacy-1');
+    expect(primary.map((s) => s.id).toList(), ['mirror-a', 'mirror-b']);
+    expect(primary.map((s) => s.url).toSet(), {
+      'https://a.example.org/live',
+      'https://b.example.org/live',
+    });
+
+    final restored = selector.forAndroidAutoMediaId(
+      'go:auto:station:legacy-1|go%3Aauto%3Afavorites',
+      preferredVerifiedUrl: 'https://b.example.org/live',
+    );
+    expect(restored.map((s) => s.id).toList(), ['mirror-b', 'mirror-a']);
+    final stale = selector.forStationId('legacy-1',
+      preferredVerifiedUrl: 'https://unverified.example.org/live');
+    expect(stale.map((s) => s.id).toList(), ['mirror-a', 'mirror-b']);
+
+    expect(selector.forStationId('legacy-2'), isEmpty);
+    expect(selector.forStationId('unknown'), isEmpty);
+    expect(selector.forAndroidAutoMediaId('go:auto:station:legacy-2'), isEmpty);
+    expect(preview.favorites.originalIdsUnchanged,
+      ['legacy-1', 'legacy-2', 'unknown']);
+  });
+
+
 }
