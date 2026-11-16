@@ -456,6 +456,47 @@ class PreflightTests(unittest.TestCase):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, extra)
 
+    def test_publisher_cannot_balance_a_deleted_event_with_unsigned_event(self):
+        current = {"events": [
+            {"id": "go-old-first", "date": "2026-12-04"},
+            {"id": "go-old-second", "date": "2026-12-05"},
+        ]}
+        def replacement(reference, catalogue, proposed, today):
+            # Three rows total, exactly the expected old length plus one.
+            # But the publisher silently deletes an old show and adds a
+            # different unsigned show. The old count-only guard passed.
+            return {"events": [
+                copy.deepcopy(current["events"][1]),
+                {**event(), "confidence": "official"},
+                {"id": "go-unsigned-extra", "date": "2027-04-04"},
+            ]}, {"newEvents": 1}
+        with self.assertRaisesRegex(ValueError, "unsigned"):
+            gate.validate_proposal(
+                self.before, self.after, {}, current, TODAY, replacement)
+
+    def test_publisher_duplicate_event_ids_cannot_balance_output_count(self):
+        current = {"events": [{"id": "go-old-first", "date": "2026-12-04"}]}
+        def duplicate(reference, catalogue, proposed, today):
+            return {"events": [
+                {**event(), "confidence": "official"},
+                {**event(), "confidence": "official"},
+            ]}, {"newEvents": 1}
+        with self.assertRaisesRegex(ValueError, "duplicate event IDs"):
+            gate.validate_proposal(
+                self.before, self.after, {}, current, TODAY, duplicate)
+
+    def test_existing_published_event_metadata_correction_is_not_blocked(self):
+        current = {"events": [{"id": "go-old-first",
+                               "status": "confirmed"}]}
+        def corrected(reference, catalogue, proposed, today):
+            return {"events": [
+                {"id": "go-old-first", "status": "cancelled"},
+                {**event(), "confidence": "official"},
+            ]}, {"newEvents": 1}
+        stats = gate.validate_proposal(
+            self.before, self.after, {}, current, TODAY, corrected)
+        self.assertEqual(stats["publishableEvents"], 1)
+
     def test_already_published_event_is_refused(self):
         with self.assertRaisesRegex(ValueError, "already in the public"):
             gate.validate_proposal(self.before, self.after, {},
