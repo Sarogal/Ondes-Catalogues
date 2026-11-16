@@ -149,6 +149,13 @@ jobs:
           print("Classes DOM fréquentes : "+repr(struct.classes.most_common(32)))
           print("Nombre de balises <article> / <li> / <div> : "+repr(
               {x:struct.tags[x] for x in ("article","li","div")}))
+          # Only source-page HTML surrounding public, known municipal event
+          # references; never log private credentials, requests or all markup.
+          for token in ("evenement-titre-3067", "eve-date-bg", "evenement-lieu-3067"):
+              i=html.find(token)
+              if i>=0:
+                  excerpt=html[max(0,i-850):i+850].replace("\\n"," ")
+                  print("Contexte HTML source ("+token+") : "+repr(excerpt))
           PY
       - name: Vérifier l'identité de l'agenda CINOR (API OpenAgenda)
         if: always()
