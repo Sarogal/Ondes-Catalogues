@@ -211,12 +211,9 @@ def extract_ferrailleur(page, source_url, venue, today):
             continue
         genre=lines[-1]
         names=lines[:-1]
-        if (not names or len(names)>6 or
-            any(EXCLUDED.search(x) for x in names)):
+        if not names or any(EXCLUDED.search(x) for x in names):
             continue
         title=" + ".join(names)
-        if len(title)>200:
-            continue
         key=(day,normalized(title))
         if key in seen:
             continue

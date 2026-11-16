@@ -268,6 +268,74 @@ class MolotovRecheckTests(unittest.TestCase):
             "reviewRequired": True, "publicationAllowed": False,
         }
 
+    @staticmethod
+    def large_signed_page(names):
+        title = " + ".join(names)
+        artists = "".join(
+            '<p><strong>' + name + '<br/>[Metal | France]</strong></p>'
+            '<p><a href="https://www.facebook.com/band%02d">Facebook</a>'
+            '<a href="https://www.instagram.com/band%02d">Instagram</a></p>'
+            % (i, i)
+            for i, name in enumerate(names)
+        )
+        return (
+            '<article class="post-4719 event type-event status-publish">'
+            '<header class="entry-header"><h1 class="entry-title">' + title +
+            '</h1></header><div id="eveCardsolo"><div class="eveDate">'
+            '<h2>31</h2><h3>Jan</h3><h3>2027</h3></div>'
+            '<div class="evePlusolo"><h4>@ Le Molotov</h4>'
+            '<h4>3 Place Paul Cézanne</h4><h4>20:30</h4></div>'
+            '<div id="eveName"><h1>' + title +
+            '</h1><h2>Metal, Post Hardcore</h2></div></div>' +
+            artists + '</article>'
+        )
+
+    def test_6_and_20_new_molotov_bands_through_real_publisher(self):
+        import copy
+        from concerts_cloud_sync import validate_approval
+        for count in (6, 20):
+            with self.subTest(count=count):
+                names = ['ACT %02d' % i for i in range(1, count+1)]
+                title = ' + '.join(names)
+                item = self.newly_documented_candidate()
+                item['name'] = title
+                item['classification'] = ['Metal', 'Post Hardcore']
+                page = self.large_signed_page(names)
+                cat = {'artists': [], 'venues': catalogue()['venues'], 'events': []}
+                proposal = m.verify(item, page, cat, dt.date(2026, 11, 12))
+                self.assertEqual(len(proposal['newArtists']), count)
+                event, added = validate_approval(
+                    proposal, {v['id']: v for v in cat['venues']},
+                    {}, dt.date(2026, 11, 12))
+                self.assertEqual(len(event['artistIds']), count)
+                self.assertEqual(len(added), count)
+                self.assertEqual(
+                    proposal['officialEvidence'][0]['officialArtistProfileLinkCounts'],
+                    [2] * count)
+
+                cat['artists'] = [{'id': 'act-01', 'name': 'ACT 01',
+                                   'aliases': []}]
+                mixed = m.verify(item, page, cat, dt.date(2026, 11, 12))
+                self.assertEqual(len(mixed['newArtists']), count - 1)
+                _, newly_added = validate_approval(
+                    mixed, {v['id']: v for v in cat['venues']},
+                    {a['id']: a for a in cat['artists']},
+                    dt.date(2026, 11, 12))
+                self.assertEqual(len(newly_added), count - 1)
+
+                altered = copy.deepcopy(proposal)
+                altered['officialEvidence'][0]['officialArtistNames'][2] = 'FAKE'
+                with self.assertRaises(ValueError):
+                    validate_approval(
+                        altered, {v['id']: v for v in cat['venues']},
+                        {}, dt.date(2026, 11, 12))
+
+                missing_section = page.replace(
+                    '<strong>' + names[-1] + '<br/>',
+                    '<strong>UNVERIFIED<br/>')
+                with self.assertRaises(ValueError):
+                    m.verify(item, missing_section, cat, dt.date(2026, 11, 12))
+
     def test_new_artists_with_two_independent_bio_profiles_approve_through_publisher(self):
         from concerts_cloud_sync import validate_approval
         c = {"artists": [], "venues": catalogue()["venues"], "events": []}

@@ -39,6 +39,10 @@ def unannounced_label(value):
 
 ALLOWED_GENRES = (
     ("post punk", "Post Punk"),
+    # The discovery classifier already recognizes event-tagged garage rock.
+    # Match ONLY this explicit subgenre in the official Genre field, never
+    # generic "Rock" in the menu or an artist biography.
+    ("garage rock", "Garage Rock"),
     ("black metal", "Black Metal"),
     ("death metal", "Death Metal"),
     ("hard rock", "Hard Rock"),
@@ -88,14 +92,13 @@ def official_artist_sections(html, allow_unannounced=False):
     lineup = [t for k, t in headings[begin:end] if k == "h2" and t.strip()]
     normalized = [canonical_words(name) for name in lineup]
     placeholders = [i for i, n in enumerate(lineup) if unannounced_label(n)]
-    if (not 1 <= len(lineup) <= 5
+    if (not lineup
             or len(set(normalized)) != len(lineup)
             or any(not 3 <= len(name) <= 100 for name in normalized)
             or (placeholders and
                 (not allow_unannounced or placeholders != [len(lineup) - 1]))
             or any(UNKNOWN.search(triage.words(raw))
-                   for i, raw in enumerate(lineup) if i not in placeholders)
-            or len(lineup) - len(placeholders) > 4):
+                   for i, raw in enumerate(lineup) if i not in placeholders)):
         raise ValueError("Programmation officielle incomplète, ambiguë ou non nominative")
     return lineup
 
@@ -149,7 +152,7 @@ def verify(candidate, html, catalogue, today):
     guest = parts[-1] if placeholders else None
     named_parts = parts[:-1] if guest else parts
     normalized = [canonical_words(name) for name in named_parts]
-    if (not 1 <= len(named_parts) <= 4
+    if (not named_parts
             or any(len(name) < 3 or UNKNOWN.search(triage.words(raw))
                    for name, raw in zip(normalized, named_parts))
             or len(set(normalized)) != len(named_parts)
@@ -183,9 +186,10 @@ def verify(candidate, html, catalogue, today):
             raise ValueError("Identité canonique ambiguë")
         if matches:
             performers.append(matches[0])
-        elif guest and not added and name == named_parts[0]:
-            # A new lead is accepted only when the first-party event header
-            # AND Artistes section independently identify its proper name.
+        else:
+            # A new band is acceptable only when BOTH the complete official
+            # event header and individual Artistes section identify it. This
+            # applies to every named act, not just one lead with a guest.
             artist_id = canonical_words(name).replace(" ", "-")
             if (not re.fullmatch(r"[a-z0-9-]{3,100}", artist_id)
                     or artist_id in reserved
@@ -194,8 +198,6 @@ def verify(candidate, html, catalogue, today):
             added.append({"id": artist_id, "name": name})
             reserved.add(artist_id)
             performers.append(added[-1])
-        else:
-            raise ValueError("Un artiste canonique déjà connu est obligatoire")
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
     if (len(venues) != 1 or triage.words(venues[0].get("city")) != "strasbourg"
             or not all(venues[0].get(x) is not None
@@ -226,9 +228,11 @@ def verify(candidate, html, catalogue, today):
         "sourceStructure": (PARTIAL_STRUCTURE if guest else
                             STRUCTURE if len(ids) == 1 else MULTI_STRUCTURE),
     }
+    # Always document exactly which official acts are new to Grosses Ondes,
+    # with or without an unnamed final guest. A guest never gets an ID.
+    proof["verifiedNewArtists"] = [a["name"] for a in added]
     if guest:
         proof["unannouncedSupportLabel"] = unannounced_label(guest)
-        proof["verifiedNewArtists"] = [a["name"] for a in added]
     return {
         "reviewDecision": "approved",
         "reviewedBy": "automated-official-recheck",

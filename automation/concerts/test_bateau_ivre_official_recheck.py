@@ -57,6 +57,68 @@ def catalogue(artists=()):
 
 
 class BateauIndependentRecheck(unittest.TestCase):
+    @staticmethod
+    def extended_lineup(acts):
+        """Every new act has BOTH a masthead H2 and its own artist section."""
+        raw = page()
+        raw = raw.replace(
+            '<h2 class="subtitle-event">+ TACHYCARDIE</h2>',
+            "".join('<h2 class="subtitle-event">+ ' + name + '</h2>'
+                    for name in acts[1:]),
+        )
+        raw = raw.replace(
+            '<h2 class="wp-block-heading">+ TACHYCARDIE</h2>',
+            "".join('<h2 class="wp-block-heading">+ ' + name + '</h2>'
+                    '<p>Groupe rock confirmé par une section nominative.</p>'
+                    for name in acts[1:]),
+        )
+        return raw
+
+    def test_six_ten_and_twenty_named_artists_pass_real_publisher(self):
+        for count in (6, 10, 20):
+            with self.subTest(count=count):
+                acts = [HEAD] + ["GROUPE %02d" % i
+                                 for i in range(1, count)]
+                html = self.extended_lineup(acts)
+                lead = candidate(html)
+                self.assertEqual(len(lead["firstPartyNamedSupport"]), count-1)
+                approval = check.verify(lead, html, catalogue(), TODAY)
+                self.assertEqual(len(approval["newArtists"]), count)
+                self.assertEqual(approval["event"]["title"], " + ".join(acts))
+                event, new = validate_approval(
+                    approval, {v["id"]: v for v in catalogue()["venues"]},
+                    {}, TODAY,
+                )
+                self.assertEqual(len(event["artistIds"]), count)
+                self.assertEqual(len(new), count)
+                self.assertEqual(
+                    approval["officialEvidence"][0]["officialArtistNames"],
+                    acts,
+                )
+
+                # A partial catalogue still accepts every *verified* new act.
+                known = [{"id": "groupe-01", "name": "GROUPE 01",
+                          "aliases": []},
+                         {"id": "groupe-02", "name": "GROUPE 02",
+                          "aliases": []}]
+                mixed = check.verify(lead, html, catalogue(known), TODAY)
+                self.assertEqual(len(mixed["newArtists"]), count-2)
+                mixed_event, additions = validate_approval(
+                    mixed, {v["id"]: v for v in catalogue()["venues"]},
+                    {v["id"]: v for v in known}, TODAY,
+                )
+                self.assertEqual(len(mixed_event["artistIds"]), count)
+                self.assertEqual(len(additions), count-2)
+
+                # Deleting a genuine supporting artist's section must fail
+                # despite an otherwise valid header naming all 20 bands.
+                truncated = html.replace(
+                    '<h2 class="wp-block-heading">+ ' + acts[-1] + '</h2>',
+                    '<h2 class="wp-block-heading">+ UNKNOWN</h2>',
+                )
+                with self.assertRaises(ValueError):
+                    check.verify(lead, truncated, catalogue(), TODAY)
+
     def test_named_new_support_and_headliner_get_distinct_sections(self):
         item = candidate()
         self.assertEqual(item["firstPartyNamedSupport"], ["TACHYCARDIE"])
