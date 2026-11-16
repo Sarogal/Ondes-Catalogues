@@ -301,6 +301,15 @@ class MunicipalBatchReadinessTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "historical_catalogue_modified"):
             inspect(reference=orig, current=changed)
 
+    def test_reordering_historical_prefix_is_forbidden(self):
+        original = historical()
+        reordered = deepcopy(original)
+        reordered["events"][0], reordered["events"][1] = (
+            reordered["events"][1], reordered["events"][0]
+        )
+        with self.assertRaisesRegex(ValueError, "historical_catalogue_modified"):
+            inspect(reference=original, current=reordered)
+
     def test_source_unavailable_or_changed_blocks(self):
         docs, source, private = sample_nine()
         def dead(url):
