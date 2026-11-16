@@ -16,7 +16,7 @@ class ConcertsPostIntakePublisherSafetyTests(unittest.TestCase):
         wf = CLOUD.read_text(encoding="utf-8")
         intake = INTAKE.read_text(encoding="utf-8")
         workflow_name = intake.splitlines()[0].removeprefix("name: ").strip()
-        self.assertIn("  workflow_run:\\n", wf.replace("\\n", "\n"))
+        self.assertIn("  workflow_run:\n", wf)
         self.assertIn("    workflows:\n      - " + workflow_name + "\n", wf)
         self.assertIn("    types: [completed]", wf)
         self.assertNotIn("pull_request_target:", wf)
