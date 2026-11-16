@@ -12,7 +12,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_municipal_preflight import (
-    CalendarCards, OfficialPage, access_is_honest, municipal_calendar_url,
+    CalendarCards, OfficialPage, access_is_honest, calendar_card_date_matches,
+    municipal_calendar_url,
     official_calendar_verified, official_event_verified, read_official,
 )
 from ptitesondes_nonmusic_release_contract import safe_event_url
@@ -54,6 +55,7 @@ class LiveGosierPublicSessionTests(unittest.TestCase):
                     card for card in cards
                     if len(card["title_ids"]) == 1
                     and card["title_ids"] == card["venue_ids"]
+                    and calendar_card_date_matches(card, date.fromisoformat(day_text))
                     and norm(VENUE) in norm(" ".join(card["words"]))
                     and title_prefix in norm(" ".join(card["words"]))
                 ]
