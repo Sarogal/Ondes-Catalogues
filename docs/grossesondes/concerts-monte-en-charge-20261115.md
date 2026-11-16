@@ -35,6 +35,12 @@
 - L'événement nouvellement approuvé doit effectivement apparaître dans le catalogue simulé, avec le bon ordre et les artistes signés ; le contrôle officiel individuel reste obligatoire.
 - Simulation : 16 dates publiées, 17e preuve ancienne expirée, 18e date valide acceptée ; 18e preuve fausse toujours refusée. **Aucune approbation privée effective n'est créée.**
 
+## Tableau de bord GitHub Actions — indicateurs agrégés
+- Le résumé du workflow public affiche désormais, en proposition isolée, `deferredUnprocessed` (concerts conservés pour le prochain cycle), `deferredVenues` (salles conservées), `newVenues`, `alreadyRegisteredVenues`, les événements ajoutés et les retenues.
+- Un simple **notice** GitHub signale une file non vide sans en publier le contenu, les URL de preuve ou les identités de dossiers non publiés.
+- Le rapport détaillé et les refus privés restent uniquement dans le stockage éphémère du runner ; il n'est jamais attaché à une exécution publique.
+- Ce changement concerne **uniquement le texte récapitulatif** du workflow. Ni calendrier, ni condition de publication, ni jeton, ni JSON public ne sont modifiés.
+
 ## Étape suivante AVANT généralisation des gros lots
 La file privée actuelle est un JSON cumulatif. Sur la **branche expérimentale**, l'éditeur traite au plus 16 approbations admissibles par passage et laisse les suivantes dans la file, sans les perdre ni les publier sans contrôle. La reprise est reconstruite depuis les identifiants d'événements effectivement publiés. Ce mécanisme n'est **pas encore fusionné** ; la limite de 16 publications par transaction reste obligatoire.
 
