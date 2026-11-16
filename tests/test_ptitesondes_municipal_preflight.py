@@ -121,6 +121,24 @@ class MunicipalPreflightTests(unittest.TestCase):
         result = check(event=EVENT.replace("</section>", " Sur inscription </section>"))
         self.assertIn("registration_changed", result["details_private_only"][0]["reasons"])
 
+    def test_conflicting_official_conditions_are_not_waived(self):
+        price_html = EVENT.replace("</section>", " Gratuit. Tarif : 10 euros </section>")
+        r = check(event=price_html)
+        self.assertIn("conflicting_price_on_official_page",
+                      r["details_private_only"][0]["reasons"])
+        reg_html = EVENT.replace("</section>", " Sur inscription et sans inscription </section>")
+        r = check(event=reg_html)
+        self.assertIn("conflicting_registration_on_official_page",
+                      r["details_private_only"][0]["reasons"])
+
+    def test_absent_official_year_cannot_borrow_neighbor_card(self):
+        no_year = CALENDAR.replace('<span class="annee">2026</span>', '')
+        other = ('<div class="media-eve"><h2 class="evenement-titre-9000">'
+                 'Autre activité</h2><span class="evenement-lieu-9000">'
+                 'Médiathèque Raoul Georges Nicolo</span>'
+                 '25 nov 2026 09h30</div>')
+        self.assertFalse(official_calendar_verified(candidate(), no_year + other))
+
     def test_forged_price_claim_and_unsourced_registration_rejected(self):
         a = access()
         a["price_evidence"] = "explicit_free"
