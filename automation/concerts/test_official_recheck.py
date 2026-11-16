@@ -102,6 +102,53 @@ class OfficialRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             v.artist_names("Example Band & Guest")
 
+    def test_explicit_final_guest_is_not_an_artist_or_a_publication_blocker(self):
+        # The official page establishes main band, future date, genre and room.
+        # A final unnamed guest is not promoted to an invented artist.
+        page = PAGE.replace("Example Band &amp; Another Band",
+                            "Example Band &amp; GUEST (surprise)").replace(
+                                "<p>✘ ANOTHER BAND (Metalcore)</p>", "")
+        x = record()
+        x["name"] = "Example Band & GUEST (surprise)"
+        approved = v.verify(x, page, catalogue(), dt.date(2026, 11, 1))
+        self.assertEqual(approved["event"]["title"], "Example Band")
+        self.assertEqual(approved["event"]["artistIds"], ["example-band"])
+        self.assertEqual(approved["newArtists"], [])
+        self.assertIn("Guest non nommé", approved["officialEvidence"][0]["notes"])
+        self.assertEqual(approved["event"]["date"], "2027-05-06")
+        self.assertIsNone(approved["event"]["time"])
+
+    def test_guest_in_middle_of_bill_or_unverified_main_stays_held(self):
+        html_middle = PAGE.replace("Example Band &amp; Another Band",
+                                   "Example Band &amp; GUEST &amp; Another Band")
+        candidate = record()
+        candidate["name"] = "Example Band & GUEST & Another Band"
+        with self.assertRaisesRegex(ValueError, "incomplet"):
+            v.verify(candidate, html_middle, catalogue(), dt.date(2026, 11, 1))
+        html_without_proof = PAGE.replace(
+            "Example Band &amp; Another Band",
+            "Example Band &amp; GUEST").replace(
+            "<p>✘ EXAMPLE BAND (Death metal)</p>", "").replace(
+            "<p>✘ ANOTHER BAND (Metalcore)</p>", "")
+        candidate["name"] = "Example Band & GUEST"
+        c = catalogue()
+        c["artists"] = []
+        with self.assertRaisesRegex(ValueError, "artiste inconnu"):
+            v.verify(candidate, html_without_proof, c, dt.date(2026, 11, 1))
+
+    def test_guest_does_not_override_cancellation_or_festival(self):
+        page = PAGE.replace("Example Band &amp; Another Band",
+                            "Example Band &amp; GUEST").replace(
+                                "<p>✘ ANOTHER BAND (Metalcore)</p>", "")
+        x = record()
+        x["name"] = "Example Band & GUEST"
+        for marker in ("concert annulé", "festival"):
+            with self.subTest(marker=marker), self.assertRaisesRegex(
+                    ValueError, "annulation ou de festival"):
+                v.verify(x, page.replace("</body>",
+                          "<p>" + marker + "</p></body>"),
+                         catalogue(), dt.date(2026, 11, 1))
+
     def test_duplicate_artist_and_venue_day_is_held(self):
         c = catalogue()
         c["events"] = [{"id": "existing", "date": "2027-05-06",

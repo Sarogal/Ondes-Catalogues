@@ -37,6 +37,16 @@ GENRES = {
 }
 BANNED = re.compile(r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|open air|"
                     r"annule|annulee|report[eé]|postponed|cancelled|sold out)\b", re.I)
+# An unnamed guest is not a musician identity. It may be omitted ONLY as an
+# explicit final suffix, never from the middle of a named bill.
+UNNAMED_GUEST_SUFFIX = re.compile(
+    r"\s+(?:\+|&|et)\s+(?:guest(?:\s+surprise|\s*\(\s*surprise\s*\))?|"
+    r"special guest|invité(?:e)? surprise|artiste surprise|surprise)\s*$", re.I)
+# Keep cancellation, uncertainty and festival blockers; only guest terms are
+# removed from the page-wide status scan.
+BANNED_STATUS = re.compile(
+    r"\b(?:tba|a confirmer|festival|fest|open air|annule|annulee|"
+    r"reporte|postponed|cancelled|sold out)\b", re.I)
 
 
 def norm(text):
@@ -127,7 +137,7 @@ def artist_names(title):
     if BANNED.search(norm(title)):
         raise ValueError("Intitulé incomplet, annulé ou de type festival")
     parts = [p.strip() for p in re.split(r"\s+(?:[+&]|et)\s+", title, flags=re.I)]
-    if not 1 <= len(parts) <= 5 or any(len(norm(x)) < 3 for x in parts):
+    if not parts or any(len(norm(x)) < 3 for x in parts):
         raise ValueError("Affiche impossible à séparer avec certitude")
     if len({norm(p) for p in parts}) != len(parts):
         raise ValueError("Artistes en double")
@@ -185,9 +195,13 @@ def verify(candidate, html_text, catalogue, today):
         raise ValueError("Date incohérente ou passée")
     if not ({norm(x) for x in (candidate.get("classification") or [])} & detail["acceptedGenreTags"]):
         raise ValueError("Genre incompatible avec la découverte")
-    if BANNED.search(norm(detail["title"])) or BANNED.search(norm(html_text[:20000])):
+    if (BANNED_STATUS.search(norm(detail["title"]))
+            or BANNED_STATUS.search(norm(html_text[:20000]))):
         raise ValueError("Indice d'annulation ou de festival")
-    parts = artist_names(detail["title"])
+    unnamed_guest = UNNAMED_GUEST_SUFFIX.search(detail["title"]) is not None
+    verified_title = (UNNAMED_GUEST_SUFFIX.sub("", detail["title"]).strip()
+                      if unnamed_guest else detail["title"])
+    parts = artist_names(verified_title)
     lineup = {norm(a) for a in detail["artists"]}
     known_names = {norm(a["name"]) for a in catalogue["artists"]}
     # Some first-party pages expose the complete named lineup only as their H2.
@@ -231,10 +245,12 @@ def verify(candidate, html_text, catalogue, today):
         "officialEvidence": [{
             "url": url, "proofType": "official-organizer-or-venue",
             "checkedAt": today.isoformat(), "checkedFields": ["artists", "date", "venue", "genre"],
-            "notes": "Relecture automatisée d'une fiche individuelle officielle; dates, genres et programmation réconciliés."
+            "notes": ("Relecture automatisée d'une fiche individuelle officielle; dates, genres et programmation réconciliés."
+                      + (" Guest non nommé omis : aucun artiste créé ou présumé."
+                         if unnamed_guest else ""))
         }],
         "event": {
-            "id": event_id, "title": detail["title"], "date": detail["date"],
+            "id": event_id, "title": verified_title, "date": detail["date"],
             "time": None, "artistIds": ids, "venueId": REX_VENUE,
             "genres": detail["genres"], "status": "confirmed", "officialUrl": url,
             "sourceType": "salle", "organizer": "Le Rex"

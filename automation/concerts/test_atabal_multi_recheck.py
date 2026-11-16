@@ -50,6 +50,66 @@ def catalogue():
 
 
 class StrictMultiBillTests(unittest.TestCase):
+    @staticmethod
+    def large_page(count):
+        named = ["COILGUNS"] + ["ACT %02d" % i for i in range(1, count)]
+        html = PAGE.replace(
+            "<h2>Pussy Miel ~ Kill!Kill!Diana</h2>",
+            "<h2>" + " ~ ".join(named[1:]) + "</h2>",
+        )
+        # Keep the original page's line breaks between independently
+        # named sections; replace the two old sections separately.
+        html = html.replace(
+            '<h2>PUSSY MIEL</h2><p>Rock garage, stoner</p><h5>PUNK ROCK</h5>',
+            "")
+        html = html.replace(
+            '<h2>Kill!Kill!Diana</h2><p>Post hardcore</p><h5>POST H-CORE</h5>',
+            "".join('<h2>' + artist + '</h2><p>Hardcore punk</p>'
+                    '<h5>POST H-CORE</h5>' for artist in named[1:]))
+
+        return named, html
+
+    def test_two_named_bands_and_six_ten_twenty_pass_real_publisher(self):
+        for count in (2, 6, 10, 20):
+            with self.subTest(count=count):
+                names, page = self.large_page(count)
+                proposal = multi.verify(candidate(), page, catalogue(), NOW)
+                self.assertEqual(len(proposal["event"]["artistIds"]), count)
+                self.assertEqual(len(proposal["newArtists"]), count)
+                evt, added = validate_approval(
+                    proposal, {v["id"]: v for v in catalogue()["venues"]},
+                    {}, NOW)
+                self.assertEqual(len(evt["artistIds"]), count)
+                self.assertEqual(len(added), count)
+                if count == 20:
+                    self.assertIn("-bill-", evt["id"])
+                self.assertLessEqual(len(evt["id"]), 150)
+                known = [{"id": "coilguns", "name": "COILGUNS", "aliases": []},
+                         {"id": "act-01", "name": "ACT 01", "aliases": []}]
+                mixed = catalogue()
+                mixed["artists"] = known
+                approved = multi.verify(candidate(), page, mixed, NOW)
+                self.assertEqual(len(approved["newArtists"]), count - 2)
+                _, additions = validate_approval(
+                    approved, {v["id"]: v for v in mixed["venues"]},
+                    {a["id"]: a for a in known}, NOW)
+                self.assertEqual(len(additions), count-2)
+
+                # A supported act without its individual named section is
+                # not corroborated, however many other groups are genuine.
+                altered = page.replace(
+                    "<h2>" + names[-1] + "</h2><p>Hardcore punk",
+                    "<h2>FALSE ACT</h2><p>Hardcore punk",
+                )
+                with self.assertRaises(ValueError):
+                    multi.verify(candidate(), altered, catalogue(), NOW)
+                fake = copy.deepcopy(proposal)
+                fake["officialEvidence"][0]["officialArtistNames"][-1] = "FAKE"
+                with self.assertRaises(ValueError):
+                    validate_approval(
+                        fake, {v["id"]: v for v in catalogue()["venues"]},
+                        {}, NOW)
+
     def test_exact_first_party_bill_produces_three_named_artists(self):
         approval = official_recheck.verify(candidate(), PAGE, catalogue(), NOW)
         self.assertEqual(approval["event"]["date"], "2027-03-11")
