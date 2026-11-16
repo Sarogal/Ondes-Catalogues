@@ -38,10 +38,7 @@ jobs:
                 'cafile_present=', bool(p.cafile),
                 'capath_present=', bool(p.capath))
           PY
-          if curl --head --fail --silent --show-error \\
-             --max-time 12 --proto '=https' \\
-             --output /dev/null \\
-             'https://www.villedugosier.fr/evenement/les-mercredis-timoun-3067'; then
+          if curl --head --fail --silent --show-error --max-time 12 --proto '=https' --output /dev/null 'https://www.villedugosier.fr/evenement/les-mercredis-timoun-3067'; then
             echo 'TLS_DIAGNOSTIC_CURL verified'
           else
             echo 'TLS_DIAGNOSTIC_CURL refused_or_unavailable'
