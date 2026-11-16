@@ -48,6 +48,86 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Single-PR diagnostic only: no write token, no state checkout, no publication.
+  # Checkout commits are PINNED so branch head changes cannot silently swap
+  # the tested private scripts, and no untrusted forks receive credentials.
+  qa-ultramarine-readonly:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == 'Sarogal/Ondes-Catalogues' && github.head_ref == 'feat/ptitesondes-ultramarine-discovery-sidecar-20261116'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    permissions:
+      contents: read
+    steps:
+      - name: Charger les sondes privées à une révision immuable (lecture seule)
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: c37517cd78f4debfc4653842eb63a3ce438a4419
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: qa65
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+      - name: Charger le correctif codes territoriaux figé (lecture seule)
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: 639e28b98617b34fdcecf29fbae8a82d2b26955c
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: qa66
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les contrats hors réseau des deux PR privées
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s qa65/automation -p 'test_municipal_gosier_discovery.py' -q
+          python -m unittest discover -s qa65/automation -p 'test_resolve_cinor_agenda.py' -q
+          python -m unittest discover -s qa66/automation -p 'test_cinor_source_registration.py' -q
+          python -m unittest discover -s qa66/automation -p 'test_overseas_openagenda_country_gate.py' -q
+      - name: Examiner la source municipale en lecture seule (14 jours max)
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          python qa65/automation/municipal_gosier_discovery.py --days 14 --output "$RUNNER_TEMP/gosier-qa.json" >/dev/null
+          python - <<'PY'
+          import json,os
+          from collections import Counter
+          with open(os.environ["RUNNER_TEMP"] + "/gosier-qa.json",encoding="utf-8") as fh:
+              r=json.load(fh)
+          if r["approved"] or r["published"] or any(
+              x.get("safe_to_publish") is not False or x.get("openagenda_uid") is not None
+              for x in r["leads"]):
+              raise SystemExit("Échec du contrat de non-publication")
+          counts=Counter(x["date_start"] for x in r["leads"])
+          print("Gosier : pistes par date = " + repr(dict(sorted(counts.items()))))
+          print("Gosier : échecs de lecture (compte uniquement) = "+str(len(r["sources_failed"])))
+          if counts.get("2026-11-18",0)<3 or counts.get("2026-11-25",0)<4 or counts.get("2026-11-28",0)<1:
+              raise SystemExit("Extraction de séances attendues incomplète, aucune publication")
+          PY
+      - name: Vérifier l'identité de l'agenda CINOR (API OpenAgenda)
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          set -euo pipefail
+          test -n "$OPENAGENDA_READ_KEY"
+          python qa65/automation/resolve_cinor_agenda.py --output "$RUNNER_TEMP/cinor-qa.json" >/dev/null
+          python - <<'PY'
+          import json,os
+          with open(os.environ["RUNNER_TEMP"]+"/cinor-qa.json",encoding="utf-8") as fh:
+              r=json.load(fh)
+          print("CINOR : résultat vérification API = "+str(r["status"]))
+          print("CINOR : aucune admission ni publication = "+str(
+              r["automatically_admitted"] is False and r["published"] == 0))
+          if r["status"]!="api_identity_verified" or r["candidate_agenda_uid"]!=9278749:
+              raise SystemExit("Configuration CINOR non confirmée par les deux vues API")
+          PY
+
   lint:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-24.04
