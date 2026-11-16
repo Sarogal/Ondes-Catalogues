@@ -62,7 +62,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Sarogal/PtitesOndes
-          ref: c37517cd78f4debfc4653842eb63a3ce438a4419
+          ref: d2e69c449b0ccda0d069d715f1a93e8b3353780a
           token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
           path: qa65
           sparse-checkout: |
