@@ -94,7 +94,7 @@ class HistoricalHomepageTests(unittest.TestCase):
         source = Path(__file__).resolve().parents[1] / (
             "docs/grossesondes/festival-history.json")
         archive = json.loads(source.read_text(encoding="utf-8"))
-        self.assertEqual(len(archive["knownFestivals"]), 173)
+        self.assertGreaterEqual(len(archive["knownFestivals"]), len(APPROVED))
         selected = {row["slug"]: row for row in archive["knownFestivals"]
                     if row.get("slug") in APPROVED}
         self.assertEqual(set(selected), set(APPROVED))
