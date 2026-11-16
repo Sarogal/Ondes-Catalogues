@@ -39,6 +39,10 @@ def unannounced_label(value):
 
 ALLOWED_GENRES = (
     ("post punk", "Post Punk"),
+    # The discovery classifier already recognizes event-tagged garage rock.
+    # Match ONLY this explicit subgenre in the official Genre field, never
+    # generic "Rock" in the menu or an artist biography.
+    ("garage rock", "Garage Rock"),
     ("black metal", "Black Metal"),
     ("death metal", "Death Metal"),
     ("hard rock", "Hard Rock"),
