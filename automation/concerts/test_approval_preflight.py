@@ -596,6 +596,29 @@ class PreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "metadata changed"):
             gate.check_append_only(self.before, proposed, TODAY)
 
+    def test_new_id_cannot_reuse_historical_official_url_and_date(self):
+        previous = prior()
+        previous["approvals"] = [row("go-c-20270401-historic")]
+        proposed = copy.deepcopy(previous)
+        # A distinct ID and artist do not make the same official page/date
+        # a distinct concert. This bypassed the old appended-only pair set.
+        repeated = row("go-c-20270401-new-identity")
+        repeated["event"]["artistIds"] = ["different-new-artist"]
+        proposed["approvals"].append(repeated)
+        with self.assertRaisesRegex(ValueError, "Duplicate official URL"):
+            gate.check_append_only(previous, proposed, TODAY)
+        self.assertEqual(len(previous["approvals"]), 1)
+
+    def test_historical_official_url_with_distinct_date_remains_eligible(self):
+        previous = prior()
+        previous["approvals"] = [row("go-c-20270401-historic")]
+        proposed = copy.deepcopy(previous)
+        next_date = row("go-c-20270402-other-date")
+        next_date["event"]["date"] = "2027-04-02"
+        proposed["approvals"].append(next_date)
+        self.assertEqual(
+            gate.check_append_only(previous, proposed, TODAY), [next_date])
+
     def test_duplicate_approval_ids_are_rejected(self):
         proposed = copy.deepcopy(self.after)
         proposed["approvals"].append(copy.deepcopy(row()))
