@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from ptitesondes_municipal_admission import (
-    SCHEMA, explicit_municipal_category_valid, inspect_municipal_admission,
+    SCHEMA, editorial_decision_line,
+    explicit_municipal_category_valid, inspect_municipal_admission,
 )
 from ptitesondes_municipal_human_decision import (
     API, APPROVER, MANIFEST_SCHEMA, REPOSITORY,
@@ -59,7 +60,8 @@ def fixture(*, explicit=True, event_html=None):
     return doc, c, a, m, html
 
 
-def github_for(manifest, *, decision="APPROVE", permission="admin"):
+def github_for(manifest, *, decision="APPROVE", permission="admin",
+               editorial="ABSENT"):
     pr = {
         "number": PR_NUMBER, "state": "open", "merged_at": None,
         "head": {"sha": PR_SHA, "repo": {"full_name": REPOSITORY}},
@@ -76,6 +78,23 @@ def github_for(manifest, *, decision="APPROVE", permission="admin"):
             "user": {"login": APPROVER, "type": "User"},
             "author_association": "OWNER",
         })
+    if editorial in ("SOURCE_ONLY", "REVOKE", "FORGED", "STALE"):
+        body = editorial_decision_line(manifest, "SOURCE_ONLY")
+        if editorial == "STALE":
+            body = body.replace(manifest["head_sha"], "f" * 40)
+        decisions.append({
+            "id": 103, "body": body,
+            "user": {"login": "not-the-owner" if editorial == "FORGED" else APPROVER,
+                     "type": "User"},
+            "author_association": "OWNER",
+        })
+        if editorial == "REVOKE":
+            decisions.append({
+                "id": 104,
+                "body": editorial_decision_line(manifest, "REVOKE"),
+                "user": {"login": APPROVER, "type": "User"},
+                "author_association": "OWNER",
+            })
     def get(url, token):
         if token != "test-token":
             raise ValueError("token_mismatch")
@@ -90,8 +109,8 @@ def github_for(manifest, *, decision="APPROVE", permission="admin"):
 
 
 def execute(*, doc=None, c=None, a=None, m=None, html=None,
-            decision="APPROVE", geo=True, token="test-token",
-            cal=CALENDAR, unavailable=False, github=None):
+            decision="APPROVE", editorial="ABSENT", geo=True,
+            token="test-token", cal=CALENDAR, unavailable=False, github=None):
     catalog, cand, conditions, manifest, official = fixture()
     catalog = doc if doc is not None else catalog
     cand = c if c is not None else cand
@@ -107,7 +126,8 @@ def execute(*, doc=None, c=None, a=None, m=None, html=None,
     return inspect_municipal_admission(
         catalog, private_review(cand), private_access(conditions),
         manifest, TODAY, token=token, source_get=get,
-        github_get=github or github_for(manifest, decision=decision),
+        github_get=github or github_for(
+            manifest, decision=decision, editorial=editorial),
         geo_check=lambda ev: (geo, "independent registry test fixture"),
     )
 
@@ -148,6 +168,31 @@ class MunicipalAdmissionGateTests(unittest.TestCase):
         self.assertIn("editorial_unknown_conditions_pending", out["blockers"])
         self.assertFalse(out["publication_ready"])
         self.assertFalse(out["technical_admission_diagnostic_passed"])
+
+    def test_explicit_second_editorial_consent_unlocks_only_diagnostic(self):
+        doc, c, a, m, html = fixture(explicit=False)
+        out = execute(doc=doc, c=c, a=a, m=m, html=html,
+                      editorial="SOURCE_ONLY")
+        self.assertTrue(out["authenticated_human_evidence"])
+        self.assertTrue(out["authenticated_unknown_access_source_only_decision"])
+        self.assertTrue(out["technical_admission_diagnostic_passed"])
+        self.assertFalse(out["publication_ready"])
+        self.assertNotIn("price", out)
+        self.assertNotIn("registration", out)
+        self.assertNotIn("additions", out)
+
+    def test_forged_or_revoked_editorial_consent_fails_closed(self):
+        doc, c, a, m, html = fixture(explicit=False)
+        for editorial in ("FORGED", "STALE", "REVOKE"):
+            with self.subTest(editorial=editorial):
+                out = execute(doc=doc, c=c, a=a, m=m, html=html,
+                              editorial=editorial)
+                self.assertTrue(out["authenticated_human_evidence"])
+                self.assertFalse(
+                    out["authenticated_unknown_access_source_only_decision"])
+                self.assertIn("editorial_unknown_conditions_pending",
+                              out["blockers"])
+                self.assertFalse(out["publication_ready"])
 
     def test_source_changed_after_approval_invalidates_manifest(self):
         doc, c, a, m, html = fixture()
