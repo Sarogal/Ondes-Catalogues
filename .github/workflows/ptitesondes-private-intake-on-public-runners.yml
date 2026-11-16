@@ -96,7 +96,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: Sarogal/PtitesOndes
-          ref: c23896f78e99908fcad6fcd120349bfabd265ce9
+          ref: 63cbe6a02abdb84f69597bcd9c3c110b7fb1c28b
           token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
           path: gosier-private-test
           sparse-checkout: |
