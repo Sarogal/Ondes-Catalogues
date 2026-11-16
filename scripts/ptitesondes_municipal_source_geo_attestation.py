@@ -231,6 +231,7 @@ def inspect_source_geo_attestation(
     expected_hash = canonical_sha256(catalogue)
     blocked = set()
     live_bytes = {}
+    registry_checked = False
     chosen_registry = VENUES if registry is None else registry
 
     def read_once(url):
@@ -256,6 +257,7 @@ def inspect_source_geo_attestation(
         if record is None:
             blocked.add("independent_static_registry_missing_or_inconsistent")
         else:
+            registry_checked = True
             day = date.fromisoformat(candidate["date_start"])
             calendar_url = municipal_calendar_url(day)
             if not _receipt_matches(
@@ -281,9 +283,7 @@ def inspect_source_geo_attestation(
             candidate.get("official_event_url") in live_bytes
             and candidate.get("calendar_url") in live_bytes
         ),
-        "registry_checked_against_versioned_static_entry": (
-            "independent_static_registry_missing_or_inconsistent" not in blocked
-        ),
+        "registry_checked_against_versioned_static_entry": registry_checked,
         "authenticated_private_attestation_passed": not blocked,
         "github_comment_timestamp_required": True,
         "maximum_attestation_age_days": MAX_COMMENT_AGE_DAYS,
