@@ -33,7 +33,7 @@ Sources officielles :
 - 9/9 : **aucune approbation humaine privée authentifiée**. Le contrôle humain #328 ne constitue pas une autorisation de publier.
 - GPS de la médiathèque : 16.20547, -61.48950, dossier public #305 encore DRAFT ; pas encore intégré au registre de publication.
 - Aucun événement expiré au 16 novembre ; refaire l'examen des éventuelles annulations, reports, complet et sources indisponibles immédiatement avant tout accord.
-- Doublons : absence de collision détectée dans la simulation sur 548 fiches ; recontrôler contre le catalogue **réel au moment de la publication** et les éventuelles nouvelles sources.
+- Doublons : la simulation #330 a testé **un puis deux ajouts hypothétiques** face à 548 fiches historiques, pas les neuf séances en une seule publication. Un contrôle exhaustif des neuf identités et des autres sources reste indispensable, sur le catalogue **réel au moment de la publication**.
 
 **Décision : 9 dossiers à proposer à une revue éditoriale, 0 dossier publiable** tant que les informations manquantes, la validation humaine et le raccordement technique ne sont pas arbitrés. Ne pas retirer ces dossiers du moteur de collecte à cause d'un prix inconnu.
 
