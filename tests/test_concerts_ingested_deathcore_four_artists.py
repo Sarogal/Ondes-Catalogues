@@ -79,6 +79,9 @@ class IngestedOfficialCompleteBillTests(unittest.TestCase):
             PAGE.replace(" + PSYCROPTIC + NETHERWALKER + TRACHEOTOMY", ""),
             PAGE.replace(" + PSYCROPTIC + NETHERWALKER + TRACHEOTOMY",
                          " + GUEST"),
+            PAGE.replace(
+                "GARMONBOZIA présente INGESTED",
+                "<strong>GARMONBOZIA</strong> présente INGESTED"),
             PAGE.replace("Deathcore</div>", "Electronic Dance</div>"),
             PAGE.replace("01/02/2027", "01/02/2028"),
             PAGE.replace("O’Sullivans By The Mill", "Other Club"),
