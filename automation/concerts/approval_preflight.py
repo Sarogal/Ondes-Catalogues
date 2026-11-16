@@ -9,6 +9,7 @@ No private record is uploaded to a public workflow artifact or printed.
 from __future__ import annotations
 
 import argparse
+import copy
 import datetime as dt
 import json
 import os
@@ -130,6 +131,43 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             "validatedByPublisher": True}
 
 
+def select_exact_publishable_subset(previous, proposed, reference,
+                                    current, today, publisher):
+    """Keep independently valid signatures; NEVER trust the first partial merge.
+
+    First run the exact publisher against the whole signed proposal to
+    identify failures. If there are failures, build an append-only proposal
+    that excludes ONLY the rejected new event IDs. Re-run the same publisher
+    on that exact subset, with the same catalogue, reference and review day.
+    No rejected record is written to the private approval file.
+    """
+    try:
+        stats = validate_proposal(
+            previous, proposed, reference, current, today, publisher)
+        return stats, proposed, []
+    except PublisherRejections as failure:
+        additions = check_append_only(previous, proposed, today)
+        failed = {r["eventId"] for r in failure.rejections}
+        expected_ids = {r["event"]["id"] for r in additions}
+        require(bool(failed) and failed.issubset(expected_ids),
+                "Publisher rejected an unknown or previously signed event")
+        accepted = [r for r in additions if r["event"]["id"] not in failed]
+        if not accepted:
+            # Existing fail-closed behavior for wholly invalid batches.
+            raise
+        safe = copy.deepcopy(proposed)
+        safe["approvals"] = (
+            copy.deepcopy(previous["approvals"]) + copy.deepcopy(accepted)
+        )
+        stats = validate_proposal(
+            previous, safe, reference, current, today, publisher)
+        require(stats["validatedByPublisher"] is True
+                and stats["newApprovals"] == len(accepted)
+                and stats["publishableEvents"] == len(accepted),
+                "Independent accepted subset not reproduced by publisher")
+        return stats, safe, failure.rejections
+
+
 def atomic_store(path, data):
     """Never leave a partially written private approvals file."""
     descriptor, filename = tempfile.mkstemp(
@@ -165,7 +203,7 @@ def main():
     sys.path.insert(0, str(root / "scripts"))
     import concerts_cloud_sync
     try:
-        stats = validate_proposal(
+        stats, selected, rejected = select_exact_publishable_subset(
             original, proposed, reference, current, today,
             concerts_cloud_sync.merge)
     except PublisherRejections as exc:
@@ -181,13 +219,19 @@ def main():
             "recordedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
         }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         raise
+    stats["proposedApprovals"] = (len(proposed["approvals"]) -
+                                  len(original["approvals"]))
+    stats["rejectedCount"] = len(rejected)
+    stats["rejected"] = rejected
+    stats["status"] = ("partially_validated" if rejected else
+                       "validated" if stats["newApprovals"] else "no_changes")
     stats["applied"] = bool(args.apply and stats["newApprovals"])
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(stats, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
     if stats["applied"]:
-        atomic_store(args.before, proposed)
+        atomic_store(args.before, selected)
     print("Official approval preflight: checked; see private report.")
 
 
