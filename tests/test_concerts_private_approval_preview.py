@@ -65,6 +65,52 @@ class PrivateApprovalReadOnlyTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 ci.append_only(BEFORE, candidate, PUBLISHED)
 
+    def test_append_only_preflight_works_with_17_older_pending_signatures(self):
+        import json
+        base = json.loads(ci.sync.REFERENCE.read_text(encoding="utf-8"))
+        rows = []
+        for i in range(1, 19):
+            rows.append({
+                "reviewDecision": "approved",
+                "reviewedBy": "independent-official-verifier",
+                "reviewedAt": "2026-11-16",
+                "officialEvidence": [{
+                    "url": "https://example.org/concert/" + str(i),
+                    "proofType": "official-organizer-or-venue",
+                }],
+                "newArtists": [],
+                "event": {
+                    "id": "go-c-202803%02d-test-fifo" % i,
+                    "title": "Test FIFO %d" % i,
+                    "date": "2028-03-%02d" % i,
+                    "time": None, "artistIds": ["kamelot"],
+                    "venueId": "la-rayonne", "genres": ["Metal"],
+                    "status": "confirmed", "sourceType": "salle",
+                    "officialUrl": "https://example.org/concert/" + str(i),
+                },
+            })
+        old = {"schema": ci.sync.SCHEMA, "approvals": rows[:17],
+               "venueApprovals": []}
+        proposed = {"schema": ci.sync.SCHEMA, "approvals": rows[:18],
+                    "venueApprovals": []}
+
+        # Synthetic fixture: stub only individual source proofs. The actual
+        # sync.merge and append-only preflight are exercised end-to-end.
+        def proven(row, venues, artists, today):
+            return row["event"], {}
+        with patch.object(ci.sync, "validate_approval", side_effect=proven):
+            self.assertEqual(ci.audit(old, proposed, base, base,
+                                      dt.date(2026, 11, 16)), 1)
+
+        def forged_last(row, venues, artists, today):
+            if row["event"]["id"] == rows[-1]["event"]["id"]:
+                raise ValueError("Source non corroborée")
+            return proven(row, venues, artists, today)
+        with patch.object(ci.sync, "validate_approval",
+                          side_effect=forged_last):
+            with self.assertRaises(ValueError):
+                ci.audit(old, proposed, base, base, dt.date(2026, 11, 16))
+
     def test_read_only_simulation_and_no_existing_event_change(self):
         after = copy.deepcopy(PUBLISHED)
         after["events"].append({"id": NEW_ROW["event"]["id"]})
