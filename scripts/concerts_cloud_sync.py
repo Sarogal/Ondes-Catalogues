@@ -6308,7 +6308,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                                 + "-paris-" + norm(names[0]).replace(" ","-")[:72]),
                     "Backstage auto : identité/date du concert non déterministe")
             safe_genres = {"Groove Metal","Black Metal","Death Metal",
-                "Melodic Death Metal","Metalcore","Industrial Metal",
+                "Melodic Death Metal","Metalcore","Deathcore","Industrial Metal",
                 "Progressive Metal","Heavy Metal","Thrash Metal","Hardcore",
                 "Post Hardcore","Post Metal","Doom Metal","Stoner Rock",
                 "Punk Rock","Punk","Metal","Hard Rock"}
