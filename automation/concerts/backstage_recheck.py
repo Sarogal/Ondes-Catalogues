@@ -147,7 +147,10 @@ def verify(candidate, html_text, catalogue, today):
     if UNSAFE.search(status_header):
         raise ValueError("Événement annulé, reporté ou à confirmer")
     names = [x.strip() for x in re.split(r"\s+\+\s+", signed_title)]
-    if not 1 <= len(names) <= 5 or any(len(norm(n)) < 3 for n in names):
+    # Verify every individually named act; no editorial cap on bill size.
+    # The official H1, exact title, genre, venue, date and identity checks
+    # below still apply to every member of the announced lineup.
+    if not names or any(len(norm(n)) < 3 for n in names):
         raise ValueError("Programmation non nominative")
     if len({norm(n) for n in names}) != len(names):
         raise ValueError("Artistes répétés dans la programmation")
