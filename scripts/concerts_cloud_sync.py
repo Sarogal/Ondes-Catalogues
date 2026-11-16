@@ -5064,6 +5064,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Hard Rock", "Stoner Rock", "Sludge", "Doom Metal",
                     "Thrash Metal", "Metal", "Punk", "Grunge",
                     "Shoegaze", "Noise Rock", "Math Rock", "Post Rock",
+                    "Garage Rock",
                 },
                 "La Laiterie automatique : genre, date ou heure non admissibles")
     elif event.get("venueId") == "la-laiterie-strasbourg":
