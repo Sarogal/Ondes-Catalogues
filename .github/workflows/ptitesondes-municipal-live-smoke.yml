@@ -1,7 +1,9 @@
 name: "P'tites Ondes — sonde municipale réelle, lecture seule"
 
 on:
-  pull_request:
+  push:
+    branches:
+      - 'feat/ptitesondes-municipal-readonly-preflight-20261116'
     paths:
       - '.github/workflows/ptitesondes-municipal-live-smoke.yml'
   workflow_dispatch:
@@ -12,13 +14,12 @@ permissions:
 jobs:
   gosier-readonly-check:
     # Only the explicitly isolated draft branch can run this network probe
-    # during PR review; never a scheduled or production publisher job.
+    # on explicit workflow-file changes; never a scheduled or production job.
     # Validate exact SPIP day/month/year metadata for 9 occurrences.
     if: >-
       github.repository == 'Sarogal/Ondes-Catalogues' &&
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft == true &&
-      github.head_ref == 'feat/ptitesondes-municipal-readonly-preflight-20261116'
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/feat/ptitesondes-municipal-readonly-preflight-20261116'
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
