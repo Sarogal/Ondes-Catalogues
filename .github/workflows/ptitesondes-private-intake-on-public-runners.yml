@@ -130,6 +130,59 @@ jobs:
           python -m unittest discover -s proof-cinor/automation -p 'test_overseas_openagenda_country_gate.py' -v
           python -m unittest discover -s proof-cinor/automation -p 'test_cinor_child_creative_discovery.py' -v
 
+      - name: Charger le registre GPS Gosier audite depuis PR 305
+        uses: actions/checkout@v4
+        with:
+          ref: d5cfbfca2bd046a94719d34c9c461ba95e48f323
+          path: proof-venues
+          persist-credentials: false
+      - name: Charger le catalogue public depuis main, lecture seule
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: proof-public
+          persist-credentials: false
+      - name: Qualification reelle des occurrences du Gosier (aucune ecriture)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gosier-qualification"
+          python proof-private/automation/municipal_gosier_discovery.py --days 14 --output "$RUNNER_TEMP/gosier-qualification/discovery.json"
+          python - <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          sys.path.insert(0, "proof-venues/scripts")
+          from venue_registry import VENUES
+          matches = [v for v in VENUES if v.get("city") == "Le Gosier"
+                     and "Médiathèque Raoul Georges Nicolo" in v.get("aliases", [])]
+          assert len(matches) == 1, "Exact reviewed venue missing"
+          p = Path(os.environ["RUNNER_TEMP"]) / "gosier-qualification" / "venue.json"
+          p.write_text(json.dumps(matches[0], ensure_ascii=False))
+          PY
+          python proof-private/automation/gosier_qualification.py \
+            --discovery "$RUNNER_TEMP/gosier-qualification/discovery.json" \
+            --catalogue proof-public/docs/ptitesondes/sorties.json \
+            --venue-registry-entry "$RUNNER_TEMP/gosier-qualification/venue.json" \
+            --output "$RUNNER_TEMP/gosier-qualification/private-report.json"
+          python - <<'PY'
+          from collections import Counter
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "gosier-qualification"
+          d = json.loads((p / "discovery.json").read_text())
+          r = json.loads((p / "private-report.json").read_text())
+          assert r["approved"] == r["published"] == 0
+          print("LIVE_GOSIER", json.dumps({
+              "days_checked": d["dates_checked"],
+              "discovered": len(d["leads"]),
+              "calendar_errors": len(d["sources_failed"]),
+              "evidence_checked": r["evidence_checked"],
+              "blocked": r["blocked"],
+              "reason_codes_only": dict(Counter(
+                  reason for e in r["sessions"] for reason in e["blockers"]))
+          }, sort_keys=True))
+          PY
+
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
