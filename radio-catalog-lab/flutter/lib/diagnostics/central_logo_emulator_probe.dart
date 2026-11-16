@@ -4,12 +4,11 @@
 // No HTTP sockets and no mutation of live station/favorite preferences.
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter/foundation.dart' show kReleaseMode;
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -26,11 +25,10 @@ const _testHost = 'images.example.org';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MaterialApp(
-    home: Scaffold(
-      body: Center(
-        child: Text('Grosses Ondes - sonde Flutter / logos Android (DEBUG)'),
-      ),
+  runApp(const Directionality(
+    textDirection: TextDirection.ltr,
+    child: Center(
+      child: Text('Grosses Ondes - sonde Flutter / logos Android (DEBUG)'),
     ),
   ));
   try {
@@ -104,7 +102,7 @@ Future<void> _runIsolatedProbe() async {
 
   // Only a synthetic catalog: no production public/private signing keys.
   final signingPair = await Ed25519().newKeyPair();
-  final publicKey = (await signingPair.extractPublicKey()) as SimplePublicKey;
+  final publicKey = await signingPair.extractPublicKey();
   final verifier = CentralCatalogVerifier(
     trustedKeys: {'debug-emulator-only': publicKey},
   );
