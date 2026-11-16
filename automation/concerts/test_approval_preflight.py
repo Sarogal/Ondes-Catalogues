@@ -496,6 +496,22 @@ class PreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Too many"):
             gate.check_append_only(self.before, proposed, TODAY)
 
+    def test_trusted_main_merge_of_preflight_triggers_one_public_runner_pass(self):
+        workflow = (
+            Path(__file__).resolve().parents[2] / ".github" / "workflows"
+            / "grossesondes-concerts-private-intake-on-public-runners.yml"
+        ).read_text(encoding="utf-8")
+        # The exact preflight edit must not wait for an unreliable schedule.
+        self.assertIn("branches: [main]", workflow)
+        self.assertIn(
+            "      - 'automation/concerts/approval_preflight.py'", workflow)
+        # PR changes are tested by the public-safe parity CI, without the
+        # private credentials of this trusted-main intake job.
+        self.assertNotIn("\\n  pull_request:", workflow)
+        self.assertIn(
+            "github.ref == 'refs/heads/main'", workflow)
+        self.assertIn("permissions:\\n  contents: read", workflow)
+
     def test_no_change_to_source_documents(self):
         previous = copy.deepcopy(self.before)
         proposed = copy.deepcopy(self.after)
