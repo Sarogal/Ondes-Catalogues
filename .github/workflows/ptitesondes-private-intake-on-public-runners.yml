@@ -109,7 +109,49 @@ jobs:
           if counts.get("2026-11-18",0)<3 or counts.get("2026-11-25",0)<4 or counts.get("2026-11-28",0)<1:
               raise SystemExit("Extraction de séances attendues incomplète, aucune publication")
           PY
+      - name: Diagnostiquer les classes HTML réelles sans journaliser le contenu (uniquement en échec)
+        if: failure()
+        run: |
+          python - <<'PY'
+          from collections import Counter
+          from datetime import date
+          from html.parser import HTMLParser
+          import sys
+          sys.path.insert(0,"qa65/automation")
+          from municipal_gosier_discovery import fetch_calendar,source_url,AgendaHTML
+          class Structure(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.classes=Counter()
+                  self.headings=Counter()
+                  self.tags=Counter()
+              def handle_starttag(self,tag,attrs):
+                  self.tags[tag]+=1
+                  if tag in ("h1","h2","h3","h4"):
+                      self.headings[tag]+=1
+                  for key,value in attrs:
+                      if key=="class" and value:
+                          for cls in value.split():
+                              if any(x in cls.lower() for x in (
+                                  "event","evenement","agenda","card","date","time","hour",
+                                  "heure","list","item","location","title","lieu")):
+                                  self.classes[cls]+=1
+          d=date(2026,11,25)
+          html=fetch_calendar(source_url(d))
+          dom=AgendaHTML()
+          dom.feed(html)
+          struct=Structure()
+          struct.feed(html)
+          print("Réponse HTML brut (octets) : "+str(len(html.encode("utf8"))))
+          print("En-têtes H1 capturés : "+str(len(dom.h1_parts)))
+          print("Cartes détectées : "+str(len(dom.cards)))
+          print("Balises de titres : "+str(dict(struct.headings)))
+          print("Classes DOM fréquentes : "+repr(struct.classes.most_common(32)))
+          print("Nombre de balises <article> / <li> / <div> : "+repr(
+              {x:struct.tags[x] for x in ("article","li","div")}))
+          PY
       - name: Vérifier l'identité de l'agenda CINOR (API OpenAgenda)
+        if: always()
         env:
           OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
           PYTHONDONTWRITEBYTECODE: '1'
