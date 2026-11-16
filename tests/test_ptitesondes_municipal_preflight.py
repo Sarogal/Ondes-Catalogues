@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_municipal_preflight import (
     SCHEMA, audit_municipal, official_calendar_verified,
     official_event_verified, municipal_calendar_url, local_time_present,
+    CalendarCards, calendar_card_date_matches,
 )
 from test_ptitesondes_nonmusic_release_contract import (
     TODAY, URL, TITLE, proposal, access, private_review,
@@ -96,6 +97,33 @@ class MunicipalPreflightTests(unittest.TestCase):
         self.assertFalse(official_event_verified(candidate(), bad))
         self.assertIn("official_event_not_reconfirmed",
                       check(event=bad)["details_private_only"][0]["reasons"])
+
+    def test_weekly_same_title_different_day_is_not_ambiguity(self):
+        another_week = CALENDAR.replace("25</span>", "18</span>").replace(
+            "mer. 25 nov.", "mer. 18 nov.")
+        joined = CALENDAR + another_week
+        self.assertTrue(official_calendar_verified(candidate(), joined))
+        p = CalendarCards()
+        p.feed(joined)
+        self.assertEqual(len(p.cards), 2)
+        self.assertEqual(
+            sum(calendar_card_date_matches(row, date(2026, 11, 25))
+                for row in p.cards), 1)
+
+    def test_day_month_year_must_be_scoped_metadata_not_prose(self):
+        # Dates buried in generic text must not fill a missing official field.
+        for change in (
+            CALENDAR.replace('<span class="jour">25</span>',
+                             '<span>25</span>'),
+            CALENDAR.replace('<span class="mois">nov</span>',
+                             '<span>nov</span>'),
+            CALENDAR.replace('<span class="annee">2026</span>',
+                             '<span>2026</span>'),
+            CALENDAR.replace('<span class="annee">2026</span>',
+                             '<span class="annee">2027</span>'),
+        ):
+            with self.subTest(change=change[:80]):
+                self.assertFalse(official_calendar_verified(candidate(), change))
 
     def test_calendar_exact_official_event_link_required(self):
         wrong = CALENDAR.replace(URL, "https://www.villedugosier.fr/evenement/autre-3068")
