@@ -190,7 +190,8 @@ def github_approval(ref, token):
         require(isinstance(sha, str) and SHA.fullmatch(sha),
                 "Blob privé non identifié")
         blob = github_json("/git/blobs/" + sha, token)
-        require(blob.get("sha") == sha, "Blob de prévalidation divergent")
+        require(blob.get("sha") == sha and blob.get("size") == size,
+                "Blob de prévalidation divergent")
         payload = blob
     else:
         payload = meta
