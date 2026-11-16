@@ -10,6 +10,7 @@ on:
       # collection pass even when GitHub delays or skips scheduled cron runs.
       - 'automation/concerts/registry_funnel.py'
       - 'automation/concerts/official_recheck.py'
+      - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
