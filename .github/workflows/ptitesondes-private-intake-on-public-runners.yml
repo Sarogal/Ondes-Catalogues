@@ -90,68 +90,6 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
-
-      # TEMPORAIRE PR UNIQUEMENT : tests de preuves d'accès sans production.
-      - name: Charger le contrat privé de conditions du Gosier
-        uses: actions/checkout@v4
-        with:
-          repository: Sarogal/PtitesOndes
-          ref: 63cbe6a02abdb84f69597bcd9c3c110b7fb1c28b
-          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
-          path: gosier-private-test
-          sparse-checkout: |
-            automation
-          persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Tester refus de conditions implicites et contrôle réel sans écritures
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -m unittest discover -s gosier-private-test/automation -p 'test_gosier_access_conditions.py' -v
-          mkdir -p "$RUNNER_TEMP/gosier-access"
-          python gosier-private-test/automation/municipal_gosier_discovery.py --days 14 --output "$RUNNER_TEMP/gosier-access/discovery.json"
-          python - <<'PY'
-          import json,os
-          from pathlib import Path
-          import sys
-          sys.path.insert(0,"gosier-private-test/automation")
-          from gosier_qualification import BNF,OSM,GPS
-          p=Path(os.environ["RUNNER_TEMP"])/"gosier-access"/"venue.json"
-          p.write_text(json.dumps({
-              "city":"Le Gosier", "aliases":["Médiathèque Raoul Georges Nicolo"],
-              "lat":GPS[0], "lng":GPS[1], "official":BNF,"geo_source":OSM
-          }))
-          PY
-          python gosier-private-test/automation/gosier_qualification.py \
-            --discovery "$RUNNER_TEMP/gosier-access/discovery.json" \
-            --catalogue docs/ptitesondes/sorties.json \
-            --venue-registry-entry "$RUNNER_TEMP/gosier-access/venue.json" \
-            --output "$RUNNER_TEMP/gosier-access/qualified.json"
-          python gosier-private-test/automation/gosier_review_candidates.py \
-            --qualification "$RUNNER_TEMP/gosier-access/qualified.json" \
-            --catalogue docs/ptitesondes/sorties.json \
-            --output "$RUNNER_TEMP/gosier-access/review.json"
-          python gosier-private-test/automation/gosier_access_conditions.py \
-            --review "$RUNNER_TEMP/gosier-access/review.json" \
-            --output "$RUNNER_TEMP/gosier-access/access.json"
-          python - <<'PY'
-          import json,os,collections
-          from pathlib import Path
-          f=Path(os.environ["RUNNER_TEMP"])/"gosier-access"/"access.json"
-          r=json.loads(f.read_text())
-          assert r["approved"]==r["published"]==0
-          assert all(x["safe_to_publish"] is False for x in r["reviewed"])
-          print("GOSIER_ACCESS_READONLY",json.dumps({
-            "total":r["count"],"conditions_to_clarify":r["conditions_to_clarify"],
-            "status":dict(collections.Counter(x["access_status"] for x in r["reviewed"])),
-            "price_evidence":dict(collections.Counter(x["price_evidence"] for x in r["reviewed"])),
-            "registration_evidence":dict(collections.Counter(x["registration_evidence"] for x in r["reviewed"])),
-            "approved":r["approved"],"published":r["published"]
-          },sort_keys=True))
-          PY
-
   run-private:
     if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event_name == 'push' || (github.event_name == 'schedule' && vars.PTITESONDES_PUBLIC_INTAKE != 'paused'))
     runs-on: ubuntu-24.04
