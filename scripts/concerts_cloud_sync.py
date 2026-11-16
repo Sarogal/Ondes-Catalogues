@@ -11,6 +11,7 @@ import argparse
 import base64
 import copy
 import datetime as dt
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -1581,6 +1582,65 @@ def require(check, message):
         raise ValueError(message)
 
 
+REVIEWED_VENUE_SPECS_PATH = ROOT / "automation/concerts/reviewed_venue_specs_v1.json"
+
+
+@lru_cache(maxsize=1)
+def read_reviewed_venue_specs():
+    """Separately code-reviewed public reference; private approval still required.
+
+    No venue can be added solely from a discovery candidate or an inferred GPS.
+    This registry is empty initially; all existing PILOT_VENUES retain the
+    original exact first-party and independent-location proof requirements.
+    """
+    data = json.loads(REVIEWED_VENUE_SPECS_PATH.read_text(encoding="utf-8"))
+    require(isinstance(data, dict)
+            and set(data) == {"schema", "venues"}
+            and data["schema"] == "grossesondes.concert.reviewed-venue-specs.v1"
+            and isinstance(data["venues"], dict),
+            "Registre public des salles de confiance invalide")
+    venues = data["venues"]
+    require(not set(venues).intersection(PILOT_VENUES),
+            "Registre de salles externe en conflit avec le catalogue historique")
+    for ident, spec in venues.items():
+        require(isinstance(ident, str)
+                and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", ident)
+                and isinstance(spec, dict)
+                and set(spec) == {
+                    "venue", "officialUrl", "locationUrl", "locationProofType"
+                }, "Dossier public de salle incomplet")
+        venue = spec["venue"]
+        require(isinstance(venue, dict)
+                and set(venue) == {
+                    "id", "name", "address", "postalCode", "city",
+                    "department", "region", "latitude", "longitude",
+                    "geoPrecision", "geoSource"
+                } and venue["id"] == ident,
+                "Identité de salle de référence incomplète")
+        require(all(isinstance(venue.get(k), str) and venue[k].strip()
+                    for k in ("name", "address", "postalCode", "city",
+                              "department", "region", "geoPrecision", "geoSource")),
+                "Adresse de salle non identifiée")
+        require(type(venue["latitude"]) in (float, int)
+                and type(venue["longitude"]) in (float, int)
+                and -90 <= venue["latitude"] <= 90
+                and -180 <= venue["longitude"] <= 180,
+                "Coordonnées de salle non géographiques")
+        for field in ("officialUrl", "locationUrl"):
+            url = spec[field]
+            parsed = urlsplit(url) if isinstance(url, str) else None
+            require(parsed is not None and parsed.scheme == "https"
+                    and bool(parsed.hostname) and parsed.username is None
+                    and parsed.hostname not in {
+                        "localhost", "127.0.0.1", "::1"
+                    }, "URL de preuve de salle non sécurisée")
+        require(venue["geoSource"] == spec["locationUrl"]
+                and isinstance(spec["locationProofType"], str)
+                and bool(spec["locationProofType"].strip()),
+                "Repère GPS ou type de source sans provenance")
+    return venues
+
+
 def norm(value):
     value = unicodedata.normalize("NFKD", str(value or "").casefold())
     return " ".join(re.findall(r"[a-z0-9]+", value.encode("ascii", "ignore").decode()))
@@ -1725,9 +1785,14 @@ def validate_venue_approval(row, today):
             and row.get("reviewedBy") == "independent-official-verifier",
             "Salle non approuvée indépendamment")
     venue = row.get("venue")
-    require(isinstance(venue, dict) and venue.get("id") in PILOT_VENUES,
-            "Salle non agréée dans la liste blanche")
-    approved = PILOT_VENUES[venue["id"]]
+    require(isinstance(venue, dict) and isinstance(venue.get("id"), str),
+            "Salle sans identifiant vérifiable")
+    approved = PILOT_VENUES.get(venue["id"])
+    if approved is None:
+        # New venues need BOTH a trusted public registry PR and a separately
+        # signed private review with the two exact corroborating sources.
+        approved = read_reviewed_venue_specs().get(venue["id"])
+    require(approved is not None, "Salle non agréée dans la liste blanche")
     expected = approved["venue"]
     require(venue == expected and set(venue) == set(expected),
             "Coordonnées, identité ou adresse de salle altérées")
