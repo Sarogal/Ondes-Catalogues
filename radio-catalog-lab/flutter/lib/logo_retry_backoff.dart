@@ -21,95 +21,13 @@ class LogoRetryBackoff {
         if (records.length >= 512) break;
         final key = record.key;
         final data = record.value;
-        // Dart VM signed 64-bit FNV keys are formatted using
-        // toRadixString(16).padLeft(16, '0'). The '-' can therefore occur
-        // *after* one or more zeroes, e.g. "0-22168ddfcfafe0".
-        // A negative 16-hex-digit magnitude produces 17 characters.
-        // Keep the historic representation: never rename cache files.
+        // Dart VM signed 64-bit FNV keys use
+        // toRadixString(16).padLeft(16, '0'), allowing leading zeroes
+        // before the sign (e.g. "0-22168ddfcfafe0").
         if (key is! String ||
             key.length < 16 ||
             key.length > 17 ||
-            !RegExp(r'^(?:[a-f0-9]{16}|0*-[1-9a-f][a-f0-9]{0,15})
-          continue;
-        }
-        final revision = data['revision'];
-        final failures = data['failures'];
-        final after = data['retry_after_utc'];
-        if (revision is! int || revision < 1 ||
-            failures is! int || failures < 1 || failures > 4 ||
-            after is! String) {
-          continue;
-        }
-        final date = DateTime.tryParse(after);
-        if (date == null || !date.isUtc) continue;
-        records[key] = _RetryEntry(revision, failures, date);
-      }
-      return LogoRetryBackoff._(records);
-    } catch (_) {
-      return LogoRetryBackoff.empty();
-    }
-  }
-
-  final Map<String, _RetryEntry> _records;
-
-  bool isDeferred({
-    required String urlKey,
-    required int revision,
-    required DateTime now,
-  }) {
-    final record = _records[urlKey];
-    return record != null &&
-        record.revision == revision &&
-        now.toUtc().isBefore(record.retryAfter);
-  }
-
-  /// Failures back off for 6, 12, 24, then 48 hours, surviving app restarts.
-  /// New image revisions and new URLs are immediately eligible again.
-  void recordFailure({
-    required String urlKey,
-    required int revision,
-    required DateTime now,
-  }) {
-    if (revision < 1) return;
-    final previous = _records[urlKey];
-    final failures = previous == null || previous.revision != revision
-        ? 1
-        : (previous.failures < 4 ? previous.failures + 1 : 4);
-    final hours = 6 * (1 << (failures - 1));
-    _records[urlKey] = _RetryEntry(
-      revision,
-      failures,
-      now.toUtc().add(Duration(hours: hours)),
-    );
-    // Bound preference size without recording complete URLs or leaking data.
-    if (_records.length > 512) {
-      final ordered = _records.entries.toList()
-        ..sort((a, b) => a.value.retryAfter.compareTo(b.value.retryAfter));
-      for (final entry in ordered.take(_records.length - 512)) {
-        _records.remove(entry.key);
-      }
-    }
-  }
-
-  void recordSuccess(String urlKey) => _records.remove(urlKey);
-
-  String toJson() => jsonEncode(<String, Object?>{
-        for (final entry in _records.entries)
-          entry.key: <String, Object?>{
-            'revision': entry.value.revision,
-            'failures': entry.value.failures,
-            'retry_after_utc': entry.value.retryAfter.toIso8601String(),
-          },
-      });
-}
-
-class _RetryEntry {
-  const _RetryEntry(this.revision, this.failures, this.retryAfter);
-  final int revision;
-  final int failures;
-  final DateTime retryAfter;
-}
-)
+            !RegExp(r'^(?:[a-f0-9]{16}|0*-[1-9a-f][a-f0-9]{0,15})$')
                 .hasMatch(key) ||
             data is! Map) {
           continue;
