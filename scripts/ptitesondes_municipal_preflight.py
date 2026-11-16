@@ -6,6 +6,7 @@ private report flags. NEVER creates patches, approvals or public writes.
 """
 from datetime import date
 from html.parser import HTMLParser
+from urllib.parse import urljoin
 import json
 import re
 from urllib.request import Request, HTTPRedirectHandler, build_opener
@@ -100,6 +101,7 @@ class CalendarCards(HTMLParser):
         self.depth = 0
         self.card = None
         self.skip = 0
+        self.in_hours = False
 
     def handle_starttag(self, tag, attrs):
         if tag in ("script", "style", "noscript"):
@@ -107,14 +109,21 @@ class CalendarCards(HTMLParser):
             return
         if self.skip:
             return
-        classes = (dict(attrs).get("class") or "").split()
+        attributes = dict(attrs)
+        classes = (attributes.get("class") or "").split()
         if self.card is None:
             if tag == "div" and "media-eve" in classes:
-                self.card = {"words": [], "title_ids": [], "venue_ids": []}
+                self.card = {"words": [], "title_ids": [], "venue_ids": [], "links": [], "hours": []}
                 self.depth = 1
             return
         if tag == "div":
             self.depth += 1
+        if tag == "a":
+            href = attributes.get("href")
+            if isinstance(href, str):
+                self.card["links"].append(urljoin(HOST + "/", href))
+        if tag == "span" and "horraires" in classes:
+            self.in_hours = True
         for name, key in (("evenement-titre-", "title_ids"),
                           ("evenement-lieu-", "venue_ids")):
             for cls in classes:
@@ -127,15 +136,20 @@ class CalendarCards(HTMLParser):
             return
         if self.skip or self.card is None:
             return
+        if tag == "span" and self.in_hours:
+            self.in_hours = False
         if tag == "div":
             self.depth -= 1
             if self.depth == 0:
                 self.cards.append(self.card)
                 self.card = None
+                self.in_hours = False
 
     def handle_data(self, data):
         if self.card is not None and not self.skip and data.strip():
             self.card["words"].append(data.strip())
+            if self.in_hours:
+                self.card["hours"].append(data.strip())
 
 
 def local_time_present(text, clock):
@@ -149,6 +163,15 @@ def local_time_present(text, clock):
     else:
         expression = rf"\b0?{hour}\s*h\s*{minute:02d}\b"
     return bool(re.search(expression, body))
+
+def time_token_pattern(clock):
+    if not isinstance(clock, str) or not TIME.fullmatch(clock):
+        return None
+    hour, minute = map(int, clock.split(":"))
+    if minute == 0:
+        return rf"0?{hour}\s*h(?:\s*00)?"
+    return rf"0?{hour}\s*h\s*{minute:02d}"
+
 
 def official_event_verified(candidate, html):
     if not isinstance(html, str) or len(html.encode("utf-8")) > MAX_HTML:
@@ -166,13 +189,18 @@ def official_event_verified(candidate, html):
     try:
         day = date.fromisoformat(candidate["date_start"])
         cue = (WEEKDAYS[day.weekday()] + " " + str(day.day) + " " + MONTHS[day.month])
-        if cue not in body:
+        start = time_token_pattern(candidate.get("start_local"))
+        end = time_token_pattern(candidate.get("end_local"))
+        if not start or not end:
+            return False
+        # Exact date and BOTH times must appear in one official session clause.
+        # Never borrow hours from a neighboring session in a recurring series.
+        occurrence = (r"\b" + re.escape(cue)
+                      + r"\s+(?:de|du)\s+" + start
+                      + r"\s+(?:a|au|jusqu a)\s+" + end + r"\b")
+        if not re.search(occurrence, body):
             return False
     except (ValueError, KeyError, TypeError):
-        return False
-    # Do not pick hours from a different event's page or from a global calendar.
-    if not (local_time_present(body, candidate.get("start_local"))
-            and local_time_present(body, candidate.get("end_local"))):
         return False
     audience = candidate.get("audience_evidence")
     if audience == "tous_ages_familles":
@@ -216,8 +244,15 @@ def official_calendar_verified(candidate, html):
     if (norm(candidate.get("title")) not in content or
             norm(candidate.get("venue")) not in content):
         return False
-    return (local_time_present(content, candidate.get("start_local"))
-            and local_time_present(content, candidate.get("end_local")))
+    if candidate.get("official_event_url") not in matching[0]["links"]:
+        return False
+    # The start/end clocks must be together in the SPIP horraires field.
+    hours_text = norm(" ".join(matching[0]["hours"]))
+    start = time_token_pattern(candidate.get("start_local"))
+    end = time_token_pattern(candidate.get("end_local"))
+    if not start or not end:
+        return False
+    return bool(re.search(r"\b" + start + r"\s+" + end + r"\b", hours_text))
 
 
 def access_is_honest(candidate, condition, html):
