@@ -30,9 +30,35 @@ API = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/eveneme
 FIELDS = ("uid,title_fr,description_fr,canonicalurl,timings,status,"
           "location_city,location_name,location_department,location_region,"
           "location_countrycode,location_coordinates,originagenda_title,"
+          "originagenda_uid,"
           "age_min,age_max,conditions_fr")
 MAX_ROWS = 10
 MAX_FETCH = 15
+
+# ODS can encode French overseas departments by territory codes instead of
+# "FR". Require matching region AND department; never admit foreign countries.
+OVERSEAS_REGION_NAMES = {
+    "GP": frozenset(("guadeloupe",)),
+    "MQ": frozenset(("martinique",)),
+    "GF": frozenset(("guyane",)),
+    "RE": frozenset(("la reunion", "reunion")),
+    "YT": frozenset(("mayotte",)),
+}
+
+
+def verified_french_country(row):
+    """Explicit France-only ODS country and overseas administrative identity."""
+    if not isinstance(row, dict):
+        return False
+    country = row.get("location_countrycode")
+    if country == "FR":
+        return True
+    expected = OVERSEAS_REGION_NAMES.get(country)
+    if expected is None:
+        return False
+    return (norm(row.get("location_department")) in expected
+            and norm(row.get("location_region")) in expected)
+
 
 
 def official_leads(token):
@@ -362,11 +388,30 @@ def reconciled_openagenda_url(lead, row):
     }
     same_agenda = source_parts[0] == target_parts[0]
     reviewed_syndication = (source_parts[0], target_parts[0]) in pinned_pairs
+    # CINOR's library event is syndicated to the North Reunion tourist office.
+    # Permit ONLY the exact observed UID/origin and both URLs; no generic
+    # cross-agenda resemblance or inferred syndication.
+    reviewed_cinor = (
+        original ==
+        "https://openagenda.com/fr/reseau-des-mediatheques-cinor/"
+        "events/55943123_activite-manuelle-8019889"
+        and canonical ==
+        "https://openagenda.com/office-de-tourisme-intercommunal-du-nord-de-la-reunion/"
+        "events/activite-manuelle-8019889"
+        and lead.get("external_id") == "55943123"
+        and str(row.get("originagenda_uid")) == "9278749"
+        and norm(row.get("originagenda_title")) ==
+            norm("Réseau de Lecture Publique de la CINOR")
+    )
     expected_source_slug = lead["external_id"] + "_" + target_parts[1]
     if (lead.get("collector") != "openagenda-v2" or
-            not (same_agenda or reviewed_syndication) or
+            not (same_agenda or reviewed_syndication or reviewed_cinor) or
             source_parts[1] != expected_source_slug):
         raise ValueError("URL canonique différente")
+    if reviewed_cinor:
+        # Keep the exact UID-bearing original first-party page. This is not
+        # an independent organizer confirmation or permission to publish.
+        return original
     if (source_parts[0], target_parts[0]) == (
             "bibliotheques-de-territoire-marseille", "bibliotheques-de-marseille"):
         # Live runner proof (12 Nov): canonical bare slug loads only a title,
@@ -392,8 +437,8 @@ def make_event(lead, row, location, today):
         raise ValueError("Ville différente")
     if norm(row.get("location_name")) != norm(lead["venue"]):
         raise ValueError("Lieu différent")
-    if row.get("location_countrycode") not in ("FR",):
-        raise ValueError("Pays non validé")
+    if not verified_french_country(row):
+        raise ValueError("Pays, région ou département non validé")
     if not scheduled(row):
         raise ValueError("Statut différent de programmé")
     coords = row.get("location_coordinates")
