@@ -12,6 +12,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1] / "automation" / "concerts"
 DATA_FILE = ROOT / "approved.json"
+# Reviewed exception: this suite only writes synthetic fixtures to a
+# TemporaryDirectory, and never opens the repository's private approval file.
+# Keep every other module mentioning approved.json protected by default.
+SYNTHETIC_PRIVATE_FILENAME_TESTS = frozenset({"test_approval_preflight.py"})
 
 
 def main() -> int:
@@ -21,7 +25,8 @@ def main() -> int:
     selected, protected = [], []
     for path in sorted(ROOT.glob("test_*.py")):
         contents = path.read_text(encoding="utf-8")
-        if "approved.json" in contents:
+        if ("approved.json" in contents and
+                path.name not in SYNTHETIC_PRIVATE_FILENAME_TESTS):
             protected.append(path.name)
         else:
             selected.append(path.stem)
