@@ -13,10 +13,21 @@ typedef CentralArtworkLocalVerifier = Future<Uri?> Function({
 });
 
 class CentralAndroidAutoArtworkIndex {
-  CentralAndroidAutoArtworkIndex(Map<String, Uri> artworkByMediaId)
-      : _artworkByMediaId = Map<String, Uri>.unmodifiable(artworkByMediaId);
+  CentralAndroidAutoArtworkIndex._(
+    Map<String, Uri> artworkByMediaId,
+    Map<String, Uri> verifiedCentralByMediaId,
+  )   : _artworkByMediaId = Map<String, Uri>.unmodifiable(artworkByMediaId),
+        _verifiedCentralByMediaId =
+            Map<String, Uri>.unmodifiable(verifiedCentralByMediaId);
 
   final Map<String, Uri> _artworkByMediaId;
+  final Map<String, Uri> _verifiedCentralByMediaId;
+
+  /// Returns a verified local SHA URI, never a genre fallback or a network URL.
+  /// The snapshot is prepared off the MediaItem path and remains read-only.
+  /// A missing ID, retired station or unavailable asset returns null.
+  Uri? verifiedCentralForStationId(String stationId) =>
+      _verifiedCentralByMediaId[stationId];
 
   /// Includes permanent GO IDs and every mapped historical ID for active
   /// stations. Retired/quarantined entries are intentionally excluded.
@@ -45,6 +56,7 @@ class CentralAndroidAutoArtworkIndexBuilder {
     required CentralLogoAssetStore store,
   }) async {
     final artwork = <String, Uri>{};
+    final verifiedArtwork = <String, Uri>{};
     final ownerByMediaId = <String, String>{};
     final verifiedByDigest = <String, Uri?>{};
 
@@ -60,6 +72,7 @@ class CentralAndroidAutoArtworkIndexBuilder {
             : '',
       );
       var selected = fallback;
+      Uri? verifiedLocal;
 
       final descriptor = CentralLogoDescriptor.fromSignedStation(station);
       if (descriptor != null) {
@@ -81,7 +94,8 @@ class CentralAndroidAutoArtworkIndexBuilder {
           verifiedByDigest[descriptor.sha256] =
               local == expected ? expected : null;
         }
-        selected = verifiedByDigest[descriptor.sha256] ?? fallback;
+        verifiedLocal = verifiedByDigest[descriptor.sha256];
+        selected = verifiedLocal ?? fallback;
       }
 
       final ids = <String>{
@@ -97,8 +111,9 @@ class CentralAndroidAutoArtworkIndexBuilder {
         }
         ownerByMediaId[id] = goId;
         artwork[id] = selected;
+        if (verifiedLocal != null) verifiedArtwork[id] = verifiedLocal;
       }
     }
-    return CentralAndroidAutoArtworkIndex(artwork);
+    return CentralAndroidAutoArtworkIndex._(artwork, verifiedArtwork);
   }
 }
