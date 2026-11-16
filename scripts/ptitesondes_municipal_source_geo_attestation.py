@@ -283,7 +283,10 @@ def inspect_source_geo_attestation(
             candidate.get("official_event_url") in live_bytes
             and candidate.get("calendar_url") in live_bytes
         ),
-        "registry_checked_against_versioned_static_entry": registry_checked,
+        # Do not present any isolated partial check as a validated receipt.
+        "registry_checked_against_versioned_static_entry": (
+            registry_checked and not blocked
+        ),
         "authenticated_private_attestation_passed": not blocked,
         "github_comment_timestamp_required": True,
         "maximum_attestation_age_days": MAX_COMMENT_AGE_DAYS,
