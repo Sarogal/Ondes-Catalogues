@@ -37,6 +37,11 @@ GENRES = {
 }
 BANNED = re.compile(r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|open air|"
                     r"annule|annulee|report[eé]|postponed|cancelled|sold out)\b", re.I)
+# Page-wide status marks are not artist names. Selling out is not cancellation.
+# Retain all other existing conservative blockers until separately reviewed.
+BANNED_PAGE_STATUS = re.compile(
+    r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|open air|"
+    r"annule|annulee|report[eé]|postponed|cancelled)\b", re.I)
 
 
 def norm(text):
@@ -185,7 +190,7 @@ def verify(candidate, html_text, catalogue, today):
         raise ValueError("Date incohérente ou passée")
     if not ({norm(x) for x in (candidate.get("classification") or [])} & detail["acceptedGenreTags"]):
         raise ValueError("Genre incompatible avec la découverte")
-    if BANNED.search(norm(detail["title"])) or BANNED.search(norm(html_text[:20000])):
+    if BANNED.search(norm(detail["title"])) or BANNED_PAGE_STATUS.search(norm(html_text[:20000])):
         raise ValueError("Indice d'annulation ou de festival")
     parts = artist_names(detail["title"])
     lineup = {norm(a) for a in detail["artists"]}
