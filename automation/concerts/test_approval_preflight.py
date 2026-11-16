@@ -507,10 +507,10 @@ class PreflightTests(unittest.TestCase):
             "      - 'automation/concerts/approval_preflight.py'", workflow)
         # PR changes are tested by the public-safe parity CI, without the
         # private credentials of this trusted-main intake job.
-        self.assertNotIn("\\n  pull_request:", workflow)
+        self.assertNotIn("\n  pull_request:", workflow)
         self.assertIn(
             "github.ref == 'refs/heads/main'", workflow)
-        self.assertIn("permissions:\\n  contents: read", workflow)
+        self.assertIn("permissions:\n  contents: read", workflow)
 
     def test_no_change_to_source_documents(self):
         previous = copy.deepcopy(self.before)
