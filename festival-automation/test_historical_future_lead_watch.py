@@ -113,6 +113,7 @@ class HistoricalHomepageTests(unittest.TestCase):
         # Reproduces a current first-party homepage layout, but the HTML is
         # synthetic and the resulting date must NOT become public evidence.
         homepage = ('<main><h1>13 - 14 - 15 | AOUT | 2027</h1>'
+                    '<button>RÉSERVER</button>'
                     '<p>le festival de metal en nouvelle aquitaine '
                     'bienvenue au <strong>Festival 666</strong></p></main>')
         years, _ = visible_future_years("Festival 666", homepage, TODAY)
