@@ -1,0 +1,38 @@
+name: "P'tites Ondes — sonde municipale réelle, lecture seule"
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ptitesondes-municipal-live-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gosier-readonly-check:
+    # Only the explicitly isolated draft branch can run this network probe
+    # during PR review; never a scheduled or production publisher job.
+    if: >-
+      github.repository == 'Sarogal/Ondes-Catalogues' &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft == true &&
+      github.head_ref == 'feat/ptitesondes-municipal-readonly-preflight-20261116'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Neuf occurrences publiques du Gosier : calendrier + fiche officielle"
+        env:
+          PTITESONDES_MUNICIPAL_LIVE_CHECK: '1'
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_municipal_live_sources.py' -v
+      - name: "Confirmer aucune écriture / aucun droit de publication"
+        run: |
+          echo "Test réseau lecture seule, sans secret, sans jeton, sans approbation ni patch."
