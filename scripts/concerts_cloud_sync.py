@@ -1634,6 +1634,9 @@ def read_reviewed_venue_specs():
                     and parsed.hostname not in {
                         "localhost", "127.0.0.1", "::1"
                     }, "URL de preuve de salle non sécurisée")
+        require(urlsplit(spec["officialUrl"]).hostname !=
+                urlsplit(spec["locationUrl"]).hostname,
+                "Une source GPS distincte du site officiel est exigée")
         require(venue["geoSource"] == spec["locationUrl"]
                 and isinstance(spec["locationProofType"], str)
                 and bool(spec["locationProofType"].strip()),
