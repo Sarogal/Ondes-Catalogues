@@ -59,6 +59,17 @@ class LiveGosierPublicSessionTests(unittest.TestCase):
                     and norm(VENUE) in norm(" ".join(card["words"]))
                     and title_prefix in norm(" ".join(card["words"]))
                 ]
+                if len(matching) != 1:
+                    def fingerprint(card):
+                        return (
+                            tuple(card["title_ids"]), tuple(card["venue_ids"]),
+                            tuple(sorted(set(card["links"]))),
+                            *(norm(" ".join(card[key]))
+                              for key in ("day", "month", "year", "hours", "words")),
+                        )
+                    print("PUBLIC_GOSIER_CARD_DIAGNOSTIC",
+                          "matches=", len(matching),
+                          "byte_equivalent=", len({fingerprint(c) for c in matching}) == 1)
                 self.assertEqual(len(matching), 1, "ambiguous or absent municipal card")
                 card = matching[0]
                 links = {url for url in card["links"] if safe_event_url(url)}
