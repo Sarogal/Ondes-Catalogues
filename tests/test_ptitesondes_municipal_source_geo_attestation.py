@@ -61,7 +61,7 @@ def scenario(*, explicit=True, approval="APPROVE", editorial="ABSENT",
              when=STAMP, permission="admin", receipt_change=None,
              html_change=None, calendar_change=None, venue_change=None,
              use_registry=True, geo=True, token="test-token",
-             change_pr_head=False):
+             change_pr_head=False, official_offline=False):
     doc, c, a, manifest, original = fixture(explicit=explicit)
     venue = deepcopy(SYNTHETIC_VENUE)
     receipt = receipt_for(doc, c, a, manifest, original, venue)
@@ -77,6 +77,8 @@ def scenario(*, explicit=True, approval="APPROVE", editorial="ABSENT",
     html = original if html_change is None else html_change(original)
 
     def get_public(url):
+        if official_offline:
+            raise OSError("offline")
         pages = {
             URL: html,
             municipal_calendar_url(TODAY.replace(day=25)): calendar,
@@ -239,6 +241,13 @@ class PrivateSourceGeoAttestationTests(unittest.TestCase):
             "independent_static_registry_missing_or_inconsistent",
             result["blockers"]
         )
+
+    def test_offline_evidence_never_reports_registry_verified(self):
+        out = scenario(official_offline=True)
+        self.assertFalse(out["authenticated_private_attestation_passed"])
+        self.assertFalse(out["registry_checked_against_versioned_static_entry"])
+        self.assertFalse(out["official_event_and_calendar_rechecked"])
+        self.assertIn("source_or_private_attestation_unverifiable", out["blockers"])
 
     def test_source_geo_check_cannot_override_bad_location(self):
         out = scenario(geo=False)
