@@ -142,11 +142,13 @@ def local_time_present(text, clock):
     if not isinstance(clock, str) or not TIME.fullmatch(clock):
         return False
     hour, minute = map(int, clock.split(":"))
-    # Mairie uses 09h30 or 9h30, sometimes 9h for 09:00.
-    return bool(re.search(
-        rf"\b0?{hour}h(?:{minute:02d}|{'' if minute == 0 else 'NEVER'})\b", norm(text).replace(" ", "")
-    )) or bool(re.search(rf"\b0?{hour}\s*h\s*{minute:02d}\b", text, re.I))
-
+    body = norm(text)
+    if minute == 0:
+        # The official site writes both 9h and 09h00.
+        expression = rf"\b0?{hour}\s*h(?:\s*00)?\b"
+    else:
+        expression = rf"\b0?{hour}\s*h\s*{minute:02d}\b"
+    return bool(re.search(expression, body))
 
 def official_event_verified(candidate, html):
     if not isinstance(html, str) or len(html.encode("utf-8")) > MAX_HTML:
