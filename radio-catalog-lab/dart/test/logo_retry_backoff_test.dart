@@ -63,6 +63,34 @@ void main() {
         urlKey: signedKey, revision: 1, now: start), isFalse);
   });
 
+  test('zero-padded negative signed FNV key is restored after restart', () {
+    // Existing Android Dart VM key from a radcap image with a small
+    // negative magnitude: padLeft places zeroes *before* the minus sign.
+    const key = '0-22168ddfcfafe0';
+    final retry = LogoRetryBackoff.empty();
+    retry.recordFailure(urlKey: key, revision: 1, now: start);
+
+    final stored = retry.toJson();
+    final restarted = LogoRetryBackoff.fromJson(stored);
+    expect(stored, contains(key));
+    expect(
+      restarted.isDeferred(
+        urlKey: key,
+        revision: 1,
+        now: start.add(const Duration(minutes: 5)),
+      ),
+      isTrue,
+    );
+    expect(
+      restarted.isDeferred(
+        urlKey: key,
+        revision: 2,
+        now: start.add(const Duration(minutes: 5)),
+      ),
+      isFalse,
+    );
+  });
+
   test('invalid or excessive preference content is safely ignored', () {
     expect(LogoRetryBackoff.fromJson('{').toJson(), '{}');
     expect(LogoRetryBackoff.fromJson('[]').toJson(), '{}');
