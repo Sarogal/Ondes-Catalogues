@@ -110,6 +110,23 @@ class MunicipalPreflightTests(unittest.TestCase):
             sum(calendar_card_date_matches(row, date(2026, 11, 25))
                 for row in p.cards), 1)
 
+    def test_duplicate_sidebar_card_only_if_same_evidence(self):
+        # Real public site repeats identical metadata with slightly
+        # different text; it must not count as another event.
+        second = CALENDAR.replace("</div>", "<p>En savoir plus</p></div>")
+        self.assertTrue(official_calendar_verified(candidate(), CALENDAR + second))
+        self.assertFalse(official_calendar_verified(
+            candidate(), CALENDAR + second.replace("09h30", "10h30")))
+        self.assertFalse(official_calendar_verified(
+            candidate(), CALENDAR + second.replace(URL, URL + "-other")))
+        self.assertFalse(official_calendar_verified(
+            candidate(), CALENDAR + second.replace(
+                "Médiathèque Raoul Georges Nicolo",
+                "Autre bibliothèque")))
+        self.assertFalse(official_calendar_verified(
+            candidate(), CALENDAR + second.replace(
+                "</div>", "<p>Activité annulée</p></div>")))
+
     def test_day_month_year_must_be_scoped_metadata_not_prose(self):
         # Dates buried in generic text must not fill a missing official field.
         for change in (
@@ -145,7 +162,6 @@ class MunicipalPreflightTests(unittest.TestCase):
                              "<span class=\"annee\">2027</span>"),
             CALENDAR.replace("09h30", "10h30"),
             CALENDAR.replace("Médiathèque Raoul Georges Nicolo", "Autre lieu"),
-            CALENDAR + CALENDAR,
             CALENDAR.replace(TITLE, "Autre séance"),
         ]
         for html in bad:
