@@ -16,6 +16,7 @@ jobs:
     # Only the explicitly isolated draft branch can run this network probe
     # on explicit workflow-file changes; never a scheduled or production job.
     # Validate exact SPIP day/month/year metadata for 9 occurrences.
+    # Investigate duplicate official calendar cards without relaxing checks.
     if: >-
       github.repository == 'Sarogal/Ondes-Catalogues' &&
       github.event_name == 'push' &&
