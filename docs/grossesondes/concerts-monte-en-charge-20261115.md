@@ -22,7 +22,7 @@
 - **Statut :** uniquement sur la branche expérimentale, non fusionnée. Aucun changement de calendrier d'exécution ni de production.
 
 ## Étape suivante AVANT généralisation des gros lots
-La file privée actuelle est un JSON cumulatif. Une suite de PR de 16 approbations peut être traitée par la synchronisation actuelle, mais si plus de 16 événements nouveaux arrivent **avant un seul passage**, le moteur refuse tout le delta plutôt que tronquer arbitrairement. Ne pas supprimer cette protection sans remplacer l'opération atomique par un lot sécurisé.
+La file privée actuelle est un JSON cumulatif. Sur la **branche expérimentale**, l'éditeur traite au plus 16 approbations admissibles par passage et laisse les suivantes dans la file, sans les perdre ni les publier sans contrôle. La reprise est reconstruite depuis les identifiants d'événements effectivement publiés. Ce mécanisme n'est **pas encore fusionné** ; la limite de 16 publications par transaction reste obligatoire.
 
 Plan d'intégration à tester dans une PR dédiée :
 1. Construire une file **append-only** de lots d'approbations identifiés par empreinte (indices de début et de fin, SHA du lot et de la version du registre).
