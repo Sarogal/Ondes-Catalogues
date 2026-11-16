@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import copy
 import datetime as dt
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -69,6 +70,30 @@ class RexPromoterBillTests(unittest.TestCase):
         event, added = publisher.validate_approval(row, venues, artists, TODAY)
         self.assertEqual(event, row["event"])
         self.assertEqual(set(added), {"spicy-box", "mooan-exis"})
+
+    def test_current_published_catalogue_remains_unchanged(self):
+        """Exercise the real public catalogue after #329 without writing to it.
+
+        Once the Rex date is eventually published, the same proof must be
+        rejected as a duplicate rather than creating a second event.
+        """
+        current = json.loads((ROOT / "docs/grossesondes/concerts.json").read_text(
+            encoding="utf-8"))
+        original = copy.deepcopy(current)
+        target = "go-c-20270122-toulouse-spicy-box"
+        if any(e["id"] == target for e in current["events"]):
+            with self.assertRaisesRegex(ValueError, "déjà référencé"):
+                self.verified(catalog=current)
+        else:
+            row = self.verified(catalog=current)
+            self.assertEqual(row["event"]["id"], target)
+            self.assertEqual(row["event"]["artistIds"], ["spicy-box", "mooan-exis"])
+            self.assertIsNone(row["event"]["time"])
+            venues = {v["id"]: v for v in current["venues"]}
+            artists = {a["id"]: a for a in current["artists"]}
+            event, _ = publisher.validate_approval(row, venues, artists, TODAY)
+            self.assertEqual(event, row["event"])
+        self.assertEqual(current, original)
 
     def test_biographies_without_exact_promoter_bill_are_not_approvals(self):
         variants = [
