@@ -291,10 +291,12 @@ jobs:
           # Never load PR code in scheduled production or leak sessions in logs.
           if [[ -s "$OUT/gosier-discovery.json" &&
                 -s src/automation/gosier_qualification.py &&
-                -s src/automation/gosier_review_candidates.py ]]; then
+                -s src/automation/gosier_review_candidates.py &&
+                -s src/automation/gosier_access_conditions.py ]]; then
             GOSIER_VENUE="$OUT/gosier-reviewed-venue.json"
             GOSIER_PROOF="$OUT/gosier-evidence.json"
             GOSIER_REVIEW="$OUT/gosier-review.json"
+            GOSIER_ACCESS="$OUT/gosier-access.json"
             GOSIER_GEO_OK=0
             if python - "$GOSIER_VENUE" > "$LOG/gosier-geo.log" 2>&1 <<'PY'
           import json
@@ -323,16 +325,26 @@ jobs:
                   --qualification "$GOSIER_PROOF" \
                   --catalogue public/docs/ptitesondes/sorties.json \
                   --output "$GOSIER_REVIEW" > "$LOG/gosier-review.log" 2>&1 && \
-               python - "$GOSIER_PROOF" "$GOSIER_REVIEW" \
+               python src/automation/gosier_access_conditions.py \
+                  --review "$GOSIER_REVIEW" \
+                  --output "$GOSIER_ACCESS" > "$LOG/gosier-access.log" 2>&1 && \
+               python - "$GOSIER_PROOF" "$GOSIER_REVIEW" "$GOSIER_ACCESS" \
                   > "$LOG/gosier-review-contract.log" 2>&1 <<'PY'
           import json
           import sys
-          evidence, review = [json.load(open(p, encoding="utf-8")) for p in sys.argv[1:]]
+          evidence, review, access = [json.load(open(p, encoding="utf-8")) for p in sys.argv[1:]]
           assert evidence["schema"] == "ptitesondes.gosier_private_evidence.v1"
           assert review["schema"] == "ptitesondes.gosier_private_review_candidates.v1"
           assert evidence["approved"] == evidence["published"] == 0
           assert review["approved"] == review["published"] == 0
           assert review["mode"] == "private_review_only_no_patch_no_publication"
+          assert access["schema"] == "ptitesondes.gosier_access_review.v1"
+          assert access["mode"] == "private_access_review_only_no_patch"
+          assert access["approved"] == access["published"] == 0
+          assert len(access["reviewed"]) == len(review["candidates"])
+          assert all(x["safe_to_publish"] is False and x["approved"] is False
+           and x["published"] is False for x in access["reviewed"])
+          assert "additions" not in access and "updates" not in access
           assert len(review["candidates"]) == review["needs_category_and_access_review"]
           assert all(c["safe_to_publish"] is False and c["approved"] is False
            and c["published"] is False for c in review["candidates"])
@@ -342,9 +354,11 @@ jobs:
               if [[ "$RUN_MODE" == "write" ]]; then
                 cp "$GOSIER_PROOF" "$STATE/reports/municipal-gosier-evidence-$GOSIER_DAY.json"
                 cp "$GOSIER_REVIEW" "$STATE/reports/municipal-gosier-review-$GOSIER_DAY.json"
+                cp "$GOSIER_ACCESS" "$STATE/reports/municipal-gosier-access-$GOSIER_DAY.json"
                 git -C state add -- \
                     "automation-intake/ptitesondes/reports/municipal-gosier-evidence-$GOSIER_DAY.json" \
-                    "automation-intake/ptitesondes/reports/municipal-gosier-review-$GOSIER_DAY.json"
+                    "automation-intake/ptitesondes/reports/municipal-gosier-review-$GOSIER_DAY.json" \
+                    "automation-intake/ptitesondes/reports/municipal-gosier-access-$GOSIER_DAY.json"
               fi
             else
               echo "::warning::Dossier municipal non publiable ou preuve incomplète ; aucun patch ni approbation."
