@@ -1,6 +1,6 @@
 """Bounded archive-homepage watch: future-year *research hints*, never editions.
 
-Only twelve exact, reviewed homepage URLs are eligible for a network request.
+Only twenty-four exact, reviewed homepage URLs are eligible for a network request.
 The URLs MUST still match both identical public historical snapshots. Nothing
 from HTML, historical free text or private state becomes a request destination.
 An edition year near the visible name is not a verified date or organizer.
@@ -21,7 +21,7 @@ from source_qualification import normalized
 STATE_SCHEMA = "grossesondes.source-watch.v1"
 REPORT_SCHEMA = "grossesondes.source-watch-report.v1"
 STATUS = "UNVERIFIED_ARCHIVE_HOMEPAGE_YEAR_MENTION"
-MAX_CHECKS = 2
+MAX_CHECKS = 4
 MAX_ARCHIVE_ROWS = 500
 MAX_AGE_DAYS = 7
 
@@ -53,6 +53,32 @@ APPROVED = {
                             "https://festivalgueulesdebois.com/"),
     "mennecy-metal-fest": ("Mennecy Metal Fest", "Île-de-France",
                            "https://mennecy-metal-fest.fr/"),
+    # Twelve more fixed first-party roots, matching the immutable 2026
+    # historical edition catalogue. No archive URL can authorize itself.
+    "barb-n-rock-festival": ("Barb'n'Rock Festival", "Hauts-de-France",
+                   "https://barbnrock-festival.fr/"),
+    "bocksons-festival": ("BockSons Festi’Val", "Bourgogne-Franche-Comté",
+                   "https://bocksons.com/"),
+    "bourg-d-hell": ("Bourg d'Hell", "Nouvelle-Aquitaine",
+                   "https://www.bourgdhell.fr/"),
+    "bridge-to-hell": ("Bridge To Hell", "Auvergne-Rhône-Alpes",
+                   "https://www.bridgetohell.fr/"),
+    "daimonion-fest": ("Daimonion Fest", "Hauts-de-France",
+                   "https://daimonionfest.fr/"),
+    "festival-666": ("Festival 666", "Nouvelle-Aquitaine",
+                   "https://www.festival666.com/"),
+    "kave-fest": ("Kave Fest", "Normandie",
+                   "https://www.kavefest.com/"),
+    "mauges-pit-fest": ("Mauges Pit Fest", "Pays de la Loire",
+                   "https://maugespitfest.fr/"),
+    "mordorfest": ("MordorFest", "Occitanie",
+                   "https://mordorfest.fr/"),
+    "omega-sound-fest": ("Omega Sound Fest", "Pays de la Loire",
+                   "https://www.omegasoundfest.com/"),
+    "panic-fest": ("Panic Fest", "Auvergne-Rhône-Alpes",
+                   "https://www.panicfest.fr/"),
+    "raismes-fest": ("Raismes Fest", "Hauts-de-France",
+                   "https://www.raismesfest.fr/"),
 }
 
 
@@ -195,7 +221,7 @@ def _season_matches_dates(season, first, last):
 
 
 MAX_DATE_HINTS = 3
-PILOT_PRIORITY = {"les-gueules-de-bois"}  # known public 2027 programme; still unverified
+PILOT_PRIORITY = {"les-gueules-de-bois", "festival-666"}  # known public 2027 programme; still unverified
 
 
 def visible_future_date_hints(name, html, today, target_year):
