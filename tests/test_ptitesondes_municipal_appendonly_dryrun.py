@@ -9,7 +9,9 @@ import unittest
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"scripts"))
 
-from ptitesondes_municipal_appendonly_dryrun import SCHEMA, rehearse, canonical_sha256
+from ptitesondes_municipal_appendonly_dryrun import SCHEMA, rehearse, canonical_sha256, _event_from_proposal
+from merge_policy import valid
+from ptitesondes_nonmusic_release_contract import TYPES
 from ptitesondes_municipal_preflight import municipal_calendar_url
 from test_ptitesondes_municipal_preflight import EVENT, CALENDAR, candidate
 from test_ptitesondes_nonmusic_release_contract import (
@@ -68,6 +70,33 @@ class AppendOnlySimulationTests(unittest.TestCase):
         self.assertNotIn("patch",summary)
         self.assertNotIn("additions",summary)
         self.assertNotIn("events",summary)
+
+    def test_actual_publisher_rejects_all_four_nonmusical_categories(self):
+        # Prove existing merge_policy cannot be silently used as a release path.
+        catalogue=source()
+        categories={row["category"] for row in catalogue["events"]}
+        fields=set().union(*(set(e) for e in catalogue["events"]))
+        self.assertTrue(set(TYPES).isdisjoint(categories))
+        for slug,label in TYPES.items():
+            with self.subTest(slug=slug):
+                c=candidate()
+                c["category_proposal"]=slug
+                c["category_label_proposal"]=label
+                event=_event_from_proposal(c,TODAY.isoformat(),TODAY.isoformat())
+                current_ok,current_reason=valid(event,categories,fields,TODAY)
+                self.assertFalse(current_ok)
+                self.assertEqual(current_reason,"catégorie inconnue")
+                future_ok,_=valid(event,categories|set(TYPES),fields,TODAY)
+                self.assertTrue(future_ok)
+
+    def test_current_publisher_category_gate_cannot_be_forged(self):
+        original=source()
+        attempted=deepcopy(original)
+        attempted["events"].append({"id":"fake-seed","category":"lecture-jeunesse"})
+        # An attacker changing the reference catalogue to smuggle a
+        # future category must not be considered a historical baseline.
+        self.assertNotEqual(canonical_sha256(attempted),canonical_sha256(original))
+        self.assertEqual(len(original["events"]),548)
 
     def test_missing_independent_geo_or_source_verification_blocks(self):
         c=candidate()
