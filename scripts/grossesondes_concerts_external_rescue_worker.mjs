@@ -5,9 +5,9 @@ export const MORNING_RESCUE_CRON = "28 16 * * *";
 export const AFTERNOON_RESCUE_CRON = "21 22 * * *";
 export const EVENING_RESCUE_CRON = "21 05 * * *";
 export const RESCUE_SLOTS = Object.freeze({
-  [MORNING_RESCUE_CRON]: {h: 7, m: 18, previousDay: false, runH: 16, runM: 28},
-  [AFTERNOON_RESCUE_CRON]: {h: 13, m: 11, previousDay: false, runH: 22, runM: 21},
-  [EVENING_RESCUE_CRON]: {h: 20, m: 11, previousDay: true, runH: 5, runM: 21},
+  [MORNING_RESCUE_CRON]: {h: 7, m: 18, sourceCron: "18 7 * * *", previousDay: false, runH: 16, runM: 28},
+  [AFTERNOON_RESCUE_CRON]: {h: 13, m: 11, sourceCron: "11 13 * * *", previousDay: false, runH: 22, runM: 21},
+  [EVENING_RESCUE_CRON]: {h: 20, m: 11, sourceCron: "11 20 * * *", previousDay: true, runH: 5, runM: 21},
 });
 const API = "https://api.github.com/repos/Sarogal/Ondes-Catalogues/actions/workflows/";
 const WORKFLOW = "grossesondes-concerts-private-intake-on-public-runners.yml";
@@ -38,6 +38,16 @@ export function shouldDispatch(runs, slot, checkedAt) {
       checkedAt < slot + WINDOW_AFTER) {
     throw new Error("Unverifiable run history or premature rescue");
   }
+  // All three cron expressions are distinct on the trusted main workflow.
+  // GitHub may start a different slot before a 9h10 rescue window closes.
+  // Never mistake that later run for evidence that THIS slot happened.
+  const utc = new Date(slot);
+  const trigger = Object.values(RESCUE_SLOTS).find(config =>
+    config.h === utc.getUTCHours() && config.m === utc.getUTCMinutes());
+  if (!trigger) throw new Error("Unknown original GitHub concert slot");
+  const title = "Concerts intake schedule=" + trigger.sourceCron;
+  const knownTitles = Object.values(RESCUE_SLOTS).map(config =>
+    "Concerts intake schedule=" + config.sourceCron);
   for (const item of runs) {
     if (!item || typeof item !== "object" ||
         typeof item.event !== "string" ||
@@ -52,7 +62,12 @@ export function shouldDispatch(runs, slot, checkedAt) {
     // Do not repeat known refusals or start overlapping collection runs.
     if (item.event === "schedule" &&
         at >= slot - WINDOW_BEFORE && at <= checkedAt) {
-      return false;
+      // Old unlabelled or mismatched runs cannot be safely attributed:
+      // fail closed, never trigger a second private proof evaluation.
+      if (!knownTitles.includes(item.display_title)) {
+        throw new Error("Scheduled run slot cannot be authenticated");
+      }
+      if (item.display_title === title) return false;
     }
     if (item.event === "workflow_dispatch" &&
         at >= slot && at <= checkedAt && item.head_branch === "main") {
