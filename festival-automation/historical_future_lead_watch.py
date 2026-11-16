@@ -174,6 +174,13 @@ def visible_future_years(name, html, today):
         year = int(mention.group(1))
         if now < year <= now + 2:
             years.add(year)
+    # A current-edition hero can display its date BEFORE the festival name.
+    # This remains an unverified, read-only research signal.
+    for occurrence in re.finditer(
+            r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])", text):
+        for target in (now + 1, now + 2):
+            if _preposed_poster_hints(text, occurrence.start(), today, target):
+                years.add(target)
     return sorted(years), sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -210,6 +217,53 @@ FR_YEAR_BEFORE_THREE = re.compile(
     rf" (?P<month>{MONTH_PATTERN})(?![a-z])")
 
 
+def _preposed_poster_hints(text, position, today, target_year):
+    """Research-only three-day poster printed BEFORE the festival name.
+
+    Some official pages put '13 - 14 - 15 | AOUT | 2027' before the
+    festival's brand. The intervening visible descriptor is constrained;
+    one event's dates cannot be borrowed from arbitrary neighboring text.
+    This function can never authorize publication.
+    """
+    preceding = text[max(0, position - 160):position]
+    matched = []
+    for claim in FR_DATE_AFTER_THREE.finditer(preceding):
+        if int(claim.group("year")) != target_year:
+            continue
+        between = preceding[claim.end():].strip()
+        allowed = {
+            "le", "la", "les", "de", "du", "des", "au", "aux", "en",
+            "bienvenue", "festival", "metal", "rock", "nouvelle",
+            "aquitaine", "edition", "officiel", "site", "prochain",
+            "prochaine", "pour", "sur", "notre", "grand", "retour",
+        }
+        if len(between) > 90 or any(word not in allowed
+                                   for word in between.split()):
+            continue
+        try:
+            days = [int(claim.group(k)) for k in ("start", "middle", "end")]
+            if days[1] != days[0] + 1 or days[2] != days[1] + 1:
+                continue
+            start = date(target_year, MONTHS[claim.group("month")], days[0])
+            end = date(target_year, MONTHS[claim.group("month")], days[2])
+            if not date.fromisoformat(today) < start <= end:
+                continue
+        except ValueError:
+            continue
+        matched.append({
+            "start_date_hint": start.isoformat(),
+            "end_date_hint": end.isoformat(),
+            "season_hint": None,
+            "status": "UNVERIFIED_VISIBLE_DATE_PHRASE",
+            "edition_dates_verified": False,
+            "organizer_verified": False,
+            "independence_verified": False,
+            "publication_authorized": False,
+            "review_only": True,
+        })
+    return matched if len(matched) == 1 else []
+
+
 def _season_matches_dates(season, first, last):
     """Reject obvious season/date contradictions, never infer a season."""
     months = {first.month, last.month}
@@ -240,6 +294,9 @@ def visible_future_date_hints(name, html, today, target_year):
     identity_pattern = r"(?<![a-z0-9])" + re.escape(identity) + r"(?![a-z0-9])"
     output = {}
     for occurrence in re.finditer(identity_pattern, text):
+        for hint in _preposed_poster_hints(
+                text, occurrence.start(), today, target_year):
+            output[(hint["start_date_hint"], hint["end_date_hint"])] = hint
         local = text[occurrence.end():occurrence.end() + 200]
         first_year = re.search(r"(?<!\d)(20[2-4]\d)(?!\d)", local[:65])
         if not first_year or int(first_year.group(1)) != target_year:
