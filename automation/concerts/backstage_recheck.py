@@ -153,7 +153,9 @@ def verify(candidate, html_text, catalogue, today):
     # into an explicit promoter-controlled announcement immediately below it.
     # Never infer unnamed supports from a biography or from ticketing.
     # The special tour text is a title annotation, NOT another artist.
-    if len(names) == 1:
+    # An expressly unnamed GUEST follows its existing safe headliner-only
+    # route. It is never an invitation to search page body for extra names.
+    if len(names) == 1 and not unnamed_guest:
         after_h1 = page.tokens[pos+1:pos+75]
         promoter_phrase = re.compile(r"^GARMONBOZIA\s+présente\s+", re.I)
         notices = [x for x in after_h1 if promoter_phrase.match(x)]
