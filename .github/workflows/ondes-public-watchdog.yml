@@ -5,6 +5,8 @@ on:
     paths:
       - 'monitoring/ondes_watchdog.php'
       - 'monitoring/README.md'
+      - 'scripts/grossesondes_concerts_external_rescue_worker.mjs'
+      - 'tests/test_grossesondes_concerts_external_rescue_worker.mjs'
       - '.github/workflows/ondes-public-watchdog.yml'
   schedule:
     - cron: '29 04 * * *'
@@ -32,6 +34,8 @@ jobs:
         run: |
           php -l monitoring/ondes_watchdog.php
           php monitoring/ondes_watchdog.php --self-test
+      - name: Contrôler le secours Concerts indépendant (mock uniquement)
+        run: node --test tests/test_grossesondes_concerts_external_rescue_worker.mjs
       - name: Vérifier le secret Healthchecks en mode manuel (sans ping)
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         shell: bash
