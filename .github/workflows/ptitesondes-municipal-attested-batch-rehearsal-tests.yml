@@ -1,0 +1,37 @@
+name: "P'tites Ondes — lot municipal attesté, simulation uniquement"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-municipal-attested-batch-rehearsal-20261117'
+    paths:
+      - 'scripts/ptitesondes_municipal_attested_batch_rehearsal.py'
+      - 'tests/test_ptitesondes_municipal_attested_batch_rehearsal.py'
+      - '.github/workflows/ptitesondes-municipal-attested-batch-rehearsal-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_attested_batch_rehearsal.py'
+      - 'tests/test_ptitesondes_municipal_attested_batch_rehearsal.py'
+      - '.github/workflows/ptitesondes-municipal-attested-batch-rehearsal-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  attested-municipal-rehearsal:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tests adversariaux hors ligne, sans jeton privé"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_municipal_attested_batch_rehearsal.py' -v
+      - name: "Aucun publieur, aucun patch, aucun cron"
+        run: |
+          echo "Read-only diagnostics: no publisher, no production token, no writes."
