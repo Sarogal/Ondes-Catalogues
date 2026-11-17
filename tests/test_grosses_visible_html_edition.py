@@ -82,6 +82,12 @@ class VisibleHTMLTests(unittest.TestCase):
                     html_entry(), PARENT, page, TODAY,
                     proof_mode=HTML_PROOF_MODE))
 
+    def test_other_edition_year_near_name_never_qualifies(self):
+        page = "<h1>Winter Rising Fest 2026</h1><p>12-13 août 2027</p>"
+        self.assertIsNone(validate_structured_edition(
+            html_entry(), PARENT, page, TODAY,
+            proof_mode=HTML_PROOF_MODE))
+
     def test_hidden_markup_and_jsonld_cannot_certify_visible_edition(self):
         for page in (
             "<head><title>Winter Rising Fest 2027 12-13 août 2027</title></head>",
