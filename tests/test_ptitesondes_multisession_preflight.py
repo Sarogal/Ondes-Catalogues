@@ -50,6 +50,26 @@ class MultiSessionPreflightTests(unittest.TestCase):
         self.assertNotIn("duplicate_within_candidate_batch",
                          result["blocked_reason_counts"])
 
+    def test_hidden_or_scripted_session_never_proves_second_date(self):
+        first, _ = fixture()
+        second = start_on(first, "19", "16:00")
+        official = synthetic_programme(first["scope"]["title"], [
+            ("18", "14h00"),
+        ])
+        for concealed in (
+            "<p hidden>19 novembre 2026 à 16h00</p>",
+            '<p aria-hidden="true">19 novembre 2026 à 16h00</p>',
+            '<p style="display:none">19 novembre 2026 à 16h00</p>',
+            "<script><p>19 novembre 2026 à 16h00</p></script>",
+        ):
+            with self.subTest(concealed=concealed):
+                html = official.replace("</body>", concealed + "</body>")
+                report = run(docs=[first, second],
+                    pages={first["source"]["official_url"]: html})
+                self.assertEqual(report["official_source_cues_passed"], 1)
+                self.assertFalse(report["source_preflight_batch_passed"])
+                self.assertEqual(report["public_writes"], 0)
+
     def test_exact_duplicate_still_rejected(self):
         first, _ = fixture()
         html = synthetic_programme(first["scope"]["title"], [
