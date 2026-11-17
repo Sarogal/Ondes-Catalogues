@@ -5308,7 +5308,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and proof.get("sourceStructure") ==
                     "bbc-first-party-named-paragraphs"
                 and proof.get("verifiedNewArtists") ==
-                    [a["name"] for a in new_artists],
+                    [a["name"] for a in new_artists]
+                and proof.get("unannouncedSupportLabel") in (
+                    None, "guest", "special guest", "premiere partie",
+                    "1ere partie", "1re partie", "support", "a confirmer",
+                    "tba", "surprise", "invite surprise", "artiste surprise"),
                 "BBC automatique : description nominative non certifiée")
         require(isinstance(names, list) and len(names) == len(ids)
                 and bool(names)
