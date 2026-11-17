@@ -45,7 +45,8 @@ def validate_dart_log(log: str, expected_digest: str) -> tuple[str, str]:
 def validate_native_dump(dump: str, expected_uri: str) -> None:
     # Dumpsys is a secondary Android-framework observation; it is not a DHU
     # display check. We deliberately require the URI, not only the Dart log.
-    if base.PACKAGE not in dump:
+    if (f"package={base.PACKAGE}" not in dump and
+            f"ownerPackage={base.PACKAGE}" not in dump):
         raise base.ProbeError("Native MediaSession package not visible in dumpsys")
     if expected_uri not in dump:
         raise base.ProbeError(
