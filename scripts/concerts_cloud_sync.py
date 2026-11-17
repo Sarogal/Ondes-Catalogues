@@ -5337,6 +5337,32 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     and norm(a["name"]) not in existing_artist_aliases
                     for a in new_artists),
                 "BBC automatique : artiste nouveau en collision avec un alias")
+        # Distinguish a known band's "Family & Friends" stage branding
+        # from additional named musicians: only the existing canonical act
+        # survives, the raw official headline is retained as proof.
+        collective = proof.get("nonNominativeCollectiveGuests")
+        if collective is not None:
+            require(isinstance(collective, dict)
+                    and set(collective) == {"artistName", "nonNominativeLabel"}
+                    and norm(collective.get("nonNominativeLabel"))
+                    in {"family friends", "friends"}
+                    and norm(collective.get("artistName")) in {norm(n) for n in names}
+                    and sum(
+                        norm(a.get("name")) == norm(collective["artistName"])
+                        for a in known_artist_ids.values()
+                    ) == 1,
+                    "BBC automatique : guests collectifs sans groupe canonique")
+            constructed = [
+                name + " " + collective["nonNominativeLabel"]
+                if norm(name) == norm(collective["artistName"]) else name
+                for name in names
+            ]
+            require(proof.get("originalOfficialHeadline")
+                    == " + ".join(constructed),
+                    "BBC automatique : affiche originale du collectif altérée")
+        else:
+            require(proof.get("originalOfficialHeadline") is None,
+                    "BBC automatique : preuve de collectif inattendue")
         require(event_id == ("go-c-" + event["date"].replace("-", "") +
                              "-herouville-" + ids[0])
                 and norm_date(event["date"]) > today
@@ -6939,9 +6965,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Le Cargö : artiste ou première partie différent de l'officiel")
-    elif event.get("venueId") == "big-band-cafe-herouville":
-        # New BBC events require independent exact first-party + official
-        # ticket provenance. No arbitrary band's page can self-approve.
+    elif (event.get("venueId") == "big-band-cafe-herouville"
+          and not (reviewer == "automated-official-recheck" and bbc_auto)):
+        # Preserve individually signed BBC dossiers and their historical
+        # two-source proof contract; new automatic bills are guarded by the
+        # independent first-party recheck branch above instead.
         spec = BBC_NORMANDY_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer == "independent-official-verifier"
