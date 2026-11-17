@@ -183,6 +183,74 @@ def rex_promoter_confirms_bill(paragraphs, parts):
     return False
 
 
+
+def rex_visible_divs_after_title(html_text):
+    """Visible leaf <div> descriptions after the official event <h2> only.
+
+    The Rex uses both <p> and rich-text <div> blocks for its promoter copy.
+    Do not accept scripts, templates, hidden descendants or text from a
+    different item before the event title. The exact promoter-bill test still
+    validates any extracted text; these lines alone never approve artists.
+    """
+    class VisibleDivs(html.parser.HTMLParser):
+        INVISIBLE = {"script", "style", "template", "noscript", "svg"}
+
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.after_h2 = False
+            self.hidden_depth = 0
+            self.stack = []
+            self.lines = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag in self.INVISIBLE:
+                self.hidden_depth += 1
+                return
+            if self.hidden_depth:
+                return
+            if tag == "h2":
+                self.after_h2 = True
+            elif tag == "footer":
+                self.after_h2 = False
+            if tag == "div" and self.after_h2:
+                attrs = dict(attrs)
+                style = attrs.get("style") or ""
+                hidden = (attrs.get("aria-hidden") == "true" or
+                          "hidden" in attrs or
+                          bool(re.search(r"(?:display\\s*:\\s*none|visibility\\s*:\\s*hidden)\\b",
+                                         style, re.I)) or
+                          bool(self.stack and self.stack[-1]["hidden"]))
+                if self.stack:
+                    self.stack[-1]["has_child_div"] = True
+                self.stack.append({"parts": [], "has_child_div": False,
+                                   "hidden": hidden})
+            elif tag == "br" and self.stack:
+                self.stack[-1]["parts"].append(" ")
+
+        def handle_data(self, data):
+            if self.after_h2 and not self.hidden_depth and self.stack:
+                self.stack[-1]["parts"].append(data)
+
+        def handle_endtag(self, tag):
+            if tag in self.INVISIBLE:
+                self.hidden_depth = max(0, self.hidden_depth - 1)
+                return
+            if self.hidden_depth:
+                return
+            if tag == "div" and self.stack:
+                item = self.stack.pop()
+                if not item["has_child_div"] and not item["hidden"]:
+                    value = " ".join(" ".join(item["parts"]).split())
+                    if value:
+                        self.lines.append(value)
+            if tag == "footer":
+                self.after_h2 = False
+
+    parser = VisibleDivs()
+    parser.feed(html_text)
+    return parser.lines
+
+
 def verify(candidate, html_text, catalogue, today):
     if candidate.get("source") == "bateau_ivre_official_detail_review":
         import bateau_ivre_official_recheck
@@ -244,7 +312,7 @@ def verify(candidate, html_text, catalogue, today):
     lineup = {norm(a) for a in detail["artists"]}
     known_names = {norm(a["name"]) for a in catalogue["artists"]}
     promoter_bill = (not lineup and rex_promoter_confirms_bill(
-        detail["descriptionParagraphs"], parts))
+        detail["descriptionParagraphs"] + rex_visible_divs_after_title(html_text), parts))
     # Some first-party pages expose the complete named lineup only as their H2.
     # That is acceptable only if EVERY band name is already identified in the
     # catalogue, removing the risk of inventing a new artist from an event title.
