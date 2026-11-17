@@ -1,11 +1,11 @@
-// Offline regression tests for the real v172 -> v173 candidate. Never publish.
+// Offline regression tests for the isolated v173 -> v174 preview. Never publish.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 
-const ORIGINAL=fs.readFileSync('previews/ptitesondes/sorties-v174-family-facets-preview.js','utf8');
-const CANDIDATE=fs.readFileSync('previews/ptitesondes/sorties-v173-nonmusic-preview.js','utf8');
+const ORIGINAL=fs.readFileSync('previews/ptitesondes/sorties-v173-nonmusic-preview.js','utf8');
+const CANDIDATE=fs.readFileSync('previews/ptitesondes/sorties-v174-family-facets-preview.js','utf8');
 const CATS={
   'lecture-jeunesse':['Lecture jeunesse','lecture','📚','pt-pin-lecture'],
   'atelier-numerique':['Atelier numérique','numerique','💻','pt-pin-numerique'],
