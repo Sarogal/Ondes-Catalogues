@@ -60,7 +60,6 @@ def collect_once(today):
     collected = {"paris_opendatasoft": [], "montpellier_mpt": []}
     api_url = PARIS_API + "?" + urlencode({
         "limit": 100, "where": "date_end >= '" + today.isoformat() + "'",
-        "order_by": "date_start ASC",
     })
     for provider, url, size, content_type in (
         ("paris_opendatasoft", api_url, MAX_JSON, "application/json"),
