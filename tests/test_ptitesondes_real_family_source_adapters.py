@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_real_family_source_adapters import (
     MPT_AGENDA_URL, PARIS_DATA_URL, parse_montpellier_mpt_detail,
     parse_paris_explore, parse_ical, scope_proposals, coverage_report,
-    classify,
+    classify, safe_https,
 )
 
 TODAY = date(2026, 11, 17)
@@ -50,6 +50,25 @@ URL:https://mediatheque.example.org/agenda/fictional-session-1
 END:VEVENT
 END:VCALENDAR
 """
+
+
+class OrganizerOriginTests(unittest.TestCase):
+    def test_first_party_https_host_cannot_be_replaced_by_lookalike(self):
+        site = "mpt.montpellier.fr"
+        self.assertTrue(safe_https(
+            "https://mpt.montpellier.fr/evenement/parcours-motricite",
+            site, "/evenement/"))
+        for bad in (
+            "http://mpt.montpellier.fr/evenement/parcours-motricite",
+            "https://mpt.montpellier.fr.evil.example/evenement/test",
+            "https://evil.example/evenement/parcours-motricite",
+            "https://user@mpt.montpellier.fr/evenement/test",
+            "https://mpt.montpellier.fr:8443/evenement/test",
+            "https://mpt.montpellier.fr/other/test",
+            "https://mpt.montpellier.fr/evenement/test#fake",
+        ):
+            with self.subTest(bad=bad):
+                self.assertFalse(safe_https(bad, site, "/evenement/"))
 
 
 class MptTests(unittest.TestCase):
