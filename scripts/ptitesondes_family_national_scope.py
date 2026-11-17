@@ -49,6 +49,12 @@ KNOWN_REGISTRATION = frozenset({
     "explicit_required", "explicit_not_required", "not_stated",
     "ambiguous", "contradictory",
 })
+_CANDIDATE_FIELDS = frozenset({
+    "record_kind", "title", "city", "venue", "source_url",
+    "audience_claim", "age_min", "age_max", "price_evidence",
+    "registration_evidence", "category", "category_label",
+    "date_start", "date_end",
+})
 _FORBIDDEN_OUTPUT_KEYS = frozenset({
     "events", "additions", "updates", "patch", "patch.v1",
     "catalogue", "source_url", "review_id", "candidates",
@@ -72,7 +78,7 @@ def _official_url_shape(url):
 
 
 def _valid_age_claim(row):
-    if row.get("audience_claim") not in KNOWN_AUDIENCES:
+    if not isinstance(row.get("audience_claim"), str) or row["audience_claim"] not in KNOWN_AUDIENCES:
         return False
     lo, hi = row.get("age_min"), row.get("age_max")
     if not all(
@@ -103,6 +109,8 @@ def _candidate_issues(row, today):
     if not isinstance(row, dict):
         return {"invalid_scope_item"}, None, None
     blockers = set()
+    if set(row) - _CANDIDATE_FIELDS:
+        blockers.add("unexpected_collector_field")
     kind = row.get("record_kind")
     route = "sorties" if kind == "dated_event" else (
         "lieux" if kind == "permanent_place" else None
@@ -117,14 +125,16 @@ def _candidate_issues(row, today):
     if not _valid_age_claim(row):
         blockers.add("explicit_family_audience_claim_missing_or_invalid")
 
-    if (row.get("price_evidence") not in KNOWN_PRICE
-            or row.get("registration_evidence") not in KNOWN_REGISTRATION):
+    if (not isinstance(row.get("price_evidence"), str)
+            or row["price_evidence"] not in KNOWN_PRICE
+            or not isinstance(row.get("registration_evidence"), str)
+            or row["registration_evidence"] not in KNOWN_REGISTRATION):
         blockers.add("access_evidence_state_missing_or_invalid")
 
     category, facet = None, None
     if kind == "dated_event":
         code = row.get("category")
-        if code in LEGACY_MUSICAL:
+        if isinstance(code, str) and code in LEGACY_MUSICAL:
             blockers.add("legacy_musical_pipeline_unchanged")
         elif not isinstance(code, str) or code not in FAMILY_TYPES:
             blockers.add("nonmusical_category_not_in_explicit_contract")
