@@ -14,6 +14,7 @@ from grossesondes_structured_edition import (
     validate_structured_edition, conflicts_with_existing, PROOF_MODE,
     PRIVATE_NOTES, PRIVATE_CONFIDENCE, PRIVATE_STATUS,
     PUBLISHED_CONFIDENCE, PUBLISHED_STATUS,
+    ARCHIVED_PROOF_MODE, validate_archived_structured_edition,
 )
 from grossesondes_cloud_sync import (
     collect_registered_edition_sources, build_candidate,
@@ -299,6 +300,158 @@ class StructuredEditionStageTests(unittest.TestCase):
             {PARENT["slug"]: PARENT},
             lambda *args, **kwargs: self.fail("unexpected network fetch"))
         self.assertEqual(proof, {})
+
+
+
+# An archive-only organizer is *not* a published current-edition parent.
+# These fixtures never contain authentic festival claims or live network data.
+ARCHIVE_PARENT = {
+    "slug": "winter-rising-fest",
+    "name": "Winter Rising Fest",
+    "startDate": "2026-08-12", "endDate": "2026-08-13",
+    "lastKnownYear": 2026, "officialSite": URL,
+    "venue": "Old Town Hall", "lat": 48.1, "lon": 2.5,
+    "lineup": ["Prior year act"], "price": "old price",
+}
+ARCHIVED_ENTRY = {
+    **ENTRY, "proofMode": ARCHIVED_PROOF_MODE,
+    "originSlug": ARCHIVE_PARENT["slug"],
+}
+
+
+class ArchivedStructuredEditionTests(unittest.TestCase):
+    def test_new_year_can_use_frozen_archived_organizer_only_for_identity(self):
+        verified = validate_archived_structured_edition(
+            ARCHIVED_ENTRY, ARCHIVE_PARENT, html(event()), TODAY)
+        self.assertIsNotNone(verified)
+        self.assertEqual(verified["slug"], "winter-rising-fest-2027")
+        self.assertFalse(verified["showOnMap"])
+        self.assertIsNone(verified["venue"])
+        self.assertIsNone(verified["lat"])
+        self.assertIsNone(verified["lon"])
+        self.assertIsNone(verified["price"])
+        self.assertEqual(verified["lineup"], [])
+        self.assertEqual(verified["bands"], 0)
+        self.assertNotIn("proofMode", verified)
+        self.assertIn("archive", verified["verificationStatus"])
+        self.assertEqual(ARCHIVE_PARENT["lineup"], ["Prior year act"])
+
+    def test_untrusted_archive_or_proposal_never_certifies_the_new_edition(self):
+        altered_parents = [
+            dict(ARCHIVE_PARENT, lastKnownYear=2025),
+            dict(ARCHIVE_PARENT, lastKnownYear=True),
+            dict(ARCHIVE_PARENT, endDate="2027-08-13"),
+            dict(ARCHIVE_PARENT, startDate="2025-08-12"),
+            dict(ARCHIVE_PARENT, officialSite="https://untrusted.invalid"),
+            dict(ARCHIVE_PARENT, slug="different-fest"),
+            dict(ARCHIVE_PARENT, name="Different Festival"),
+        ]
+        for altered in altered_parents:
+            with self.subTest(parent=altered):
+                self.assertIsNone(validate_archived_structured_edition(
+                    ARCHIVED_ENTRY, altered, html(event()), TODAY))
+        for altered in [
+            dict(ARCHIVED_ENTRY, originSlug="different"),
+            dict(ARCHIVED_ENTRY, officialSite="https://attacker.invalid"),
+            dict(ARCHIVED_ENTRY, evidence=["https://attacker.invalid"]),
+            dict(ARCHIVED_ENTRY, lat=48.1),
+            dict(ARCHIVED_ENTRY, venue="Old Town Hall"),
+            dict(ARCHIVED_ENTRY, lineup=["Prior year act"], bands=1),
+            dict(ARCHIVED_ENTRY, showOnMap=True),
+            dict(ARCHIVED_ENTRY, proofMode=PROOF_MODE),
+            dict(ARCHIVED_ENTRY, startDate="2027-08-14"),
+        ]:
+            with self.subTest(proposal=altered):
+                self.assertIsNone(validate_archived_structured_edition(
+                    altered, ARCHIVE_PARENT, html(event()), TODAY))
+
+    def test_official_page_must_prove_the_2027_edition_again(self):
+        for source in (
+            "",
+            html(event(name="Winter Rising Fest 2026")),
+            html(event(startDate="2027-08-11")),
+            html(event(eventStatus="https://schema.org/EventCancelled")),
+            "<h1>Winter Rising Fest 2027</h1><p>12–13 août 2027</p>",
+        ):
+            with self.subTest(source=source):
+                self.assertIsNone(validate_archived_structured_edition(
+                    ARCHIVED_ENTRY, ARCHIVE_PARENT, source, TODAY))
+
+    def archived_dataset(self):
+        calendar, history, patch = fixtures()
+        history["knownFestivals"][3] = copy.deepcopy(ARCHIVE_PARENT)
+        patch["additions"] = [copy.deepcopy(ARCHIVED_ENTRY)]
+        patch["updates"] = []
+        return calendar, history, patch
+
+    def test_archive_edition_enters_stage_only_with_independent_current_html(self):
+        calendar, history, patch = self.archived_dataset()
+        original = copy.deepcopy(calendar)
+        parents = {r["slug"]: r for r in history["knownFestivals"]}
+        urls = []
+        proofs = collect_registered_edition_sources(
+            patch, {}, lambda url, *, registered, raw:
+            urls.append((url, registered, raw)) or html(event()),
+            archived=parents)
+        self.assertEqual(urls, [(URL, True, True)])
+        self.assertEqual(list(proofs), ["registered-edition:" + ARCHIVED_ENTRY["slug"]])
+        candidate, report = stage(calendar, history, patch, proofs, TODAY)
+        self.assertEqual(report["accepted_additions"], [ARCHIVED_ENTRY["slug"]])
+        self.assertEqual(len(candidate["festivals"]), len(calendar["festivals"]) + 1)
+        self.assertFalse(candidate["festivals"][-1]["showOnMap"])
+        self.assertEqual(calendar, original)
+        empty, held = stage(calendar, history, patch, {}, TODAY)
+        self.assertEqual(held["accepted_additions"], [])
+        self.assertEqual(empty["festivals"], calendar["festivals"])
+
+    def test_archived_origin_does_not_accept_malicious_private_url(self):
+        calendar, history, patch = self.archived_dataset()
+        patch["additions"][0]["evidence"] = ["https://attacker.invalid/payload"]
+        parents = {r["slug"]: r for r in history["knownFestivals"]}
+        visited = []
+        proofs = collect_registered_edition_sources(
+            patch, {}, lambda url, *, registered, raw:
+            visited.append(url) or html(event()),
+            archived=parents)
+        self.assertEqual(visited, [URL])
+        candidate, result = stage(calendar, history, patch, proofs, TODAY)
+        self.assertEqual(result["accepted_additions"], [])
+        self.assertEqual(candidate["festivals"], calendar["festivals"])
+
+    def test_unknown_archive_origin_and_duplicates_stay_blocked(self):
+        calendar, history, patch = self.archived_dataset()
+        patch["additions"][0]["originSlug"] = "fake-archive"
+        visited = []
+        evidence = collect_registered_edition_sources(
+            patch, {}, lambda *args, **kwargs: visited.append("fetched"),
+            archived={r["slug"]: r for r in history["knownFestivals"]})
+        self.assertEqual(visited, [])
+        self.assertEqual(evidence, {})
+        candidate, report = stage(calendar, history, patch, {}, TODAY)
+        self.assertEqual(report["accepted_additions"], [])
+        self.assertEqual(candidate["festivals"], calendar["festivals"])
+        calendar, history, patch = self.archived_dataset()
+        calendar["festivals"][0] = dict(
+            ARCHIVED_ENTRY, proofMode=None, originSlug=None)
+        candidate, report = stage(calendar, history, patch,
+                                  {"registered-edition:" + ARCHIVED_ENTRY["slug"]:
+                                   html(event())}, TODAY)
+        self.assertEqual(report["accepted_additions"], [])
+        self.assertIn("doublon", report["held"][0]["reason"])
+
+    def test_cumulative_publisher_merge_is_idempotent_from_archives(self):
+        calendar, history, patch = self.archived_dataset()
+        snapshot = {"festivals.json": calendar, "festival-history.json": history}
+        sources = {"registered-edition:" + ARCHIVED_ENTRY["slug"]: html(event())}
+        first, first_report = build_candidate(
+            snapshot, snapshot, patch, sources, TODAY, trusted_published=True)
+        self.assertTrue(first_report["changed"])
+        self.assertEqual(len(first["festivals"]), len(calendar["festivals"]) + 1)
+        second, second_report = build_candidate(
+            snapshot, {"festivals.json": first, "festival-history.json": history},
+            patch, sources, TODAY, trusted_published=True)
+        self.assertFalse(second_report["changed"])
+        self.assertEqual(second["festivals"], first["festivals"])
 
 
 if __name__ == "__main__":

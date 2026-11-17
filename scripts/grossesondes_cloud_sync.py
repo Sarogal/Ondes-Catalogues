@@ -20,7 +20,9 @@ from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
 from grossesondes_stage import official_text, stage, PROOF_MODE
-from grossesondes_structured_edition import PROOF_MODE as EDITION_PROOF_MODE
+from grossesondes_structured_edition import (
+    PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -246,19 +248,27 @@ def collect_registered_update_sources(patch, original, fetcher=official_text):
     return sources
 
 
-def collect_registered_edition_sources(patch, original, fetcher=official_text):
-    """Fetch official parent sites independently for new edition candidates.
+def collect_registered_edition_sources(patch, original, fetcher=official_text,
+                                       archived=None):
+    """Fetch only registered first-party parents (published or archived).
 
-    No URL supplied by the private patch is fetched. The parent is looked up
-    ONLY in the immutable Infomaniak snapshot; failed fetches fail closed.
+    Both parent registries come from the immutable Infomaniak snapshots;
+    never fetch a URL supplied by the private proposal. The archive path
+    needs its separate proof mode and cannot silently borrow old metadata.
     """
     sources={}
     cached={}
     for proposed in patch.get("additions",[])[:10]:
-        if proposed.get("proofMode") != EDITION_PROOF_MODE:
+        mode=proposed.get("proofMode")
+        if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE):
             continue
         slug=proposed.get("slug")
-        parent=original.get(proposed.get("originSlug"),{})
+        registered = (archived if mode == ARCHIVED_PROOF_MODE else original)
+        if not isinstance(registered, dict):
+            continue
+        parent=registered.get(proposed.get("originSlug"),{})
+        if not isinstance(parent, dict):
+            continue
         url=parent.get("officialSite")
         if not isinstance(url,str):
             continue
@@ -352,7 +362,11 @@ def main():
     # Only re-fetch registered officialSite URLs from the immutable production.
     original={e["slug"]:e for e in snapshot["festivals.json"]["festivals"]}
     sources.update(collect_registered_update_sources(patch,original))
-    sources.update(collect_registered_edition_sources(patch,original))
+    registered_archives={
+        e["slug"]:e for e in snapshot["festival-history.json"]["knownFestivals"]
+    }
+    sources.update(collect_registered_edition_sources(
+        patch, original, archived=registered_archives))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days

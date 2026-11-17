@@ -14,6 +14,7 @@ from grossesondes_structured_roster import (
 )
 
 PROOF_MODE = "structured-edition.v1"
+ARCHIVED_PROOF_MODE = "structured-archived-edition.v1"
 SLUG = re.compile(r"^(.+)-(20[2-4][0-9])$")
 EMBEDDED_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 
@@ -148,6 +149,41 @@ def validate_structured_edition(proposal, parent, html, today):
     result = {k: proposal[k] for k in ROW_KEYS}
     result["verificationStatus"] = PUBLISHED_STATUS
     result["sourceConfidence"] = PUBLISHED_CONFIDENCE
+    return result
+
+
+def validate_archived_structured_edition(proposal, archived, html, today):
+    """Require 2027/2028 JSON-LD on the pinned ARCHIVE first-party homepage.
+
+    The historical edition is an identity and network-origin reference only.
+    It is never evidence of the next edition, its date, address, artists,
+    tickets or map pin. The organizer's current JSON-LD is re-fetched by the
+    existing public cloud publisher, not supplied from the private proposal.
+    """
+    if (not isinstance(proposal, dict) or not isinstance(archived, dict)
+            or proposal.get("proofMode") != ARCHIVED_PROOF_MODE
+            or proposal.get("originSlug") != archived.get("slug")):
+        return None
+    old_start = iso_day(archived.get("startDate"))
+    old_end = iso_day(archived.get("endDate"))
+    verified_today = iso_day(today)
+    last_year = archived.get("lastKnownYear")
+    if (type(last_year) is not int or old_start is None or old_end is None
+            or verified_today is None
+            or not old_start <= old_end < verified_today
+            or old_start.year != last_year or old_end.year != last_year
+            or archived.get("officialSite") is None
+            or not isinstance(archived.get("officialSite"), str)):
+        return None
+    # Reuse the stricter published-parent validator unchanged, with an
+    # internal proof-mode adapter. A forged field or extra key still fails.
+    adapted = dict(proposal, proofMode=PROOF_MODE)
+    result = validate_structured_edition(adapted, archived, html, today)
+    if result is not None:
+        result["verificationStatus"] = (
+            "Édition vérifiée sur le site officiel de l'archive ; "
+            "lieu et coordonnées 2027 non confirmés"
+        )
     return result
 
 

@@ -23,8 +23,9 @@ from grossesondes_structured_tickets import (
     PROOF_MODE as TICKET_PROOF_MODE, validate_structured_tickets,
 )
 from grossesondes_structured_edition import (
-    PROOF_MODE as EDITION_PROOF_MODE, validate_structured_edition,
-    conflicts_with_existing,
+    PROOF_MODE as EDITION_PROOF_MODE,
+    ARCHIVED_PROOF_MODE, validate_structured_edition,
+    validate_archived_structured_edition, conflicts_with_existing,
 )
 from grossesondes_history_guard import validate_history_extension
 from grossesondes_noel_2026 import (
@@ -166,8 +167,12 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
-        if e.get("proofMode")==EDITION_PROOF_MODE:
-            parent=existing.get(e.get("originSlug"))
+        if e.get("proofMode") in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE):
+            archived_parent = e["proofMode"] == ARCHIVED_PROOF_MODE
+            origin = e.get("originSlug")
+            parent = (next((h for h in history["knownFestivals"]
+                            if h.get("slug") == origin), None)
+                      if archived_parent else existing.get(origin))
             known_rows=rows + (
                 published_calendar.get("festivals",[]) if published_calendar else [])
             known_history=history["knownFestivals"] + (
@@ -176,7 +181,9 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
                     e,known_rows,known_history):
                 report["held"].append({"slug":slug,"reason":"édition parente absente ou doublon"})
                 continue
-            proposed=validate_structured_edition(
+            validator = (validate_archived_structured_edition
+                         if archived_parent else validate_structured_edition)
+            proposed=validator(
                 e,parent,sources.get("registered-edition:"+slug,""),today)
             if proposed is None:
                 report["held"].append({"slug":slug,
@@ -324,7 +331,9 @@ def main():
             print("Preuve JSON-LD indisponible pour "+slug+" ; modification différée.")
     # The independently fetched parent URL, never the private candidate's
     # evidence URL, is the only eligible source for a new edition.
-    evidence.update(collect_registered_edition_sources(patch,registered))
+    archive_registered={row["slug"]: row for row in production_history["knownFestivals"]}
+    evidence.update(collect_registered_edition_sources(
+        patch, registered, archived=archive_registered))
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(
