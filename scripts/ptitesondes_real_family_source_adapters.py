@@ -22,6 +22,11 @@ PARIS_DATA_URL = ("https://opendata.paris.fr/explore/dataset/"
                   "que-faire-a-paris-/")
 MPT_AGENDA_URL = "https://mpt.montpellier.fr/evenements"
 MAX_BATCH = 200
+# Region timezone is an externally curated source property, never inferred.
+TERRITORY_TIMEZONES = frozenset({
+    "Europe/Paris", "America/Guadeloupe", "America/Martinique",
+    "America/Cayenne", "Indian/Reunion", "Indian/Mayotte",
+})
 MONTHS = {
     "janvier": 1, "fevrier": 2, "mars": 3, "avril": 4,
     "mai": 5, "juin": 6, "juillet": 7, "aout": 8,
@@ -287,13 +292,15 @@ def _unfold_ics(value):
     return re.sub(r"\r?\n[ \t]", "", value)
 
 
-def parse_ical(text, feed_url, today):
+def parse_ical(text, feed_url, today, *, target_timezone="Europe/Paris"):
     """Cross-municipality iCalendar adapter: strictly explicit clock timestamps.
 
-    Requires DTSTART with UTC Z or TZID=Europe/Paris (or an ISO offset).
-    RRULE/RDATE/EXDATE are not expanded, untimed entries are held.
-    Location alone never supplies a guessed city or GPS.
+    Requires DTSTART UTC Z or explicit matching TZID, never naive clocks.
+    target_timezone must be a reviewed French territory IANA zone.
+    RRULE/RDATE/EXDATE never expanded. Location cannot supply GPS or city.
     """
+    if target_timezone not in TERRITORY_TIMEZONES:
+        raise ValueError("unreviewed_feed_timezone")
     if (type(today) is not date or not isinstance(text, str)
             or not text.startswith("BEGIN:VCALENDAR")
             or not 50 <= len(text) <= 2_000_000
@@ -311,13 +318,16 @@ def parse_ical(text, feed_url, today):
         for ln in lines:
             if ":" in ln and len(ln) <= 2000:
                 key, val = ln.split(":", 1)
-                props.setdefault(key.upper(), val.replace(r"\,", ",")
+                k = key.split(";", 1)
+                normalized_key = k[0].upper() + (";" + k[1] if len(k) == 2 else "")
+                props.setdefault(normalized_key, val.replace(r"\,", ",")
                                  .replace(r"\n", " ").strip())
         if any(k.startswith(("RRULE", "RDATE", "EXDATE")) for k in props):
             continue  # never invent recurrence instances
         if norm(props.get("STATUS", "")) in ("cancelled", "canceled"):
             continue
-        key = next((k for k in props if k.startswith("DTSTART")), None)
+        key = next((k for k in props if k == "DTSTART" or
+                    k.upper().startswith("DTSTART;TZID=")), None)
         if not key:
             continue
         raw = props[key]
@@ -326,15 +336,17 @@ def parse_ical(text, feed_url, today):
             if key == "DTSTART" and re.fullmatch(r"\d{8}T\d{6}Z", raw):
                 dt = datetime.strptime(raw, "%Y%m%dT%H%M%SZ").replace(
                     tzinfo=ZoneInfo("UTC"))
-            elif key == "DTSTART;TZID=Europe/Paris" and re.fullmatch(
-                    r"\d{8}T\d{6}", raw):
+            elif (key.upper().startswith("DTSTART;TZID=")
+                  and key.split("=", 1)[1] == target_timezone
+                  and re.fullmatch(r"\d{8}T\d{6}", raw)):
+                # TZID values are case-sensitive IANA names.
                 dt = datetime.strptime(raw, "%Y%m%dT%H%M%S").replace(
-                    tzinfo=ZoneInfo("Europe/Paris"))
+                    tzinfo=ZoneInfo(target_timezone))
         except ValueError:
             continue
         if dt is None:
             continue
-        local = dt.astimezone(ZoneInfo("Europe/Paris"))
+        local = dt.astimezone(ZoneInfo(target_timezone))
         if not _in_window(local.date().isoformat(), today):
             continue
         title = props.get("SUMMARY", "")
