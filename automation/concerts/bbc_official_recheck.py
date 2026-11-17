@@ -91,8 +91,8 @@ def artist_parts(title):
     if len(parts) > 1 and triage.words(parts[-1]) in UNANNOUNCED:
         guest = triage.words(parts.pop())
     keys = [triage.words(p) for p in parts]
-    if (not parts or any(not 3 <= len(key) <= 100 or UNSAFE.search(key)
-                         for key in keys)
+    if (not parts or any(not 3 <= len(key) <= 100 or key in UNANNOUNCED
+                         or UNSAFE.search(key) for key in keys)
             or len(set(keys)) != len(keys)):
         raise ValueError("BBC : programmation ou noms d'artistes ambigus")
     return parts, guest
