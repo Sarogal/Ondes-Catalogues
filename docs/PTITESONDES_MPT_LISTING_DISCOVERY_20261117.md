@@ -18,7 +18,7 @@ Le moteur énumère des liens de fiches municipaux strictement autorisés sur `m
 
 - Source HTTPS précise, hôte strict `mpt.montpellier.fr`, sans utilisateur, port personnalisé, query ni fragment.
 - Le collecteur ne traite pas les pages autres que celles explicitement liées depuis `https://mpt.montpellier.fr/evenements`.
-- Maximum 80 liens détectés, échantillon **12 pages détaillées** dans le smoke CI, plafond 24 pages pour les tests hors ligne.
+- Maximum 80 liens détectés, échantillon **24 pages détaillées maximum** dans le smoke CI, soit les 24 liens détectés dans la première lecture réelle ; ce seuil reste plafonné et ne garantit pas l'exhaustivité des agendas de la ville.
 - Taille de chaque page <= 1,5 Mio, délai HTTP 12 s, pas de redirection, petite temporisation entre lectures.
 - Une page inaccessible est décomptée **en attente**, jamais comme une absence de programme.
 - Les journées futures sont lues sans deviner une récurrence, et sans inventer âges, lieux ou données GPS.
@@ -29,7 +29,7 @@ Le moteur énumère des liens de fiches municipaux strictement autorisés sur `m
 ## Séparation de responsabilité
 
 - Script sans réseau `ptitesondes_mpt_listing_discovery.py` : détecte les liens, accepte une lecture détail injectée, transmet en mémoire des **pistes**, et produit un rapport public **anonyme**.
-- Script one-shot `ptitesondes_mpt_listing_live_smoke.py` : lit une liste et maximum 12 pages, ne persiste aucun candidat.
+- Script one-shot `ptitesondes_mpt_listing_live_smoke.py` : lit une liste et maximum 24 pages, ne persiste aucun candidat.
 - Aucune écriture dans les catalogues, aucun secret GitHub, aucun appel au publisher, aucune transmission vers la branche privée, aucune modification des workflows programmés.
 - Les étapes de prévalidation #342/#346, du contrôle de provenance GPS, de la qualification d'âge/public, de l'approbation privée et de la publication restent **distinctes et obligatoires**.
 
@@ -37,6 +37,6 @@ Le moteur énumère des liens de fiches municipaux strictement autorisés sur `m
 
 `tests/test_ptitesondes_mpt_listing_discovery.py` couvre les domaines spoofés, les liens cachés, les pages adultes, l'absence de détails, le plafond de pages et l'absence de publication.
 
-CI dédiée sur runner public, lecture seule, déclenchée sur la PR. Le résultat du smoke doit être confronté à la source actuelle avant de considérer une utilisation régulière. L'ajout d'un cron et le transfert privé exigeraient un lot supplémentaire audité et une validation explicite.
+CI dédiée sur runner public, lecture seule, déclenchée sur la PR. Le premier smoke de 12 pages a détecté **24 liens municipaux**, lu **12 fiches**, trouvé **5 occurrences familiales structurées**, sans aucune erreur réseau. Le nouvel échantillonnage jusqu'à 24 fiches vise à mesurer les pistes des autres pages, sans créer d'événements ni présumer de l'approbation privée. L'ajout d'un cron et le transfert privé exigeraient un lot supplémentaire audité et une validation explicite.
 
 **Ne pas fusionner ni déployer sans accord explicite.**
