@@ -194,6 +194,11 @@ def run(folder, calendar, history, today, fetcher=official_text):
         parent = archive.get(slug)
         if not isinstance(parent, dict) or parent.get("officialSite") != source["officialSite"]:
             continue
+        identity = pinned_parent_identity(parent)
+        if (identity is None or parent.get("lastKnownYear") != identity[1]
+                or source["year"] != identity[1] + 1):
+            # An inconsistent historic parent must not trigger even a page fetch.
+            continue
         new_slug = slug + "-" + str(source["year"])
         if new_slug in published or new_slug in archive_slugs or new_slug in occupied:
             continue
