@@ -65,6 +65,18 @@ class OfficialAddressPatternTests(unittest.TestCase):
         self.assertEqual(rows[0]["verification"],
                          "discovery_only_needs_official_and_independent_proof")
 
+    def test_div_street_address_rendering_is_still_exact_and_visible(self):
+        page = ADDRESS_DETAIL.replace(
+            "<p>Maison pour tous Mélina Mercouri<br/>",
+            "<div>Maison pour tous Mélina Mercouri<br/>").replace(
+            "842 Rue de la Vieille Poste<br/>34000 Montpellier</p>",
+            "842 Rue de la Vieille Poste<br/>34000 Montpellier</div>")
+        items = parse_montpellier_mpt_detail(page, ADDRESS_LINK, TODAY)
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["venue"], "Maison pour tous Mélina Mercouri")
+        self.assertEqual(items[0]["source_url"], ADDRESS_LINK)
+        self.assertEqual(items[0]["date_start"], "2026-11-18")
+
     def test_sidebar_future_occurrences_cannot_supply_main_event_dates(self):
         rows = parse_montpellier_mpt_detail(ADDRESS_DETAIL, ADDRESS_LINK, TODAY)
         self.assertEqual([x["date_start"] for x in rows], ["2026-11-18"])
