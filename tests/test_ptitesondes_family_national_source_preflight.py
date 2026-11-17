@@ -111,7 +111,7 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
         self.assertEqual(out["official_source_cues_passed"], 1)
         self.assertTrue(out["source_preflight_batch_passed"])
         self.assertEqual(out["blocked_occurrences"], 0)
-        self.assertEqual(out["catalogue_events_preserved"], 548)
+        self.assertEqual(out["catalogue_events_preserved"], len(before["events"]))
         self.assertTrue(out["human_approvals_not_checked"])
         self.assertTrue(out["geo_provider_not_refetched"])
         self.assertFalse(out["publication_ready"])
@@ -305,7 +305,7 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
                   pages={item["source"]["official_url"]: html})
         self.assertIn("already_published_from_any_source",
                       out["blocked_reason_counts"])
-        self.assertEqual(out["catalogue_events_preserved"], 549)
+        self.assertEqual(out["catalogue_events_preserved"], len(current["events"]))
 
     def test_sha_change_invalidates_snapshot(self):
         with self.assertRaisesRegex(ValueError, "catalogue_sha_pin_mismatch"):
