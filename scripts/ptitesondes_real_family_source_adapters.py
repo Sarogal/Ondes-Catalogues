@@ -308,7 +308,13 @@ class _MptFirstArticleAddress(HTMLParser):
             self.paragraph.append(data)
 
 
-def _mpt_reviewable_address_venue(html):
+def _mpt_reviewable_address_venue(html, *, visible_main_parts=None):
+    """Require one exact street + postal-city block, no page-wide geo guess.
+
+    Most MPT pages embed their address in a DIV, not a P. Reuse the visibility
+    parser's ONLY-primary-detail text parts as a second structural rendering.
+    Never read a related-event card or hidden DOM block for building evidence.
+    """
     p = _MptFirstArticleAddress()
     try:
         p.feed(html)
@@ -317,24 +323,36 @@ def _mpt_reviewable_address_venue(html):
         return None
     if not p.article_complete:
         return None
-    places = []
-    for block in p.blocks:
-        lines = [line.strip() for line in block.splitlines() if line.strip()]
-        if len(lines) != 3:
-            continue
-        venue, address, postcode = lines
-        if not (re.fullmatch(r"34\d{3}\s+Montpellier", postcode,
-                             re.IGNORECASE)
-                and re.fullmatch(
-                    r"\d{1,4}\s*[a-zA-Z]?\s+(?:rue|avenue|av\.?|boulevard|bd|"
-                    r"all[eé]e|chemin|cours|impasse|place|quai|passage)"
-                    r"\b.{4,100}", address, re.IGNORECASE)
-                and 3 <= len(venue) <= 150
-                and not re.search(r"\b(?:organis[ée]|partenaires?)\b",
-                                  norm(venue))):
-            continue
-        places.append(venue)
-    return places[0] if len(places) == 1 else None
+    blocks = [
+        [line.strip() for line in block.splitlines() if line.strip()]
+        for block in p.blocks
+    ]
+    if visible_main_parts is not None:
+        # The caller's _MptVisible stopped before "Autres événements".
+        # Do not invent a venue from a whole page or unrelated listings.
+        if not isinstance(visible_main_parts, list):
+            return None
+        blocks.append([
+            line.strip() for item in visible_main_parts if isinstance(item, str)
+            for line in item.splitlines() if line.strip()
+        ])
+    places = set()
+    for lines in blocks:
+        for i in range(len(lines) - 2):
+            venue, address, postcode = lines[i:i+3]
+            if not (re.fullmatch(r"34\d{3}\s+Montpellier", postcode,
+                                 re.IGNORECASE)
+                    and re.fullmatch(
+                        r"\d{1,4}\s*[a-zA-Z]?\s+(?:rue|avenue|av\.?|"
+                        r"boulevard|bd|all[eé]e|chemin|cours|impasse|"
+                        r"place|quai|passage)\b.{4,100}",
+                        address, re.IGNORECASE)
+                    and 3 <= len(venue) <= 150
+                    and not re.search(r"\b(?:organis[ée]|partenaires?)\b",
+                                      norm(venue))):
+                continue
+            places.add(venue)
+    return next(iter(places)) if len(places) == 1 else None
 
 
 def parse_montpellier_mpt_detail(html, url, today):
@@ -373,7 +391,8 @@ def parse_montpellier_mpt_detail(html, url, today):
                 p.parts[i + 1] if i + 1 < len(p.parts) else None)
             break
     if not venue:
-        venue = _mpt_reviewable_address_venue(html)
+        venue = _mpt_reviewable_address_venue(
+            html, visible_main_parts=p.parts)
     if not venue:
         return []
     venue = venue.split("(", 1)[0].strip()
