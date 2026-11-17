@@ -24,6 +24,7 @@ from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
 )
+from grossesondes_archived_html_intake import PINNED_ARCHIVED_HTML_SOURCES
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -275,13 +276,24 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
         url=parent.get("officialSite")
         if not isinstance(url,str):
             continue
-        if url not in cached:
+        proof_url=url
+        if mode == ARCHIVED_HTML_PROOF_MODE:
+            pinned = PINNED_ARCHIVED_HTML_SOURCES.get(proposed.get("originSlug"))
+            if (isinstance(pinned,dict)
+                    and pinned["officialSite"] == url
+                    and proposed.get("startDate","")[:4] == str(pinned["year"])
+                    and proposed.get("endDate","")[:4] == str(pinned["year"])):
+                # A pre-reviewed fixed first-party page; NEVER from the patch.
+                proof_url=pinned["proofUrl"]
+        if proof_url not in cached:
             try:
-                cached[url]=fetcher(url,registered=True,raw=True)
+                cached[proof_url]=fetcher(proof_url,registered=True,raw=True)
             except Exception:
-                cached[url]=""
+                cached[proof_url]=""
                 print("Preuve officielle de nouvelle édition indisponible pour "+str(slug))
-        sources["registered-edition:"+str(slug)]=cached[url]
+        sources["registered-edition:"+str(slug)]=cached[proof_url]
+        if proof_url != url:
+            sources["registered-edition-proof-url:"+str(slug)]=proof_url
     return sources
 
 
