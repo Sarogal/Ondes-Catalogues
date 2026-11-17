@@ -99,6 +99,44 @@ class BBCOfficialRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check.verify(discovery(bad), bad, c, DAY)
 
+    def test_known_svinkels_family_friends_plus_named_support(self):
+        # Observed 12/12 official BBC structure: "Family & Friends" denotes
+        # unnamed guests of an existing act, never a new band identity.
+        names = ["SVINKELS FAMILY & FRIENDS", "DOMINIQUE FÉVRIER"]
+        page = html_bill(names)
+        page = page.replace("Programmation metal", "Programmation punk")
+        page = page.replace(
+            "<p>SVINKELS FAMILY & FRIENDS est un groupe de metal sur cette affiche.</p>",
+            "<p>Svinkels repartent en tournée avec des invités variables.</p>"
+            "<p>Un album Tribute revient sur leur histoire.</p>")
+        page = page.replace(
+            "<p>DOMINIQUE FÉVRIER est un groupe de metal sur cette affiche.</p>",
+            "<p>Dominique Février est un projet de rap et de punk sur scène.</p>")
+        c = catalog(["Svinkels"])
+        approval = check.verify(discovery(page), page, c, DAY)
+        self.assertEqual(approval["event"]["artistIds"],
+                         ["svinkels", "dominique-fevrier"])
+        self.assertEqual(approval["newArtists"],
+                         [{"id": "dominique-fevrier", "name": "DOMINIQUE FÉVRIER"}])
+        proof = approval["officialEvidence"][0]
+        self.assertEqual(proof["originalOfficialHeadline"],
+                         "SVINKELS FAMILY & FRIENDS + DOMINIQUE FÉVRIER")
+        self.assertEqual(proof["nonNominativeCollectiveGuests"],
+                         {"artistName": "SVINKELS",
+                          "nonNominativeLabel": "FAMILY & FRIENDS"})
+        publishing(approval, c)
+        tampered = copy.deepcopy(approval)
+        tampered["officialEvidence"][0]["originalOfficialHeadline"] = "SVINKELS"
+        with self.assertRaises(ValueError):
+            publishing(tampered, c)
+        tampered = copy.deepcopy(approval)
+        tampered["officialEvidence"][0]["nonNominativeCollectiveGuests"][
+            "nonNominativeLabel"] = "LIVE NEW BAND"
+        with self.assertRaises(ValueError):
+            publishing(tampered, c)
+        with self.assertRaises(ValueError):
+            check.verify(discovery(page), page, catalog(), DAY)
+
     def test_stability_second_day_and_exact_publisher_queue(self):
         page = html_bill(["ACT ONE", "ACT TWO"])
         row = {"status": "pending_review",
