@@ -20,6 +20,11 @@ GENRES = frozenset({
     "post punk", "punk", "hardcore", "metalcore", "deathcore",
     "hard rock", "metal", "stoner", "sludge", "grindcore", "thrash", "doom",
 })
+UNANNOUNCED = frozenset({
+    "guest", "special guest", "premiere partie", "1ere partie",
+    "1re partie", "support", "surprise", "a confirmer", "tba",
+    "invite surprise", "artiste surprise",
+})
 UNSAFE_NAMES = frozenset({
     "guest", "special guest", "premiere partie", "support", "surprise",
     "tba", "a confirmer", "festival", "tribute", "hommage",
@@ -55,7 +60,11 @@ def verify(candidate, page, catalogue, today):
     doc.feed(page)
     if len(doc.rows) != 1:
         raise ValueError("Cave : un unique article de concert nécessaire")
-    names = doc.rows[0]["artists"]
+    raw_names = doc.rows[0]["artists"]
+    guest = None
+    if len(raw_names) > 1 and source.norm(raw_names[-1]) in UNANNOUNCED:
+        guest = source.norm(raw_names[-1])
+    names = raw_names[:-1] if guest else raw_names
     keys = [source.norm(name) for name in names]
     if (not keys or len(set(keys)) != len(keys)
             or any(not 3 <= len(name) <= 100 or name in UNSAFE_NAMES
@@ -139,6 +148,7 @@ def verify(candidate, page, catalogue, today):
         "officialArtistNames": names,
         "verifiedNewArtists": [a["name"] for a in added],
         "officialVenue": "La Cave aux Poètes",
+        **({"unannouncedSupportLabel": guest} if guest else {}),
     }
     if fresh["localTime"]:
         proof["concertStartTimeConfirmed"] = fresh["localTime"]
