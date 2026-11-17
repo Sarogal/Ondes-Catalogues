@@ -217,7 +217,7 @@ def rex_visible_divs_after_title(html_text):
                 style = attrs.get("style") or ""
                 hidden = (attrs.get("aria-hidden") == "true" or
                           "hidden" in attrs or
-                          bool(re.search(r"(?:display\\s*:\\s*none|visibility\\s*:\\s*hidden)\\b",
+                          bool(re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)\b",
                                          style, re.I)) or
                           bool(self.stack and self.stack[-1]["hidden"]))
                 if self.stack:
