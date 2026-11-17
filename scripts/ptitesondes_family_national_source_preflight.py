@@ -300,6 +300,12 @@ def inspect_family_national_preflight(
     blocked = Counter()
     validated_source_count = 0
     signatures = set()
+    shared_urls = Counter(
+        b["source"].get("official_url")
+        for b in bundles
+        if isinstance(b, dict) and isinstance(b.get("source"), dict)
+        and isinstance(b["source"].get("official_url"), str)
+    )
     for bundle in bundles:
         reasons = set()
         if not isinstance(bundle, dict) or set(bundle) != BUNDLE_FIELDS:
@@ -336,6 +342,7 @@ def inspect_family_national_preflight(
         if not _venue_match(scope, source, venue_registry):
             reasons.add("venue_point_or_independent_provenance_unverified")
 
+        raw = None
         if not reasons:
             try:
                 raw = source_get(source_url)
@@ -351,7 +358,6 @@ def inspect_family_national_preflight(
         venue = norm_text(scope["venue"])
         day = scope["date_start"]
         signature = (title, city, venue, day, start)
-        previously_seen_on_page = any(u == source_url for u, _ in signatures)
         if (source_url, signature) in signatures:
             reasons.add("duplicate_within_candidate_batch")
         # Distinct sessions on a shared page need one SAME-BLOCK date/time
@@ -361,8 +367,8 @@ def inspect_family_national_preflight(
             isinstance(old, dict) and old.get("source_url") == source_url
             for old in catalogue["events"]
         )
-        if (previously_seen_on_page or historical_same_url) and not (
-            isinstance(raw if "raw" in locals() else None, str)
+        if (shared_urls[source_url] > 1 or historical_same_url) and not (
+            isinstance(raw, str)
             and _session_pair_on_official_page(raw, scope, start)
         ):
             reasons.add("shared_page_exact_session_pair_unverified")
@@ -394,7 +400,7 @@ def inspect_family_national_preflight(
                 # Distinct exact clock on the SAME date is allowed only
                 # when separately paired on an official session block.
                 if not (
-                    isinstance(raw if "raw" in locals() else None, str)
+                    isinstance(raw, str)
                     and _session_pair_on_official_page(raw, scope, start)
                 ):
                     reasons.add("shared_page_exact_session_pair_unverified")
