@@ -281,8 +281,8 @@ def inspect_family_national_preflight(
                 norm_text(old.get("title")) == title
                 and norm_text(old.get("city")) == city
                 and norm_text(old.get("venue")) == venue
-                and old.get("date_start") <= day <= old.get(
-                    "date_end", old.get("date_start")
+                and old.get("date_start") <= day <= (
+                    old.get("date_end") or old.get("date_start")
                 )
             )):
                 reasons.add("already_published_from_any_source")
