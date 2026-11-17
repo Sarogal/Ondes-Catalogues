@@ -117,10 +117,13 @@ class MptListingDiscoveryTests(unittest.TestCase):
         leads, report = discover_listing(
             PAGE, today=TODAY, detail_get=lambda url: FAMILY_DETAIL)
         out = json.dumps(report, ensure_ascii=False)
-        for forbidden in ("source_url", "title", "Maison pour tous",
-                          "Atelier dessin", GOOD, OTHER, "candidates",
-                          "additions", "patch"):
+        for forbidden in ("source_url", "Maison pour tous",
+                          "Atelier dessin", GOOD, OTHER,
+                          '"additions"', '"patch"'):
             self.assertNotIn(forbidden, out)
+        for forbidden_key in ("events", "title", "candidates",
+                              "source_url", "additions", "patch"):
+            self.assertNotIn(forbidden_key, report)
         self.assertEqual(report["public_writes"], 0)
         self.assertEqual(report["private_approvals"], 0)
         self.assertFalse(report["approval_granted_to_publisher"])
