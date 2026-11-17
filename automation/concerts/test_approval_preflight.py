@@ -48,6 +48,14 @@ def publisher_accept(reference, current, approvals, today):
     return out, {"newEvents": len(approvals["approvals"])}
 
 
+def prior_signed_row():
+    earlier = row("go-c-20270330-earlier-signed")
+    earlier["event"]["officialUrl"] = "https://example.org/agenda/older"
+    earlier["event"]["date"] = "2027-03-30"
+    earlier["officialEvidence"][0]["url"] = earlier["event"]["officialUrl"]
+    return earlier
+
+
 class PreflightTests(unittest.TestCase):
     def setUp(self):
         self.before = prior()
@@ -63,10 +71,7 @@ class PreflightTests(unittest.TestCase):
 
     def test_previously_signed_pending_event_does_not_block_new_approval(self):
         previous = prior()
-        older = row("go-c-20270330-earlier-signed")
-        older["event"]["officialUrl"] = "https://example.org/agenda/older"
-        older["event"]["date"] = "2027-03-30"
-        older["officialEvidence"][0]["url"] = older["event"]["officialUrl"]
+        older = prior_signed_row()
         previous["approvals"] = [older]
         proposed = copy.deepcopy(previous)
         proposed["approvals"].append(row())
@@ -83,7 +88,7 @@ class PreflightTests(unittest.TestCase):
 
     def test_previously_signed_pending_baseline_rejects_unsigned_extra(self):
         previous = prior()
-        older = row("go-c-20270330-earlier-signed")
+        older = prior_signed_row()
         previous["approvals"] = [older]
         proposed = copy.deepcopy(previous)
         proposed["approvals"].append(row())
@@ -97,7 +102,7 @@ class PreflightTests(unittest.TestCase):
 
     def test_previously_signed_pending_event_cannot_change_during_new_approval(self):
         previous = prior()
-        older = row("go-c-20270330-earlier-signed")
+        older = prior_signed_row()
         previous["approvals"] = [older]
         proposed = copy.deepcopy(previous)
         proposed["approvals"].append(row())
@@ -112,7 +117,7 @@ class PreflightTests(unittest.TestCase):
 
     def test_previously_signed_pending_event_must_match_its_exact_proof(self):
         previous = prior()
-        previous["approvals"] = [row("go-c-20270330-earlier-signed")]
+        previous["approvals"] = [prior_signed_row()]
         proposed = copy.deepcopy(previous)
         proposed["approvals"].append(row())
         def forged(reference, current, ledger, today):
