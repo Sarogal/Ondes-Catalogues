@@ -41,6 +41,6 @@ jobs:
           wf = Path(".github/workflows/ptitesondes-reviewed-venue-gps-wave2-tests.yml").read_text()
           assert not any(x.strip().startswith("schedule:") for x in wf.splitlines())
           assert "contents: read" in wf
-          assert not any(key in wf for key in ("secrets.", "deploy-pages", "git push", "contents: write"))
+          assert not any(key in wf for key in ("se" + "crets.", "deploy" + "-pages", "git" + " push", "contents:" + " write"))
           print("PASS: no production writes")
           PY
