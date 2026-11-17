@@ -1,0 +1,37 @@
+name: "P'tites Ondes — taxonomie nationale famille, sans publication"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-family-national-taxonomy-readonly-20261117'
+    paths:
+      - 'scripts/ptitesondes_family_national_scope.py'
+      - 'tests/test_ptitesondes_family_national_scope.py'
+      - '.github/workflows/ptitesondes-family-national-scope-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_family_national_scope.py'
+      - 'tests/test_ptitesondes_family_national_scope.py'
+      - '.github/workflows/ptitesondes-family-national-scope-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  family-scope-tests:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tester la taxonomie sans internet, secret ni publication"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_family_national_scope.py' -v
+      - name: "Confirmer la séparation sortie / lieu et la publication désactivée"
+        run: |
+          echo "Read-only scope proposal. No publication and no recurring job."
