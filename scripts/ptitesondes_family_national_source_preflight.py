@@ -53,57 +53,81 @@ AGE_PHRASE = re.compile(
 TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d\Z")
 
 
-class _VisibleText(HTMLParser):
+# A hidden block must never supply an official title, date or session.
+# Keep proper HTML ancestry: script, style, template, aria-hidden and CSS
+# concealed descendants are all excluded, even inside an otherwise visible LI.
+_VOID = frozenset({"area", "base", "br", "col", "embed", "hr", "img",
+                   "input", "link", "meta", "param", "source", "track", "wbr"})
+_INVISIBLE = frozenset({"head", "script", "style", "noscript", "template",
+                        "iframe", "svg"})
+
+
+class _Visibility(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.words = []
-        self.hidden_depth = 0
+        self.elements = []
+
+    def _hidden(self):
+        return bool(self.elements and self.elements[-1][1])
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style"):
-            self.hidden_depth += 1
+        attr = dict(attrs)
+        style = str(attr.get("style") or "").casefold()
+        hidden = (self._hidden() or tag in _INVISIBLE
+                  or "hidden" in attr
+                  or str(attr.get("aria-hidden") or "").casefold() == "true"
+                  or re.search(r"display\\s*:\\s*none|visibility\\s*:\\s*hidden",
+                               style) is not None)
+        if tag not in _VOID:
+            self.elements.append((tag, hidden))
+        return hidden
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        if tag not in _VOID:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style"):
-            self.hidden_depth = max(0, self.hidden_depth - 1)
+        for pos in range(len(self.elements) - 1, -1, -1):
+            if self.elements[pos][0] == tag:
+                del self.elements[pos:]
+                break
+
+
+class _VisibleText(_Visibility):
+    def __init__(self):
+        super().__init__()
+        self.words = []
 
     def handle_data(self, data):
-        if not self.hidden_depth:
+        if not self._hidden():
             self.words.append(data)
 
 
-class _SessionBlocks(HTMLParser):
-    """Smallest self-contained dated/time block in a publisher's HTML.
-
-    A global page may contain several dates and several unrelated clocks.
-    Only pair cues contained in one <time>, <li> or <p> block can prove
-    a precise session on a shared programme URL. No inferred recurrence.
-    """
+class _SessionBlocks(_Visibility):
+    """Date and start clock must coexist in one VISIBLE time/li/p element."""
     TAGS = frozenset({"time", "li", "p"})
 
     def __init__(self):
-        super().__init__(convert_charrefs=True)
+        super().__init__()
         self.stack = []
         self.blocks = []
-        self.hidden = 0
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style", "noscript"):
-            self.hidden += 1
-        elif not self.hidden and tag in self.TAGS:
+        hidden = super().handle_starttag(tag, attrs)
+        if not hidden and tag in self.TAGS:
             self.stack.append((tag, []))
 
     def handle_data(self, data):
-        if not self.hidden:
+        if not self._hidden():
             for _, parts in self.stack:
                 parts.append(data)
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style", "noscript"):
-            self.hidden = max(0, self.hidden - 1)
-        elif tag in self.TAGS and self.stack and self.stack[-1][0] == tag:
+        if tag in self.TAGS and self.stack and self.stack[-1][0] == tag:
             _, words = self.stack.pop()
             self.blocks.append(norm_text(" ".join(words)))
+        super().handle_endtag(tag)
 
 
 def _session_pair_on_official_page(html, scope, clock):
