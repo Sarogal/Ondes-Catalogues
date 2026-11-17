@@ -186,6 +186,12 @@ def parse_paris_explore(response, today):
 
 
 class _MptVisible(HTMLParser):
+    """Only human-visible text from the primary event, never related cards."""
+    VOID = frozenset(("area", "base", "br", "col", "embed", "hr", "img",
+                      "input", "link", "meta", "source", "track", "wbr"))
+    INVISIBLE = frozenset(("head", "script", "style", "noscript", "template",
+                           "svg", "iframe"))
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.heading = []
@@ -195,30 +201,45 @@ class _MptVisible(HTMLParser):
         self.h2_text = []
         self.parts = []
         self.stopped = False
-        self.hidden = 0
+        self.stack = []
+
+    def _hidden(self):
+        return bool(self.stack and self.stack[-1][1])
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style", "noscript"):
-            self.hidden += 1
-        if tag == "h1" and not self.h1_seen:
-            self.in_h1 = True
-        if tag == "h2" and self.h1_seen:
-            self.in_h2 = True
-            self.h2_text = []
+        attr = dict(attrs)
+        style = str(attr.get("style") or "").casefold()
+        hidden = (self._hidden() or tag in self.INVISIBLE
+                  or "hidden" in attr or "inert" in attr
+                  or str(attr.get("aria-hidden") or "").casefold() == "true"
+                  or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                               style) is not None)
+        if tag not in self.VOID:
+            self.stack.append((tag, hidden))
+        if not hidden and not self.stopped:
+            if tag == "h1" and not self.h1_seen:
+                self.in_h1 = True
+            if tag == "h2" and self.h1_seen:
+                self.in_h2 = True
+                self.h2_text = []
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style", "noscript") and self.hidden:
-            self.hidden -= 1
-        if tag == "h1" and self.in_h1:
-            self.in_h1 = False
-            self.h1_seen = True
-        if tag == "h2" and self.in_h2:
-            self.in_h2 = False
-            if "autres evenements" in norm(" ".join(self.h2_text)):
-                self.stopped = True
+        hidden = self._hidden()
+        if not hidden:
+            if tag == "h1" and self.in_h1:
+                self.in_h1 = False
+                self.h1_seen = True
+            if tag == "h2" and self.in_h2:
+                self.in_h2 = False
+                if "autres evenements" in norm(" ".join(self.h2_text)):
+                    self.stopped = True
+        for idx in range(len(self.stack) - 1, -1, -1):
+            if self.stack[idx][0] == tag:
+                del self.stack[idx:]
+                break
 
     def handle_data(self, data):
-        if self.hidden or self.stopped or not data.strip():
+        if self._hidden() or self.stopped or not data.strip():
             return
         if self.in_h1:
             self.heading.append(data.strip())
