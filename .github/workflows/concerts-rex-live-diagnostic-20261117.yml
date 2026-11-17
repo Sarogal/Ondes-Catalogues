@@ -36,6 +36,13 @@ jobs:
           print("RAW_HTTP_BYTES:", len(raw.encode('utf-8')))
           print("RAW_HTML_HAS_PROMOTER_TEXT:", bool(re.search(r"les productions du possible", plain, re.I)))
           print("RAW_HTML_HAS_EXACT_BILL:", bool(re.search(r"spicy\s*box\s*\+\s*mooan\s*exis", plain, re.I)))
+          source_pos = raw.casefold().find("les productions du possible")
+          if source_pos != -1:
+              source_context = re.sub(r"\\s+", " ", raw[max(source_pos - 200, 0):source_pos + 320])
+              print("RAW_PROMOTER_CONTEXT:", source_context[:520])
+          heading_index = next((i for i, (kind, _) in enumerate(doc.records) if kind == 'h2'), -1)
+          if heading_index >= 0:
+              print("PARSED_AFTER_H2:", [(kind, value[:110]) for kind, value in doc.records[heading_index + 1:heading_index + 10]])
           print("PARSED_PARAGRAPHS:", sum(kind == 'p' for kind, _ in doc.records))
           print("PARSED_HEADINGS:", sum(kind == 'h2' for kind, _ in doc.records))
           try:
