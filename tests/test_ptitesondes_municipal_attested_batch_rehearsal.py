@@ -86,9 +86,7 @@ def run(*, variant=None, get=None, gh=None, records=None, token="test-only-token
         current_sha256=cur_pin or canonical_sha256(live),
         token=token, source_get=get or source, github_get=gh or private,
         geo_check=lambda e: (True, "synthetic geo, NOT real evidence"),
-        registry=deepcopy(SYNTHETIC_VENUE) and (
-            [deepcopy(SYNTHETIC_VENUE)] if records is None else records
-        ),
+        registry=[deepcopy(SYNTHETIC_VENUE)] if records is None else records,
         now=now,
     )
 
@@ -184,7 +182,7 @@ class AttestedBatchRehearsalTests(unittest.TestCase):
         cal = bundles[0]["review"]["candidates"][0]["calendar_url"]
         def changed(url):
             content = source(url)
-            return content.replace("09h00", "13h00") if url == cal else content
+            return content.replace("9h00", "13h00") if url == cal else content
         out = run(get=changed)
         self.assertEqual(out["hypothetical_in_memory_additions"], 0)
 
@@ -279,7 +277,7 @@ class AttestedBatchRehearsalTests(unittest.TestCase):
         def no_editorial(url, token):
             result = gh(url, token)
             if "/comments?" in url:
-                return [c for c in result if "SOURCE-ONLY" not in c["body"]]
+                return [c for c in result if "SOURCE_ONLY" not in c["body"]]
             return result
         bad = run(known_conditions=False, gh=no_editorial)
         self.assertEqual(bad["hypothetical_in_memory_additions"], 0)
