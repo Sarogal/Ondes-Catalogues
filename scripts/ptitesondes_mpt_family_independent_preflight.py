@@ -18,7 +18,7 @@ from merge_policy import byid
 from ptitesondes_family_national_scope import FAMILY_TYPES
 from ptitesondes_family_national_source_preflight import (
     canonical_sha256, inspect_family_national_preflight,
-    _session_pair_on_official_page, norm_text,
+    _session_pair_on_official_page, norm_text, _VisibleText,
 )
 from ptitesondes_mpt_independent_geo_pilot import (
     reviewed_pilot_records, review_exact_venue_name,
@@ -43,6 +43,7 @@ _PRIVATE_ROOTLESS = frozenset({
     "official_primary_detail_unavailable",
     "primary_article_title_or_session_mismatch",
     "art_installation_requires_editorial_review",
+    "municipal_address_disagrees_with_independent_venue",
 })
 
 
@@ -258,6 +259,13 @@ def independent_family_preview(leads, catalogue, today, *, official_get,
             expected_clock=lead["start_local"])
         if primary is None:
             held["primary_article_title_or_session_mismatch"] += 1
+            continue
+        primary_text = _VisibleText()
+        primary_text.feed(primary)
+        primary_text.close()
+        if norm_text(reviewed["address_label"]) not in norm_text(
+                " ".join(primary_text.words)):
+            held["municipal_address_disagrees_with_independent_venue"] += 1
             continue
         if (lead["category"] == "sortie-nature"
                 and "installation artistique" in norm_text(primary)):
