@@ -26,6 +26,7 @@ REGISTRY = [{
     "venue_key": "ajaccio-maison-des-enfants",
     "city": "Ajaccio",
     "venue": "Maison des enfants",
+    "region": "Corse", "department": "Corse-du-Sud (2A)",
     "lat": 41.9191,
     "lng": 8.7385,
     "institutional_url": "https://culture.commune.test/maison-des-enfants",
@@ -244,6 +245,21 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
         changed[0]["lat"] = 41.1234
         out = run(reg=changed)
         self.assertEqual(out["official_source_cues_passed"], 0)
+
+    def test_geography_must_match_registered_region_and_department(self):
+        row, html = fixture()
+        url = row["source"]["official_url"]
+        for field, false_value in (
+            ("region", "Guadeloupe"),
+            ("department", "La Réunion (974)"),
+        ):
+            with self.subTest(field=field):
+                forged = deepcopy(row)
+                forged["source"][field] = false_value
+                out = run(docs=[forged], pages={url: html})
+                self.assertIn("venue_point_or_independent_provenance_unverified",
+                              out["blocked_reason_counts"])
+                self.assertEqual(out["public_writes"], 0)
 
     def test_geo_source_same_host_or_non_https_fails(self):
         for geo in ("https://culture.commune.test/geo",
