@@ -16,9 +16,9 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from ptitesondes_family_national_source_preflight import (
     SCHEMA, official_host, inspect_family_national_preflight,
+    canonical_sha256,
 )
 from ptitesondes_family_national_scope import FAMILY_TYPES
-from ptitesondes_municipal_appendonly_dryrun import canonical_sha256
 
 TODAY = date(2026, 11, 17)
 HOST = "agenda.commune.test"
