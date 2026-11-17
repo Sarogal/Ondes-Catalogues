@@ -24,7 +24,8 @@ from grossesondes_structured_tickets import (
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE,
-    ARCHIVED_PROOF_MODE, validate_structured_edition,
+    ARCHIVED_PROOF_MODE, HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    validate_structured_edition,
     validate_archived_structured_edition, conflicts_with_existing,
 )
 from grossesondes_history_guard import validate_history_extension
@@ -167,8 +168,11 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
-        if e.get("proofMode") in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE):
-            archived_parent = e["proofMode"] == ARCHIVED_PROOF_MODE
+        if e.get("proofMode") in (
+                EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
+                HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE):
+            archived_parent = e["proofMode"] in (
+                ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)
             origin = e.get("originSlug")
             parent = (next((h for h in history["knownFestivals"]
                             if h.get("slug") == origin), None)
@@ -184,7 +188,8 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             validator = (validate_archived_structured_edition
                          if archived_parent else validate_structured_edition)
             proposed=validator(
-                e,parent,sources.get("registered-edition:"+slug,""),today)
+                e,parent,sources.get("registered-edition:"+slug,""),today,
+                proof_mode=e["proofMode"])
             if proposed is None:
                 report["held"].append({"slug":slug,
                                        "reason":"nouvelle édition sans preuve officielle indépendante"})
