@@ -1,0 +1,44 @@
+name: P'tites Ondes — adaptateurs agendas familles (découverte sans publication)
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-real-family-source-adapters-20261117
+    paths:
+      - 'scripts/ptitesondes_real_family_source_adapters.py'
+      - 'tests/test_ptitesondes_real_family_source_adapters.py'
+      - '.github/workflows/ptitesondes-real-family-source-adapters-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_real_family_source_adapters.py'
+      - 'tests/test_ptitesondes_real_family_source_adapters.py'
+      - '.github/workflows/ptitesondes-real-family-source-adapters-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate Python modules and run offline adversarial tests
+        run: |
+          python -m py_compile scripts/ptitesondes_real_family_source_adapters.py
+          python -m unittest discover -s tests -p 'test_ptitesondes_real_family_source_adapters.py' -v
+      - name: Ensure no I/O or publisher coupling
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('scripts/ptitesondes_real_family_source_adapters.py').read_text()
+          assert 'def fetch(' not in p and 'requests.' not in p
+          assert 'def publish(' not in p and 'def write_catalogue(' not in p
+          assert 'approval_granted_to_publisher": False' in p
+          assert 'public_writes": 0' in p
+          assert 'from ptitesondes_family_national_scope import' in p
+          print('PASS: offline read-only adapters, no network or publisher')
+          PY
