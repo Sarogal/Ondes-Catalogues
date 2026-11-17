@@ -255,6 +255,10 @@ def parse_montpellier_mpt_detail(html, url, today):
     price = "explicit_free" if "gratuit" in normal else "not_stated"
     if "€" in contents or re.search(r"\b[0-9]+\s*euros?\b", normal):
         price = "explicit_price" if price == "not_stated" else "contradictory"
+    if price == "explicit_free" and any(
+            condition in normal for condition in ("carte mpt obligatoire",
+                                                "adhesion obligatoire")):
+        price = "ambiguous"  # free session != necessarily free access
     registration = ("explicit_required" if "sur inscription" in normal or
                     "inscription obligatoire" in normal else "not_stated")
     category = classify(title)
