@@ -233,14 +233,19 @@ class PrivateSourceGeoAttestationTests(unittest.TestCase):
                 out = scenario(venue_change=change)
                 self.assertFalse(out["authenticated_private_attestation_passed"])
 
-    def test_real_branch_lacks_gosier_static_record_so_default_must_fail(self):
-        # The separate #305 GPS branch is still a draft: do not pretend its
-        # immutable entry was integrated in the #335 parent.
-        result = scenario(use_registry=False)
+    def test_missing_versioned_static_record_fails_closed(self):
+        # #305 GPS registry is now on main. Isolate the absence of an
+        # independently reviewed entry explicitly rather than assuming
+        # which branches are merged. The failure barrier is unchanged.
+        with patch("ptitesondes_municipal_source_geo_attestation.VENUES", []):
+            result = scenario(use_registry=False)
         self.assertIn(
             "independent_static_registry_missing_or_inconsistent",
             result["blockers"]
         )
+        self.assertFalse(result["authenticated_private_attestation_passed"])
+        self.assertFalse(result["publication_ready"])
+        self.assertEqual(result["public_writes"], 0)
 
     def test_offline_evidence_never_reports_registry_verified(self):
         out = scenario(official_offline=True)
