@@ -53,3 +53,28 @@ Valider les licences, les hôtes organisateurs et leurs identités ; homologuer 
 - Tests adversariaux spécialisés : CI publique `ptitesondes-real-family-source-adapters-tests.yml`, lecture seule, aucun secret.
 - La **suite globale** peut échouer sur le test obsolète `test_real_branch_lacks_gosier_static_record_so_default_must_fail`, qui suppose #305 non fusionnée alors que le registre GPS a été intégré depuis. Ce problème est isolé dans la PR en brouillon **#352** ; ne pas masquer l'échec ni prétendre à une validation globale sans nouvel état GitHub Actions.
 - Correctif indépendant de dédoublonnage des véritables séances individuelles préparé en **PR #351**. Les adaptateurs ici ne le déclenchent pas directement.
+
+## Diagnostic territorial réel du catalogue (17/11/2026, 363 fiches futures)
+
+| Région | Futur |
+|---|---:|
+| Pays de la Loire | 73 |
+| Île-de-France | 70 |
+| Occitanie | 36 |
+| Auvergne-Rhône-Alpes | 32 |
+| Nouvelle-Aquitaine | 26 |
+| Hauts-de-France | 25 |
+| Bretagne | 23 |
+| Bourgogne-Franche-Comté | 17 |
+| Normandie | 16 |
+| Grand Est | 12 |
+| Provence-Alpes-Côte d'Azur (deux graphies réunies) | 19 |
+| Centre-Val de Loire | 8 |
+| Corse | 1 |
+| Région absente (villes métropolitaines) | 5 |
+| Guadeloupe, Martinique, Guyane, La Réunion, Mayotte réunies | **0** |
+
+Il reste **126 fiches futures sans limite d'âge numérique** documentée ; 237 en renseignent au moins une. Les 548 identifiants événement sont distincts et il n'a pas été trouvé de doublon strict parmi les fiches futures sur titre normalisé, ville, lieu, date et horaire. Cela n'élimine pas les doublons sémantiques plus subtils.
+
+La revue des premières pistes ultramarines se trouve dans
+`docs/PTITESONDES_GOSIER_REVIEWED_LEADS_20261117.md` : quatre fiches officielles détaillées, deux pistes bloquées, zéro publication.
