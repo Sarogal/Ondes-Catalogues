@@ -95,6 +95,67 @@ class RexPromoterBillTests(unittest.TestCase):
             self.assertEqual(event, row["event"])
         self.assertEqual(current, original)
 
+    def test_rex_div_publisher_matches_official_source(self):
+        """Regression for real 17 Nov 2026 raw Rex HTML: promoter text in a div.
+
+        Verified against read-only CI probe: the page contains the exact
+        organizer announcement, but the previous <p>-only parser missed it.
+        """
+        bill = "Les Productions du Possible et Le bruit du papier invitent SPICY BOX + MOOAN EXIS !"
+        raw = HTML.replace("<p>" + bill + "</p>",
+                           '<div class="x14z9mp" style="overflow-wrap: break-word;">'
+                           + bill + "</div>")
+        extracted = rex.parse_detail(raw)
+        self.assertFalse(any(bill in p for p in extracted["descriptionParagraphs"]))
+        self.assertIn(bill, rex.rex_visible_divs_after_title(raw))
+        row = self.verified(html=raw)
+        self.assertEqual(row["event"]["artistIds"], ["spicy-box", "mooan-exis"])
+        self.assertEqual(row["event"]["date"], "2027-01-22")
+        self.assertIsNone(row["event"]["time"])
+        self.assertEqual(row["officialEvidence"][0]["sourceStructure"],
+                         "rex-promoter-exact-bill")
+        venues = {v["id"]: v for v in catalogue()["venues"]}
+        artists = {a["id"]: a for a in catalogue()["artists"]}
+        event, added = publisher.validate_approval(row, venues, artists, TODAY)
+        self.assertEqual(event, row["event"])
+        self.assertEqual(set(added), {"spicy-box", "mooan-exis"})
+
+    def test_rex_divs_reject_hidden_or_nonvisible_text(self):
+        bill = "Les Productions du Possible et Le bruit du papier invitent SPICY BOX + MOOAN EXIS !"
+        original = "<p>" + bill + "</p>"
+        variants = [
+            "<script>" + bill + "</script>",
+            "<style>" + bill + "</style>",
+            "<template><div>" + bill + "</div></template>",
+            "<noscript><div>" + bill + "</div></noscript>",
+            '<div style="display:none;">' + bill + "</div>",
+            '<div style="visibility:hidden;">' + bill + "</div>",
+            '<div hidden>' + bill + "</div>",
+            '<div aria-hidden="true">' + bill + "</div>",
+            '<div style="display:none;"><div>' + bill + "</div></div>",
+        ]
+        for markup in variants:
+            with self.subTest(markup=markup[:40]):
+                with self.assertRaisesRegex(ValueError, "Affiche sans détail"):
+                    self.verified(html=HTML.replace(original, markup))
+
+    def test_rex_div_rejects_unrelated_lineups_and_pre_heading_mentions(self):
+        bill = "Les Productions du Possible et Le bruit du papier invitent SPICY BOX + MOOAN EXIS !"
+        original = "<p>" + bill + "</p>"
+        cases = [
+            HTML.replace(original, "<div>" + bill.replace(
+                "MOOAN EXIS", "UNKNOWN SUPPORT") + "</div>"),
+            HTML.replace(original, "<div>SPICY BOX + MOOAN EXIS ont déjà joué.</div>"),
+            HTML.replace(original, "").replace(
+                "<h2>", "<div>" + bill + "</div><h2>"),
+            HTML.replace(original, "").replace(
+                "</body>", "<footer><div>" + bill + "</div></footer></body>"),
+        ]
+        for raw in cases:
+            with self.subTest(case=raw[-130:]):
+                with self.assertRaisesRegex(ValueError, "Affiche sans détail"):
+                    self.verified(html=raw)
+
     def test_biographies_without_exact_promoter_bill_are_not_approvals(self):
         variants = [
             HTML.replace("invitent SPICY BOX + MOOAN EXIS !",
