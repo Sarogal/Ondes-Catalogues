@@ -228,6 +228,94 @@ class _MptVisible(HTMLParser):
             self.parts.append(data.strip())
 
 
+class _MptFirstArticleAddress(HTMLParser):
+    """Extract a visible street address from ONLY the event's first article.
+
+    MPT often renders "Maison pour tous X / 123 rue ... / 34000 Montpellier"
+    without a "Lieu :" label. The unique street address, not a place-name
+    guess, anchors this fallback. Sidebar and related events are ignored.
+    """
+    VOID = frozenset(("area", "base", "br", "col", "embed", "hr", "img",
+                      "input", "link", "meta", "source", "track", "wbr"))
+    INVISIBLE = frozenset(("script", "style", "noscript", "template", "svg"))
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []
+        self.article_started = False
+        self.article_complete = False
+        self.in_article = False
+        self.paragraph = None
+        self.blocks = []
+
+    def _hidden(self):
+        return bool(self.stack and self.stack[-1][1])
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        style = str(a.get("style") or "").casefold()
+        hidden = (self._hidden() or tag in self.INVISIBLE
+                  or "hidden" in a or "inert" in a
+                  or str(a.get("aria-hidden") or "").casefold() == "true"
+                  or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                               style) is not None)
+        if tag == "article" and not self.article_started and not hidden:
+            self.article_started = True
+            self.in_article = True
+        if self.in_article and not hidden:
+            if tag == "p" and self.paragraph is None:
+                self.paragraph = []
+            if tag == "br" and self.paragraph is not None:
+                self.paragraph.append("\n")
+        if tag not in self.VOID:
+            self.stack.append((tag, hidden))
+
+    def handle_endtag(self, tag):
+        if tag == "p" and self.paragraph is not None:
+            self.blocks.append("".join(self.paragraph))
+            self.paragraph = None
+        if tag == "article" and self.in_article:
+            self.in_article = False
+            self.article_complete = True
+        for idx in range(len(self.stack) - 1, -1, -1):
+            if self.stack[idx][0] == tag:
+                del self.stack[idx:]
+                break
+
+    def handle_data(self, data):
+        if self.in_article and self.paragraph is not None and not self._hidden():
+            self.paragraph.append(data)
+
+
+def _mpt_reviewable_address_venue(html):
+    p = _MptFirstArticleAddress()
+    try:
+        p.feed(html)
+        p.close()
+    except (ValueError, TypeError):
+        return None
+    if not p.article_complete:
+        return None
+    places = []
+    for block in p.blocks:
+        lines = [line.strip() for line in block.splitlines() if line.strip()]
+        if len(lines) != 3:
+            continue
+        venue, address, postcode = lines
+        if not (re.fullmatch(r"34\d{3}\s+Montpellier", postcode,
+                             re.IGNORECASE)
+                and re.fullmatch(
+                    r"\d{1,4}\s*[a-zA-Z]?\s+(?:rue|avenue|av\.?|boulevard|bd|"
+                    r"all[eé]e|chemin|cours|impasse|place|quai|passage)"
+                    r"\b.{4,100}", address, re.IGNORECASE)
+                and 3 <= len(venue) <= 150
+                and not re.search(r"\b(?:organis[ée]|partenaires?)\b",
+                                  norm(venue))):
+            continue
+        places.append(venue)
+    return places[0] if len(places) == 1 else None
+
+
 def parse_montpellier_mpt_detail(html, url, today):
     """Read a *detail page*, not list cards; never copy unrelated events."""
     if (type(today) is not date or not safe_https(
@@ -243,6 +331,16 @@ def parse_montpellier_mpt_detail(html, url, today):
     normal = norm(contents)
     if BLOCKED.search(normal) or not CHILD.search(normal):
         return []
+    # A public family calendar is not an invitation to a school-only session.
+    # "Crèche" mentioned in partners is not enough to block; a restricted
+    # audience phrase in the PRIMARY event detail is required.
+    if re.search(
+        r"\b(?:reserve(?:s|e|es)? aux? (?:creches|etablissements scolaires|"
+        r"groupes scolaires|classes)|seance scolaire uniquement|"
+        r"reserve(?:s|e|es)? aux? scolaires)\b",
+        normal
+    ):
+        return []
     # Venue has to be explicitly named on the organiser's page.
     venue = None
     for i, chunk in enumerate(p.parts):
@@ -253,6 +351,8 @@ def parse_montpellier_mpt_detail(html, url, today):
             venue = chunk.split(":", 1)[1].strip() or (
                 p.parts[i + 1] if i + 1 < len(p.parts) else None)
             break
+    if not venue:
+        venue = _mpt_reviewable_address_venue(html)
     if not venue:
         return []
     venue = venue.split("(", 1)[0].strip()
