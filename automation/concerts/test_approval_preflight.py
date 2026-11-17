@@ -48,6 +48,14 @@ def publisher_accept(reference, current, approvals, today):
     return out, {"newEvents": len(approvals["approvals"])}
 
 
+def prior_signed_row():
+    earlier = row("go-c-20270330-earlier-signed")
+    earlier["event"]["officialUrl"] = "https://example.org/agenda/older"
+    earlier["event"]["date"] = "2027-03-30"
+    earlier["officialEvidence"][0]["url"] = earlier["event"]["officialUrl"]
+    return earlier
+
+
 class PreflightTests(unittest.TestCase):
     def setUp(self):
         self.before = prior()
@@ -60,6 +68,65 @@ class PreflightTests(unittest.TestCase):
             self.before, self.after, {}, self.catalogue, TODAY, publisher_accept)
         self.assertEqual(result["publishableEvents"], 1)
         self.assertTrue(result["validatedByPublisher"])
+
+    def test_previously_signed_pending_event_does_not_block_new_approval(self):
+        previous = prior()
+        older = prior_signed_row()
+        previous["approvals"] = [older]
+        proposed = copy.deepcopy(previous)
+        proposed["approvals"].append(row())
+        calls = []
+        def publisher(reference, current, ledger, today):
+            calls.append(len(ledger["approvals"]))
+            return publisher_accept(reference, current, ledger, today)
+        stats = gate.validate_proposal(
+            previous, proposed, {}, {"events": []}, TODAY, publisher)
+        self.assertEqual(calls, [1, 2])
+        self.assertTrue(stats["validatedByPublisher"])
+        self.assertEqual(stats["newApprovals"], 1)
+        self.assertEqual(previous["approvals"], [older])
+
+    def test_previously_signed_pending_baseline_rejects_unsigned_extra(self):
+        previous = prior()
+        older = prior_signed_row()
+        previous["approvals"] = [older]
+        proposed = copy.deepcopy(previous)
+        proposed["approvals"].append(row())
+        def unsafe(reference, current, ledger, today):
+            out, report = publisher_accept(reference, current, ledger, today)
+            out["events"].append({"id": "go-unsigned-fake"})
+            return out, report
+        with self.assertRaisesRegex(ValueError, "baseline.*unsigned"):
+            gate.validate_proposal(
+                previous, proposed, {}, {"events": []}, TODAY, unsafe)
+
+    def test_previously_signed_pending_event_cannot_change_during_new_approval(self):
+        previous = prior()
+        older = prior_signed_row()
+        previous["approvals"] = [older]
+        proposed = copy.deepcopy(previous)
+        proposed["approvals"].append(row())
+        def mutable(reference, current, ledger, today):
+            out, report = publisher_accept(reference, current, ledger, today)
+            if len(ledger["approvals"]) == 2:
+                out["events"][0]["time"] = "21:00"
+            return out, report
+        with self.assertRaisesRegex(ValueError, "mutated an existing signed event"):
+            gate.validate_proposal(
+                previous, proposed, {}, {"events": []}, TODAY, mutable)
+
+    def test_previously_signed_pending_event_must_match_its_exact_proof(self):
+        previous = prior()
+        previous["approvals"] = [prior_signed_row()]
+        proposed = copy.deepcopy(previous)
+        proposed["approvals"].append(row())
+        def forged(reference, current, ledger, today):
+            out, report = publisher_accept(reference, current, ledger, today)
+            out["events"][0]["date"] = "2027-04-02"
+            return out, report
+        with self.assertRaisesRegex(ValueError, "Previously signed approval mutated"):
+            gate.validate_proposal(
+                previous, proposed, {}, {"events": []}, TODAY, forged)
 
     def test_no_new_approvals_does_not_call_publisher(self):
         def fail(*args):

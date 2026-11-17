@@ -100,6 +100,39 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     incoming = {approval["event"]["id"] for approval in appended}
     require(not incoming.intersection(already),
             "An automated approval ID is already in the public catalogue")
+    # Concurrent cloud publication can leave an intake checkout behind the
+    # signed private history. Reproduce the precise publisher baseline from
+    # PREVIOUS (already signed) approvals before checking new signatures.
+    # This does not authorize an unsigned event or relax any publisher gate.
+    old_signed = {
+        approval["event"]["id"]: approval["event"]
+        for approval in previous["approvals"]
+        if isinstance(approval, dict) and isinstance(approval.get("event"), dict)
+        and isinstance(approval["event"].get("id"), str)
+    }
+    require(len(old_signed) == len(previous["approvals"]),
+            "Duplicate or malformed previously signed approvals")
+    pending_old = set(old_signed) - already
+    baseline_by_id = None
+    baseline_ids = already
+    if pending_old:
+        baseline, _baseline_stats = publisher(
+            reference, current, previous, today)
+        baseline_rows = baseline.get("events") if isinstance(baseline, dict) else None
+        require(isinstance(baseline_rows, list),
+                "Signed publisher baseline unavailable")
+        baseline_by_id = {row.get("id"): row for row in baseline_rows
+                          if isinstance(row, dict)}
+        baseline_ids = set(baseline_by_id)
+        require(len(baseline_by_id) == len(baseline_rows)
+                and already.issubset(baseline_ids)
+                and baseline_ids.issubset(already | set(old_signed)),
+                "Signed publisher baseline lost an event or inserted an unsigned event")
+        for event_id in baseline_ids - already:
+            proof = old_signed[event_id]
+            actual = baseline_by_id[event_id]
+            require(all(actual.get(key) == value for key, value in proof.items()),
+                    "Previously signed approval mutated by publisher")
     candidate, stats = publisher(reference, current, proposed, today)
     published = {e["id"]: e for e in candidate["events"]}
     rejected = []
@@ -139,9 +172,13 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     candidate_ids = [event["id"] for event in candidate["events"]]
     require(len(candidate_ids) == len(set(candidate_ids)),
             "Publisher returned duplicate event IDs")
-    require(set(candidate_ids) == already | incoming,
+    require(set(candidate_ids) == baseline_ids | incoming,
             "Publisher removed a published concert or added an unsigned one")
-    require(len(candidate_ids) - len(current["events"]) == len(appended),
+    if baseline_by_id is not None:
+        require(all(published[event_id] == baseline_by_id[event_id]
+                    for event_id in baseline_ids),
+                "Publisher mutated an existing signed event during preflight")
+    require(len(candidate_ids) - len(baseline_ids) == len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
             "publishableEvents": len(appended),
