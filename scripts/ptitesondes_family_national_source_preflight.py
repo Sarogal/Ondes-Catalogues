@@ -39,8 +39,8 @@ SOURCE_FIELDS = frozenset({
 })
 BUNDLE_FIELDS = frozenset({"scope", "source"})
 REGISTRY_FIELDS = frozenset({
-    "venue_key", "city", "venue", "lat", "lng",
-    "institutional_url", "geo_source_url",
+    "venue_key", "city", "venue", "region", "department",
+    "lat", "lng", "institutional_url", "geo_source_url",
 })
 BAD_STATUS = re.compile(
     r"\b(?:annul(?:e|ee|es|ees)|complet|report(?:e|ee|es|ees))\b"
@@ -181,7 +181,9 @@ def _venue_match(scope, source, registry):
         return False
     v = records[0]
     if (norm_text(v["venue"]) != norm_text(scope["venue"])
-            or norm_text(v["city"]) != norm_text(scope["city"])):
+            or norm_text(v["city"]) != norm_text(scope["city"])
+            or norm_text(v["region"]) != norm_text(source["region"])
+            or norm_text(v["department"]) != norm_text(source["department"])):
         return False
     institutional = official_host(v["institutional_url"])
     geo = official_host(v["geo_source_url"])
