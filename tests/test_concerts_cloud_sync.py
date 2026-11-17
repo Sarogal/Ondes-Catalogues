@@ -1350,6 +1350,8 @@ class ConcertsCloudSyncTests(unittest.TestCase):
         a["reviewedBy"]="automated-official-recheck"
         a["event"]["venueId"]="le-rex-toulouse"
         a["event"]["sourceType"]="salle"
+        # The official 19H30 listing is not verified music start time.
+        a["event"]["time"]=None
         official="https://www.lerextoulouse.com/fr/programmation/groupe-essai/"
         a["event"]["officialUrl"]=official
         a["officialEvidence"][0]["url"]=official
