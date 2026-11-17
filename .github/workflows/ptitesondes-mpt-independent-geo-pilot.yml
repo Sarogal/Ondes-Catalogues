@@ -1,0 +1,54 @@
+name: "P'tites Ondes — lieux familiaux MPT, attestation geo indépendante sans publication"
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-mpt-independent-geo-pilot-20261117
+    paths:
+      - scripts/ptitesondes_mpt_independent_geo_pilot.py
+      - scripts/ptitesondes_mpt_geo_live_smoke.py
+      - tests/test_ptitesondes_mpt_independent_geo_pilot.py
+      - .github/workflows/ptitesondes-mpt-independent-geo-pilot.yml
+  pull_request:
+    paths:
+      - scripts/ptitesondes_mpt_independent_geo_pilot.py
+      - scripts/ptitesondes_mpt_geo_live_smoke.py
+      - tests/test_ptitesondes_mpt_independent_geo_pilot.py
+      - .github/workflows/ptitesondes-mpt-independent-geo-pilot.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Import/syntax and adversarial venue-only checks
+        run: |
+          python -m py_compile scripts/ptitesondes_mpt_independent_geo_pilot.py
+          python -m py_compile scripts/ptitesondes_mpt_geo_live_smoke.py
+          python -m unittest discover -s tests -p 'test_ptitesondes_mpt_independent_geo_pilot.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_family_national_source_preflight.py' -v
+  live:
+    needs: offline
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Read-only IGN housenumber checks (3 sources, 0 writes)
+        run: python scripts/ptitesondes_mpt_geo_live_smoke.py
