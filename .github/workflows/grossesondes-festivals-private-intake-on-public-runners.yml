@@ -138,6 +138,9 @@ jobs:
           run_private candidate_preflight python "$ENGINE/national_candidate_promotion.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private publisher_handoff python "$ENGINE/national_admission_handoff.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
+          # Official archived pages: TWO consecutive days, private patch only.
+          # No private scheduled Actions, no proposed row goes to a public log.
+          run_private archived_2027 python application/scripts/grossesondes_archived_html_intake.py --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           test -s "$REPORT"
           python - "$REPORT" <<'PY'
           import json, sys

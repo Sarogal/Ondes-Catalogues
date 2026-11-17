@@ -196,7 +196,9 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
                 continue
             rows.append(proposed)
             report["accepted_additions"].append(slug)
-            report["source_proofs"].append(parent["officialSite"])
+            report["source_proofs"].append(
+                sources.get("registered-edition-proof-url:"+slug,
+                            parent["officialSite"]))
         elif e.get("proofMode") is not None:
             report["held"].append({"slug":slug,"reason":"mode d'ajout non pris en charge"})
         elif slug=="muscadeath-2027" and can_add_muscadeath(e,sources.get("muscadeath","")):

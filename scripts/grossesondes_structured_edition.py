@@ -157,6 +157,11 @@ def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_
             return None
     result = {k: proposal[k] for k in ROW_KEYS}
     result["verificationStatus"] = PUBLISHED_STATUS
+    if proof_mode == HTML_PROOF_MODE:
+        result["notes"] = (
+            "Édition annoncée sur une page du site officiel ; dates visibles "
+            "revérifiées. Lieu, séances, tarifs et coordonnées à confirmer."
+        )
     result["sourceConfidence"] = (
         "Site officiel (HTML visible vérifié indépendamment)"
         if proof_mode == HTML_PROOF_MODE else PUBLISHED_CONFIDENCE)
