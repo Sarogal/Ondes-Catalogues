@@ -2251,6 +2251,76 @@
       "id": "tracheotomy",
       "name": "TRACHEOTOMY",
       "aliases": []
+    },
+    {
+      "id": "the-haunted-youth",
+      "name": "The Haunted Youth",
+      "aliases": []
+    },
+    {
+      "id": "pyo",
+      "name": "Pyo",
+      "aliases": []
+    },
+    {
+      "id": "last-hounds",
+      "name": "Last Hounds",
+      "aliases": []
+    },
+    {
+      "id": "supernova",
+      "name": "Supernova",
+      "aliases": []
+    },
+    {
+      "id": "le-rox",
+      "name": "Le Rox",
+      "aliases": []
+    },
+    {
+      "id": "perp-walk",
+      "name": "Perp Walk",
+      "aliases": []
+    },
+    {
+      "id": "brick",
+      "name": "Brick",
+      "aliases": []
+    },
+    {
+      "id": "hold-me-tight",
+      "name": "Hold Me Tight",
+      "aliases": []
+    },
+    {
+      "id": "the-last-shape",
+      "name": "The Last Shape",
+      "aliases": []
+    },
+    {
+      "id": "spiruline",
+      "name": "Spiruline",
+      "aliases": []
+    },
+    {
+      "id": "feints",
+      "name": "Feints",
+      "aliases": []
+    },
+    {
+      "id": "could-seed",
+      "name": "Could Seed",
+      "aliases": []
+    },
+    {
+      "id": "arkitects-failure",
+      "name": "Arkitects Failure",
+      "aliases": []
+    },
+    {
+      "id": "rosa",
+      "name": "Rosa",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14631,6 +14701,113 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261125-nantes-the-haunted-youth",
+      "title": "The Haunted Youth + Pyo",
+      "date": "2026-11-25",
+      "artistIds": [
+        "the-haunted-youth",
+        "pyo"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "New Wave",
+        "Post Punk",
+        "Rock",
+        "Shoegaze"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/the-haunted-youth/5325",
+      "sourceType": "salle",
+      "time": "20:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261129-nantes-last-hounds",
+      "title": "Last Hounds + Supernova + Le Rox + Perp Walk + Brick + Hold Me Tight + The Last Shape + Spiruline + Feints",
+      "date": "2026-11-29",
+      "artistIds": [
+        "last-hounds",
+        "supernova",
+        "le-rox",
+        "perp-walk",
+        "brick",
+        "hold-me-tight",
+        "the-last-shape",
+        "spiruline",
+        "feints"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Hardcore",
+        "Metal",
+        "Punk",
+        "Punk Hardcore",
+        "straight edge hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/broken-window-fest-j2/5373",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-nantes-could-seed",
+      "title": "Could Seed + Arkitects Failure + Rosa",
+      "date": "2026-12-04",
+      "artistIds": [
+        "could-seed",
+        "arkitects-failure",
+        "rosa"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Post Metal",
+        "Post Rock",
+        "screamo"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/could-seed-arkitects-failure-rosa/5413",
+      "sourceType": "salle",
+      "time": "19:30",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
       "ticketUrl": null,
       "lastVerified": "2026-11-17",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
