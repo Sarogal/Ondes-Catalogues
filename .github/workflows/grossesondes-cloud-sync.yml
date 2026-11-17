@@ -51,7 +51,7 @@ permissions:
 # Preserve the common deployment lock AND do not replace older pending jobs.
 # GitHub Actions queue:max allows up to 100 sequential waiting runs.
 concurrency:
-  group: ondes-cloud-publication
+  group: ${{ github.event_name == 'pull_request' && format('ondes-ci-grossesondes-cloud-{0}', github.event.pull_request.number) || 'ondes-cloud-publication' }}
   queue: max
   cancel-in-progress: false
 
