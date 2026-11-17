@@ -40,6 +40,10 @@ on:
         options:
           - preview
           - publish
+      retry_once:
+        description: Réessai unique après une concurrence de publication
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -47,7 +51,7 @@ permissions:
 # Preserve the common deployment lock AND do not replace older pending jobs.
 # GitHub Actions queue:max allows up to 100 sequential waiting runs.
 concurrency:
-  group: ondes-cloud-publication
+  group: ${{ github.event_name == 'pull_request' && format('ondes-ci-grossesondes-cloud-{0}', github.event.pull_request.number) || 'ondes-cloud-publication' }}
   queue: max
   cancel-in-progress: false
 
@@ -66,11 +70,14 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
 
   prepare:
-    if: ${{ github.event_name != 'pull_request' && (github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') }}
+    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') }}
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: write
     timeout-minutes: 20
     outputs:
-      deploy: ${{ steps.decision.outputs.deploy }}
+      deploy: ${{ steps.confirm.outputs.deploy }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -122,19 +129,59 @@ jobs:
             --report /tmp/grossesondes_cloud/report.json \
             --deploy "$DEPLOY" >> "$GITHUB_STEP_SUMMARY"
       - name: Archiver uniquement le calendrier officiellement prouvé dans Git
+        id: commit_published
         if: ${{ steps.decision.outputs.deploy == 'true' }}
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- docs/grossesondes/festivals.json reviews/grossesondes-published-head.json
           git diff --cached --quiet && exit 1
           git commit -m "data(grossesondes): intégrer les éditions officiellement corroborées"
-          git push origin HEAD:main
+          # NEVER force-push, rebase or replay this candidate on a different HEAD.
+          # A competing PR may have changed the publisher/validator since test.
+          if git push origin HEAD:main > "$RUNNER_TEMP/festival-push-result.log" 2>&1; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          elif grep -Eq '\[rejected\].*(fetch first|non-fast-forward)' "$RUNNER_TEMP/festival-push-result.log"; then
+            echo "::warning::Main a avancé : abandon du candidat local ; nouvelle validation requise."
+            echo "retry_required=true" >> "$GITHUB_OUTPUT"
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Impossible de pousser la publication ; aucun déploiement."
+            exit 1
+          fi
+      - name: Refaire une seule vérification sur le nouveau main après conflit
+        if: ${{ steps.commit_published.outputs.retry_required == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RETRY_ONCE: ${{ inputs.retry_once || false }}
+        run: |
+          set -euo pipefail
+          if [ "$RETRY_ONCE" = "true" ]; then
+            echo "::error::Conflit répété ; arrêt fermé jusqu'au prochain cycle normal."
+            exit 1
+          fi
+          # workflow_dispatch is an independent, sequential run: tests, fresh
+          # private intake, independent official proof, signed main recheck.
+          gh workflow run grossesondes-cloud-sync.yml --repo "$GITHUB_REPOSITORY" \
+            --ref main -f mode=publish -f retry_once=true
+      - name: Autoriser Pages uniquement après push réel du commit prouvé
+        id: confirm
+        env:
+          DECIDED: ${{ steps.decision.outputs.deploy }}
+          PUSHED: ${{ steps.commit_published.outputs.pushed }}
+        run: |
+          if [ "$DECIDED" = "true" ] && [ "$PUSHED" = "true" ]; then
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Configurer GitHub Pages
-        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        if: ${{ steps.confirm.outputs.deploy == 'true' }}
         uses: actions/configure-pages@v6
       - name: Construire le site JSON Pages
-        if: ${{ steps.decision.outputs.deploy == 'true' }}
+        if: ${{ steps.confirm.outputs.deploy == 'true' }}
         uses: actions/upload-pages-artifact@v5
         with:
           path: docs/
