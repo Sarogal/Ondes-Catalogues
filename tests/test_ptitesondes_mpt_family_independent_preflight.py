@@ -150,6 +150,15 @@ class MptIndependentPreflightTests(unittest.TestCase):
         self.assertEqual(report["held_before_source_preflight"][
             "independent_geo_not_currently_verified"], 1)
 
+    def test_street_address_mismatch_even_at_same_named_venue_fails(self):
+        page = OFFICIAL.replace(
+            "240 Rue Claude Levi-Strauss",
+            "238 Rue Claude Levi-Strauss")
+        report = do_preview(official=page)
+        self.assertEqual(report["official_source_cues_passed"], 0)
+        self.assertEqual(report["held_before_source_preflight"][
+            "municipal_address_disagrees_with_independent_venue"], 1)
+
     def test_ambiguous_access_fails_source_gate_without_auto_waiver(self):
         candidate = dict(LEAD, price_evidence="ambiguous")
         report = do_preview(leads=[candidate])
@@ -169,6 +178,8 @@ class MptIndependentPreflightTests(unittest.TestCase):
         page = page.replace("pour les tout-petits", "pour les tout-petits, installation artistique")
         page = page.replace("18 novembre 2026 - 10:30", "25 novembre 2026 - 14:00")
         page = page.replace("Maison pour tous Frida Kahlo", "Maison pour tous Albert Dubout")
+        page = page.replace("240 Rue Claude Levi-Strauss", "2 Rue des Tourterelles")
+        page = page.replace("34000 Montpellier", "34090 Montpellier")
         report = do_preview(leads=[art], official=page)
         self.assertEqual(report["official_source_cues_passed"], 0)
         self.assertEqual(report["held_before_source_preflight"][
