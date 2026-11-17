@@ -1,0 +1,37 @@
+name: "P'tites Ondes — attestation privée des preuves municipales, aucun déploiement"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-municipal-source-geo-attestation-20261116'
+    paths:
+      - 'scripts/ptitesondes_municipal_source_geo_attestation.py'
+      - 'tests/test_ptitesondes_municipal_source_geo_attestation.py'
+      - '.github/workflows/ptitesondes-municipal-source-geo-attestation-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_source_geo_attestation.py'
+      - 'tests/test_ptitesondes_municipal_source_geo_attestation.py'
+      - '.github/workflows/ptitesondes-municipal-source-geo-attestation-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-geo-attestation-test:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tests hors ligne, aucune preuve ni clé privée réelle"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_municipal_source_geo_attestation.py' -v
+      - name: "Préserver la publication désactivée"
+        run: |
+          echo "No private token, no cron, no patch, no catalogue modification."
