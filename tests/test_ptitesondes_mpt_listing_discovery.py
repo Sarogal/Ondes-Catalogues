@@ -101,6 +101,27 @@ class OfficialAddressPatternTests(unittest.TestCase):
         self.assertEqual(parse_montpellier_mpt_detail(
             related, ADDRESS_LINK, TODAY), [])
 
+    def test_hidden_date_cannot_certify_official_session(self):
+        for hide in ("hidden", 'aria-hidden="true"',
+                     'style="display: none"', 'style="visibility:hidden"'):
+            with self.subTest(hide=hide):
+                page = ADDRESS_DETAIL.replace(
+                    "<li>18 novembre 2026 - 10:00 > 11:00</li>",
+                    "<li><span " + hide + ">18 novembre 2026 - "
+                    "10:00 > 11:00</span></li>")
+                self.assertEqual(parse_montpellier_mpt_detail(
+                    page, ADDRESS_LINK, TODAY), [])
+
+    def test_hidden_audience_cannot_make_adult_session_family_friendly(self):
+        page = ADDRESS_DETAIL.replace("Tout-petits, Enfants", "Adultes")
+        page = page.replace("pour les enfants", "pour les adultes")
+        page = page.replace(
+            "<article><p>Adultes</p>",
+            '<article><p>Adultes</p><p style="display:none">'
+            'Enfants et tout-petits</p>')
+        self.assertEqual(parse_montpellier_mpt_detail(
+            page, ADDRESS_LINK, TODAY), [])
+
     def test_reserved_to_creches_is_not_open_family_outing(self):
         page = ADDRESS_DETAIL.replace(
             "Session de lecture des contes pour les enfants",
