@@ -82,6 +82,18 @@ class NationalFamilyScopeTests(unittest.TestCase):
         self.assertFalse(out["approval_granted_to_publisher"])
         self.assertEqual(out["public_writes"], 0)
 
+    def test_no_municipal_city_lock_for_mainland_corsica_and_overseas(self):
+        # Geographic claims remain unverified; this only tests that the
+        # general editorial taxonomy is not accidentally restricted to Gosier.
+        cities = (
+            "Montpellier", "Ajaccio", "Le Gosier", "Fort-de-France",
+            "Cayenne", "Saint-Denis", "Mamoudzou",
+        )
+        out = audit_family_scope([event(city=city) for city in cities], TODAY)
+        self.assertEqual(out["structurally_plausible_for_independent_review"], 7)
+        self.assertTrue(out["geographic_provenance_not_verified"])
+        self.assertEqual(out["public_writes"], 0)
+
     def test_permanent_place_routes_only_to_lieux(self):
         out = audit_family_scope([venue()], TODAY)
         self.assertEqual(out["proposed_routes"], {"lieux": 1})
