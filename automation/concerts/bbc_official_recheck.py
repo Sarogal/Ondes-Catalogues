@@ -22,8 +22,10 @@ UNSAFE = re.compile(
 # An artist biography may mention an album 'tribute' or festivals played
 # elsewhere. Reject actual cancellation/postponement markers, not biographies.
 BODY_UNSAFE = re.compile(
-    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
-    r"hommage|cover(?:s)?)\b")
+    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled)\b")
+PERFORMER_TRIBUTE = re.compile(
+    r"\s+(?:est|incarne|propose|joue|presente)\s+"
+    r"(?:un|une|des)?\s*(?:hommage|tribute|cover(?:s)?|reprises?)\b")
 UNANNOUNCED = frozenset({
     "guest", "special guest", "premiere partie", "1ere partie",
     "1re partie", "support", "a confirmer", "tba", "surprise",
@@ -171,9 +173,13 @@ def verify(candidate, page, catalogue, today):
     paragraphs = [triage.words(p) for p in doc.paragraphs]
     for name in names:
         token = triage.words(name)
-        if not any(re.search(r"(?<![a-z0-9])" + re.escape(token)
-                             + r"(?![a-z0-9])", p) for p in paragraphs):
+        matching = [p for p in paragraphs if re.search(
+            r"(?<![a-z0-9])" + re.escape(token) + r"(?![a-z0-9])", p)]
+        if not matching:
             raise ValueError("BBC : artiste non corroboré dans sa description")
+        if any(re.search(r"(?<![a-z0-9])" + re.escape(token) +
+                         PERFORMER_TRIBUTE.pattern, p) for p in matching):
+            raise ValueError("BBC : spectacle hommage ou reprises ambigu")
     if BODY_UNSAFE.search(" ".join(paragraphs)):
         raise ValueError("BBC : annonce ambiguë, report ou annulation")
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE]
