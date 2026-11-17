@@ -1,0 +1,26 @@
+name: "P'tites Ondes — répétition append-only municipale (zéro publication)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_appendonly_dryrun.py'
+      - 'tests/test_ptitesondes_municipal_appendonly_dryrun.py'
+      - '.github/workflows/ptitesondes-municipal-appendonly-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  rehearsal-no-write:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tests du vrai catalogue et des refus de modification historique"
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_municipal_appendonly_dryrun.py' -v
