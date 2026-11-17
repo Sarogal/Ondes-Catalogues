@@ -87,6 +87,22 @@ class CaveOfficialRecheckTests(unittest.TestCase):
                 self.assertEqual(len(evt["artistIds"]), count)
                 self.assertEqual(len(new), count)
 
+    def test_unannounced_final_support_is_not_invented(self):
+        acts = ("Dewaere", "Première partie")
+        page = html(acts)
+        c = catalog()
+        approval = check.verify(candidate(page, acts), page, c, TODAY)
+        self.assertEqual(approval["event"]["title"], "Dewaere")
+        self.assertEqual(approval["event"]["artistIds"], ["dewaere"])
+        self.assertEqual(approval["newArtists"], [{"id":"dewaere","name":"Dewaere"}])
+        self.assertEqual(approval["officialEvidence"][0]["unannouncedSupportLabel"],
+                         "premiere partie")
+        publish(approval,c)
+        # Placeholder in leading position is not a certified headliner.
+        wrong = ("Première partie", "Dewaere")
+        with self.assertRaises(ValueError):
+            check.verify(candidate(html(wrong), wrong), html(wrong), c, TODAY)
+
     def test_existing_group_with_new_support(self):
         page = html()
         c = catalog(["Dewaere"])
