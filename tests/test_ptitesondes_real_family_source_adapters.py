@@ -127,6 +127,37 @@ class IcalTests(unittest.TestCase):
         self.assertIsNone(rows[0]["city"])
         self.assertEqual(scope_proposals(rows, TODAY), [])
 
+    def test_explicit_paris_tzid_case_preserved(self):
+        ical = ICS.replace("DTSTART:20261120T100000Z",
+                           "DTSTART;TZID=Europe/Paris:20261120T100000")
+        rows = parse_ical(ical, "https://mediatheque.example.org/a.ics", TODAY)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["start_local"], "10:00")
+
+    def test_guadeloupe_explicit_utc_conversion(self):
+        ical = ICS.replace("DTSTART:20261120T100000Z",
+                           "DTSTART:20261120T010000Z")
+        rows = parse_ical(ical, "https://mediatheque.example.org/a.ics",
+                          TODAY, target_timezone="America/Guadeloupe")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["date_start"], "2026-11-19")
+        self.assertEqual(rows[0]["start_local"], "21:00")
+
+    def test_explicit_overseas_tzid_must_match_verified_feed_region(self):
+        ical = ICS.replace("DTSTART:20261120T100000Z",
+                           "DTSTART;TZID=America/Martinique:20261120T100000")
+        link = "https://mediatheque.example.org/a.ics"
+        self.assertEqual(parse_ical(ical, link, TODAY), [])
+        rows = parse_ical(ical, link, TODAY,
+                          target_timezone="America/Martinique")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["start_local"], "10:00")
+
+    def test_unreviewed_feed_timezone_is_rejected(self):
+        with self.assertRaises(ValueError):
+            parse_ical(ICS, "https://mediatheque.example.org/a.ics",
+                       TODAY, target_timezone="Antarctica/Troll")
+
     def test_rrule_is_never_expanded(self):
         self.assertEqual(parse_ical(ICS.replace("END:VEVENT",
             "RRULE:FREQ=WEEKLY;COUNT=5\nEND:VEVENT"),
