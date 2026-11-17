@@ -217,6 +217,37 @@ VENUES = [
         "official": "https://paul-b.fr/infos-pratiques/",
         "geo_source": "https://mapcarta.com/fr/W70691345",
     },
+    {
+        # BnF Catalogue collectif de France: Mediatheque Raoul Georges Nicolo,
+        # Boulevard Amedee Clara, 97190 Le Gosier (Guadeloupe).
+        # https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125
+        # Official municipal programme independently names the same library:
+        # https://www.villedugosier.fr/actualites/evenement/programme-des-animations-du-mois-de-la-mediatheque-raoul-georges-nicolo?date_event=2026-11-04
+        # OSM way 125054083: exact named library building, amenity=library.
+        # https://mapcarta.com/fr/W125054083
+        # GPS proves this building only, NEVER a specific children's session.
+        "city": "Le Gosier",
+        "aliases": ["Médiathèque Raoul Georges Nicolo"],
+        "lat": 16.20547, "lng": -61.48950,
+        "official": "https://ccfr.bnf.fr/portailccfr/ark:/16871/0027125",
+        "geo_source": "https://mapcarta.com/fr/W125054083",
+    },
+    {
+        # CINOR public library network: 1 allee des Pierres de Lune,
+        # 97400 Saint-Denis, Reunion; same building on OSM way 543425791.
+        # https://lecturepublique.cinor.org/cms/www.main.cls?surl=reseau-horaires
+        # https://mapcarta.com/fr/W543425791
+        # OpenAgenda's CINOR programme names this venue but each individual
+        # child session must still pass all independent publication checks.
+        "city": "Saint-Denis",
+        "aliases": [
+            "Bibliothèque Intercommunale Alain Lorraine",
+            "Bibliothèque Alain Lorraine",
+        ],
+        "lat": -20.89270, "lng": 55.45130,
+        "official": "https://lecturepublique.cinor.org/cms/www.main.cls?surl=reseau-horaires",
+        "geo_source": "https://mapcarta.com/fr/W543425791",
+    },
 ]
 
 def verified_location(event):
