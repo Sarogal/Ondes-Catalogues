@@ -1,4 +1,6 @@
 name: Grosses Ondes — Concerts nationaux sur runner public, revue privée
+# Identify the exact triggering cron in read-only GitHub run metadata.
+run-name: "Concerts intake schedule=${{ github.event_name == 'schedule' && github.event.schedule || github.event_name }}"
 
 on:
   # One controlled post-merge cloud run for Concerts engine maintenance only.
@@ -23,7 +25,8 @@ on:
         required: true
   schedule:
     - cron: '18 7 * * *'
-    - cron: '11 13,20 * * *'
+    - cron: '11 13 * * *'
+    - cron: '11 20 * * *'
 
 # Never run pull_request code with private tokens or Ticketmaster credentials.
 permissions:
