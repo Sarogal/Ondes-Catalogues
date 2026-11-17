@@ -183,11 +183,51 @@ class CandidatePromotionTests(unittest.TestCase):
         self.assertEqual(row["status"], "OFFICIAL_CLAIMS_NOT_RECONFIRMED")
         self.assertFalse(row["verified_fields_private"])
 
-    def test_incomplete_lineup_fails_closed(self):
+    def test_partial_lineup_does_not_erase_verified_edition_core(self):
         source = web_sources()
         source[SPEC["lineup_url"]] = "MozHell 2027 Ultra Vomit THE ARRS"
-        self.assertEqual(self.run_review(sources=source)["dossiers"][0]["status"],
-                         "OFFICIAL_CLAIMS_NOT_RECONFIRMED")
+        result = self.run_review(sources=source)
+        row = result["dossiers"][0]
+        self.assertEqual(row["status"],
+                         "FIRST_PARTY_EDITION_RECHECKED_LINEUP_PENDING_PRIVATE")
+        self.assertEqual(result["edition_core_rechecked_count"], 1)
+        self.assertEqual(result["first_party_rechecked_count"], 0)
+        self.assertEqual(row["verified_fields_private"]["startDate"], "2027-07-23")
+        self.assertEqual(row["verified_fields_private"]["organizer"], "MOZHELL PROD")
+        self.assertNotIn("lineup", row["verified_fields_private"])
+        self.assertNotIn("bands", row["verified_fields_private"])
+        self.assertEqual(row["optional_enrichment_pending_review_only"],
+                         ["lineup_if_announced"])
+        preview = row["candidate_preview_private"]
+        self.assertEqual(preview["candidate"]["lineup"], [])
+        self.assertEqual(preview["candidate"]["bands"], 0)
+        self.assertFalse(preview["candidate"]["showOnMap"])
+        self.assertNotIn(SPEC["lineup_url"], preview["candidate"]["auditSources"])
+        self.assertFalse(preview["publication_authorized"])
+        self.assertEqual(result["publications"], 0)
+
+    def test_unavailable_lineup_is_optional_but_official_dates_are_not(self):
+        source = web_sources()
+        del source[SPEC["lineup_url"]]
+        result = self.run_review(sources=source)
+        row = result["dossiers"][0]
+        self.assertEqual(row["status"],
+                         "FIRST_PARTY_EDITION_RECHECKED_LINEUP_PENDING_PRIVATE")
+        self.assertEqual(row["optional_enrichment_pending_review_only"],
+                         ["lineup_source_unavailable"])
+        self.assertEqual(row["verified_fields_private"]["startDate"], "2027-07-23")
+        self.assertFalse(result["publication_authorized"])
+        del source[SPEC["dates_url"]]
+        failed = self.run_review(sources=source)["dossiers"][0]
+        self.assertEqual(failed["status"], "OFFICIAL_RECHECK_FAILED")
+        self.assertFalse(failed["verified_fields_private"])
+        self.assertNotIn("candidate_preview_private", failed)
+
+    def test_valid_lineup_remains_independently_verified(self):
+        result = self.run_review()
+        self.assertEqual(result["edition_core_rechecked_count"], 1)
+        self.assertEqual(result["first_party_rechecked_count"], 1)
+        self.assertEqual(result["dossiers"][0]["optional_enrichment_pending_review_only"], [])
 
     def test_collision_with_public_slug_refuses(self):
         def edits(args):

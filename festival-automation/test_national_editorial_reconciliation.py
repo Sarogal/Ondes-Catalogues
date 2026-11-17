@@ -164,6 +164,27 @@ class EditorialReconciliationTests(unittest.TestCase):
         self.assertFalse(row["safe_to_publish"])
         self.assertEqual(editorial["publications"], 0)
 
+    def test_optional_enrichment_does_not_block_an_announced_edition(self):
+        f = fixtures()
+        f[0]["curated_future_lead_observations"][MOZHELL["id"]] = primary(MOZHELL)
+        result = review(f)
+        dossier = result["dossiers"][0]
+        draft = result["editorial_drafts_private"][0]
+        self.assertEqual(dossier["status"], "PRIMARY_DATE_CLAIM_REVIEW")
+        self.assertNotIn("lineup_review", dossier["missing_checks"])
+        self.assertNotIn("ticketing_review", dossier["missing_checks"])
+        self.assertIn("lineup_if_announced",
+                      dossier["optional_enrichment_pending_review_only"])
+        self.assertIn("ticketing_if_announced",
+                      draft["optional_enrichment_pending_review_only"])
+        # An official date hint is not a publication approval. Critical
+        # identity, locality, conflicts and editorial checks remain enforced.
+        self.assertIn("organizer_identity", dossier["missing_checks"])
+        self.assertIn("venue_and_department", dossier["missing_checks"])
+        self.assertIn("independent_date_confirmation", dossier["missing_checks"])
+        self.assertFalse(dossier["safe_to_publish"])
+        self.assertFalse(result["publication_authorized"])
+
     def test_archive_identity_not_future_edition_proof(self):
         result = review(fixtures())
         self.assertEqual(result["schema"], SCHEMA)

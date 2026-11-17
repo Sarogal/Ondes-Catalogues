@@ -75,7 +75,9 @@ def _private_candidate_preview(spec, entry, maps, today):
     The map coordinates are a linked POI reference. The public map flag stays
     off until a distinct publication gate revalidates the *2027* site.
     """
-    if (entry.get("status") != "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE"
+    if (entry.get("status") not in (
+                "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE",
+                "FIRST_PARTY_EDITION_RECHECKED_LINEUP_PENDING_PRIVATE")
             or not isinstance(maps, dict)
             or maps.get("status") != "ORGANIZER_LINKED_MAPS_POI_REVIEW_ONLY"):
         return None
@@ -95,7 +97,7 @@ def _private_candidate_preview(spec, entry, maps, today):
             "region": fields["region"],
             "venue": None,
             "styles": "Metal / Rock",
-            "bands": fields["bands"], "days": "3",
+            "bands": fields.get("bands", 0), "days": "3",
             "capacity": None, "price": None,
             "organizer": fields["organizer"],
             "officialSite": "https://www.mozhell.fr/fr/",
@@ -104,8 +106,11 @@ def _private_candidate_preview(spec, entry, maps, today):
             "source": spec["dates_url"],
             "lastVerified": today,
             "notes": (
-                "Du 23 au 25 juillet 2027 à Insming ; trois premiers "
-                "groupes annoncés. Repère Google Maps relié au site officiel ; "
+                "Du 23 au 25 juillet 2027 à Insming ; "
+                + ("trois premiers groupes revérifiés. "
+                   if "lineup" in fields else
+                   "programmation nominative encore en revue. ")
+                + "Repère Google Maps relié au site officiel ; "
                 "les pages FR/EN divergent (5 et 13 rue de l'Albe). "
                 "Emplacement exact 2027 à confirmer, programmation incomplète."
             ),
@@ -117,15 +122,20 @@ def _private_candidate_preview(spec, entry, maps, today):
             "futureVenueConfirmed": False,
             "showOnMap": False,
             "dateRangeIsContinuous": True,
-            "sourceConfidence": "organisateur (dates/artistes, lieu en revue)",
+            "sourceConfidence": (
+                "organisateur (dates/artistes, lieu en revue)"
+                if "lineup" in fields else
+                "organisateur (dates/identité, artistes et lieu en revue)"
+            ),
             "verificationStatus": (
                 "Édition datée ; repère Maps organisateur à confirmer pour 2027"
             ),
-            "lineup": list(fields["lineup"]),
-            "auditSources": [
-                spec["dates_url"], spec["lineup_url"], spec["locality_url"],
-                spec["access_fr_url"], spec["access_en_url"],
-            ],
+            "lineup": list(fields.get("lineup", [])),
+            "auditSources": (
+                [spec["dates_url"], spec["locality_url"],
+                 spec["access_fr_url"], spec["access_en_url"]]
+                + ([spec["lineup_url"]] if "lineup" in fields else [])
+            ),
         },
     }
 
@@ -209,7 +219,6 @@ def build_review(editorial, published, history, today, fetcher=None, html_fetche
             continue
         try:
             body_dates = normalized(fetch(spec["dates_url"]))
-            body_lineup = normalized(fetch(spec["lineup_url"]))
             body_organizer = normalized(fetch(spec["organizer_url"]))
         except Exception:
             # No exception contents in private report or public action logs:
@@ -217,26 +226,39 @@ def build_review(editorial, published, history, today, fetcher=None, html_fetche
             entry["status"] = "OFFICIAL_RECHECK_FAILED"
             rows.append(entry)
             continue
-        entry["checked_official_urls"] = [spec["dates_url"], spec["lineup_url"],
-                                          spec["organizer_url"]]
+        entry["checked_official_urls"] = [spec["dates_url"], spec["organizer_url"]]
         if (normalized("23, 24 et 25 juillet 2027") not in body_dates
                 or normalized("Insming") not in body_dates
                 or normalized("MozHell Open Air") not in body_dates
-                or not all(normalized(b) in body_lineup for b in spec["bands"])
-                or normalized("2027") not in body_lineup
                 or normalized("Association MOZHELL PROD") not in body_organizer
                 or not date.fromisoformat(spec["start"]) > today_date):
             entry["status"] = "OFFICIAL_CLAIMS_NOT_RECONFIRMED"
             rows.append(entry)
             continue
-        entry["status"] = "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE"
+
+        # The edition's official date, identity and organizer can be reviewed
+        # independently of the next line-up announcement. An unavailable or
+        # incomplete roster never becomes an invented artist or a public patch.
+        entry["status"] = "FIRST_PARTY_EDITION_RECHECKED_LINEUP_PENDING_PRIVATE"
         entry["verified_fields_private"] = {
             "name": spec["dossier_name"] + " " + str(spec["year"]),
             "startDate": spec["start"], "endDate": spec["end"],
             "city": spec["city"], "department": spec["department"],
             "region": spec["region"], "organizer": spec["organizer"],
-            "lineup": list(spec["bands"]), "bands": len(spec["bands"]),
         }
+        entry["optional_enrichment_pending_review_only"] = ["lineup_if_announced"]
+        try:
+            body_lineup = normalized(fetch(spec["lineup_url"]))
+            entry["checked_official_urls"].append(spec["lineup_url"])
+            if (all(normalized(b) in body_lineup for b in spec["bands"])
+                    and normalized("2027") in body_lineup):
+                entry["status"] = "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE"
+                entry["verified_fields_private"].update(
+                    lineup=list(spec["bands"]), bands=len(spec["bands"]))
+                entry["optional_enrichment_pending_review_only"] = []
+        except Exception:
+            entry["optional_enrichment_pending_review_only"] = [
+                "lineup_source_unavailable"]
         # The organizer's three pages are NOT independent corroborations.
         # Neither an address from a prior edition nor city-centroid GPS is
         # automatically a proven location for the 2027 event.
@@ -300,6 +322,11 @@ def build_review(editorial, published, history, today, fetcher=None, html_fetche
         "dossiers_total": len(rows),
         "first_party_rechecked_count": sum(
             e["status"] == "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE" for e in rows),
+        "edition_core_rechecked_count": sum(
+            e["status"] in (
+                "FIRST_PARTY_FIELDS_RECHECKED_PRIVATE",
+                "FIRST_PARTY_EDITION_RECHECKED_LINEUP_PENDING_PRIVATE")
+            for e in rows),
         "dossiers": rows,
     }
 

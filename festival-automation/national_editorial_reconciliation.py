@@ -495,9 +495,14 @@ def build_review(queue, detail, state, leads, public, history, today):
             status = "PRESS_DATE_CLAIM_REVIEW"
         else:
             status = "RESEARCH_REQUIRED"
+        # Publishing the edition does not require a complete running order,
+        # ticket offers or daily schedule. Those are independent enrichments:
+        # omit unverified values rather than blocking the edition identity.
         blocks = ["editorial_approval", "organizer_identity", "venue_and_department",
                   "independent_date_confirmation", "coordinates_review",
-                  "lineup_review", "ticketing_review", "duplicate_review"]
+                  "duplicate_review"]
+        enrichment_pending = ["lineup_if_announced", "ticketing_if_announced",
+                              "schedule_if_announced"]
         if not primary and not first_party_reviews:
             blocks.append("first_party_date_observation_missing")
         if not detail_clues and not primary and not first_party_reviews:
@@ -568,6 +573,7 @@ def build_review(queue, detail, state, leads, public, history, today):
             "independence_verified": False,
             "future_edition_confirmed": False,
             "missing_checks": sorted(set(blocks)),
+            "optional_enrichment_pending_review_only": enrichment_pending,
         }
         result.append(row)
         # A draft is prepared only for an observed future-date claim on a
@@ -591,6 +597,7 @@ def build_review(queue, detail, state, leads, public, history, today):
                     "coordinates": None,
                 },
                 "missing_checks": list(row["missing_checks"]),
+                "optional_enrichment_pending_review_only": list(enrichment_pending),
             })
     return {
         "schema": SCHEMA, "as_of": today, "review_only": True,

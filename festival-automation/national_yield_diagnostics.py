@@ -277,6 +277,7 @@ def diagnose(state, review, today, previous_review=None):
     if not isinstance(dossiers, list) or len(dossiers) > MAX_DOSSIERS:
         raise ValueError("invalid editorial dossiers")
     blocks = Counter()
+    enrichments = Counter()
     statuses = Counter()
     for row in dossiers:
         if (not isinstance(row, dict)
@@ -291,8 +292,16 @@ def diagnose(state, review, today, previous_review=None):
         status = row.get("status")
         if not isinstance(status, str) or len(status) > 120:
             raise ValueError("invalid dossier status")
+        optional = row.get("optional_enrichment_pending_review_only", [])
+        if (not isinstance(optional, list) or len(optional) > 20
+                or any(not isinstance(s, str) or len(s) > 120 for s in optional)
+                or any(s not in ("lineup_if_announced", "ticketing_if_announced",
+                                 "schedule_if_announced") for s in optional)
+                or set(optional) & set(reasons)):
+            raise ValueError("invalid optional enrichment checks")
         statuses[status] += 1
         blocks.update(set(reasons))
+        enrichments.update(set(optional))
     if len(dossiers) != review.get("dossiers_count"):
         raise ValueError("editorial dossier count mismatch")
     from historical_future_lead_watch import APPROVED as HISTORICAL
@@ -308,6 +317,7 @@ def diagnose(state, review, today, previous_review=None):
         "status_counts": dict(sorted(statuses.items())),
         "progress_since_previous_review": compare_progress(previous_review, review, today),
         "blocking_reason_counts": dict(sorted(blocks.items())),
+        "optional_enrichment_reason_counts": dict(sorted(enrichments.items())),
         "historical_watch": _watch(
             state.get("historical_future_source_checks_private"),
             "status", today, expected=HISTORICAL),
