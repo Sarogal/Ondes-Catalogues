@@ -358,7 +358,7 @@ def inspect_family_national_preflight(
         venue = norm_text(scope["venue"])
         day = scope["date_start"]
         signature = (title, city, venue, day, start)
-        if (source_url, signature) in signatures:
+        if signature in signatures:
             reasons.add("duplicate_within_candidate_batch")
         # Distinct sessions on a shared page need one SAME-BLOCK date/time
         # pair. Otherwise separately mentioned dates and times could combine
@@ -372,7 +372,7 @@ def inspect_family_national_preflight(
             and _session_pair_on_official_page(raw, scope, start)
         ):
             reasons.add("shared_page_exact_session_pair_unverified")
-        signatures.add((source_url, signature))
+        signatures.add(signature)
         for old in catalogue["events"]:
             if (not isinstance(old, dict)
                     or not isinstance(old.get("date_start"), str)):
