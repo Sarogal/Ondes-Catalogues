@@ -42,8 +42,9 @@ Les tests ne fournissent que des scénarios fictifs.
    doublon titre/ville/lieu/date dans le lot et contre le catalogue,
    y compris les fiches d'une source musicale ou OpenAgenda.
 6. **Géographie :** un lieu et ses coordonnées doivent correspondre à
-   une entrée d'un registre distinct, avec sources institutionnelle et
-   cartographique HTTPS de domaines différents ; seuil maximal **65 m**.
+   une entrée d'un registre distinct, avec **ville, lieu, région et département
+   concordants**, sources institutionnelle et cartographique HTTPS de
+   domaines différents ; seuil maximal **65 m**.
 
 ### Limites qui restent bloquantes
 
