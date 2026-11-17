@@ -87,6 +87,7 @@ jobs:
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
   run-private:
@@ -261,6 +262,126 @@ jobs:
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
+          fi
+          # Optional ultra-marine probes. Both remain STRICTLY discovery-only.
+          # The approved private main branch, never a PR branch, supplies code.
+          # Reports are stored on the private state branch only, never in Pages
+          # or the public GitHub Actions logs. No new schedule or permissions.
+          # Cache each successful daily probe in the private state branch:
+          # avoid 14 redundant municipal requests at every collection slot.
+          GOSIER_DAY="$(TZ=America/Guadeloupe date +%F)"
+          if [[ -s src/automation/municipal_gosier_discovery.py ]] && \
+             [[ "$RUN_MODE" != "write" || ! -s "$STATE/reports/municipal-gosier-$GOSIER_DAY.json" ]]; then
+            if python src/automation/municipal_gosier_discovery.py \
+                --days 14 --output "$OUT/gosier-discovery.json" \
+                > "$LOG/gosier-discovery.log" 2>&1 && \
+               python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["schema"]=="ptitesondes.municipal_gosier_leads.v1"; assert r["approved"]==r["published"]==0; assert len(r["leads"])<=100; assert all(x["safe_to_publish"] is False and x["openagenda_uid"] is None for x in r["leads"])' \
+                "$OUT/gosier-discovery.json" > "$LOG/gosier-contract.log" 2>&1; then
+              if [[ "$RUN_MODE" == "write" ]]; then
+                cp "$OUT/gosier-discovery.json" "$STATE/reports/municipal-gosier-$GOSIER_DAY.json"
+                git -C state add -- "automation-intake/ptitesondes/reports/municipal-gosier-$GOSIER_DAY.json"
+              fi
+            else
+              echo "::warning::Veille municipale ultramarine incomplète ; aucune piste promue."
+            fi
+          fi
+          # When the reviewed private code AND independently verified public
+          # building exist on approved main, produce PRIVATE evidence and
+          # editorial review dossiers. No patch, approval or catalogue write.
+          # Never load PR code in scheduled production or leak sessions in logs.
+          if [[ -s "$OUT/gosier-discovery.json" &&
+                -s src/automation/gosier_qualification.py &&
+                -s src/automation/gosier_review_candidates.py &&
+                -s src/automation/gosier_access_conditions.py ]]; then
+            GOSIER_VENUE="$OUT/gosier-reviewed-venue.json"
+            GOSIER_PROOF="$OUT/gosier-evidence.json"
+            GOSIER_REVIEW="$OUT/gosier-review.json"
+            GOSIER_ACCESS="$OUT/gosier-access.json"
+            GOSIER_GEO_OK=0
+            if python - "$GOSIER_VENUE" > "$LOG/gosier-geo.log" 2>&1 <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "public/scripts")
+          from venue_registry import VENUES
+          matches = [p for p in VENUES
+           if p.get("city") == "Le Gosier"
+           and "Médiathèque Raoul Georges Nicolo" in p.get("aliases", ())]
+          if len(matches) != 1:
+              raise ValueError("reviewed_building_unavailable")
+          Path(sys.argv[1]).write_text(
+              json.dumps(matches[0], ensure_ascii=False), encoding="utf-8")
+          PY
+            then
+              GOSIER_GEO_OK=1
+            fi
+            if [[ "$GOSIER_GEO_OK" == 1 ]] && \
+               python src/automation/gosier_qualification.py \
+                  --discovery "$OUT/gosier-discovery.json" \
+                  --catalogue public/docs/ptitesondes/sorties.json \
+                  --venue-registry-entry "$GOSIER_VENUE" \
+                  --output "$GOSIER_PROOF" > "$LOG/gosier-evidence.log" 2>&1 && \
+               python src/automation/gosier_review_candidates.py \
+                  --qualification "$GOSIER_PROOF" \
+                  --catalogue public/docs/ptitesondes/sorties.json \
+                  --output "$GOSIER_REVIEW" > "$LOG/gosier-review.log" 2>&1 && \
+               python src/automation/gosier_access_conditions.py \
+                  --review "$GOSIER_REVIEW" \
+                  --output "$GOSIER_ACCESS" > "$LOG/gosier-access.log" 2>&1 && \
+               python - "$GOSIER_PROOF" "$GOSIER_REVIEW" "$GOSIER_ACCESS" \
+                  > "$LOG/gosier-review-contract.log" 2>&1 <<'PY'
+          import json
+          import sys
+          evidence, review, access = [json.load(open(p, encoding="utf-8")) for p in sys.argv[1:]]
+          assert evidence["schema"] == "ptitesondes.gosier_private_evidence.v1"
+          assert review["schema"] == "ptitesondes.gosier_private_review_candidates.v1"
+          assert evidence["approved"] == evidence["published"] == 0
+          assert review["approved"] == review["published"] == 0
+          assert review["mode"] == "private_review_only_no_patch_no_publication"
+          assert access["schema"] == "ptitesondes.gosier_access_review.v1"
+          assert access["mode"] == "private_access_review_only_no_patch"
+          assert access["approved"] == access["published"] == 0
+          assert len(access["reviewed"]) == len(review["candidates"])
+          assert all(x["safe_to_publish"] is False and x["approved"] is False
+           and x["published"] is False for x in access["reviewed"])
+          assert "additions" not in access and "updates" not in access
+          assert len(review["candidates"]) == review["needs_category_and_access_review"]
+          assert all(c["safe_to_publish"] is False and c["approved"] is False
+           and c["published"] is False for c in review["candidates"])
+          assert "additions" not in review and "updates" not in review
+          PY
+            then
+              if [[ "$RUN_MODE" == "write" ]]; then
+                cp "$GOSIER_PROOF" "$STATE/reports/municipal-gosier-evidence-$GOSIER_DAY.json"
+                cp "$GOSIER_REVIEW" "$STATE/reports/municipal-gosier-review-$GOSIER_DAY.json"
+                cp "$GOSIER_ACCESS" "$STATE/reports/municipal-gosier-access-$GOSIER_DAY.json"
+                git -C state add -- \
+                    "automation-intake/ptitesondes/reports/municipal-gosier-evidence-$GOSIER_DAY.json" \
+                    "automation-intake/ptitesondes/reports/municipal-gosier-review-$GOSIER_DAY.json" \
+                    "automation-intake/ptitesondes/reports/municipal-gosier-access-$GOSIER_DAY.json"
+              fi
+            else
+              echo "::warning::Dossier municipal non publiable ou preuve incomplète ; aucun patch ni approbation."
+            fi
+          fi
+          CINOR_DAY="$(TZ=Indian/Reunion date +%F)"
+          if [[ -s src/automation/resolve_cinor_agenda.py && -n "$OPENAGENDA_READ_KEY" ]] && \
+             [[ "$RUN_MODE" != "write" || ! -s "$STATE/reports/cinor-agenda-review-$CINOR_DAY.json" ]]; then
+            if python src/automation/resolve_cinor_agenda.py \
+                --output "$OUT/cinor-directory-review.json" \
+                > "$LOG/cinor-directory.log" 2>&1 && \
+               python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["schema"]=="ptitesondes.cinor_agenda_probe.v1"; assert r["automatically_admitted"] is False; assert r["published"]==0' \
+                "$OUT/cinor-directory-review.json" > "$LOG/cinor-contract.log" 2>&1; then
+              if [[ "$RUN_MODE" == "write" ]]; then
+                cp "$OUT/cinor-directory-review.json" "$STATE/reports/cinor-agenda-review-$CINOR_DAY.json"
+                git -C state add -- "automation-intake/ptitesondes/reports/cinor-agenda-review-$CINOR_DAY.json"
+              fi
+            else
+              echo "::warning::Identité de l'agenda CINOR non certifiée ; aucun UID activé."
+            fi
+          fi
+          if [[ "$RUN_MODE" == "write" ]]; then
+            push_private 'data(ptitesondes): conserver les sondes ultramarines en privé uniquement'
           fi
           # A single delayed scheduled run can catch up to four DUE,
           # not-yet-reviewed batches. One intake collection per run (no
