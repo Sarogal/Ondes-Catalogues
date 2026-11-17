@@ -45,7 +45,11 @@ REGISTRY_FIELDS = frozenset({
 BAD_STATUS = re.compile(
     r"\b(?:annul(?:e|ee|es|ees)|complet|report(?:e|ee|es|ees))\b"
 )
-AGE_PHRASE = re.compile(r"\b(?:enfants?|familles?|bebes?|tout.petit[s]?)\b")
+AGE_PHRASE = re.compile(
+    r"\b(?:(?:pour|destine|reserve)\s+(?:les |aux |a |la )?"
+    r"(?:enfants?|familles?|bebes?|tout.petit[s]?)"
+    r"|public\s+(?:enfants?|familles?)|en\s+famille)\b"
+)
 TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d\Z")
 
 
