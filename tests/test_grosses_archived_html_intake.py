@@ -84,6 +84,27 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
         self.visits.append((url, registered, raw))
         return self.pages[url]
 
+    def test_pinned_organizer_page_is_same_https_origin_and_path(self):
+        valid = engine.pinned_first_party
+        site = "https://www.mozhell.fr/fr/"
+        self.assertTrue(valid(site,
+            "https://www.mozhell.fr/fr/le-mozhell-est-de-retour-pour-une-nouvelle-edition-en-2027"))
+        self.assertTrue(valid("https://www.festival666.com/",
+                              "https://www.festival666.com/"))
+        for unsafe in (
+            "http://www.mozhell.fr/fr/news",
+            "https://www.mozhell.fr.evil.example/fr/news",
+            "https://www.mozhell.fr.evil.example/fr/",
+            "https://www.mozhell.fr/other/news",
+            "https://www.mozhell.fr/fr/../other",
+            "https://www.mozhell.fr/fr/%2e%2e/other",
+            "https://www.mozhell.fr/fr/news?url=evil",
+            "https://www.mozhell.fr:444/fr/news",
+            "https://username@www.mozhell.fr/fr/news",
+        ):
+            with self.subTest(unsafe=unsafe):
+                self.assertFalse(valid(site, unsafe))
+
     def test_two_days_prove_two_archived_editions_without_inherited_fields(self):
         first = engine.run(
             self.folder, self.calendar, self.history, self.day1, self.fetch)
