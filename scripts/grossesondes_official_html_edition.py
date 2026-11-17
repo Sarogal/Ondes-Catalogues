@@ -141,6 +141,12 @@ def visible_official_edition(html, edition_title, start, end):
         dates = list(explicit_ranges(excerpt, year))
         if not dates:
             continue
+        # An adjacent edition label for another year is a contradiction,
+        # even when a nearby generic paragraph advertises this year.
+        after_name = re.match(r"\s*(20[2-4]\d)(?!\d)",
+                              text[mention.end():mention.end() + 14])
+        if after_name and int(after_name.group(1)) != year:
+            return False
         # A cancellation or unresolved postponement of the same edition
         # anywhere in the relevant announcement blocks forbids admission.
         if CANCEL.search(excerpt):
