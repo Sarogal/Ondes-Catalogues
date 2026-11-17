@@ -46,6 +46,12 @@ def norm(s):
     )).split())
 
 
+def fold_accents(s):
+    """Preserve date/time punctuation while removing French accents."""
+    s = unicodedata.normalize("NFKD", str(s or "").casefold())
+    return "".join(c for c in s if not unicodedata.combining(c))
+
+
 def safe_https(url, host, prefix="/"):
     if not isinstance(url, str) or len(url) > 700:
         return False
@@ -253,8 +259,7 @@ def parse_montpellier_mpt_detail(html, url, today):
                     "inscription obligatoire" in normal else "not_stated")
     category = classify(title)
     out = []
-    for day, month, year, clock, ending in DATE_FR.findall(norm(contents).replace(
-            " - ", " - ")):
+    for day, month, year, clock, ending in DATE_FR.findall(fold_accents(contents)):
         try:
             d = date(int(year), MONTHS[month], int(day))
             hh, mm = map(int, clock.split(":"))
