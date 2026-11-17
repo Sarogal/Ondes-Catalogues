@@ -60,7 +60,7 @@ jobs:
               print("PROMOTER_BILL_STRICT_ACCEPT:", rex.rex_promoter_confirms_bill(desc, parts))
               rich = rex.rex_visible_divs_after_title(raw)
               print("RICH_VISIBLE_DIV_COUNT:", len(rich))
-              print("RICH_HAS_EXACT_BILL:", any(bool(re.search(r"spicy\\s*box\\s*\\+\\s*mooan\\s*exis", s, re.I)) for s in rich))
+              print("RICH_HAS_EXACT_BILL:", any(bool(re.search(r"spicy\s*box\s*\+\s*mooan\s*exis", s, re.I)) for s in rich))
               print("PROMOTER_PROOF_AFTER_FIX:", rex.rex_promoter_confirms_bill(desc + rich, parts))
               import test_rex_promoter_bill as fixtures
               approval = rex.verify(fixtures.candidate(), raw, fixtures.catalogue(), fixtures.TODAY)
