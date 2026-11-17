@@ -14,7 +14,7 @@ MONTHS = {
     "juin": 6, "juillet": 7, "aout": 8, "septembre": 9, "octobre": 10,
     "novembre": 11, "decembre": 12, "january": 1, "february": 2,
     "march": 3, "april": 4, "may": 5, "june": 6, "july": 7,
-    "august": 8, "september": 9, "october": 10, "december": 12,
+    "august": 8, "september": 9, "october": 10, "november": 11, "december": 12,
 }
 MONTH_WORD = "|".join(sorted(MONTHS, key=len, reverse=True))
 DATE_EXPRESSION = re.compile(
@@ -31,6 +31,8 @@ CANCEL = re.compile(
     re.IGNORECASE,
 )
 HIDDEN = {"head", "script", "style", "noscript", "template", "svg", "iframe"}
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr"}
 BREAKS = {"div", "section", "article", "header", "footer", "main", "p",
           "br", "li", "h1", "h2", "h3", "h4", "h5", "h6", "tr"}
 
@@ -43,8 +45,11 @@ def fold(value):
 class VisibleText(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.hidden = []
+        self.stack = []
         self.parts = []
+
+    def hidden(self):
+        return bool(self.stack and self.stack[-1][1])
 
     def handle_starttag(self, tag, attrs):
         attributes = dict(attrs)
@@ -53,24 +58,27 @@ class VisibleText(HTMLParser):
                      or attributes.get("aria-hidden") == "true"
                      or re.search(r"(?:display\s*:\s*none|visibility\s*:\s*hidden)",
                                   style) is not None)
-        self.hidden.append(invisible or any(self.hidden))
-        if tag in BREAKS and not any(self.hidden):
+        if tag in BREAKS and not self.hidden() and not invisible:
             self.parts.append(" ")
+        if tag not in VOID:
+            self.stack.append((tag, invisible or self.hidden()))
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs)
-        self.handle_endtag(tag)
+        if tag not in VOID:
+            self.handle_endtag(tag)
 
     def handle_endtag(self, tag):
-        if tag in BREAKS and not any(self.hidden):
+        if tag in BREAKS and not self.hidden():
             self.parts.append(" ")
-        if self.hidden:
-            self.hidden.pop()
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                break
 
     def handle_data(self, data):
-        if not any(self.hidden):
+        if not self.hidden():
             self.parts.append(data)
-
 
 def explicit_ranges(text, year):
     """Only printed calendar dates with an explicit month and edition year."""
