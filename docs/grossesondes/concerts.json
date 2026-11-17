@@ -2321,6 +2321,16 @@
       "id": "rosa",
       "name": "Rosa",
       "aliases": []
+    },
+    {
+      "id": "spicy-box",
+      "name": "Spicy Box",
+      "aliases": []
+    },
+    {
+      "id": "mooan-exis",
+      "name": "Mooan Exis",
+      "aliases": []
     }
   ],
   "venues": [
@@ -14808,6 +14818,37 @@
       "time": "19:30",
       "timeMeaning": "début du concert",
       "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-toulouse-spicy-box",
+      "title": "Spicy Box (+ Mooan Exis) !",
+      "date": "2027-01-22",
+      "artistIds": [
+        "spicy-box",
+        "mooan-exis"
+      ],
+      "venueId": "le-rex-toulouse",
+      "genres": [
+        "Punk",
+        "Techno"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lerextoulouse.com/fr/programmation/spicy-box-mooan-exis-/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Rex",
       "ticketUrl": null,
       "lastVerified": "2026-11-17",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
