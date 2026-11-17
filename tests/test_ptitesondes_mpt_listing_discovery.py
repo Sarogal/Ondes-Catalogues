@@ -10,6 +10,9 @@ from ptitesondes_mpt_listing_discovery import (
     LISTING_URL, MAX_LINKS, extract_detail_links,
     discover_listing, trusted_detail,
 )
+from ptitesondes_real_family_source_adapters import (
+    parse_montpellier_mpt_detail,
+)
 
 TODAY = date(2026, 11, 17)
 GOOD = "https://mpt.montpellier.fr/evenement/atelier-dessin-enfants"
@@ -35,6 +38,75 @@ ADULT_DETAIL = """<html><h1>Peinture pour les adultes</h1>
 <p>Activité adultes uniquement.</p><p>Lieu : Maison pour tous Albert Camus</p>
 <li>19 novembre 2026 - 10:00 > 11:00</li></html>"""
 
+
+ADDRESS_DETAIL = """<html><h1>Méli'Pitchouns : atelier d'éveil et de lecture</h1>
+<article><p>Tout-petits, Enfants</p>
+<p>Session de lecture des contes pour les enfants, jusqu'à 5 ans</p>
+<li>18 novembre 2026 - 10:00 > 11:00</li>
+<p>Maison pour tous Mélina Mercouri<br/>
+842 Rue de la Vieille Poste<br/>34000 Montpellier</p>
+<p>Sur inscription | Gratuit<br/>Carte MPT obligatoire</p></article>
+<h2>Autres événements</h2>
+<h3>Atelier pour adultes</h3><li>19 novembre 2026 - 16:00 > 17:00</li>
+</html>"""
+ADDRESS_LINK = "https://mpt.montpellier.fr/evenement/melipitchouns-atelier-deveil-et-de-lecture"
+
+
+class OfficialAddressPatternTests(unittest.TestCase):
+    def test_exact_mpt_street_address_recognized_without_lieu_label(self):
+        rows = parse_montpellier_mpt_detail(ADDRESS_DETAIL, ADDRESS_LINK, TODAY)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["venue"], "Maison pour tous Mélina Mercouri")
+        self.assertEqual(rows[0]["city"], "Montpellier")
+        self.assertEqual(rows[0]["date_start"], "2026-11-18")
+        self.assertEqual(rows[0]["start_local"], "10:00")
+        self.assertEqual(rows[0]["price_evidence"], "ambiguous")
+        self.assertEqual(rows[0]["category"], "lecture-jeunesse")
+        self.assertEqual(rows[0]["verification"],
+                         "discovery_only_needs_official_and_independent_proof")
+
+    def test_sidebar_future_occurrences_cannot_supply_main_event_dates(self):
+        rows = parse_montpellier_mpt_detail(ADDRESS_DETAIL, ADDRESS_LINK, TODAY)
+        self.assertEqual([x["date_start"] for x in rows], ["2026-11-18"])
+
+    def test_no_street_or_wrong_city_keeps_venue_unverified(self):
+        for change in (
+            "842 Rue de la Vieille Poste",
+            "34000 Montpellier",
+        ):
+            html = ADDRESS_DETAIL.replace(change, "unverified")
+            self.assertEqual(parse_montpellier_mpt_detail(
+                html, ADDRESS_LINK, TODAY), [])
+
+    def test_multiple_conflicting_address_blocks_held(self):
+        conflicting = ADDRESS_DETAIL.replace(
+            "</article>",
+            '<p>Maison pour tous Autre bâtiment<br/>'
+            '4 Rue des Peupliers<br/>34000 Montpellier</p></article>')
+        self.assertEqual(parse_montpellier_mpt_detail(
+            conflicting, ADDRESS_LINK, TODAY), [])
+
+    def test_hidden_or_related_address_does_not_certify_venue(self):
+        hidden = ADDRESS_DETAIL.replace(
+            '<p>Maison pour tous Mélina Mercouri<br/>',
+            '<p hidden>Maison pour tous Mélina Mercouri<br/>')
+        self.assertEqual(parse_montpellier_mpt_detail(
+            hidden, ADDRESS_LINK, TODAY), [])
+        related = ADDRESS_DETAIL.replace(
+            "842 Rue de la Vieille Poste<br/>34000 Montpellier",
+            "lieu non précisé").replace(
+            "<h3>Atelier pour adultes</h3>",
+            '<h3>Atelier pour adultes</h3><p>Maison pour tous Mélina Mercouri<br/>'
+            '842 Rue de la Vieille Poste<br/>34000 Montpellier</p>')
+        self.assertEqual(parse_montpellier_mpt_detail(
+            related, ADDRESS_LINK, TODAY), [])
+
+    def test_reserved_to_creches_is_not_open_family_outing(self):
+        page = ADDRESS_DETAIL.replace(
+            "Session de lecture des contes pour les enfants",
+            "Animation réservée aux crèches Thérèse Sentis et Oustal")
+        self.assertEqual(parse_montpellier_mpt_detail(
+            page, ADDRESS_LINK, TODAY), [])
 
 class MptListingDiscoveryTests(unittest.TestCase):
     def test_read_only_listing_extracts_distinct_detail_links(self):
