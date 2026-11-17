@@ -22,6 +22,7 @@ from grossesondes_preview import (
 from grossesondes_stage import official_text, stage, PROOF_MODE
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
+    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
 )
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
@@ -260,10 +261,12 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
     cached={}
     for proposed in patch.get("additions",[])[:10]:
         mode=proposed.get("proofMode")
-        if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE):
+        if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
+                        HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE):
             continue
         slug=proposed.get("slug")
-        registered = (archived if mode == ARCHIVED_PROOF_MODE else original)
+        registered = (archived if mode in (
+            ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE) else original)
         if not isinstance(registered, dict):
             continue
         parent=registered.get(proposed.get("originSlug"),{})

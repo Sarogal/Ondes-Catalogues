@@ -8,6 +8,8 @@ bands, price or sessions. The JSON-LD must specify the precise year AND dates.
 from datetime import date
 import re
 
+from grossesondes_official_html_edition import visible_official_edition
+
 from grossesondes_structured_roster import (
     JsonLD, walk, iso_day, edition_name, ALLOWED_EVENT_TYPES,
     SENSITIVE_STATUSES,
@@ -15,6 +17,8 @@ from grossesondes_structured_roster import (
 
 PROOF_MODE = "structured-edition.v1"
 ARCHIVED_PROOF_MODE = "structured-archived-edition.v1"
+HTML_PROOF_MODE = "official-html-edition.v1"
+ARCHIVED_HTML_PROOF_MODE = "official-html-archived-edition.v1"
 SLUG = re.compile(r"^(.+)-(20[2-4][0-9])$")
 EMBEDDED_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 
@@ -64,14 +68,15 @@ ROW_KEYS = {
 PRIVATE_KEYS = {"proofMode", "originSlug", "evidence", "verified_at"}
 
 
-def validate_structured_edition(proposal, parent, html, today):
+def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_MODE):
     """Return sanitized new row or None; never partially accept."""
     if not (isinstance(proposal, dict) and isinstance(parent, dict)
             and isinstance(html, str) and 0 < len(html) <= 1_400_000):
         return None
     if set(proposal) != ROW_KEYS | PRIVATE_KEYS:
         return None
-    if proposal.get("proofMode") != PROOF_MODE:
+    if (proof_mode not in (PROOF_MODE, HTML_PROOF_MODE)
+            or proposal.get("proofMode") != proof_mode):
         return None
     old_slug, new_slug = parent.get("slug"), proposal.get("slug")
     parent_identity = pinned_parent_identity(parent)
@@ -119,40 +124,47 @@ def validate_structured_edition(proposal, parent, html, today):
             and proposal["verificationStatus"] == PRIVATE_STATUS
             and proposal["sourceConfidence"] == PRIVATE_CONFIDENCE):
         return None
-    parser = JsonLD()
-    parser.feed(html)
-    seen_matching = False
-    for document in parser.documents[:30]:
-        for event in walk(document):
-            types = event.get("@type")
-            if not isinstance(types, list):
-                types = [types]
-            types = {str(t).rsplit("/", 1)[-1].casefold() for t in types}
-            if not types.intersection(ALLOWED_EVENT_TYPES):
-                continue
-            event_name = event.get("name")
-            if (not isinstance(event_name, str)
-                    or edition_name(event_name) != edition_name(title)
-                    or str(year) not in re.findall(r"\b20[2-4][0-9]\b", event_name)):
-                continue
-            # Any conflicting same-edition event invalidates the whole page.
-            ev_start = iso_day(event.get("startDate"))
-            ev_end = iso_day(event.get("endDate"))
-            status = str(event.get("eventStatus", "")).rsplit("/", 1)[-1].casefold()
-            if (event_name.strip() != title.strip()
-                    or ev_start != start or ev_end != end
-                    or status in SENSITIVE_STATUSES):
-                return None
-            seen_matching = True
-    if not seen_matching:
-        return None
+    if proof_mode == HTML_PROOF_MODE:
+        if not visible_official_edition(html, title, start, end):
+            return None
+    else:
+        parser = JsonLD()
+        parser.feed(html)
+        seen_matching = False
+        for document in parser.documents[:30]:
+            for event in walk(document):
+                types = event.get("@type")
+                if not isinstance(types, list):
+                    types = [types]
+                types = {str(t).rsplit("/", 1)[-1].casefold() for t in types}
+                if not types.intersection(ALLOWED_EVENT_TYPES):
+                    continue
+                event_name = event.get("name")
+                if (not isinstance(event_name, str)
+                        or edition_name(event_name) != edition_name(title)
+                        or str(year) not in re.findall(r"\b20[2-4][0-9]\b", event_name)):
+                    continue
+                # Any conflicting same-edition event invalidates the whole page.
+                ev_start = iso_day(event.get("startDate"))
+                ev_end = iso_day(event.get("endDate"))
+                status = str(event.get("eventStatus", "")).rsplit("/", 1)[-1].casefold()
+                if (event_name.strip() != title.strip()
+                        or ev_start != start or ev_end != end
+                        or status in SENSITIVE_STATUSES):
+                    return None
+                seen_matching = True
+        if not seen_matching:
+            return None
     result = {k: proposal[k] for k in ROW_KEYS}
     result["verificationStatus"] = PUBLISHED_STATUS
-    result["sourceConfidence"] = PUBLISHED_CONFIDENCE
+    result["sourceConfidence"] = (
+        "Site officiel (HTML visible vérifié indépendamment)"
+        if proof_mode == HTML_PROOF_MODE else PUBLISHED_CONFIDENCE)
     return result
 
 
-def validate_archived_structured_edition(proposal, archived, html, today):
+def validate_archived_structured_edition(proposal, archived, html, today,
+                                         proof_mode=ARCHIVED_PROOF_MODE):
     """Require 2027/2028 JSON-LD on the pinned ARCHIVE first-party homepage.
 
     The historical edition is an identity and network-origin reference only.
@@ -161,7 +173,8 @@ def validate_archived_structured_edition(proposal, archived, html, today):
     existing public cloud publisher, not supplied from the private proposal.
     """
     if (not isinstance(proposal, dict) or not isinstance(archived, dict)
-            or proposal.get("proofMode") != ARCHIVED_PROOF_MODE
+            or proof_mode not in (ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)
+            or proposal.get("proofMode") != proof_mode
             or proposal.get("originSlug") != archived.get("slug")):
         return None
     old_start = iso_day(archived.get("startDate"))
@@ -177,8 +190,11 @@ def validate_archived_structured_edition(proposal, archived, html, today):
         return None
     # Reuse the stricter published-parent validator unchanged, with an
     # internal proof-mode adapter. A forged field or extra key still fails.
-    adapted = dict(proposal, proofMode=PROOF_MODE)
-    result = validate_structured_edition(adapted, archived, html, today)
+    internal_mode = (HTML_PROOF_MODE if proof_mode == ARCHIVED_HTML_PROOF_MODE
+                     else PROOF_MODE)
+    adapted = dict(proposal, proofMode=internal_mode)
+    result = validate_structured_edition(
+        adapted, archived, html, today, proof_mode=internal_mode)
     if result is not None:
         result["verificationStatus"] = (
             "Édition vérifiée sur le site officiel de l'archive ; "
