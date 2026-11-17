@@ -19,9 +19,10 @@ STRUCTURE = "bbc-first-party-named-paragraphs"
 UNSAFE = re.compile(
     r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
     r"festival|hommage|tribute|cover(?:s)?|tba|surprise|guest|invite)\b")
+# An artist biography may mention an album 'tribute' or festivals played
+# elsewhere. Reject actual cancellation/postponement markers, not biographies.
 BODY_UNSAFE = re.compile(
-    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
-    r"festival|hommage|tribute|cover(?:s)?)\b")
+    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled)\b")
 UNANNOUNCED = frozenset({
     "guest", "special guest", "premiere partie", "1ere partie",
     "1re partie", "support", "a confirmer", "tba", "surprise",
@@ -82,20 +83,39 @@ class EventParagraphs(HTMLParser):
                 self.finished = True
 
 
-def artist_parts(title):
-    """Only an explicit trailing (LIVE) staging label is non-artist text."""
+def artist_parts(title, catalogue):
+    """Canonical acts only; unannounced guests are never inferred as artists."""
     parts = [x.strip() for x in re.split(r"\s+\+\s+", title)]
     if parts:
         parts[-1] = re.sub(r"\s+\(LIVE\)$", "", parts[-1], flags=re.I).strip()
     guest = None
     if len(parts) > 1 and triage.words(parts[-1]) in UNANNOUNCED:
         guest = triage.words(parts.pop())
+    # Some first-party bills stage a KNOWN artist as "X FAMILY & FRIENDS":
+    # this is not a separate group. Keep X only when already canonical and
+    # separately named in the first-party event description; named supports
+    # after the plus sign remain mandatory and independently corroborated.
+    collective = None
+    for i, name in enumerate(parts):
+        match = re.fullmatch(
+            r"(.+?)\s+(?:FAMILY\s*&\s*FRIENDS|&\s*FRIENDS)",
+            name, flags=re.I)
+        if match:
+            base = match.group(1).strip()
+            known = [a for a in catalogue.get("artists", [])
+                     if triage.words(a.get("name")) == triage.words(base)]
+            if (collective is not None or len(known) != 1
+                    or not known[0].get("id")):
+                raise ValueError("BBC : collectif sans artiste canonique")
+            collective = {"artistName": base,
+                          "nonNominativeLabel": "family-and-friends"}
+            parts[i] = base
     keys = [triage.words(p) for p in parts]
     if (not parts or any(not 3 <= len(key) <= 100 or key in UNANNOUNCED
                          or UNSAFE.search(key) for key in keys)
             or len(set(keys)) != len(keys)):
         raise ValueError("BBC : programmation ou noms d'artistes ambigus")
-    return parts, guest
+    return parts, guest, collective
 
 
 def verify(candidate, page, catalogue, today):
@@ -131,7 +151,11 @@ def verify(candidate, page, catalogue, today):
     if (len(fresh["classification"]) != 1
             or triage.words(fresh["classification"][0]) not in GENRES):
         raise ValueError("BBC : genre non corroboré")
-    names, guest = artist_parts(fresh["name"])
+    if not isinstance(catalogue, dict) or any(
+            not isinstance(catalogue.get(k), list)
+            for k in ("artists", "venues", "events")):
+        raise ValueError("BBC : catalogue invalide")
+    names, guest, collective = artist_parts(fresh["name"], catalogue)
     if triage.words(names[0]) != triage.words(fresh["leadArtist"]):
         raise ValueError("BBC : tête d'affiche non concordante")
     doc = EventParagraphs()
@@ -148,10 +172,6 @@ def verify(candidate, page, catalogue, today):
             raise ValueError("BBC : artiste non corroboré dans sa description")
     if BODY_UNSAFE.search(" ".join(paragraphs)):
         raise ValueError("BBC : annonce ambiguë, report ou annulation")
-    if not isinstance(catalogue, dict) or any(
-            not isinstance(catalogue.get(k), list)
-            for k in ("artists", "venues", "events")):
-        raise ValueError("BBC : catalogue invalide")
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE]
     if (len(venues) != 1 or triage.words(venues[0].get("city")) !=
             "herouville saint clair" or any(venues[0].get(k) is None
@@ -204,6 +224,7 @@ def verify(candidate, page, catalogue, today):
             "officialArtistNames": names,
             "verifiedNewArtists": [x["name"] for x in new],
             **({"unannouncedSupportLabel": guest} if guest else {}),
+            **({"nonNominativeCollectiveGuests": collective} if collective else {}),
         }],
         "event": {
             "id": event_id, "title": " + ".join(names),
