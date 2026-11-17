@@ -55,6 +55,52 @@ def validate_native_dump(dump: str, expected_uri: str) -> None:
         )
 
 
+def precheck_session_artwork(
+    adb_path: str, serial: str, digest: str, png: bytes,
+    *, allow_verified_existing: bool,
+) -> bool:
+    """Return True only if this diagnostic already owns an exact SHA file.
+
+    In strict mode an existing file remains a refusal. Manual MCT mode may
+    reuse it only when the native ContentProvider serves the exact bundled
+    bytes. Never overwrite, relabel or delete a preexisting SHA object.
+    """
+    relative = f"files/{base.CENTRAL_DIR}/{digest}.img"
+    pwd = base.adb(adb_path, serial, "shell", "run-as", base.PACKAGE, "pwd")
+    root = pwd.stdout.decode("utf-8", "replace").strip()
+    if not root.startswith("/data/") or base.PACKAGE not in root:
+        raise base.ProbeError("Cannot safely inspect QEMU app data")
+    snapshot = base.adb(
+        adb_path, serial, "shell", "run-as", base.PACKAGE,
+        "test", "-e", f"files/{base.SNAPSHOTS_DIR}", check=False,
+    )
+    if snapshot.returncode != 1:
+        raise base.ProbeError("Debug snapshot directory exists or is unverifiable")
+    existing = base.adb(
+        adb_path, serial, "shell", "run-as", base.PACKAGE,
+        "test", "-e", relative, check=False,
+    )
+    if existing.returncode == 1:
+        print("QEMU session SHA not yet present; no user cache overwritten")
+        return False
+    if existing.returncode != 0:
+        raise base.ProbeError("Cannot safely determine SHA existence")
+    if not allow_verified_existing:
+        raise base.ProbeError("Refusing an existing SHA outside manual MCT mode")
+    uri = f"content://{base.AUTHORITY}/central/{digest}.img"
+    payload = base.adb(
+        adb_path, serial, "exec-out", "content", "read", "--uri", uri,
+        check=False,
+    )
+    if payload.returncode != 0 or payload.stdout != png:
+        raise base.ProbeError(
+            "Existing SHA is not the exact verified diagnostic PNG; "
+            "refusing reuse and cleanup"
+        )
+    print("Reusing exact verified SHA from previous QEMU probe; no overwrite")
+    return True
+
+
 def capture_debug_session(adb_path: str, serial: str, log_file: Path) -> str:
     base.adb(adb_path, serial, "logcat", "-c")
     base.adb(adb_path, serial, "shell", "am", "force-stop", base.PACKAGE)
@@ -92,9 +138,15 @@ def verify_provider(adb_path: str, serial: str, uri: str, png: bytes) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", default="emulator-5554")
-    parser.add_argument(
+    hold = parser.add_mutually_exclusive_group()
+    hold.add_argument(
         "--hold-for-dhu", action="store_true",
-        help="Keep the diagnostic APK active until ENTER, for optional DHU inspection",
+        help="Strict native-dump proof, then hold the DEBUG app for DHU",
+    )
+    hold.add_argument(
+        "--hold-for-mct", action="store_true",
+        help="Use verified preserved SHA; keep DEBUG session open for manual "
+             "Media Controller Test, then restore normal APK on ENTER",
     )
     options = parser.parse_args()
     root = Path(__file__).resolve().parent.parent
@@ -133,10 +185,14 @@ def main() -> int:
 
     installed = False
     success = False
+    reused_existing = False
     try:
         base.adb(adb_path, options.serial, "install", "-r", str(apk))
         installed = True
-        base.probe_data_precheck(adb_path, options.serial, digest)
+        reused_existing = precheck_session_artwork(
+            adb_path, options.serial, digest, png,
+            allow_verified_existing=options.hold_for_mct,
+        )
         log = capture_debug_session(
             adb_path, options.serial, root / LOG_FILE,
         )
@@ -149,20 +205,36 @@ def main() -> int:
         )
         dump = dump_result.stdout.decode("utf-8", "replace")
         (root / DUMP_FILE).write_text(dump, encoding="utf-8")
-        validate_native_dump(dump, uri)
-        print("PASS: native MediaSession dump contains exact verified SHA URI")
-        if options.hold_for_dhu:
-            print("Diagnostic session active for DHU/manual inspection.")
-            print("Press ENTER to restore the normal DEBUG APK.", flush=True)
-            input()
+        if options.hold_for_mct:
+            # Android can serialize art as Bitmap rather than URI in dumpsys.
+            # The correct next evidence is an external MediaController client.
+            from radio_catalog_android_auto_dump_inspector import inspect_dump
+            evidence = inspect_dump(dump, uri)
+            if not evidence["native_session_package"]:
+                raise base.ProbeError("Native session owner absent from dumpsys")
+            print("PASS: native session package visible; URI in dumpsys is advisory")
+            print("Native dump indicators:", evidence)
+            print("MANUAL MCT REQUIRED: Select Grosses Ondes in the external")
+            print("Media Controller Test app on emulator-5554. Inspect metadata")
+            print("and the Diagnostic SHA artwork; record screenshots/observations.")
+            print("Playback must remain silent. No MCT result is auto-certified.")
+            input("Press ENTER to restore the normal DEBUG APK: ")
+        else:
+            validate_native_dump(dump, uri)
+            print("PASS: native MediaSession dump contains exact verified SHA URI")
+            if options.hold_for_dhu:
+                print("Diagnostic session active for DHU/manual inspection.")
+                input("Press ENTER to restore the normal DEBUG APK: ")
         success = True
-        # The preflight refused existing target/snapshot directory. Cleanup
-        # only the one synthetic SHA file, never a user cache directory.
-        base.adb(
-            adb_path, options.serial, "shell", "run-as", base.PACKAGE,
-            "rm", "-f", f"files/{base.CENTRAL_DIR}/{digest}.img",
-        )
-        print("Removed only the probe-created SHA object")
+        if not reused_existing:
+            # Only the SHA absent at precheck can have been created here.
+            base.adb(
+                adb_path, options.serial, "shell", "run-as", base.PACKAGE,
+                "rm", "-f", f"files/{base.CENTRAL_DIR}/{digest}.img",
+            )
+            print("Removed only the probe-created SHA object")
+        else:
+            print("Preserved the preexisting verified diagnostic SHA object")
     finally:
         if installed:
             print("Restoring ordinary DEBUG Flutter APK", flush=True)
@@ -181,7 +253,10 @@ def main() -> int:
             "Native session proof incomplete; no deployment. "
             "Diagnostic SHA preserved for investigation if installed."
         )
-    print("PREFLIGHT ANDROID-AUTO-NATIVE-SESSION OK (QEMU only, no UI proof)")
+    if options.hold_for_mct:
+        print("MCT HANDOFF COMPLETED (QEMU only); visual art requires user evidence")
+    else:
+        print("PREFLIGHT ANDROID-AUTO-NATIVE-SESSION OK (QEMU only, no UI proof)")
     return 0
 
 
