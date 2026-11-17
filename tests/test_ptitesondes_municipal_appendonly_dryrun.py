@@ -1,4 +1,4 @@
-"""Adversarial, network-free municipal append-only rehearsal on real 548-event input."""
+"""Adversarial, network-free municipal append-only rehearsal on real growing public-catalogue input."""
 from copy import deepcopy
 from datetime import date
 from pathlib import Path
@@ -21,7 +21,7 @@ from test_ptitesondes_nonmusic_release_contract import (
 
 def source():
     # CI runs on the public repository. This reads the EXISTING tracked
-    # production catalogue, not a synthetic 548-row substitute.
+    # production catalogue, not a synthetic fixed-size substitute.
     return json.loads((ROOT/"docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
 
 
@@ -47,17 +47,17 @@ def run(c=None,a=None,catalogue=None,get=official_get,dates=None,day=TODAY):
 
 
 class AppendOnlySimulationTests(unittest.TestCase):
-    def test_exact_548_historical_rows_are_intact_after_one_hypothetical(self):
+    def test_all_current_historical_rows_are_intact_after_one_hypothetical(self):
         original=source()
-        self.assertEqual(len(original["events"]),548)
+        self.assertGreaterEqual(len(original["events"]),548)
         before=deepcopy(original)
         fingerprint=canonical_sha256(original)
         summary=run(catalogue=original)
         self.assertEqual(summary["schema"],SCHEMA)
         self.assertEqual(summary["mode"],"in_memory_hypothetical_only_no_patch_no_publication")
-        self.assertEqual(summary["historical_preserved"],548)
+        self.assertEqual(summary["historical_preserved"],len(before["events"]))
         self.assertEqual(summary["hypothetical_additions"],1)
-        self.assertEqual(summary["hypothetical_total"],549)
+        self.assertEqual(summary["hypothetical_total"],len(before["events"])+1)
         self.assertEqual(summary["historical_records_modified"],0)
         self.assertEqual(summary["historical_records_deleted"],0)
         self.assertEqual(summary["publication_ready"],0)
@@ -96,7 +96,7 @@ class AppendOnlySimulationTests(unittest.TestCase):
         # An attacker changing the reference catalogue to smuggle a
         # future category must not be considered a historical baseline.
         self.assertNotEqual(canonical_sha256(attempted),canonical_sha256(original))
-        self.assertEqual(len(original["events"]),548)
+        self.assertGreaterEqual(len(original["events"]),548)
 
     def test_missing_independent_geo_or_source_verification_blocks(self):
         c=candidate()
@@ -208,7 +208,7 @@ class AppendOnlySimulationTests(unittest.TestCase):
             verified_dates={**stamps(c1),**stamps(c2)}
         )
         self.assertEqual(result["hypothetical_additions"],2)
-        self.assertEqual(result["hypothetical_total"],550)
+        self.assertEqual(result["hypothetical_total"],len(source()["events"])+2)
         self.assertEqual(result["public_writes"],0)
 
     def test_empty_verification_dates_fail_closed_not_default_to_today(self):

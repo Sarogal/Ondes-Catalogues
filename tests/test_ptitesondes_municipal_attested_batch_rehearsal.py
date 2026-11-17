@@ -103,8 +103,8 @@ class AttestedBatchRehearsalTests(unittest.TestCase):
         self.assertTrue(out["all_private_source_geo_attestations_passed"])
         self.assertTrue(out["in_memory_rehearsal_passed"])
         self.assertEqual(out["hypothetical_in_memory_additions"], 9)
-        self.assertEqual(out["reference_events_preserved"], 548)
-        self.assertEqual(out["current_events_preserved"], 548)
+        self.assertEqual(out["reference_events_preserved"], len(snapshot["events"]))
+        self.assertEqual(out["current_events_preserved"], len(snapshot["events"]))
         self.assertEqual(historical(), snapshot)
         self.assertEqual(out["simulation_blockers"], [])
         self.assertFalse(out["publication_ready"])
@@ -239,7 +239,7 @@ class AttestedBatchRehearsalTests(unittest.TestCase):
         out = run(current=current)
         self.assertFalse(out["municipal_batch_passed"])
         self.assertEqual(out["hypothetical_in_memory_additions"], 0)
-        self.assertEqual(out["current_events_preserved"], 549)
+        self.assertEqual(out["current_events_preserved"], len(current["events"]))
 
     def test_new_public_catalogue_invalidates_old_approvals(self):
         def changed(_, live, bundles, ___):
