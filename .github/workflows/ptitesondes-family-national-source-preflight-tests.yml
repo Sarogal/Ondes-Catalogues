@@ -1,0 +1,37 @@
+name: "P'tites Ondes — prévalidation familiale nationale indépendante sans publication"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-family-independent-preflight-20261117'
+    paths:
+      - 'scripts/ptitesondes_family_national_source_preflight.py'
+      - 'tests/test_ptitesondes_family_national_source_preflight.py'
+      - '.github/workflows/ptitesondes-family-national-source-preflight-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_family_national_source_preflight.py'
+      - 'tests/test_ptitesondes_family_national_source_preflight.py'
+      - '.github/workflows/ptitesondes-family-national-source-preflight-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  national-family-source-preflight:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Adversarial offline: source, age, horaires, catalogue, GPS"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_family_national_source_preflight.py' -v
+      - name: "No authenticated review, no secret, no publisher"
+        run: |
+          echo "No live credentials, no recurring workflow, no catalogue writes."
