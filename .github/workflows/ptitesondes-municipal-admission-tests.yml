@@ -1,0 +1,37 @@
+name: "P'tites Ondes — admission municipale isolée, tests sans publication"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-municipal-admission-gate-20261116'
+    paths:
+      - 'scripts/ptitesondes_municipal_admission.py'
+      - 'tests/test_ptitesondes_municipal_admission.py'
+      - '.github/workflows/ptitesondes-municipal-admission-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_admission.py'
+      - 'tests/test_ptitesondes_municipal_admission.py'
+      - '.github/workflows/ptitesondes-municipal-admission-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-admission-tests:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tests adversariaux, sans accès réseau privé"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_municipal_admission.py' -v
+      - name: "Vérifier aucune écriture en production"
+        run: |
+          echo "No publisher, no secret, no checkout credentials, no public catalogue modification."
