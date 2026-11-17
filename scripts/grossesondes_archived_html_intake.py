@@ -15,6 +15,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges, visible_official_edition
@@ -41,6 +42,29 @@ PINNED_ARCHIVED_HTML_SOURCES = {
 STATE_KEY = "archived_html_edition_observations"
 SOURCE_MARKER = "grossesondes.patch.v1"
 ORIGIN_URL = "https://grosses-ondes.fr/data/festivals.json"
+
+
+def pinned_first_party(site, proof):
+    """Only same-origin HTTPS documents at/below a reviewed parent path."""
+    if not isinstance(site, str) or not isinstance(proof, str):
+        return False
+    try:
+        origin, target = urlsplit(site), urlsplit(proof)
+        if (origin.scheme != "https" or target.scheme != "https"
+                or origin.hostname != target.hostname
+                or not origin.hostname or origin.port is not None
+                or target.port is not None
+                or any((origin.username, origin.password, target.username,
+                        target.password, origin.query, origin.fragment,
+                        target.query, target.fragment))):
+            return False
+        base = origin.path if origin.path.endswith("/") else origin.path + "/"
+        return (target.path == origin.path
+                or target.path.startswith(base)) and (
+                    ".." not in target.path and "%" not in target.path
+                    and "\\\\" not in target.path)
+    except ValueError:
+        return False
 
 
 def official_date(html, parent, year):
@@ -192,7 +216,10 @@ def run(folder, calendar, history, today, fetcher=official_text):
     occupied = {row.get("slug") for row in patch["additions"]}
     for slug, source in PINNED_ARCHIVED_HTML_SOURCES.items():
         parent = archive.get(slug)
-        if not isinstance(parent, dict) or parent.get("officialSite") != source["officialSite"]:
+        if (not isinstance(parent, dict)
+                or parent.get("officialSite") != source["officialSite"]
+                or not pinned_first_party(source["officialSite"],
+                                          source["proofUrl"])):
             continue
         identity = pinned_parent_identity(parent)
         if (identity is None or parent.get("lastKnownYear") != identity[1]
