@@ -520,6 +520,88 @@ class PreflightTests(unittest.TestCase):
             gate.validate_proposal(self.before, self.after, {}, self.catalogue,
                                    TODAY, change)
 
+    def test_previous_signed_backlog_can_be_emitted_with_fresh_approval(self):
+        """Real race: old approvals were signed but Pages had not caught up.
+
+        A concurrent publisher publishes the backlog while the intake checks
+        a brand-new Rex approval. No unsigned data enters the candidate.
+        """
+        previous = prior()
+        backlog = row("go-c-20261125-nantes-signed")
+        backlog["event"]["date"] = "2026-11-25"
+        backlog["event"]["officialUrl"] = "https://example.org/agenda/nantes"
+        backlog["officialEvidence"][0]["url"] = backlog["event"]["officialUrl"]
+        previous["approvals"].append(backlog)
+        proposed = copy.deepcopy(previous)
+        fresh = row("go-c-20270122-toulouse-spicy-box")
+        fresh["event"]["date"] = "2027-01-22"
+        fresh["event"]["officialUrl"] = "https://example.org/agenda/rex"
+        fresh["officialEvidence"][0]["url"] = fresh["event"]["officialUrl"]
+        proposed["approvals"].append(fresh)
+        current = {"events": [{"id": "go-c-20261201-previously-public",
+                               "date": "2026-12-01"}]}
+
+        def publisher(reference, catalogue, approvals, today):
+            return {"events": [
+                *copy.deepcopy(catalogue["events"]),
+                {**backlog["event"], "confidence": "official"},
+                {**fresh["event"], "confidence": "official"},
+            ]}, {"newEvents": 2, "held": []}
+
+        result = gate.validate_proposal(
+            previous, proposed, {}, current, TODAY, publisher)
+        self.assertEqual(result["publishableEvents"], 1)
+        self.assertTrue(result["validatedByPublisher"])
+        self.assertEqual(len(previous["approvals"]), 1)
+        self.assertEqual(len(current["events"]), 1)
+
+    def test_previously_signed_backlog_may_stay_deferred(self):
+        """Partial FIFO publication must not force every old signed event."""
+        previous = prior()
+        older = row("go-c-20261125-nantes-signed")
+        older["event"]["officialUrl"] = "https://example.org/nantes"
+        previous["approvals"].append(older)
+        proposed = copy.deepcopy(previous)
+        fresh = row("go-c-20270122-toulouse-spicy-box")
+        fresh["event"]["officialUrl"] = "https://example.org/rex"
+        proposed["approvals"].append(fresh)
+        def publisher(reference, catalogue, approvals, today):
+            return {"events": [{**fresh["event"], "confidence": "official"}]}, {}
+        result = gate.validate_proposal(
+            previous, proposed, {}, {"events": []}, TODAY, publisher)
+        self.assertEqual(result["publishableEvents"], 1)
+
+    def test_previous_signed_backlog_never_allows_unsigned_extra(self):
+        previous = prior()
+        older = row("go-c-20261125-nantes-signed")
+        older["event"]["officialUrl"] = "https://example.org/nantes"
+        previous["approvals"].append(older)
+        proposed = copy.deepcopy(previous)
+        fresh = row("go-c-20270122-toulouse-spicy-box")
+        fresh["event"]["officialUrl"] = "https://example.org/rex"
+        proposed["approvals"].append(fresh)
+        current = {"events": [{"id": "go-c-published", "date": "2026-12-01"}]}
+
+        def forged(reference, catalogue, approvals, today):
+            return {"events": [
+                *copy.deepcopy(catalogue["events"]),
+                {**older["event"], "confidence": "official"},
+                {**fresh["event"], "confidence": "official"},
+                {"id": "go-c-never-signed", "date": "2027-02-01"},
+            ]}, {}
+        with self.assertRaisesRegex(ValueError, "unsigned"):
+            gate.validate_proposal(
+                previous, proposed, {}, current, TODAY, forged)
+
+        def dropped_published(reference, catalogue, approvals, today):
+            return {"events": [
+                {**older["event"], "confidence": "official"},
+                {**fresh["event"], "confidence": "official"},
+            ]}, {}
+        with self.assertRaisesRegex(ValueError, "removed a published"):
+            gate.validate_proposal(
+                previous, proposed, {}, current, TODAY, dropped_published)
+
     def test_publisher_cannot_return_unexpected_number_of_events(self):
         def extra(reference, current, approvals, today):
             return {"events": [event(), {"id": "other"}]}, {}
