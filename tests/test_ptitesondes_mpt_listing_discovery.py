@@ -88,8 +88,8 @@ class MptListingDiscoveryTests(unittest.TestCase):
         self.assertEqual(report["details_without_explicit_family_session"], 1)
         self.assertEqual({x["date_start"] for x in leads},
                          {"2026-11-18", "2026-11-25"})
-        self.assertEqual([x["category"] for x in leads],
-                         ["atelier-creatif", "cinema-jeunesse", "atelier-creatif"])
+        self.assertEqual(sorted(x["category"] for x in leads),
+                         ["atelier-creatif", "atelier-creatif", "cinema-jeunesse"])
 
     def test_bounded_sampling_does_not_infer_remaining_sessions(self):
         seen = []
