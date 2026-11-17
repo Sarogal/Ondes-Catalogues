@@ -10,6 +10,8 @@ from collections import Counter
 from copy import deepcopy
 from datetime import date
 from html.parser import HTMLParser
+import hashlib
+import json
 import math
 import re
 import unicodedata
@@ -18,11 +20,18 @@ from urllib.parse import urlsplit
 from ptitesondes_family_national_scope import (
     FAMILY_TYPES, audit_family_scope,
 )
-from ptitesondes_municipal_appendonly_dryrun import canonical_sha256
 from merge_policy import byid
 from proof import meters
 
 SCHEMA = "ptitesondes.family_independent_source_preflight.v1"
+
+
+def canonical_sha256(document):
+    """Versioned canonical JSON pin; no dependency on the draft municipal PR."""
+    return hashlib.sha256(json.dumps(
+        document, ensure_ascii=False, sort_keys=True, allow_nan=False,
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
 MAX_BATCH = 100
 SOURCE_FIELDS = frozenset({
     "official_url", "start_local", "lat", "lng", "venue_key",
