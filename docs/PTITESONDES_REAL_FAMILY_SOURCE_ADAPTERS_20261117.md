@@ -44,3 +44,12 @@ La chaîne d'autorité demeure : découverte → qualification → preuve indép
 Valider les licences, les hôtes organisateurs et leurs identités ; homologuer des registres indépendants de lieux/GPS ; tester en conditions réelles l'accès API Paris et les pages MPT ; élargir à plusieurs fiches et collectivités sans dépasser les quotas ; effectuer l'anti-doublon ; réviser en privé les preuves et les décisions ; puis seulement préparer une publication soumise à autorisation.
 
 **Cette PR ne demande ni fusion ni publication.**
+
+## Validation réelle et diagnostics CI
+
+- Première collecte ponctuelle : **36 occurrences candidates**, dont 31 Paris et 5 Montpellier ; 12 propositions thématiques structurées, aucune preuve GPS ni approbation privée.
+- Un second passage sur 100 résultats Paris non triés a donné **89 occurrences**, dont 84 Paris et 5 Montpellier, 13 structurées : **cet écart ne traduit pas 53 nouvelles activités**, mais des échantillons API non épinglés. L'échantillonneur est maintenant trié par `date_start ASC, id ASC` ; ses prochaines mesures restent des fenêtres de 100 enregistrements, pas une estimation nationale.
+- La prise en charge iCalendar reconnaît explicitement Europe/Paris, America/Guadeloupe, America/Martinique, America/Cayenne, Indian/Reunion et Indian/Mayotte. Le fuseau est un paramètre de source **homologuée indépendamment** : il ne se déduit pas du nom du lieu. Un événement en UTC est converti dans ce fuseau, jamais systématiquement en heure métropolitaine.
+- Tests adversariaux spécialisés : CI publique `ptitesondes-real-family-source-adapters-tests.yml`, lecture seule, aucun secret.
+- La **suite globale** peut échouer sur le test obsolète `test_real_branch_lacks_gosier_static_record_so_default_must_fail`, qui suppose #305 non fusionnée alors que le registre GPS a été intégré depuis. Ce problème est isolé dans la PR en brouillon **#352** ; ne pas masquer l'échec ni prétendre à une validation globale sans nouvel état GitHub Actions.
+- Correctif indépendant de dédoublonnage des véritables séances individuelles préparé en **PR #351**. Les adaptateurs ici ne le déclenchent pas directement.
