@@ -186,6 +186,12 @@ def parse_paris_explore(response, today):
 
 
 class _MptVisible(HTMLParser):
+    """Only human-visible text from the primary event, never related cards."""
+    VOID = frozenset(("area", "base", "br", "col", "embed", "hr", "img",
+                      "input", "link", "meta", "source", "track", "wbr"))
+    INVISIBLE = frozenset(("head", "script", "style", "noscript", "template",
+                           "svg", "iframe"))
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.heading = []
@@ -195,30 +201,45 @@ class _MptVisible(HTMLParser):
         self.h2_text = []
         self.parts = []
         self.stopped = False
-        self.hidden = 0
+        self.stack = []
+
+    def _hidden(self):
+        return bool(self.stack and self.stack[-1][1])
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style", "noscript"):
-            self.hidden += 1
-        if tag == "h1" and not self.h1_seen:
-            self.in_h1 = True
-        if tag == "h2" and self.h1_seen:
-            self.in_h2 = True
-            self.h2_text = []
+        attr = dict(attrs)
+        style = str(attr.get("style") or "").casefold()
+        hidden = (self._hidden() or tag in self.INVISIBLE
+                  or "hidden" in attr or "inert" in attr
+                  or str(attr.get("aria-hidden") or "").casefold() == "true"
+                  or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                               style) is not None)
+        if tag not in self.VOID:
+            self.stack.append((tag, hidden))
+        if not hidden and not self.stopped:
+            if tag == "h1" and not self.h1_seen:
+                self.in_h1 = True
+            if tag == "h2" and self.h1_seen:
+                self.in_h2 = True
+                self.h2_text = []
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style", "noscript") and self.hidden:
-            self.hidden -= 1
-        if tag == "h1" and self.in_h1:
-            self.in_h1 = False
-            self.h1_seen = True
-        if tag == "h2" and self.in_h2:
-            self.in_h2 = False
-            if "autres evenements" in norm(" ".join(self.h2_text)):
-                self.stopped = True
+        hidden = self._hidden()
+        if not hidden:
+            if tag == "h1" and self.in_h1:
+                self.in_h1 = False
+                self.h1_seen = True
+            if tag == "h2" and self.in_h2:
+                self.in_h2 = False
+                if "autres evenements" in norm(" ".join(self.h2_text)):
+                    self.stopped = True
+        for idx in range(len(self.stack) - 1, -1, -1):
+            if self.stack[idx][0] == tag:
+                del self.stack[idx:]
+                break
 
     def handle_data(self, data):
-        if self.hidden or self.stopped or not data.strip():
+        if self._hidden() or self.stopped or not data.strip():
             return
         if self.in_h1:
             self.heading.append(data.strip())
@@ -226,6 +247,112 @@ class _MptVisible(HTMLParser):
             self.h2_text.append(data.strip())
         elif self.h1_seen:
             self.parts.append(data.strip())
+
+
+class _MptFirstArticleAddress(HTMLParser):
+    """Extract a visible street address from ONLY the event's first article.
+
+    MPT often renders "Maison pour tous X / 123 rue ... / 34000 Montpellier"
+    without a "Lieu :" label. The unique street address, not a place-name
+    guess, anchors this fallback. Sidebar and related events are ignored.
+    """
+    VOID = frozenset(("area", "base", "br", "col", "embed", "hr", "img",
+                      "input", "link", "meta", "source", "track", "wbr"))
+    INVISIBLE = frozenset(("script", "style", "noscript", "template", "svg"))
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []
+        self.article_started = False
+        self.article_complete = False
+        self.in_article = False
+        self.paragraph = None
+        self.blocks = []
+
+    def _hidden(self):
+        return bool(self.stack and self.stack[-1][1])
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        style = str(a.get("style") or "").casefold()
+        hidden = (self._hidden() or tag in self.INVISIBLE
+                  or "hidden" in a or "inert" in a
+                  or str(a.get("aria-hidden") or "").casefold() == "true"
+                  or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                               style) is not None)
+        if tag == "article" and not self.article_started and not hidden:
+            self.article_started = True
+            self.in_article = True
+        if self.in_article and not hidden:
+            if tag == "p" and self.paragraph is None:
+                self.paragraph = []
+            if tag == "br" and self.paragraph is not None:
+                self.paragraph.append("\n")
+        if tag not in self.VOID:
+            self.stack.append((tag, hidden))
+
+    def handle_endtag(self, tag):
+        if tag == "p" and self.paragraph is not None:
+            self.blocks.append("".join(self.paragraph))
+            self.paragraph = None
+        if tag == "article" and self.in_article:
+            self.in_article = False
+            self.article_complete = True
+        for idx in range(len(self.stack) - 1, -1, -1):
+            if self.stack[idx][0] == tag:
+                del self.stack[idx:]
+                break
+
+    def handle_data(self, data):
+        if self.in_article and self.paragraph is not None and not self._hidden():
+            self.paragraph.append(data)
+
+
+def _mpt_reviewable_address_venue(html, *, visible_main_parts=None):
+    """Require one exact street + postal-city block, no page-wide geo guess.
+
+    Most MPT pages embed their address in a DIV, not a P. Reuse the visibility
+    parser's ONLY-primary-detail text parts as a second structural rendering.
+    Never read a related-event card or hidden DOM block for building evidence.
+    """
+    p = _MptFirstArticleAddress()
+    try:
+        p.feed(html)
+        p.close()
+    except (ValueError, TypeError):
+        return None
+    if not p.article_complete:
+        return None
+    blocks = [
+        [line.strip() for line in block.splitlines() if line.strip()]
+        for block in p.blocks
+    ]
+    if visible_main_parts is not None:
+        # The caller's _MptVisible stopped before "Autres événements".
+        # Do not invent a venue from a whole page or unrelated listings.
+        if not isinstance(visible_main_parts, list):
+            return None
+        blocks.append([
+            line.strip() for item in visible_main_parts if isinstance(item, str)
+            for line in item.splitlines() if line.strip()
+        ])
+    places = set()
+    for lines in blocks:
+        for i in range(len(lines) - 2):
+            venue, address, postcode = lines[i:i+3]
+            if not (re.fullmatch(r"34\d{3}\s+Montpellier", postcode,
+                                 re.IGNORECASE)
+                    and re.fullmatch(
+                        r"\d{1,4}\s*[a-zA-Z]?\s+(?:rue|avenue|av\.?|"
+                        r"boulevard|bd|all[eé]e|chemin|cours|impasse|"
+                        r"place|quai|passage)\b.{4,100}",
+                        address, re.IGNORECASE)
+                    and 3 <= len(venue) <= 150
+                    and not re.search(r"\b(?:organis[ée]|partenaires?)\b",
+                                      norm(venue))):
+                continue
+            places.add(venue)
+    return next(iter(places)) if len(places) == 1 else None
 
 
 def parse_montpellier_mpt_detail(html, url, today):
@@ -243,6 +370,16 @@ def parse_montpellier_mpt_detail(html, url, today):
     normal = norm(contents)
     if BLOCKED.search(normal) or not CHILD.search(normal):
         return []
+    # A public family calendar is not an invitation to a school-only session.
+    # "Crèche" mentioned in partners is not enough to block; a restricted
+    # audience phrase in the PRIMARY event detail is required.
+    if re.search(
+        r"\b(?:reserve(?:s|e|es)? aux? (?:creches|etablissements scolaires|"
+        r"groupes scolaires|classes)|seance scolaire uniquement|"
+        r"reserve(?:s|e|es)? aux? scolaires)\b",
+        normal
+    ):
+        return []
     # Venue has to be explicitly named on the organiser's page.
     venue = None
     for i, chunk in enumerate(p.parts):
@@ -253,6 +390,9 @@ def parse_montpellier_mpt_detail(html, url, today):
             venue = chunk.split(":", 1)[1].strip() or (
                 p.parts[i + 1] if i + 1 < len(p.parts) else None)
             break
+    if not venue:
+        venue = _mpt_reviewable_address_venue(
+            html, visible_main_parts=p.parts)
     if not venue:
         return []
     venue = venue.split("(", 1)[0].strip()
