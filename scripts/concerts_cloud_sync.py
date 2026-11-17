@@ -5314,6 +5314,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and proof.get("verifiedNewArtists") ==
                     [a["name"] for a in new_artists]
                 and proof.get("officialVenue") == "La Cave aux Poètes"
+                and proof.get("unannouncedSupportLabel") in (
+                    None, "guest", "special guest", "premiere partie",
+                    "1ere partie", "1re partie", "support", "surprise",
+                    "a confirmer", "tba", "invite surprise",
+                    "artiste surprise")
                 and proof.get("checkedFields") ==
                     (["artists", "date", "venue", "genre"] +
                      (["concertStartTime"] if event.get("time") else []))
