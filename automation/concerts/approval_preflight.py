@@ -139,9 +139,26 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
     candidate_ids = [event["id"] for event in candidate["events"]]
     require(len(candidate_ids) == len(set(candidate_ids)),
             "Publisher returned duplicate event IDs")
-    require(set(candidate_ids) == already | incoming,
+    # The publisher may emit previously signed private approvals that were
+    # still pending in GitHub Pages when this public-runner intake checked out
+    # main. These are authorized by the immutable PRIVATE ledger, not by the
+    # new proposal. A concurrent publisher may also publish those during the
+    # intake, so never require exact equality to only the appended IDs.
+    previously_signed = {
+        row["event"]["id"]
+        for row in previous["approvals"]
+        if isinstance(row, dict) and row.get("reviewDecision") == "approved"
+        and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+    }
+    emitted = set(candidate_ids)
+    require(already.issubset(emitted) and
+            emitted.issubset(already | incoming | previously_signed),
             "Publisher removed a published concert or added an unsigned one")
-    require(len(candidate_ids) - len(current["events"]) == len(appended),
+    # The per-proposal check above already verified EVERY appended event was
+    # emitted unchanged. Extra emitted rows are allowed ONLY when previously
+    # signed; never create fictitious approvals or weaken the publisher.
+    require(len(emitted - already) >= len(appended),
             "Unexpected number of publishable events")
     return {"newApprovals": len(appended),
             "publishableEvents": len(appended),
