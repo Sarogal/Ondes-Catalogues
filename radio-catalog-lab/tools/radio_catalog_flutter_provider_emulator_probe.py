@@ -25,6 +25,7 @@ BRANCH = "integration/radio-catalog-logo-reconciliation-20261116"
 CENTRAL_DIR = "grosses_ondes_central_logos_v1"
 SNAPSHOTS_DIR = "grosses_ondes_debug_probe_snapshots_v1"
 TARGET = "lib/diagnostics/central_logo_emulator_probe.dart"
+BUILD_TIMEOUT_SECONDS = 900
 LOG_FILENAME = "reconciliation-flutter-provider-probe.log"
 SERIAL_PATTERN = re.compile(r"emulator-[0-9]+\Z")
 PASS_PATTERN = re.compile(
@@ -51,6 +52,33 @@ def run(*args: str, check: bool = True) -> subprocess.CompletedProcess[bytes]:
         detail = (result.stderr or result.stdout).decode("utf-8", "replace")
         raise ProbeError(f"Command failed ({args[0]}): {detail[:700]}")
     return result
+
+
+def build_flutter_debug(*args: str) -> None:
+    """Show actual Flutter/Gradle progress; do not buffer a whole build.
+
+    The command times out instead of leaving PowerShell apparently frozen.
+    Only the diagnostic DEBUG APK is built; this function never installs it.
+    """
+    print(f"Flutter DEBUG build: {' '.join(args[1:])}", flush=True)
+    try:
+        result = subprocess.run(
+            list(args),
+            check=False,
+            timeout=BUILD_TIMEOUT_SECONDS,
+            # Deliberately inherit stdout/stderr: the previous PIPE capture
+            # hid the *entire* Gradle build, including errors and progress.
+        )
+    except subprocess.TimeoutExpired as error:
+        raise ProbeError(
+            "Flutter DEBUG build timed out; inspect the last visible Gradle "
+            "output and check for remaining flutter/Gradle processes. "
+            "Do not delete caches or use flutter clean automatically."
+        ) from error
+    if result.returncode != 0:
+        raise ProbeError(
+            f"Flutter DEBUG build failed with exit code {result.returncode}"
+        )
 
 
 def cmd_text(*args: str) -> str:
@@ -195,8 +223,10 @@ def main() -> int:
 
     emulator_guard(adb_path, args.serial)
     apk = root / "build" / "app" / "outputs" / "flutter-apk" / "app-debug.apk"
-    print("Building alternate diagnostic Flutter entrypoint (DEBUG only)")
-    run(flutter, "build", "apk", "--debug", "--no-pub", "--target", TARGET)
+    print("Building alternate diagnostic Flutter entrypoint (DEBUG only)", flush=True)
+    build_flutter_debug(
+        flutter, "build", "apk", "--debug", "--no-pub", "--target", TARGET,
+    )
     if not apk.is_file():
         raise ProbeError("No DEBUG diagnostic APK produced")
 
@@ -216,7 +246,7 @@ def main() -> int:
         if installed:
             print("Restoring normal DEBUG Flutter target and emulator app")
             try:
-                run(
+                build_flutter_debug(
                     flutter, "build", "apk", "--debug", "--no-pub",
                     "--dart-define=GO_LOGO_AUDIT=true",
                 )

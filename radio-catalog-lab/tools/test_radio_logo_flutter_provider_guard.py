@@ -14,6 +14,26 @@ def command(stdout: bytes, rc: int = 0) -> subprocess.CompletedProcess[bytes]:
 
 
 class FlutterProviderProbeGuardTests(unittest.TestCase):
+    def test_flutter_build_streams_output_instead_of_capturing(self):
+        with patch.object(probe.subprocess, "run", return_value=command(b"", 0)) as runner:
+            probe.build_flutter_debug("flutter", "build", "apk", "--debug")
+            args, kwargs = runner.call_args
+            self.assertEqual(args[0], ["flutter", "build", "apk", "--debug"])
+            self.assertEqual(kwargs["timeout"], probe.BUILD_TIMEOUT_SECONDS)
+            self.assertNotIn("stdout", kwargs)
+            self.assertNotIn("stderr", kwargs)
+
+    def test_failed_flutter_build_is_reported(self):
+        with patch.object(probe.subprocess, "run", return_value=command(b"", 1)):
+            with self.assertRaisesRegex(probe.ProbeError, "exit code 1"):
+                probe.build_flutter_debug("flutter", "build", "apk")
+
+    def test_stalled_flutter_build_times_out_without_installing(self):
+        timeout = subprocess.TimeoutExpired(cmd=["flutter", "build"], timeout=900)
+        with patch.object(probe.subprocess, "run", side_effect=timeout):
+            with self.assertRaisesRegex(probe.ProbeError, "timed out"):
+                probe.build_flutter_debug("flutter", "build", "apk")
+
     def test_real_phone_is_refused_even_when_online(self):
         with self.assertRaises(probe.ProbeError):
             probe.emulator_guard("adb", "R58N123ABCD")
