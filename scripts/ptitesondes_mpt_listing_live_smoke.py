@@ -7,6 +7,7 @@ Only aggregate counts go to GitHub Actions logs. No cron, secrets or write.
 from collections import Counter
 from datetime import datetime
 import json
+import re
 import time
 from urllib.request import Request, HTTPRedirectHandler, build_opener
 from zoneinfo import ZoneInfo
@@ -15,7 +16,8 @@ from ptitesondes_mpt_listing_discovery import (
     LISTING_URL, MAX_HTML_BYTES, trusted_detail, discover_listing,
 )
 from ptitesondes_real_family_source_adapters import (
-    _MptVisible, _mpt_reviewable_address_venue, DATE_FR, CHILD, BLOCKED,
+    _MptVisible, _MptFirstArticleAddress, _mpt_reviewable_address_venue,
+    DATE_FR, CHILD, BLOCKED,
     fold_accents, norm,
 )
 
@@ -57,6 +59,8 @@ def live_sample(today, *, list_get=read_official, detail_get=read_official):
         parser.feed(raw)
         body = " ".join(parser.parts)
         visible = norm(body)
+        address = _MptFirstArticleAddress()
+        address.feed(raw)
         flags = {
             "main_title_visible": bool(parser.heading),
             "family_signal_visible": bool(CHILD.search(visible)),
@@ -64,6 +68,14 @@ def live_sample(today, *, list_get=read_official, detail_get=read_official):
                 fold_accents(body))),
             "street_address_confirmed": (
                 _mpt_reviewable_address_venue(raw) is not None),
+            "raw_article_tag_seen": re.search(
+                r"<article\b", raw, re.I) is not None,
+            "article_container_recognized": address.article_complete,
+            "article_address_postcode_seen": any(
+                re.search(r"34\d{3}\s+montpellier", b, re.I)
+                for b in address.blocks),
+            "raw_postcode_montpellier_seen": re.search(
+                r"34\d{3}\s+montpellier", raw, re.I) is not None,
             "explicit_lieu_label": any(
                 norm(s).startswith("lieu ") for s in parser.parts),
             "status_blocker_visible": bool(BLOCKED.search(visible)),
