@@ -19,6 +19,14 @@ STRUCTURE = "bbc-first-party-named-paragraphs"
 UNSAFE = re.compile(
     r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
     r"festival|hommage|tribute|cover(?:s)?|tba|surprise|guest|invite)\b")
+BODY_UNSAFE = re.compile(
+    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
+    r"festival|hommage|tribute|cover(?:s)?)\b")
+UNANNOUNCED = frozenset({
+    "guest", "special guest", "premiere partie", "1ere partie",
+    "1re partie", "support", "a confirmer", "tba", "surprise",
+    "invite surprise", "artiste surprise",
+})
 GENRES = frozenset({
     "rock", "hard rock", "punk", "punk rock", "hardcore", "metal",
     "metal alternatif", "heavy metal", "death metal", "black metal",
@@ -79,12 +87,15 @@ def artist_parts(title):
     parts = [x.strip() for x in re.split(r"\s+\+\s+", title)]
     if parts:
         parts[-1] = re.sub(r"\s+\(LIVE\)$", "", parts[-1], flags=re.I).strip()
+    guest = None
+    if len(parts) > 1 and triage.words(parts[-1]) in UNANNOUNCED:
+        guest = triage.words(parts.pop())
     keys = [triage.words(p) for p in parts]
     if (not parts or any(not 3 <= len(key) <= 100 or UNSAFE.search(key)
                          for key in keys)
             or len(set(keys)) != len(keys)):
         raise ValueError("BBC : programmation ou noms d'artistes ambigus")
-    return parts
+    return parts, guest
 
 
 def verify(candidate, page, catalogue, today):
@@ -120,7 +131,7 @@ def verify(candidate, page, catalogue, today):
     if (len(fresh["classification"]) != 1
             or triage.words(fresh["classification"][0]) not in GENRES):
         raise ValueError("BBC : genre non corroboré")
-    names = artist_parts(fresh["name"])
+    names, guest = artist_parts(fresh["name"])
     if triage.words(names[0]) != triage.words(fresh["leadArtist"]):
         raise ValueError("BBC : tête d'affiche non concordante")
     doc = EventParagraphs()
@@ -135,7 +146,7 @@ def verify(candidate, page, catalogue, today):
         if not any(re.search(r"(?<![a-z0-9])" + re.escape(token)
                              + r"(?![a-z0-9])", p) for p in paragraphs):
             raise ValueError("BBC : artiste non corroboré dans sa description")
-    if UNSAFE.search(" ".join(paragraphs)):
+    if BODY_UNSAFE.search(" ".join(paragraphs)):
         raise ValueError("BBC : annonce ambiguë, report ou annulation")
     if not isinstance(catalogue, dict) or any(
             not isinstance(catalogue.get(k), list)
@@ -192,6 +203,7 @@ def verify(candidate, page, catalogue, today):
             "sourceStructure": STRUCTURE,
             "officialArtistNames": names,
             "verifiedNewArtists": [x["name"] for x in new],
+            **({"unannouncedSupportLabel": guest} if guest else {}),
         }],
         "event": {
             "id": event_id, "title": " + ".join(names),
