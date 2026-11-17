@@ -1,0 +1,55 @@
+name: "P'tites Ondes — preuve croisee MPT/IGN, hors publication"
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-mpt-source-geo-preflight-20261117
+    paths:
+      - scripts/ptitesondes_mpt_family_independent_preflight.py
+      - scripts/ptitesondes_mpt_source_geo_live_pilot.py
+      - tests/test_ptitesondes_mpt_family_independent_preflight.py
+      - .github/workflows/ptitesondes-mpt-source-geo-pilot.yml
+  pull_request:
+    paths:
+      - scripts/ptitesondes_mpt_family_independent_preflight.py
+      - scripts/ptitesondes_mpt_source_geo_live_pilot.py
+      - tests/test_ptitesondes_mpt_family_independent_preflight.py
+      - .github/workflows/ptitesondes-mpt-source-geo-pilot.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check strict primary HTML, independent GPS and no publisher
+        run: |
+          python -m py_compile scripts/ptitesondes_mpt_family_independent_preflight.py
+          python -m py_compile scripts/ptitesondes_mpt_source_geo_live_pilot.py
+          python -m unittest discover -s tests -p 'test_ptitesondes_mpt_family_independent_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_mpt_independent_geo_pilot.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_family_national_source_preflight.py' -v
+  live-readonly:
+    needs: offline
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recheck one 18 Nov 2026 MPT family session against live municipal HTML and IGN
+        run: python scripts/ptitesondes_mpt_source_geo_live_pilot.py
