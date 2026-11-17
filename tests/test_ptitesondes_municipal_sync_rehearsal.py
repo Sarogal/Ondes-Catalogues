@@ -58,10 +58,10 @@ class IsolatedSyncRehearsalTests(unittest.TestCase):
         )):
             out = run(reference=ref, current=live)
         self.assertEqual(out["schema"], SCHEMA)
-        self.assertEqual(out["reference_events_preserved"], 548)
-        self.assertEqual(out["current_events_preserved"], 548)
+        self.assertEqual(out["reference_events_preserved"], len(ref["events"]))
+        self.assertEqual(out["current_events_preserved"], len(live["events"]))
         self.assertEqual(out["hypothetical_in_memory_additions"], 9)
-        self.assertEqual(out["hypothetical_in_memory_total"], 557)
+        self.assertEqual(out["hypothetical_in_memory_total"], len(ref["events"]) + 9)
         self.assertTrue(out["historical_prefix_unchanged"])
         self.assertTrue(out["planning_stamps_are_not_signed_proof"])
         self.assertTrue(out["requires_independent_source_and_gps_attestation"])
@@ -80,7 +80,7 @@ class IsolatedSyncRehearsalTests(unittest.TestCase):
         out = run(token=None)
         self.assertFalse(out["batch_readiness_confirmed"])
         self.assertEqual(out["hypothetical_in_memory_additions"], 0)
-        self.assertEqual(out["hypothetical_in_memory_total"], 548)
+        self.assertEqual(out["hypothetical_in_memory_total"], len(historical()["events"]))
         self.assertIn("batch_evidence_or_approval_incomplete",
                       out["simulation_blockers"])
         self.assertEqual(out["public_writes"], 0)
