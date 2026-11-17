@@ -108,7 +108,7 @@ def artist_parts(title, catalogue):
                     or not known[0].get("id")):
                 raise ValueError("BBC : collectif sans artiste canonique")
             collective = {"artistName": base,
-                          "nonNominativeLabel": "family-and-friends"}
+                          "nonNominativeLabel": name[len(base):].strip()}
             parts[i] = base
     keys = [triage.words(p) for p in parts]
     if (not parts or any(not 3 <= len(key) <= 100 or key in UNANNOUNCED
@@ -224,7 +224,9 @@ def verify(candidate, page, catalogue, today):
             "officialArtistNames": names,
             "verifiedNewArtists": [x["name"] for x in new],
             **({"unannouncedSupportLabel": guest} if guest else {}),
-            **({"nonNominativeCollectiveGuests": collective} if collective else {}),
+            **({"nonNominativeCollectiveGuests": collective,
+                "originalOfficialHeadline": fresh["name"]}
+               if collective else {}),
         }],
         "event": {
             "id": event_id, "title": " + ".join(names),
