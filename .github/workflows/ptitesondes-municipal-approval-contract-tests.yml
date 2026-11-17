@@ -1,0 +1,26 @@
+name: "P'tites Ondes — décision humaine privée, contrat hors ligne"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_human_decision.py'
+      - 'tests/test_ptitesondes_municipal_human_decision.py'
+      - '.github/workflows/ptitesondes-municipal-approval-contract-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  human-approval-fail-closed:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Refus d'usurpation, révocation, preuves et SHA"
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_municipal_human_decision.py' -v
