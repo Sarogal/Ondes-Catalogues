@@ -40,3 +40,9 @@ Le moteur énumère des liens de fiches municipaux strictement autorisés sur `m
 CI dédiée sur runner public, lecture seule, déclenchée sur la PR. Le premier smoke de 12 pages a détecté **24 liens municipaux**, lu **12 fiches**, trouvé **5 occurrences familiales structurées**, sans aucune erreur réseau. Le nouvel échantillonnage jusqu'à 24 fiches vise à mesurer les pistes des autres pages, sans créer d'événements ni présumer de l'approbation privée. L'ajout d'un cron et le transfert privé exigeraient un lot supplémentaire audité et une validation explicite.
 
 **Ne pas fusionner ni déployer sans accord explicite.**
+
+## Diagnostic de la deuxième passe
+
+La collecte des 24 fiches a confirmé une insuffisance de l'adaptateur initial : **19 pages avec signal familial et 23 avec séance datée**, mais seulement **5 occurrences** produites. La majorité des sites MPT publient une adresse complète dans un bloc HTML structuré sans champ `Lieu :`. Les premiers essais restreints au bloc de type `<p>` ne suffisaient pas. La correction actuelle rapproche les éléments **visibles et antérieurs aux « Autres événements »**, exige une paire `numéro + voie + 34xxx Montpellier`, et refuse les lieux divergents. Aucun GPS ni âge n'est inventé.
+
+La nouvelle métrique publique est **agrégée uniquement** (titre visible, public explicite, séance datée et adresse de rue reconnue). Elle ne contient aucun intitulé, URL de séance ou document brut.
