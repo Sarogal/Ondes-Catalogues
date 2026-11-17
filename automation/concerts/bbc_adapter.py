@@ -167,7 +167,7 @@ def candidate(markup, url, source, today):
         raise ValueError("Unexpected event title or ticket-date heading")
     title=" ".join(page.headings[1][0].split()).strip()
     date_heading=fold(page.headings[2][0])
-    if not (3<=len(title)<=150) or EXCLUDE.search(fold(title)):
+    if not (3<=len(title)<=4000) or EXCLUDE.search(fold(title)):
         raise ValueError("Nonconcert or ambiguous headline")
     date_match=DATE_RE.search(date_heading)
     if not date_match:

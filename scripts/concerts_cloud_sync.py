@@ -4260,6 +4260,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
+    bbc_auto = False
     bateau_auto = False
     laiterie_auto = False
     rockstore_auto = False
@@ -4325,6 +4326,18 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event_id != "go-c-20270408-biarritz-peter-hook-and-the-light" and
             event.get("time") is None
         )
+        bbc_auto = (
+            venue == "big-band-cafe-herouville" and
+            event_id not in BBC_NORMANDY_VERIFIED and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "bigbandcafe.com" and
+            bool(re.fullmatch(r"/[a-z0-9-]{3,160}/", parsed_url.path)) and
+            parsed_url.path not in ("/concerts/", "/agenda/", "/archives/") and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None
+        )
         blacklab_auto = (
             venue == "the-black-lab-wasquehal" and
             event_id not in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED and
@@ -4381,7 +4394,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
         )
         require(bool(rex or molotov or ferrailleur or backstage
                      or atabal_pilot or atabal_multi or blacklab_auto
-                     or laiterie_auto or rockstore_auto or bateau_auto)
+                     or laiterie_auto or rockstore_auto or bateau_auto
+                     or bbc_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -5277,6 +5291,89 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "hard rock", "ska punk",
                 },
                 "Bateau Ivre : genre explicite insuffisant")
+    elif (event.get("venueId") == "big-band-cafe-herouville"
+          and reviewer == "automated-official-recheck"):
+        require(bbc_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "Big Band Café"
+                and event.get("sourceType") == "salle"
+                and event.get("time") is None
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "BBC automatique : provenance, statut ou horaire incohérents")
+        proof = evidence[0]
+        names = proof.get("officialArtistNames")
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("checkedFields") == ["artists", "date", "venue", "genre"]
+                and proof.get("sourceStructure") ==
+                    "bbc-first-party-named-paragraphs"
+                and proof.get("verifiedNewArtists") ==
+                    [a["name"] for a in new_artists]
+                and proof.get("unannouncedSupportLabel") in (
+                    None, "guest", "special guest", "premiere partie",
+                    "1ere partie", "1re partie", "support", "a confirmer",
+                    "tba", "surprise", "invite surprise", "artiste surprise"),
+                "BBC automatique : description nominative non certifiée")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and bool(names)
+                and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                        for n in names)
+                and len({norm(n) for n in names}) == len(names)
+                and event.get("title") == " + ".join(names),
+                "BBC automatique : affiche nominative incohérente")
+        artists_by_id = dict(known_artist_ids)
+        artists_by_id.update(added)
+        require(all(aid in artists_by_id
+                    and norm(artists_by_id[aid]["name"]) == norm(name)
+                    for aid, name in zip(ids, names)),
+                "BBC automatique : artiste inventé ou nom canonique divergent")
+        existing_artist_aliases = {
+            norm(alias)
+            for a in known_artist_ids.values()
+            for alias in (a.get("aliases") or [])
+            if isinstance(alias, str)
+        }
+        require(all(a["id"] == norm(a["name"]).replace(" ", "-")[:90].strip("-")
+                    and norm(a["name"]) not in existing_artist_aliases
+                    for a in new_artists),
+                "BBC automatique : artiste nouveau en collision avec un alias")
+        # Distinguish a known band's "Family & Friends" stage branding
+        # from additional named musicians: only the existing canonical act
+        # survives, the raw official headline is retained as proof.
+        collective = proof.get("nonNominativeCollectiveGuests")
+        if collective is not None:
+            require(isinstance(collective, dict)
+                    and set(collective) == {"artistName", "nonNominativeLabel"}
+                    and norm(collective.get("nonNominativeLabel"))
+                    in {"family friends", "friends"}
+                    and norm(collective.get("artistName")) in {norm(n) for n in names}
+                    and sum(
+                        norm(a.get("name")) == norm(collective["artistName"])
+                        for a in known_artist_ids.values()
+                    ) == 1,
+                    "BBC automatique : guests collectifs sans groupe canonique")
+            constructed = [
+                name + " " + collective["nonNominativeLabel"]
+                if norm(name) == norm(collective["artistName"]) else name
+                for name in names
+            ]
+            require(proof.get("originalOfficialHeadline")
+                    == " + ".join(constructed),
+                    "BBC automatique : affiche originale du collectif altérée")
+        else:
+            require(proof.get("originalOfficialHeadline") is None,
+                    "BBC automatique : preuve de collectif inattendue")
+        require(event_id == ("go-c-" + event["date"].replace("-", "") +
+                             "-herouville-" + ids[0])
+                and norm_date(event["date"]) > today
+                and len(event.get("genres") or []) == 1
+                and norm(event["genres"][0]) in {
+                    "rock", "hard rock", "punk", "punk rock", "hardcore",
+                    "metal", "metal alternatif", "heavy metal", "death metal",
+                    "black metal", "stoner", "doom", "sludge", "garage",
+                    "garage rock", "noise", "post rock"
+                },
+                "BBC automatique : date, identité ou genre invalide")
     elif (event.get("venueId") == "the-black-lab-wasquehal"
           and reviewer == "automated-official-recheck"):
         # This independent gate mirrors the Black Lab's only permitted
@@ -6868,9 +6965,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         and norm(resolved[aid]["name"]) == norm(name)
                         for aid, name in zip(ids, spec["artistNames"])),
                 "Le Cargö : artiste ou première partie différent de l'officiel")
-    elif event.get("venueId") == "big-band-cafe-herouville":
-        # New BBC events require independent exact first-party + official
-        # ticket provenance. No arbitrary band's page can self-approve.
+    elif (event.get("venueId") == "big-band-cafe-herouville"
+          and not (reviewer == "automated-official-recheck" and bbc_auto)):
+        # Preserve individually signed BBC dossiers and their historical
+        # two-source proof contract; new automatic bills are guarded by the
+        # independent first-party recheck branch above instead.
         spec = BBC_NORMANDY_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer == "independent-official-verifier"

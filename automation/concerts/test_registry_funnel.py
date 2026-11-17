@@ -57,13 +57,16 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["readyForIndependentRecheck"], 0)
         self.assertEqual(out["exclusiveBlockingReasons"]["awaiting_distinct_day_stability"], 1)
 
-    def test_supported_source_is_required_for_current_auto_recheck(self):
-        x = row("one", source="bbc_official_detail_review")
-        r, a, c = fixtures(x)
+    def test_bbc_now_supported_but_unknown_official_adapter_still_held(self):
+        eligible = row("one", source="bbc_official_detail_review")
+        unknown = row("two", source="agenda_officiel_unknown_detail_review")
+        r, a, c = fixtures(eligible, unknown)
         out = f.build(r, a, c, dt.date(2026, 11, 9))
-        self.assertEqual(out["documentedOfficialGenreLeadsPendingFreshVerification"], 1)
+        self.assertEqual(out["documentedOfficialGenreLeadsPendingFreshVerification"], 2)
         self.assertEqual(out["exclusiveBlockingReasons"]["verified_adapter_not_available"], 1)
-        self.assertEqual(out["readyForIndependentRecheck"], 0)
+        self.assertEqual(out["sourceBlockingReasons"]["bbc_official_detail_review"],
+                         {"ready_for_independent_recheck": 1})
+        self.assertEqual(out["readyForIndependentRecheck"], 1)
 
     def test_molotov_rex_backstage_do_not_require_discovery_detail_flag(self):
         # Their actual recheck contracts fetch the official individual page;
