@@ -81,6 +81,24 @@ class BBCOfficialRecheckTests(unittest.TestCase):
         self.assertEqual(app["newArtists"], [{"id":"act-two", "name":"ACT TWO"}])
         publishing(app, c)
 
+    def test_explicit_unnamed_final_support_keeps_only_real_headliner(self):
+        page = html_bill(["ACT ONE + GUEST"])
+        # The official description confirms only the named headliner.
+        page = page.replace(
+            "<p>ACT ONE + GUEST est un groupe de metal sur cette affiche.</p>",
+            "<p>ACT ONE est un groupe de metal sur cette affiche.</p>")
+        c = catalog()
+        approval = check.verify(discovery(page), page, c, DAY)
+        self.assertEqual(approval["event"]["artistIds"], ["act-one"])
+        self.assertEqual(approval["event"]["title"], "ACT ONE")
+        self.assertEqual(approval["newArtists"], [{"id": "act-one", "name": "ACT ONE"}])
+        self.assertEqual(
+            approval["officialEvidence"][0]["unannouncedSupportLabel"], "guest")
+        publishing(approval, c)
+        bad = page.replace("ACT ONE + GUEST", "ACT ONE + GUEST + ACT TWO")
+        with self.assertRaises(ValueError):
+            check.verify(discovery(bad), bad, c, DAY)
+
     def test_stability_second_day_and_exact_publisher_queue(self):
         page = html_bill(["ACT ONE", "ACT TWO"])
         row = {"status": "pending_review",
