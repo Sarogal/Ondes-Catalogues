@@ -41,8 +41,8 @@ par le publisher**, ni un futur choix automatique sur base de mots-clés.
 ### Groupements suggérés pour la carte
 
 Ne pas afficher nécessairement 13 filtres en tête de page :
-garder les **7 familles** (lecture, atelier, cinéma, jeux, spectacle,
-nature, culture, événement, sport : **9 facettes**) pour une navigation claire,
+garder les **9 facettes** (lecture, atelier, cinéma, jeux, spectacle,
+nature, culture, événement et sport) pour une navigation claire,
 tout en conservant l'ID technique fin pour les détails et les contrôles.
 Les catégories musicales sont conservées dans leur circuit indépendant.
 Le front-end actuel v172 et la prévisualisation v173 (#327) ne sont pas touchés.
