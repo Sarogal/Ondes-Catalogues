@@ -1,0 +1,54 @@
+name: "P'tites Ondes — découverte liste Maisons pour tous, sans publication"
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-mpt-listing-discovery-20261117
+    paths:
+      - scripts/ptitesondes_mpt_listing_discovery.py
+      - scripts/ptitesondes_mpt_listing_live_smoke.py
+      - tests/test_ptitesondes_mpt_listing_discovery.py
+      - .github/workflows/ptitesondes-mpt-listing-discovery-tests.yml
+  pull_request:
+    paths:
+      - scripts/ptitesondes_mpt_listing_discovery.py
+      - scripts/ptitesondes_mpt_listing_live_smoke.py
+      - tests/test_ptitesondes_mpt_listing_discovery.py
+      - .github/workflows/ptitesondes-mpt-listing-discovery-tests.yml
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Python syntax + adversarial municipality listing links
+        run: |
+          python -m py_compile scripts/ptitesondes_mpt_listing_discovery.py
+          python -m py_compile scripts/ptitesondes_mpt_listing_live_smoke.py
+          python -m unittest discover -s tests -p 'test_ptitesondes_mpt_listing_discovery.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_real_family_source_adapters.py' -v
+  live-sample:
+    needs: offline
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: One bounded read-only sample, no secrets or catalogue output
+        run: python scripts/ptitesondes_mpt_listing_live_smoke.py
