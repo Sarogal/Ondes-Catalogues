@@ -1,0 +1,37 @@
+name: "P'tites Ondes — aperçu v174 familles, aucun déploiement"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-v174-family-facets-preview-20261117'
+    paths:
+      - 'previews/ptitesondes/sorties-v174-family-facets-preview.js'
+      - 'tests/ptitesondes_v174_family_facets_preview.test.mjs'
+      - '.github/workflows/ptitesondes-v174-family-facets-preview-tests.yml'
+  pull_request:
+    paths:
+      - 'previews/ptitesondes/sorties-v174-family-facets-preview.js'
+      - 'tests/ptitesondes_v174_family_facets_preview.test.mjs'
+      - '.github/workflows/ptitesondes-v174-family-facets-preview-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  v174-preview:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: "Tests hors ligne : neuf facettes, treize catégories et carte intacte"
+        run: |
+          node --test tests/ptitesondes_v174_family_facets_preview.test.mjs
+      - name: "Aucune publication, v172 et v173 inchangées"
+        run: |
+          echo "Preview only; no GitHub Pages publisher and no Infomaniak deployment."
