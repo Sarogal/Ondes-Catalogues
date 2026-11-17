@@ -39,9 +39,9 @@ def report(day=TODAY, archive="CONSISTENT"):
 
 
 class HistoricalHomepageTests(unittest.TestCase):
-    def test_twelve_approved_historical_roots_valid_and_spread_across_regions(self):
+    def test_twentyfour_approved_historical_roots_valid_and_spread_across_regions(self):
         roster = validated_roster(historical(), TODAY)
-        self.assertEqual(len(roster), 12)
+        self.assertEqual(len(roster), 24)
         self.assertEqual(len({x["region"] for x in roster.values()}), 12)
         self.assertTrue(all(x["url"].startswith("https://") for x in roster.values()))
 
@@ -51,7 +51,7 @@ class HistoricalHomepageTests(unittest.TestCase):
         roster, status = load_verified_roster(
             TODAY, fetch_json=lambda url: (visits.append(url), deepcopy(doc))[1])
         self.assertEqual(visits, [HISTORY_PAGES, HISTORY_GIT])
-        self.assertEqual(len(roster), 12)
+        self.assertEqual(len(roster), 24)
         self.assertEqual(status, "CONSISTENT")
         visits.clear()
         def divergent(url):
@@ -87,6 +87,75 @@ class HistoricalHomepageTests(unittest.TestCase):
         doc["knownFestivals"].pop()
         with self.assertRaises(ValueError):
             validated_roster(doc, TODAY)
+
+    def test_approved_urls_exactly_match_checked_historical_catalogue(self):
+        import json
+        from pathlib import Path
+        source = Path(__file__).resolve().parents[1] / (
+            "docs/grossesondes/festival-history.json")
+        archive = json.loads(source.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(archive["knownFestivals"]), len(APPROVED))
+        selected = {row["slug"]: row for row in archive["knownFestivals"]
+                    if row.get("slug") in APPROVED}
+        self.assertEqual(set(selected), set(APPROVED))
+        for slug, (name, region, url) in APPROVED.items():
+            with self.subTest(slug=slug):
+                row = selected[slug]
+                self.assertEqual(row["name"], name)
+                # The publisher's region comparator normalizes typographic
+                # apostrophes in Provence-Alpes-Côte d'Azur.
+                from source_qualification import normalized
+                self.assertEqual(normalized(row["region"]), normalized(region))
+                self.assertEqual(row["officialSite"], url)
+                self.assertEqual(row["lastKnownYear"], 2026)
+
+    def test_visible_preposed_three_day_poster_of_festival_666(self):
+        # Reproduces a current first-party homepage layout, but the HTML is
+        # synthetic and the resulting date must NOT become public evidence.
+        homepage = ('<main><h1>13 - 14 - 15 | AOUT | 2027</h1>'
+                    '<button>RÉSERVER</button>'
+                    '<p>le festival de metal en nouvelle aquitaine '
+                    'bienvenue au <strong>Festival 666</strong></p></main>')
+        years, _ = visible_future_years("Festival 666", homepage, TODAY)
+        self.assertEqual(years, [2027])
+        hints = visible_future_date_hints(
+            "Festival 666", homepage, TODAY, 2027)
+        self.assertEqual(len(hints), 1)
+        self.assertEqual((hints[0]["start_date_hint"],
+                          hints[0]["end_date_hint"]),
+                         ("2027-08-13", "2027-08-15"))
+        self.assertFalse(hints[0]["edition_dates_verified"])
+        self.assertFalse(hints[0]["publication_authorized"])
+        roster = validated_roster(historical(), TODAY)
+        s = state()
+        checks = scan(s, {"festival-666": roster["festival-666"]},
+                      TODAY, fetch=lambda _: homepage)
+        self.assertEqual(checks[0]["status"], "YEAR_MENTION_REVIEW_ONLY")
+        queue = build_queue(s, report(), [], TODAY)
+        self.assertEqual(queue["publications"], 0)
+        self.assertEqual(queue["historical_homepage_date_hints_private"], 1)
+        self.assertFalse(queue["dossiers"][0]["publication_authorized"])
+
+    def test_preposed_poster_never_borrows_neighbor_or_invalid_dates(self):
+        bad_html = [
+            ('<main><h1>13 14 15 aout 2027</h1>'
+             '<p>autre festival puis bienvenue au Festival 666</p></main>'),
+            ('<main><h1>13 14 16 aout 2027</h1>'
+             '<p>le festival de metal bienvenue au Festival 666</p></main>'),
+            ('<main><h1>13 14 15 aout 2026</h1>'
+             '<p>le festival de metal bienvenue au Festival 666</p></main>'),
+            ('<main><script>13 14 15 aout 2027</script>'
+             '<p>le festival de metal bienvenue au Festival 666</p></main>'),
+        ]
+        for body in bad_html:
+            with self.subTest(body=body):
+                try:
+                    years, _ = visible_future_years("Festival 666", body, TODAY)
+                    self.assertEqual(years, [])
+                    self.assertEqual(visible_future_date_hints(
+                        "Festival 666", body, TODAY, 2027), [])
+                except ValueError:  # no visible candidate is validly inconclusive
+                    pass
 
     def test_visible_explicit_year_near_identity_is_not_a_date_proof(self):
         name = "As One Fest"
@@ -143,14 +212,14 @@ class HistoricalHomepageTests(unittest.TestCase):
                     'sur le site de l’événement.</p>')
         first = scan(s, roster, TODAY, fetch=fetch)
         second = scan(s, roster, TODAY, fetch=fetch)
-        self.assertEqual(len(first), 2)
-        self.assertEqual(len(second), 2)
-        self.assertEqual(len(visited), 4)
-        self.assertEqual(len(set(visited)), 4)
+        self.assertEqual(len(first), 4)
+        self.assertEqual(len(second), 4)
+        self.assertEqual(len(visited), 8)
+        self.assertEqual(len(set(visited)), 8)
         self.assertEqual(set(visited).difference({x["url"] for x in roster.values()}), set())
-        self.assertEqual(len(validated_hints(s, TODAY)), 4)
+        self.assertEqual(len(validated_hints(s, TODAY)), 8)
         self.assertEqual(scan(s, roster, TODAY, fetch=fetch, limit=0), [])
-        self.assertEqual(len(visited), 4)
+        self.assertEqual(len(visited), 8)
 
     def test_failed_recheck_removes_previously_seen_future_year(self):
         roster = validated_roster(historical(), TODAY)
