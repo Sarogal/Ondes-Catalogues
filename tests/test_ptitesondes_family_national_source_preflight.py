@@ -68,20 +68,25 @@ def fixture(code="atelier-creatif", index=1):
     return {"scope": scope, "source": source}, page
 
 
-def run(*, docs=None, catalog=None, hosts=None, reg=None, pages=None,
+MISSING = object()
+
+
+def run(*, docs=MISSING, catalog=None, hosts=None, reg=None, pages=None,
         reader=None, pin=None):
     if catalog is None:
         catalog = historical()
-    if docs is None:
+    if docs is MISSING:
         docs, text = fixture()
         docs, pages = [docs], {docs["source"]["official_url"]: text}
-    if pages is None:
+    if pages is None and isinstance(docs, list):
         pages = {
             item["source"]["official_url"]: fixture(
                 item["scope"]["category"], i + 1
             )[1]
             for i, item in enumerate(docs)
         }
+    if pages is None:
+        pages = {}
     if reader is None:
         reader = lambda url: pages[url]
     return inspect_family_national_preflight(
