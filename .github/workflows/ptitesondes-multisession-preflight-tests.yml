@@ -1,0 +1,44 @@
+name: "P'tites Ondes — contrôle séances multiples national, sans publication"
+
+on:
+  push:
+    branches:
+      - 'fix/ptitesondes-multisession-dedupe-preflight-20261117'
+    paths:
+      - 'scripts/ptitesondes_family_national_source_preflight.py'
+      - 'tests/test_ptitesondes_multisession_preflight.py'
+      - '.github/workflows/ptitesondes-multisession-preflight-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_family_national_source_preflight.py'
+      - 'tests/test_ptitesondes_multisession_preflight.py'
+      - '.github/workflows/ptitesondes-multisession-preflight-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-multi-session:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify syntax and existing national proof regressions
+        run: |
+          python -m py_compile scripts/ptitesondes_family_national_source_preflight.py
+          python -m unittest discover -s tests -p 'test_ptitesondes_family_national_source_preflight.py' -v
+      - name: Prove real multi-session preservation without relaxing blockers
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_multisession_preflight.py' -v
+      - name: Enforce absence of publisher, secrets and recurring triggers
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s = Path('scripts/ptitesondes_family_national_source_preflight.py').read_text()
+          assert '"public_writes": 0' in s
+          assert '"publication_ready": False' in s
+          assert '"approval_granted_to_publisher": False' in s
+          assert "publisher_not_connected" in s
+          print("No publisher or private authentication enabled.")
+          PY
