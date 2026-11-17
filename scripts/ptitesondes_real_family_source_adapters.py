@@ -68,6 +68,10 @@ def safe_https(url, host, prefix="/"):
 def classify(title, labels=""):
     """Only unambiguous explicit themes; all others need editorial review."""
     value = norm(title + " " + labels)
+    # Never re-route the existing seven musical categories into the
+    # experimental non-musical family contract.
+    if re.search(r"\b(musique|musical|concert|chant|chorale|percussions)\b", value):
+        return None
     patterns = (
         ("atelier-scientifique", r"\b(scientifique|astronomi|robotique|experiences de science)\b"),
         ("atelier-numerique", r"\b(numerique|programmation informatique|codage)\b"),
