@@ -1,0 +1,37 @@
+name: "P'tites Ondes — lot municipal isolé, neuf séances fictives"
+
+on:
+  push:
+    branches:
+      - 'feat/ptitesondes-municipal-batch-readonly-20261116'
+    paths:
+      - 'scripts/ptitesondes_municipal_batch_readiness.py'
+      - 'tests/test_ptitesondes_municipal_batch_readiness.py'
+      - '.github/workflows/ptitesondes-municipal-batch-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_municipal_batch_readiness.py'
+      - 'tests/test_ptitesondes_municipal_batch_readiness.py'
+      - '.github/workflows/ptitesondes-municipal-batch-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  municipal-batch-offline:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Contrat à neuf occurrences — fixtures fictives hors ligne"
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_municipal_batch_readiness.py' -v
+      - name: "Confirm isolation"
+        run: |
+          echo "No private token, no cron, no patch, no public catalogue write."
