@@ -6,7 +6,6 @@ municipal detail page and later pass the #346 official/GPS/private gates.
 """
 from datetime import date
 from html.parser import HTMLParser
-import ipaddress
 from urllib.parse import urljoin, urlsplit
 
 from ptitesondes_real_family_source_adapters import (
@@ -52,7 +51,7 @@ class _Links(HTMLParser):
         if tag == "a" and not self.hidden:
             attrs = dict(attrs)
             style = str(attrs.get("style") or "").casefold().replace(" ", "")
-            if (attrs.get("hidden") is not None
+            if ("hidden" in attrs
                     or str(attrs.get("aria-hidden") or "").lower() == "true"
                     or "display:none" in style):
                 return
