@@ -24,7 +24,7 @@ from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
 )
-from grossesondes_archived_html_intake import PINNED_ARCHIVED_HTML_SOURCES
+from grossesondes_archived_html_intake import PINNED_ARCHIVED_HTML_SOURCES, pinned_first_party
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -282,7 +282,8 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
             if (isinstance(pinned,dict)
                     and pinned["officialSite"] == url
                     and proposed.get("startDate","")[:4] == str(pinned["year"])
-                    and proposed.get("endDate","")[:4] == str(pinned["year"])):
+                    and proposed.get("endDate","")[:4] == str(pinned["year"])
+                    and pinned_first_party(url, pinned["proofUrl"])):
                 # A pre-reviewed fixed first-party page; NEVER from the patch.
                 proof_url=pinned["proofUrl"]
         if proof_url not in cached:
