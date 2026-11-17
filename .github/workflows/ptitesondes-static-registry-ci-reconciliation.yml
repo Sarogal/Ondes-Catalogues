@@ -1,0 +1,27 @@
+name: "P'tites Ondes — test registre GPS fusionné sans publication"
+
+on:
+  push:
+    branches:
+      - test/ptitesondes-registry-merge-ci-reconciliation-20261117
+    paths:
+      - tests/test_ptitesondes_municipal_source_geo_attestation.py
+      - .github/workflows/ptitesondes-static-registry-ci-reconciliation.yml
+  pull_request:
+    paths:
+      - tests/test_ptitesondes_municipal_source_geo_attestation.py
+      - .github/workflows/ptitesondes-static-registry-ci-reconciliation.yml
+
+permissions:
+  contents: read
+
+jobs:
+  static-registry-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify owner attestation still fails if approved GPS record absent
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_municipal_source_geo_attestation.py' -v
