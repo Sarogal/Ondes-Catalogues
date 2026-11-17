@@ -4260,6 +4260,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
+    cave_auto = False
     bateau_auto = False
     laiterie_auto = False
     rockstore_auto = False
@@ -4325,6 +4326,24 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event_id != "go-c-20270408-biarritz-peter-hook-and-the-light" and
             event.get("time") is None
         )
+        cave_auto = (
+            venue == "la-cave-aux-poetes-roubaix" and
+            event_id not in CAVE_POETES_VERIFIED and
+            official_url not in {
+                spec["officialUrl"] for spec in CAVE_POETES_VERIFIED.values()
+            } and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "caveauxpoetes.com" and
+            bool(re.fullmatch(
+                r"/evenement/[a-z0-9-]{3,120}/", parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            (event.get("time") is None or (
+                isinstance(event.get("time"), str) and
+                re.fullmatch(r"(?:[01]\d|2[0-3]):[0-5]\d",
+                             event["time"])))
+        )
         blacklab_auto = (
             venue == "the-black-lab-wasquehal" and
             event_id not in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED and
@@ -4381,7 +4400,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
         )
         require(bool(rex or molotov or ferrailleur or backstage
                      or atabal_pilot or atabal_multi or blacklab_auto
-                     or laiterie_auto or rockstore_auto or bateau_auto)
+                     or laiterie_auto or rockstore_auto or bateau_auto
+                     or cave_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -5277,6 +5297,61 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "hard rock", "ska punk",
                 },
                 "Bateau Ivre : genre explicite insuffisant")
+    elif (event.get("venueId") == "la-cave-aux-poetes-roubaix"
+          and reviewer == "automated-official-recheck"):
+        require(cave_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "La Cave aux Poètes"
+                and event.get("sourceType") == "salle"
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Cave auto : concert hors profil première main")
+        proof = evidence[0]
+        names = proof.get("officialArtistNames")
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("sourceStructure") ==
+                    "cave-poetes-first-party-named-artist-blocks"
+                and proof.get("verifiedNewArtists") ==
+                    [a["name"] for a in new_artists]
+                and proof.get("officialVenue") == "La Cave aux Poètes"
+                and proof.get("checkedFields") ==
+                    (["artists", "date", "venue", "genre"] +
+                     (["concertStartTime"] if event.get("time") else []))
+                and proof.get("concertStartTimeConfirmed") == event.get("time"),
+                "Cave auto : identité, date, salle ou début musical falsifié")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and bool(names)
+                and all(isinstance(x, str) and 3 <= len(norm(x)) <= 100
+                        for x in names)
+                and len({norm(x) for x in names}) == len(names)
+                and event.get("title") == " + ".join(names),
+                "Cave auto : affiche nominative incomplète")
+        named = dict(known_artist_ids)
+        named.update(added)
+        require(all(aid in named and
+                    norm(named[aid].get("name")) == norm(name)
+                    for aid, name in zip(ids, names)),
+                "Cave auto : identité de groupe non corroborée")
+        known_aliases = {
+            norm(alias)
+            for artist in known_artist_ids.values()
+            for alias in (artist.get("aliases") or [])
+            if isinstance(alias, str)
+        }
+        require(all(a["id"] == norm(a["name"]).replace(" ", "-")[:90].strip("-")
+                    and norm(a["name"]) not in known_aliases
+                    for a in new_artists),
+                "Cave auto : nouvel artiste déjà connu sous un alias")
+        require(event_id == ("go-c-" + event["date"].replace("-", "") +
+                             "-roubaix-" + ids[0])
+                and norm_date(event["date"]) > today
+                and len(event.get("genres") or []) == 1
+                and norm(event["genres"][0]) in {
+                    "post punk", "punk", "hardcore", "metalcore", "deathcore",
+                    "hard rock", "metal", "stoner", "sludge", "grindcore",
+                    "thrash", "doom"
+                },
+                "Cave auto : date, genre ou identifiant divergents")
     elif (event.get("venueId") == "the-black-lab-wasquehal"
           and reviewer == "automated-official-recheck"):
         # This independent gate mirrors the Black Lab's only permitted
@@ -5964,7 +6039,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(i in resolved and norm(resolved[i]["name"]).replace(" ","-")==i
                         for i in ids),
                 "La Carène : noms des artistes incompatibles")
-    elif event.get("venueId") == "la-cave-aux-poetes-roubaix":
+    elif (event.get("venueId") == "la-cave-aux-poetes-roubaix"
+          and not (reviewer == "automated-official-recheck" and cave_auto)):
         spec=CAVE_POETES_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer=="independent-official-verifier"
