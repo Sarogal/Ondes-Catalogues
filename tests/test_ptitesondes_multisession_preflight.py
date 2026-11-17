@@ -73,6 +73,19 @@ class MultiSessionPreflightTests(unittest.TestCase):
         self.assertIn("shared_page_exact_session_pair_unverified",
                       result["blocked_reason_counts"])
 
+    def test_matching_session_from_two_sources_is_always_duplicate(self):
+        first, page = fixture()
+        second = deepcopy(first)
+        second["scope"]["source_url"] = "https://agenda.commune.test/animations/copy"
+        second["source"]["official_url"] = second["scope"]["source_url"]
+        out = run(docs=[first, second], pages={
+            first["source"]["official_url"]: page,
+            second["source"]["official_url"]: page,
+        })
+        self.assertEqual(out["official_source_cues_passed"], 1)
+        self.assertIn("duplicate_within_candidate_batch",
+                      out["blocked_reason_counts"])
+
     def test_historical_other_day_same_source_is_not_duplicate(self):
         first, _ = fixture()
         newer = start_on(first, "19", "16:00")
