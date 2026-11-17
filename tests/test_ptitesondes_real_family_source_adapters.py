@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_real_family_source_adapters import (
     MPT_AGENDA_URL, PARIS_DATA_URL, parse_montpellier_mpt_detail,
     parse_paris_explore, parse_ical, scope_proposals, coverage_report,
+    classify,
 )
 
 TODAY = date(2026, 11, 17)
@@ -140,6 +141,16 @@ class IcalTests(unittest.TestCase):
         self.assertEqual(parse_ical(ICS.replace(
             "DTSTART:20261120T100000Z", "DTSTART;VALUE=DATE:20261120"),
             "https://mediatheque.example.org/agenda.ics", TODAY), [])
+
+
+class MusicalIsolationTests(unittest.TestCase):
+    def test_musical_conte_is_not_misrouted_as_family_lecture(self):
+        self.assertIsNone(classify("Conte musical pour les enfants"))
+        self.assertIsNone(classify("Concert jeunesse de musique et percussions"))
+
+    def test_nonmusical_story_is_still_classified(self):
+        self.assertEqual(classify("Heure du conte pour les enfants"),
+                         "lecture-jeunesse")
 
 
 class IsolationTests(unittest.TestCase):
