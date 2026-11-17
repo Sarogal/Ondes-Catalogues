@@ -22,7 +22,8 @@ UNSAFE = re.compile(
 # An artist biography may mention an album 'tribute' or festivals played
 # elsewhere. Reject actual cancellation/postponement markers, not biographies.
 BODY_UNSAFE = re.compile(
-    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled)\b")
+    r"\b(?:annul(?:e|ee|ation)|reporte(?:e)?|postponed|cancelled|"
+    r"hommage|cover(?:s)?)\b")
 UNANNOUNCED = frozenset({
     "guest", "special guest", "premiere partie", "1ere partie",
     "1re partie", "support", "a confirmer", "tba", "surprise",
@@ -156,7 +157,10 @@ def verify(candidate, page, catalogue, today):
             for k in ("artists", "venues", "events")):
         raise ValueError("BBC : catalogue invalide")
     names, guest, collective = artist_parts(fresh["name"], catalogue)
-    if triage.words(names[0]) != triage.words(fresh["leadArtist"]):
+    expected_lead = names[0]
+    if collective and triage.words(collective["artistName"]) == triage.words(names[0]):
+        expected_lead += " " + collective["nonNominativeLabel"]
+    if triage.words(expected_lead) != triage.words(fresh["leadArtist"]):
         raise ValueError("BBC : tête d'affiche non concordante")
     doc = EventParagraphs()
     doc.feed(page)
