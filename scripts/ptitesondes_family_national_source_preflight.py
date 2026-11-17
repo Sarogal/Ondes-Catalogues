@@ -72,6 +72,70 @@ class _VisibleText(HTMLParser):
             self.words.append(data)
 
 
+class _SessionBlocks(HTMLParser):
+    """Smallest self-contained dated/time block in a publisher's HTML.
+
+    A global page may contain several dates and several unrelated clocks.
+    Only pair cues contained in one <time>, <li> or <p> block can prove
+    a precise session on a shared programme URL. No inferred recurrence.
+    """
+    TAGS = frozenset({"time", "li", "p"})
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack = []
+        self.blocks = []
+        self.hidden = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style", "noscript"):
+            self.hidden += 1
+        elif not self.hidden and tag in self.TAGS:
+            self.stack.append((tag, []))
+
+    def handle_data(self, data):
+        if not self.hidden:
+            for _, parts in self.stack:
+                parts.append(data)
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style", "noscript"):
+            self.hidden = max(0, self.hidden - 1)
+        elif tag in self.TAGS and self.stack and self.stack[-1][0] == tag:
+            _, words = self.stack.pop()
+            self.blocks.append(norm_text(" ".join(words)))
+
+
+def _session_pair_on_official_page(html, scope, clock):
+    if not isinstance(html, str) or not TIME_PATTERN.fullmatch(clock):
+        return False
+    try:
+        day = date.fromisoformat(scope["date_start"])
+    except (TypeError, ValueError, KeyError):
+        return False
+    month = (
+        "janvier", "fevrier", "mars", "avril", "mai", "juin",
+        "juillet", "aout", "septembre", "octobre", "novembre", "decembre"
+    )[day.month - 1]
+    dates = tuple(norm_text(x) for x in (
+        day.isoformat(), f"{day.day:02d}/{day.month:02d}/{day.year}",
+        f"{day.day} {month} {day.year}",
+    ))
+    hh, mm = clock.split(":")
+    times = tuple(norm_text(x) for x in (clock, f"{int(hh)}h{mm}"))
+    parser = _SessionBlocks()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError):
+        return False
+    return any(
+        any(d in block for d in dates)
+        and any(t in block for t in times)
+        for block in parser.blocks
+    )
+
+
 def norm_text(text):
     if not isinstance(text, str):
         return ""
@@ -279,28 +343,65 @@ def inspect_family_national_preflight(
             except (OSError, UnicodeError, ValueError, TypeError, KeyError):
                 reasons.add("official_source_unavailable_or_unverifiable")
 
-        # Exact and semantic collisions, with no implied modifications to
-        # historical records and no acceptance via existing musical categories.
+        # A programme URL is often shared by *different proven sessions*.
+        # Never deduplicate merely by URL; the exact local start is part of
+        # the occurrence identity. Ambiguous historical time fails closed.
         title = norm_text(scope["title"])
         city = norm_text(scope["city"])
         venue = norm_text(scope["venue"])
         day = scope["date_start"]
-        signature = (title, city, venue, day)
-        if signature in signatures:
+        signature = (title, city, venue, day, start)
+        previously_seen_on_page = any(u == source_url for u, _ in signatures)
+        if (source_url, signature) in signatures:
             reasons.add("duplicate_within_candidate_batch")
-        signatures.add(signature)
+        # Distinct sessions on a shared page need one SAME-BLOCK date/time
+        # pair. Otherwise separately mentioned dates and times could combine
+        # into an invented session.
+        historical_same_url = any(
+            isinstance(old, dict) and old.get("source_url") == source_url
+            for old in catalogue["events"]
+        )
+        if (previously_seen_on_page or historical_same_url) and not (
+            isinstance(raw if "raw" in locals() else None, str)
+            and _session_pair_on_official_page(raw, scope, start)
+        ):
+            reasons.add("shared_page_exact_session_pair_unverified")
+        signatures.add((source_url, signature))
         for old in catalogue["events"]:
-            if (not isinstance(old, dict) or not isinstance(old.get("date_start"), str)):
+            if (not isinstance(old, dict)
+                    or not isinstance(old.get("date_start"), str)):
                 continue
-            if (old.get("source_url") == source_url or (
+            same_page = old.get("source_url") == source_url
+            same_identity = (
                 norm_text(old.get("title")) == title
                 and norm_text(old.get("city")) == city
                 and norm_text(old.get("venue")) == venue
-                and old.get("date_start") <= day <= (
-                    old.get("date_end") or old.get("date_start")
-                )
-            )):
-                reasons.add("already_published_from_any_source")
+            )
+            start_day = old.get("date_start")
+            end_day = old.get("date_end") or start_day
+            if not isinstance(end_day, str):
+                continue
+            overlaps = start_day <= day <= end_day
+            if not overlaps:
+                continue
+            if same_identity:
+                prior_clock = old.get("time")
+                if (not isinstance(prior_clock, str)
+                        or not TIME_PATTERN.fullmatch(prior_clock)
+                        or prior_clock == start):
+                    reasons.add("already_published_from_any_source")
+                    break
+                # Distinct exact clock on the SAME date is allowed only
+                # when separately paired on an official session block.
+                if not (
+                    isinstance(raw if "raw" in locals() else None, str)
+                    and _session_pair_on_official_page(raw, scope, start)
+                ):
+                    reasons.add("shared_page_exact_session_pair_unverified")
+            elif same_page:
+                # One publisher page with conflicting identity on the same
+                # day is not a reason to auto-pass an uncertain collision.
+                reasons.add("shared_page_event_identity_ambiguous")
                 break
 
         if reasons:
