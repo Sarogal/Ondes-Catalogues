@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-14",
+  "updatedAt": "2026-11-17",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2215,6 +2215,41 @@
     {
       "id": "half-me",
       "name": "HALF ME",
+      "aliases": []
+    },
+    {
+      "id": "blackgold",
+      "name": "BLACKGOLD",
+      "aliases": []
+    },
+    {
+      "id": "sumo-cyco",
+      "name": "SUMO CYCO",
+      "aliases": []
+    },
+    {
+      "id": "hyro-the-hero",
+      "name": "HYRO THE HERO",
+      "aliases": []
+    },
+    {
+      "id": "ingested",
+      "name": "INGESTED",
+      "aliases": []
+    },
+    {
+      "id": "psycroptic",
+      "name": "PSYCROPTIC",
+      "aliases": []
+    },
+    {
+      "id": "netherwalker",
+      "name": "NETHERWALKER",
+      "aliases": []
+    },
+    {
+      "id": "tracheotomy",
+      "name": "TRACHEOTOMY",
       "aliases": []
     }
   ],
@@ -14451,6 +14486,159 @@
       "history": [
         {
           "date": "2026-11-14",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261204-paris-employed-to-serve",
+      "title": "EMPLOYED TO SERVE + CABAL + Cold Culture",
+      "date": "2026-12-04",
+      "artistIds": [
+        "employed-to-serve",
+        "cabal",
+        "cold-culture"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Metalcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/employed-to-serve/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-16",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-16",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270521-montpellier-vulves-assassines",
+      "title": "Vulves Assassines",
+      "date": "2027-05-21",
+      "artistIds": [
+        "vulves-assassines"
+      ],
+      "venueId": "rockstore-montpellier",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://rockstore.fr/vulves-assassines-21-mai-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rockstore",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-16",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-16",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270210-strasbourg-the-last-internationale",
+      "title": "The Last Internationale + Damantra",
+      "date": "2027-02-10",
+      "artistIds": [
+        "the-last-internationale",
+        "damantra"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Garage Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/the-last-internationale2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261203-paris-blackgold",
+      "title": "BLACKGOLD + SUMO CYCO + HYRO THE HERO",
+      "date": "2026-12-03",
+      "artistIds": [
+        "blackgold",
+        "sumo-cyco",
+        "hyro-the-hero"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/blackgold/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270201-paris-ingested",
+      "title": "INGESTED + PSYCROPTIC + NETHERWALKER + TRACHEOTOMY",
+      "date": "2027-02-01",
+      "artistIds": [
+        "ingested",
+        "psycroptic",
+        "netherwalker",
+        "tracheotomy"
+      ],
+      "venueId": "backstage-by-the-mill-paris",
+      "genres": [
+        "Deathcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.backstage-btm.com/agenda/ingested/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Backstage By The Mill",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-17",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-17",
           "change": "Ajout après revue des preuves officielles"
         }
       ]

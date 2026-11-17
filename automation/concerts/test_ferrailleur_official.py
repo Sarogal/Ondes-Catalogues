@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ferrailleur_official as f
+from concerts_cloud_sync import FERRAILLEUR_LOCATION_FIX
 
 PAGE = """<html><body>
 <div>samedi 19 décembre 2026</div>
@@ -46,7 +47,8 @@ def catalogue():
             "id": "le-ferrailleur-nantes", "name": "Le Ferrailleur",
             "city": "Nantes", "address": "Quai des Antilles", "postalCode": "44200",
             "latitude": 47.20058, "longitude": -1.57365,
-            "geoSource": "Adresse officielle ; OpenStreetMap node 373218467"
+            # The real publisher requires the exact signed GPS source.
+            **FERRAILLEUR_LOCATION_FIX
         }],
         "events": []
     }
@@ -115,10 +117,63 @@ class FerrailleurOfficialTests(unittest.TestCase):
         self.assertEqual([x["id"] for x in approved["newArtists"]],
                          ["seth","the-great-old-ones"])
 
-    def test_more_than_two_unknown_artists_held(self):
-        c=catalogue();c["artists"]=[]
-        with self.assertRaisesRegex(ValueError,"Trop de nouveaux"):
-            f.verify(candidate(),PAGE,c,dt.date(2026,11,1))
+    def test_all_three_named_unknown_artists_can_be_registered(self):
+        cat = catalogue()
+        cat["artists"] = []
+        row = f.verify(candidate(), PAGE, cat, dt.date(2026, 11, 1))
+        self.assertEqual(len(row["newArtists"]), 3)
+        from concerts_cloud_sync import validate_approval
+        event, artists = validate_approval(
+            row, {v["id"]: v for v in cat["venues"]}, {},
+            dt.date(2026, 11, 1))
+        self.assertEqual(len(event["artistIds"]), 3)
+        self.assertEqual(len(artists), 3)
+
+    def test_twenty_new_and_mixed_named_bands_reach_real_publisher(self):
+        from concerts_cloud_sync import validate_approval
+        names = ["ACT %02d" % i for i in range(1, 21)]
+        bill = " + ".join(names)
+        page = (
+            "<html><body><div>samedi 19 décembre 2026</div>"
+            + "".join("<div><span>" + name +
+                      "</span><span>Black Metal</span></div>"
+                      for name in names)
+            + '<a href="https://dice.fm/x">Réservation</a>'
+              "<span>Partagez</span><span>horaires début</span>"
+              "<strong>19:00</strong></body></html>"
+        )
+        item = candidate()
+        item["name"] = bill
+        item["classification"] = ["Black Metal"]
+        cat = catalogue()
+        cat["artists"] = []
+        approval = f.verify(item, page, cat, dt.date(2026, 11, 1))
+        self.assertEqual(len(approval["newArtists"]), 20)
+        event, artists = validate_approval(
+            approval, {v["id"]: v for v in cat["venues"]}, {},
+            dt.date(2026, 11, 1))
+        self.assertEqual(len(event["artistIds"]), 20)
+        self.assertEqual(len(artists), 20)
+
+        cat["artists"] = [{"id": "act-01", "name": "ACT 01"},
+                          {"id": "act-02", "name": "ACT 02"}]
+        mixed = f.verify(item, page, cat, dt.date(2026, 11, 1))
+        self.assertEqual(len(mixed["newArtists"]), 18)
+        _, newer = validate_approval(
+            mixed, {v["id"]: v for v in cat["venues"]},
+            {v["id"]: v for v in cat["artists"]}, dt.date(2026, 11, 1))
+        self.assertEqual(len(newer), 18)
+
+        altered = copy.deepcopy(approval)
+        altered["officialEvidence"][0]["officialArtistNames"][4] = "FAKE"
+        with self.assertRaises(ValueError):
+            validate_approval(
+                altered, {v["id"]: v for v in cat["venues"]}, {},
+                dt.date(2026, 11, 1))
+        with self.assertRaises(ValueError):
+            f.verify(item, page.replace("<span>ACT 20</span>",
+                                        "<span>OTHER</span>"),
+                     catalogue(), dt.date(2026, 11, 1))
 
     def test_alias_and_slug_collisions_are_held(self):
         c=catalogue();c["artists"].pop()

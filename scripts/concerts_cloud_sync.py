@@ -11,6 +11,8 @@ import argparse
 import base64
 import copy
 import datetime as dt
+from functools import lru_cache
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -27,10 +29,10 @@ APPROVAL_URL = (
     "automation/concerts/approved.json?ref=main"
 )
 SCHEMA = "grossesondes.concert.approvals.v1"
-# Capacity for cumulative, still individually signed records. Limit the delta
-# per workflow run separately to prevent accidental mass publication.
-MAX_CUMULATIVE_EVENT_APPROVALS = 400
-MAX_CUMULATIVE_VENUE_APPROVALS = 100
+# Keep a strict publication delta. The private append-only approval ledger may
+# grow beyond 400 records; each published concert still needs its signed entry.
+# A 20 MB resource guard is a file-transport limit, NOT an event/artist quota.
+MAX_PRIVATE_APPROVAL_FILE_BYTES = 20_000_000
 MAX_NEW_EVENTS_PER_SYNC = 16
 MAX_NEW_VENUES_PER_SYNC = 6
 
@@ -1580,6 +1582,68 @@ def require(check, message):
         raise ValueError(message)
 
 
+REVIEWED_VENUE_SPECS_PATH = ROOT / "automation/concerts/reviewed_venue_specs_v1.json"
+
+
+@lru_cache(maxsize=1)
+def read_reviewed_venue_specs():
+    """Separately code-reviewed public reference; private approval still required.
+
+    No venue can be added solely from a discovery candidate or an inferred GPS.
+    This registry is empty initially; all existing PILOT_VENUES retain the
+    original exact first-party and independent-location proof requirements.
+    """
+    data = json.loads(REVIEWED_VENUE_SPECS_PATH.read_text(encoding="utf-8"))
+    require(isinstance(data, dict)
+            and set(data) == {"schema", "venues"}
+            and data["schema"] == "grossesondes.concert.reviewed-venue-specs.v1"
+            and isinstance(data["venues"], dict),
+            "Registre public des salles de confiance invalide")
+    venues = data["venues"]
+    require(not set(venues).intersection(PILOT_VENUES),
+            "Registre de salles externe en conflit avec le catalogue historique")
+    for ident, spec in venues.items():
+        require(isinstance(ident, str)
+                and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", ident)
+                and isinstance(spec, dict)
+                and set(spec) == {
+                    "venue", "officialUrl", "locationUrl", "locationProofType"
+                }, "Dossier public de salle incomplet")
+        venue = spec["venue"]
+        require(isinstance(venue, dict)
+                and set(venue) == {
+                    "id", "name", "address", "postalCode", "city",
+                    "department", "region", "latitude", "longitude",
+                    "geoPrecision", "geoSource"
+                } and venue["id"] == ident,
+                "Identité de salle de référence incomplète")
+        require(all(isinstance(venue.get(k), str) and venue[k].strip()
+                    for k in ("name", "address", "postalCode", "city",
+                              "department", "region", "geoPrecision", "geoSource")),
+                "Adresse de salle non identifiée")
+        require(type(venue["latitude"]) in (float, int)
+                and type(venue["longitude"]) in (float, int)
+                and -90 <= venue["latitude"] <= 90
+                and -180 <= venue["longitude"] <= 180,
+                "Coordonnées de salle non géographiques")
+        for field in ("officialUrl", "locationUrl"):
+            url = spec[field]
+            parsed = urlsplit(url) if isinstance(url, str) else None
+            require(parsed is not None and parsed.scheme == "https"
+                    and bool(parsed.hostname) and parsed.username is None
+                    and parsed.hostname not in {
+                        "localhost", "127.0.0.1", "::1"
+                    }, "URL de preuve de salle non sécurisée")
+        require(urlsplit(spec["officialUrl"]).hostname !=
+                urlsplit(spec["locationUrl"]).hostname,
+                "Une source GPS distincte du site officiel est exigée")
+        require(venue["geoSource"] == spec["locationUrl"]
+                and isinstance(spec["locationProofType"], str)
+                and bool(spec["locationProofType"].strip()),
+                "Repère GPS ou type de source sans provenance")
+    return venues
+
+
 def norm(value):
     value = unicodedata.normalize("NFKD", str(value or "").casefold())
     return " ".join(re.findall(r"[a-z0-9]+", value.encode("ascii", "ignore").decode()))
@@ -1595,8 +1659,43 @@ def read_approvals(token):
     with urlopen(req, timeout=18) as response:
         require(response.status == 200, "Approbations privées indisponibles")
         payload = json.load(response)
-    require(payload.get("encoding") == "base64", "Format réponse GitHub inattendu")
-    return json.loads(base64.b64decode(payload["content"]).decode("utf-8"))
+    require(isinstance(payload, dict) and
+            payload.get("type") == "file",
+            "Fichier d'approbations privé inattendu")
+    size = payload.get("size")
+    require(isinstance(size, int) and
+            0 < size <= MAX_PRIVATE_APPROVAL_FILE_BYTES,
+            "Taille du registre privé invalide ou excessive")
+    if payload.get("encoding") == "none":
+        # GitHub's Contents API omits Base64 at >1 MB. Read the exact,
+        # content-addressed blob from the same private repo, never a raw
+        # untrusted URL or a redirect controlled by the JSON metadata.
+        sha = payload.get("sha")
+        require(isinstance(sha, str) and
+                re.fullmatch(r"[0-9a-f]{40}", sha),
+                "SHA du registre d'approbations invalide")
+        blob_url = ("https://api.github.com/repos/Sarogal/GrossesOndes/"
+                    "git/blobs/" + sha)
+        blob_request = Request(blob_url, headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "GrossesOndesConcertsCloud/1.0",
+        })
+        with urlopen(blob_request, timeout=18) as response:
+            require(response.status == 200, "Blob d'approbations indisponible")
+            content = json.load(response)
+        require(isinstance(content, dict) and content.get("sha") == sha
+                and content.get("size") == size,
+                "Blob privé ne correspond pas au registre signé")
+    else:
+        content = payload
+    require(content.get("encoding") == "base64" and
+            isinstance(content.get("content"), str),
+            "Base64 des approbations privées absent")
+    decoded = base64.b64decode(content["content"], validate=False)
+    require(len(decoded) == size,
+            "Taille du registre privé différente de sa métadonnée")
+    return json.loads(decoded.decode("utf-8"))
 
 
 def validate_catalogue(data):
@@ -1689,9 +1788,14 @@ def validate_venue_approval(row, today):
             and row.get("reviewedBy") == "independent-official-verifier",
             "Salle non approuvée indépendamment")
     venue = row.get("venue")
-    require(isinstance(venue, dict) and venue.get("id") in PILOT_VENUES,
-            "Salle non agréée dans la liste blanche")
-    approved = PILOT_VENUES[venue["id"]]
+    require(isinstance(venue, dict) and isinstance(venue.get("id"), str),
+            "Salle sans identifiant vérifiable")
+    approved = PILOT_VENUES.get(venue["id"])
+    if approved is None:
+        # New venues need BOTH a trusted public registry PR and a separately
+        # signed private review with the two exact corroborating sources.
+        approved = read_reviewed_venue_specs().get(venue["id"])
+    require(approved is not None, "Salle non agréée dans la liste blanche")
     expected = approved["venue"]
     require(venue == expected and set(venue) == set(expected),
             "Coordonnées, identité ou adresse de salle altérées")
@@ -3981,8 +4085,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Rockstore/Black Lab : ID transféré dans une autre salle")
     require(norm_date(event.get("date")) >= today,
             "Concert passé ou non daté")
+    # A 20-artist official bill necessarily has a longer title than a
+    # single-headliner concert. Bound length by the number of artist IDs,
+    # not by an arbitrary 220-character ceiling; each ID and named artist
+    # still passes the strict checks below and the venue-specific proof.
+    billed_ids = event.get("artistIds")
+    title_limit = (max(220, 124 * len(billed_ids))
+                   if isinstance(billed_ids, list) else 220)
     require(isinstance(event.get("title"), str) and
-            3 <= len(event["title"]) <= 220,
+            3 <= len(event["title"]) <= title_limit,
             "Titre invalide")
     official_url = event.get("officialUrl")
     require(isinstance(official_url, str) and
@@ -4291,8 +4402,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 for x in ids),
             "Artistes non identifiés")
     new_artists = approval.get("newArtists") or []
-    require(isinstance(new_artists, list) and len(new_artists) <= 15,
-            "Trop d'artistes nouveaux")
+    # A new artist is accepted only when included in the approved event bill.
+    # Do not cap the number of documented first-party artists per event.
+    require(isinstance(new_artists, list) and len(new_artists) <= len(ids),
+            "Artistes nouveaux non liés au plateau approuvé")
     added = {}
     for artist in new_artists:
         aid = artist.get("id")
@@ -4305,6 +4418,51 @@ def validate_approval(approval, venues, known_artist_ids, today):
         added[aid] = {"id": aid, "name": name, "aliases": []}
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
+    if reviewer == "automated-official-recheck" and rex:
+        # Rex time on public pages refers to admission, not proven concert start.
+        require(event.get("time") is None,
+                "Le Rex automatique : heure musicale non corroborée")
+        # A newly introduced named (+ support) must match the exact promoter
+        # proof emitted by the independent first-party detail verifier.
+        if " (+" in event.get("title", "") and new_artists:
+            rex_proof = next((item for item in evidence
+                              if isinstance(item, dict)
+                              and item.get("sourceStructure") ==
+                              "rex-promoter-exact-bill"), None)
+            names = rex_proof.get("officialArtistNames") if rex_proof else None
+            require(isinstance(names, list) and len(names) == len(ids)
+                    and len(names) >= 2
+                    and all(isinstance(n, str) and 3 <= len(norm(n)) <= 100
+                            for n in names)
+                    and len({norm(n) for n in names}) == len(names)
+                    and norm(event["title"]) ==
+                    " ".join(norm(n) for n in names),
+                    "Le Rex : plateau nominatif du promoteur absent ou altéré")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(all(aid in resolved and
+                        norm(resolved[aid]["name"]) == norm(name)
+                        for aid, name in zip(ids, names)),
+                    "Le Rex : identité des artistes différente de la preuve")
+            existing_aliases = {norm(alias)
+                                for artist in known_artist_ids.values()
+                                for alias in (artist.get("aliases") or [])
+                                if isinstance(alias, str)}
+            require(all(norm(a["name"]) not in existing_aliases
+                        and a["id"] ==
+                        norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                        for a in new_artists),
+                    "Le Rex : alias existant ou nouvel identifiant non canonique")
+        # A final unnamed guest may be omitted by the independent verifier.
+        # It must NEVER be added to the published title or artist identities
+        # as if it were a named artist. This does not bypass the normal
+        # first-party event/date/genre/provenance checks above.
+        placeholder = re.compile(r"\b(?:guest|invites?|surprise|tba)\b", re.I)
+        require(not placeholder.search(norm(event.get("title", ""))) and
+                not any(placeholder.search(norm(
+                    (known_artist_ids.get(aid) or added[aid])["name"]))
+                    for aid in ids),
+                "Le Rex automatique : artiste guest non nommé interdit")
     if reviewer == "automated-official-recheck" and backstage:
         # An unannounced guest may be OMITTED from the proposed bill, but
         # may never become a fabricated artist in the publisher.
@@ -4316,7 +4474,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(proof is not None, "Backstage : preuve officielle absente")
         names = proof.get("officialArtistNames")
         require(isinstance(names, list) and len(names) == len(ids)
-                and 1 <= len(names) <= 5
+                and bool(names)
                 and all(isinstance(name, str) and 3 <= len(norm(name)) <= 100
                         for name in names)
                 and len({norm(name) for name in names}) == len(names)
@@ -4338,10 +4496,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
                    for a in known_artist_ids.values()
                    for alias in a.get("aliases", [])
                    if isinstance(alias, str)}
-        require(len(added) <= 2 and all(
-            norm(a["name"]) not in existing | aliases
-            and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
-            for a in new_artists),
+        # Every new artist must belong to the exact verified first-party bill.
+        # A headlining tour or a large multi-band night can introduce any
+        # number of names as long as each one is individually identified.
+        require(len(added) <= len(names)
+            and set(added).issubset(set(ids))
+            and all(
+                norm(a["name"]) not in existing | aliases
+                and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                for a in new_artists),
             "Backstage : nouveau nom en collision ou non identifié")
     if reviewer == "automated-official-recheck" and ferrailleur:
         proof = next((item for item in evidence if isinstance(item,dict)
@@ -4352,7 +4515,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(proof is not None, "Liste officielle d'artistes non vérifiée")
         names = proof.get("officialArtistNames")
         require(isinstance(names,list) and len(names)==len(ids) and
-                1<=len(names)<=5 and
+                bool(names) and
                 all(isinstance(n,str) and 3<=len(norm(n))<=100 for n in names) and
                 len({norm(n) for n in names})==len(names),
                 "Liste officielle d'artistes absente ou ambiguë")
@@ -4360,7 +4523,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(len(displayed)==len(names) and
                 all(norm(a)==norm(b) for a,b in zip(displayed,names)),
                 "Affiche différente de la liste officielle")
-        require(len(added)<=2 and
+        require(len(added)<=len(names) and
                 proof.get("verifiedNewArtists")==[x["name"] for x in new_artists],
                 "Artistes nouveaux non documentés exactement")
         # Each ID has to point to the exact named act, not another known act.
@@ -4842,7 +5005,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             names = proof.get("officialArtistNames")
             counts = proof.get("officialArtistProfileLinkCounts")
             unannounced_label = proof.get("unannouncedSupportLabel")
-            require(1 <= len(new_artists) <= 2 and 1 <= len(ids) <= 4
+            require(1 <= len(new_artists) <= len(ids) and bool(ids)
                     and (unannounced_label is None or
                          unannounced_label in {
                             "guest", "special guest", "invite", "invite surprise",
@@ -4925,7 +5088,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
           and reviewer == "automated-official-recheck"):
         require(laiterie_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "La Laiterie"
-                and 1 <= len(ids) <= 4
+                and bool(ids)
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "La Laiterie automatique : concert hors périmètre")
         proof = evidence[0]
@@ -4951,7 +5114,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         "artiste surprise", "premiere partie", "1ere partie",
                         "1re partie", "support", "a confirmer", "tba",
                     }
-                    and len(new_artists) <= 1
+                    and len(new_artists) <= len(ids)
                     and proof.get("verifiedNewArtists") ==
                         [a["name"] for a in new_artists],
                     "La Laiterie : invité annoncé ou artiste nouveau non corroboré")
@@ -4965,9 +5128,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 for artist in new_artists),
                 "La Laiterie : artiste nouveau en conflit avec une identité existante")
         else:
-            require(new_artists == []
-                    and proof.get("unannouncedSupportLabel") is None
-                    and proof.get("verifiedNewArtists") is None,
+            # Historical pre-upgrade, known-only proofs omitted this field.
+            # New proofs must pin the complete list of new named artists.
+            legacy_known_only = (not new_artists and
+                                 proof.get("verifiedNewArtists") is None)
+            require(proof.get("unannouncedSupportLabel") is None
+                    and (legacy_known_only or
+                         proof.get("verifiedNewArtists") ==
+                             [a["name"] for a in new_artists]),
                     "La Laiterie : nouveaux artistes non corroborés")
             if len(ids) == 1:
                 require(structure ==
@@ -4997,6 +5165,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Hard Rock", "Stoner Rock", "Sludge", "Doom Metal",
                     "Thrash Metal", "Metal", "Punk", "Grunge",
                     "Shoegaze", "Noise Rock", "Math Rock", "Post Rock",
+                    "Garage Rock",
                 },
                 "La Laiterie automatique : genre, date ou heure non admissibles")
     elif event.get("venueId") == "la-laiterie-strasbourg":
@@ -5057,7 +5226,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # guests may bypass the per-artist section verification.
         require(bateau_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "Le Bateau Ivre"
-                and 1 <= len(ids) <= 4 and len(new_artists) <= 3
+                and bool(ids) and len(new_artists) <= len(ids)
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "Bateau Ivre : profil de publication non autorisé")
         proof = evidence[0]
@@ -5607,7 +5776,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             proof = evidence[0]
             names = proof.get("officialArtistNames")
             require(isinstance(names, list) and
-                    3 <= len(names) <= 4 and
+                    len(names) >= 2 and
                     all(isinstance(n, str) and
                         3 <= len(norm(n)) <= 100 for n in names) and
                     len({norm(n) for n in names}) == len(names),
@@ -5634,10 +5803,22 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         ["Heavy Metal"], ["Grindcore"], ["Stoner"],
                         ["Doom"], ["Thrash"]),
                     "Atabal multi : affiche, genre, heure ou statut non approuvés")
+            # The verifier and this publisher independently compute the
+            # same short ID for legacy bills and a deterministic digest for
+            # long, individually signed 10/20-artist programmes.
+            normalized_slugs = [
+                norm(n).replace(" ", "-")[:72].strip("-")
+                for n in names
+            ]
             expected_id = ("go-c-" + url_day.strftime("%Y%m%d") +
-                           "-biarritz-" + "-".join(
-                               norm(n).replace(" ", "-")[:72].strip("-")
-                               for n in names))
+                           "-biarritz-" + "-".join(normalized_slugs))
+            if len(expected_id) > 150:
+                digest = hashlib.sha256(
+                    "|".join(normalized_slugs).encode("utf-8")
+                ).hexdigest()[:20]
+                expected_id = ("go-c-" + url_day.strftime("%Y%m%d") +
+                               "-biarritz-" + normalized_slugs[0] +
+                               "-bill-" + digest)
             require(event_id == expected_id and len(ids) == len(names),
                     "Atabal multi : ID d'affiche ou nombre d'artistes divergent")
             resolved = dict(known_artist_ids)
@@ -6219,7 +6400,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "Backstage auto : date, genre, lieu ou origine non attestés")
             names = proof.get("officialArtistNames")
             displayed = re.split(r"\s+\+\s+", event.get("title", ""))
-            require(isinstance(names, list) and 1 <= len(names) <= 5
+            require(isinstance(names, list) and bool(names)
                     and all(isinstance(n, str) and len(norm(n)) >= 3 for n in names)
                     and len({norm(n) for n in names}) == len(names)
                     and len(displayed) == len(names)
@@ -6229,7 +6410,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                                 + "-paris-" + norm(names[0]).replace(" ","-")[:72]),
                     "Backstage auto : identité/date du concert non déterministe")
             safe_genres = {"Groove Metal","Black Metal","Death Metal",
-                "Melodic Death Metal","Metalcore","Industrial Metal",
+                "Melodic Death Metal","Metalcore","Deathcore","Industrial Metal",
                 "Progressive Metal","Heavy Metal","Thrash Metal","Hardcore",
                 "Post Hardcore","Post Metal","Doom Metal","Stoner Rock",
                 "Punk Rock","Punk","Metal","Hard Rock"}
@@ -7067,8 +7248,15 @@ def merge(reference, current, approvals, today):
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
-    require(len(approvals["approvals"]) <= MAX_CUMULATIVE_EVENT_APPROVALS,
-            "Trop d’approbations cumulées")
+    # Signed approval IDs must be unique even after the historical queue
+    # exceeds 400 records. Duplicating a signature cannot mask a conflict.
+    ledger_ids = [
+        row["event"]["id"] for row in approvals["approvals"]
+        if isinstance(row, dict) and isinstance(row.get("event"), dict)
+        and isinstance(row["event"].get("id"), str)
+    ]
+    require(len(ledger_ids) == len(set(ledger_ids)),
+            "Identifiants d'approbations en doublon")
     # Une modification manuelle d'un concert CLOUD ne peut contourner
     # la file privée des approbations et les champs documentés.
     approved_ids = {
@@ -7162,8 +7350,8 @@ def merge(reference, current, approvals, today):
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
     venue_approvals = approvals.get("venueApprovals", [])
-    require(isinstance(venue_approvals, list) and len(venue_approvals) <= MAX_CUMULATIVE_VENUE_APPROVALS,
-            "Liste d'approbations de salles inattendue ou excessive")
+    require(isinstance(venue_approvals, list),
+            "Liste d'approbations de salles inattendue")
     approved_venues = {x["venue"]["id"]: x for x in venue_approvals
                        if isinstance(x,dict) and isinstance(x.get("venue"),dict)
                        and isinstance(x["venue"].get("id"), str)}
@@ -7177,9 +7365,19 @@ def merge(reference, current, approvals, today):
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
               "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
-              "alreadyPublished": 0, "alreadyRegisteredVenues": 0, "held": []}
+              "alreadyPublished": 0, "alreadyRegisteredVenues": 0,
+              "deferredUnprocessed": 0, "deferredVenues": 0, "held": []}
     for entry in venue_approvals:
         try:
+            # Resume approved venue registrations in deterministic small
+            # batches. Existing published venues are always revalidated;
+            # unseen venues after the limit remain in the immutable ledger
+            # and face their full evidence check on the following run.
+            v_id = entry["venue"]["id"]
+            if (counts["newVenues"] >= MAX_NEW_VENUES_PER_SYNC
+                    and v_id not in venues):
+                counts["deferredVenues"] += 1
+                continue
             incoming = validate_venue_approval(entry, today)
             v_id = incoming["id"]
             if v_id in venues:
@@ -7209,6 +7407,15 @@ def merge(reference, current, approvals, today):
                              "status", "officialUrl", "sourceType")),
                         "Approbation existante ne correspond pas à la fiche publiée")
                 counts["alreadyPublished"] += 1
+                continue
+            # FIFO batching: a full, separately validated and signed batch
+            # is one atomic catalogue update. Leave later approved entries
+            # untouched for the next guarded workflow pass, using the public
+            # event IDs as the durable resume cursor (no second mutable DB).
+            # Do not validate or count these as "held" before their turn.
+            if (counts["newEvents"] >= MAX_NEW_EVENTS_PER_SYNC
+                    and entry.get("reviewDecision") == "approved"):
+                counts["deferredUnprocessed"] += 1
                 continue
             evt, new_artists = validate_approval(entry, venues, artists, today)
             # Aucune collision non déclarée sur le même lieu, jour et artiste.
@@ -7242,8 +7449,9 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
-    # A large first-party intake must be split into reviewed batches.
-    # If the delta is unexpectedly high, stop rather than silently truncate.
+    # Invariant: no run can publish above the atomically reviewed batch size.
+    # The remaining approvals are not discarded and cannot circumvent
+    # validate_approval: the next run checks them before publishing.
     require(counts["newEvents"] <= MAX_NEW_EVENTS_PER_SYNC,
             "Trop de nouveaux concerts en une seule synchronisation")
     require(counts["newVenues"] <= MAX_NEW_VENUES_PER_SYNC,

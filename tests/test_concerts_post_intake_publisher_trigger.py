@@ -36,6 +36,19 @@ class ConcertsPostIntakePublisherSafetyTests(unittest.TestCase):
         self.assertIn("  contents: write", wf)
         self.assertNotIn("repository: Sarogal/GrossesOndes", wf)
 
+    def test_post_329_publisher_guards_retained(self):
+        wf = CLOUD.read_text(encoding="utf-8")
+        for guarded in (
+            "automation/concerts/reviewed_venue_specs_v1.json",
+            "deferredUnprocessed",
+            "deferredVenues",
+            "queue: max",
+            "cancel-in-progress: false",
+            "GROSSES_ONDES_INTAKE_READ_TOKEN",
+        ):
+            self.assertIn(guarded, wf)
+        self.assertNotIn("  pull_request_target:", wf)
+
     def test_existing_publication_gates_and_idempotent_lock_retained(self):
         wf = CLOUD.read_text(encoding="utf-8")
         self.assertIn("  workflow_dispatch:", wf)

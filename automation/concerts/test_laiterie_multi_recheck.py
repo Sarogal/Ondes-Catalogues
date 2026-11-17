@@ -51,6 +51,62 @@ def publisher_check(row):
 
 
 class LaiterieMultiTests(unittest.TestCase):
+    @staticmethod
+    def extended_lineup(count):
+        supports = ["ACT %02d" % i for i in range(1, count)]
+        page = TWO.replace(
+            "<h2>+ 7WEEKS</h2>",
+            "<h2>+ " + " + ".join(supports) + "</h2>",
+        )
+        page = page.replace(
+            "<h2>7WEEKS</h2><h2>On vous recommande</h2>",
+            "".join("<h2>" + name + "</h2>" for name in supports)
+            + "<h2>On vous recommande</h2>",
+        )
+        return page
+
+    def test_six_ten_twenty_official_new_artist_sections(self):
+        for count in (6, 10, 20):
+            with self.subTest(count=count):
+                html = self.extended_lineup(count)
+                lead = candidate(html)
+                cat = catalogue()
+                approval = verifier.verify(lead, html, cat, TODAY)
+                self.assertEqual(len(approval["event"]["artistIds"]), count)
+                self.assertEqual(len(approval["newArtists"]), count-1)
+                out, added = publisher.validate_approval(
+                    approval, {v["id"]: v for v in cat["venues"]},
+                    {a["id"]: a for a in cat["artists"]}, TODAY)
+                self.assertEqual(len(out["artistIds"]), count)
+                self.assertEqual(len(added), count-1)
+
+                # Same official lineup is valid with a partially known roster.
+                mixed = copy.deepcopy(cat)
+                mixed["artists"].append({"id": "act-01", "name": "ACT 01",
+                                         "aliases": []})
+                verified = verifier.verify(lead, html, mixed, TODAY)
+                self.assertEqual(len(verified["newArtists"]), count-2)
+                _, fresh = publisher.validate_approval(
+                    verified, {v["id"]: v for v in mixed["venues"]},
+                    {a["id"]: a for a in mixed["artists"]}, TODAY)
+                self.assertEqual(len(fresh), count-2)
+
+                # Removing a genuine official artist section cannot pass.
+                broken = html.replace(
+                    "<h2>ACT %02d</h2>" % (count-1),
+                    "<h2>UNVERIFIED ACT</h2>",
+                )
+                with self.assertRaises(ValueError):
+                    verifier.verify(lead, broken, cat, TODAY)
+
+                tampered = copy.deepcopy(approval)
+                tampered["officialEvidence"][0]["verifiedNewArtists"].pop()
+                with self.assertRaises(ValueError):
+                    publisher.validate_approval(
+                        tampered,
+                        {v["id"]: v for v in cat["venues"]},
+                        {a["id"]: a for a in cat["artists"]}, TODAY)
+
     def test_two_exactly_named_existing_artists_pass_independent_publisher(self):
         row = signed()
         self.assertEqual(row["event"]["artistIds"],
@@ -137,11 +193,18 @@ class LaiterieMultiTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises((ValueError, KeyError)):
                 publisher_check(row)
 
-    def test_unknown_artist_and_existing_event_are_not_silently_added(self):
+    def test_verified_unknown_artist_is_registered_but_existing_event_held(self):
         c = two_catalogue()
         c["artists"] = c["artists"][:1]
-        with self.assertRaisesRegex(ValueError, "canonique"):
-            verifier.verify(candidate(), TWO, c, TODAY)
+        approved = verifier.verify(candidate(), TWO, c, TODAY)
+        self.assertEqual(approved["newArtists"],
+                         [{"id": "7weeks", "name": "7WEEKS"}])
+        public, added = publisher.validate_approval(
+            approved, {v["id"]: v for v in c["venues"]},
+            {a["id"]: a for a in c["artists"]}, TODAY)
+        self.assertEqual(public["artistIds"],
+                         ["peter-hook-and-the-light", "7weeks"])
+        self.assertEqual(list(added), ["7weeks"])
         c = two_catalogue()
         c["events"] = [{
             "id": "prior", "date": "2027-04-02",

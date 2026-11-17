@@ -22,9 +22,6 @@ MONTHS = dict(zip(
      "aout", "septembre", "octobre", "novembre", "decembre"),
     range(1, 13)
 ))
-# Automatic first-party discovery may register at most two new named acts
-# per concert. More complex bills stay pending for manual curation.
-MAX_NEW_ARTISTS = 2
 GENRE_HINTS = re.compile(
     r"(?<![a-z0-9])(metal|punk|hardcore|grind|doom|sludge|stoner|"
     r"hard rock|heavy rock)(?![a-z0-9])"
@@ -126,10 +123,10 @@ def extract(page):
     boundary = next((i for i in range(date_at+1, len(nodes))
                      if norm(nodes[i]) in ("reservation", "partagez")
                      or norm(nodes[i]).startswith("horaires debut")), None)
-    if boundary is None or boundary - date_at > 35:
+    if boundary is None:
         raise ValueError("En-tête officiel du concert non isolé")
     lineup = [s for s in nodes[date_at+1:boundary] if norm(s)]
-    if not 2 <= len(lineup) <= 25:
+    if len(lineup) < 2:
         raise ValueError("Artistes ou genres absents de l'en-tête officiel")
 
     clock = []
@@ -174,7 +171,7 @@ def verify(candidate, page, catalogue, today):
         raise ValueError("Affiche incomplète ou de type festival")
     tokens = detail["lineupTokens"]
     labels = candidate.get("classification") or []
-    if not labels or len(labels) > 10:
+    if not labels:
         raise ValueError("Genre non documenté")
     allowed = {norm(x) for x in labels}
     used = 0
@@ -235,8 +232,6 @@ def verify(candidate, page, catalogue, today):
             fresh.append({"id": aid, "name": name})
             reserved_ids.add(aid)
         ids.append(aid)
-    if len(fresh) > MAX_NEW_ARTISTS:
-        raise ValueError("Trop de nouveaux artistes pour une approbation automatique")
     if len(set(ids)) != len(ids):
         raise ValueError("Artistes dupliqués dans l'affiche")
 
