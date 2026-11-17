@@ -76,7 +76,7 @@ class _Visibility(HTMLParser):
         hidden = (self._hidden() or tag in _INVISIBLE
                   or "hidden" in attr
                   or str(attr.get("aria-hidden") or "").casefold() == "true"
-                  or re.search(r"display\\s*:\\s*none|visibility\\s*:\\s*hidden",
+                  or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
                                style) is not None)
         if tag not in _VOID:
             self.elements.append((tag, hidden))
