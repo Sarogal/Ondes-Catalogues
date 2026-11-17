@@ -41,6 +41,20 @@ class ConcurrentPublishRetryGuardTests(unittest.TestCase):
         self.assertIn("steps.commit_published.outputs.pushed", w)
         self.assertIn("needs.prepare.outputs.deploy == 'true'", w)
 
+    def test_pr_checks_do_not_hold_production_pages_publication_lock(self):
+        w = self.workflow
+        archive = (ROOT / ".github/workflows/grossesondes-history-release.yml"
+                  ).read_text(encoding="utf-8")
+        self.assertIn("format('ondes-ci-grossesondes-cloud-{0}'", w)
+        self.assertIn("format('ondes-ci-grossesondes-history-{0}'", archive)
+        self.assertIn("|| 'ondes-cloud-publication'", w)
+        self.assertIn("|| 'ondes-cloud-publication'", archive)
+        for content in (w, archive):
+            self.assertIn("queue: max", content)
+            self.assertIn("cancel-in-progress: false", content)
+        self.assertNotIn("group: ondes-cloud-publication", w)
+        self.assertNotIn("group: ondes-cloud-publication", archive)
+
     def test_no_secrets_or_extra_cron_enter_pull_request_job(self):
         w = self.workflow
         self.assertIn("if: github.event_name == 'pull_request'", w)
