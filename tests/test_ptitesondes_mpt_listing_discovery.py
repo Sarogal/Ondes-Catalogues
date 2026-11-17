@@ -141,6 +141,24 @@ class MptListingDiscoveryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             extract_detail_links(PAGE, listing_url="https://evil.test/evenements")
 
+    def test_full_twenty_four_page_bound_uses_only_distinct_links(self):
+        urls = [
+            "https://mpt.montpellier.fr/evenement/session-" + str(n)
+            for n in range(24)
+        ]
+        html = "<html><h1>Événements</h1>" + "".join(
+            '<a href="' + url + '">Détail</a>' for url in urls
+        ) + "</html>"
+        visited = []
+        _, report = discover_listing(
+            html, today=TODAY, page_limit=24,
+            detail_get=lambda url: visited.append(url) or ADULT_DETAIL)
+        self.assertEqual(visited, urls)
+        self.assertEqual(report["selected_detail_pages"], 24)
+        self.assertEqual(report["readable_detail_pages"], 24)
+        self.assertEqual(report["explicit_dated_occurrences"], 0)
+        self.assertEqual(report["public_writes"], 0)
+
     def test_no_synthetic_ages_or_geolocation_on_leads(self):
         leads, report = discover_listing(
             PAGE, today=TODAY, page_limit=1,
