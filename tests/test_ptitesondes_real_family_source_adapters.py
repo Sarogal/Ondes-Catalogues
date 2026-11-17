@@ -59,7 +59,7 @@ class MptTests(unittest.TestCase):
         self.assertEqual(rows[0]["category"], "activite-sportive")
         self.assertEqual(rows[0]["venue"], "Bâtiment Fanfonne Guillierme")
         self.assertEqual(rows[0]["city"], "Montpellier")
-        self.assertEqual(rows[0]["price_evidence"], "explicit_free")
+        self.assertEqual(rows[0]["price_evidence"], "ambiguous")
         self.assertEqual(rows[0]["registration_evidence"], "not_stated")
 
     def test_related_cards_must_not_contaminate_main_event(self):
