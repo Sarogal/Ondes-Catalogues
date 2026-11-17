@@ -47,7 +47,7 @@ def live_sample(today, *, list_get=read_official, detail_get=read_official):
         requests += 1
         return detail_get(url)
     _, report = discover_listing(
-        listing, today=today, detail_get=throttled, page_limit=12)
+        listing, today=today, detail_get=throttled, page_limit=24)
     report["live_sample"] = True
     report["remote_details_read_attempted"] = requests
     return report
