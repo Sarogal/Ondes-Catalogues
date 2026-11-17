@@ -599,6 +599,70 @@ class PublishedWatchTests(unittest.TestCase):
         self.assertEqual(w.inspect(m,html,{"michael-schenker-group":"Michael Schenker Group"})
                          ["status"],"date_only")
 
+    def test_bonjour_magma_ticket_faq_before_real_artist_section(self):
+        """The venue's ticket-resale FAQ is not a replacement for Magma."""
+        v=event("go-c-20261202-saint-brieuc-magma","2026-12-02",
+                "Magma","bonjour-minuit-saint-brieuc",
+                "https://bonjour-minuit.fr/evenement/magma-02dec26/",
+                ["magma"])
+        names={"magma":"Magma"}
+        page="""<html><body><main><article>
+        <h1>Magma</h1><div>mercredi 02 décembre 2026</div>
+        <span>Grande Salle</span><p>20h00 : ouverture des portes</p>
+        <p>TARIFS</p><p>Complet - Bourse aux billets</p>
+        <h2>Vous cherchez des billets ou vous avez un empêchement ?</h2>
+        <p>Rendez-vous sur notre bourse aux billets</p>
+        <h2>Magma</h2><p>rock progressifFRA</p>
+        <p>Biographie de Christian Vander, sans autre groupe sur l'affiche</p>
+        </article></main></body></html>"""
+        self.assertEqual(w.source_kind(v),"bonjour")
+        good=w.inspect(v,page,names)
+        self.assertEqual((good["status"],good["observedDate"]),
+                         ("matched","2026-12-02"))
+        self.assertEqual(w.inspect(v,page.replace("<h2>Magma</h2>",
+                         "<h2>Autre artiste</h2>"),names)["status"],
+                         "lineup_review")
+        self.assertEqual(w.inspect(v,page.replace("rock progressifFRA",
+                         "genre absent"),names)["status"],"unverifiable")
+        self.assertEqual(w.inspect(v,page.replace("02 décembre 2026",
+                         "03 décembre 2026"),names)["status"],"date_review")
+        self.assertEqual(w.inspect(v,page.replace("<p>TARIFS</p>",
+                         "<p>Concert annulé</p><p>TARIFS</p>"),names)["status"],
+                         "content_review")
+        # Only the exact FAQ heading is skippable: a new unknown H2
+        # must not silently become an approved artist.
+        self.assertEqual(w.inspect(v,page.replace(
+                         "Vous cherchez des billets ou vous avez un empêchement ?",
+                         "Première partie surprise"),names)["status"],
+                         "lineup_review")
+
+    def test_forum_header_bill_in_div_is_not_false_lineup_alert(self):
+        """Exact named co-bill in first-party header; no year is invented."""
+        v=event("go-c-20270522-vaureal-hard-rock-party","2027-05-22",
+                "Harsh + Furies + Charcoal","le-forum-vaureal",
+                "https://leforum.cergypontoise.fr/agenda/hard-rock-party",
+                ["harsh","furies","charcoal"],"20:00","début du concert")
+        names={"harsh":"Harsh","furies":"Furies","charcoal":"Charcoal"}
+        page="""<html><main><article><h1>HARD ROCK PARTY</h1>
+        <div>HARSH + FURIES + CHARCOAL</div>
+        <p>Production : Le Forum</p>
+        <p>Rendez-vous le 22 mai à 20h, au Forum</p>
+        <article><h2>CHARCOAL</h2><p>Biographie de CHARCOAL</p></article>
+        </article></main></html>"""
+        good=w.inspect(v,page,names)
+        self.assertEqual(good["status"],"lineup_only")
+        self.assertNotIn("observedDate",good)
+        altered=page.replace("FURIES + CHARCOAL","AUTRE GROUPE + CHARCOAL")
+        self.assertEqual(w.inspect(v,altered,names)["status"],"lineup_review")
+        extra=page.replace("FURIES + CHARCOAL",
+                           "FURIES + CHARCOAL + NOUVEAU GROUPE")
+        self.assertEqual(w.inspect(v,extra,names)["status"],"lineup_review")
+        after_only=page.replace("<div>HARSH + FURIES + CHARCOAL</div>",
+                "<div>Nouvelle programmation</div>").replace(
+                "<p>Rendez-vous", "<p>HARSH + FURIES + CHARCOAL</p><p>Rendez-vous")
+        self.assertEqual(w.inspect(v,after_only,names)["status"],
+                         "lineup_review")
+
     def test_invalid_catalogue_and_bad_limits_rejected(self):
         broken=dict(CATALOGUE);broken["mode"]="public-unrestricted"
         with self.assertRaises(ValueError):

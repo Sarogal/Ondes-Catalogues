@@ -321,8 +321,19 @@ def forum_inspect(event, page, artists):
         if tag=="p" and val:
             subtitles.append(val)
     if event["id"]=="go-c-20270522-vaureal-hard-rock-party":
+        # The official title's co-bill may be text inside a span/div rather
+        # than the first P. Accept an exact bill ONLY before the "Production"
+        # marker adjacent to this unique H1, never from artist biographies.
+        visible_header=VisibleText()
+        visible_header.feed(page)
+        raw_header=norm(" ".join(visible_header.body))
+        pos=raw_header.find(head)
+        prefix=(raw_header[pos+len(head):pos+len(head)+260].split(
+            "production le forum", 1)[0].strip() if pos>=0 else "")
+        expected_bill=norm(" ".join(names))
         lineup_match=(head=="hard rock party" and
-                      norm(" ".join(subtitles[:1]))==norm(" ".join(names)))
+                      (norm(" ".join(subtitles[:1]))==expected_bill
+                       or prefix==expected_bill))
     elif event["id"]=="go-c-20270317-vaureal-michael-schenker-group":
         lineup_match=head.endswith(names[0]) and "tour 2027" in head
     else:
@@ -405,25 +416,36 @@ def bonjour_inspect(event, page, artists):
     if day!=event["date"]:
         return {"status":"date_review","observedDate":day,
                 "reason":"Date officielle différente ; aucune modification automatique"}
-    first_h2=next((n for n in range(i+1,len(nodes))
-                   if nodes[n][0]=="h2"),None)
-    if first_h2 is None:
+    h2_indices=[n for n in range(i+1,len(nodes)) if nodes[n][0]=="h2"]
+    if not h2_indices:
+        return {"status":"unverifiable","reason":"Artistes officiels absents"}
+    # A ticket-resale FAQ precedes the Magma artist profile on the real
+    # official page. Ignore only this exact non-artist heading.
+    ticket_heading="vous cherchez des billets ou vous avez un empechement"
+    named_h2=[n for n in h2_indices if norm(nodes[n][1])!=ticket_heading]
+    if not named_h2:
         return {"status":"unverifiable","reason":"Artistes officiels absents"}
     expected=[norm(artists.get(aid,"")) for aid in event["artistIds"]]
     if not expected or not all(expected):
         return {"status":"unverifiable","reason":"Identité d'artiste absente du catalogue"}
-    actual=[re.sub(r"\s+release party$","",norm(x))
-            for tag,x in nodes[i+1:] if tag=="h2"]
+    actual=[re.sub(r"\s+release party$","",norm(nodes[n][1]))
+            for n in named_h2]
     if actual[:len(expected)]!=expected:
         return {"status":"lineup_review","observedDate":day,
                 "reason":"Artistes officiels différents : revue obligatoire"}
-    # Genre is the named lead act's adjacent badge, never bio or menu.
-    style=bonjour_minuit_adapter.plain(
-        " ".join(parsed.first_style_chunks))[:95]
+    first_h2=named_h2[0]
+    # Genre must be adjacent to the REAL named artist, not a ticket FAQ.
+    style=(bonjour_minuit_adapter.plain(" ".join(parsed.first_style_chunks))[:95]
+           if first_h2==h2_indices[0] else "")
     if (not style and first_h2+1<len(nodes)
             and nodes[first_h2+1][0]=="p"
             and len(nodes[first_h2+1][1])<=85):
         style=bonjour_minuit_adapter.plain(nodes[first_h2+1][1])
+    # This exact whitelisted Magma page joins its official origin code to
+    # the badge: "rock progressifFRA". Do not infer genre from a biography.
+    if (event["id"]=="go-c-20261202-saint-brieuc-magma"
+            and style=="rock progressiffra"):
+        style="rock progressif"
     found=bonjour_minuit_adapter.STYLE.search(style)
     if not found or found.start()!=0:
         return {"status":"unverifiable",
