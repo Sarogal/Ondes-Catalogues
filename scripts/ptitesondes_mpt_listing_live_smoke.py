@@ -67,7 +67,8 @@ def live_sample(today, *, list_get=read_official, detail_get=read_official):
             "exact_date_time_visible": bool(DATE_FR.findall(
                 fold_accents(body))),
             "street_address_confirmed": (
-                _mpt_reviewable_address_venue(raw) is not None),
+                _mpt_reviewable_address_venue(
+                    raw, visible_main_parts=parser.parts) is not None),
             "raw_article_tag_seen": re.search(
                 r"<article\b", raw, re.I) is not None,
             "article_container_recognized": address.article_complete,
