@@ -60,7 +60,7 @@ def collect_once(today):
     collected = {"paris_opendatasoft": [], "montpellier_mpt": []}
     api_url = PARIS_API + "?" + urlencode({
         "limit": 100, "where": "date_end >= '" + today.isoformat() + "'",
-        "order_by": "date_start ASC, id ASC",
+        "order_by": "date_start ASC",
     })
     for provider, url, size, content_type in (
         ("paris_opendatasoft", api_url, MAX_JSON, "application/json"),
@@ -102,5 +102,10 @@ def collect_once(today):
 
 
 if __name__ == "__main__":
-    print(json.dumps(collect_once(date.today()), ensure_ascii=False,
-                     sort_keys=True, indent=2))
+    result = collect_once(date.today())
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
+    # A failed source is never considered a successful live validation.
+    # The other source can still be diagnosed with its own counts.
+    if any(v.get("status") != "fetched_and_parsed"
+           for v in result["checked_sources"].values()):
+        raise SystemExit("LIVE_SAMPLE_INCOMPLETE: at least one source held")
