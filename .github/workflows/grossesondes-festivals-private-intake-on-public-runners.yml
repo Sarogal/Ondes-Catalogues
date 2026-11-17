@@ -136,6 +136,7 @@ jobs:
           fi
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
           run_private candidate_preflight python "$ENGINE/national_candidate_promotion.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          run_private publisher_handoff python "$ENGINE/national_admission_handoff.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
           test -s "$REPORT"
           python - "$REPORT" <<'PY'
@@ -167,6 +168,7 @@ jobs:
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
+            automation-intake/grossesondes/national-festival-publisher-handoff.json \
             automation-intake/grossesondes/national-festival-yield-diagnostics.json
           if git diff --cached --quiet; then
             echo "Aucun changement des états privés ; rien à envoyer."
