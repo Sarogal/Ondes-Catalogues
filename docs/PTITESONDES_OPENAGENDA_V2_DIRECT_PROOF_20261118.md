@@ -24,8 +24,9 @@ Fichier : scripts/ptitesondes_openagenda_v2_direct_evidence.py.
 4. Refuse non publié, annulé, complet, reporté, retiré, en ligne, sans preuve explicite de famille ou avec identité de titre incorrecte.
 5. Compare le lieu et les coordonnées de l'événement à un point **indépendamment documenté**, 65 mètres max ; n'utilise pas de géolocalisation inventée.
 6. N'accepte que des créneaux explicites avec offset cohérent avec le territoire, maximum 800 comme la documentation, aucun horaire inventé depuis une plage de dates.
-7. Si un UID regroupe des jours multiples, la décision est « en attente de regroupement ». Aucune conversion en multiples fiches journalières autorisée.
-8. Rapport de comptages anonymisés. Drapeaux d'attestation organisateur, droits, âge/accès, dédoublonnage et publication toujours faux.
+7. Contrôle des codes de territoires français ultramarins GP, MQ, GF, RE et YT : pays non-FR admissible seulement si les champs région et département concordent exactement avec le territoire attendu, plus les exigences de ville, lieu, GPS et fuseau indépendamment homologués.
+8. Si un UID regroupe des jours multiples, la décision est « en attente de regroupement ». Aucune conversion en multiples fiches journalières autorisée.
+9. Rapport de comptages anonymisés. Drapeaux d'attestation organisateur, droits, âge/accès, dédoublonnage et publication toujours faux.
 
 Le résultat positif ne vaut que **preuve structurelle API v2**. Il n'accorde aucune validation éditoriale, n'écrit aucune fiche publique et ne remplace ni l'organisateur ni le publisher existant.
 
@@ -33,7 +34,7 @@ Le résultat positif ne vaut que **preuve structurelle API v2**. Il n'accorde au
 
 Workflow : .github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml. Exécute uniquement des tests fictifs adversariaux sur runner public, permissions contents:read, sans secret, sans programmation cron et sans publication.
 
-Tests : URL falsifiée, UID ou agenda discordant, annulation, report, complet, géographie incohérente, public non familial, droits absents, décalage de fuseau et DST incorrect, occurrence absente, range de dates sans horaires, 25 jours sur un UID conservés en attente de regroupement, clé secrète interdite, HTTP redirigé interdit, rapport anonymisé.
+Tests : dossier fictif de Guadeloupe avec fuseau et codes administratifs vérifiés, refus d'un territoire contradictoire, rapport avec motif de refus arbitraire rejeté, URL falsifiée, UID ou agenda discordant, annulation, report, complet, géographie incohérente, public non familial, droits absents, décalage de fuseau et DST incorrect, occurrence absente, range de dates sans horaires, 25 jours sur un UID conservés en attente de regroupement, clé secrète interdite, HTTP redirigé interdit, rapport anonymisé.
 
 **Aucun test live avec la véritable clé API n'est réalisé dans cette PR.** Il faudra un smoke test de lecture sécurisée sur l'infrastructure existante après validation, sans exposer le secret à la branche PR.
 
