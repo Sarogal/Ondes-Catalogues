@@ -139,7 +139,7 @@ class VerifiedSourceContractTests(unittest.TestCase):
                   "approvals": []}
         public = {"schemaVersion": 1, "mode": "preview-public-unlisted",
                   "artists": [], "events": []}
-        rows = registry(sources + ["unregistered"])
+        rows = registry(sources + ["agenda_officiel_unregistered"])
         with patch.object(official_recheck, "verify",
                           side_effect=simulated_verify):
             _, report = official_recheck.process(
@@ -152,7 +152,7 @@ class VerifiedSourceContractTests(unittest.TestCase):
 
     def test_private_funnel_and_rechecker_classify_same_eligible_sources(self):
         sources = sorted(contract.VERIFIER_SPECS)
-        rows = registry(sources + ["unregistered"])
+        rows = registry(sources + ["agenda_officiel_unregistered"])
         report = registry_funnel.build(
             rows,
             {"schema": registry_funnel.APPROVALS_SCHEMA, "approvals": []},
