@@ -245,6 +245,7 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     result = {
         "schema": SCHEMA, "mode": "isolated_direct_source_evidence_only",
         "source_evidence_structurally_valid": False,
+        "api_family_audience_confirmed": False,
         "event_kind": "unverified",
         "explicit_local_times_for_candidate_day": [],
         "explicit_dated_days_count": 0,
@@ -309,8 +310,11 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     desc = _norm(" ".join((_fr(api_event, key) for key in (
         "title", "description", "longDescription"))))
     age_child = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
-    if EXCLUSIVELY_ADULT.search(desc) or (not CHILD.search(desc) and not age_child):
+    if EXCLUSIVELY_ADULT.search(desc):
         return fail("family_audience_not_in_source_record")
+    # A neutral source description may be corroborated by a separately
+    # pinned first-party organizer session; it is NOT family proof by itself.
+    api_family_cue = bool(CHILD.search(desc) or age_child)
     # OpenAgenda API v2 represents rights.license as an object, not a
     # string. These fields are attribution evidence, NEVER proof that the
     # event's creator is the organiser or that reuse terms were reviewed.
@@ -338,6 +342,7 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
         kind = "single_explicit_dated_occurrence"
     return dict(result,
                 source_evidence_structurally_valid=True,
+                api_family_audience_confirmed=api_family_cue,
                 event_kind=kind,
                 explicit_dated_days_count=len(all_days),
                 explicit_local_times_for_candidate_day=clocks,
