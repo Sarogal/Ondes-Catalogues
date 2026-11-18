@@ -1,0 +1,43 @@
+name: "P'tites Ondes — audit autonome du funnel (données agrégées, aucun déploiement)"
+
+on:
+  push:
+    branches:
+      - audit/ptitesondes-national-autonomy-funnel-20261118
+    paths:
+      - scripts/ptitesondes_autonomy_funnel.py
+      - tests/test_ptitesondes_autonomy_funnel.py
+      - .github/workflows/ptitesondes-autonomy-funnel-tests.yml
+  pull_request:
+    paths:
+      - scripts/ptitesondes_autonomy_funnel.py
+      - tests/test_ptitesondes_autonomy_funnel.py
+      - .github/workflows/ptitesondes-autonomy-funnel-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aggregated-funnel-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test adversarial des compteurs, confidentialité et refus
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_autonomy_funnel.py' -v
+      - name: Vérifier absence de publication
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text = Path("scripts/ptitesondes_autonomy_funnel.py").read_text()
+          assert "def summarize(" in text
+          assert "public_writes" in text
+          assert "urllib" not in text
+          assert "git push" not in text
+          PY
