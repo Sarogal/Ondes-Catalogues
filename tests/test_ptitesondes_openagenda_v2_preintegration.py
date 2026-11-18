@@ -28,6 +28,7 @@ ORGANIZER = "https://programme.example.org/"
 DIRECT = {
     "schema": "ptitesondes.openagenda_v2_direct_source_evidence.v1",
     "source_evidence_structurally_valid": True,
+    "api_family_audience_confirmed": True,
     "approval_granted": False, "public_writes": 0,
 }
 
