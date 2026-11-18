@@ -10,10 +10,11 @@ an exact dated session even if it does not link to the root OA agenda; this
 avoids per-event allowlist exceptions while preserving evidence requirements.
 """
 from datetime import date
+import re
 from urllib.parse import urlsplit
 
 from ptitesondes_family_national_source_preflight import (
-    _session_pair_on_official_page, _source_cues, official_host,
+    _session_pair_on_official_page, _source_cues, official_host, norm_text,
 )
 
 SCHEMA = "ptitesondes.oa2.independent_organizer_session.v1"
@@ -22,6 +23,14 @@ FORBIDDEN_HOSTS = frozenset((
     "openagenda.com", "www.openagenda.com", "api.openagenda.com",
     "public.opendatasoft.com",
 ))
+# A child-looking title must NEVER outweigh an explicit first-party
+# adult-only statement. Check visible text, not hidden HTML/script noise.
+ADULT_ONLY = re.compile(
+    r"\\b(?:reserve aux adultes|adultes? uniquement|public adultes?"
+    r"|interdit aux enfants|sans enfants|18 ans et plus"
+    r"|a partir de 18 ans)\\b"
+)
+
 
 
 def _safe_url(url):
@@ -83,6 +92,16 @@ def check_independent_session(lead, api_event, direct_proof, reviewed_organizer,
     html = fetched_official_page.get("html")
     if not isinstance(html, str) or not 50 <= len(html) <= 500_000:
         return fail("official_page_missing_or_oversized")
+
+    from ptitesondes_family_national_source_preflight import _VisibleText
+    visible_parser = _VisibleText()
+    try:
+        visible_parser.feed(html)
+        visible_parser.close()
+    except (ValueError, TypeError):
+        return fail("official_page_unreadable")
+    if ADULT_ONLY.search(norm_text(" ".join(visible_parser.words))):
+        return fail("organizer_explicit_adult_only")
 
     # Exact OA identity/title/venue/timezone is already checked in direct_proof.
     # The first-party source must corroborate each distinct local session time
