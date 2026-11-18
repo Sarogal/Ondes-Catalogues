@@ -90,6 +90,26 @@
       "id": "bre-festivals",
       "region": "Bretagne",
       "url": "https://www.tourismebretagne.com/preparer-mon-sejour/agenda/festivals-bretagne/"
+    },
+    {
+      "id": "reu-tourisme",
+      "region": "La Réunion",
+      "url": "https://www.reunion.fr/organisez/actualites-de-l-ile/agenda/"
+    },
+    {
+      "id": "mtq-tourisme",
+      "region": "Martinique",
+      "url": "https://www.martinique.org/fr/agenda"
+    },
+    {
+      "id": "glp-tourisme",
+      "region": "Guadeloupe",
+      "url": "https://www.lesilesdeguadeloupe.com/agenda/"
+    },
+    {
+      "id": "ncl-tourisme-music",
+      "region": "Nouvelle-Calédonie",
+      "url": "https://www.nouvellecaledonie.travel/planifier-son-voyage/agenda/evenements-musicaux/"
     }
   ]
 }
