@@ -34,9 +34,9 @@ jobs:
           wf = Path('.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml').read_text()
           assert 'contents: read' in wf
           assert not any(line.strip().startswith('schedule:') for line in wf.splitlines())
-          assert not any(word in wf for word in ('se' + 'crets.', 'contents: write', 'git push', 'deploy-pages'))
+          assert not any(word in wf for word in ('se' + 'crets.', 'contents:' + ' write', 'git' + ' push', 'deploy' + '-pages'))
           src = Path('scripts/ptitesondes_openagenda_v2_geo_bridge.py').read_text()
           assert 'public_writes' in src and 'publisher_connected' in src
-          assert not any(word in src for word in ('urlopen(', 'requests.post(', 'git push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          assert not any(word in src for word in ('urlopen(', 'requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
           print('PASS: isolated offline geometry tests, zero secrets/publisher')
           PY
