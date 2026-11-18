@@ -479,7 +479,12 @@ def bonjour_inspect(event, page, artists):
         "rock" if re.fullmatch(
             r"(?:transe|math|electro|art|indie|kraut|psych) rock",
             explicit) else explicit)
-    if norm(normalized_genre) != norm(event["genres"][0]):
+    # Existing catalogues may use the expanded French spelling while the
+    # first-party badge abbreviates "indé". This is a source-wide synonym.
+    def canonical(value):
+        word = norm(value)
+        return "rock independant" if word in ("rock inde", "rock independant") else word
+    if not event.get("genres") or canonical(normalized_genre) != canonical(event["genres"][0]):
         # A changed first-artist genre must be reviewed, not silently
         # normalized into the old public event.
         return {"status": "content_review", "observedDate": observed,
