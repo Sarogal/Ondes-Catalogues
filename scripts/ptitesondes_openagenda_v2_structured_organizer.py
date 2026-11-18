@@ -8,6 +8,7 @@ No per-event exceptions, approval, rights claim, or publication.
 """
 from datetime import date, datetime
 from html.parser import HTMLParser
+import ipaddress
 import json
 import re
 from urllib.parse import urlsplit
@@ -117,10 +118,17 @@ def check_structured_organizer_session(
                 or len(url) > 1800 or u.hostname != host
                 or official_host(url) != host
                 or host in FORBIDDEN_HOSTS
-                or host.endswith((".openagenda.com", ".opendatasoft.com"))
-                or u.hostname in ("localhost", "127.0.0.1")
+                or host.endswith((".openagenda.com", ".opendatasoft.com",
+                                  ".local", ".internal"))
+                or host == "localhost"
+                or re.fullmatch(r"[a-z0-9.-]+", host) is None
                 or official_page.get("url") != url):
             return hold("organizer_url_not_independently_pinned")
+        try:
+            ipaddress.ip_address(host)
+            return hold("organizer_url_not_independently_pinned")
+        except ValueError:
+            pass
     except (TypeError, ValueError):
         return hold("organizer_url_not_independently_pinned")
     html = official_page.get("html")
