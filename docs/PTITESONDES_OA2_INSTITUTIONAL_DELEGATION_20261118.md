@@ -88,3 +88,22 @@ GPS, horaires, public ou droit.
 
 Ne jamais exécuter un workflow de PR avec les secrets du dépôt privé.
 Ne rien fusionner, publier ou déployer sans autorisation explicite.
+
+## Vérification impérative de la provenance de la réponse OA
+
+Un test adversarial a révélé que les données d'une réponse d'événement v2
+n'incluent pas systématiquement une preuve de l'UID de l'agenda interrogé.
+La fonction de diagnostic exige désormais un **contexte de lecture séparé**
+`trusted_api_context` avec la méthode GET, le statut HTTP 200, l'URL
+exacte `https://api.openagenda.com/v2/agendas/<agenda_uid>/events/<event_uid>`
+et un accès `public_read_only`. Les identifiants de ce contexte doivent
+correspondre à l'agenda revu et au candidat.
+
+**Ce contexte doit être produit uniquement par le lecteur API de confiance
+dans le moteur privé, lors d'une requête réseau réellement réussie** :
+les champs fournis par le candidat OpenAgenda ou par ODS ne valent pas
+reçu de requête. Le code est un contrat de validation local, pas une signature
+cryptographique ; il ne peut certifier sa propre origine si le caller n'est
+pas isolé. L'absence de contexte provoque le refus
+`direct_api_request_not_independently_bound`, jamais un résultat positif.
+La chaîne de publication ne change pas.
