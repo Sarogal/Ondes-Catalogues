@@ -27,8 +27,9 @@ STYLE_PREFIX = re.compile(
     r"psych(?:e|edelique)|post rock|shoegaze|indus|trip hop)\b"
 )
 UNNAMED = frozenset({
-    "guest", "special guest", "premiere partie", "support",
-    "surprise", "a confirmer", "tba", "invite surprise"
+    "guest", "special guest", "premiere partie",
+    "premiere partie surprise", "support", "surprise",
+    "a confirmer", "tba", "invite surprise", "artiste surprise"
 })
 
 
@@ -203,8 +204,16 @@ def verify(candidate, page, catalogue, today):
     headline = venue.plain(identity(fresh["name"]))
     headline = re.sub(r"\brelease party\b", "", headline)
     headline = " ".join(headline.split())
+    guest = None
     if headline != joined:
-        raise ValueError("Bonjour Minuit : affiche H1 et sections H2 divergentes")
+        # The official H1 may advertise an unnamed support; accept it
+        # only as a recognized final *generic* label, never as an artist.
+        for marker in sorted(UNNAMED, key=len, reverse=True):
+            if headline == joined + " " + marker:
+                guest = marker
+                break
+        if guest is None:
+            raise ValueError("Bonjour Minuit : affiche H1 et sections H2 divergentes")
 
     venue_matches = [v for v in catalogue["venues"] if v.get("id") == VENUE]
     if (len(venue_matches) != 1 or
@@ -264,6 +273,8 @@ def verify(candidate, page, catalogue, today):
             "officialArtistBadges": [badge for _name, badge in parsed.sections],
             "verifiedNewArtists": [a["name"] for a in new_artists],
             "officialRoom": fresh["venueHall"],
+            **({"unannouncedSupportLabel": guest,
+                "originalOfficialHeadline": fresh["name"]} if guest else {}),
         }],
         "event": {
             "id": eid, "title": " + ".join(names), "date": fresh["date"],
