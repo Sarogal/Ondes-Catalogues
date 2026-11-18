@@ -10,6 +10,7 @@ not in pull request CI with secrets.
 from collections import Counter, defaultdict
 from datetime import date, timedelta
 import json
+import math
 import re
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -48,6 +49,30 @@ def _venue_key(row):
             or not norm(city) or not norm(name)):
         return None
     return norm(city), norm(name)
+
+
+def _matching_registry_point(row, record):
+    """A nonempty dict alone is never a trustworthy venue identity match.
+
+    This is still just a public registry candidate, NOT evidence that any
+    OpenAgenda coordinates or event session were independently attested.
+    """
+    if not isinstance(record, dict):
+        return False
+    key = _venue_key(row)
+    aliases = record.get("aliases")
+    if (key is None or norm(record.get("city")) != key[0]
+            or not isinstance(aliases, list) or not aliases
+            or key[1] not in {
+                norm(alias) for alias in aliases if isinstance(alias, str)
+            }):
+        return False
+    point = (record.get("lat"), record.get("lng"))
+    return (
+        all(type(v) in (int, float) and math.isfinite(v) for v in point)
+        and -90 <= point[0] <= 90 and -180 <= point[1] <= 180
+        and not (point[0] == 0 and point[1] == 0)
+    )
 
 
 def audit_backlog_geo_coverage(
@@ -108,7 +133,7 @@ def audit_backlog_geo_coverage(
             known = location_lookup(row)
         except (ValueError, TypeError, KeyError, OverflowError, OSError):
             known = None
-        if not isinstance(known, dict):
+        if not _matching_registry_point(row, known):
             unmatched_venues.add(key)
             counts["leads_without_exact_existing_registry_identity"] += 1
         else:
