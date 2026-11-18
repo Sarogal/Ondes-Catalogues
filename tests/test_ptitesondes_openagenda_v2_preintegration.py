@@ -213,6 +213,13 @@ class FallbackContract(unittest.TestCase):
         self.assertEqual(self.ok(ods_state="temporary_unavailable")["route"], "hold")
         self.assertEqual(self.ok(ods_state="uid_absent")["route"],
                          "direct_source_candidate_for_remaining_gates")
+        # A forged first-party report cannot waive agenda origin verification.
+        x = self.ok(independently_linked=False, first_party_session_evidence={
+            "schema": "ptitesondes.oa2.independent_organizer_session.v1",
+            "official_session_evidence_consistent": True,
+            "approval_granted": True, "public_writes": 0,
+        })
+        self.assertEqual(x["route"], "hold")
 
     def test_institution_historic_unknown_and_multi_day_block(self):
         for changes in (
