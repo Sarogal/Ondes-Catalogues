@@ -245,6 +245,10 @@ class OA2DirectEvidenceTests(unittest.TestCase):
         self.assertEqual(review(event=ev)["reason"],
                          "family_audience_not_in_source_record")
         ev["age"] = {"min": 3, "max": 9}
+        # A contradictory child-age field must not override adult-only text.
+        self.assertEqual(review(event=ev)["reason"],
+                         "family_audience_not_in_source_record")
+        ev["description"] = {"fr": "Animation sans restriction déclarée"}
         self.assertTrue(review(event=ev)["source_evidence_structurally_valid"])
         ev["age"] = {"min": 9, "max": 3}
         self.assertEqual(review(event=ev)["reason"], "invalid_age_claim")
