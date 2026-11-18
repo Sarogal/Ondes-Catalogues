@@ -301,9 +301,18 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     age_child = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
     if EXCLUSIVELY_ADULT.search(desc) or (not CHILD.search(desc) and not age_child):
         return fail("family_audience_not_in_source_record")
+    # OpenAgenda API v2 represents rights.license as an object, not a
+    # string. These fields are attribution evidence, NEVER proof that the
+    # event's creator is the organiser or that reuse terms were reviewed.
     rights = api_event.get("rights")
-    if not isinstance(rights, dict) or not isinstance(
-            rights.get("license"), str) or not rights["license"].strip():
+    license_info = rights.get("license") if isinstance(rights, dict) else None
+    licensor = rights.get("licensor") if isinstance(rights, dict) else None
+    if (not isinstance(license_info, dict)
+            or not isinstance(license_info.get("id"), str)
+            or not license_info["id"].strip()
+            or not isinstance(licensor, dict)
+            or not isinstance(licensor.get("name"), str)
+            or not licensor["name"].strip()):
         return fail("source_rights_unknown")
     clocks, all_days, err = _sessions(
         api_event, reviewed_agenda["timezone"], target_day, today)
