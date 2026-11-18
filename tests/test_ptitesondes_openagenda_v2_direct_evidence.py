@@ -252,6 +252,21 @@ class OA2DirectEvidenceTests(unittest.TestCase):
         ev["rights"] = {}
         self.assertEqual(review(event=ev)["reason"], "source_rights_unknown")
 
+    def test_neutral_api_audience_is_not_rejected_but_stays_unattested(self):
+        ev = deepcopy(EVENT)
+        ev["title"]["fr"] = "Rencontre du samedi"
+        ev["description"] = {"fr": "Rencontre à la bibliothèque"}
+        lead = dict(LEAD, title="Rencontre du samedi")
+        state = review(event=ev, lead=lead)
+        self.assertTrue(state["source_evidence_structurally_valid"])
+        self.assertIs(state["api_family_audience_confirmed"], False)
+        self.assertFalse(state["approval_granted"])
+        self.assertFalse(state["age_and_access_fully_verified"])
+        ev["description"] = {"fr": "Réservé aux adultes uniquement"}
+        self.assertEqual(review(event=ev, lead=lead)["reason"],
+                         "family_audience_not_in_source_record")
+
+
     def test_v2_structured_license_and_licensor_are_required(self):
         # Real OpenAgenda v2 shape: rights.license is an object with a stable
         # id. A syntactically valid licence NEVER means reuse was reviewed.
