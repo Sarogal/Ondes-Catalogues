@@ -251,7 +251,7 @@ def collect_registered_update_sources(patch, original, fetcher=official_text):
 
 
 def collect_registered_edition_sources(patch, original, fetcher=official_text,
-                                       archived=None):
+                                       archived=None, published_slugs=None):
     """Fetch only registered first-party parents (published or archived).
 
     Both parent registries come from the immutable Infomaniak snapshots;
@@ -260,7 +260,27 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
     """
     sources={}
     cached={}
-    for proposed in patch.get("additions",[])[:10]:
+    # Ten fresh first-party fetches per run protect latency and remote sites.
+    # Crucially, skip editions ALREADY on the signed published calendar before
+    # applying this batch limit. Otherwise the first ten private additions
+    # are checked forever and later editions starve.
+    if published_slugs is None:
+        published_slugs = set()
+    if (not isinstance(published_slugs, (set, frozenset))
+            or any(not isinstance(x, str) for x in published_slugs)):
+        raise ValueError("Invalid signed published edition identities")
+    ready = []
+    for addition in patch.get("additions", []):
+        if not isinstance(addition, dict):
+            continue
+        if (addition.get("slug") not in published_slugs
+                and addition.get("proofMode") in (
+                    EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
+                    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)):
+            ready.append(addition)
+        if len(ready) == 10:
+            break
+    for proposed in ready:
         mode=proposed.get("proofMode")
         if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
                         HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE):
@@ -381,8 +401,13 @@ def main():
     registered_archives={
         e["slug"]:e for e in snapshot["festival-history.json"]["knownFestivals"]
     }
+    signed_published_slugs = {
+        row["slug"] for row in published["festivals.json"]["festivals"]
+        if isinstance(row, dict) and isinstance(row.get("slug"), str)
+    }
     sources.update(collect_registered_edition_sources(
-        patch, original, archived=registered_archives))
+        patch, original, archived=registered_archives,
+        published_slugs=signed_published_slugs))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
