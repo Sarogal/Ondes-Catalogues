@@ -13,6 +13,7 @@ Le 18 novembre, 40 pistes à 4 lieux GPS représentaient seulement 9 UID distinc
 - Lecture GET /v2/agendas/{agendaUID}/events/{eventUID}, avec clé publique oa_pk_ dans l'en-tête HTTP key (jamais en paramètre URL) : https://developers.openagenda.com/10-lecture/ et https://developers.openagenda.com/authentification/.
 - uid immutable ; state=2 pour publié ; status=1 pour programmé ; timings explicites begin/end ; timezone ; location et rights : https://developers.openagenda.com/evenements/structure/ et https://developers.openagenda.com/lieux/structure/.
 - Une fiche OpenAgenda peut être participative : une correspondance API ne prouve **jamais** seule l'identité de l'organisateur ou les droits de republication.
+- Selon la documentation 2026 de l'API, `rights.license` est un **objet** (`id`, `name`, `url`), non une chaîne. Le concédant `rights.licensor` doit être distingué de l'éditeur `rights.publisher` ; la licence et l'attribution doivent être vérifiées avant publication : https://developers.openagenda.com/licence/.
 
 ## Module isolé
 
