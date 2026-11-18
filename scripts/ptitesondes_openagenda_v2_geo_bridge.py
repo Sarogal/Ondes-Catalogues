@@ -247,3 +247,40 @@ def review_independent_geo(lead, api_event, reviewed_source,
     return dict(base, geo_evidence_consistent=True,
                 registered_venue=registered,
                 reason="independent_address_and_ban_match_other_gates_pending")
+
+
+def review_direct_with_independent_geo(
+        lead, api_event, reviewed_agenda, reviewed_source,
+        official_page, geocoder_request_url, geojson, today):
+    """Compose independent GPS with API v2 structural checks, read-only.
+
+    This is a DIAGNOSTIC bridge, not a production replacement for the venue
+    registry or a source-rights/access/age approval. In particular, an
+    official institution and BAN never prove an event's organizer or license.
+    """
+    geo = review_independent_geo(
+        lead, api_event, reviewed_source, official_page,
+        geocoder_request_url, geojson,
+    )
+    result = {
+        "schema": "ptitesondes.oa2.direct_geo_diagnostic.v1",
+        "geography_verified": geo["geo_evidence_consistent"] is True,
+        "direct_source_structurally_valid": False,
+        "publisher_connected": False,
+        "approval_granted": False, "public_writes": 0,
+    }
+    if not geo["geo_evidence_consistent"]:
+        return dict(result, reason=geo["reason"])
+    from ptitesondes_openagenda_v2_direct_evidence import review_direct_v2
+    direct = review_direct_v2(
+        lead, api_event, reviewed_agenda, geo["registered_venue"], today,
+    )
+    # The returned message contains ONLY a fixed producer-owned reason;
+    # never include source URLs, UID, title, API payload, key, coordinates.
+    return dict(
+        result,
+        direct_source_structurally_valid=(
+            direct.get("source_evidence_structurally_valid") is True
+        ),
+        reason=direct.get("reason", "direct_structure_unverified"),
+    )
