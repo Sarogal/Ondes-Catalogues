@@ -27,6 +27,7 @@ import trabendo_adapter
 import maroquinerie_adapter
 import boule_noire_adapter
 import bonjour_minuit_adapter
+import bonjour_minuit_official_recheck
 import rocher_palmer_adapter
 
 CLOUD = "https://sarogal.github.io/Ondes-Catalogues/grossesondes/concerts.json"
@@ -54,7 +55,7 @@ SOURCES = {
         r"/[a-z0-9-]+", re.I), "brin"),
     "bonjour-minuit-saint-brieuc": (
         "bonjour-minuit.fr",
-        re.compile(r"/evenement/(?:magma-02dec26|sbrbs-30janv27)/", re.I),
+        re.compile(r"/evenement/[a-z0-9-]{3,115}/", re.I),
         "bonjour"),
 
     # First pilot for already published Rocher bills; exact official detail
@@ -183,8 +184,24 @@ def source_kind(event):
         return None
     if kind == "forum" and FORUM_WATCH_URLS.get(event.get("id")) != url:
         return None
-    if kind == "bonjour" and BONJOUR_WATCH_URLS.get(event.get("id")) != url:
-        return None
+    if kind == "bonjour":
+        # Any future, already-published official show is observable. Keep
+        # old manually signed pages pinned, but remove the per-event allowlist.
+        event_id = event.get("id")
+        day = event.get("date")
+        if (not isinstance(day, str)
+                or not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day)
+                or not isinstance(event_id, str)
+                or not re.fullmatch(
+                    r"go-c-" + day.replace("-", "") +
+                    r"-saint-brieuc-[a-z0-9-]+", event_id)):
+            return None
+        if (event_id in BONJOUR_WATCH_URLS
+                and BONJOUR_WATCH_URLS[event_id] != url):
+            return None
+        if (url in BONJOUR_WATCH_URLS.values()
+                and BONJOUR_WATCH_URLS.get(event_id) != url):
+            return None
     if kind == "rocher" and event.get("id") != "go-c-20261107-cenon-gwendoline":
         return None
     if kind == "glazart" and glazart_adapter.event_date(url) is None:
@@ -378,83 +395,97 @@ def forum_inspect(event, page, artists):
 
 
 def bonjour_inspect(event, page, artists):
-    """First-party event date/room/lineup, no automatic publication."""
-    parsed=bonjour_minuit_adapter.Detail()
+    """Generic read-only first-party reinspection of *published* BM shows.
+
+    It evaluates every published Bonjour Minuit individual event URL, not
+    just the two old manually signed dossiers. The result is an anomaly
+    report ONLY: no changes to public events, status or private approvals.
+    """
+    if source_kind(event) != "bonjour":
+        return {"status": "unsupported", "reason": "Fiche non officielle"}
+    parsed = bonjour_minuit_adapter.Detail()
     parsed.feed(page)
-    nodes=parsed.nodes
-    heads=[i for i,(tag,_) in enumerate(nodes) if tag=="h1"]
-    if len(heads)!=1:
-        return {"status":"unverifiable","reason":"En-tête officiel absent"}
-    i=heads[0]
-    if norm(nodes[i][1])!=norm(BONJOUR_HEADLINES[event["id"]]):
-        return {"status":"lineup_review",
-                "reason":"En-tête nominatif différent : revue indépendante"}
-    # Real pages encode date / venue in DIV/SPAN, not in P. Restrict to
-    # visible fields between this H1 and the first named artist H2.
-    header=bonjour_minuit_adapter.plain(" ".join(parsed.header_chunks))
-    early=re.split(r"\b(?:tarifs|placement|si vous aimez|billetterie)\b",
-                   header,maxsplit=1)[0][:1200]
-    dates=bonjour_minuit_adapter.full_dates(early)
-    if len(dates)!=1:
-        return {"status":"unverifiable","reason":"Année complète absente"}
-    day=next(iter(dates))
-    if "grande salle" not in early:
-        return {"status":"content_review","observedDate":day,
-                "reason":"Changement possible d'espace musical ; revue seulement"}
-    if bonjour_minuit_adapter.CANCEL.search(early):
-        return {"status":"content_review","observedDate":day,
-                "observedSourceStatus":"cancelled_notice",
-                "reason":"Annulation explicitement mentionnée ; preuve à recouper"}
-    if bonjour_minuit_adapter.POSTPONE.search(early):
-        return {"status":"content_review","observedDate":day,
-                "observedSourceStatus":"postponement_notice",
-                "reason":"Report explicitement mentionné ; preuve à recouper"}
-    if bonjour_minuit_adapter.SOLD_OUT.search(early):
-        return {"status":"content_review","observedDate":day,
-                "observedSourceStatus":"sold_out_notice",
-                "reason":"Complet annoncé : ceci n'est PAS une annulation"}
-    if day!=event["date"]:
-        return {"status":"date_review","observedDate":day,
-                "reason":"Date officielle différente ; aucune modification automatique"}
-    h2_indices=[n for n in range(i+1,len(nodes)) if nodes[n][0]=="h2"]
-    if not h2_indices:
-        return {"status":"unverifiable","reason":"Artistes officiels absents"}
-    # A ticket-resale FAQ precedes the Magma artist profile on the real
-    # official page. Ignore only this exact non-artist heading.
-    ticket_heading="vous cherchez des billets ou vous avez un empechement"
-    named_h2=[n for n in h2_indices if norm(nodes[n][1])!=ticket_heading]
-    if not named_h2:
-        return {"status":"unverifiable","reason":"Artistes officiels absents"}
-    expected=[norm(artists.get(aid,"")) for aid in event["artistIds"]]
+    headings = [text for tag, text in parsed.nodes if tag == "h1"]
+    if len(headings) != 1:
+        return {"status": "unverifiable",
+                "reason": "Un en-tête officiel unique est nécessaire"}
+    extractor = bonjour_minuit_official_recheck.OfficialArtistHeadings()
+    extractor.feed(page)
+    extractor.close()
+    if not extractor.sections:
+        return {"status": "unverifiable",
+                "reason": "Sections nominatives officielles absentes"}
+    raw_names = [bonjour_minuit_official_recheck.identity(name)
+                 for name, _badge in extractor.sections]
+    expected = [norm(artists.get(aid, "")) for aid in event["artistIds"]]
+    actual = [norm(name) for name in raw_names]
     if not expected or not all(expected):
-        return {"status":"unverifiable","reason":"Identité d'artiste absente du catalogue"}
-    actual=[re.sub(r"\s+release party$","",norm(nodes[n][1]))
-            for n in named_h2]
-    if actual[:len(expected)]!=expected:
-        return {"status":"lineup_review","observedDate":day,
-                "reason":"Artistes officiels différents : revue obligatoire"}
-    first_h2=named_h2[0]
-    # Genre must be adjacent to the REAL named artist, not a ticket FAQ.
-    style=(bonjour_minuit_adapter.plain(" ".join(parsed.first_style_chunks))[:95]
-           if first_h2==h2_indices[0] else "")
-    if (not style and first_h2+1<len(nodes)
-            and nodes[first_h2+1][0]=="p"
-            and len(nodes[first_h2+1][1])<=85):
-        style=bonjour_minuit_adapter.plain(nodes[first_h2+1][1])
-    # This exact whitelisted Magma page joins its official origin code to
-    # the badge: "rock progressifFRA". Do not infer genre from a biography.
-    if (event["id"]=="go-c-20261202-saint-brieuc-magma"
-            and style=="rock progressiffra"):
-        style="rock progressif"
-    found=bonjour_minuit_adapter.STYLE.search(style)
-    if not found or found.start()!=0:
-        return {"status":"unverifiable",
-                "reason":"Badge de genre pertinent non vérifiable"}
-    # Door clocks and tentative show times never prove a music-start hour.
-    return {"status":"matched","observedDate":day,
-            "reason":"Date, salle et artistes vérifiés ; début musical NON vérifié"}
+        return {"status": "unverifiable",
+                "reason": "Artiste publié absent du catalogue"}
+    if actual != expected:
+        return {"status": "lineup_review",
+                "reason": "Artistes publiés et affiche officielle divergents"}
 
+    headline = bonjour_minuit_adapter.plain(headings[0])
+    headline = re.sub(r"\brelease party\b", "", headline)
+    headline = " ".join(headline.split())
+    joined = bonjour_minuit_adapter.plain(" ".join(raw_names))
+    if headline != joined:
+        if not any(headline == joined + " " + marker
+                   for marker in bonjour_minuit_official_recheck.UNNAMED):
+            return {"status": "lineup_review",
+                    "reason": "En-tête de soirée et sections artistes divergents"}
 
+    header = bonjour_minuit_adapter.plain(" ".join(parsed.header_chunks))
+    early = re.split(r"\b(?:tarifs|placement|si vous aimez|billetterie)\b",
+                     header, maxsplit=1)[0][:1200]
+    dates = bonjour_minuit_adapter.full_dates(early)
+    if len(dates) != 1:
+        return {"status": "unverifiable",
+                "reason": "Année complète absente de l'en-tête"}
+    observed = next(iter(dates))
+    rooms = {m.group(1) for m in bonjour_minuit_adapter.ROOM.finditer(early)}
+    if len(rooms) != 1:
+        return {"status": "content_review", "observedDate": observed,
+                "reason": "Salle ou espace musical incertain"}
+    # Existing manually signed Magma / SBRBS pages were both independently
+    # verified as Grande Salle; retain that historical room promise.
+    if (event["id"] in BONJOUR_WATCH_URLS
+            and rooms != {"grande salle"}):
+        return {"status": "content_review", "observedDate": observed,
+                "reason": "Déplacement possible du concert signé"}
+    if bonjour_minuit_adapter.CANCEL.search(early):
+        return {"status": "content_review", "observedDate": observed,
+                "observedSourceStatus": "cancelled_notice",
+                "reason": "Annulation annoncée : revue indépendante obligatoire"}
+    if bonjour_minuit_adapter.POSTPONE.search(early):
+        return {"status": "content_review", "observedDate": observed,
+                "observedSourceStatus": "postponement_notice",
+                "reason": "Report annoncé : revue indépendante obligatoire"}
+    if bonjour_minuit_adapter.SOLD_OUT.search(early):
+        return {"status": "content_review", "observedDate": observed,
+                "observedSourceStatus": "sold_out_notice",
+                "reason": "Complet : ce n'est PAS une annulation"}
+    if observed != event["date"]:
+        return {"status": "date_review", "observedDate": observed,
+                "reason": "Date officielle différente ; revue uniquement"}
+    badge = extractor.sections[0][1]
+    genre = bonjour_minuit_adapter.STYLE.search(badge)
+    if not genre or genre.start() != 0:
+        return {"status": "unverifiable",
+                "reason": "Genre affiché hors profil première main"}
+    explicit = genre.group(1)
+    normalized_genre = (
+        "rock" if re.fullmatch(
+            r"(?:transe|math|electro|art|indie|kraut|psych) rock",
+            explicit) else explicit)
+    if norm(normalized_genre) != norm(event["genres"][0]):
+        # A changed first-artist genre must be reviewed, not silently
+        # normalized into the old public event.
+        return {"status": "content_review", "observedDate": observed,
+                "reason": "Genre officiel différent de celui publié"}
+    return {"status": "matched", "observedDate": observed,
+            "reason": "Date et plateau officiels corroborés, heure musicale non inférée"}
 
 
 def rocher_inspect(event, page, artists):
