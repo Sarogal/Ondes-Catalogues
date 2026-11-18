@@ -39,6 +39,7 @@ REMAINING_GATES = (
 SAFE_STAGES = (
     "invalid_case",
     "organizer_index_not_confirmed",
+    "official_feed_not_confirmed",
     "organizer_event_page_not_exact",
     "independent_venue_not_verified",
     "openagenda_identity_or_sessions_not_verified",
@@ -150,6 +151,37 @@ def diagnose_indexed_candidate(case, reviewed_index, fetched_index, today):
         if key != "organizer_event_page"
     }
     prepared["reviewed_organizer"] = nominated["reviewed_organizer"]
+    prepared["organizer_page"] = case["organizer_event_page"]
+    return diagnose_candidate(prepared, today)
+
+
+
+def diagnose_feed_candidate(case, reviewed_feed, fetched_feed, today):
+    """Nominate a page from a vetted *institutional RSS/Atom feed* only.
+
+    The incoming OpenAgenda candidate cannot override the trusted feed pin.
+    After exact same-host feed nomination, the event page must be fetched
+    independently, then pass the existing JSON-LD/text session, GPS and
+    OpenAgenda structural checks. No publisher or secret exposure.
+    """
+    from ptitesondes_openagenda_v2_official_feeds import (
+        nominate_from_reviewed_feed, verify_nominated_feed_page,
+    )
+    base = diagnose_candidate(None, today)
+    if not isinstance(case, dict) or set(case) != INDEXED_CASE:
+        return base
+    nomination = nominate_from_reviewed_feed(
+        case["lead"], reviewed_feed, fetched_feed)
+    if nomination.get("first_party_event_link_nominated") is not True:
+        return dict(base, stage="official_feed_not_confirmed")
+    if not verify_nominated_feed_page(
+            nomination, case["organizer_event_page"]):
+        return dict(base, stage="organizer_event_page_not_exact")
+    prepared = {
+        key: value for key, value in case.items()
+        if key != "organizer_event_page"
+    }
+    prepared["reviewed_organizer"] = nomination["reviewed_organizer"]
     prepared["organizer_page"] = case["organizer_event_page"]
     return diagnose_candidate(prepared, today)
 
