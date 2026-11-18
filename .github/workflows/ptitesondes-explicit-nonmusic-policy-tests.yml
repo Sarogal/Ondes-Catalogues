@@ -1,0 +1,40 @@
+name: "P'tites Ondes — categories familiales explicites, non activees"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/merge_policy.py'
+      - 'tests/test_ptitesondes_explicit_nonmusic_policy.py'
+      - '.github/workflows/ptitesondes-explicit-nonmusic-policy-tests.yml'
+      - 'docs/PTITESONDES_EXPLICIT_NONMUSIC_POLICY_20261118.md'
+
+permissions:
+  contents: read
+
+jobs:
+  family-categories-disabled-by-default:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline category opt-in and historical publisher invariants
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_explicit_nonmusic_policy.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_merge_policy.py' -v
+      - name: Assert inactive integration, no runtime publication change
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("scripts/merge_policy.py").read_text()
+          assert "reviewed_family_categories=None" in s
+          assert "valid(ev,categories,fields,today)" in s
+          assert "reviewed_family_categories=" not in s[s.index("def merge("):]
+          print("PASS: 13 family types explicitly opt-in only, publisher unchanged")
+          PY
