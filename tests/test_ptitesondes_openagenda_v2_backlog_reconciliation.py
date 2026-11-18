@@ -26,10 +26,19 @@ def lead(uid, when="2026-12-05", *, title="Lecture jeunesse",
 
 
 def catalog(*events):
+    # Keep the REAL public merge policy's version=3 and >=100 historical
+    # events contract. Do not weaken byid() to make miniature tests pass.
+    baseline = [{
+        "id": "test-history-" + str(i),
+        "title": "Autre activité", "city": "Autreville",
+        "venue": "Maison des autres",
+        "date_start": "2026-12-11", "date_end": "2026-12-11",
+        "source_url": "https://autreville.test/agenda",
+    } for i in range(100)]
     return {
-        "schema": "ptitesondes.sorties.v1",
+        "version": 3,
         "updated_at": "2026-11-17T08:49:57+01:00",
-        "events": list(events),
+        "events": baseline + list(events),
     }
 
 
