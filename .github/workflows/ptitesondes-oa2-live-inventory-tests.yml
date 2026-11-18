@@ -42,7 +42,7 @@ jobs:
           wf = Path('.github/workflows/ptitesondes-oa2-live-inventory-tests.yml').read_text()
           assert 'contents: read' in wf
           assert 'se' + 'crets.' not in wf
-          assert 'deploy-pages' not in wf
-          assert 'git push' not in wf
-          assert 'schedule:' not in wf
+          assert ('deploy' + '-pages') not in wf
+          assert ('git' + ' push') not in wf
+          assert ('sche' + 'dule:') not in wf
           PY
