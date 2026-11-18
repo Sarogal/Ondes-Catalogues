@@ -399,8 +399,10 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
     chosen = p1 + [p2[(start + i) % len(p2)] for i in range(min(max_p2, len(p2)))]
     collected = {}
     robot_cache = {}
-    # Total limit prevents RSS detail expansion from becoming unbounded.
-    rss_probe_budget = 12
+    # Defer RSS detail reads until all official feeds have been inspected.
+    # This keeps the 12-page request budget while preventing early P1 venues
+    # from consuming all requests before later venues get a chance.
+    rss_probe_queue = []
     for source in chosen:
         base = source["url"]
         info = {"venue": source["name"], "url": base}
@@ -2107,39 +2109,38 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                         feed_stats["feedErrors"].append({
                             "type": kind, "errorType": type(feed_error).__name__
                         })
-            # Resolve a bounded, rotating subset of first-party RSS article URLs.
-            # RSS pubDate is never a concert date. Only the article's own single
-            # MusicEvent with named performers/date/location can form a NEW
-            # quarantined discovery lead; the original undated lead remains.
+            # Keep undated RSS announcements archived, and defer their official
+            # detail pages to the fair global source rotation AFTER all venues
+            # have been scanned. RSS pubDate is never used as event date.
             rss_detail = {"attempted": 0, "dated": 0, "held": 0}
-            if rss_probe_budget > 0:
-                probes = official_rss_jsonld_bridge.select_leads(
-                    rss_leads, base, day, scan_slot,
-                    limit=min(2, rss_probe_budget))
-                for lead in probes:
-                    rss_probe_budget -= 1
-                    rss_detail["attempted"] += 1
-                    try:
-                        link = lead["sourceUrl"]
-                        if not robots_allow(link, robot_cache):
-                            rss_detail["held"] += 1
-                            continue
-                        body, actual = download(link, timeout=10, cap=900_000)
-                        record = official_rss_jsonld_bridge.candidate_from_event_page(
-                            lead, body, actual, source, known, day,
-                            read_ld=read_ld, venue_candidate=venue_candidate, norm=norm)
-                        if record is None:
-                            rss_detail["held"] += 1
-                            continue
-                        collected[record["candidateId"]] = record
-                        rss_detail["dated"] += 1
-                    except Exception:
-                        rss_detail["held"] += 1
             info.update({"pagesChecked": len(pages), "candidatesDetected": count,
                          "feeds": feed_stats, "rssStructured": rss_detail})
+            if rss_leads:
+                rss_probe_queue.append((source, base, rss_leads, rss_detail))
         except Exception as err:
             info["error"] = type(err).__name__ + ": " + str(err)[:130]
         report.append(info)
+    # Up to twelve HTTP detail probes per cycle, distributed fairly over ALL
+    # discovered official feeds. No extra network calls versus the former cap.
+    for source, base, stats, lead in official_rss_jsonld_bridge.select_venue_probes(
+            rss_probe_queue, day, scan_slot, limit=12, per_venue=2):
+        stats["attempted"] += 1
+        try:
+            link = lead["sourceUrl"]
+            if not robots_allow(link, robot_cache):
+                stats["held"] += 1
+                continue
+            body, actual = download(link, timeout=10, cap=900_000)
+            record = official_rss_jsonld_bridge.candidate_from_event_page(
+                lead, body, actual, source, known, day,
+                read_ld=read_ld, venue_candidate=venue_candidate, norm=norm)
+            if record is None:
+                stats["held"] += 1
+                continue
+            collected[record["candidateId"]] = record
+            stats["dated"] += 1
+        except Exception:
+            stats["held"] += 1
     return list(collected.values())
 
 

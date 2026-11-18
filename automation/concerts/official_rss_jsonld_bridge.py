@@ -59,9 +59,46 @@ def select_leads(leads, source_url, day, slot, limit=2):
             seen.add(link)
     if not valid or not limit:
         return []
-    offset = (day.toordinal() + 2 * slot) % len(valid)
+    # A non-overlapping two-lead window for each of the three daily slots.
+    # Advancing by one per day would re-read almost the same 2 links and
+    # starve older announcements, even when three runs/day succeed.
+    offset = ((day.toordinal() * 3 + slot) * limit) % len(valid)
     return [valid[(offset + n) % len(valid)]
             for n in range(min(limit, len(valid)))]
+
+
+def select_venue_probes(queue, day, slot, limit=12, per_venue=2):
+    """Fair bounded selection across ALL available first-party venue RSS feeds.
+
+    Each queue item is (trusted source, official base URL, RSS leads, diagnostics).
+    First rotate over venues, then probe at most two individual pages per venue.
+    This prevents the first six sources in a fixed list from monopolizing the
+    whole cycle. Neither untrusted RSS URLs nor candidate data choose venues.
+    """
+    if (not isinstance(day, dt.date) or slot not in (0, 1, 2)
+            or not isinstance(limit, int) or not 0 <= limit <= 12
+            or not isinstance(per_venue, int) or not 1 <= per_venue <= 2):
+        raise ValueError("Invalid RSS fair-probe budget")
+    groups = []
+    for source, base, leads, diagnostics in queue:
+        candidates = select_leads(leads, base, day, slot, limit=per_venue)
+        if candidates:
+            groups.append((source, base, diagnostics, candidates))
+    if not groups or limit == 0:
+        return []
+    turn = day.toordinal() * 3 + slot
+    start = (turn * limit) % len(groups)
+    ordered = groups[start:] + groups[:start]
+    selected = []
+    # Round-robin: first sample as many distinct venues as possible before
+    # spending second probes on any one venue.
+    for position in range(per_venue):
+        for source, base, diagnostics, candidates in ordered:
+            if len(selected) >= limit:
+                return selected
+            if position < len(candidates):
+                selected.append((source, base, diagnostics, candidates[position]))
+    return selected
 
 
 def _event_types(value):
