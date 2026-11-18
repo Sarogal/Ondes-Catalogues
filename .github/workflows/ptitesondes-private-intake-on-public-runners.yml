@@ -263,6 +263,28 @@ jobs:
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
+          # Once per local day, independently check actual OpenAgenda v2 API
+          # metadata for the configured sources. Store only aggregated counters
+          # in the PRIVATE intake branch. No UID, source, title, URL or key.
+          # Failure is non-blocking: it NEVER changes admission/publication.
+          if [[ "$RUN_MODE" == "write" ]]; then
+            OA2_REPORT="$STATE/reports/openagenda-v2-agendas-$DAY.json"
+            if [[ ! -s "$OA2_REPORT" ]]; then
+              OA2_TMP="$RUNNER_TEMP/ptitesondes-oa2-agendas.json"
+              if python public/scripts/ptitesondes_openagenda_v2_agenda_census.py \
+                   --sources src/automation/sources.json \
+                   > "$OA2_TMP" 2> "$LOG/openagenda-v2-census-error.log" &&
+                 python public/scripts/ptitesondes_oa2_census_guard.py \
+                   --input "$OA2_TMP" --output "$OA2_REPORT" \
+                   > "$LOG/openagenda-v2-census-guard.log" 2>&1; then
+                git -C state add -- "automation-intake/ptitesondes/reports/openagenda-v2-agendas-$DAY.json"
+                push_private 'data(ptitesondes): stocker uniquement les compteurs anonymes OA v2'
+              else
+                rm -f -- "$OA2_REPORT"
+                echo "::warning::Recensement OpenAgenda v2 non disponible ; aucune preuve ni publication affectée."
+              fi
+            fi
+          fi
           # Optional ultra-marine probes. Both remain STRICTLY discovery-only.
           # The approved private main branch, never a PR branch, supplies code.
           # Reports are stored on the private state branch only, never in Pages
