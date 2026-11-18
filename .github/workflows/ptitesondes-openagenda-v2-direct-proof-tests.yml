@@ -6,13 +6,17 @@ on:
       - feat/ptitesondes-openagenda-v2-direct-proof-20261118
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   pull_request:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   workflow_dispatch:
@@ -35,6 +39,8 @@ jobs:
         run: |
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_direct_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_preintegration.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
@@ -47,5 +53,8 @@ jobs:
           source = Path("scripts/ptitesondes_openagenda_v2_direct_evidence.py").read_text()
           assert "publisher_connected" in source and "public_writes" in source
           assert "oa_pk_" in source and "oa_sk_" not in source
+          preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
+          assert "publisher_connected" in preflight and "public_writes" in preflight
+          assert not any(x in preflight for x in ("requests.post(", "git push", "PRIVATE_INTAKE_READ_TOKEN"))
           print("PASS: offline-only checks, no publisher, no private actions")
           PY
