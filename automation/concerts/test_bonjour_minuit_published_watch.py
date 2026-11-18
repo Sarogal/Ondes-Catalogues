@@ -29,7 +29,7 @@ def html(multi=False,date=None,room="Grande Salle",extra="",remove=None):
                  else "mercredi 02 décembre 2026")
     groups=(["SBRBS release party","Atoem","Sarakiniko","DJ Cup of Tea"]
             if multi else ["Magma"])
-    genre=["rock indé Saint-Brieuc","electroRennes","popBretagne","dj setRennes"] if multi else ["rock progressif FRA"]
+    genre=["rock indé Saint-Brieuc","electro Rennes","pop Bretagne","dj set Rennes"] if multi else ["rock progressif FRA"]
     parts="".join("<h2>"+n+"</h2><p>"+g+"</p><p>Sa biographie est connue.</p>"
                   for n,g in zip(groups,genre) if n!=remove)
     return ("<main><article><h1>"+title+"</h1><p>"+day+"</p>"
