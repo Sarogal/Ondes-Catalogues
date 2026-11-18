@@ -29,6 +29,16 @@ FR_TZ = frozenset({
     "Europe/Paris", "America/Guadeloupe", "America/Martinique",
     "America/Cayenne", "Indian/Reunion", "Indian/Mayotte",
 })
+# Some source feeds represent French overseas departments by ISO territory
+# codes. Require both independently declared administrative names rather than
+# accepting any non-FR country that happens to be near a reviewed venue.
+OVERSEAS_ADMIN = {
+    "GP": frozenset(("guadeloupe",)),
+    "MQ": frozenset(("martinique",)),
+    "GF": frozenset(("guyane",)),
+    "RE": frozenset(("reunion", "la reunion")),
+    "YT": frozenset(("mayotte",)),
+}
 UID = re.compile(r"[0-9]{1,12}\Z")
 SLUG = re.compile(r"[a-z0-9][a-z0-9-]{0,100}\Z")
 TIME = re.compile(
@@ -139,6 +149,15 @@ def _time(raw, timezone):
         return None
 
 
+def _french_location(location):
+    code = location.get("countryCode")
+    if code == "FR":
+        return True
+    names = OVERSEAS_ADMIN.get(code)
+    return bool(names and _norm(location.get("adminLevel1")) in names
+                and _norm(location.get("adminLevel2")) in names)
+
+
 def _venue(ev, approved):
     """Two independent coordinate sets: published OA and reviewed venue."""
     loc = ev.get("location")
@@ -150,7 +169,7 @@ def _venue(ev, approved):
             or _norm(loc.get("adminLevel4")) != _norm(approved["city"])
             or _norm(loc.get("name")) not in {
                 _norm(name) for name in approved["aliases"]
-            } or loc.get("countryCode") != "FR"):
+            } or not _french_location(loc)):
         return False
     a = (loc.get("latitude"), loc.get("longitude"))
     b = (approved.get("lat"), approved.get("lng"))
