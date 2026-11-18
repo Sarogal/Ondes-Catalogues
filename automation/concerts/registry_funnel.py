@@ -31,6 +31,7 @@ AUTOMATIC_RECHECK_SOURCES = frozenset({
     "agenda_officiel_laiterie_detail_review",
     "agenda_officiel_rockstore_detail_review",
     "bateau_ivre_official_detail_review",
+    "agenda_officiel_bonjour_minuit_detail_review",
 })
 # Only these verifiers require discovery's officialDetailFound=True. The Rex,
 # Molotov and Backstage independently fetch and verify the first-party detail;
@@ -43,6 +44,7 @@ DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES = frozenset({
     "agenda_officiel_laiterie_detail_review",
     "agenda_officiel_rockstore_detail_review",
     "bateau_ivre_official_detail_review",
+    "agenda_officiel_bonjour_minuit_detail_review",
 })
 TERMINAL_STATUSES = frozenset({"approved", "rejected", "superseded"})
 EXCLUDED_BUCKETS = frozenset({
