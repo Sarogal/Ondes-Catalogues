@@ -1,6 +1,6 @@
 import datetime as dt
 import unittest
-from concerts_schedule_catchup import trusted, should_wake, REPO, SOURCE
+from concerts_schedule_catchup import trusted, trusted_scheduled_cron, should_wake, REPO, SOURCE
 
 NOW=dt.datetime(2026,11,18,12,tzinfo=dt.timezone.utc)
 
@@ -32,6 +32,12 @@ class ScheduleCatchupTests(unittest.TestCase):
         altered=upstream()
         altered["repository"]["full_name"]="attacker/repo"
         self.assertFalse(trusted(altered))
+
+    def test_only_main_schedule_can_trigger_second_wakeup(self):
+        self.assertTrue(trusted_scheduled_cron(REPO, "refs/heads/main"))
+        self.assertFalse(trusted_scheduled_cron(REPO, "refs/heads/feature"))
+        self.assertFalse(trusted_scheduled_cron("attacker/repo", "refs/heads/main"))
+        self.assertFalse(trusted_scheduled_cron(REPO, "refs/pull/373/merge"))
 
     def test_no_duplicate_and_missed_schedule(self):
         self.assertEqual(should_wake([intake(4)],NOW)[0],False)

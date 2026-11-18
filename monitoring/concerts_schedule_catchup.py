@@ -47,6 +47,12 @@ def trusted(payload):
             run.get("head_branch") == "main")
 
 
+def trusted_scheduled_cron(repo, ref):
+    # GitHub schedule workflows run only from the default branch. Never
+    # accept PR, fork, tag, or arbitrary ref for privileged dispatch.
+    return repo == REPO and ref == "refs/heads/main"
+
+
 def should_wake(rows, now):
     """Returns (should_dispatch, reason); protects recent runs and failed API."""
     if not isinstance(rows, list) or now.tzinfo is None:
@@ -105,16 +111,23 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
-    if (os.getenv("GITHUB_REPOSITORY") != REPO or
-            os.getenv("GITHUB_EVENT_NAME") != "workflow_run"):
-        raise ValueError("Untrusted GitHub execution context")
-    path = os.getenv("GITHUB_EVENT_PATH")
-    if not path:
-        raise ValueError("GitHub event file missing")
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
-    if not trusted(payload):
-        print("Scheduled source validation refused; no action.")
-        return
+    if os.getenv("GITHUB_REPOSITORY") != REPO:
+        raise ValueError("Untrusted GitHub repository")
+    event_type = os.getenv("GITHUB_EVENT_NAME")
+    if event_type == "schedule":
+        if not trusted_scheduled_cron(os.getenv("GITHUB_REPOSITORY"),
+                                       os.getenv("GITHUB_REF")):
+            raise ValueError("Untrusted GitHub scheduled ref")
+    elif event_type == "workflow_run":
+        path = os.getenv("GITHUB_EVENT_PATH")
+        if not path:
+            raise ValueError("GitHub event file missing")
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if not trusted(payload):
+            print("Scheduled source validation refused; no action.")
+            return
+    else:
+        raise ValueError("GitHub event cannot dispatch the Concerts intake")
     token = os.getenv("GH_TOKEN")
     if not token:
         raise ValueError("GitHub actions token unavailable")
