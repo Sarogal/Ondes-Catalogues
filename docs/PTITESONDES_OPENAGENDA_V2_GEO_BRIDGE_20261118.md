@@ -52,3 +52,18 @@ Deux séries de tests purement simulés contrôlent les refus de transport, les 
 1. Homologuer les hôtes/pages institutionnels par une source indépendante réutilisable, et construire un registre **sans autorisations automatiques fondées sur OpenAgenda seul**.
 2. Alimenter les lots de diagnostic avec les pistes du backlog privé ; quantifier combien des premiers refus GPS deviennent des preuves de localisation à trois sources, en conservant les échecs et taux de troncature.
 3. Vérifier ensuite les autres critères indépendants, notamment organisateur, droit de réutilisation, âge/accès, catégorie, dates locales, doublons historiques et publication réelle. Une preuve géographique seule ne peut jamais publier.
+
+## Séparation explicite des sources de confiance et capacité nationale
+
+Le nouveau module `scripts/ptitesondes_openagenda_v2_geo_registry.py` reçoit deux entrées **structurellement séparées** :
+
+- un lot de pistes brutes `lead/api_event/reviewed_agenda`, qui **ne peut pas** contenir de `reviewed_source` ;
+- un registre de référence maintenu indépendamment `city/aliases/approved_host/exact_url`, dont les noms et hôtes doivent déjà avoir été examinés.
+
+Il sélectionne uniquement les correspondances exactes **commune + alias**, puis appelle le diagnostic par lot. Si deux entrées du registre prétendent identifier le même lieu avec des pages différentes, la sélection reste bloquée. Un champ `approved=true`, une URL officielle déclarée par le collecteur ou des coordonnées de la fiche OpenAgenda ne peuvent pas choisir une page de confiance.
+
+Ce garde-fou sépare la **provenance de la preuve** du contenu à valider. Il ne prétend ni homologuer automatiquement tous les sites municipaux, ni connaître l'organisateur, ni obtenir un droit de republication. Le registre reste à alimenter à partir de sources institutionnelles vérifiables, sans exceptions événementielles.
+
+Pour une capacité nationale, le lot borne le travail à **60 pistes par passage** et mutualise les lectures de la même page et les recherches IGN/BAN identiques. Ce n'est pas encore un connecteur de production : il faudra un pilote en lecture seule sur des données privées réelles pour mesurer la proportion d'UID et de lieux récupérables. Les compteurs sont anonymisés, les erreurs restent fail-closed et la chaîne de publication ne reçoit aucune décision.
+
+La documentation publique actuelle de l'IGN confirme le service `https://data.geopf.fr/geocodage/search` et une limite d'utilisation de 50 requêtes par seconde et par IP. Ce module n'a aucun déclencheur de production et ne fait pas de collecte massive en CI. Voir : https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/geocodage/.
