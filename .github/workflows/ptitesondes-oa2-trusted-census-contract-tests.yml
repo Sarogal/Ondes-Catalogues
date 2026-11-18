@@ -1,0 +1,25 @@
+name: "P'tites Ondes — contrat de sécurité du recensement OpenAgenda"
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ptitesondes-oa2-trusted-census.yml'
+      - '.github/workflows/ptitesondes-oa2-trusted-census-contract-tests.yml'
+      - 'tests/test_ptitesondes_oa2_trusted_census_workflow.py'
+
+permissions:
+  contents: read
+
+jobs:
+  trusted-census-contract-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify trust and no publisher with no secrets or network
+        run: python -m unittest discover -s tests -p 'test_ptitesondes_oa2_trusted_census_workflow.py' -v
