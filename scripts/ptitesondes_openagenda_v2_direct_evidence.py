@@ -86,6 +86,16 @@ def _uid(value):
                 and int(value) > 0))
 
 
+def _valid_public_read_key(value):
+    """Accept public read keys only, rejecting all HTTP header control chars."""
+    return (
+        isinstance(value, str)
+        and value.startswith("oa_pk_")
+        and 15 <= len(value) <= 256
+        and not any(ch.isspace() or ord(ch) < 32 or ord(ch) == 127 for ch in value)
+    )
+
+
 def _source_parts(url):
     """Require a UID-prefixed OpenAgenda page with an explicit agenda slug."""
     if not isinstance(url, str) or len(url) > 700:
@@ -347,10 +357,7 @@ def read_direct_v2(agenda_uid, event_uid, public_read_key, opener=None):
     """
     if not _uid(agenda_uid) or not _uid(event_uid):
         raise ValueError("invalid_immutable_uid")
-    if (not isinstance(public_read_key, str)
-            or not public_read_key.startswith("oa_pk_")
-            or not 15 <= len(public_read_key) <= 256
-            or any(x in public_read_key for x in ("\r", "\n", " ", "\t"))):
+    if not _valid_public_read_key(public_read_key):
         raise ValueError("public_read_key_unavailable_or_not_public")
     url = (API_ORIGIN + "/v2/agendas/" + str(agenda_uid)
            + "/events/" + str(event_uid))
@@ -389,10 +396,7 @@ def read_direct_agenda_v2(agenda_uid, public_read_key, opener=None):
     """
     if not _uid(agenda_uid):
         raise ValueError("invalid_immutable_agenda_uid")
-    if (not isinstance(public_read_key, str)
-            or not public_read_key.startswith("oa_pk_")
-            or not 15 <= len(public_read_key) <= 256
-            or any(x in public_read_key for x in ("\\r", "\\n", " ", "\\t"))):
+    if not _valid_public_read_key(public_read_key):
         raise ValueError("public_read_key_unavailable_or_not_public")
     url = API_ORIGIN + "/v2/agendas/" + str(agenda_uid)
     request = Request(url, headers={
