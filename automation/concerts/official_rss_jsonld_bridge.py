@@ -14,7 +14,8 @@ from urllib.parse import urlsplit
 _UNANNOUNCED = frozenset({
     "guest", "guests", "special guest", "surprise", "tba", "to be announced",
     "premiere partie", "première partie", "a confirmer", "à confirmer",
-    "various artists",
+    "various artists", "invite surprise", "invité surprise",
+    "artiste surprise", "guest surprise", "première partie surprise",
 })
 _BLOCKED_PATH = re.compile(
     r"(?i)(?:^|/)(?:feed|comments?|category|tag|wp-json)(?:/|$)|"
@@ -71,23 +72,36 @@ def _event_types(value):
     return set()
 
 
-def _performer_names(value):
+def official_named_bill(value):
+    """Return named performers and optional trailing non-nominative guest.
+
+    An officially announced placeholder is NOT a performer. It is acceptable
+    only at the end of a bill containing at least one real, explicitly typed
+    MusicGroup/Person; never invent the support's identity.
+    """
     performers = value if isinstance(value, list) else [value]
     if not performers or len(performers) > 40:
-        return []
-    names = []
-    for performer in performers:
+        return None
+    names, identities, unnamed = [], set(), None
+    for index, performer in enumerate(performers):
         if not isinstance(performer, dict) or not (
                 _event_types(performer.get("@type")) & {"MusicGroup", "Person"}):
-            return []
+            return None
         name = performer.get("name")
         if not isinstance(name, str) or not 2 <= len(name.strip()) <= 120:
-            return []
-        normalized = " ".join(name.casefold().split())
-        if normalized in _UNANNOUNCED or normalized in names:
-            return []
-        names.append(normalized)
-    return names
+            return None
+        name = " ".join(name.split())
+        normalized = name.casefold()
+        if normalized in _UNANNOUNCED:
+            if not names or index != len(performers) - 1 or unnamed is not None:
+                return None
+            unnamed = name
+            continue
+        if normalized in identities:
+            return None
+        identities.add(normalized)
+        names.append(name)
+    return (names, unnamed) if names else None
 
 
 def candidate_from_event_page(
@@ -122,7 +136,8 @@ def candidate_from_event_page(
     if isinstance(status, str) and re.search(
             r"cancel|postpon|reschedul|report|annul", status, re.I):
         return None
-    if not _performer_names(event.get("performer")):
+    bill = official_named_bill(event.get("performer"))
+    if bill is None:
         return None
     location = event.get("location")
     if isinstance(location, list):
@@ -144,6 +159,10 @@ def candidate_from_event_page(
     if not row or row.get("sourceUrl", "").rstrip("/") != actual_url.rstrip("/"):
         return None
     if row.get("publicationAllowed") is not False:
+        return None
+    if bill[1] is not None and (
+            row.get("leadArtist") != " + ".join(bill[0])
+            or row.get("unannouncedSupportLabel") != bill[1]):
         return None
     # Do not set officialDetailFound: this is the first discovery proof,
     # not an independent verification of a new performance or band.

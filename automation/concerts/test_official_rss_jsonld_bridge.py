@@ -72,6 +72,52 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertIs(checked["publicationAllowed"], False)
         self.assertIs(checked["reviewRequired"], True)
 
+    def test_confirmed_headliner_and_trailing_surprise_guest_are_discoverable(self):
+        import copy
+        sample = [
+            {"@type": "MusicGroup", "name": "Groupe Metal"},
+            {"@type": "MusicGroup", "name": "Invité surprise"},
+        ]
+        self.assertEqual(bridge.official_named_bill(sample),
+                         (["Groupe Metal"], "Invité surprise"))
+        original = sample[1].copy()
+        row = evaluate(page=html_for(performer=sample))
+        self.assertIsNotNone(row)
+        self.assertEqual(row["leadArtist"], "Groupe Metal")
+        self.assertEqual(row["unannouncedSupportLabel"], "Invité surprise")
+        self.assertEqual(row["classification"], ["Death Metal", "Grindcore"])
+        self.assertFalse(row["publicationAllowed"])
+        self.assertTrue(row["reviewRequired"])
+        self.assertEqual(sample[1], original)
+        reviewed = triage.triage(row, catalogue={})
+        self.assertEqual(reviewed["reviewBucket"], "genre_tag_review")
+        self.assertFalse(reviewed["publicationAllowed"])
+
+    def test_unannounced_guest_must_be_trailing_and_follow_named_artist(self):
+        named = {"@type": "MusicGroup", "name": "Groupe Metal"}
+        unnamed = {"@type": "MusicGroup", "name": "Guest"}
+        for performers in (
+                [unnamed], [unnamed, named], [named, unnamed, named],
+                [named, unnamed, unnamed]):
+            with self.subTest(performers=performers):
+                self.assertIsNone(bridge.official_named_bill(performers))
+                self.assertIsNone(evaluate(page=html_for(performer=performers)))
+        self.assertEqual(bridge.official_named_bill([named, unnamed]),
+                         (["Groupe Metal"], "Guest"))
+
+    def test_actual_band_with_guest_in_its_name_is_not_a_placeholder(self):
+        official = [
+            {"@type": "MusicGroup", "name": "Guest House Massacre"},
+            {"@type": "MusicGroup", "name": "Band of Souls"},
+        ]
+        self.assertEqual(bridge.official_named_bill(official),
+                         (["Guest House Massacre", "Band of Souls"], None))
+        row = evaluate(page=html_for(performer=official))
+        self.assertIsNotNone(row)
+        self.assertEqual(row["leadArtist"],
+                         "Guest House Massacre + Band of Souls")
+        self.assertNotIn("unannouncedSupportLabel", row)
+
     def test_feed_date_is_not_used_for_concert_date(self):
         xml = ('<rss><channel><item><title>Groupe annonce une tournée</title>'
                '<pubDate>Wed, 18 Nov 2026 08:00:00 GMT</pubDate>'
