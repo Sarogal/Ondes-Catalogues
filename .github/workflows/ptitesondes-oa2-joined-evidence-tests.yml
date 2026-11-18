@@ -6,6 +6,7 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_joined_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_index.py'
+      - 'docs/PTITESONDES_OA2_JOINED_EVIDENCE_20261118.md'
       - 'tests/test_ptitesondes_openagenda_v2_joined_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_structured_organizer.py'
       - 'tests/test_ptitesondes_openagenda_v2_structured_organizer.py'
