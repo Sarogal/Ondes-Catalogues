@@ -22,6 +22,7 @@ import bbc_adapter
 import bonjour_minuit_adapter
 import cave_poetes_adapter
 import official_recheck
+import bonjour_minuit_official_recheck
 from concerts_cloud_sync import validate_approval
 
 
@@ -86,6 +87,19 @@ def run():
         # The existing official downloader enforces robots, HTTPS, host and size.
         html = official_recheck.download_official(url, cache)
         candidate = one_case(kind, url, expected, html, today)
+        if kind == "bonjour":
+            diagnostic = bonjour_minuit_official_recheck.OfficialArtistHeadings()
+            diagnostic.feed(html)
+            diagnostic.close()
+            other = bonjour_minuit_adapter.Detail()
+            other.feed(html)
+            print(json.dumps({
+                "diagnostic": "bonjour-official-first-party-heading-structure",
+                "h1Count": len(diagnostic.h1s),
+                "h1Titles": [" ".join("".join(q).split())[:110] for q in diagnostic.h1s],
+                "discoveryH1": [v[:110] for tag,v in other.nodes if tag=="h1"],
+                "artistSections": len(diagnostic.sections),
+            }, ensure_ascii=False), flush=True)
         approval = official_recheck.verify(
             candidate, html, copy.deepcopy(catalogue), today)
         event, new_artists = validate_approval(
