@@ -252,6 +252,12 @@ def rex_visible_divs_after_title(html_text):
 
 
 def verify(candidate, html_text, catalogue, today):
+    if candidate.get("source") == "bbc_official_detail_review":
+        import bbc_official_recheck
+        return bbc_official_recheck.verify(candidate, html_text, catalogue, today)
+    if candidate.get("source") == "agenda_officiel_cave_poetes_detail":
+        import cave_poetes_official_recheck
+        return cave_poetes_official_recheck.verify(candidate, html_text, catalogue, today)
     if candidate.get("source") == "agenda_officiel_bonjour_minuit_detail_review":
         import bonjour_minuit_official_recheck
         return bonjour_minuit_official_recheck.verify(
@@ -384,7 +390,7 @@ def download_official(url, robots_cache):
         raise ValueError("robots.txt interdit la récupération")
     response = Request(url, headers={"User-Agent": discover.AGENT})
     with urlopen(response, timeout=12) as r:
-        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr"):
+        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com"):
             raise ValueError("Redirection hors domaine officiel")
         raw = r.read(500_001)
         if len(raw) > 500_000:
@@ -424,7 +430,9 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                    "agenda_officiel_laiterie_detail_review",
                    "agenda_officiel_rockstore_detail_review",
                    "bateau_ivre_official_detail_review",
-                   "agenda_officiel_bonjour_minuit_detail_review") and
+                   "agenda_officiel_bonjour_minuit_detail_review",
+                   "bbc_official_detail_review",
+                   "agenda_officiel_cave_poetes_detail") and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
