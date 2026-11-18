@@ -150,6 +150,23 @@ class StructuredOrganizerContract(unittest.TestCase):
             r = verify(page_html=html(visible=VISIBLE + "<p>" + line + "</p>"))
             self.assertFalse(r["official_structured_sessions_concordant"])
 
+    def test_structured_adult_cancelled_and_online_conflicts_remain_blocked(self):
+        for patch in (
+            {"description": "Réservé aux adultes uniquement"},
+            {"description": "Événement annulé"},
+            {"eventAttendanceMode": "https://schema.org/OnlineEventAttendanceMode"},
+            {"eventAttendanceMode": 3},
+        ):
+            with self.subTest(patch=patch):
+                r = verify(page_html=html(dict(SESSION, **patch)))
+                self.assertFalse(r["official_structured_sessions_concordant"])
+                self.assertFalse(r["approval_granted"])
+        yes = verify(page_html=html(dict(
+            SESSION,
+            eventAttendanceMode="https://schema.org/OfflineEventAttendanceMode",
+        )))
+        self.assertTrue(yes["official_structured_sessions_concordant"])
+
     def test_organizer_host_must_be_separately_pinned_to_same_exact_url(self):
         for bad in (
             dict(ORGANIZER, approved_host="openagenda.com",
