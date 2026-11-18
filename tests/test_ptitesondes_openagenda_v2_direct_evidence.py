@@ -157,6 +157,49 @@ class OA2DirectEvidenceTests(unittest.TestCase):
         self.assertEqual(review(venue=unrelated)["reason"],
                          "geography_not_independently_verified")
 
+    def test_french_overseas_geometry_and_local_time_explicitly_reviewed(self):
+        lead = dict(LEAD, city="Le Gosier", venue="Médiathèque jeunesse",
+                    source_url="https://openagenda.com/fr/gosier-test/events/12345678_fete-jeunesse")
+        approved = {
+            "agenda_slug": "gosier-test", "agenda_uid": "919191",
+            "timezone": "America/Guadeloupe",
+        }
+        geo = {
+            "city": "Le Gosier", "aliases": ["Médiathèque jeunesse"],
+            "lat": 16.20547, "lng": -61.4895,
+        }
+        event = deepcopy(EVENT)
+        event["timezone"] = "America/Guadeloupe"
+        event["location"].update({
+            "name": "Médiathèque jeunesse", "adminLevel4": "Le Gosier",
+            "adminLevel1": "Guadeloupe", "adminLevel2": "Guadeloupe",
+            "countryCode": "GP", "latitude": 16.20547,
+            "longitude": -61.4895,
+        })
+        event["timings"][0] = {
+            "begin": "2026-12-05T14:30:00-0400",
+            "end": "2026-12-05T16:00:00-0400",
+        }
+        ok = review(lead=lead, agenda=approved, event=event, venue=geo)
+        self.assertTrue(ok["source_evidence_structurally_valid"], ok["reason"])
+        self.assertEqual(ok["explicit_local_times_for_candidate_day"], ["14:30"])
+        self.assertFalse(ok["approval_granted"])
+        event["location"]["countryCode"] = "MQ"
+        self.assertEqual(review(lead=lead, agenda=approved, event=event,
+                                venue=geo)["reason"],
+                         "geography_not_independently_verified")
+        event["location"]["countryCode"] = "GP"
+        event["location"]["adminLevel2"] = "Martinique"
+        self.assertEqual(review(lead=lead, agenda=approved, event=event,
+                                venue=geo)["reason"],
+                         "geography_not_independently_verified")
+
+    def test_public_aggregate_refuses_arbitrary_reason_text(self):
+        forged = review()
+        forged["reason"] = "private city and source url disguised as failure"
+        with self.assertRaisesRegex(ValueError, "invalid_source_report"):
+            redacted_batch_report([forged])
+
     def test_timezone_offsets_dst_and_overseas_are_never_inferred(self):
         ev = deepcopy(EVENT)
         ev["timezone"] = "America/Guadeloupe"
