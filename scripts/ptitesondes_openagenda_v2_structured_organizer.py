@@ -26,6 +26,15 @@ MAX_HTML = 500_000
 MAX_BLOCKS = 25
 MAX_NODES = 80
 MAX_SESSIONS = 20
+EXPLICIT_ADULT_VARIANTS = re.compile(
+    r"\b(?:adultes? seulement|adultes? exclusivement|majeurs? uniquement"
+    r"|interdit aux mineurs|sans mineurs)\b"
+)
+
+
+def _adult_only(raw):
+    text = norm_text(raw)
+    return bool(ADULT_ONLY.search(text) or EXPLICIT_ADULT_VARIANTS.search(text))
 
 
 class _JSONLD(HTMLParser):
@@ -147,7 +156,7 @@ def check_structured_organizer_session(
     if any(not isinstance(lead.get(k), str) or
            norm_text(lead[k]) not in visible for k in ("title", "city", "venue")):
         return hold("official_visible_title_city_venue_not_confirmed")
-    if ADULT_ONLY.search(visible) or BAD_STATUS.search(visible):
+    if _adult_only(visible) or BAD_STATUS.search(visible):
         return hold("adult_only_cancelled_full_or_postponed")
     if not AGE_PHRASE.search(visible):
         return hold("organizer_family_audience_not_visible")
@@ -187,7 +196,7 @@ def check_structured_organizer_session(
                 continue
             description = event.get("description")
             if isinstance(description, str) and (
-                    ADULT_ONLY.search(norm_text(description))
+                    _adult_only(description)
                     or BAD_STATUS.search(norm_text(description))):
                 continue
             attendance = event.get("eventAttendanceMode")
