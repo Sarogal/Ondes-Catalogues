@@ -163,7 +163,9 @@ def diagnose_delegated_calendar_candidate(case, reviewed_source,
         "geocoder_request_url", "geojson",
     })
     if (type(today) is not date or not isinstance(case, dict)
-            or set(case) != expected or not isinstance(reviewed_source, dict)):
+            or set(case) != expected or not isinstance(reviewed_source, dict)
+            or not isinstance(case.get("lead"), dict)
+            or not isinstance(case.get("api_event"), dict)):
         return base
     link = inspect_institutional_agenda_page(
         reviewed_source, fetched_institution_page)
