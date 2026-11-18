@@ -556,6 +556,15 @@ def blacklab_inspect(event, page, artists):
         return {"status": "unverifiable", "reason": "Artiste publié introuvable"}
     actual = [norm(name) for name in names]
     if actual != expected:
+        # Older, independently signed multi-group shows can retain a
+        # single-act website H1 while the full five-band bill is separately
+        # proven inside the body. This H1 alone cannot establish that the
+        # support artists disappeared; do not raise a false removal alert.
+        # Newly verified complete H1 bills still trigger a lineup review.
+        if len(actual) == 1 and len(expected) > 1 and actual[0] == expected[0]:
+            return {"status": "unverifiable", "observedDate": detail["date"],
+                    "reason": "Titre officiel limité à la tête d'affiche ; "
+                              "la programmation historique complète exige une autre preuve"}
         return {"status": "lineup_review", "observedDate": detail["date"],
                 "observedArtists": names,
                 "reason": "Plateau sur le site officiel différent du catalogue"}

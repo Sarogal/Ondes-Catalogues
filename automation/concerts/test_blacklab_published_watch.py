@@ -51,6 +51,17 @@ class BlackLabGenericWatchTests(unittest.TestCase):
             EVENT,page(status="Ce concert est annulé."),ARTISTS)["status"],
                          "content_review")
 
+    def test_old_published_multi_artist_bill_with_short_h1_is_not_false_loss(self):
+        # Prior independently reviewed Rhapsody-style first-party pages
+        # may advertise only the lead act in H1 despite listing more in body.
+        five={**EVENT,"title":"RHAPSODY OF FIRE + SERIOUS BLACK + SUBMASQ + AEON GODS + ROCK OUT",
+              "artistIds":["rhapsody","serious","submasq","aeon","rockout"]}
+        five_artists={"rhapsody":"RHAPSODY OF FIRE","serious":"SERIOUS BLACK",
+                      "submasq":"SUBMASQ","aeon":"AEON GODS","rockout":"ROCK OUT"}
+        short=page(title="RHAPSODY OF FIRE")
+        self.assertEqual(watch.inspect(five,short,five_artists)["status"],
+                         "unverifiable")
+
     def test_unsupported_and_unverifiable_never_count_as_cancellation(self):
         self.assertEqual(watch.inspect(
             EVENT,"<html><body>site indisponible</body></html>",
