@@ -50,15 +50,29 @@ def bill_from_official_body(title, chunks):
             for name,key in zip(names,normalized)) or
             len(set(normalized)) != len(normalized)):
         raise ValueError("Black Lab : identités d'artistes invalides")
-    # Only short, bounded source nodes after the H1, not the H1 itself,
-    # footer, other cards, or an arbitrary whole-document search.
-    body = [adapter.fold(value).strip() for value in chunks[:28]]
+    # The Black Lab's two reusable first-party formats:
+    #  (1) the full "+-joined" bill is repeated at the START of a detail
+    #      node, optionally followed by a musical style;
+    #  (2) each exact artist gets its OWN separate early performer heading,
+    #      in the same order as the H1. Biographical mentions do NOT count.
+    # The evidence window scales with the number of billed performers;
+    # this is not an artist-count ceiling or a list of approved concerts.
+    body = [adapter.fold(value).strip()
+            for value in chunks[:max(28,len(names)*8)]]
     label = adapter.fold(" + ".join(names))
-    # A band's name mentioned as a musical influence in the *middle*
-    # of a biography is not a billed stage act. The first-party event
-    # headline must start its own official detail node, after the H1.
-    if not any(re.match(r"^" + re.escape(label) + r"(?![a-z0-9])", node)
-               for node in body):
+    full_bill = any(re.match(r"^" + re.escape(label) + r"(?![a-z0-9])", node)
+                    for node in body)
+    def separate_named_headings():
+        offset = 0
+        for name in names:
+            target = adapter.fold(name)
+            located = next((i for i in range(offset,len(body))
+                            if body[i] == target), None)
+            if located is None:
+                return False
+            offset = located+1
+        return True
+    if not full_bill and not separate_named_headings():
         raise ValueError("Black Lab : plateau officiel non corroboré dans la fiche")
     return names, guest
 

@@ -198,6 +198,24 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"corroboré"):
             check.verify(lead(wrong),wrong,catalog(),self.TODAY)
 
+    def test_separate_official_performer_headings_validate_lineup_in_order(self):
+        title="REVNOIR + ICE SEALED EYES"
+        page=DETAIL.format(title=title,date="mercredi 3 février 2027",
+            organizer="The Black Lab",
+            description="<p>REVNOIR</p><p>REVNOIR metalcore français</p>"
+                        "<p>ICE SEALED EYES</p><p>Projet metal moderne</p>")
+        decision=check.verify(lead(page),page,catalog(),self.TODAY)
+        self.assertEqual(decision["officialEvidence"][0]
+                         ["officialArtistNames"],["REVNOIR","ICE SEALED EYES"])
+        self.assertEqual(len(decision["newArtists"]),2)
+        self.assertIsNone(decision["event"]["time"])
+        # A mere biography mentioning both groups is not two headings.
+        bad=DETAIL.format(title=title,date="mercredi 3 février 2027",
+            organizer="The Black Lab",
+            description="<p>Inspiré par REVNOIR et ICE SEALED EYES, metalcore</p>")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(bad),bad,catalog(),self.TODAY)
+
     def test_influence_with_exact_lineup_is_not_a_performance_bill(self):
         page = DETAIL.format(title="HOULE + CÂN BARDD",
             date="mercredi 3 février 2027", organizer="The Black Lab",
