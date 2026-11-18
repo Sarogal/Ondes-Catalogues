@@ -131,7 +131,9 @@ class GeoBacklogCoverageTests(unittest.TestCase):
         ]
         c = audit_backlog_geo_coverage(
             rows, TODAY, location_lookup=lambda r: (
-                {"city": r["city"]} if "Réunion" in r["city"] else None
+                {"city": r["city"], "aliases": [r["venue"]],
+                 "lat": -20.9, "lng": 55.4}
+                if "Réunion" in r["city"] else None
             ))["counts"]
         self.assertEqual(c["active_future_venue_city_pairs"], 2)
         self.assertEqual(c["uids_all_venues_exactly_in_existing_registry"], 1)
@@ -150,6 +152,33 @@ class GeoBacklogCoverageTests(unittest.TestCase):
         })
         self.assertNotIn("PRIVATE_KEY_XXXXX", json.dumps(a))
         self.assertEqual(a["counts"]["collector_not_admissible"], 2)
+
+    def test_matching_registry_identity_requires_actual_valid_coordinate_record(self):
+        invalid = (
+            {"city": "Autre ville", "aliases": ["Bibliothèque fictive"],
+             "lat": 49.4, "lng": 1.09},
+            {"city": "Rouen", "aliases": ["Autre lieu"],
+             "lat": 49.4, "lng": 1.09},
+            {"city": "Rouen", "aliases": ["Bibliothèque fictive"],
+             "lat": float("nan"), "lng": 1.09},
+            {"city": "Rouen", "aliases": ["Bibliothèque fictive"],
+             "lat": 0, "lng": 0},
+            {"city": "Rouen", "aliases": ["Bibliothèque fictive"],
+             "lat": True, "lng": 1.09},
+            {"city": "Rouen", "aliases": ["Bibliothèque fictive"]},
+            {"city": "Rouen", "aliases": "Bibliothèque fictive",
+             "lat": 49.4, "lng": 1.09},
+        )
+        for bogus in invalid:
+            with self.subTest(record=bogus):
+                result = audit_backlog_geo_coverage(
+                    [case()], TODAY, location_lookup=lambda _: bogus)
+                self.assertEqual(
+                    result["counts"]["leads_without_exact_existing_registry_identity"],
+                    1)
+                self.assertEqual(
+                    result["counts"]["uids_all_venues_exactly_in_existing_registry"],
+                    0)
 
     def test_malformed_rows_safe_and_bounded(self):
         c = audit_backlog_geo_coverage(
