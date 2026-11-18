@@ -425,6 +425,19 @@ def bonjour_inspect(event, page, artists):
     if actual != expected:
         return {"status": "lineup_review",
                 "reason": "Artistes publiés et affiche officielle divergents"}
+    # An extra H2 without a recognized badge may be a newly announced
+    # support band. Never silently discard it just because the badge is
+    # missing. Only the venue's known ticket-resale heading is site chrome.
+    heading_names = [
+        norm(bonjour_minuit_official_recheck.identity(text))
+        for tag, text in parsed.nodes
+        if tag == "h2" and
+        not bonjour_minuit_adapter.NONARTIST_HEADING.search(
+            bonjour_minuit_adapter.plain(text))
+    ]
+    if heading_names != expected:
+        return {"status": "lineup_review",
+                "reason": "Une section H2 supplémentaire ou non certifiée nécessite une revue"}
 
     headline = bonjour_minuit_adapter.plain(headings[0])
     headline = re.sub(r"\brelease party\b", "", headline)
@@ -484,7 +497,8 @@ def bonjour_inspect(event, page, artists):
     def canonical(value):
         word = norm(value)
         return "rock independant" if word in ("rock inde", "rock independant") else word
-    if not event.get("genres") or canonical(normalized_genre) != canonical(event["genres"][0]):
+    if (event.get("genres") and
+            canonical(normalized_genre) != canonical(event["genres"][0])):
         # A changed first-artist genre must be reviewed, not silently
         # normalized into the old public event.
         return {"status": "content_review", "observedDate": observed,
