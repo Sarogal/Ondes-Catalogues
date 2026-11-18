@@ -24,6 +24,7 @@ from grossesondes_stage import official_text
 from grossesondes_structured_edition import (
     ARCHIVED_HTML_PROOF_MODE, PRIVATE_CONFIDENCE, PRIVATE_NOTES,
     PRIVATE_STATUS, pinned_parent_identity, validate_archived_structured_edition,
+    conflicts_with_existing,
 )
 
 # Never derive a destination from private candidates, discovered links or a
@@ -80,8 +81,27 @@ def organizer_homepage(url):
         return False
 
 
+def already_published_next_edition(parent, year, published_rows):
+    """Reuse the publisher's signed-catalog identity/year overlap gate.
+
+    The date is only a local year marker for matching, never a proposed date
+    or evidence. This prevents yearless published slugs from re-entering the
+    private admission queue under their derived -2027 identifiers.
+    """
+    if not published_rows:
+        return False
+    identity = pinned_parent_identity(parent)
+    if identity is None:
+        return False
+    return conflicts_with_existing({
+        "slug": identity[0] + "-" + str(year),
+        "name": str(parent.get("name") or "").strip() + " " + str(year),
+        "startDate": str(year) + "-01-01",
+    }, published_rows, [])
+
+
 def generic_rotating_sources(archive, published, occupied, state, today,
-                             limit=GENERIC_MAX_PER_RUN):
+                             limit=GENERIC_MAX_PER_RUN, published_rows=()):
     """Pick bounded, diverse first-party homepages without any event hardcode.
 
     Follow up yesterday's observed exact edition before rotating new archives:
@@ -113,6 +133,8 @@ def generic_rotating_sources(archive, published, occupied, state, today,
             continue
         new_slug = identity[0] + "-" + str(year)
         if new_slug in published or new_slug in occupied:
+            continue
+        if already_published_next_edition(parent, year, published_rows):
             continue
         site = parent.get("officialSite")
         if not organizer_homepage(site):
@@ -332,7 +354,8 @@ def run(folder, calendar, history, today, fetcher=official_text):
     # a bounded rotating set of signed archived organizer homepages.
     watched = dict(PINNED_ARCHIVED_HTML_SOURCES)
     watched.update(generic_rotating_sources(
-        archive, published, occupied, state, today))
+        archive, published, occupied, state, today,
+        published_rows=calendar["festivals"]))
     for slug, source in watched.items():
         parent = archive.get(slug)
         if (not isinstance(parent, dict)
@@ -347,6 +370,10 @@ def run(folder, calendar, history, today, fetcher=official_text):
             record(slug, "historical_identity_or_year_mismatch")
             continue
         new_slug = identity[0] + "-" + str(source["year"])
+        if already_published_next_edition(parent, source["year"],
+                                          calendar["festivals"]):
+            record(slug, "already_published_or_historical")
+            continue
         if new_slug in published or new_slug in archive_slugs:
             record(slug, "already_published_or_historical")
             continue
