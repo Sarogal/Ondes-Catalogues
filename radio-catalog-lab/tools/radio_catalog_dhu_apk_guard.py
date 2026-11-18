@@ -52,22 +52,64 @@ def check_metadata(
     ):
         raise ApkGuardError("Android debuggable=true not proven")
 
-    # Subject / DN text is unreliable; compare the public X.509 cert digest
-    # with the certificate stored in the local Android debug keystore.
-    digest_lines = re.findall(
-        r"(?im)^Signer\s+#(\d+)\s+certificate SHA-256 digest:\s*"
-        r"([0-9a-f:]{64,95})\s*$", signer,
-    )
-    if len(digest_lines) != 1 or digest_lines[0][0] != "1":
-        raise ApkGuardError("Exactly one APK signing certificate is required")
-    actual = digest_lines[0][1].replace(":", "").lower()
+    # AOSP apksigner can label a cert as "Signer #1" or
+    # "Signer (minSdkVersion=..., maxSdkVersion=...)" when different signing
+    # schemes/API intervals are reported. Check EVERY certificate digest,
+    # never just the first one, and require the local debug key's public cert.
     expected = expected_debug_sha256.replace(":", "").lower()
-    if not re.fullmatch(r"[0-9a-f]{64}", actual):
-        raise ApkGuardError("Cannot parse APK signer SHA-256 digest")
-    if not re.fullmatch(r"[0-9a-f]{64}", expected) or actual != expected:
+    if not re.fullmatch(r"[0-9a-f]{64}", expected):
+        raise ApkGuardError("Invalid local debug certificate SHA-256")
+    certificate_lines = [
+        line.strip() for line in signer.splitlines()
+        if re.search(r"certificate\s+SHA-256\s+digest\s*:", line, re.I)
+    ]
+    if not certificate_lines:
+        markers = [
+            line.strip()[:170] for line in signer.splitlines()
+            if re.search(r"signer|certificate|signatures", line, re.I)
+        ][:6]
         raise ApkGuardError(
-            "APK signer differs from local androiddebugkey certificate "
-            f"(APK={actual}, debug.keystore={expected})"
+            "No certificate SHA-256 digest found in apksigner output "
+            f"(signing lines: {markers!r}); refusing installation"
+        )
+    format_pattern = re.compile(
+        r"Signer\s+(?:#(?P<number>[1-9]\d*)|"
+        r"\(minSdkVersion\s*=\s*\d+\s*,\s*maxSdkVersion\s*=\s*\d+\))"
+        r"\s+certificate\s+SHA-256\s+digest:\s*"
+        r"(?P<digest>[0-9a-fA-F:]+)",
+        re.IGNORECASE,
+    )
+    numbers = set()
+    fingerprints = set()
+    for line in certificate_lines:
+        match = format_pattern.fullmatch(line)
+        if not match:
+            raise ApkGuardError(
+                "Unrecognized apksigner certificate SHA-256 line: "
+                f"{line[:170]!r}; refusing installation"
+            )
+        if match.group("number"):
+            numbers.add(int(match.group("number")))
+        fingerprint = match.group("digest").replace(":", "").lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", fingerprint):
+            raise ApkGuardError("Malformed certificate SHA-256 digest")
+        fingerprints.add(fingerprint)
+
+    if numbers and numbers != {1}:
+        raise ApkGuardError(
+            f"APK contains unexpected numbered signers {sorted(numbers)}"
+        )
+    declared_signers = re.findall(
+        r"(?im)^\s*Number of signers:\s*(\d+)\s*$", signer
+    )
+    if declared_signers and (
+        len(declared_signers) != 1 or declared_signers[0] != "1"
+    ):
+        raise ApkGuardError("APK must have exactly one declared signer")
+    if len(fingerprints) != 1 or fingerprints != {expected}:
+        raise ApkGuardError(
+            "APK certificate SHA-256 differs from local androiddebugkey "
+            f"(APK={sorted(fingerprints)}, debug.keystore={expected})"
         )
 
 
