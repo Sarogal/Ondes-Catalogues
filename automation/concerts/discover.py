@@ -2288,7 +2288,10 @@ def main():
                    "officiallyConfirmedNewMetalConcerts": 0},
         "triageCounts": triage_counts,
         "shortlistReviewCount": len(shortlist),
-        "candidates": classified[:1000],
+        # Never truncate candidates: private intake_archive verifies that triageCounts
+        # exactly matches the archived list, and missing rows cannot be recovered
+        # reliably during a later scan of rotating venue cohorts.
+        "candidates": classified,
         "notes": ["Aucun candidat n'est publiable sans confirmation indépendante de date, genre, artistes, salle, et contrôle de festival.",
                   "Les salles P2 sont contrôlées par rotation. Une salle sans données structurées nécessite un collecteur adapté.",
                   "Le résultat ne modifie ni les catalogues ni GitHub Pages ni le WebFTP."],
@@ -2303,7 +2306,7 @@ def main():
             "Les doublons et annulations sont des alertes, pas des concerts à ajouter.",
             "Le filtre de genre ne classe aucun événement comme confirmé automatiquement."
         ],
-        "candidates": shortlist[:1000]
+        "candidates": shortlist
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     summary = [
         "# Veille concerts — " + day.isoformat(),
