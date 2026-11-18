@@ -125,7 +125,7 @@ def detail_candidate(html, url, source, today):
         raise ValueError("No first-party event title")
     title = " ".join(p.heading_parts).strip()
     after = p.parts[p.heading_end:]
-    if not 3 <= len(title) <= 190 or not after:
+    if not 3 <= len(title) <= 3000 or not after:
         raise ValueError("No individual event content")
     # Usually the event date is the first paragraph below <h1>; we allow
     # a few fragmented text nodes, but never accept a biography's date.

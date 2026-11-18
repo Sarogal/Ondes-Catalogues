@@ -1,10 +1,9 @@
-"""Strict first-party recheck for *single known artist* Black Lab concert pages.
+"""The Black Lab: source-wide, fail-closed first-party named-lineup verifier.
 
-This is a narrow, reusable first-party verification pattern: the discovery
-candidate never grants approval. A second read of the canonical official
-event page must restate the same date, sole *canonical* artist, genre, venue,
-and active status. Multi-artist bills and new artists remain held for a
-separately corroborated lineup verifier.
+Read the official individual detail anew, require the headline AND its named
+performance bill inside the early official detail body. Genres, biographies
+and musical influences never create an artist. No per-concert allowlist or
+arbitrary performer-count limit. The publisher separately checks all IDs.
 """
 from __future__ import annotations
 
@@ -18,111 +17,171 @@ SOURCE = "agenda_officiel_blacklab_detail_review"
 VENUE_ID = "the-black-lab-wasquehal"
 CITY = "wasquehal"
 SOURCE_URL = adapter.AGENDA
-DANGEROUS_TITLE = re.compile(
-    r"\b(?:festival|tribute|hommage|cover|dj|guest|invite|surprise|"
-    r"annule|reporte|reportee|postponed|cancelled)\b", re.IGNORECASE
-)
+STRUCTURE = "blacklab-first-party-named-bill-in-detail-v2"
+NONCONCERT = re.compile(
+    r"\b(?:festival|tribute fest|hommage|dj set|annule|reporte|"
+    r"reportee|postponed|cancelled)\b")
+UNNAMED = frozenset({
+    "guest", "guests", "special guest", "special guests", "invite surprise",
+    "premiere partie surprise", "support surprise", "surprise",
+    "a confirmer", "tba",
+})
+
+
+def bill_from_official_body(title, chunks):
+    """Corroborate EVERY billed musician in the official detail body.
+
+    A title alone or artist-name mentions in a biography do not suffice:
+    a multi-artist bill must be restated contiguously as a performance
+    headline in an early official detail node. Single artists must likewise
+    be repeated with a complete token boundary, not a similar spelling.
+    """
+    raw = re.split(r"\s+\+\s+", title)
+    if not raw or any(not s.strip() for s in raw):
+        raise ValueError("Black Lab : programme nominatif vide")
+    guest = None
+    if len(raw) > 1 and triage.words(raw[-1]) in UNNAMED:
+        guest = triage.words(raw.pop())
+    names = [" ".join(item.split()) for item in raw]
+    normalized = [triage.words(name) for name in names]
+    if (not names or any(
+            not 3 <= len(name) <= 100 or
+            not 3 <= len(key) <= 100 or key in UNNAMED
+            for name,key in zip(names,normalized)) or
+            len(set(normalized)) != len(normalized)):
+        raise ValueError("Black Lab : identités d'artistes invalides")
+    # The Black Lab's two reusable first-party formats:
+    #  (1) the full "+-joined" bill is repeated at the START of a detail
+    #      node, optionally followed by a musical style;
+    #  (2) each exact artist gets its OWN separate early performer heading,
+    #      in the same order as the H1. Biographical mentions do NOT count.
+    # The evidence window scales with the number of billed performers;
+    # this is not an artist-count ceiling or a list of approved concerts.
+    body = [adapter.fold(value).strip()
+            for value in chunks[:max(28,len(names)*8)]]
+    label = adapter.fold(" + ".join(names))
+    full_bill = any(re.match(r"^" + re.escape(label) + r"(?![a-z0-9])", node)
+                    for node in body)
+    def separate_named_headings():
+        offset = 0
+        for name in names:
+            target = adapter.fold(name)
+            located = next((i for i in range(offset,len(body))
+                            if body[i] == target), None)
+            if located is None:
+                return False
+            offset = located+1
+        return True
+    if not full_bill and not separate_named_headings():
+        raise ValueError("Black Lab : plateau officiel non corroboré dans la fiche")
+    return names, guest
 
 
 def verify(candidate, page, catalogue, today):
-    if not isinstance(today, dt.date):
-        raise ValueError("Date de contrôle invalide")
-    if not isinstance(candidate, dict):
-        raise ValueError("Candidat absent")
+    if not isinstance(today, dt.date) or not isinstance(candidate, dict):
+        raise ValueError("Black Lab : date ou candidat invalide")
     if (candidate.get("source") != SOURCE
             or candidate.get("reviewBucket") != "genre_tag_review"
             or candidate.get("possibleExistingConcert") is not False
             or candidate.get("publicationAllowed") is not False
             or candidate.get("reviewRequired") is not True
-            or candidate.get("officialDetailFound") is not True):
-        raise ValueError("Candidat non éligible à la vérification officielle")
-    if (triage.words(candidate.get("venue")) != "the black lab"
+            or candidate.get("officialDetailFound") is not True
+            or triage.words(candidate.get("venue")) != "the black lab"
             or triage.words(candidate.get("city")) != CITY
             or str(candidate.get("department")) != "59"
             or candidate.get("sourcePage") != SOURCE_URL):
-        raise ValueError("Identité de la salle et agenda source incompatibles")
-    official_url = candidate.get("sourceUrl")
-    if not isinstance(official_url, str) or adapter.official_slug(official_url) is None:
-        raise ValueError("URL individuelle officielle Black Lab requise")
-    if not isinstance(page, str) or len(page) > 500_000:
-        raise ValueError("Fiche officielle illisible")
-    official_source = {
-        "name": "The Black Lab", "city": "Wasquehal",
-        "department": "59", "url": SOURCE_URL,
-    }
-    fresh = adapter.detail_candidate(
-        page, official_url, official_source, today.isoformat()
-    )
-    for key in ("sourceUrl", "date", "source", "name", "classification",
-                "venue", "city", "department"):
+        raise ValueError("Black Lab : source privée ou quarantaine incorrecte")
+    url = candidate.get("sourceUrl")
+    if not isinstance(url,str) or adapter.official_slug(url) is None:
+        raise ValueError("Black Lab : fiche HTTPS individuelle obligatoire")
+    if not isinstance(page,str) or not 100 <= len(page) <= 500_000:
+        raise ValueError("Black Lab : réponse officielle illisible")
+    if not isinstance(catalogue,dict) or not all(
+            isinstance(catalogue.get(key),list)
+            for key in ("artists","venues","events")):
+        raise ValueError("Black Lab : catalogue invalide")
+    source = {"name":"The Black Lab","city":"Wasquehal",
+              "department":"59","url":SOURCE_URL}
+    fresh = adapter.detail_candidate(page,url,source,today.isoformat())
+    for key in ("sourceUrl","date","source","name","classification",
+                "venue","city","department"):
         if fresh.get(key) != candidate.get(key):
-            raise ValueError("Donnée officielle modifiée ou non identique: " + key)
-    if fresh.get("date") <= today.isoformat():
-        raise ValueError("Concert non futur")
-    if not fresh.get("classification") or fresh.get("localTime") is not None:
-        raise ValueError("Preuve de genre ou d'horaire incertaine")
-    if not isinstance(catalogue, dict) or not all(
-        isinstance(catalogue.get(key), list)
-        for key in ("artists", "venues", "events")
-    ):
-        raise ValueError("Catalogue non conforme")
-
-    # Only a title describing one EXACT existing canonical artist is admitted.
+            raise ValueError("Black Lab : annonce modifiée : "+key)
+    if fresh["date"] <= today.isoformat() or not fresh["classification"] or (
+            fresh.get("localTime") is not None):
+        raise ValueError("Black Lab : concert non futur ou horaire non fiable")
     title = fresh["name"]
-    if any(token in title for token in (" + ", " & ", " / ", " feat.", " ft. ", " w/ ")):
-        raise ValueError("Affiche multi-artistes: revue nominative nécessaire")
-    if DANGEROUS_TITLE.search(triage.words(title)):
-        raise ValueError("Titre de spectacle, cover, festival ou statut ambigu")
-    matches = [a for a in catalogue["artists"]
-               if triage.words(a.get("name")) == triage.words(title)]
-    if len(matches) != 1 or not matches[0].get("id"):
-        raise ValueError("Un seul artiste déjà identifié et canonique requis")
-    performer = matches[0]
-
-    # Discovery parser excludes cancellation/changed date in the masthead.
-    # Recheck the substantial event detail as well, not adjacent listings.
+    if NONCONCERT.search(triage.words(title)):
+        raise ValueError("Black Lab : titre de spectacle ambigu")
     doc = adapter._Parse()
     doc.feed(page)
-    detail = adapter.fold(" ".join(doc.parts[doc.heading_end or 0:
-                                             (doc.heading_end or 0) + 65]))
-    if adapter.CANCEL.search(detail):
-        raise ValueError("Annonce de report, déplacement ou annulation")
+    if doc.heading_end is None:
+        raise ValueError("Black Lab : détail absent")
+    nodes = doc.parts[doc.heading_end:]
+    names, guest = bill_from_official_body(title, nodes)
+    if adapter.CANCEL.search(adapter.fold(" ".join(nodes[:65]))):
+        raise ValueError("Black Lab : concert reporté ou annulé")
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
-    if len(venues) != 1 or triage.words(venues[0].get("city")) != CITY:
-        raise ValueError("Salle géolocalisée inconnue ou ambiguë")
-    if not all(venues[0].get(k) is not None for k in ("latitude", "longitude")):
-        raise ValueError("Géolocalisation de la salle non vérifiée")
-    aid = performer["id"]
-    if any(e.get("officialUrl") == official_url or
-           (e.get("date") == fresh["date"] and
+    if len(venues) != 1 or triage.words(venues[0].get("city")) != CITY or (
+            any(venues[0].get(k) is None for k in ("latitude","longitude"))):
+        raise ValueError("Black Lab : Géolocalisation de la salle non confirmée")
+
+    by_name, existing_ids, aliases = {}, set(), set()
+    for artist in catalogue["artists"]:
+        aid = artist.get("id")
+        if not isinstance(aid,str) or not aid:
+            raise ValueError("Black Lab : catalogue d'artistes invalide")
+        existing_ids.add(aid)
+        by_name.setdefault(triage.words(artist.get("name")),[]).append(artist)
+        aliases.update(triage.words(a) for a in artist.get("aliases") or []
+                       if isinstance(a,str))
+    ids, new = [], []
+    for name in names:
+        key = triage.words(name)
+        matches = by_name.get(key,[])
+        if len(matches) > 1:
+            raise ValueError("Black Lab : identité canonique multiple")
+        if matches:
+            aid = matches[0]["id"]
+        else:
+            if key in aliases:
+                raise ValueError("Black Lab : alias existant, revue humaine")
+            aid = key.replace(" ","-")[:90].strip("-")
+            if not 3 <= len(aid) <= 100 or aid in existing_ids:
+                raise ValueError("Black Lab : nouvel artiste ambigu")
+            new.append({"id":aid,"name":name})
+            existing_ids.add(aid)
+        ids.append(aid)
+    if len(set(ids)) != len(ids):
+        raise ValueError("Black Lab : groupe répété")
+    if any(e.get("officialUrl") == url or (
+            e.get("date") == fresh["date"] and
             e.get("venueId") == VENUE_ID and
-            aid in e.get("artistIds", []))
-           for e in catalogue["events"]):
-        raise ValueError("Concert déjà publié ou même artiste et salle/date")
-    event_id = ("go-c-" + fresh["date"].replace("-", "") +
-                "-wasquehal-" + aid)
-    if len(event_id) > 150 or any(e.get("id") == event_id
-                                  for e in catalogue["events"]):
-        raise ValueError("Collision d'identifiant")
+            set(e.get("artistIds") or []) & set(ids))
+            for e in catalogue["events"]):
+        raise ValueError("Black Lab : concert déjà publié")
+    eid = "go-c-"+fresh["date"].replace("-","")+"-wasquehal-"+ids[0]
+    if len(eid)>150 or any(e.get("id")==eid for e in catalogue["events"]):
+        raise ValueError("Black Lab : identifiant déjà réservé")
     return {
-        "reviewDecision": "approved",
-        "reviewedBy": "automated-official-recheck",
-        "reviewedAt": today.isoformat(),
-        "officialEvidence": [{
-            "url": official_url,
-            "proofType": "official-organizer-or-venue",
-            "checkedAt": today.isoformat(),
-            "checkedFields": ["artists", "date", "venue", "genre"],
-            "officialArtistNames": [performer["name"]],
-            "sourceStructure": "official-event-single-known-artist-recheck",
-            "notes": "Fiche officielle relue; artiste canonique connu, date, salle et genre concordants; heure inconnue.",
+        "reviewDecision":"approved",
+        "reviewedBy":"automated-official-recheck",
+        "reviewedAt":today.isoformat(),
+        "officialEvidence":[{
+            "url":url,"proofType":"official-organizer-or-venue",
+            "checkedAt":today.isoformat(),
+            "checkedFields":["artists","date","venue","genre"],
+            "officialArtistNames":names,
+            "verifiedNewArtists":[a["name"] for a in new],
+            "sourceStructure":STRUCTURE,
+            **({"unannouncedSupportLabel":guest} if guest else {})
         }],
-        "event": {
-            "id": event_id, "title": performer["name"], "date": fresh["date"],
-            "time": None, "artistIds": [aid], "venueId": VENUE_ID,
-            "genres": fresh["classification"], "status": "confirmed",
-            "officialUrl": official_url, "sourceType": "salle",
-            "organizer": "The Black Lab",
+        "event":{
+            "id":eid,"title":" + ".join(names),
+            "date":fresh["date"],"time":None,"artistIds":ids,
+            "venueId":VENUE_ID,"genres":fresh["classification"],
+            "status":"confirmed","officialUrl":url,"sourceType":"salle",
+            "organizer":"The Black Lab"
         },
-        "newArtists": [],
+        "newArtists":new
     }

@@ -82,14 +82,14 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
             organizer="The Black Lab",
             description="death metal live")
         candidate = lead(page, BLACK_DAHLIA)
-        with self.assertRaisesRegex(ValueError, "multi-artistes"):
+        with self.assertRaisesRegex(ValueError, "corroboré"):
             check.verify(candidate, page, catalog(), self.TODAY)
 
     def test_artist_unknown_not_created_from_title(self):
         page = DETAIL.format(
             title="NEW FANTASY BAND", date="mercredi 3 février 2027",
             organizer="The Black Lab", description="death metal live")
-        with self.assertRaisesRegex(ValueError, "canonique"):
+        with self.assertRaisesRegex(ValueError, "corroboré"):
             check.verify(lead(page), page, catalog(), self.TODAY)
 
     def test_reported_event_in_slug_refused_even_if_genre(self):
@@ -160,6 +160,94 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
                 candidate[field] = value
                 with self.assertRaises(ValueError):
                     check.verify(candidate, dahlia(), catalog(), self.TODAY)
+
+    def test_new_first_party_performer_becomes_canonical_artist(self):
+        page = DETAIL.format(title="NEW FANTASY BAND",
+                             date="mercredi 3 février 2027",
+                             organizer="The Black Lab",
+                             description="NEW FANTASY BAND death metal live")
+        record = check.verify(lead(page), page, catalog(), self.TODAY)
+        self.assertEqual(record["newArtists"],
+                         [{"id":"new-fantasy-band","name":"NEW FANTASY BAND"}])
+        self.assertEqual(record["event"]["artistIds"],["new-fantasy-band"])
+
+    def test_exact_first_party_lineup_scales_without_artist_count_cap(self):
+        for count in (2, 8, 24):
+            with self.subTest(artists=count):
+                names = [f"GROUP {i:02d}" for i in range(1,count+1)]
+                bill = " + ".join(names)
+                page = DETAIL.format(title=bill,
+                    date="mercredi 3 février 2027",
+                    organizer="The Black Lab",description=bill+" death metal live")
+                record = check.verify(lead(page), page, catalog(), self.TODAY)
+                self.assertEqual(record["officialEvidence"][0]
+                                 ["officialArtistNames"],names)
+                self.assertEqual(len(record["newArtists"]),count)
+                self.assertEqual(len(record["event"]["artistIds"]),count)
+                self.assertIsNone(record["event"]["time"])
+
+    def test_musical_influences_and_near_spelling_never_create_performers(self):
+        page = DETAIL.format(title="ME GUSTA TU",
+            date="mercredi 3 février 2027",organizer="The Black Lab",
+            description="ME GUSTAS TÚ joue du punk en hommage à Manu Chao")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(page),page,catalog(),self.TODAY)
+        wrong = DETAIL.format(title="HOULE + CÂN BARDD",
+            date="mercredi 3 février 2027",organizer="The Black Lab",
+            description="Influencé par HOULE et CÂN BARDD, death metal")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(wrong),wrong,catalog(),self.TODAY)
+
+    def test_separate_official_performer_headings_validate_lineup_in_order(self):
+        title="REVNOIR + ICE SEALED EYES"
+        page=DETAIL.format(title=title,date="mercredi 3 février 2027",
+            organizer="The Black Lab",
+            description="<p>REVNOIR</p><p>REVNOIR metalcore français</p>"
+                        "<p>ICE SEALED EYES</p><p>Projet metal moderne</p>")
+        decision=check.verify(lead(page),page,catalog(),self.TODAY)
+        self.assertEqual(decision["officialEvidence"][0]
+                         ["officialArtistNames"],["REVNOIR","ICE SEALED EYES"])
+        self.assertEqual(len(decision["newArtists"]),2)
+        self.assertIsNone(decision["event"]["time"])
+        # A mere biography mentioning both groups is not two headings.
+        bad=DETAIL.format(title=title,date="mercredi 3 février 2027",
+            organizer="The Black Lab",
+            description="<p>Inspiré par REVNOIR et ICE SEALED EYES, metalcore</p>")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(bad),bad,catalog(),self.TODAY)
+
+    def test_influence_with_exact_lineup_is_not_a_performance_bill(self):
+        page = DETAIL.format(title="HOULE + CÂN BARDD",
+            date="mercredi 3 février 2027", organizer="The Black Lab",
+            description="Influences : HOULE + CÂN BARDD, death metal")
+        with self.assertRaisesRegex(ValueError, "corroboré"):
+            check.verify(lead(page), page, catalog(), self.TODAY)
+
+    def test_independent_publisher_accepts_2_and_24_acts_and_rejects_forgery(self):
+        sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"scripts"))
+        from concerts_cloud_sync import validate_approval
+        for count in (2, 24):
+            with self.subTest(artists=count):
+                names=[f"GROUP {i:02d}" for i in range(1,count+1)]
+                title=" + ".join(names)
+                page=DETAIL.format(title=title,date="mercredi 3 février 2027",
+                    organizer="The Black Lab",description=title+" death metal live")
+                cl=catalog()
+                decision=check.verify(lead(page),page,cl,self.TODAY)
+                venues={v["id"]:v for v in cl["venues"]}
+                artists={a["id"]:a for a in cl["artists"]}
+                event,new=validate_approval(decision,venues,artists,self.TODAY)
+                self.assertEqual(len(event["artistIds"]),count)
+                self.assertEqual(len(new),count)
+                self.assertIsNone(event["time"])
+                altered=copy.deepcopy(decision)
+                altered["officialEvidence"][0]["officialArtistNames"].reverse()
+                with self.assertRaises(ValueError):
+                    validate_approval(altered,venues,artists,self.TODAY)
+                altered=copy.deepcopy(decision)
+                altered["event"]["time"]="20:00"
+                with self.assertRaises(ValueError):
+                    validate_approval(altered,venues,artists,self.TODAY)
 
     def test_alias_collision_never_invents_artist(self):
         cl = catalog()
