@@ -148,6 +148,59 @@ class DiscoveryTests(unittest.TestCase):
         self.assertEqual(c["date"], "2027-02-15")
         self.assertFalse(c["publicationAllowed"])
 
+    def test_structured_genre_enters_review_only_not_publication(self):
+        import triage
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        raw = {
+            "@type": "MusicEvent",
+            "name": "Nouveau groupe et guest",
+            "startDate": "2027-02-15T20:00:00+01:00",
+            "genre": ["Death Metal", "Grindcore"],
+            "performer": [
+                {"@type": "MusicGroup", "name": "Nouveau Groupe"},
+                {"@type": "MusicGroup", "name": "Guest"},
+            ],
+            "location": {"name": "La Salle",
+                         "address": {"addressLocality": "Nîmes"}},
+        }
+        lead = d.venue_candidate(raw, source, "https://official.example/events/123",
+                                 set(), "2026-11-18")
+        self.assertEqual(lead["classification"], ["Death Metal", "Grindcore"])
+        assessed = triage.triage(lead, catalogue={})
+        self.assertEqual(assessed["reviewBucket"], "genre_tag_review")
+        self.assertEqual(assessed["genreEvidence"], "tag_genre_source")
+        self.assertTrue(assessed["reviewRequired"])
+        self.assertFalse(assessed["publicationAllowed"])
+
+    def test_general_description_never_becomes_structured_genre_evidence(self):
+        import triage
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        raw = {"@type": "Event", "name": "Concert sans genre",
+               "startDate": "2027-02-15",
+               "description": "Cette salle accueille du metal et du punk",
+               "location": {"name": "La Salle",
+                            "address": {"addressLocality": "Nîmes"}}}
+        lead = d.venue_candidate(raw, source, "https://official.example/events/456",
+                                 set(), "2026-11-18")
+        self.assertEqual(lead["classification"], [])
+        assessed = triage.triage(lead, catalogue={})
+        self.assertEqual(assessed["reviewBucket"], "genre_unknown")
+        self.assertFalse(assessed["publicationAllowed"])
+
+    def test_structured_generic_rock_and_non_string_genre_do_not_auto_qualify(self):
+        import triage
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        for genre in ("Rock", {"name": "Metal"}, [None, "Rock", 12]):
+            with self.subTest(genre=genre):
+                raw = {"name": "Concert", "startDate": "2027-03-11",
+                       "genre": genre, "location": {"name": "La Salle",
+                       "address": {"addressLocality": "Nîmes"}}}
+                lead = d.venue_candidate(raw, source, "https://official.example/event",
+                                         set(), "2026-11-18")
+                assessed = triage.triage(lead, catalogue={})
+                self.assertEqual(assessed["reviewBucket"], "genre_unknown")
+                self.assertFalse(assessed["publicationAllowed"])
+
     def test_absence_date_pas_de_candidate(self):
         source = {"name": "Salle", "city": "Paris", "department": "75"}
         self.assertIsNone(d.venue_candidate({"@type": "MusicEvent", "name": "Un concert"},
