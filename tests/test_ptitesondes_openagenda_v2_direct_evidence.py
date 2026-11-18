@@ -251,6 +251,24 @@ class OA2DirectEvidenceTests(unittest.TestCase):
         ev["rights"] = {}
         self.assertEqual(review(event=ev)["reason"], "source_rights_unknown")
 
+    def test_v2_structured_license_and_licensor_are_required(self):
+        # Real OpenAgenda v2 shape: rights.license is an object with a stable
+        # id. A syntactically valid licence NEVER means reuse was reviewed.
+        positive = review()
+        self.assertTrue(positive["source_evidence_structurally_valid"])
+        self.assertIs(positive["rights_reviewed"], False)
+        for changed in (
+            {"license": "etalab-2.0", "licensor": {"name": "Fictif"}},
+            {"license": {"id": "etalab-2.0"}},
+            {"license": {"id": ""}, "licensor": {"name": "Fictif"}},
+            {"license": {"id": "etalab-2.0"}, "licensor": {}},
+            {"license": {"id": "etalab-2.0"}, "licensor": {"name": ""}},
+        ):
+            with self.subTest(changed=changed):
+                ev = deepcopy(EVENT)
+                ev["rights"] = changed
+                self.assertEqual(review(event=ev)["reason"], "source_rights_unknown")
+
     def test_recurring_oversized_duplicate_or_invalid_time_refused(self):
         ev = deepcopy(EVENT)
         ev["timings"].append(deepcopy(ev["timings"][0]))
