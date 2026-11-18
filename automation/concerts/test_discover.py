@@ -172,6 +172,73 @@ class DiscoveryTests(unittest.TestCase):
         self.assertTrue(assessed["reviewRequired"])
         self.assertFalse(assessed["publicationAllowed"])
 
+    def test_first_party_music_event_exact_keywords_enter_review_only(self):
+        import triage
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        raw = {
+            "@type": ["https://schema.org/MusicEvent", "Event"],
+            "name": "Affiche métal avec deux artistes", "startDate": "2027-05-22",
+            "keywords": ["Death Metal, Rock; Grindcore",
+                         "Hard Rock|Noise Rock",
+                         "The venue presents metal and punk every week"],
+            "description": "La salle programme du metal et du punk.",
+            "location": {"name": "La Salle",
+                         "address": {"addressLocality": "Nîmes"}},
+        }
+        row = d.venue_candidate(raw, source, "https://official.example/event/123",
+                                 set(), "2026-11-18")
+        self.assertEqual(row["classification"],
+                         ["Death Metal", "Grindcore", "Hard Rock", "Noise Rock"])
+        self.assertEqual(row["structuredGenreProvenance"],
+                         "event_keywords_review_only")
+        reviewed = triage.triage(row, catalogue={})
+        self.assertEqual(reviewed["reviewBucket"], "genre_tag_review")
+        self.assertFalse(reviewed["publicationAllowed"])
+        self.assertTrue(reviewed["reviewRequired"])
+
+    def test_keywords_from_generic_event_or_page_description_not_admissible(self):
+        import triage
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        base = {
+            "@type": "MusicEvent", "name": "Concert non vérifié",
+            "startDate": "2027-05-22", "location": {
+                "name": "La Salle", "address": {"addressLocality": "Nîmes"}},
+        }
+        variants = [
+            {"keywords": "Rock, Pop Rock, Electro"},
+            {"keywords": "La salle accueille du metal et du punk"},
+            {"keywords": ["metal festival dates",
+                          "backstage metal events 2027"]},
+            {"keywords": ["https://thirdparty.example/metal"]},
+            {"description": "Concert metal mais sans genre explicite"},
+            {"keywords": {"name": "Death Metal"}},
+            {"@type": "Event", "keywords": ["Death Metal"]},
+            {"@type": "https://schema.org/Organization",
+             "keywords": ["Death Metal"]},
+        ]
+        for variant in variants:
+            with self.subTest(variant=variant):
+                row = d.venue_candidate(
+                    {**base, **variant}, source,
+                    "https://official.example/event/123", set(), "2026-11-18")
+                self.assertEqual(row["classification"], [])
+                self.assertIsNone(row["structuredGenreProvenance"])
+                checked = triage.triage(row, catalogue={})
+                self.assertEqual(checked["reviewBucket"], "genre_unknown")
+                self.assertFalse(checked["publicationAllowed"])
+
+    def test_explicit_genre_overrides_event_keywords_without_combining(self):
+        source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
+        raw = {"@type": "MusicEvent", "name": "Concert Rock",
+               "startDate": "2027-05-22",
+               "genre": "Rock", "keywords": ["Death Metal"],
+               "location": {"name": "La Salle",
+                            "address": {"addressLocality": "Nîmes"}}}
+        row = d.venue_candidate(raw, source, "https://official.example/one",
+                                 set(), "2026-11-18")
+        self.assertEqual(row["classification"], ["Rock"])
+        self.assertEqual(row["structuredGenreProvenance"], "event_genre")
+
     def test_general_description_never_becomes_structured_genre_evidence(self):
         import triage
         source = {"name": "La Salle", "city": "Nîmes", "department": "30"}
