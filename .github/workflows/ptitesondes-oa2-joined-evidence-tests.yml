@@ -53,5 +53,8 @@ jobs:
                          for line in flow.splitlines())
           assert all(x in src for x in ("approval_granted", "public_writes", "outstanding_gates", "REMAINING_GATES"))
           assert not any(x in src for x in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          feeds = Path("scripts/ptitesondes_openagenda_v2_official_feeds.py").read_text()
+          assert "public_writes" in feeds and "publisher_connected" in feeds
+          assert not any(x in feeds for x in ("urlopen(", "requests.", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
           print("PASS: readonly, never publisher, no credentials or schedule")
           PY
