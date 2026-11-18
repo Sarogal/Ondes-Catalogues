@@ -104,3 +104,33 @@ Deux autres UID publiquement documentés ont été interrogés avec la **même r
 | [Villeurbanne, `27039422`](https://openagenda.com/fr/villeurbanne2022/events/27039422_7427103) | `total_count=0` | Exposition continue à regrouper, horaires officiels uniquement pour une sous-période |
 
 Ce contre-échantillon établit que le fallback doit distinguer **absence réelle** et **fiche déjà présente dans ODS** : l'API directe n'est pas un second vote indépendant qui permettrait de supprimer la preuve de source, les restrictions de catégories ou la déduplication. Les pages OpenAgenda ont été consultées sans clé, **pas** les réponses API v2 authentifiées. Les âges, horaires et conditions ici sont des observations de fiches publiques à revalider à la date d'une éventuelle publication, jamais des attestations d'organisateur indépendantes.
+
+## Vérification organisatrice générique et inventaire des agendas — suite du 18/11
+
+### Sources organisatrices sans exceptions événementielles
+
+Le module `scripts/ptitesondes_openagenda_v2_organizer_bridge.py` réutilise directement les contrôles de page HTML officielle du moteur national `ptitesondes_family_national_source_preflight.py` (titre, ville, lieu, public familial, date et heure). Il ne rajoute **aucune URL OpenAgenda d'événement** en allowlist. Le domaine de l'organisateur et l'URL exacte doivent provenir d'un registre **indépendamment révisé**, et le contenu HTML doit être récupéré séparément à cette URL exacte (HTTPS, limite de taille, sans redirection par le client appelant).
+
+- Une séance par jour doit présenter sa **date et son heure dans le même bloc visible** de la source organisatrice ; deux horaires ne doivent pas être artificiellement assemblés à partir de deux blocs.
+- Les termes explicites « adultes uniquement », « public adulte », « réservé aux adultes » et équivalents interrompent la preuve, **même si le titre de l'événement mentionne des enfants**.
+- Un événement sur plusieurs journées sous un UID unique reste réservé au contrat de regroupement : cette voie ne peut pas fabriquer des fiches quotidiennes.
+- L'absence de lien vers la page **racine de l'agenda** sur le site organisateur ne bloque plus **le diagnostic de routage** lorsqu'une page d'organisateur de confiance documente la séance exacte. L'UID, le slug d'agenda, la géolocalisation, la période, l'absence prouvée dans ODS et l'historique doivent néanmoins toujours concorder.
+- La fonction `dry_run_first_party_fallback` calcule la preuve organisatrice à partir des **mêmes données** OpenAgenda et de la source officielle, sans croire un booléen provenant du backlog. Le résultat reste un **candidat aux vérifications restantes**, jamais un patch ou une approbation.
+
+Ce traitement réduit la dépendance à une correspondance `page institutionnelle → racine OpenAgenda`, sans supprimer la condition indépendante d'une source institutionnelle ou organisatrice réelle. Il ouvre une voie générique aux ateliers, lectures, cinémas et autres sorties, **mais la publication des nouvelles catégories n'est pas encore raccordée**.
+
+### Source registry : les 16 UID restent à authentifier
+
+La route authentifiée de consultation d'un agenda est `GET /v2/agendas/{agendaUID}` selon https://developers.openagenda.com/configuration-dun-agenda/. Elle renseigne l'UID, le slug, le titre, l'URL auto-déclarée et parfois le statut `official`. Ces **métadonnées OpenAgenda ne sont pas une preuve indépendante du propriétaire ou d'un programme**, même si le bit `official=1`.
+
+La fonction `read_direct_agenda_v2` effectue cette lecture sans redirection, avec `key: oa_pk_...` en **en-tête**, une taille et un délai limités, et une identité UID/slug exacte. L'outil manuel `scripts/ptitesondes_openagenda_v2_agenda_census.py` l'applique aux UID du fichier approuvé `Sarogal/PtitesOndes/automation/sources.json` et produit uniquement des **comptages anonymisés** :
+
+- agendas configurés et identités API cohérentes ou non ;
+- drapeau `official` seulement informatif ;
+- existence éventuelle d'un site de référence auto-déclaré à examiner ;
+- agendas indisponibles ou à visibilité restreinte ;
+- **zéro organisateur homologué, zéro licence examinée, zéro approbation ou écriture** à ce stade.
+
+Les 16 UID listés dans la configuration sont réels ; aucune identité institutionnelle n'est affirmée automatiquement. Aucune lecture API v2 authentifiée n'a pu être exécutée depuis la PR non fusionnée : pour éviter d'exposer le secret, l'exécution doit se faire dans un contexte de confiance, **jamais dans le code d'une branche PR susceptible de changer**. Les résultats des tests simulés sont clairement distingués des données API live et des publications.
+
+Aucun changement dans `ptitesondes_candidate_promotion.py`, `merge_policy.py`, les catégories publiques, les catalogues, le site Infomaniak, les crons et Grosses Ondes.
