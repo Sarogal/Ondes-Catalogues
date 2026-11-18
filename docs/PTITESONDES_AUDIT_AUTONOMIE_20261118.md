@@ -109,6 +109,14 @@ Les comparaisons Git indiquent : `#361 -> #362 -> #364` en avance sur leurs bran
 - **Manuel/inopérant pour ce périmètre** : homologation générique de sources, publication de sorties non musicales, admission du projet MPT en brouillon, preuve de publication Outre-mer, contrôles systématiques de l’affichage navigateur à chaque déploiement.
 - **Non vérifié** : configuration réelle du service de secours Cloudflare externe et de ses secrets ; le fichier de code existe mais ne prouve pas l’activation du service. Le watchdog public se contente d’auditer ou d’émettre un heartbeat.
 
+## 9 bis. Incident transversal de surveillance vérifié le 18/11
+
+Les sept derniers cycles du workflow `ondes-public-watchdog.yml` consultés ont **échoué** (dont [run 44200950299](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44200950299)). La dernière erreur provient du contrôle `monitoring/ondes_watchdog.php`, pas d'un échec de syntaxe ou d'authentification : journaux « passage programmé absent » sur plusieurs workflows P'tites Ondes et Grosses Ondes. Les exécutions principales interrogées existent pourtant et sont majoritairement vertes.
+
+Le code associe une exécution à un créneau si `created_at` est compris entre `slot - 120 secondes` et `slot + 9 heures` et signale un créneau « absent » au-delà. Le décalage d'un lancement GitHub ne prouve pas à lui seul l'échec du créneau nominal ; le système ne connaît pas le cron d'origine de chaque run à partir du seul champ `created_at`. Les alertes peuvent donc confondre des retards importants avec des absences réelles, mais elles peuvent aussi être légitimes : **aucune conclusion générale « faux positifs » sans rapprochement supplémentaire**.
+
+Correctif transversal distinct à préparer : classifier les alertes par absence confirmée / exécution tardive / rattrapage confirmé, conserver le seuil d'alerte pour ne pas masquer les incidents, comparer une fenêtre élargie sans attribuer un run au mauvais créneau, tester les cas adversariaux et déployer uniquement après validation. Le Cloudflare Worker indépendant de secours existe en code, mais son déploiement et son efficacité ne sont pas vérifiés.
+
 ## 10. Critères de sortie avant le 30 novembre
 
 1. Au moins un **événement musical** découvert après activation d’une source, prévalidé, accepté, commité dans Git, servi par Pages puis effectivement visible sur la carte, sans action manuelle, preuves et IDs archivés.
