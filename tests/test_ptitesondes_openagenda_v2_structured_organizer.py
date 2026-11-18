@@ -91,6 +91,12 @@ class StructuredOrganizerContract(unittest.TestCase):
                 self.assertFalse(verify(page_html=html(p))[
                     "official_structured_sessions_concordant"])
 
+    def test_exact_timezone_conversion_accepts_equivalent_utc_instant(self):
+        # API timezone is Europe/Paris; UTC 13:30 corresponds to 14:30.
+        p = dict(SESSION, startDate="2026-12-05T13:30:00Z")
+        result = verify(page_html=html(p))
+        self.assertTrue(result["official_structured_sessions_concordant"], result["reason"])
+
     def test_mismatching_name_city_venue_or_wrong_location_structure_held(self):
         for bad in (
             dict(SESSION, name="Une autre séance"),
@@ -137,8 +143,9 @@ class StructuredOrganizerContract(unittest.TestCase):
                  exact_url="https://openagenda.com/fr/foo"),
             dict(ORGANIZER, approved_host="api.openagenda.com",
                  exact_url="https://api.openagenda.com/foo"),
-            dict(ORGANIZER, approved_host="www.bibliotheque-test.fr.evil.net",
-                 exact_url="https://www.bibliotheque-test.fr.evil.net/a"),
+            dict(ORGANIZER, approved_host="www.bibliotheque-test.fr.evil.net"),
+            dict(ORGANIZER, approved_host="127.0.0.1",
+                 exact_url="https://127.0.0.1/lieu"),
             dict(ORGANIZER, exact_url="http://www.bibliotheque-test.fr/a"),
             dict(ORGANIZER, exact_url="https://www.bibliotheque-test.fr/a#x"),
             dict(ORGANIZER, approved_host="localhost",
