@@ -68,7 +68,8 @@ ROW_KEYS = {
 PRIVATE_KEYS = {"proofMode", "originSlug", "evidence", "verified_at"}
 
 
-def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_MODE):
+def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_MODE,
+                                allow_skipped_archive_years=False):
     """Return sanitized new row or None; never partially accept."""
     if not (isinstance(proposal, dict) and isinstance(parent, dict)
             and isinstance(html, str) and 0 < len(html) <= 1_400_000):
@@ -85,7 +86,8 @@ def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_
         return None
     base_slug, old_year = parent_identity
     year = int(new_match.group(2))
-    if not (year == old_year + 1 and year in (2027, 2028)
+    if not (year in (2027, 2028) and year > old_year
+            and (year == old_year + 1 or allow_skipped_archive_years)
             and base_slug == new_match.group(1)
             and proposal["originSlug"] == old_slug):
         return None
@@ -199,7 +201,8 @@ def validate_archived_structured_edition(proposal, archived, html, today,
                      else PROOF_MODE)
     adapted = dict(proposal, proofMode=internal_mode)
     result = validate_structured_edition(
-        adapted, archived, html, today, proof_mode=internal_mode)
+        adapted, archived, html, today, proof_mode=internal_mode,
+        allow_skipped_archive_years=True)
     if result is not None:
         result["verificationStatus"] = (
             "Édition vérifiée sur le site officiel de l'archive ; "
