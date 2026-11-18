@@ -185,6 +185,17 @@ def check_structured_organizer_session(
                 or event["eventStatus"].rsplit("/", 1)[-1] != "EventScheduled"
             ):
                 continue
+            description = event.get("description")
+            if isinstance(description, str) and (
+                    ADULT_ONLY.search(norm_text(description))
+                    or BAD_STATUS.search(norm_text(description))):
+                continue
+            attendance = event.get("eventAttendanceMode")
+            if attendance is not None and (
+                    not isinstance(attendance, str)
+                    or attendance.rsplit("/", 1)[-1]
+                    not in ("OfflineEventAttendanceMode", "MixedEventAttendanceMode")):
+                continue
             location = event.get("location")
             places = location if isinstance(location, list) else [location]
             if not any(isinstance(loc, dict) and
