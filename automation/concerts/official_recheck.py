@@ -402,18 +402,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
     # Raw observations can be dozens of same-day duplicate scans.
     candidates = [i for i in items if
                   i.get("stableObservations", 0) >= 2 and
-                  i.get("candidate", {}).get("source") in
-                  ("agenda_officiel_rex_genre", "agenda_officiel_molotov_genre",
-                   "agenda_officiel_ferrailleur_genre",
-                   "agenda_officiel_backstage_detail",
-                   "agenda_officiel_atabal_detail",
-                   "agenda_officiel_blacklab_detail_review",
-                   "agenda_officiel_laiterie_detail_review",
-                   "agenda_officiel_rockstore_detail_review",
-                   "bateau_ivre_official_detail_review",
-                   "agenda_officiel_bonjour_minuit_detail_review",
-                   "bbc_official_detail_review",
-                   "agenda_officiel_cave_poetes_detail") and
+                  isinstance(i.get("candidate", {}).get("source"), str) and
+                  i.get("candidate", {}).get("source") in VERIFIER_SPECS and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
