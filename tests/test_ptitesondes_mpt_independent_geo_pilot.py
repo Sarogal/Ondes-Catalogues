@@ -14,7 +14,9 @@ from ptitesondes_mpt_independent_geo_pilot import (
 )
 
 EXTERNAL_SCORES = (0.9768809090909089, 0.9724745454545455,
-                   0.9704199999999998)
+                   0.9704199999999998, 0.9732336363636362,
+                   0.9768809090909089, 0.9704199999999998,
+                   0.9724745454545455)
 
 
 def geocode(row, score=0.975, feature_type="housenumber"):
@@ -33,13 +35,17 @@ class ReviewedMptVenueTests(unittest.TestCase):
     def setUp(self):
         self.records = reviewed_pilot_records()
 
-    def test_three_pinned_municipal_and_independent_geo_sources(self):
+    def test_seven_pinned_municipal_and_independent_geo_sources(self):
         self.assertTrue(validate_curated_registry(self.records))
-        self.assertEqual(len(self.records), 3)
+        self.assertEqual(len(self.records), 7)
         self.assertEqual({r["venue"] for r in self.records}, {
             "Maison pour tous Mélina Mercouri",
             "Maison pour tous Frida Kahlo",
             "Maison pour tous Albert Dubout",
+            "Maison pour tous Michel Colucci",
+            "Maison pour tous Marie Curie",
+            "Maison pour tous L'Escoutaïre",
+            "Maison pour tous François Villon",
         })
         for r in self.records:
             with self.subTest(venue=r["venue"]):
@@ -133,8 +139,8 @@ class ReviewedMptVenueTests(unittest.TestCase):
     def test_private_free_anonymous_report_and_no_publication(self):
         responses = {row["venue_key"]: geocode(row) for row in self.records}
         report = geo_review_report(self.records, responses)
-        self.assertEqual(report["curated_venues_checked"], 3)
-        self.assertEqual(report["exact_external_housenumber_matches"], 3)
+        self.assertEqual(report["curated_venues_checked"], 7)
+        self.assertEqual(report["exact_external_housenumber_matches"], 7)
         self.assertEqual(report["public_writes"], 0)
         self.assertFalse(report["publication_ready"])
         self.assertFalse(report["publisher_connected"])
@@ -153,13 +159,13 @@ class ReviewedMptVenueTests(unittest.TestCase):
         responses[self.records[1]["venue_key"]] = geocode(
             self.records[1], feature_type="street")
         r = geo_review_report(self.records, responses)
-        self.assertEqual(r["exact_external_housenumber_matches"], 2)
+        self.assertEqual(r["exact_external_housenumber_matches"], 6)
         self.assertEqual(r["held_for_external_geo_review"], 1)
         self.assertFalse(r["publication_ready"])
 
     def test_preflight_venue_schema_only_not_event_admission(self):
         refs = national_preflight_venue_registry()
-        self.assertEqual(len(refs), 3)
+        self.assertEqual(len(refs), 7)
         for ref in refs:
             self.assertEqual(set(ref), REGISTRY_KEYS)
             for forbidden in ("date_start", "title", "source_url",
