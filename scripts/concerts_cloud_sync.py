@@ -5322,6 +5322,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and p.get("verifiedNewArtists") ==
                     [a["name"] for a in new_artists]
                 and p.get("officialRoom") in ("Le Club", "La Grande Salle")
+                and p.get("unannouncedSupportLabel") in (
+                    None, "guest", "special guest", "premiere partie",
+                    "premiere partie surprise", "support", "surprise",
+                    "a confirmer", "tba", "invite surprise",
+                    "artiste surprise")
                 and p.get("doorTimeConfirmed") is None
                 and p.get("concertStartTimeConfirmed") is None,
                 "Bonjour Minuit auto : preuve nominative ou horaire non conforme")
@@ -5348,6 +5353,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         norm(event["genres"][0]) + " ")
                 ),
                 "Bonjour Minuit auto : plateau ou badges non corroborés")
+        label = p.get("unannouncedSupportLabel")
+        if label:
+            require(isinstance(p.get("originalOfficialHeadline"), str)
+                    and norm(p["originalOfficialHeadline"]) ==
+                        norm(" ".join(names) + " " + label),
+                    "Bonjour Minuit auto : guest annoncé non corroboré")
+        else:
+            require(p.get("originalOfficialHeadline") is None,
+                    "Bonjour Minuit auto : annonce d'artistes supplémentaires non attendue")
         resolved = dict(known_artist_ids)
         resolved.update(added)
         require(all(aid in resolved
