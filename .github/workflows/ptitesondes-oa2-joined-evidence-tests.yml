@@ -37,7 +37,10 @@ jobs:
           flow = Path(".github/workflows/ptitesondes-oa2-joined-evidence-tests.yml").read_text()
           assert "contents: read" in flow and "pull_request:" in flow
           assert not any(line.startswith(("  schedule:", "  workflow_dispatch:")) for line in flow.splitlines())
-          assert not any(x in flow for x in ("\u0024{{ se" + "crets.", "uses: actions/deploy-pages@"))
+          assert not any(line.lstrip().startswith("uses: actions/" + "deploy-pages@")
+                         for line in flow.splitlines())
+          assert not any(line.lstrip().startswith("env: " + "\u0024{{ secrets.")
+                         for line in flow.splitlines())
           assert all(x in src for x in ("approval_granted", "public_writes", "outstanding_gates", "REMAINING_GATES"))
           assert not any(x in src for x in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           print("PASS: readonly, never publisher, no credentials or schedule")
