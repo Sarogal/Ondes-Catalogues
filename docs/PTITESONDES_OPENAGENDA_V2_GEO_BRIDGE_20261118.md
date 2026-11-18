@@ -33,3 +33,22 @@ Des pages institutionnelles dépourvues de JSON-LD de lieu, des réponses BAN im
 La suite tests/test_ptitesondes_openagenda_v2_geo_bridge.py comprend 13 tests hors réseau (France métropolitaine, discordances ultramarines, JSON-LD falsifié/ambigu, hôtes trompeurs, mauvaise adresse, score faible, géométries contradictoires, hors rayon, alias non documentés, faux drapeaux d'approbation, composition avec la preuve API). Ces tests utilisent uniquement des données synthétiques.
 
 **Étapes restantes :** adapter génériquement les pages institutionnelles réelles sans schéma JSON-LD, vérifier la provenance des pages récupérées, mettre en cache et faire tourner les géocodages exacts du backlog en lecture seule, mesurer le nombre de lieux réellement débloqués, puis relier la revue complète au publisher après validation. Aucune nouvelle fiche n'est revendiquée par ce lot.
+
+## Récupération bornée et exécution par lot (suite du 18 novembre)
+
+L'adaptateur accepte désormais un `Place` explicitement typé dans le champ `location` d'un `Event` JSON-LD institutionnel. Ce contrat est **générique** : aucune exception par salle ou représentation. Plusieurs événements décrivant exactement le même bâtiment sont rapprochés par adresse réelle ; leurs alias explicitement présents peuvent être réunis. Deux adresses ou numéros contradictoires restent bloquants. Le parcours JSON-LD est borné et non récursif.
+
+Deux modules complémentaires, toujours **déconnectés de la production**, préparent le traitement réel :
+
+- `scripts/ptitesondes_openagenda_v2_geo_fetch.py` : récupère uniquement une page HTTPS déjà épinglée par un registre externe de confiance (statut 200, URL finale identique, pas de redirection, contenu HTML borné), puis construit depuis son adresse exacte une requête IGN/BAN au numéro, avec réponse GeoJSON bornée. Aucun secret ni URL OpenAgenda fourni comme source de confiance.
+- `scripts/ptitesondes_openagenda_v2_geo_batch.py` : vérifie au maximum **60 pistes par lot**, en mémorisant les réponses sur la seule durée d'un lot pour un document institutionnel identique et une adresse IGN/BAN identique. Chaque fiche reste néanmoins revérifiée séparément pour son identité, ses coordonnées, dates, fuseau, statut et indices du public. Le rapport de sortie contient seulement des compteurs à nomenclature fixe, jamais de titre, URL, UID, âge, lieu, coordonnées ou détail d'erreur privée.
+
+Les caches ne donnent **aucun** droit d'approbation et ne transforment pas deux miroirs d'un même UID en deux sources indépendantes. Le module ne détermine pas lui-même si un domaine appartient réellement à la collectivité : cette identité doit provenir du registre des sources homologuées, jamais d'un booléen ajouté au backlog ou d'une annonce OpenAgenda. Aucune mise à jour de registre, pipeline, catégorie, entrée de catalogue, secret, cron ou publisher n'est prévue dans cette PR.
+
+Deux séries de tests purement simulés contrôlent les refus de transport, les conflits d'adresse, les ambiguïtés JSON-LD, les réutilisations de cache et la confidentialité. Une réussite CI atteste seulement ces comportements hors réseau : aucune couverture de lieu ou de sortie supplémentaire n'est revendiquée sans contrôle réel de données sur un environnement de confiance.
+
+### Prochaine intégration nécessaire
+
+1. Homologuer les hôtes/pages institutionnels par une source indépendante réutilisable, et construire un registre **sans autorisations automatiques fondées sur OpenAgenda seul**.
+2. Alimenter les lots de diagnostic avec les pistes du backlog privé ; quantifier combien des premiers refus GPS deviennent des preuves de localisation à trois sources, en conservant les échecs et taux de troncature.
+3. Vérifier ensuite les autres critères indépendants, notamment organisateur, droit de réutilisation, âge/accès, catégorie, dates locales, doublons historiques et publication réelle. Une preuve géographique seule ne peut jamais publier.
