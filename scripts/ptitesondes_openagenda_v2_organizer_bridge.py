@@ -145,3 +145,25 @@ def check_independent_session(lead, api_event, direct_proof, reviewed_organizer,
     return dict(result, official_session_evidence_consistent=True,
                 confirmed_local_start_times_count=len(times),
                 reason="organizer_session_confirmed_other_gates_pending")
+
+
+def dry_run_first_party_fallback(ods_state, lead, api_event, direct_proof,
+                                 agenda_identity, grouping, reviewed_organizer,
+                                 fetched_official_page, historic_uid_exists=None):
+    """One read-only bundle: independent first-party proof + ODS-missing route.
+
+    Computes the first-party evidence freshly against the SAME lead and event;
+    does not accept a caller-provided 'organizer_verified=True' assertion.
+    No admission, publisher patch or website writes can occur here.
+    """
+    from ptitesondes_openagenda_v2_preintegration import ods_fallback_preflight
+    organizer = check_independent_session(
+        lead, api_event, direct_proof, reviewed_organizer,
+        fetched_official_page,
+    )
+    return ods_fallback_preflight(
+        ods_state, direct_proof, agenda_identity, grouping,
+        historic_uid_exists=historic_uid_exists,
+        independently_linked=False,
+        first_party_session_evidence=organizer,
+    )
