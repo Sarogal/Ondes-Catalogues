@@ -125,3 +125,76 @@ def redacted_agenda_reference(result):
         "publisher_connected": False,
         "public_writes": 0,
     }
+
+
+def diagnose_delegated_calendar_candidate(case, reviewed_source,
+                                          fetched_institution_page, today):
+    """Separately verify the institutional link, geo and direct OA event.
+
+    Crucial: this is NOT the existing session proof. A calendar hyperlink
+    alone does NOT independently authenticate a particular session, even
+    if a v2 API record exists and agrees with the candidate.
+    """
+    from datetime import date
+    from ptitesondes_openagenda_v2_geo_bridge import review_independent_geo
+    from ptitesondes_openagenda_v2_direct_evidence import review_direct_v2
+
+    base = {
+        "schema": "ptitesondes.oa2.calendar_reference_joined_readonly.v1",
+        "stage": "invalid_case",
+        "institutional_calendar_link_observed": False,
+        "venue_verified": False,
+        "direct_source_verified": False,
+        "organizer_ownership_attested": False,
+        "independent_event_session_verified": False,
+        "approval_granted": False,
+        "publisher_connected": False,
+        "public_writes": 0,
+        "outstanding_gates": [
+            "institutional_ownership", "event_session_independent_proof",
+            "rights_and_reuse", "audience_age_and_access",
+            "historical_deduplication", "editorial_category",
+            "final_private_approval", "publisher_and_visibility",
+        ],
+    }
+    expected = frozenset({
+        "lead", "api_event", "reviewed_venue_source", "venue_page",
+        "geocoder_request_url", "geojson",
+    })
+    if (type(today) is not date or not isinstance(case, dict)
+            or set(case) != expected or not isinstance(reviewed_source, dict)):
+        return base
+    link = inspect_institutional_agenda_page(
+        reviewed_source, fetched_institution_page)
+    if link["institutional_root_link_observed"] is not True:
+        return dict(base, stage="institutional_agenda_link_not_confirmed")
+    try:
+        geo = review_independent_geo(
+            case["lead"], case["api_event"], case["reviewed_venue_source"],
+            case["venue_page"], case["geocoder_request_url"], case["geojson"])
+        if geo.get("geo_evidence_consistent") is not True:
+            return dict(base, stage="independent_venue_not_verified",
+                        institutional_calendar_link_observed=True)
+        reviewed_agenda = {
+            k: reviewed_source[k]
+            for k in ("agenda_slug", "agenda_uid", "timezone")
+        }
+        direct = review_direct_v2(
+            case["lead"], case["api_event"], reviewed_agenda,
+            geo["registered_venue"], today)
+        if direct.get("source_evidence_structurally_valid") is not True:
+            return dict(
+                base, stage="direct_openagenda_event_not_verified",
+                institutional_calendar_link_observed=True,
+                venue_verified=True)
+        if direct.get("event_kind") != "single_explicit_dated_occurrence":
+            return dict(
+                base, stage="multi_day_grouping_required",
+                institutional_calendar_link_observed=True,
+                venue_verified=True, direct_source_verified=True)
+        return dict(
+            base, stage="calendar_referenced_but_event_proof_pending",
+            institutional_calendar_link_observed=True,
+            venue_verified=True, direct_source_verified=True)
+    except (TypeError, ValueError, KeyError, OverflowError, OSError):
+        return dict(base, stage="invalid_case")
