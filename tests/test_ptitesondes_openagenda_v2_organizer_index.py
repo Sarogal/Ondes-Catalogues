@@ -119,7 +119,7 @@ class InstitutionalIndexContract(unittest.TestCase):
             with self.subTest(bad=str(type(bad))):
                 self.assertFalse(discover(lead=bad)["indexed_event_link_confirmed"])
         self.assertFalse(discover(index_html="z"*350001)["indexed_event_link_confirmed"])
-        self.assertEqual(len(redacted_index_stage({"reason": "PRIVATE secret"})), 5)
+        self.assertEqual(len(redacted_index_stage({"reason": "PRIVATE secret"})), 7)
 
     def test_link_text_normalization_not_similarity_guessing(self):
         label = '<a href="/programmation/lecture">Lecture pour enfants</a>'
