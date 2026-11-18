@@ -119,7 +119,7 @@ def review_official_listing_batch(listing_html, catalogue, today, *,
         "approval_granted_to_publisher": False,
         "published_events": 0,
         "public_writes": 0,
-        "source_urls_event_titles_raw_html_never_logged": True,
+        "candidate_identity_excluded_from_report": True,
     }
     if (result["independent_source_cues_passed"] > len(chosen)
             or result["detail_pages_readable"]
