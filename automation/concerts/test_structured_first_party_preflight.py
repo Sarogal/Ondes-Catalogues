@@ -112,6 +112,85 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
         self.assertEqual(report["approvalsProposed"], 0)
         self.assertFalse(report["publicationAllowed"])
 
+    def test_unknown_genre_exploration_finds_fresh_tag_without_approving(self):
+        original = candidate()
+        original["classification"] = []
+        original["genreEvidence"] = None
+        original["reviewBucket"] = "genre_unknown"
+        row = registry([original])
+        before = json.dumps(row, sort_keys=True)
+        report = run(reg=row)
+        self.assertEqual(report["eligible"], 0)
+        self.assertEqual(report["attempted"], 0)
+        self.assertEqual(report["exploratoryEligible"], 1)
+        self.assertEqual(report["exploratoryAttempted"], 1)
+        self.assertEqual(report["totalProbed"], 1)
+        self.assertEqual(report["exploratoryGenreRecovered"], 1)
+        self.assertEqual(report["structureMatched"], 0)
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publicationAllowed"])
+        self.assertEqual(report["results"][0]["status"],
+                         "exploratory_evidence_only")
+        self.assertFalse(report["results"][0]["publicationAllowed"])
+        self.assertEqual(json.dumps(row, sort_keys=True), before)
+
+    def test_unknown_genre_stays_unknown_when_official_page_only_says_rock(self):
+        original = candidate()
+        original["classification"] = []
+        original["reviewBucket"] = "genre_unknown"
+        row = registry([original])
+        report = run(reg=row, fetch=lambda url, **kw: (
+            page(genre="Rock", keywords=["General venue metal gigs"]), url))
+        self.assertEqual(report["attempted"], 0)
+        self.assertEqual(report["exploratoryAttempted"], 1)
+        self.assertEqual(report["exploratoryGenreRecovered"], 0)
+        self.assertEqual(report["exploratoryGenreUnknown"], 1)
+        self.assertFalse(report["results"][0]["publicationAllowed"])
+
+    def test_known_genre_review_takes_priority_without_exceeding_budget(self):
+        original = candidate()
+        no_genre = []
+        for i in range(20):
+            item = copy.deepcopy(original)
+            item["candidateId"] = "unknown-" + str(i).zfill(3)
+            item["sourceUrl"] = (
+                "https://venue.example/concerts/unknown-"
+                + str(i).zfill(3) + "/")
+            item["classification"] = []
+            item["reviewBucket"] = "genre_unknown"
+            no_genre.append(item)
+        report = run(reg=registry([original, *no_genre]),
+                     fetch=lambda url, **kw: ("<html></html>", url), limit=8)
+        self.assertEqual(report["attempted"], 1)
+        self.assertEqual(report["exploratoryEligible"], 20)
+        self.assertEqual(report["exploratoryAttempted"], 7)
+        self.assertEqual(report["totalProbed"], 8)
+        self.assertEqual(len(report["results"]), 8)
+        self.assertEqual(report["approvalsProposed"], 0)
+
+    def test_three_daily_slots_rotate_exploratory_cohorts(self):
+        unknown = []
+        for i in range(20):
+            row = candidate()
+            row["candidateId"] = "unknown-" + str(i).zfill(3)
+            row["sourceUrl"] = (
+                "https://venue.example/concerts/unknown-"
+                + str(i).zfill(3) + "/")
+            row["classification"] = []
+            row["reviewBucket"] = "genre_unknown"
+            unknown.append(row)
+        rows = registry(unknown)
+        checked = set()
+        for slot in (0, 1, 2):
+            report = module.build(
+                rows, SOURCES, CATALOGUE, APPROVALS, TODAY,
+                fetch=lambda url, **kw: ("<html></html>", url),
+                robots=lambda url, cache: True, limit=8, scan_slot=slot)
+            self.assertEqual(report["totalProbed"], 8)
+            self.assertEqual(report["exploratoryAttempted"], 8)
+            checked.update(item["candidateId"] for item in report["results"])
+        self.assertEqual(len(checked), 20)
+
     def test_changed_official_performer_date_or_venue_is_held(self):
         variants = [
             {"performer": [
