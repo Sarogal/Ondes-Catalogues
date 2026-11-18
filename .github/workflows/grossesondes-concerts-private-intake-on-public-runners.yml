@@ -6,10 +6,22 @@ on:
   push:
     branches: [main]
     paths:
-      # A trusted main-branch merge of the independent verifier must get a
-      # collection pass even when GitHub delays or skips scheduled cron runs.
+      # Run the FIRST trusted post-merge cycle whenever relevant discovery,
+      # qualification or independent review CODE changes on main. PRs never
+      # execute with private credentials. Do not trigger on test-only changes.
+      - 'automation/concerts/discover.py'
+      - 'automation/concerts/feeds.py'
+      - 'automation/concerts/triage.py'
+      - 'automation/concerts/sources.json'
+      - 'automation/concerts/official_rss_jsonld_bridge.py'
+      - 'automation/concerts/structured_first_party_preflight.py'
+      - 'automation/concerts/venue_adapters.py'
+      - 'automation/concerts/*_adapter.py'
+      - 'automation/concerts/*_recheck.py'
       - 'automation/concerts/registry_funnel.py'
+      - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
+      - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
