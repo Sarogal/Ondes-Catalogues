@@ -263,6 +263,12 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
         and fp.get("approval_granted") is False
         and fp.get("public_writes") == 0
     )
+    # An institution linking its calendar is not evidence that this particular
+    # neutral-audience event is suitable for families. Only an independently
+    # checked first-party dated session can supply the missing audience cue.
+    if (direct_result.get("api_family_audience_confirmed") is not True
+            and not first_party_ok):
+        return dict(report, reason="family_audience_requires_independent_session")
     if independently_linked is not True and not first_party_ok:
         return dict(report, reason="no_independent_institutional_or_first_party_session_evidence")
     if (not isinstance(grouping, dict) or grouping.get("schema") != SCHEMA
