@@ -163,3 +163,22 @@ Les 55 slugs ne sont pas 55 organisateurs vérifiés, et les 196 UID ne sont pas
 Le branchement concerne uniquement le **reporting de la prévalidation** ; le flux ancien reste inchangé : lecture du backlog privé, interrogation ODS existante, consultation de page officielle, dossier privé, contrôles GPS et historiques. Le point critique est encore l'authentification API v2 de l'UID absent du miroir, l'identité du bon agenda (notamment lors des syndications), la source organisatrice indépendante, la licence par événement, le droit d'accès, la catégorie et la déduplication. Le code de la PR ne branche aucun de ces rapports au publisher et ne change aucune catégorie de `merge_policy`.
 
 Une fois un contexte de confiance pour la clé `OPENAGENDA_READ_KEY` confirmé, exécuter le recensement des 16 agendas et un échantillon borné d'UID prouvés absents d'ODS ; les résultats restent **anonymisés**. En parallèle, faire homologuer un registre à identités d'agendas vérifiées par liens institutionnels exacts et prévoir l'extension ultérieure aux autres slugs. Aucun nouveau cron de dépôt privé n'est nécessaire pour cette étape.
+
+
+## Correctifs de robustesse post-audit — 18 novembre après-midi
+
+- Les deux routes GET OpenAgenda v2 valident désormais la clé publique `oa_pk_` par la même fonction. Tout caractère de contrôle HTTP, espace, tabulation ou saut de ligne entraîne un refus **avant** création du transport. Les clés secrètes restent interdites.
+- La preuve de la structure d'un événement peut être produite quand le champ français OpenAgenda ne contient aucun indice familial, **sans inventer** un public cible : `api_family_audience_confirmed=false`. Le raccourci vers la revue restante reste bloqué à moins qu'une page **indépendamment épinglée** de l'organisateur atteste la même séance (date et heure dans un même bloc visible, titre, ville, lieu et indice familial). Un simple lien du site municipal vers la racine de l'agenda ne suffit pas pour ce cas.
+- Les mentions explicites `adultes uniquement`, `public adulte`, `18 ans et plus` et variantes restent refusées, **même quand l'API contient un `age.max` enfant contradictoire**. Des tests adversariaux vérifient le traitement.
+- Aucun statut d'approbation ni patch public ne peut être produit par ces branches ; `approval_granted=false`, `public_writes=0` et `publisher_connected=false` sont préservés.
+- CI hors réseau au commit `e6d63e9031765a919ce044993db4dd214eb92d95` : **73 tests passants sur sept suites OpenAgenda v2**, workflow public `44325365356`. Cela ne remplace pas un smoke test réel avec clé de lecture.
+
+### Priorité d'intégration ensuite (toujours hors production)
+
+1. Faire lire les 16 agendas configurés depuis un **workflow de confiance** exécutant du code relu sur la branche de confiance ; ne jamais transmettre `OPENAGENDA_READ_KEY` au code d'une PR non fusionnée. Mesurer les identités exactes sans exposer les UID privés.
+2. Lire un échantillon borné d'UID réellement présents dans le backlog : absents ODS, présents ODS, multi-jours, non musicaux, ultramarins, déjà publiés, sources non authentifiées. Quantifier les motifs et la proportion de véritables événements distincts.
+3. Étendre l'homologation GPS générique à partir de pages institutionnelles et de référentiels géographiques indépendants. Ne pas injecter de coordonnées depuis la seule fiche de l'événement.
+4. Raccorder le diagnostic, les preuves de l'organisateur, les droits de réutilisation, la catégorie et l'historique au publisher via une prévisualisation **sans écriture** avant toute demande de fusion.
+5. Mesurer la conversion réelle `découverte -> distinct -> source vérifiée -> GPS -> public -> prévalidation -> approbation -> publication -> Pages -> affichage carte`. Un workflow réussi et 0 nouvelle fiche n'attestent pas l'autonomie.
+
+Les PR #358 et #366 restent distinctes. La PR #367 a été fusionnée ailleurs à 14:22 UTC le 18/11 pendant cette reprise ; aucune fusion n'a été effectuée dans ce chantier. Aucun changement Infomaniak, Grosses Ondes, crons ou runners privés.
