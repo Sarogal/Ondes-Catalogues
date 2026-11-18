@@ -33,6 +33,11 @@ NONCONCERT = re.compile(
 CANCEL = re.compile(r"\b(annule|annulee|annulation|cancelled|canceled)\b")
 POSTPONE = re.compile(r"\b(reporte|reportee|report|postponed|rescheduled)\b")
 SOLD_OUT = re.compile(r"\b(complet|complete|sold out)\b")
+# Ticket resale may introduce an H2 BEFORE any artist profile. This is
+# venue-template chrome, never a performer or a reason to skip sold-out shows.
+NONARTIST_HEADING = re.compile(
+    r"\b(vous cherchez des billets|bourse aux billets|"
+    r"billets ou vous avez un empechement)\b")
 # The style must be an explicit label *immediately following a named artist
 # heading* on the individual venue page. A bio, venue menu and a "Si vous aimez"
 # paragraph do NOT qualify.
@@ -167,7 +172,12 @@ class Detail(HTMLParser):
             if tag == "h1":
                 self.seen_h1 = True
         if tag == "h2" and self.seen_first_h2 and not self.closed_first_h2:
-            self.closed_first_h2 = True
+            heading = self.nodes[-1][1] if self.nodes and self.nodes[-1][0] == "h2" else ""
+            if NONARTIST_HEADING.search(plain(heading)):
+                self.seen_first_h2 = False
+                self.first_style_chunks = []
+            else:
+                self.closed_first_h2 = True
         if tag == "sup" and self.sup:
             self.sup -= 1
         if tag in ("script", "style", "nav", "footer", "noscript") and self.hidden:
@@ -223,7 +233,8 @@ def candidate(html, url, source, today):
     # only admissible Rock evidence. It is not an artist biography
     # and not a venue-wide navigation tag.
     first_h2 = next((n for n in range(i+1,len(nodes))
-                     if nodes[n][0]=="h2"), None)
+                     if nodes[n][0]=="h2"
+                     and not NONARTIST_HEADING.search(plain(nodes[n][1]))), None)
     if first_h2 is None:
         raise ValueError("Artiste nommément identifié manquant")
     first_name = nodes[first_h2][1]
