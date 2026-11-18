@@ -84,49 +84,53 @@ def run():
     for kind, url, expected in cases:
         if dt.date.fromisoformat(expected["date"]) <= today:
             raise ValueError(kind + ": a historical live fixture expired")
-        # The existing official downloader enforces robots, HTTPS, host and size.
-        html = official_recheck.download_official(url, cache)
-        candidate = one_case(kind, url, expected, html, today)
-        if kind == "bonjour":
-            diagnostic = bonjour_minuit_official_recheck.OfficialArtistHeadings()
-            diagnostic.feed(html)
-            diagnostic.close()
-            other = bonjour_minuit_adapter.Detail()
-            other.feed(html)
-            print(json.dumps({
-                "diagnostic": "bonjour-official-first-party-heading-structure",
-                "h1Count": len(diagnostic.h1s),
-                "h1Titles": [" ".join("".join(q).split())[:110] for q in diagnostic.h1s],
-                "discoveryH1": [v[:110] for tag,v in other.nodes if tag=="h1"],
-                "artistSections": len(diagnostic.sections),
-            }, ensure_ascii=False), flush=True)
-        approval = official_recheck.verify(
-            candidate, html, copy.deepcopy(catalogue), today)
-        event, new_artists = validate_approval(
-            approval,
-            {v["id"]: v for v in catalogue["venues"]},
-            {a["id"]: a for a in catalogue["artists"]}, today)
-        if len(event["artistIds"]) != expected["artists"]:
-            raise ValueError(kind + ": incomplete named lineup")
-        if event.get("time") != expected["time"]:
-            raise ValueError(kind + ": unproved musical start")
-        if event.get("date") != expected["date"] or event.get("genres") != expected["genres"]:
-            raise ValueError(kind + ": publisher modified verified date or genre")
-        if event["title"].casefold() != expected["title"].casefold():
-            raise ValueError(kind + ": published act names do not match expected lineup")
-        if any(e["id"] == event["id"] or e.get("officialUrl") == url
-               for e in catalogue["events"]):
-            raise ValueError(kind + ": duplicate already published")
-        results.append({"venue": kind, "publisherAccepts": True,
-                        "eventId": event["id"],
-                        "lineupArtistCount": len(event["artistIds"]),
-                        "newArtistCount": len(new_artists),
-                        "time": event["time"]})
-    if len(results) != 3:
-        raise AssertionError("Three independent venues were not verified")
+        try:
+            # The existing official downloader enforces robots, HTTPS, host and size.
+            html = official_recheck.download_official(url, cache)
+            candidate = one_case(kind, url, expected, html, today)
+            if kind == "bonjour":
+                diagnostic = bonjour_minuit_official_recheck.OfficialArtistHeadings()
+                diagnostic.feed(html)
+                diagnostic.close()
+                other = bonjour_minuit_adapter.Detail()
+                other.feed(html)
+                print(json.dumps({
+                    "diagnostic": "bonjour-official-first-party-heading-structure",
+                    "h1Count": len(diagnostic.h1s),
+                    "h1Titles": [" ".join("".join(q).split())[:110] for q in diagnostic.h1s],
+                    "discoveryH1": [v[:110] for tag,v in other.nodes if tag=="h1"],
+                    "artistSections": len(diagnostic.sections),
+                }, ensure_ascii=False), flush=True)
+            approval = official_recheck.verify(
+                candidate, html, copy.deepcopy(catalogue), today)
+            event, new_artists = validate_approval(
+                approval,
+                {v["id"]: v for v in catalogue["venues"]},
+                {a["id"]: a for a in catalogue["artists"]}, today)
+            if len(event["artistIds"]) != expected["artists"]:
+                raise ValueError(kind + ": incomplete named lineup")
+            if event.get("time") != expected["time"]:
+                raise ValueError(kind + ": unproved musical start")
+            if event.get("date") != expected["date"] or event.get("genres") != expected["genres"]:
+                raise ValueError(kind + ": publisher modified verified date or genre")
+            if event["title"].casefold() != expected["title"].casefold():
+                raise ValueError(kind + ": published act names do not match expected lineup")
+            if any(e["id"] == event["id"] or e.get("officialUrl") == url
+                   for e in catalogue["events"]):
+                raise ValueError(kind + ": duplicate already published")
+            results.append({"venue": kind, "publisherAccepts": True,
+                            "eventId": event["id"],
+                            "lineupArtistCount": len(event["artistIds"]),
+                            "newArtistCount": len(new_artists),
+                            "time": event["time"]})
+        except Exception as exc:
+            results.append({"venue": kind, "publisherAccepts": False,
+                            "failure": type(exc).__name__ + ": " + str(exc)[:160]})
     print(json.dumps({"mode": "live-read-only-no-private-ledger",
                       "asOf": today.isoformat(), "results": results},
-                     ensure_ascii=False, sort_keys=True))
+                     ensure_ascii=False, sort_keys=True), flush=True)
+    if len(results) != 3 or not all(x["publisherAccepts"] for x in results):
+        raise RuntimeError("Live rehearsal incomplete; no approval or publication")
 
 
 if __name__ == "__main__":
