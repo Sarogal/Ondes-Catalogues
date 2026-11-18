@@ -129,6 +129,23 @@ class OA2DirectEvidenceTests(unittest.TestCase):
         lead["city"] = "Rouen"
         self.assertEqual(review(lead=lead)["reason"], "candidate_venue_identity_mismatch")
 
+    def test_missing_identity_cannot_pass_with_empty_alias(self):
+        event = deepcopy(EVENT)
+        event["title"]["fr"] = ""
+        lead = dict(LEAD, title="")
+        self.assertEqual(review(lead=lead, event=event)["reason"],
+                         "api_title_mismatch")
+        event = deepcopy(EVENT)
+        event["location"]["name"] = ""
+        lead = dict(LEAD, venue="")
+        bad_venue = dict(VENUE, aliases=[""])
+        self.assertEqual(review(lead=lead, event=event, venue=bad_venue)["reason"],
+                         "geography_not_independently_verified")
+        event = deepcopy(EVENT)
+        lead = dict(LEAD, city="")
+        self.assertEqual(review(lead=lead, event=event)["reason"],
+                         "candidate_venue_identity_mismatch")
+
     def test_explicit_unpublished_cancelled_full_online_removed_block(self):
         for patch in (
             {"state": 1}, {"state": 0}, {"status": 2},
