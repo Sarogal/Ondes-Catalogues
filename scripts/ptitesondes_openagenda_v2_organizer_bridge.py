@@ -26,9 +26,9 @@ FORBIDDEN_HOSTS = frozenset((
 # A child-looking title must NEVER outweigh an explicit first-party
 # adult-only statement. Check visible text, not hidden HTML/script noise.
 ADULT_ONLY = re.compile(
-    r"\\b(?:reserve aux adultes|adultes? uniquement|public adultes?"
+    r"\b(?:reserve aux adultes|adultes? uniquement|public adultes?"
     r"|interdit aux enfants|sans enfants|18 ans et plus"
-    r"|a partir de 18 ans)\\b"
+    r"|a partir de 18 ans)\b"
 )
 
 
