@@ -52,9 +52,9 @@ def check_metadata(
     ):
         raise ApkGuardError("Android debuggable=true not proven")
 
-    # AOSP apksigner can label a cert as "Signer #1" or
-    # "Signer (minSdkVersion=..., maxSdkVersion=...)" when different signing
-    # schemes/API intervals are reported. Check EVERY certificate digest,
+    # apksigner exposes several signer labels depending on SDK/build tools:
+    # "Signer #1", "Signer (minSdkVersion=..., maxSdkVersion=...)",
+    # "V2 Signer:" and "V3.0 Signer:". Check EVERY certificate digest,
     # never just the first one, and require the local debug key's public cert.
     expected = expected_debug_sha256.replace(":", "").lower()
     if not re.fullmatch(r"[0-9a-f]{64}", expected):
@@ -73,9 +73,11 @@ def check_metadata(
             f"(signing lines: {markers!r}); refusing installation"
         )
     format_pattern = re.compile(
+        r"(?:V[1-4](?:\.\d+)?\s+Signer:\s*|"
         r"Signer\s+(?:#(?P<number>[1-9]\d*)|"
         r"\(minSdkVersion\s*=\s*\d+\s*,\s*maxSdkVersion\s*=\s*\d+\))"
-        r"\s+certificate\s+SHA-256\s+digest:\s*"
+        r"\s+)"
+        r"certificate\s+SHA-256\s+digest:\s*"
         r"(?P<digest>[0-9a-fA-F:]+)",
         re.IGNORECASE,
     )
