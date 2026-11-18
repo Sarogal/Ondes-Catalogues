@@ -122,8 +122,11 @@ def generic_rotating_sources(archive, published, occupied, state, today,
         identity = pinned_parent_identity(parent)
         if identity is None or parent.get("lastKnownYear") != identity[1]:
             continue
-        year = identity[1] + 1
-        if year not in (2027, 2028) or year <= today.year:
+        # An archive can be older than the previous calendar year. The
+        # FIRST upcoming target is 2027/2028; it must be printed on the
+        # organizer's present-day page, never inferred from the old record.
+        year = max(today.year + 1, identity[1] + 1)
+        if year not in (2027, 2028):
             continue
         if not isinstance(parent.get("name"), str) or not 8 <= len(parent["name"]) <= 180:
             continue
@@ -219,7 +222,8 @@ def candidate(parent, source, html, today):
     ident = pinned_parent_identity(parent)
     if (ident is None or parent.get("officialSite") != source["officialSite"]
             or parent.get("lastKnownYear") != ident[1]
-            or source["year"] != ident[1] + 1):
+            or source["year"] not in (2027, 2028)
+            or source["year"] <= ident[1]):
         return None
     observed = official_date(html, parent, source["year"])
     if observed is None:
@@ -366,7 +370,8 @@ def run(folder, calendar, history, today, fetcher=official_text):
             continue
         identity = pinned_parent_identity(parent)
         if (identity is None or parent.get("lastKnownYear") != identity[1]
-                or source["year"] != identity[1] + 1):
+                or source["year"] not in (2027, 2028)
+                or source["year"] <= identity[1]):
             record(slug, "historical_identity_or_year_mismatch")
             continue
         new_slug = identity[0] + "-" + str(source["year"])
