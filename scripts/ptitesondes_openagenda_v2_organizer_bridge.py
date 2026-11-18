@@ -13,7 +13,7 @@ from datetime import date
 from urllib.parse import urlsplit
 
 from ptitesondes_family_national_source_preflight import (
-    _session_pair_on_official_page, _source_cues, official_host, norm_text,
+    _session_pair_on_official_page, _source_cues, official_host,
 )
 
 SCHEMA = "ptitesondes.oa2.independent_organizer_session.v1"
@@ -74,6 +74,8 @@ def check_independent_session(lead, api_event, direct_proof, reviewed_organizer,
     approved_host = reviewed_organizer["approved_host"]
     if (source is None or not isinstance(approved_host, str)
             or not approved_host or approved_host in FORBIDDEN_HOSTS
+            or approved_host.endswith(".openagenda.com")
+            or approved_host.endswith(".opendatasoft.com")
             or source.hostname != approved_host
             or official_host(reviewed_organizer["exact_url"]) != approved_host
             or fetched_official_page["url"] != reviewed_organizer["exact_url"]):
@@ -102,14 +104,13 @@ def check_independent_session(lead, api_event, direct_proof, reviewed_organizer,
     except ValueError:
         return fail("invalid_candidate_day")
     try:
-        age = api_event.get("age")
-        lo = age.get("min") if isinstance(age, dict) else None
-        hi = age.get("max") if isinstance(age, dict) else None
         for clock in times:
             scope = {
                 "title": lead["title"], "city": lead["city"],
                 "venue": lead["venue"], "date_start": day,
-                "age_min": lo, "age_max": hi,
+                # Do not conflate exact event metadata age with an organizer
+                # confirmation of the same bounds. Age is a separate gate.
+                "age_min": None, "age_max": None,
                 # Access remains unknown here; explicitly labelled fields
                 # are checked separately, never silently interpreted as free.
                 "price_evidence": "not_stated",
