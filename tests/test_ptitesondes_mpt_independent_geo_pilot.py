@@ -88,7 +88,7 @@ class ReviewedMptVenueTests(unittest.TestCase):
             wrong_city["features"][0]["properties"]["city"] = "Lattes"
             self.assertFalse(independent_geo_recheck(row, wrong_city))
             wrong_zip = geocode(row)
-            wrong_zip["features"][0]["properties"]["postcode"] = "34080"
+            wrong_zip["features"][0]["properties"]["postcode"] = "99999"
             self.assertFalse(independent_geo_recheck(row, wrong_zip))
 
     def test_duplicate_exact_geo_results_are_ambiguous(self):
