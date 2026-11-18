@@ -203,7 +203,7 @@ def group_multi_day(event, external_organizer_schedule=None,
 
 
 def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
-                           grouping, historic_uid_exists=False,
+                           grouping, historic_uid_exists=None,
                            independently_linked=False):
     """Assess whether ODS absence MAY be investigated using direct API proof.
 
