@@ -81,7 +81,7 @@ class FullOfflineCircuit(unittest.TestCase):
     def test_organizer_authority_link_not_present(self):
         x = inspect(page=False)
         self.assertEqual(x["route"], "hold")
-        self.assertEqual(x["reason"], "institutional_agenda_link_not_verified")
+        self.assertEqual(x["reason"], "no_independent_institutional_or_first_party_session_evidence")
 
     def test_historical_uid_blocks_every_source(self):
         self.assertEqual(inspect(historic=True)["reason"],
