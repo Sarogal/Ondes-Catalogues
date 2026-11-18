@@ -10,6 +10,7 @@ from ptitesondes_openagenda_v2_institutional_delegation import (
     inspect_institutional_agenda_page,
     redacted_agenda_reference,
     diagnose_delegated_calendar_candidate,
+    select_pinned_agenda_for_lead, census_institution_pins_on_private_backlog,
 )
 from test_ptitesondes_openagenda_v2_joined_evidence import envelope, TODAY
 
@@ -217,6 +218,67 @@ class DelegatedAgendaPreflight(unittest.TestCase):
         extra = ('<p>Agenda de la ville</p><a href="' + ROOT +
                  '">Site externe</a>')
         self.assertFalse(inspect(html(extra))["institutional_root_link_observed"])
+
+
+    def test_curated_agenda_pin_ignores_claimed_organizer_and_duplicate_registry(self):
+        c = direct_case()["lead"]
+        c["official_url"] = "https://evil.example/owned"
+        reason, pin = select_pinned_agenda_for_lead(c, [REVIEWED])
+        self.assertEqual(reason, "institution_pin_selected_for_verification_only")
+        self.assertEqual(pin, REVIEWED)
+        self.assertEqual(
+            select_pinned_agenda_for_lead(c, [])[0],
+            "no_independently_curated_institution")
+        duplicate = dict(REVIEWED,
+                         institution_host="second-library.example",
+                         exact_page_url="https://second-library.example/agenda")
+        reason, pin = select_pinned_agenda_for_lead(
+            c, [REVIEWED, duplicate])
+        self.assertEqual(reason, "institution_registry_ambiguous")
+        self.assertIsNone(pin)
+
+    def test_untrusted_event_url_or_uid_cannot_select_source(self):
+        c = direct_case()["lead"]
+        for untrusted in (
+            dict(c, external_id="8888888"),
+            dict(c, source_url="https://openagenda.com.evil.example/agenda/events/123"),
+            dict(c, source_url="http://openagenda.com/" + SLUG),
+        ):
+            self.assertEqual(
+                select_pinned_agenda_for_lead(untrusted, [REVIEWED])[0],
+                "lead_identity_invalid")
+
+    def test_registry_rejects_unreviewed_source_and_excessive_size(self):
+        for records in (
+            [dict(REVIEWED, institution_host="openagenda.com",
+                  exact_page_url=ROOT)],
+            [dict(REVIEWED, timezone="Mars/Phobos")],
+            [dict(REVIEWED, extra="unreviewed")],
+            [REVIEWED] * 501,
+        ):
+            with self.assertRaises(ValueError):
+                select_pinned_agenda_for_lead(
+                    direct_case()["lead"], records)
+
+    def test_real_backlog_census_shape_is_private_and_not_approval(self):
+        c = direct_case()["lead"]
+        leads = [
+            dict(c), dict(c), dict(c, date_start="2026-01-01"),
+            dict(c, date_start="bad"), dict(c, external_id="invalid"),
+        ]
+        r = census_institution_pins_on_private_backlog(
+            leads, [REVIEWED], TODAY)
+        self.assertEqual(r["counts"].get("future_in_window_rows"), 3)
+        self.assertEqual(
+            r["counts"].get("institution_pin_selected_for_verification_only"), 2)
+        self.assertEqual(r["counts"].get("lead_identity_invalid"), 1)
+        self.assertEqual(r["counts"].get("expired_rows"), 1)
+        self.assertEqual(r["counts"].get("invalid_or_missing_date"), 1)
+        self.assertFalse(r["approval_granted"])
+        self.assertFalse(r["institutional_ownership_attested"])
+        self.assertEqual(r["public_writes"], 0)
+        for secret in (PAGE_URL, HOST, SLUG, c["title"], c["source_url"]):
+            self.assertNotIn(secret, json.dumps(r))
 
     def test_fail_closed_for_invalid_or_oversized_document_and_redaction(self):
         self.assertEqual(inspect(page="<html>").get("reason"),
