@@ -240,7 +240,7 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
             })
         fetched_details = []
         def download(url, **kwargs):
-            match = re.search(r"venue(\\d{2})[.]example", url)
+            match = re.search(r"venue([0-9]{2})[.]example", url)
             self.assertIsNotNone(match)
             index = match.group(1)
             official = f"https://venue{index}.example/concerts/show-2027/"
