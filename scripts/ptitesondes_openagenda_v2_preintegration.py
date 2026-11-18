@@ -222,16 +222,19 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
     if historic_uid_exists is not False:
         return dict(report, reason="historical_uid_exists_or_unknown")
     if (not isinstance(direct_result, dict)
+            or direct_result.get("schema") != "ptitesondes.openagenda_v2_direct_source_evidence.v1"
             or direct_result.get("source_evidence_structurally_valid") is not True
             or direct_result.get("approval_granted") is not False
             or direct_result.get("public_writes") != 0):
         return dict(report, reason="direct_source_not_verified")
     if (not isinstance(agenda_identity, dict)
+            or agenda_identity.get("schema") != SCHEMA
             or agenda_identity.get("identity_consistent") is not True):
         return dict(report, reason="agenda_identity_not_consistent")
     if independently_linked is not True:
         return dict(report, reason="institutional_agenda_link_not_verified")
-    if not isinstance(grouping, dict) or grouping.get("schema") != SCHEMA:
+    if (not isinstance(grouping, dict) or grouping.get("schema") != SCHEMA
+            or grouping.get("publication_authorized") is not False):
         return dict(report, reason="grouping_not_checked")
     if grouping.get("kind") != "one_day_explicit_slots":
         return dict(report, reason="multi_day_requires_grouping")
