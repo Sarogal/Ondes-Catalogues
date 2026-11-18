@@ -198,6 +198,39 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"corroboré"):
             check.verify(lead(wrong),wrong,catalog(),self.TODAY)
 
+    def test_influence_with_exact_lineup_is_not_a_performance_bill(self):
+        page = DETAIL.format(title="HOULE + CÂN BARDD",
+            date="mercredi 3 février 2027", organizer="The Black Lab",
+            description="Influences : HOULE + CÂN BARDD, death metal")
+        with self.assertRaisesRegex(ValueError, "corroboré"):
+            check.verify(lead(page), page, catalog(), self.TODAY)
+
+    def test_independent_publisher_accepts_2_and_24_acts_and_rejects_forgery(self):
+        sys.path.insert(0,str(Path(__file__).resolve().parents[2]/"scripts"))
+        from concerts_cloud_sync import validate_approval
+        for count in (2, 24):
+            with self.subTest(artists=count):
+                names=[f"GROUP {i:02d}" for i in range(1,count+1)]
+                title=" + ".join(names)
+                page=DETAIL.format(title=title,date="mercredi 3 février 2027",
+                    organizer="The Black Lab",description=title+" death metal live")
+                cl=catalog()
+                decision=check.verify(lead(page),page,cl,self.TODAY)
+                venues={v["id"]:v for v in cl["venues"]}
+                artists={a["id"]:a for a in cl["artists"]}
+                event,new=validate_approval(decision,venues,artists,self.TODAY)
+                self.assertEqual(len(event["artistIds"]),count)
+                self.assertEqual(len(new),count)
+                self.assertIsNone(event["time"])
+                altered=copy.deepcopy(decision)
+                altered["officialEvidence"][0]["officialArtistNames"].reverse()
+                with self.assertRaises(ValueError):
+                    validate_approval(altered,venues,artists,self.TODAY)
+                altered=copy.deepcopy(decision)
+                altered["event"]["time"]="20:00"
+                with self.assertRaises(ValueError):
+                    validate_approval(altered,venues,artists,self.TODAY)
+
     def test_alias_collision_never_invents_artist(self):
         cl = catalog()
         cl["artists"].append({"id": "same-band", "name": "The Black Dahlia Murder"})

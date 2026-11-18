@@ -54,8 +54,10 @@ def bill_from_official_body(title, chunks):
     # footer, other cards, or an arbitrary whole-document search.
     body = [adapter.fold(value).strip() for value in chunks[:28]]
     label = adapter.fold(" + ".join(names))
-    if not any(re.search(r"(?<![a-z0-9])" + re.escape(label) +
-                         r"(?![a-z0-9])", node)
+    # A band's name mentioned as a musical influence in the *middle*
+    # of a biography is not a billed stage act. The first-party event
+    # headline must start its own official detail node, after the H1.
+    if not any(re.match(r"^" + re.escape(label) + r"(?![a-z0-9])", node)
                for node in body):
         raise ValueError("Black Lab : plateau officiel non corroboré dans la fiche")
     return names, guest
