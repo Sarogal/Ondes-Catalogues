@@ -1,0 +1,68 @@
+name: "P'tites Ondes — lieux GPS documentés, second lot (sans publier)"
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-reviewed-venue-gps-wave2-20261117
+    paths:
+      - scripts/venue_registry.py
+      - scripts/ptitesondes_independent_ign_venue_recheck.py
+      - scripts/ptitesondes_ign_geo_live_smoke.py
+      - tests/test_ptitesondes_independent_ign_venue_recheck.py
+      - tests/test_ptitesondes_venue_geo_wave2.py
+      - .github/workflows/ptitesondes-reviewed-venue-gps-wave2-tests.yml
+  pull_request:
+    paths:
+      - scripts/venue_registry.py
+      - scripts/ptitesondes_independent_ign_venue_recheck.py
+      - scripts/ptitesondes_ign_geo_live_smoke.py
+      - tests/test_ptitesondes_independent_ign_venue_recheck.py
+      - tests/test_ptitesondes_venue_geo_wave2.py
+      - .github/workflows/ptitesondes-reviewed-venue-gps-wave2-tests.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test identities, exact location matching and negative cases
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_venue_geo_wave2.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_independent_ign_venue_recheck.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_candidate_promotion.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_municipal_source_geo_attestation.py' -v
+      - name: No public/publisher or scheduled mutation
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path(".github/workflows/ptitesondes-reviewed-venue-gps-wave2-tests.yml").read_text()
+          assert not any(x.strip().startswith("schedule:") for x in wf.splitlines())
+          assert "contents: read" in wf
+          assert not any(key in wf for key in ("se" + "crets.", "deploy" + "-pages", "git" + " push", "contents:" + " write"))
+          print("PASS: no production writes")
+          PY
+
+  live-ign-readonly:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Recheck four municipality-pinned house numbers against IGN, no private data
+        run: python scripts/ptitesondes_ign_geo_live_smoke.py

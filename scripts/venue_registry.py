@@ -248,6 +248,52 @@ VENUES = [
         "official": "https://lecturepublique.cinor.org/cms/www.main.cls?surl=reseau-horaires",
         "geo_source": "https://mapcarta.com/fr/W543425791",
     },
+    {
+        # Municipal directory: 24 rue Emile Decorps, 69100 Villeurbanne.
+        # https://www.villeurbanne.fr/annuaire/culture-loisirs/cinema-et-theatres/le-studio-24
+        # Independent IGN/BAN housenumber, score 0.9765:
+        # https://data.geopf.fr/geocodage/search?q=24%20rue%20Emile%20Decorps%2069100%20Villeurbanne&limit=2
+        # Location ONLY; the 29 private leads are NOT individually verified.
+        "city": "Villeurbanne", "aliases": ["Studio 24"],
+        "lat": 45.757956, "lng": 4.899764,
+        "official": "https://www.villeurbanne.fr/annuaire/culture-loisirs/cinema-et-theatres/le-studio-24",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=24%20rue%20Emile%20Decorps%2069100%20Villeurbanne&limit=2",
+    },
+    {
+        # Rouen changed the name of Bibliotheque Saint-Sever in 2026.
+        # Exact municipal venue name and address: 65 avenue de Bretagne.
+        # https://rouen.fr/fr/agenda/82031901_inauguration-aretha-franklin
+        # Independent IGN/BAN housenumber, score 0.9747:
+        # https://data.geopf.fr/geocodage/search?q=65%20avenue%20de%20Bretagne%2076100%20Rouen&limit=2
+        # No automatic legacy alias "Saint-Sever": different historic venue
+        # labels require dedicated review of each event's official location.
+        "city": "Rouen", "aliases": ["Bibliothèque Aretha-Franklin"],
+        "lat": 49.431261, "lng": 1.082660,
+        "official": "https://rouen.fr/fr/agenda/82031901_inauguration-aretha-franklin",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=65%20avenue%20de%20Bretagne%2076100%20Rouen&limit=2",
+    },
+    {
+        # Rouen municipal venue and venue-specific event page jointly locate
+        # the library at 42 rue Henri-II-de-Plantagenet, 76100 Rouen.
+        # https://rouen.fr/fr/agenda/76031960_je-suis-venue-vous-lire-simone-de-beauvoir
+        # Independent IGN/BAN housenumber, score 0.9742:
+        # https://data.geopf.fr/geocodage/search?q=42%20rue%20Henri%20II%20Plantagenet%2076100%20Rouen&limit=2
+        "city": "Rouen", "aliases": ["Bibliothèque Simone de Beauvoir"],
+        "lat": 49.426213, "lng": 1.096972,
+        "official": "https://rouen.fr/fr/agenda/76031960_je-suis-venue-vous-lire-simone-de-beauvoir",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=42%20rue%20Henri%20II%20Plantagenet%2076100%20Rouen&limit=2",
+    },
+    {
+        # The City of Roubaix lists the central library at 2 rue Pierre Motte.
+        # https://www.ville-roubaix.fr/services-infos-pratiques/culture-et-patrimoine/livre-et-lecture/
+        # Independent IGN/BAN housenumber, score 0.9720:
+        # https://data.geopf.fr/geocodage/search?q=2%20rue%20Pierre%20Motte%2059100%20Roubaix&limit=2
+        "city": "Roubaix",
+        "aliases": ["Médiathèque de Roubaix - La Grand-Plage"],
+        "lat": 50.690508, "lng": 3.175283,
+        "official": "https://www.ville-roubaix.fr/services-infos-pratiques/culture-et-patrimoine/livre-et-lecture/",
+        "geo_source": "https://data.geopf.fr/geocodage/search?q=2%20rue%20Pierre%20Motte%2059100%20Roubaix&limit=2",
+    },
 ]
 
 def verified_location(event):
