@@ -1,0 +1,80 @@
+name: Grosses Ondes — audit national des salles sur runner public
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 11 * * 1'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-concerts-sources-public-audit.yml'
+      - 'automation/concerts/venues-national.json'
+      - 'automation/concerts/sources.json'
+      - 'automation/concerts/audit_sources.py'
+      - 'automation/concerts/geo_audit.py'
+      - 'automation/concerts/test_audit_sources.py'
+      - 'automation/concerts/test_geo_audit.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-concerts-source-public-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier les registres et les contrôles géographiques
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s automation/concerts -p 'test_audit_sources.py' -v
+          python -m unittest discover -s automation/concerts -p 'test_geo_audit.py' -v
+      - name: Contrôler les 119 salles sans modifier aucune donnée
+        shell: bash
+        run: |
+          set -euo pipefail
+          python automation/concerts/audit_sources.py --output "$RUNNER_TEMP/venue-audit"
+          python automation/concerts/geo_audit.py --output "$RUNNER_TEMP/venue-audit"
+          # Full venue-level URLs/notes live only in the runner's ephemeral
+          # workspace; PUBLIC logs and summary carry aggregate statuses.
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+              "venue-audit/salles_audit.json").read_text(encoding="utf-8"))
+          assert report["schema"] == "grossesondes.concert.sources-audit.v1"
+          assert report["publishesNothing"] is True
+          lines = [
+              "## Grosses Ondes — santé des sources officielles",
+              "",
+              "Audit national en lecture seule, aucune approbation ni publication.",
+              "",
+              f"Salles examinées : **{report['count']}**.",
+              "",
+              "### Statuts (une page accessible n'est pas un concert confirmé)",
+          ]
+          lines += ["- " + k + " : " + str(v)
+                    for k, v in sorted(report["statusCounts"].items())]
+          lines += ["", "### Méthodes candidates (à vérifier)", ""]
+          lines += ["- " + k + " : " + str(v)
+                    for k, v in sorted(report["methodSuggestions"].items())]
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as dest:
+              dest.write("\n".join(lines) + "\n")
+          PY
+      - name: Confirmer le mode lecture seule et l'absence d'artefacts publics
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "Audit lecture seule terminé."
