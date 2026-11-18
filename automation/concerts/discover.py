@@ -268,6 +268,46 @@ def safe_name(value):
     return ""
 
 
+def explicit_music_event_keyword_genres(raw):
+    """Read REVIEW-only genres from the event's own structured keyword tags.
+
+    Schema.org MusicEvent sometimes exposes 'keywords' instead of 'genre'.
+    Only exact, recognized subgenre labels qualify; descriptions, whole-site
+    keywords, generic Rock, URL/HTML and free text cannot become evidence.
+    No approval can result from this function.
+    """
+    if not isinstance(raw, dict):
+        return []
+    kinds = raw.get("@type", [])
+    if isinstance(kinds, str):
+        kinds = [kinds]
+    if (not isinstance(kinds, list) or
+            not any(isinstance(t, str) and
+                    t.rsplit("/", 1)[-1] == "MusicEvent" for t in kinds)):
+        return []
+    keywords = raw.get("keywords", [])
+    if isinstance(keywords, str):
+        keywords = [keywords]
+    if not isinstance(keywords, list) or len(keywords) > 40:
+        return []
+    recognized = {triage.words(g) for g in triage.POSITIVE_GENRES}
+    labels, seen = [], set()
+    for entry in keywords:
+        if not isinstance(entry, str) or len(entry) > 300:
+            continue
+        for token in re.split(r"[,;|\\n]", entry):
+            tag = token.strip()
+            key = triage.words(tag)
+            if (not 2 <= len(tag) <= 80 or key not in recognized
+                    or key in seen):
+                continue
+            seen.add(key)
+            labels.append(tag)
+            if len(labels) >= 20:
+                return labels
+    return labels
+
+
 def venue_candidate(raw, source, page_url, known, day):
     date = iso_day(raw.get("startDate"))
     status = safe_name(raw.get("eventStatus")).casefold()
@@ -315,6 +355,11 @@ def venue_candidate(raw, source, page_url, known, day):
         event_genres = []
     event_genres = [item.strip() for item in event_genres
                     if isinstance(item, str) and item.strip()][:20]
+    provenance = "event_genre" if event_genres else None
+    if not event_genres:
+        event_genres = explicit_music_event_keyword_genres(raw)
+        if event_genres:
+            provenance = "event_keywords_review_only"
     keywords = " ".join(map(str, [raw.get("genre", ""), raw.get("keywords", ""), raw.get("description", "")]))
     if not name or not venue or not city:
         return None
@@ -329,6 +374,7 @@ def venue_candidate(raw, source, page_url, known, day):
         "sourcePage": page_url, "date": date, "name": name, "leadArtist": artist,
         "venue": venue, "city": city, "department": source["department"],
         "classification": event_genres,
+        "structuredGenreProvenance": provenance,
         "genreToConfirm": not relevant,
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
