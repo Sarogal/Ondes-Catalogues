@@ -7,7 +7,9 @@ import sys
 from urllib.parse import quote
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from ptitesondes_openagenda_v2_geo_bridge import review_independent_geo
+from ptitesondes_openagenda_v2_geo_bridge import (
+    review_independent_geo, review_direct_with_independent_geo,
+)
 
 LEAD = {"venue": "Médiathèque des Familles", "city": "Rouen"}
 EVENT = {"location": {
@@ -179,6 +181,59 @@ class IndependentGeoContract(unittest.TestCase):
         self.assertFalse(check["geo_evidence_consistent"])
         self.assertFalse(check["approval_granted"])
         self.assertEqual(check["public_writes"], 0)
+
+
+
+class CombinedReadOnlyGeoAndDirectEvidence(unittest.TestCase):
+    def data(self):
+        lead = dict(LEAD,
+            source_url="https://openagenda.com/fr/rouen-test/events/12345678_atelier",
+            external_id="12345678", date_start="2026-12-05",
+            date_end="2026-12-05", title="Atelier jeunesse")
+        ev = dict(EVENT,
+            uid=12345678, state=2, status=1,
+            attendanceMode=1, timezone="Europe/Paris",
+            title={"fr": "Atelier jeunesse"},
+            description={"fr": "Atelier créatif pour enfants"},
+            rights={"license": {"id": "etalab-2.0"},
+                    "licensor": {"name": "Institution fictive"}},
+            timings=[{"begin": "2026-12-05T14:00:00+0100",
+                      "end": "2026-12-05T15:00:00+0100"}])
+        agenda = {"agenda_slug": "rouen-test", "agenda_uid": "919191",
+                  "timezone": "Europe/Paris"}
+        return lead, ev, agenda
+
+    def test_geocode_can_feed_direct_api_verification_without_publisher(self):
+        from datetime import date
+        lead, ev, agenda = self.data()
+        result = review_direct_with_independent_geo(
+            lead, ev, agenda, SOURCE, PAGE, GEO_URL, BAN,
+            date(2026, 11, 18))
+        self.assertTrue(result["geography_verified"])
+        self.assertTrue(result["direct_source_structurally_valid"], result["reason"])
+        self.assertFalse(result["publisher_connected"])
+        self.assertFalse(result["approval_granted"])
+        self.assertEqual(result["public_writes"], 0)
+        self.assertNotIn("registered_venue", result)
+        self.assertNotIn("source_url", result)
+
+    def test_forged_geo_and_adult_only_api_record_fail_separately(self):
+        from datetime import date
+        lead, ev, agenda = self.data()
+        fake_geo = dict(PAGE, html="<html><body>Lieu inventé</body></html>")
+        absent = review_direct_with_independent_geo(
+            lead, ev, agenda, SOURCE, fake_geo, GEO_URL, BAN,
+            date(2026, 11, 18))
+        self.assertFalse(absent["geography_verified"])
+        self.assertFalse(absent["direct_source_structurally_valid"])
+        ev = dict(ev, description={"fr": "Réservé aux adultes uniquement"})
+        invalid = review_direct_with_independent_geo(
+            lead, ev, agenda, SOURCE, PAGE, GEO_URL, BAN,
+            date(2026, 11, 18))
+        self.assertTrue(invalid["geography_verified"])
+        self.assertFalse(invalid["direct_source_structurally_valid"])
+        self.assertEqual(invalid["reason"], "family_audience_not_in_source_record")
+        self.assertFalse(invalid["approval_granted"])
 
 
 if __name__ == "__main__":
