@@ -175,7 +175,8 @@ class FallbackContract(unittest.TestCase):
     def test_only_missing_or_unavailable_ods_can_be_proposed(self):
         for status in ("found", "conflicting", "malformed", None, "success"):
             self.assertEqual(self.ok(ods_state=status)["route"], "hold")
-        self.assertEqual(self.ok(ods_state="temporary_unavailable")["route"],
+        self.assertEqual(self.ok(ods_state="temporary_unavailable")["route"], "hold")
+        self.assertEqual(self.ok(ods_state="uid_absent")["route"],
                          "direct_source_candidate_for_remaining_gates")
 
     def test_institution_historic_unknown_and_multi_day_block(self):
