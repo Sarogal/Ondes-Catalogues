@@ -11,7 +11,7 @@ from ptitesondes_openagenda_v2_organizer_index import (
     discover_from_reviewed_index, check_indexed_event_fetch,
     redacted_index_stage, _VisibleAnchors,
 )
-from ptitesondes_openagenda_v2_joined_evidence import diagnose_candidate
+from ptitesondes_openagenda_v2_joined_evidence import (diagnose_candidate, diagnose_indexed_candidate)
 from test_ptitesondes_openagenda_v2_joined_evidence import (
     envelope, html as official_event_html, TODAY,
 )
@@ -132,6 +132,45 @@ class InstitutionalIndexContract(unittest.TestCase):
         self.assertFalse(discover(index_html=document(label),
                     lead=dict(LEAD, title="Lecture pour adolescents"))[
                         "indexed_event_link_confirmed"])
+
+    def test_full_indexed_path_requires_no_candidate_supplied_organizer_pin(self):
+        case = envelope()
+        case.pop("reviewed_organizer")
+        case.pop("organizer_page")
+        case["organizer_event_page"] = {
+            "url": EVENT_URL, "html": official_event_html()}
+        case["lead"]["approved_host"] = "evil.example"
+        case["lead"]["official_url"] = "https://evil.example/event"
+        good = diagnose_indexed_candidate(
+            case, INDEX,
+            {"url": INDEX["exact_index_url"], "html": document()}, TODAY)
+        self.assertEqual(
+            good["stage"], "structural_evidence_complete_other_gates_pending")
+        self.assertFalse(good["approval_granted"])
+        self.assertEqual(good["public_writes"], 0)
+        case["organizer_event_page"]["url"] = "https://evil.example/event"
+        blocked = diagnose_indexed_candidate(
+            case, INDEX,
+            {"url": INDEX["exact_index_url"], "html": document()}, TODAY)
+        self.assertEqual(blocked["stage"], "organizer_event_page_not_exact")
+        self.assertFalse(blocked["approval_granted"])
+        self.assertNotIn(EVENT_URL, json.dumps(blocked))
+
+    def test_indexed_pipeline_blocks_missing_or_ambiguous_index(self):
+        case = envelope()
+        case.pop("reviewed_organizer")
+        case.pop("organizer_page")
+        case["organizer_event_page"] = {
+            "url": EVENT_URL, "html": official_event_html()}
+        for raw in (
+            document('<a href="https://evil.example/evil">Lecture pour enfants</a>'),
+            document('<a href="/programmation/lecture">Lecture pour enfants</a>'
+                     '<a href="/agenda/autre">Lecture pour enfants</a>'),
+        ):
+            result = diagnose_indexed_candidate(
+                case, INDEX, {"url": INDEX["exact_index_url"], "html": raw}, TODAY)
+            self.assertEqual(result["stage"], "organizer_index_not_confirmed")
+            self.assertFalse(result["source_evidence_structurally_complete"])
 
     def test_index_nomination_then_joined_proof_still_not_approval(self):
         case = envelope()
