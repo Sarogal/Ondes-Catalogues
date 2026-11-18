@@ -42,7 +42,8 @@ NONARTIST_HEADING = re.compile(
 # heading* on the individual venue page. A bio, venue menu and a "Si vous aimez"
 # paragraph do NOT qualify.
 STYLE = re.compile(
-    r"\b(rock progressif|rock inde|rock alternatif|post rock|post metal|"
+    r"\b((?:transe|math|electro|art|indie|kraut|psych) rock|"
+    r"rock progressif|rock inde|rock alternatif|post rock|post metal|"
     r"garage rock|noise rock|stoner|sludge|shoegaze|hardcore|metalcore|"
     r"death metal|black metal|doom|punk|grunge|psychedelique|garage|"
     r"metal|rock)\b")
@@ -249,7 +250,13 @@ def candidate(html, url, source, today):
     found = STYLE.search(style_text)
     if not found or found.start() != 0:
         raise ValueError("Étiquette officielle Rock/Metal/Punk absente")
-    genres = [found.group(1).title()]
+    # First-party genre badges such as "transe rock" explicitly denote
+    # rock even when the qualifier precedes the word; map these families to
+    # the existing public Rock taxonomy rather than reject the full show.
+    primary = found.group(1)
+    genres = ["Rock" if re.fullmatch(
+        r"(?:transe|math|electro|art|indie|kraut|psych) rock", primary
+    ) else primary.title()]
     lead_artist = re.sub(r"\s+release party$", "", first_name, flags=re.I).strip()
     state = ("cancelled" if CANCEL.search(bounded)
              else "postponed" if POSTPONE.search(bounded)
