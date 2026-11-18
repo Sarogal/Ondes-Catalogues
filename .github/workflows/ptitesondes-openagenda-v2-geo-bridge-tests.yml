@@ -57,7 +57,8 @@ jobs:
           assert 'public_writes' in batch and 'approval_granted' in batch
           assert not any(x in batch for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
           registry = Path('scripts/ptitesondes_openagenda_v2_geo_registry.py').read_text()
-          assert 'public_writes' not in registry or 'public_writes' in registry
+          assert 'diagnose_batch' in registry and '_validate_registry' in registry
+          assert 'source_pins_selected_from_curated_registry_only' in registry
           assert not any(x in registry for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
           print('PASS: isolated offline geometry tests, zero secrets/publisher')
           PY
