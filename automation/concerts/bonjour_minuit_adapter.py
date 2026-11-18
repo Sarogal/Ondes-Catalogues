@@ -199,7 +199,9 @@ def candidate(html, url, source, today):
         raise ValueError("En-tête individuel manquant ou ambigu")
     i = headings[0]
     title = nodes[i][1]
-    if not 3 <= len(title) <= 200 or NONCONCERT.search(plain(title)):
+    # A 20-artist bill can exceed 200 chars; individual names are bounded
+    # separately by the independent first-party H2 verifier.
+    if not 3 <= len(title) <= 3000 or NONCONCERT.search(plain(title)):
         raise ValueError("Format hors concerts ou intitulé invalide")
     # Bounded section after event H1 and BEFORE the first named artist H2:
     # the site uses DIV and SPAN for date, room and door hours.
