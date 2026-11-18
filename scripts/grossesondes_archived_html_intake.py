@@ -346,6 +346,28 @@ def run(folder, calendar, history, today, fetcher=official_text):
     original_patch = copy.deepcopy(patch)
     successes, candidates = 0, 0
     occupied = {row.get("slug") for row in patch["additions"]}
+    # Long-lived PRIVATE aggregate coverage, distinct from the rolling 40
+    # diagnostic reasons. Only an archived slug and attempted date are kept.
+    checked_sources = state.setdefault("archived_html_source_attempted_private", {})
+    if not isinstance(checked_sources, dict):
+        raise ValueError("Invalid archived source coverage state")
+    for checked_slug, checked_day in checked_sources.items():
+        if checked_slug not in archive or not isinstance(checked_day, str):
+            raise ValueError("Invalid archived source coverage record")
+        try:
+            parsed_checked_day = date.fromisoformat(checked_day)
+        except ValueError as exc:
+            raise ValueError("Invalid archived source coverage date") from exc
+        if parsed_checked_day > today:
+            raise ValueError("Archived source coverage date lies in future")
+    tracking_started = state.setdefault("archived_html_tracking_started_private",
+                                        today.isoformat())
+    try:
+        if (not isinstance(tracking_started, str)
+                or date.fromisoformat(tracking_started) > today):
+            raise ValueError("Invalid archive coverage tracking start")
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Invalid archive coverage tracking start") from exc
     # Diagnostics are strictly private (source-watch-state.json); no raw HTML,
     # URLs, exception messages, public artifacts, or publish permissions.
     history_status = state.setdefault("archived_html_proof_last_result_private", {})
@@ -385,6 +407,9 @@ def run(folder, calendar, history, today, fetcher=official_text):
         if new_slug in occupied:
             record(slug, "already_in_private_patch")
             continue
+        # "Attempted" counts both successful requests and fetch failures.
+        # The raw URL, response, exception and HTML are NEVER persisted here.
+        checked_sources[slug] = today.isoformat()
         try:
             html = fetcher(source["proofUrl"], registered=True, raw=True)
         except (OSError, ValueError, TypeError, UnicodeError):
@@ -420,6 +445,26 @@ def run(folder, calendar, history, today, fetcher=official_text):
         state["archived_html_proof_last_result_private"] = {
             key: history_status[key] for key in keep
         }
+    trusted_first_party = {
+        slug for slug, parent in archive.items()
+        if isinstance(parent, dict)
+        and organizer_homepage(parent.get("officialSite"))
+    }
+    attempted = trusted_first_party.intersection(checked_sources)
+    recently_attempted = sum(
+        0 <= (today - date.fromisoformat(checked_sources[slug])).days < 7
+        for slug in attempted
+    )
+    state["archived_html_source_coverage_private"] = {
+        "as_of": today.isoformat(),
+        "tracking_started_on": tracking_started,
+        "historical_records": len(archive),
+        "first_party_https_sources": len(trusted_first_party),
+        "untrusted_or_missing_origin_sources": len(archive) - len(trusted_first_party),
+        "sources_attempted_since_tracking": len(attempted),
+        "sources_attempted_past_7_days": recently_attempted,
+        "sources_unattempted_since_tracking": len(trusted_first_party) - len(attempted),
+    }
     if patch != original_patch:
         patch["generated_at"] = today.isoformat()
         atomic_json(folder / ("patch-" + today.isoformat() + ".json"), patch)
