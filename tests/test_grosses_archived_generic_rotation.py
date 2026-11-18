@@ -152,6 +152,39 @@ class GenericArchivedOrganizerTests(unittest.TestCase):
         self.assertEqual(out["officialProofsEligible"], 0)
         self.assertEqual(out["privateCandidatesAdded"], 0)
 
+    def test_yearless_published_edition_is_not_recollected_as_new_suffix(self):
+        # Actual Cernunnos failure shape: published slug lacks year, but the
+        # signed current edition already has the exact festival/year.
+        self.public["festivals"] = [{
+            "slug": "delta-riff", "name": "Delta Riff Open Air",
+            "startDate": "2027-07-10", "endDate": "2027-07-11",
+        }]
+        first = engine.run(self.root, self.public, self.history,
+                           self.today, self.fetch)
+        self.assertEqual(first["officialProofsEligible"], 1)
+        self.assertNotIn(SECOND["officialSite"],
+                         [url for url, _, _ in self.visited])
+        after = engine.run(self.root, self.public, self.history,
+                           self.nextday, self.fetch)
+        self.assertEqual(after["privateCandidatesAdded"], 1)
+        stored = json.loads((self.root / "source-watch-state.json").read_text())
+        self.assertNotIn("delta-riff-2027",
+                         stored["archived_html_edition_observations"])
+        patch = json.loads((self.root / "patch-2026-11-18.json").read_text())
+        self.assertEqual([row["slug"] for row in patch["additions"]],
+                         ["north-fire-2027"])
+
+    def test_previous_year_with_same_yearless_slug_is_not_excluded(self):
+        self.public["festivals"] = [{
+            "slug": "delta-riff", "name": "Delta Riff Open Air",
+            "startDate": "2026-07-10", "endDate": "2026-07-11",
+        }]
+        result = engine.run(self.root, self.public, self.history,
+                            self.today, self.fetch)
+        self.assertEqual(result["officialProofsEligible"], 2)
+        self.assertIn(SECOND["officialSite"],
+                      [url for url, _, _ in self.visited])
+
     def test_skip_existing_public_edition_no_duplicate(self):
         self.public["festivals"] = [{"slug": "north-fire-2027"}]
         engine.run(self.root, self.public, self.history, self.today, self.fetch)
