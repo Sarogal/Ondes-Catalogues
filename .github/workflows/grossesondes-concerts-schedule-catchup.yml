@@ -1,0 +1,70 @@
+name: Grosses Ondes — rattrapage indépendant du cron Concerts
+
+on:
+  pull_request:
+    paths:
+      - 'monitoring/concerts_schedule_catchup.py'
+      - 'monitoring/test_concerts_schedule_catchup.py'
+      - '.github/workflows/grossesondes-concerts-schedule-catchup.yml'
+  workflow_run:
+    workflows:
+      - Grosses Ondes — concerts, synchronisation cloud sécurisée
+    types: [completed]
+  # Additional independent wakeups: GitHub may miss *both* intake and
+  # publisher crons. These checks never publish and share the 7 h guard.
+  schedule:
+    - cron: '43 1,5,9,13,17,21 * * *'
+
+concurrency:
+  group: grossesondes-concerts-schedule-catchup
+  cancel-in-progress: false
+
+jobs:
+  offline-tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests sans secret, approbation ni publication
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s monitoring -p 'test_concerts_schedule_catchup.py' -v
+
+  catchup:
+    if: >-
+      github.repository == 'Sarogal/Ondes-Catalogues' &&
+      ((github.event_name == 'schedule' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+      github.event.workflow_run.event == 'schedule' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contrôler les règles de sécurité du rattrapage
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s monitoring -p 'test_concerts_schedule_catchup.py' -v
+      - name: Déclencher seulement l'intake existant si plus de 7 h sans collecte
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python monitoring/concerts_schedule_catchup.py --execute
