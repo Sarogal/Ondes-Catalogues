@@ -104,6 +104,62 @@ class IndependentGeoContract(unittest.TestCase):
         result = review(official_page=dict(PAGE, html=html(graph)))
         self.assertEqual(result["reason"], "official_address_not_exact_or_ambiguous")
 
+    def test_nested_first_party_event_place_matches_generic_venue(self):
+        # Real municipal listings commonly embed Place under Event.location,
+        # not as a top-level JSON-LD entity. The venue has its own address.
+        event = {
+            "@type": "MusicEvent", "name": "Concert du samedi",
+            "location": copy.deepcopy(NODE),
+        }
+        yes = review(official_page=dict(PAGE, html=html(event)))
+        self.assertTrue(yes["geo_evidence_consistent"], yes["reason"])
+        event["location"].pop("@type")
+        no = review(official_page=dict(PAGE, html=html(event)))
+        self.assertEqual(no["reason"], "official_address_not_exact_or_ambiguous")
+        event["location"]["@type"] = "Place"
+        event["location"]["address"]["streetAddress"] = (
+            "43 rue Henri II Plantagenet")
+        other = review(official_page=dict(PAGE, html=html(event)))
+        self.assertEqual(other["reason"], "geocoder_query_not_official_address")
+
+    def test_same_building_repeated_across_events_merges_safe_aliases(self):
+        first = copy.deepcopy(NODE)
+        second = copy.deepcopy(NODE)
+        first["alternateName"] = []
+        second["alternateName"] = ["Bibliothèque des Familles"]
+        page = {"@graph": [
+            {"@type": "Event", "name": "Première séance",
+             "location": first},
+            {"@type": "Event", "name": "Seconde séance",
+             "location": second},
+        ]}
+        result = review(official_page=dict(PAGE, html=html(page)))
+        self.assertTrue(result["geo_evidence_consistent"], result["reason"])
+        self.assertIn("bibliotheque des familles",
+                      result["registered_venue"]["aliases"])
+        # Actual disagreement on the building number MUST still block.
+        page["@graph"][1]["location"]["address"]["streetAddress"] = (
+            "43 rue Henri II Plantagenet")
+        denied = review(official_page=dict(PAGE, html=html(page)))
+        self.assertEqual(denied["reason"],
+                         "official_address_not_exact_or_ambiguous")
+
+    def test_unrelated_event_text_and_untyped_location_are_not_geo_proof(self):
+        # Neither an address-only Event nor an unrelated Place title can
+        # replace the independently attested venue identity.
+        wrong_name = copy.deepcopy(NODE)
+        wrong_name["name"] = "Autre bâtiment"
+        wrong_name["alternateName"] = []
+        for invalid in (
+            {"@type": "Event", "name": "Médiathèque des Familles",
+             "location": dict(NODE["address"])},
+            {"@type": "Event", "location": wrong_name},
+            {"@type": "Offer", "location": copy.deepcopy(NODE)},
+        ):
+            with self.subTest(invalid=invalid):
+                result = review(official_page=dict(PAGE, html=html(invalid)))
+                self.assertFalse(result["geo_evidence_consistent"])
+
     def test_geocoder_must_query_only_official_address(self):
         for url in (
             GEO_URL.replace("42%20", "43%20"),
