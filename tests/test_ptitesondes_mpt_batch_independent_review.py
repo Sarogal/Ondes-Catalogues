@@ -97,6 +97,9 @@ class MptBatchSourceGeoTests(unittest.TestCase):
     def test_multiple_sources_one_generic_pipeline_not_event_adapters(self):
         r = review()
         self.assertEqual(r["discovered_occurrences"], 4)
+        self.assertTrue(r["sample_only_not_full_agenda"])
+        self.assertTrue(r["only_current_listing_page_checked"])
+        self.assertFalse(r["detail_selection_truncated"])
         self.assertEqual(r["classified_family_occurrences"], 4)
         self.assertEqual(r["selected_for_independent_review"], 4)
         self.assertEqual(r["venue_points_external_ign_rechecked"], 4)
