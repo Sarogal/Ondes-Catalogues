@@ -40,3 +40,43 @@ Un résultat `structural_evidence_complete_other_gates_pending` ne doit **jamais
 
 ## Sécurité
 La branche est isolée. Aucun workflow périodique, aucune clé, aucun cron, aucun catalogue public/privé ni publisher n'est modifié. Les tests sont hors réseau.
+
+## État constaté sur la collecte réelle du 18 novembre (sans données de candidats)
+Ces mesures proviennent des rapports **agrégés** de la branche privée de collecte ; elles ne
+sont **pas** le résultat du nouveau raccordement, qui n'a pas été exécuté sur le backlog réel.
+
+| Étape | État mesuré |
+|---|---|
+| Découverte | 48 sources, 587 événements examinés, 478 séances pertinentes |
+| Backlog | 434 pistes enregistrées |
+| Admission historique | 223 pistes brutes admissibles avant certaines déduplications, 140 pistes avec GPS non vérifié, 40 avec date/séance problématique |
+| Contrôle de sortie (4 créneaux) | 60 décisions ; 31 échecs UID/source, 16 public/âge, 5 horaire/date, 4 déjà publiées, 2 GPS, 2 autres |
+| Source OpenAgenda | 16/16 identités API concordantes ; 0 propriétaire indépendamment attesté |
+| Séances organisateur | 0 attestation enregistrée au recensement |
+| Prévalidation / approbation / publication du jour | 0 / 0 / 0 |
+| Catalogue public | 549 fiches dont 364 futures, date déclarée 2026-11-17 08:49:57 +01:00 |
+| Nouvelles catégories non musicales dans le catalogue actuel | 0 — catalogue actuel composé des 7 catégories musicales historiques |
+| Couverture ultramarine future | 0 dans les 5 territoires suivis |
+
+**Avertissement** : « pistes » et « décisions » ne sont pas des UID uniques et les 60 décisions
+ne constituent pas 60 événements distincts. Aucun taux cumulé de passage des neuf portes
+n'est prouvable à partir des seuls rapports agrégés. Les 0 attestations de propriété ne prouvent
+pas que les pages officielles n'existent pas : la collecte actuelle ne démontre pas encore cette
+vérification indépendante.
+
+## Obstacles structurels existants, à traiter dans une PR dédiée
+- `ptitesondes_candidate_promotion.permitted()` exige `registry_location(lead)` dès l'admission ;
+  le nouveau GPS n'est donc pas encore essayable sur les 140 pistes non géolocalisées.
+- `ptitesondes_candidate_promotion.category_for()` ne retourne que les catégories musicales ;
+  une exception explicite à un UID/lieu précis confirme une dette de généralisation.
+- `merge_policy.valid()` limite les catégories aux valeurs présentes dans la référence
+  historique. Le catalogue courant ne comporte aucune catégorie non musicale.
+- `ptitesondes_family_national_scope.FAMILY_TYPES` propose 13 catégories familiales génériques,
+  mais son audit ne confère aucun droit de publication.
+- `ptitesondes_nonmusic_release_contract.py` vérifie encore des séries propres à un lieu du Gosier
+  et n'est pas branché au publisher national.
+- Les événements qui couvrent plusieurs jours ne doivent pas être développés en fiches
+  quotidiennes fictives : créer un contrat explicite de regroupement et de séances.
+
+**Ne pas lever les refus de source/organisateur, accès, droits, identité GPS, horaires et historique.
+Tout élargissement des catégories doit être explicite, versionné, testé et validé avant le publisher.**
