@@ -127,6 +127,63 @@ class GenericArchivedOrganizerTests(unittest.TestCase):
         self.assertEqual(len(set(a) | set(b) | set(c)), 30)
         self.assertLessEqual(engine.GENERIC_MAX_PER_RUN, 10)
 
+    def test_historical_2025_last_seen_can_prove_2027_without_inventing_2026(self):
+        # Historical coverage must not disappear merely because the previous
+        # edition was missing or the last archived year was 2025.
+        revived = archive("returning-ash-2025", "Returning Ash Fest",
+                          "https://returningash.example/")
+        revived.update(startDate="2025-07-10", endDate="2025-07-11",
+                       lastKnownYear=2025)
+        html = ("<html><body><main><h1>Returning Ash Fest</h1>"
+                "<p>Les 21 et 22 août 2027.</p></main></body></html>")
+        self.history["knownFestivals"].append(revived)
+        self.pages[revived["officialSite"]] = html
+        watched = engine.generic_rotating_sources(
+            {revived["slug"]: revived}, set(), set(), {}, self.today)
+        self.assertEqual(watched[revived["slug"]]["year"], 2027)
+        day1 = engine.run(self.root, self.public, self.history,
+                          self.today, self.fetch)
+        day2 = engine.run(self.root, self.public, self.history,
+                          self.nextday, self.fetch)
+        self.assertEqual(day1["privateCandidatesAdded"], 0)
+        self.assertEqual(day2["privateCandidatesAdded"], 3)
+        patch = json.loads((self.root / "patch-2026-11-18.json").read_text())
+        proposal = next(r for r in patch["additions"]
+                        if r["slug"] == "returning-ash-2027")
+        self.assertEqual(proposal["startDate"], "2027-08-21")
+        self.assertIsNone(proposal["venue"])
+        self.assertIsNone(proposal["lat"])
+        self.assertFalse(proposal["showOnMap"])
+        # The publisher still independently validates the HTML first-party
+        # claim. Ordinary published-parent admission stays consecutive-year.
+        self.assertIsNotNone(validate_archived_structured_edition(
+            proposal, revived, html, self.nextday.isoformat(),
+            proof_mode=ARCHIVED_HTML_PROOF_MODE))
+        from grossesondes_structured_edition import (
+            HTML_PROOF_MODE, validate_structured_edition)
+        self.assertIsNone(validate_structured_edition(
+            dict(proposal, proofMode=HTML_PROOF_MODE), revived, html,
+            self.nextday.isoformat(), proof_mode=HTML_PROOF_MODE))
+
+    def test_historical_gap_does_not_approve_wrong_year_or_missing_dates(self):
+        old = archive("returning-ash-2025", "Returning Ash Fest",
+                      "https://returningash.example/")
+        old.update(startDate="2025-07-10", endDate="2025-07-11",
+                   lastKnownYear=2025)
+        target = {"officialSite": old["officialSite"],
+                  "proofUrl": old["officialSite"], "year": 2027}
+        self.assertIsNone(engine.candidate(
+            old, target, "<html><body>Returning Ash Fest 2026</body></html>",
+            self.today))
+        self.assertIsNone(engine.candidate(
+            old, target,
+            "<html><body>Returning Ash Fest 21 et 22 août 2026</body></html>",
+            self.today))
+        self.assertIsNone(engine.candidate(
+            old, dict(target, year=2029),
+            "<html><body>Returning Ash Fest 21 et 22 août 2029</body></html>",
+            self.today))
+
     def test_only_first_party_https_from_signed_archive_is_allowed(self):
         for site in (
             "http://organizer.example/", "https://127.0.0.1/",
