@@ -84,6 +84,54 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
         self.visits.append((url, registered, raw))
         return self.pages[url]
 
+    def test_private_diagnostic_identifies_missing_date_without_releasing_html(self):
+        official = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        self.pages[official] = "<html><body>Festival 666 : programme à venir</body></html>"
+        result = engine.run(self.folder, self.calendar, self.history,
+                            self.day1, self.fetch)
+        self.assertEqual(result["privateCandidatesAdded"], 0)
+        statefile = self.folder / "source-watch-state.json"
+        serialized = statefile.read_text(encoding="utf-8")
+        state = json.loads(serialized)
+        statuses = state["archived_html_proof_last_result_private"]
+        self.assertEqual(statuses["festival-666"]["result"],
+                         "visible_dates_absent_or_ambiguous")
+        self.assertEqual(statuses["mozhell-open-air"]["result"],
+                         "second_independent_day_pending")
+        self.assertEqual(statuses["festival-666"]["checked_on"], "2026-11-17")
+        self.assertNotIn("programme à venir", serialized)
+        self.assertNotIn("www.festival666.com", serialized)
+        self.assertFalse((self.folder / "patch-2026-11-18.json").exists())
+
+    def test_private_diagnostic_distinguishes_official_fetch_error(self):
+        fail_url = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        def denied(url, **kwargs):
+            if url == fail_url:
+                raise OSError("403 server error; private internal response")
+            return self.fetch(url, **kwargs)
+        result = engine.run(self.folder, self.calendar, self.history,
+                            self.day1, denied)
+        self.assertEqual(result["officialProofsEligible"], 1)
+        state = (self.folder / "source-watch-state.json").read_text()
+        self.assertEqual(json.loads(state)[
+            "archived_html_proof_last_result_private"]["festival-666"]["result"],
+            "official_page_fetch_failed")
+        self.assertNotIn("403 server error", state)
+        self.assertFalse(result["publicWrites"])
+
+    def test_private_diagnostic_marks_second_day_append_and_duplicate(self):
+        engine.run(self.folder, self.calendar, self.history, self.day1, self.fetch)
+        engine.run(self.folder, self.calendar, self.history, self.day2, self.fetch)
+        state = json.loads((self.folder / "source-watch-state.json").read_text())
+        statuses = state["archived_html_proof_last_result_private"]
+        self.assertEqual(statuses["festival-666"]["result"], "added_to_private_patch")
+        self.assertEqual(statuses["mozhell-open-air"]["result"], "added_to_private_patch")
+        engine.run(self.folder, self.calendar, self.history, self.day2, self.fetch)
+        state = json.loads((self.folder / "source-watch-state.json").read_text())
+        statuses = state["archived_html_proof_last_result_private"]
+        self.assertEqual(statuses["festival-666"]["result"], "already_in_private_patch")
+        self.assertEqual(statuses["mozhell-open-air"]["result"], "already_in_private_patch")
+
     def test_pinned_organizer_page_is_same_https_origin_and_path(self):
         valid = engine.pinned_first_party
         site = "https://www.mozhell.fr/fr/"
