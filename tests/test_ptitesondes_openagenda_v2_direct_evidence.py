@@ -370,6 +370,22 @@ class OA2ReadOnlyTransportTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     read_direct_agenda_v2("919191", key, opener=_MockHttp(valid))
 
+    def test_both_api_readers_refuse_control_characters(self):
+        # A mocked transport must never see a key with control characters,
+        # even when urllib.Request would otherwise accept the raw header.
+        for bad_char in ("\r", "\n", "\t", "\x00", "\x1f", "\x7f", " "):
+            key = "oa_pk_" + "x" * 30 + bad_char
+            for reader, args, payload in (
+                (read_direct_v2, ("919191", "12345678"), EVENT),
+                (read_direct_agenda_v2, ("919191",), {"uid": 919191, "slug": "commune-test"}),
+            ):
+                with self.subTest(reader=reader.__name__, char=repr(bad_char)):
+                    net = _MockHttp(payload)
+                    with self.assertRaises(ValueError):
+                        reader(*args, key, opener=net)
+                    self.assertIsNone(net.request)
+
+
     def test_public_key_header_only_exact_pinned_https_route(self):
         network = _MockHttp(EVENT)
         row = read_direct_v2("919191", "12345678", "oa_pk_" + "x" * 30,
