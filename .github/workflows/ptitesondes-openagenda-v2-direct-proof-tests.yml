@@ -43,7 +43,7 @@ jobs:
           wf = Path(".github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml").read_text()
           assert "contents: read" in wf
           assert not any(x.strip().startswith("schedule:") for x in wf.splitlines())
-          assert not any(x in wf for x in ("se" + "crets.", "git push", "deploy" + "-pages", "contents:" + " write"))
+          assert not any(x in wf for x in ("se" + "crets.", "git" + " push", "deploy" + "-pages", "contents:" + " write"))
           source = Path("scripts/ptitesondes_openagenda_v2_direct_evidence.py").read_text()
           assert "publisher_connected" in source and "public_writes" in source
           assert "oa_pk_" in source and "oa_sk_" not in source
