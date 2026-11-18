@@ -39,6 +39,27 @@ CHILD = re.compile(
     r"\b(?:enfants?|bebes?|tout petits?|familles?|parents enfants|"
     r"jeune public|petits et grands|adolescents?|ados?)\b"
 )
+EXCLUSIVELY_ADULT = re.compile(
+    r"\b(?:reserve aux adultes|adulte uniquement|interdit aux enfants|"
+    r"sans enfants|public adulte seulement)\b"
+)
+# Only these stable, programmer-owned reason codes may leave private audit.
+SAFE_REASONS = frozenset({
+    "missing_or_unreviewed_source_registry",
+    "candidate_url_uid_or_agenda_mismatch", "invalid_event_uid",
+    "direct_api_event_uid_mismatch", "not_publicly_scheduled",
+    "event_removed", "not_physical_family_event",
+    "unreviewed_territory_timezone",
+    "candidate_date_invalid_or_out_of_window", "api_title_mismatch",
+    "geography_not_independently_verified", "candidate_venue_identity_mismatch",
+    "invalid_age_claim", "family_audience_not_in_source_record",
+    "source_rights_unknown", "invalid_or_oversized_timings",
+    "no_explicit_timings", "malformed_timing", "invalid_timing_or_timezone",
+    "invalid_timing_duration", "time_offset_not_matching_reviewed_timezone",
+    "overnight_timing_needs_separate_contract", "duplicate_timing",
+    "uid_has_no_exact_dated_occurrence",
+    "await_independent_organizer_rights_duplicate_and_access_checks",
+})
 
 
 def _norm(value):
@@ -50,8 +71,9 @@ def _norm(value):
 
 
 def _uid(value):
-    return (type(value) is int and value >= 0 and bool(UID.fullmatch(str(value)))
-            or isinstance(value, str) and bool(UID.fullmatch(value)))
+    return ((type(value) is int and value > 0 and bool(UID.fullmatch(str(value))))
+            or (isinstance(value, str) and bool(UID.fullmatch(value))
+                and int(value) > 0))
 
 
 def _source_parts(url):
@@ -216,7 +238,9 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
         return fail("invalid_event_uid")
     if str(api_event["uid"]) != lead["external_id"]:
         return fail("direct_api_event_uid_mismatch")
-    if api_event.get("state") != 2 or api_event.get("status") != 1:
+    if (type(api_event.get("state")) is not int or api_event["state"] != 2
+            or type(api_event.get("status")) is not int
+            or api_event["status"] != 1):
         return fail("not_publicly_scheduled")
     if api_event.get("removed") is True:
         return fail("event_removed")
@@ -251,7 +275,7 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     desc = _norm(" ".join((_fr(api_event, key) for key in (
         "title", "description", "longDescription"))))
     age_child = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
-    if not CHILD.search(desc) and not age_child:
+    if EXCLUSIVELY_ADULT.search(desc) or (not CHILD.search(desc) and not age_child):
         return fail("family_audience_not_in_source_record")
     rights = api_event.get("rights")
     if not isinstance(rights, dict) or not isinstance(
@@ -331,9 +355,10 @@ def redacted_batch_report(reports):
     for report in reports:
         if (not isinstance(report, dict) or report.get("schema") != SCHEMA
                 or report.get("public_writes") != 0
-                or report.get("approval_granted") is not False):
+                or report.get("approval_granted") is not False
+                or report.get("reason") not in SAFE_REASONS):
             raise ValueError("invalid_source_report")
-        counts[report.get("reason", "missing_reason")] += 1
+        counts[report["reason"]] += 1
     return {
         "schema": "ptitesondes.openagenda_v2_source_aggregate.v1",
         "checked": len(reports),
