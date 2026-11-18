@@ -7,7 +7,12 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_openagenda_v2_direct_evidence import review_direct_v2
-from ptitesondes_openagenda_v2_organizer_bridge import check_independent_session
+from ptitesondes_openagenda_v2_organizer_bridge import (
+    check_independent_session, dry_run_first_party_fallback,
+)
+from ptitesondes_openagenda_v2_preintegration import (
+    agenda_identity_for_review, group_multi_day,
+)
 
 LEAD = {
     "source_url": "https://openagenda.com/commune-test/events/12345678_lecture",
@@ -153,6 +158,67 @@ class OrganizerEvidenceContract(unittest.TestCase):
         self.assertTrue(check(event=event, html=HTML + "De 6 à 8 ans.")[
             "official_session_evidence_consistent"])
         self.assertFalse(check(event=event)["age_access_fully_verified"])
+
+    def test_first_party_can_route_without_homepage_openagenda_link(self):
+        """A real, independently-pinned event session replaces a missing
+        agenda-homepage link only in a NON-PUBLISHING fallback diagnostic."""
+        source = {
+            "agenda_uid": "919191", "agenda_slug": "commune-test",
+            "timezone": "Europe/Paris",
+            "institution_url": "https://www.bibliotheque-test.fr/",
+            "authority_reference_url": "https://www.bibliotheque-test.fr/agenda",
+        }
+        identity = agenda_identity_for_review(
+            {"uid": 919191, "slug": "commune-test"}, source,
+        )
+        self.assertTrue(identity["identity_consistent"])
+        evidence = review_direct_v2(
+            LEAD, EVENT, AGENDA, VENUE, date(2026, 11, 18),
+        )
+        result = dry_run_first_party_fallback(
+            "uid_absent", LEAD, EVENT, evidence, identity,
+            group_multi_day(EVENT), ORGANIZER,
+            {"url": ORGANIZER["exact_url"], "html": HTML},
+            historic_uid_exists=False,
+        )
+        self.assertEqual(result["route"],
+                         "direct_source_candidate_for_remaining_gates")
+        self.assertFalse(result["approval_granted"])
+        self.assertFalse(result["publisher_connected"])
+        self.assertEqual(result["public_writes"], 0)
+        self.assertNotIn("additions", result)
+        bad = dry_run_first_party_fallback(
+            "uid_absent", LEAD, EVENT, evidence, identity,
+            group_multi_day(EVENT), ORGANIZER,
+            {"url": ORGANIZER["exact_url"],
+             "html": HTML.replace("5 décembre 2026 à 14:30",
+                                  "5 décembre 2026")},
+            historic_uid_exists=False,
+        )
+        self.assertEqual(bad["route"], "hold")
+
+    def test_ods_present_and_historic_match_still_block_with_organizer(self):
+        identity = agenda_identity_for_review(
+            {"uid": 919191, "slug": "commune-test"},
+            {"agenda_uid": "919191", "agenda_slug": "commune-test",
+             "timezone": "Europe/Paris",
+             "institution_url": "https://www.bibliotheque-test.fr/",
+             "authority_reference_url": "https://www.bibliotheque-test.fr/agenda"},
+        )
+        evidence = review_direct_v2(LEAD, EVENT, AGENDA, VENUE,
+                                    date(2026, 11, 18))
+        for ods, historic in (("uid_present", False), ("uid_absent", True),
+                              ("temporary_unavailable", False),
+                              ("uid_absent", None)):
+            with self.subTest(ods=ods, historic=historic):
+                result = dry_run_first_party_fallback(
+                    ods, LEAD, EVENT, evidence, identity,
+                    group_multi_day(EVENT), ORGANIZER,
+                    {"url": ORGANIZER["exact_url"], "html": HTML},
+                    historic_uid_exists=historic,
+                )
+                self.assertEqual(result["route"], "hold")
+                self.assertFalse(result["approval_granted"])
 
     def test_html_size_and_synthetic_approval_tamper_fail(self):
         self.assertFalse(check(html="")["official_session_evidence_consistent"])
