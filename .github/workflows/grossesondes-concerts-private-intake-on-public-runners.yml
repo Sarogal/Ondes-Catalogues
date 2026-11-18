@@ -157,6 +157,25 @@ jobs:
             fi
           done
 
+      - name: Revérification générique des concerts structurés (diagnostic privé)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Evidence-only trial: no changes to approval signatures or public JSON.
+          # Neither candidate identities nor official URLs appear in public logs.
+          if ! python public/automation/concerts/structured_first_party_preflight.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --sources public/automation/concerts/sources.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --approvals confidential/automation/concerts/approved.json \
+              --out confidential/automation/concerts/intake/structured-first-party-preflight.json \
+              > "$RUNNER_TEMP/concerts-private-logs/structured-preflight.log" 2>&1; then
+            echo "::warning::Prévalidation structurée indisponible : les approbations existantes restent inchangées."
+          else
+            echo "Revérification structurée générique enregistrée en privé, sans approbation."
+          fi
+
       - name: Valider les approbations avec données privées avant activation éventuelle
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -356,6 +375,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/registry-funnel.json ]; then
             git add --sparse -- automation/concerts/intake/registry-funnel.json
+          fi
+          if [ -f automation/concerts/intake/structured-first-party-preflight.json ]; then
+            git add --sparse -- automation/concerts/intake/structured-first-party-preflight.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
