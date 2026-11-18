@@ -7,18 +7,22 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
+      - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   pull_request:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
+      - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   workflow_dispatch:
@@ -45,6 +49,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_preintegration.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_dryrun_e2e.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_live_smoke.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
@@ -60,5 +66,8 @@ jobs:
           preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
           assert "publisher_connected" in preflight and "public_writes" in preflight
           assert not any(x in preflight for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          smoke = Path("scripts/ptitesondes_openagenda_v2_live_smoke.py").read_text()
+          assert "public_writes" in smoke and "approval_granted" in smoke
+          assert not any(x in smoke for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           print("PASS: offline-only checks, no publisher, no private actions")
           PY
