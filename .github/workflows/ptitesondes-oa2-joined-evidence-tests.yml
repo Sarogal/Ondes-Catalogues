@@ -5,6 +5,9 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_joined_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
+      - 'scripts/ptitesondes_openagenda_v2_eventon_index.py'
+      - 'tests/test_ptitesondes_openagenda_v2_eventon_index.py'
+      - 'docs/PTITESONDES_EVENTON_INDEX_ROUTING_20261118.md'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_index.py'
       - 'docs/PTITESONDES_OA2_JOINED_EVIDENCE_20261118.md'
       - 'tests/test_ptitesondes_openagenda_v2_joined_evidence.py'
@@ -32,6 +35,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_joined_evidence.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_organizer_index.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_eventon_index.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
       - name: Assert only read-only diagnostics are exposed
