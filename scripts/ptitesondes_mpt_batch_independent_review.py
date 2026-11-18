@@ -100,7 +100,9 @@ def review_official_listing_batch(listing_html, catalogue, today, *,
             "structurally_plausible_for_independent_review"],
         "selected_for_independent_review": len(chosen),
         "held_by_source_batch_limit": over_limit,
-        "sample_only_not_full_agenda": discovery[
+        "sample_only_not_full_agenda": True,
+        "only_current_listing_page_checked": True,
+        "detail_selection_truncated": discovery[
             "selected_details_are_sample_only"],
         "primary_official_detail_requests_distinct": len(cache),
         "venue_points_external_ign_rechecked": checked[
