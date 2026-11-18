@@ -53,6 +53,44 @@ class BonjourMinuitPublishedWatch(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.assertIsNone(w.source_kind(bad))
 
+    def test_any_future_published_bonjour_date_is_watched_without_id_allowlist(self):
+        cases = [
+            ("2027-02-12", "novo-data",
+             "https://bonjour-minuit.fr/evenement/novodata-12fev27/",
+             ("Novö Data","Barre à Mine"), "Club", "rock post-punk"),
+            ("2027-03-13", "la-jungle",
+             "https://bonjour-minuit.fr/evenement/lajungle-13mars27/",
+             ("La Jungle","DOPPLeR"), "Grande Salle", "transe rock"),
+        ]
+        for day,first,url,names,room,badge in cases:
+            with self.subTest(date=day):
+                eid="go-c-"+day.replace("-","")+"-saint-brieuc-"+first
+                ev=published(eid,day," + ".join(names),url,
+                             [first,"barre-a-mine" if first=="novo-data" else "doppler"])
+                ev["genres"]=["Rock"]
+                page=(
+                    "<main><article><h1>"+" ".join(names)+"</h1>"
+                    "<div>"+("vendredi 12 février 2027" if first=="novo-data"
+                              else "samedi 13 mars 2027")+"</div>"
+                    "<div>"+room+" • 20h30</div>"
+                    "<h2>"+names[0]+"</h2><div><span>"+badge+
+                    "</span><span>Bretagne</span></div><p>Biographie</p>"
+                    "<h2>"+names[1]+"</h2><div><span>rock noise</span>"
+                    "<span>FRA</span></div><p>Biographie 2</p>"
+                    "</article></main>")
+                artists={first:names[0],
+                         "barre-a-mine" if first=="novo-data" else "doppler":names[1]}
+                self.assertEqual(w.source_kind(ev),"bonjour")
+                self.assertEqual(w.inspect(ev,page,artists)["status"],"matched")
+                # A newly added named support on the same official page
+                # is NEVER silently accepted by the read-only monitor.
+                altered=page.replace("</article>",
+                    "<h2>Third Band</h2><div>rock FRA</div></article>")
+                self.assertEqual(w.inspect(ev,altered,artists)["status"],
+                                 "lineup_review")
+                wrong=dict(ev, officialUrl=url+"?utm=1")
+                self.assertIsNone(w.source_kind(wrong))
+
     def test_named_magma_and_four_sbrbs_artists_are_verified_without_clock(self):
         for ev,page in ((M,html()),(S,html(multi=True))):
             with self.subTest(event=ev["id"]):
