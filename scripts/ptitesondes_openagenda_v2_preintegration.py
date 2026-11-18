@@ -218,7 +218,8 @@ def group_multi_day(event, external_organizer_schedule=None,
 
 def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
                            grouping, historic_uid_exists=None,
-                           independently_linked=False):
+                           independently_linked=False,
+                           first_party_session_evidence=None):
     """Assess whether ODS absence MAY be investigated using direct API proof.
 
     No boolean named approved; this is a non-publishing routing diagnostic.
@@ -247,8 +248,23 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
             or agenda_identity.get("schema") != SCHEMA
             or agenda_identity.get("identity_consistent") is not True):
         return dict(report, reason="agenda_identity_not_consistent")
-    if independently_linked is not True:
-        return dict(report, reason="institutional_agenda_link_not_verified")
+    # Some organizers maintain their own definitive program without linking
+    # back to the OpenAgenda home page. An independently reviewed first-party
+    # page containing EACH exact session may substitute only for the missing
+    # agenda-homepage link, never for identity, time, GPS, rights or history.
+    fp = first_party_session_evidence
+    first_party_ok = (
+        isinstance(fp, dict)
+        and fp.get("schema") == "ptitesondes.oa2.independent_organizer_session.v1"
+        and fp.get("official_session_evidence_consistent") is True
+        and fp.get("organizer_ownership_attested") is False
+        and fp.get("rights_reviewed") is False
+        and fp.get("age_access_fully_verified") is False
+        and fp.get("approval_granted") is False
+        and fp.get("public_writes") == 0
+    )
+    if independently_linked is not True and not first_party_ok:
+        return dict(report, reason="no_independent_institutional_or_first_party_session_evidence")
     if (not isinstance(grouping, dict) or grouping.get("schema") != SCHEMA
             or grouping.get("publication_authorized") is not False):
         return dict(report, reason="grouping_not_checked")
