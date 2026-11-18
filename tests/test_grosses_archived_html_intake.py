@@ -84,6 +84,43 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
         self.visits.append((url, registered, raw))
         return self.pages[url]
 
+    def test_private_archive_coverage_counts_attempts_without_source_leakage(self):
+        # A public runner must track breadth beyond the last 40 diagnostics,
+        # but its private state must never save URLs, HTML or response bodies.
+        engine.run(self.folder, self.calendar, self.history,
+                   self.day1, self.fetch)
+        state = json.loads((self.folder / "source-watch-state.json").read_text())
+        coverage = state["archived_html_source_coverage_private"]
+        self.assertEqual(coverage["historical_records"], 2)
+        self.assertEqual(coverage["first_party_https_sources"], 2)
+        self.assertEqual(coverage["sources_attempted_since_tracking"], 2)
+        self.assertEqual(coverage["sources_attempted_past_7_days"], 2)
+        self.assertEqual(coverage["sources_unattempted_since_tracking"], 0)
+        self.assertEqual(coverage["tracking_started_on"], "2026-11-17")
+        self.assertEqual(state["archived_html_source_attempted_private"], {
+            "mozhell-open-air": "2026-11-17",
+            "festival-666": "2026-11-17",
+        })
+        data = (self.folder / "source-watch-state.json").read_text()
+        self.assertNotIn("www.festival666.com", data)
+        self.assertNotIn("13 - 14 - 15", data)
+
+    def test_private_coverage_records_failed_attempt_but_not_success(self):
+        error_url = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        def fetch(url, **kwargs):
+            if url == error_url:
+                raise OSError("could not reach official host")
+            return self.fetch(url, **kwargs)
+        engine.run(self.folder, self.calendar, self.history,
+                   self.day1, fetch)
+        state = json.loads((self.folder / "source-watch-state.json").read_text())
+        self.assertEqual(state["archived_html_source_coverage_private"]
+                         ["sources_attempted_since_tracking"], 2)
+        self.assertEqual(state["archived_html_proof_last_result_private"]
+                         ["festival-666"]["result"], "official_page_fetch_failed")
+        self.assertNotIn("could not reach official host",
+                         (self.folder / "source-watch-state.json").read_text())
+
     def test_private_diagnostic_identifies_missing_date_without_releasing_html(self):
         official = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
         self.pages[official] = "<html><body>Festival 666 : programme à venir</body></html>"
