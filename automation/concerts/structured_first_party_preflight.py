@@ -49,7 +49,8 @@ def trusted_source(candidate, sources):
 
 
 def build(registry, sources, catalogue, approvals, today, *,
-          fetch=discover.download, robots=discover.robots_allow, limit=8):
+          fetch=discover.download, robots=discover.robots_allow, limit=8,
+          scan_slot=0):
     if (registry.get("schema") != "grossesondes.concert.intake.v1"
             or not isinstance(registry.get("items"), dict)):
         raise ValueError("Private intake schema invalid")
@@ -63,8 +64,9 @@ def build(registry, sources, catalogue, approvals, today, *,
     if (approvals.get("schema") != "grossesondes.concert.approvals.v1"
             or not isinstance(approvals.get("approvals"), list)):
         raise ValueError("Private approvals schema invalid")
-    if not isinstance(today, dt.date) or not 1 <= limit <= 12:
-        raise ValueError("Invalid date or bounded probe budget")
+    if (not isinstance(today, dt.date) or not 1 <= limit <= 12
+            or scan_slot not in (0, 1, 2)):
+        raise ValueError("Invalid date, slot or bounded probe budget")
     published = {
         (e.get("officialUrl"), e.get("date"))
         for e in catalogue["events"] if isinstance(e, dict)
@@ -75,13 +77,14 @@ def build(registry, sources, catalogue, approvals, today, *,
         and a.get("reviewDecision") == "approved"
         and isinstance(a.get("event"), dict)
     }
-    eligible = []
+    eligible, exploratory = [], []
     for row in registry["items"].values():
         if not isinstance(row, dict) or not isinstance(row.get("candidate"), dict):
             continue
         candidate = row["candidate"]
         if (candidate.get("source") != SOURCE
-                or candidate.get("reviewBucket") != "genre_tag_review"
+                or candidate.get("reviewBucket") not in (
+                    "genre_tag_review", "genre_unknown")
                 or candidate.get("publicationAllowed") is not False
                 or candidate.get("reviewRequired") is not True
                 or candidate.get("possibleExistingConcert") is True
@@ -98,15 +101,28 @@ def build(registry, sources, catalogue, approvals, today, *,
         pair = (candidate.get("sourceUrl"), candidate.get("date"))
         if pair in approved or pair in published:
             continue
-        eligible.append(candidate)
+        if candidate.get("reviewBucket") == "genre_tag_review":
+            eligible.append(candidate)
+        else:
+            exploratory.append(candidate)
 
-    eligible.sort(key=lambda c: (str(c.get("candidateId") or ""),
-                                  str(c.get("sourceUrl") or "")))
-    offset = today.toordinal() * limit % len(eligible) if eligible else 0
-    selected = [eligible[(offset + i) % len(eligible)]
-                for i in range(min(limit, len(eligible)))]
+    def choose(rows, budget):
+        rows.sort(key=lambda c: (str(c.get("candidateId") or ""),
+                                 str(c.get("sourceUrl") or "")))
+        if not rows or budget <= 0:
+            return []
+        # Three daily slots cover different fixed-size cohorts, and all
+        # candidates eventually rotate in without removing stability checks.
+        offset = ((today.toordinal() * 3 + scan_slot) * limit) % len(rows)
+        return [rows[(offset + i) % len(rows)]
+                for i in range(min(budget, len(rows)))]
+
+    selected = choose(eligible, limit)
+    selected_exploratory = choose(exploratory, limit - len(selected))
     results, counts, robot_cache = [], Counter(), {}
-    for candidate in selected:
+    for diagnostic_only, candidate in (
+            [(False, c) for c in selected]
+            + [(True, c) for c in selected_exploratory]):
         reason = "unknown"
         status = "held"
         source = trusted_source(candidate, sources)
@@ -127,8 +143,21 @@ def build(registry, sources, catalogue, approvals, today, *,
                     if not fresh:
                         reason = "structured_event_proof_missing_or_ambiguous"
                     elif any(fresh.get(field) != candidate.get(field)
-                             for field in IDENTITY_FIELDS):
+                             for field in IDENTITY_FIELDS
+                             if not diagnostic_only or field != "classification"):
                         reason = "official_event_identity_changed"
+                    elif diagnostic_only:
+                        # An unknown-genre lead NEVER enters the approval
+                        # pathway. This second reading only reveals whether
+                        # an official MusicEvent now carries explicit tags.
+                        status = "exploratory_evidence_only"
+                        bucket = triage.triage(
+                            fresh, catalogue=catalogue).get("reviewBucket")
+                        reason = (
+                            "fresh_official_music_event_genre_recovered"
+                            if bucket == "genre_tag_review" else
+                            "fresh_official_music_event_genre_still_unknown"
+                        )
                     elif triage.triage(fresh, catalogue=catalogue).get(
                             "reviewBucket") != "genre_tag_review":
                         reason = "retriage_requires_review"
@@ -142,12 +171,21 @@ def build(registry, sources, catalogue, approvals, today, *,
         counts[reason] += 1
         results.append({
             "candidateId": candidate.get("candidateId"),
+            "probeKind": ("genre_unknown_diagnostic" if diagnostic_only
+                          else "genre_review_preflight"),
             "status": status, "reason": reason,
             "publicationAllowed": False,
         })
     return {
         "schema": SCHEMA, "asOf": today.isoformat(),
         "eligible": len(eligible), "attempted": len(selected),
+        "exploratoryEligible": len(exploratory),
+        "exploratoryAttempted": len(selected_exploratory),
+        "totalProbed": len(selected) + len(selected_exploratory),
+        "exploratoryGenreRecovered": counts[
+            "fresh_official_music_event_genre_recovered"],
+        "exploratoryGenreUnknown": counts[
+            "fresh_official_music_event_genre_still_unknown"],
         "structureMatched": sum(r["status"] == "independent_structure_matched"
                                 for r in results),
         "reasonCounts": dict(sorted(counts.items())),
@@ -166,16 +204,20 @@ def main():
     args = p.parse_args()
     def read(path):
         return json.loads(Path(path).read_text(encoding="utf-8"))
+    local_now = dt.datetime.now(ZoneInfo("Europe/Paris"))
+    local_slot = 0 if local_now.hour < 12 else 1 if local_now.hour < 18 else 2
     report = build(
         read(args.registry), read(args.sources), read(args.catalogue),
-        read(args.approvals), dt.datetime.now(ZoneInfo("Europe/Paris")).date())
+        read(args.approvals), local_now.date(), scan_slot=local_slot)
     Path(args.out).write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
     # Public Actions logs reveal ONLY aggregate counts, never candidates/URLs.
     print("Preflight structuré officiel : "
           + str(report["attempted"]) + " analysés ; "
-          + str(report["structureMatched"]) + " concordances, "
+          + str(report["structureMatched"]) + " concordances ; "
+          + str(report["exploratoryAttempted"]) + " explorations de genre "
+          + "(" + str(report["exploratoryGenreRecovered"]) + " tags retrouvés), "
           "aucune approbation ou publication.")
 
 
