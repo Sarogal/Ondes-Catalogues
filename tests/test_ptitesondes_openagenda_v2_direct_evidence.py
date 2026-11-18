@@ -49,12 +49,16 @@ EVENT = {
 }
 
 
-def review(*, lead=None, event=None, agenda=None, venue=None):
+_DEFAULT = object()
+
+
+def review(*, lead=_DEFAULT, event=_DEFAULT,
+           agenda=_DEFAULT, venue=_DEFAULT):
     return review_direct_v2(
-        deepcopy(LEAD if lead is None else lead),
-        deepcopy(EVENT if event is None else event),
-        deepcopy(AGENDA if agenda is None else agenda),
-        deepcopy(VENUE if venue is None else venue), TODAY
+        deepcopy(LEAD if lead is _DEFAULT else lead),
+        deepcopy(EVENT if event is _DEFAULT else event),
+        deepcopy(AGENDA if agenda is _DEFAULT else agenda),
+        deepcopy(VENUE if venue is _DEFAULT else venue), TODAY
     )
 
 
