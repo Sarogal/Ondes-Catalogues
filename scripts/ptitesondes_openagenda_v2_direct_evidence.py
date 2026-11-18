@@ -380,6 +380,49 @@ def read_direct_v2(agenda_uid, event_uid, public_read_key, opener=None):
     return payload
 
 
+def read_direct_agenda_v2(agenda_uid, public_read_key, opener=None):
+    """Read published OpenAgenda metadata without granting ownership.
+
+    GET /v2/agendas/{agendaUID} supplies exact UID and slug identity but
+    even official=1 and an institution-looking url are self-asserted API
+    metadata. An independently fetched institutional page is still needed.
+    """
+    if not _uid(agenda_uid):
+        raise ValueError("invalid_immutable_agenda_uid")
+    if (not isinstance(public_read_key, str)
+            or not public_read_key.startswith("oa_pk_")
+            or not 15 <= len(public_read_key) <= 256
+            or any(x in public_read_key for x in ("\\r", "\\n", " ", "\\t"))):
+        raise ValueError("public_read_key_unavailable_or_not_public")
+    url = API_ORIGIN + "/v2/agendas/" + str(agenda_uid)
+    request = Request(url, headers={
+        "key": public_read_key,
+        "Accept": "application/json",
+        "User-Agent": "PtitesOndesIndependentOAV2ReadOnly/1.0",
+    })
+    fetch = opener or build_opener(_NoRedirect()).open
+    try:
+        with fetch(request, timeout=18) as response:
+            if response.geturl() != url or response.status != 200:
+                raise ValueError("direct_agenda_unexpected_endpoint_or_status")
+            raw = response.read(250_001)
+    except (OSError, TimeoutError):
+        raise ValueError("direct_agenda_unavailable") from None
+    if len(raw) > 250_000:
+        raise ValueError("direct_agenda_response_too_large")
+    try:
+        result = json.loads(raw)
+    except (ValueError, UnicodeDecodeError):
+        raise ValueError("direct_agenda_invalid_json") from None
+    if (not isinstance(result, dict)
+            or not _uid(result.get("uid"))
+            or str(result["uid"]) != str(agenda_uid)
+            or not isinstance(result.get("slug"), str)
+            or SLUG.fullmatch(result["slug"]) is None):
+        raise ValueError("direct_agenda_uid_or_slug_invalid")
+    return result
+
+
 def redacted_batch_report(reports):
     """Only non-identifying counts, suitable for public runner summaries."""
     if not isinstance(reports, list) or len(reports) > 100:
