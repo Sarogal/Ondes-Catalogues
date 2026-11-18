@@ -88,16 +88,39 @@ class _LD(HTMLParser):
 
 
 def _nodes(raw):
-    if isinstance(raw, list):
-        for item in raw[:MAX_JSONLD]:
-            yield from _nodes(item)
-    elif isinstance(raw, dict):
-        yield raw
-        graph = raw.get("@graph")
-        if isinstance(graph, list):
-            for item in graph[:MAX_JSONLD]:
-                if isinstance(item, dict):
-                    yield item
+    """Bounded nonrecursive traversal of document and @graph collections."""
+    pending = [raw]
+    emitted = 0
+    while pending and emitted < MAX_JSONLD:
+        node = pending.pop()
+        if isinstance(node, list):
+            pending.extend(reversed(node[:MAX_JSONLD]))
+        elif isinstance(node, dict):
+            yield node
+            emitted += 1
+            graph = node.get("@graph")
+            if isinstance(graph, list):
+                pending.extend(reversed(graph[:MAX_JSONLD]))
+
+
+def _types(node):
+    values = node.get("@type", []) if isinstance(node, dict) else []
+    if isinstance(values, str):
+        values = [values]
+    return {item.rsplit("/", 1)[-1] for item in values
+            if isinstance(item, str)} if isinstance(values, list) else set()
+
+
+def _place_candidates(node):
+    """Only explicit Place nodes, including Event.location typed as Place."""
+    if _types(node) & ALLOWED_PLACE_TYPES:
+        yield node
+    if any(t == "Event" or t.endswith("Event") for t in _types(node)):
+        nested = node.get("location")
+        locations = nested if isinstance(nested, list) else [nested]
+        for place in locations[:MAX_JSONLD]:
+            if isinstance(place, dict) and _types(place) & ALLOWED_PLACE_TYPES:
+                yield place
 
 
 def _place_address(html, venue, city):
@@ -109,49 +132,48 @@ def _place_address(html, venue, city):
         parser.close()
     except (TypeError, ValueError):
         return None
-    matching = []
+    # A municipality can repeat the SAME address for several sessions while
+    # listing distinct alternate names. Only divergent physical addresses
+    # are contradictory: aliases at one address are combined.
+    matching = {}
     for block in parser.blocks:
         try:
             data = json.loads(block)
         except (ValueError, TypeError):
             continue
-        for node in _nodes(data):
-            types = node.get("@type", [])
-            if isinstance(types, str):
-                types = [types]
-            types = {
-                value.rsplit("/", 1)[-1] for value in types
-                if isinstance(value, str)
-            } if isinstance(types, list) else set()
-            if not types.intersection(ALLOWED_PLACE_TYPES):
-                continue
-            names = [node.get("name")]
-            aliases = node.get("alternateName", [])
-            names += aliases if isinstance(aliases, list) else [aliases]
-            names = [name for name in names if isinstance(name, str) and norm(name)]
-            if (not names or norm(venue) not in {norm(x) for x in names}):
-                continue
-            address = node.get("address")
-            if not isinstance(address, dict):
-                continue
-            locality = address.get("addressLocality")
-            street = address.get("streetAddress")
-            postcode = address.get("postalCode")
-            country = address.get("addressCountry")
-            if (not isinstance(locality, str) or norm(locality) != norm(city)
-                    or not isinstance(street, str)
-                    or not re.fullmatch(r"[0-9]{1,4}[a-zA-Z]?\s+.+", street)
-                    or not isinstance(postcode, str)
-                    or not re.fullmatch(r"(?:[0-9]{5}|97[0-9]{3})", postcode)
-                    or country not in ("FR", "France")):
-                continue
-            match = re.fullmatch(r"([0-9]{1,4}[a-zA-Z]?)\s+(.+)", street.strip())
-            if match:
-                matching.append((match.group(1), match.group(2),
-                                 postcode, locality, tuple(sorted(set(norm(x) for x in names)))))
-    # Two conflicting official address records for one named venue are ambiguous.
-    unique = set(matching)
-    return next(iter(unique)) if len(unique) == 1 else None
+        for item in _nodes(data):
+            for node in _place_candidates(item):
+                names = [node.get("name")]
+                aliases = node.get("alternateName", [])
+                names += aliases if isinstance(aliases, list) else [aliases]
+                names = {norm(x) for x in names
+                         if isinstance(x, str) and norm(x)}
+                if not names or norm(venue) not in names:
+                    continue
+                address = node.get("address")
+                if not isinstance(address, dict):
+                    continue
+                locality = address.get("addressLocality")
+                street = address.get("streetAddress")
+                postcode = address.get("postalCode")
+                country = address.get("addressCountry")
+                if (not isinstance(locality, str) or norm(locality) != norm(city)
+                        or not isinstance(street, str)
+                        or not re.fullmatch(r"[0-9]{1,4}[a-zA-Z]?\s+.+", street)
+                        or not isinstance(postcode, str)
+                        or not re.fullmatch(r"(?:[0-9]{5}|97[0-9]{3})", postcode)
+                        or country not in ("FR", "France")):
+                    continue
+                number = re.fullmatch(
+                    r"([0-9]{1,4}[a-zA-Z]?)\s+(.+)", street.strip())
+                if number:
+                    address_key = (number.group(1), number.group(2),
+                                   postcode, locality)
+                    matching.setdefault(address_key, set()).update(names)
+    if len(matching) != 1:
+        return None
+    address, known_names = next(iter(matching.items()))
+    return (*address, tuple(sorted(known_names)))
 
 
 def review_independent_geo(lead, api_event, reviewed_source,
