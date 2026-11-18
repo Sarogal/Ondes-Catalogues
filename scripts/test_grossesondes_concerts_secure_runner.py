@@ -41,6 +41,24 @@ class PrivateIntakeHandoffTests(unittest.TestCase):
         self.assertIn("github.ref == 'refs/heads/main'", self.workflow)
         self.assertIn("cancel-in-progress: false", self.workflow)
 
+    def test_trusted_discovery_and_diagnostics_merges_trigger_fresh_intake(self):
+        # A source/genre/fairness patch merged to main should be measured
+        # immediately, not wait for the next potentially delayed cron.
+        trigger = self.workflow.split("on:\n", 1)[1].split("\npermissions:", 1)[0]
+        for path in (
+            "automation/concerts/discover.py",
+            "automation/concerts/official_rss_jsonld_bridge.py",
+            "automation/concerts/structured_first_party_preflight.py",
+            "automation/concerts/triage.py",
+            "automation/concerts/feeds.py",
+            "automation/concerts/sources.json",
+        ):
+            with self.subTest(path=path):
+                self.assertIn("'" + path + "'", trigger)
+        self.assertNotIn("pull_request:", trigger)
+        self.assertNotIn("pull_request_target:", trigger)
+        self.assertIn("    branches: [main]", trigger)
+
     def test_promisor_objects_auth_before_stage_and_push(self):
         step = self.commit_step
         self.assertIn("INTAKE_PUSH_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_WRITE_TOKEN }}", step)
