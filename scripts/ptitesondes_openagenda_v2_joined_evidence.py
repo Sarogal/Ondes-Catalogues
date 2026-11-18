@@ -38,6 +38,8 @@ REMAINING_GATES = (
 )
 SAFE_STAGES = (
     "invalid_case",
+    "organizer_index_not_confirmed",
+    "organizer_event_page_not_exact",
     "independent_venue_not_verified",
     "openagenda_identity_or_sessions_not_verified",
     "multi_day_grouping_required",
@@ -114,6 +116,42 @@ def diagnose_candidate(case, today):
     except (Exception):
         # No raw exception details: these often include private URLs or data.
         return base
+
+
+
+INDEXED_CASE = frozenset({
+    "lead", "api_event", "reviewed_agenda",
+    "reviewed_venue_source", "venue_page",
+    "geocoder_request_url", "geojson", "organizer_event_page",
+})
+
+
+def diagnose_indexed_candidate(case, reviewed_index, fetched_index, today):
+    """Use only first-party URLs DISCOVERED on a separately pinned site index.
+
+    This prevents a caller accidentally treating a candidate-supplied
+    organizer URL as an approved pin. Same confidential, read-only result
+    as diagnose_candidate; no URL, title or UID is ever in the report.
+    """
+    from ptitesondes_openagenda_v2_organizer_index import (
+        discover_from_reviewed_index, check_indexed_event_fetch,
+    )
+    base = diagnose_candidate(None, today)
+    if (not isinstance(case, dict) or set(case) != INDEXED_CASE):
+        return base
+    nominated = discover_from_reviewed_index(
+        case["lead"], reviewed_index, fetched_index)
+    if nominated.get("indexed_event_link_confirmed") is not True:
+        return dict(base, stage="organizer_index_not_confirmed")
+    if not check_indexed_event_fetch(nominated, case["organizer_event_page"]):
+        return dict(base, stage="organizer_event_page_not_exact")
+    prepared = {
+        key: value for key, value in case.items()
+        if key != "organizer_event_page"
+    }
+    prepared["reviewed_organizer"] = nominated["reviewed_organizer"]
+    prepared["organizer_page"] = case["organizer_event_page"]
+    return diagnose_candidate(prepared, today)
 
 
 def diagnose_batch(cases, today):
