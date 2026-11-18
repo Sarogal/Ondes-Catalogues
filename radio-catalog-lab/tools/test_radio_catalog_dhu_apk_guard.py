@@ -80,6 +80,54 @@ class StandaloneDhuGuardTests(unittest.TestCase):
         guard.check_metadata(self.badging, self.manifest, value,
                              self.debug_digest)
 
+    def test_observed_windows_v2_signer_format_is_supported(self):
+        # Actual apksigner output on the Windows user workstation (2026-11-18).
+        signer = (
+            'V2 Signer: certificate SHA-256 digest: '
+            f'{self.debug_digest}\n'
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, signer, self.debug_digest,
+        )
+
+    def test_versioned_v3_scheme_signer_format_is_supported(self):
+        signer = (
+            'V3.0 Signer: certificate SHA-256 digest: '
+            f'{self.debug_digest}\n'
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, signer, self.debug_digest,
+        )
+
+    def test_mixed_v2_and_v3_scheme_labels_same_key_are_supported(self):
+        signer = (
+            f'V2 Signer: certificate SHA-256 digest: {self.debug_digest}\n'
+            f'V3.0 Signer: certificate SHA-256 digest: {self.debug_digest}\n'
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, signer, self.debug_digest,
+        )
+
+    def test_mixed_scheme_different_certificate_is_rejected(self):
+        signer = (
+            f'V2 Signer: certificate SHA-256 digest: {self.debug_digest}\n'
+            f'V3.0 Signer: certificate SHA-256 digest: {"b" * 64}\n'
+        )
+        self.assert_bad(signing=signer)
+
+    def test_multiple_numbered_scheme_signers_are_rejected(self):
+        signer = (
+            f'V2 Signer: certificate SHA-256 digest: {self.debug_digest}\n'
+            f'Signer #2 certificate SHA-256 digest: {self.debug_digest}\n'
+        )
+        self.assert_bad(signing=signer)
+
+    def test_unknown_scheme_signer_format_remains_rejected(self):
+        signer = (
+            f'V9 Signer: certificate SHA-256 digest: {self.debug_digest}\n'
+        )
+        self.assert_bad(signing=signer)
+
     def test_aosp_sdk_range_signer_label_is_supported(self):
         # Android build tooling may print scheme-specific min/max SDK signers.
         scoped = self.signing.replace(
