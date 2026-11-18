@@ -58,12 +58,32 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["exclusiveBlockingReasons"]["awaiting_distinct_day_stability"], 1)
 
     def test_supported_source_is_required_for_current_auto_recheck(self):
-        x = row("one", source="bbc_official_detail_review")
+        x = row("one", source="agenda_officiel_future_venue_detail")
         r, a, c = fixtures(x)
         out = f.build(r, a, c, dt.date(2026, 11, 9))
         self.assertEqual(out["documentedOfficialGenreLeadsPendingFreshVerification"], 1)
         self.assertEqual(out["exclusiveBlockingReasons"]["verified_adapter_not_available"], 1)
         self.assertEqual(out["readyForIndependentRecheck"], 0)
+
+    def test_three_new_official_venue_sources_are_ready_but_not_approved(self):
+        sources = (
+            "bbc_official_detail_review",
+            "agenda_officiel_cave_poetes_detail",
+            "agenda_officiel_bonjour_minuit_detail_review",
+        )
+        r, a, c = fixtures(*(row("new-venue-" + str(i), source=source)
+                              for i, source in enumerate(sources)))
+        before = copy.deepcopy((r, a, c))
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        self.assertEqual(out["readyForIndependentRecheck"], 3)
+        self.assertEqual(out["stableCandidatesInSupportedSourceQueue"], 3)
+        self.assertEqual(out["privateApprovedEventsTotal"], 0)
+        self.assertEqual(out["publicEventsTotal"], 0)
+        self.assertIs(out["publicationAllowed"], False)
+        self.assertEqual((r, a, c), before)
+        for source in sources:
+            self.assertEqual(out["sourceBlockingReasons"][source],
+                             {"ready_for_independent_recheck": 1})
 
     def test_molotov_rex_backstage_do_not_require_discovery_detail_flag(self):
         # Their actual recheck contracts fetch the official individual page;
