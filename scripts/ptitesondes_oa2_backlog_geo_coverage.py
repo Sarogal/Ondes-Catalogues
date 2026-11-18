@@ -83,7 +83,8 @@ def audit_backlog_geo_coverage(
             continue
         counts["future_leads_in_active_window"] += 1
         source = row.get("collector")
-        source = source if source in KNOWN_COLLECTORS else "unrecognized_or_legacy"
+        source = (source if isinstance(source, str) and source in KNOWN_COLLECTORS
+                  else "unrecognized_or_legacy")
         by_source[source] += 1
         key = _venue_key(row)
         if key is None:
@@ -107,7 +108,7 @@ def audit_backlog_geo_coverage(
             known = location_lookup(row)
         except (ValueError, TypeError, KeyError, OverflowError, OSError):
             known = None
-        if known is None:
+        if not isinstance(known, dict):
             unmatched_venues.add(key)
             counts["leads_without_exact_existing_registry_identity"] += 1
         else:
