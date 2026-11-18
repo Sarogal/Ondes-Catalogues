@@ -136,6 +136,25 @@ class ReviewedMptVenueTests(unittest.TestCase):
         invalid[0]["address_label"] = "unverified"
         self.assertFalse(validate_curated_registry(invalid))
 
+    def test_curated_registry_schema_allows_more_buildings_without_new_parser(self):
+        # Structural-only synthetic extension: NOT a newly approved real venue.
+        example = deepcopy(self.records[0])
+        example["venue_key"] = "mpt-synthetic-venue-montpellier"
+        example["venue"] = "Maison pour tous Synthétique"
+        example["address_label"] = "44 Rue des Tests 34000 Montpellier"
+        example["institutional_url"] = (
+            "https://mpt.montpellier.fr/evenement/synthetic-example")
+        example["geo_source_url"] = (
+            "https://data.geopf.fr/geocodage/search?"
+            "q=44%20Rue%20des%20Tests%2034000%20Montpellier&limit=2")
+        expanded = reviewed_pilot_records() + [example]
+        self.assertTrue(validate_curated_registry(expanded))
+        self.assertIsNone(review_exact_venue_name(
+            "Montpellier", "Maison pour tous Synthétique"))
+        self.assertEqual(review_exact_venue_name(
+            "Montpellier", "Maison pour tous Synthétique",
+            records=expanded)["venue_key"], example["venue_key"])
+
     def test_private_free_anonymous_report_and_no_publication(self):
         responses = {row["venue_key"]: geocode(row) for row in self.records}
         report = geo_review_report(self.records, responses)
