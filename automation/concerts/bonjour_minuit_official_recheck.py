@@ -57,16 +57,20 @@ class OfficialArtistHeadings(HTMLParser):
         self.current = None
         self.collecting_badge = False
         self.sections = []
+        self.potential_short_badge = None
 
     def _finish(self):
         if self.current is not None:
             title = " ".join("".join(self.current["title"]).split())
             badge = venue.plain(" ".join(self.current["badge"]))[:100]
+            if not badge and self.current.get("first_short_p"):
+                badge = venue.plain(self.current["first_short_p"])[:100]
             if title and STYLE_PREFIX.search(badge):
                 self.sections.append((title, badge))
         self.current = None
         self.in_h2 = False
         self.collecting_badge = False
+        self.potential_short_badge = None
 
     def handle_starttag(self, tag, attrs):
         if tag in self.SKIP:
@@ -84,6 +88,14 @@ class OfficialArtistHeadings(HTMLParser):
             self.in_h2 = True
             self.collecting_badge = False
         elif tag == "p" and self.current is not None and not self.in_h2:
+            # Some legitimate venue templates express the genre as a
+            # single short P instead of a DIV/SPAN. Capture ONLY the first
+            # short P when no preceding badge exists; never use a biography.
+            self.potential_short_badge = (
+                [] if not self.current["badge"]
+                and not self.current.get("first_p_seen") else None
+            )
+            self.current["first_p_seen"] = True
             self.collecting_badge = False
 
     def handle_data(self, text):
@@ -93,6 +105,8 @@ class OfficialArtistHeadings(HTMLParser):
             self.h1s[-1].append(text)
         elif self.in_h2 and self.current is not None:
             self.current["title"].append(text)
+        elif self.potential_short_badge is not None:
+            self.potential_short_badge.append(text)
         elif self.collecting_badge and self.current is not None:
             self.current["badge"].append(text)
 
@@ -103,6 +117,11 @@ class OfficialArtistHeadings(HTMLParser):
             return
         if self.hidden:
             return
+        if tag == "p" and self.potential_short_badge is not None:
+            possible = " ".join(" ".join(self.potential_short_badge).split())
+            if self.current is not None and len(possible) <= 85:
+                self.current["first_short_p"] = possible
+            self.potential_short_badge = None
         if tag == "h1":
             self.in_h1 = False
         elif tag == "h2" and self.in_h2:
