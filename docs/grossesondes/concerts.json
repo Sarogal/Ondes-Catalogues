@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-17",
+  "updatedAt": "2026-11-18",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2330,6 +2330,41 @@
     {
       "id": "mooan-exis",
       "name": "Mooan Exis",
+      "aliases": []
+    },
+    {
+      "id": "dominique-fevrier",
+      "name": "DOMINIQUE FÉVRIER",
+      "aliases": []
+    },
+    {
+      "id": "novo-data",
+      "name": "Novö Data",
+      "aliases": []
+    },
+    {
+      "id": "barre-a-mine",
+      "name": "Barre à Mine",
+      "aliases": []
+    },
+    {
+      "id": "championne",
+      "name": "Championne",
+      "aliases": []
+    },
+    {
+      "id": "cheval-jospin",
+      "name": "Cheval Jospin",
+      "aliases": []
+    },
+    {
+      "id": "dewaere",
+      "name": "Dewaere",
+      "aliases": []
+    },
+    {
+      "id": "dalaidrama",
+      "name": "DALAÏDRAMA",
       "aliases": []
     }
   ],
@@ -14857,6 +14892,126 @@
       "history": [
         {
           "date": "2026-11-17",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261212-herouville-svinkels",
+      "title": "SVINKELS + DOMINIQUE FÉVRIER",
+      "date": "2026-12-12",
+      "artistIds": [
+        "svinkels",
+        "dominique-fevrier"
+      ],
+      "venueId": "big-band-cafe-herouville",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bigbandcafe.com/svinkels-family-friends/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Big Band Café",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-18",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-18",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270212-saint-brieuc-novo-data",
+      "title": "Novö Data + Barre à Mine",
+      "date": "2027-02-12",
+      "artistIds": [
+        "novo-data",
+        "barre-a-mine"
+      ],
+      "venueId": "bonjour-minuit-saint-brieuc",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bonjour-minuit.fr/evenement/novodata-12fev27/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Bonjour Minuit",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-18",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-18",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270319-saint-brieuc-championne",
+      "title": "Championne + Cheval Jospin",
+      "date": "2027-03-19",
+      "artistIds": [
+        "championne",
+        "cheval-jospin"
+      ],
+      "venueId": "bonjour-minuit-saint-brieuc",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bonjour-minuit.fr/evenement/championne-19mars27/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Bonjour Minuit",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-18",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-18",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270212-roubaix-dewaere",
+      "title": "Dewaere + DALAÏDRAMA",
+      "date": "2027-02-12",
+      "artistIds": [
+        "dewaere",
+        "dalaidrama"
+      ],
+      "venueId": "la-cave-aux-poetes-roubaix",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://caveauxpoetes.com/evenement/dalaidrama-dewaere/",
+      "sourceType": "salle",
+      "time": "20:00",
+      "timeMeaning": "début du concert",
+      "organizer": "La Cave aux Poètes",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-18",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-18",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
