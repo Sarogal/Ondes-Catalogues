@@ -1,0 +1,90 @@
+# P’tites Ondes — rattachement institutionnel générique d’agendas OpenAgenda
+**18 novembre 2026. Développement de diagnostic isolé, sans activation.**
+
+## Hypothèse structurante
+
+Il est irréaliste de maintenir une exception programmée pour chaque séance
+de chaque organisateur national. Une institution peut publier sur son propre
+site officiel un lien visible vers la racine d’un agenda OpenAgenda. Ce lien
+est un signal **indépendant de la collecte OpenAgenda**, qui permet de
+comprendre la relation entre son site et un agenda de programmation.
+
+**Cela ne prouve pas** que l’institution possède toutes les données de
+l’agenda, que chaque événement est effectivement organisé par elle, que
+les horaires sont exacts, que la licence permet leur redistribution, ni
+que la publication dans P’tites Ondes est autorisée.
+
+## Contrat technique
+
+`scripts/ptitesondes_openagenda_v2_institutional_delegation.py` :
+
+1. Prend un registre d'institution fourni **hors du candidat** :
+   `institution_host`, `exact_page_url`, `agenda_slug`,
+   `agenda_uid`, `timezone`. Le registre doit être maintenu
+   par une autorité indépendante et ne peut pas provenir de l'API OpenAgenda,
+   d'un lien collecté ou d'un résultat de moteur de recherche seul.
+2. Exige que la réponse institutionnelle ait été récupérée sans redirection,
+   à cette URL HTTPS exacte (hôte ne figurant pas sur OpenAgenda ou ODS).
+3. Recherche un lien HTML visible, avec un libellé explicite
+   « agenda / programmation / événements / calendrier / sorties », vers
+   **la racine** `https://openagenda.com/<slug>` de l'agenda attendu.
+   Les liens vers une fiche d'événement, les URL de redirection, les
+   faux sous-domaines, les liens masqués et les domaines homographes sont
+   insuffisants.
+4. Un résultat positif apporte uniquement
+   `institutional_root_link_observed=True`. Il laisse
+   `independently_attested_owner=False` et
+   `event_session_verified=False`.
+5. La deuxième étape
+   `diagnose_delegated_calendar_candidate` croise cette observation
+   avec les contrôles existants : coordonnées officielles de bâtiment
+   et IGN/BAN, identité agenda UID + événement UID, statut, titre,
+   date et séances API v2.
+6. Même en cas de succès structurel, le résultat indique
+   `calendar_referenced_but_event_proof_pending` et exige des contrôles
+   distincts pour la preuve de séance officielle, la propriété de
+   l'agenda, les licences/droits, l'âge/accès, les doublons historiques,
+   la classification et l'approbation de publication.
+
+Le module ne lit aucun secret, ne contacte aucun site et n'écrit aucun
+catalogue ni patch. Les sorties publiques sont uniquement des codes fixes,
+jamais une ville, une page, une UID ou un lien privé.
+
+## Pourquoi cette piste est utile
+
+Le backlog privé lu le 18 novembre contient 434 pistes, dont 412
+avec des URLs OpenAgenda. Ses 368 pistes futures correspondent à 334
+couples UID/date distincts ; plusieurs UID couvrent plusieurs séances.
+
+Les sept sources institutionnelles de lieux permanents déjà surveillées
+dans `ptitesondes_place_agenda_sources.json` ne correspondent qu'à
+**deux pistes futures distinctes** de ce backlog (appariement exact de
+ville et alias de lieu, sans attestation indépendante complète).
+
+Cette lacune de couverture motive la création d'un **registre national
+d'institutions et de leurs agendas effectivement confirmés**, revu
+une fois par source et non une fois par sortie. La présente PR ne
+fabrique aucune ligne de ce registre et ne prétend pas avoir vérifié
+le rattachement de l'un des 16 agendas OA actuellement configurés.
+
+## Absence d'assouplissement caché
+
+Cette PR **ne remplace pas** le contrat de vérification des séances
+indépendantes. Elle ajoute un palier de preuve distinct et chiffrable.
+La chaîne de publication existante n'utilise pas ce nouvel adaptateur.
+
+Une décision ultérieure d'utiliser un agenda institutionnel attesté
+comme *source officielle* de séance serait un **changement explicite de
+politique éditoriale** nécessitant validation, revue des droits et
+tests end-to-end. Aucun tel changement ici.
+
+### Préparation du prochain test réel
+
+Exécuter en environnement privé avec un échantillon de sites
+institutionnels déjà approuvés, contenant la racine OA, puis mesurer
+dans un rapport anonyme combien de couples UID/date deviennent
+« identité de calendrier confirmée » et combien restent bloqués par
+GPS, horaires, public ou droit.
+
+Ne jamais exécuter un workflow de PR avec les secrets du dépôt privé.
+Ne rien fusionner, publier ou déployer sans autorisation explicite.
