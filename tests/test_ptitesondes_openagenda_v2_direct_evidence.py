@@ -36,7 +36,14 @@ EVENT = {
     "attendanceMode": 1, "timezone": "Europe/Paris",
     "title": {"fr": "Fête jeunesse"},
     "description": {"fr": "Ateliers pour enfants et familles"},
-    "rights": {"license": "CC-BY-4.0"},
+    "rights": {
+        "license": {
+            "id": "etalab-2.0", "name": "Licence Ouverte 2.0",
+            "url": "https://www.data.gouv.fr/pages/legal/licences/etalab-2.0/"
+        },
+        "licensor": {"name": "Collectivité fictive (test)", "agendaUid": 919191},
+        "publisher": {"name": "Collectivité fictive (test)", "agendaUid": 919191},
+    },
     "location": {
         "name": "Salle des familles", "adminLevel4": "Villeurbanne",
         "countryCode": "FR", "latitude": 45.7580,
