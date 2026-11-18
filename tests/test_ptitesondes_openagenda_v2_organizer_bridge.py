@@ -197,6 +197,44 @@ class OrganizerEvidenceContract(unittest.TestCase):
         )
         self.assertEqual(bad["route"], "hold")
 
+    def test_neutral_openagenda_text_requires_independent_family_session(self):
+        lead = dict(LEAD, title="Rencontre du samedi")
+        ev = deepcopy(EVENT)
+        ev["title"] = {"fr": "Rencontre du samedi"}
+        ev["description"] = {"fr": "Rencontre à la bibliothèque"}
+        proof = review_direct_v2(lead, ev, AGENDA, VENUE, date(2026, 11, 18))
+        self.assertTrue(proof["source_evidence_structurally_valid"])
+        self.assertFalse(proof["api_family_audience_confirmed"])
+        official_html = HTML.replace("Lecture pour enfants", "Rencontre du samedi")
+        official = {"url": ORGANIZER["exact_url"], "html": official_html}
+        identity = agenda_identity_for_review(
+            {"uid": 919191, "slug": "commune-test"},
+            {"agenda_uid": "919191", "agenda_slug": "commune-test",
+             "timezone": "Europe/Paris",
+             "institution_url": "https://www.bibliotheque-test.fr/",
+             "authority_reference_url": "https://www.bibliotheque-test.fr/agenda"},
+        )
+        grouping = group_multi_day(ev)
+        # A trusted agenda homepage alone is insufficient for an event whose
+        # published API entry does not assert a family audience.
+        without_page = dry_run_first_party_fallback(
+            "uid_absent", lead, ev, proof, identity, grouping, ORGANIZER,
+            {"url": ORGANIZER["exact_url"], "html": "<p>Missing</p>"},
+            historic_uid_exists=False,
+        )
+        self.assertEqual(without_page["route"], "hold")
+        self.assertEqual(without_page["reason"],
+                         "family_audience_requires_independent_session")
+        with_page = dry_run_first_party_fallback(
+            "uid_absent", lead, ev, proof, identity, grouping, ORGANIZER,
+            official, historic_uid_exists=False,
+        )
+        self.assertEqual(with_page["route"],
+                         "direct_source_candidate_for_remaining_gates")
+        self.assertFalse(with_page["approval_granted"])
+        self.assertEqual(with_page["public_writes"], 0)
+
+
     def test_ods_present_and_historic_match_still_block_with_organizer(self):
         identity = agenda_identity_for_review(
             {"uid": 919191, "slug": "commune-test"},
