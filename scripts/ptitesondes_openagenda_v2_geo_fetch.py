@@ -8,7 +8,7 @@ All network results are treated as untrusted. Fail closed, with fixed reason
 codes only; never return arbitrary HTTP error messages or event identifiers.
 """
 import json
-from urllib.parse import urlencode, parse_qs
+from urllib.parse import quote, parse_qs
 from urllib.request import Request, HTTPRedirectHandler, build_opener
 
 from ptitesondes_openagenda_v2_geo_bridge import (
@@ -89,7 +89,7 @@ def ban_query_for_official_address(lead, reviewed_source, official_page):
     address = f"{number} {street} {postcode} {locality}"
     if not 8 <= len(address) <= MAX_QUERY_LENGTH:
         return None
-    return GEO_ENDPOINT + "?" + urlencode({"q": address, "limit": 2})
+    return GEO_ENDPOINT + "?q=" + quote(address, safe="") + "&limit=2"
 
 
 def fetch_ban_exact(query_url, opener=None):
