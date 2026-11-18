@@ -39,6 +39,7 @@ REMAINING_GATES = (
 SAFE_STAGES = (
     "invalid_case",
     "organizer_index_not_confirmed",
+    "eventon_index_not_confirmed",
     "organizer_event_page_not_exact",
     "independent_venue_not_verified",
     "openagenda_identity_or_sessions_not_verified",
@@ -144,6 +145,35 @@ def diagnose_indexed_candidate(case, reviewed_index, fetched_index, today):
     if nominated.get("indexed_event_link_confirmed") is not True:
         return dict(base, stage="organizer_index_not_confirmed")
     if not check_indexed_event_fetch(nominated, case["organizer_event_page"]):
+        return dict(base, stage="organizer_event_page_not_exact")
+    prepared = {
+        key: value for key, value in case.items()
+        if key != "organizer_event_page"
+    }
+    prepared["reviewed_organizer"] = nominated["reviewed_organizer"]
+    prepared["organizer_page"] = case["organizer_event_page"]
+    return diagnose_candidate(prepared, today)
+
+
+
+def diagnose_eventon_candidate(case, reviewed_index, fetched_index, today):
+    """Generic EventON index -> exact first-party page -> joined gates.
+
+    The official calendar's EventON timestamp is a routing hint ONLY.
+    It never certifies the date or clock and cannot be used as a right to
+    publish. The candidate cannot pin an organizer URL from its own text.
+    """
+    from ptitesondes_openagenda_v2_eventon_index import (
+        nominate_eventon_page, verify_eventon_page,
+    )
+    base = diagnose_candidate(None, today)
+    if not isinstance(case, dict) or set(case) != INDEXED_CASE:
+        return base
+    nominated = nominate_eventon_page(
+        case["lead"], reviewed_index, fetched_index)
+    if nominated.get("first_party_event_page_nominated") is not True:
+        return dict(base, stage="eventon_index_not_confirmed")
+    if not verify_eventon_page(nominated, case["organizer_event_page"]):
         return dict(base, stage="organizer_event_page_not_exact")
     prepared = {
         key: value for key, value in case.items()
