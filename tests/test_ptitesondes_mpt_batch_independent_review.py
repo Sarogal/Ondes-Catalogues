@@ -89,7 +89,7 @@ def review(listing=LIST, *, htmls=PAGES, catalog=None, page_limit=24,
            geo=geocoded):
     return review_official_listing_batch(
         listing, catalogue() if catalog is None else catalog, TODAY,
-        detail_get=lambda url: htmls[url], geocoder_get=geo,
+        detail_get=lambda url: htmls[url] if url in htmls else (_ for _ in ()).throw(OSError("unavailable official detail")), geocoder_get=geo,
         page_limit=page_limit)
 
 
