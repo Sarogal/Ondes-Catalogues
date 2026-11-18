@@ -18,7 +18,7 @@ _UNANNOUNCED = frozenset({
 })
 _BLOCKED_PATH = re.compile(
     r"(?i)(?:^|/)(?:feed|comments?|category|tag|wp-json)(?:/|$)|"
-    r"\\.(?:pdf|ics|xml|json|jpeg|jpg|png|webp)$"
+    r"[.](?:pdf|ics|xml|json|jpeg|jpg|png|webp)$"
 )
 
 
