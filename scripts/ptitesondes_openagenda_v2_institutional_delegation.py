@@ -267,14 +267,54 @@ def select_pinned_agenda_for_lead(lead, reviewed_sources):
     return _select_indexed_lead(lead, registry)
 
 
+
+def _legacy_mirror_slug(url):
+    """Parse only exact https://openagenda.com/{slug}/events/{event-slug}.
+
+    This is a discovery pointer, NEVER an OA direct-source proof. A legacy
+    title slug has no immutable event UID in its path, so the client must
+    authenticate the UID through the public OA v2 endpoint separately.
+    """
+    from urllib.parse import urlsplit
+    from ptitesondes_openagenda_v2_direct_evidence import SLUG
+    if not isinstance(url, str) or len(url) > 700:
+        return None
+    try:
+        u = urlsplit(url)
+        if (u.scheme != "https" or u.hostname != "openagenda.com"
+                or u.port not in (None, 443) or u.username or u.password
+                or u.query or u.fragment):
+            return None
+        parts = u.path.strip("/").split("/")
+        if parts and parts[0] in ("fr", "en"):
+            parts = parts[1:]
+        if (len(parts) != 3 or parts[1] != "events"
+                or SLUG.fullmatch(parts[0]) is None
+                or SLUG.fullmatch(parts[2]) is None):
+            return None
+        if re.match(r"^[0-9]{1,12}_", parts[2]):
+            return None
+        return parts[0]
+    except ValueError:
+        return None
+
+
 def _select_indexed_lead(lead, index):
     from ptitesondes_openagenda_v2_direct_evidence import _source_parts
     if not isinstance(lead, dict):
         return "lead_identity_invalid", None
     identity = _source_parts(lead.get("source_url"))
     raw_uid = lead.get("external_id")
-    if (identity is None or not isinstance(raw_uid, str)
-            or raw_uid != identity[1]):
+    if identity is None:
+        from ptitesondes_openagenda_v2_direct_evidence import _uid
+        legacy = _legacy_mirror_slug(lead.get("source_url"))
+        if (legacy is not None and _uid(raw_uid)
+                and lead.get("collector") == "opendatasoft-index"):
+            # Retain its exact original source URL. It is NOT an approved
+            # source; a separately bound OA v2 API check is mandatory.
+            return "legacy_ods_mirror_needs_authenticated_api_bridge", None
+        return "lead_identity_invalid", None
+    if not isinstance(raw_uid, str) or raw_uid != identity[1]:
         return "lead_identity_invalid", None
     rows = index.get(identity[0], [])
     if not rows:
