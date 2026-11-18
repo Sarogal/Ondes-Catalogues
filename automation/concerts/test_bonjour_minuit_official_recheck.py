@@ -115,7 +115,7 @@ class BonjourMinuitIndependentTests(unittest.TestCase):
             verify.verify(discovery(page, url), bad, cat, TODAY)
 
     def test_not_a_concert_allowlist_one_two_eight_twenty_named_artists(self):
-        for total in (1, 2, 8, 20):
+        for total in (1, 2, 8, 20, 24):
             names = tuple("ACT %02d" % index for index in range(total))
             page = show(names)
             with self.subTest(billed=total):

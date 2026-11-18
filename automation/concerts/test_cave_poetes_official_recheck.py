@@ -75,7 +75,7 @@ class CaveOfficialRecheckTests(unittest.TestCase):
         self.assertEqual(len(new), 2)
 
     def test_one_two_eight_twenty_new_groups_publisher(self):
-        for count in (1, 2, 8, 20):
+        for count in (1, 2, 8, 20, 24):
             with self.subTest(count=count):
                 names = tuple("ACT %02d" % i for i in range(count))
                 page = html(names)

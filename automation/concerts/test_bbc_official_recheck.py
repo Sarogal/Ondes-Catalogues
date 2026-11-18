@@ -57,7 +57,7 @@ def publishing(approval, catalogue):
 
 class BBCOfficialRecheckTests(unittest.TestCase):
     def test_one_two_eight_twenty_first_party_bands_admitted_by_real_publisher(self):
-        for count in (1, 2, 8, 20):
+        for count in (1, 2, 8, 20, 24):
             with self.subTest(count=count):
                 names = ["ACT %02d" % i for i in range(count)]
                 page = html_bill(names)
