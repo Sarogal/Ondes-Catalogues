@@ -4243,6 +4243,16 @@ def validate_approval(approval, venues, known_artist_ids, today):
     if event_id in ROUEN_ROCK_PAGED_VERIFIED:
         require(event.get("venueId") == "le-106-rouen",
                 "Identifiant de l'affiche Le 106 transféré hors salle")
+    reserved_bonjour_urls = {
+        spec["officialUrl"]: ident
+        for ident, spec in BONJOUR_MINUIT_VERIFIED.items()
+    }
+    if official_url in reserved_bonjour_urls:
+        require(event_id == reserved_bonjour_urls[official_url],
+                "Bonjour Minuit : fiche signée réservée à son ID historique")
+    if event_id in BONJOUR_MINUIT_VERIFIED:
+        require(event.get("venueId") == "bonjour-minuit-saint-brieuc",
+                "Bonjour Minuit : ID signé déplacé hors salle")
     reserved_bbc_urls = {spec["officialUrl"]: ident
                          for ident, spec in BBC_NORMANDY_VERIFIED.items()}
     if official_url in reserved_bbc_urls:
@@ -4260,6 +4270,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         for item in evidence if isinstance(item, dict)
     ), "Preuve officielle portant sur l'URL exacte absente")
     blacklab_auto = False
+    bonjour_auto = False
     bateau_auto = False
     laiterie_auto = False
     rockstore_auto = False
@@ -4325,6 +4336,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event_id != "go-c-20270408-biarritz-peter-hook-and-the-light" and
             event.get("time") is None
         )
+        bonjour_auto = (
+            venue == "bonjour-minuit-saint-brieuc" and
+            event_id not in BONJOUR_MINUIT_VERIFIED and
+            official_url not in reserved_bonjour_urls and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == "bonjour-minuit.fr" and
+            bool(re.fullmatch(r"/evenement/[a-z0-9-]{3,115}/",
+                              parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None
+        )
         blacklab_auto = (
             venue == "the-black-lab-wasquehal" and
             event_id not in ROCKSTORE_BLACKLAB_OFFICIAL_VERIFIED and
@@ -4381,7 +4405,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
         )
         require(bool(rex or molotov or ferrailleur or backstage
                      or atabal_pilot or atabal_multi or blacklab_auto
-                     or laiterie_auto or rockstore_auto or bateau_auto)
+                     or laiterie_auto or rockstore_auto or bateau_auto
+                     or bonjour_auto)
                 and event.get("sourceType") == "salle",
                 "Approbation automatique hors périmètre de salle agréée")
         reviewed_at = norm_date(approval.get("reviewedAt"))
@@ -5277,6 +5302,75 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "hard rock", "ska punk",
                 },
                 "Bateau Ivre : genre explicite insuffisant")
+    elif (event.get("venueId") == "bonjour-minuit-saint-brieuc"
+          and reviewer == "automated-official-recheck"):
+        require(bonjour_auto and event.get("status") == "confirmed"
+                and event.get("organizer") == "Bonjour Minuit"
+                and event.get("sourceType") == "salle"
+                and len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Bonjour Minuit auto : seul un événement vérifié est admis")
+        p = evidence[0]
+        names = p.get("officialArtistNames")
+        badges = p.get("officialArtistBadges")
+        require(p.get("url") == official_url
+                and p.get("proofType") == "official-organizer-or-venue"
+                and p.get("checkedAt") == reviewed_at.isoformat()
+                and p.get("checkedFields") ==
+                    ["artists", "date", "venue", "genre"]
+                and p.get("sourceStructure") ==
+                    "bonjour-minuit-named-h2-and-immediate-genre-badge"
+                and p.get("verifiedNewArtists") ==
+                    [a["name"] for a in new_artists]
+                and p.get("officialRoom") in ("Le Club", "La Grande Salle")
+                and p.get("doorTimeConfirmed") is None
+                and p.get("concertStartTimeConfirmed") is None,
+                "Bonjour Minuit auto : preuve nominative ou horaire non conforme")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and bool(names)
+                and all(isinstance(name, str) and 3 <= len(norm(name)) <= 100
+                        for name in names)
+                and len({norm(x) for x in names}) == len(names)
+                and isinstance(badges, list) and len(badges) == len(names)
+                and all(isinstance(x, str) and 3 <= len(x) <= 100
+                        and re.match(
+                            r"^(?:rock|metal|punk|hardcore|post punk|noise|"
+                            r"grunge|stoner|electro|electronique|pop|indie|"
+                            r"dj set|rap|hip hop|jazz|ska|soul|folk|"
+                            r"new wave|ambient|experimental|chanson|"
+                            r"psyche|psychedelique|post rock|shoegaze|"
+                            r"indus|trip hop)\b", x)
+                        for x in badges)
+                and event.get("title") == " + ".join(names),
+                "Bonjour Minuit auto : plateau ou badges non corroborés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved
+                    and norm(resolved[aid].get("name")) == norm(name)
+                    for aid, name in zip(ids, names)),
+                "Bonjour Minuit auto : groupe ou identité canonique divergents")
+        aliases = {
+            norm(alias)
+            for a in known_artist_ids.values()
+            for alias in (a.get("aliases") or [])
+            if isinstance(alias, str)
+        }
+        require(all(a["id"] == norm(a["name"]).replace(" ", "-")[:90].strip("-")
+                    and norm(a["name"]) not in aliases
+                    for a in new_artists),
+                "Bonjour Minuit auto : doublon ou alias d'artiste nouveau")
+        require(event_id == (
+                    "go-c-" + event["date"].replace("-", "") +
+                    "-saint-brieuc-" + ids[0])
+                and norm_date(event["date"]) > today
+                and len(event.get("genres") or []) == 1
+                and norm(event["genres"][0]) in {
+                    "rock progressif", "rock inde", "rock alternatif",
+                    "post rock", "post metal", "garage rock", "noise rock",
+                    "stoner", "sludge", "shoegaze", "hardcore", "metalcore",
+                    "death metal", "black metal", "doom", "punk", "grunge",
+                    "psychedelique", "garage", "metal", "rock"
+                },
+                "Bonjour Minuit auto : date, genre ou ID invalide")
     elif (event.get("venueId") == "the-black-lab-wasquehal"
           and reviewer == "automated-official-recheck"):
         # This independent gate mirrors the Black Lab's only permitted
@@ -5478,7 +5572,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     norm(y["name"]) for y in known_artist_ids.values()}
                         for x in new_artists),
                 "Jardin Moderne : groupe nouveau non corroboré ou doublonné")
-    elif event.get("venueId") == "bonjour-minuit-saint-brieuc":
+    elif (event.get("venueId") == "bonjour-minuit-saint-brieuc"
+          and not (reviewer == "automated-official-recheck"
+                   and bonjour_auto)):
+        # Individually signed Magma/SBRBS remain immutable; the new
+        # generically verified bills go through the automatic gate above.
         spec = BONJOUR_MINUIT_VERIFIED.get(event_id)
         require(spec is not None
                 and reviewer == "independent-official-verifier"
