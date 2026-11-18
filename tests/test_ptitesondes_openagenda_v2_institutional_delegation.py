@@ -171,11 +171,11 @@ class DelegatedAgendaPreflight(unittest.TestCase):
                                  "direct_api_request_not_independently_bound")
                 self.assertEqual(result["public_writes"], 0)
 
-    def test_wrong_agenda_identity_blocks_direct_event(self):
+    def test_wrong_agenda_identity_blocks_before_accepting_api_response(self):
         reviewed = dict(REVIEWED, agenda_uid=99999999)
         out = diagnose_delegated_calendar_candidate(
             direct_case(), reviewed, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
-        self.assertEqual(out["stage"], "direct_openagenda_event_not_verified")
+        self.assertEqual(out["stage"], "direct_api_request_not_independently_bound")
 
     def test_positive_structural_chain_never_verifies_session_or_ownership(self):
         result = diagnose_delegated_calendar_candidate(
