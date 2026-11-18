@@ -195,6 +195,99 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
             [{**LEAD, "sourceUrl": "https://evil.invalid/events/show"}],
             SOURCE["url"], TODAY, 0), [])
 
+    def test_fair_global_budget_rotates_across_all_official_venues(self):
+        queue = []
+        for i in range(18):
+            base = f"https://venue{i:02d}.example/agenda/"
+            source = {"name": f"Venue {i:02d}", "url": base}
+            leads = [{**LEAD, "sourceUrl":
+                      f"https://venue{i:02d}.example/concerts/date-2027/"}]
+            queue.append((source, base, leads, {}))
+        first = bridge.select_venue_probes(queue, TODAY, 0)
+        second = bridge.select_venue_probes(queue, TODAY, 1)
+        self.assertEqual(len(first), 12)
+        self.assertEqual(len(second), 12)
+        self.assertEqual(len({id(row[2]) for row in first}), 12)
+        # No venue remains permanently at the tail of the input list.
+        self.assertEqual(len({row[1] for row in first + second}), 18)
+        self.assertTrue(all(bridge.official_event_url(row[3]["sourceUrl"],
+                                                        row[1])
+                            for row in first + second))
+
+    def test_consecutive_slots_and_days_advance_over_long_rss_feed(self):
+        base = SOURCE["url"]
+        leads = [{**LEAD, "sourceUrl":
+                  f"https://venue.example/concerts/old-date-{i:02d}/"}
+                 for i in range(17)]
+        checked = []
+        for n in range(3):
+            day = TODAY + dt.timedelta(days=n)
+            for slot in (0, 1, 2):
+                selected = bridge.select_leads(leads, base, day, slot, limit=2)
+                checked.extend(item["sourceUrl"] for item in selected)
+        # Nine cycles * two links should cover all 17 distinct items.
+        self.assertEqual(len(set(checked)), 17)
+        self.assertEqual(len(checked), 18)
+
+    def test_full_scan_fair_rss_allocation_preserves_undated_leads(self):
+        import re
+        sources = []
+        for i in range(18):
+            sources.append({
+                "name": f"Venue {i:02d}", "city": "Nîmes",
+                "department": "30", "priority": "P1",
+                "url": f"https://venue{i:02d}.example/agenda/",
+            })
+        fetched_details = []
+        def download(url, **kwargs):
+            match = re.search(r"venue(\\d{2})[.]example", url)
+            self.assertIsNotNone(match)
+            index = match.group(1)
+            official = f"https://venue{index}.example/concerts/show-2027/"
+            if url.endswith("/agenda/"):
+                return "<html><body>Agenda</body></html>", url
+            if url.endswith("/feed/"):
+                return (f"<rss><channel><item><title>Annonce {index}</title>"
+                        f"<link>{official}</link></item></channel></rss>"), url
+            if url == official:
+                fetched_details.append(index)
+                event = {
+                    "@type": "MusicEvent", "name": f"Metal Band {index}",
+                    "url": official, "startDate": "2027-03-11",
+                    "genre": ["Death Metal"],
+                    "performer": {"@type": "MusicGroup",
+                                  "name": f"Metal Band {index}"},
+                    "location": {"name": f"Venue {index}",
+                                 "address": {"addressLocality": "Nîmes",
+                                             "addressCountry": "FR"}},
+                }
+                return ('<script type="application/ld+json">' +
+                        json.dumps(event) + '</script>'), url
+            raise AssertionError("Unexpected URL: " + url)
+        def feeds_for(html, final, same_host):
+            return {"ics": [], "rss": [final.replace("/agenda/", "/feed/")]}
+        venue_sets = []
+        for slot in (0, 1):
+            fetched_details.clear()
+            infos = []
+            with patch.object(discover, "download", side_effect=download), \
+                 patch.object(discover, "robots_allow", return_value=True), \
+                 patch.object(discover.feeds, "feed_links",
+                              side_effect=feeds_for):
+                rows = discover.scan_venues(
+                    {"venues": sources}, set(), TODAY, infos, scan_slot=slot)
+            self.assertEqual(len(fetched_details), 12)
+            self.assertEqual(len({x for x in fetched_details}), 12)
+            self.assertEqual(len([x for x in rows if x["date"] is None]), 18)
+            self.assertEqual(len([x for x in rows if x["date"] is not None]), 12)
+            self.assertEqual(sum(i["rssStructured"]["attempted"]
+                                 for i in infos), 12)
+            self.assertEqual(sum(i["rssStructured"]["dated"]
+                                 for i in infos), 12)
+            self.assertTrue(all(x["publicationAllowed"] is False for x in rows))
+            venue_sets.append(set(fetched_details))
+        self.assertEqual(len(venue_sets[0] | venue_sets[1]), 18)
+
     def test_full_scan_keeps_undated_rss_and_adds_dated_event(self):
         xml = ('<rss><channel><item><title>Nouvelle date officielle</title>'
                '<link>' + EVENT_URL + '</link></item></channel></rss>')
