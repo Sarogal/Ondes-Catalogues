@@ -71,6 +71,66 @@ PILOT_VENUES = (
             "q=2%20Rue%20des%20Tourterelles%2034090%20Montpellier&limit=2"
         ),
     },
+    {
+        "venue_key": "mpt-michel-colucci-montpellier",
+        "city": "Montpellier", "venue": "Maison pour tous Michel Colucci",
+        "region": "Occitanie", "department": "Hérault",
+        "postcode": "34070",
+        "address_label": "205 Rue de Cheng-Du 34070 Montpellier",
+        "lat": 43.593964, "lng": 3.840626,
+        "institutional_url": (
+            "https://mpt.montpellier.fr/evenement/drole-de-zebulon-atelier-de-cuisine"
+        ),
+        "geo_source_url": (
+            "https://data.geopf.fr/geocodage/search?"
+            "q=205%20Rue%20de%20Cheng-Du%2034070%20Montpellier&limit=2"
+        ),
+    },
+    {
+        "venue_key": "mpt-marie-curie-montpellier",
+        "city": "Montpellier", "venue": "Maison pour tous Marie Curie",
+        "region": "Occitanie", "department": "Hérault",
+        "postcode": "34080",
+        "address_label": "13 Allée Antonin Chauliac 34080 Montpellier",
+        "lat": 43.612888, "lng": 3.830471,
+        "institutional_url": (
+            "https://mpt.montpellier.fr/evenement/le-corps-le-jeu-atelier-de-motricite"
+        ),
+        "geo_source_url": (
+            "https://data.geopf.fr/geocodage/search?"
+            "q=13%20All%C3%A9e%20Antonin%20Chauliac%2034080%20Montpellier&limit=2"
+        ),
+    },
+    {
+        "venue_key": "mpt-escoutaire-montpellier",
+        "city": "Montpellier", "venue": "Maison pour tous L'Escoutaïre",
+        "region": "Occitanie", "department": "Hérault",
+        "postcode": "34070",
+        "address_label": "67 Rue des Razeteurs 34070 Montpellier",
+        "lat": 43.595533, "lng": 3.884113,
+        "institutional_url": (
+            "https://mpt.montpellier.fr/evenement/rendez-vous-au-lieu-daccueil-enfants-parents-laep"
+        ),
+        "geo_source_url": (
+            "https://data.geopf.fr/geocodage/search?"
+            "q=67%20Rue%20des%20Razeteurs%2034070%20Montpellier&limit=2"
+        ),
+    },
+    {
+        "venue_key": "mpt-francois-villon-montpellier",
+        "city": "Montpellier", "venue": "Maison pour tous François Villon",
+        "region": "Occitanie", "department": "Hérault",
+        "postcode": "34080",
+        "address_label": "55 Rue des Araucarias 34080 Montpellier",
+        "lat": 43.615165, "lng": 3.839472,
+        "institutional_url": (
+            "https://mpt.montpellier.fr/evenement/attention-ta-tete-spectacle-de-cirque-jonglage-antipodisme-danse"
+        ),
+        "geo_source_url": (
+            "https://data.geopf.fr/geocodage/search?"
+            "q=55%20Rue%20des%20Araucarias%2034080%20Montpellier&limit=2"
+        ),
+    },
 )
 
 
@@ -91,7 +151,7 @@ def reviewed_pilot_records():
 def validate_curated_registry(records=None):
     """Structural review, NOT verification that the live IGN API still agrees."""
     records = PILOT_VENUES if records is None else records
-    if not isinstance(records, (tuple, list)) or len(records) != 3:
+    if not isinstance(records, (tuple, list)) or not 3 <= len(records) <= 7:
         return False
     seen_keys, seen_names = set(), set()
     for r in records:
@@ -101,7 +161,7 @@ def validate_curated_registry(records=None):
                 or not re.fullmatch(r"mpt-[a-z-]+-montpellier", r["venue_key"])
                 or r["city"] != "Montpellier" or r["region"] != "Occitanie"
                 or r["department"] != "Hérault"
-                or r["postcode"] not in ("34000", "34090")
+                or r["postcode"] not in ("34000", "34070", "34080", "34090")
                 or not isinstance(r["venue"], str)
                 or not r["venue"].startswith("Maison pour tous ")
                 or not isinstance(r["address_label"], str)
