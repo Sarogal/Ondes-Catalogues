@@ -320,6 +320,14 @@ def run(folder, calendar, history, today, fetcher=official_text):
     original_patch = copy.deepcopy(patch)
     successes, candidates = 0, 0
     occupied = {row.get("slug") for row in patch["additions"]}
+    # Diagnostics are strictly private (source-watch-state.json); no raw HTML,
+    # URLs, exception messages, public artifacts, or publish permissions.
+    history_status = state.setdefault("archived_html_proof_last_result_private", {})
+    if not isinstance(history_status, dict):
+        raise ValueError("Invalid private archive diagnostics state")
+    def record(slug, reason):
+        history_status[slug] = {"checked_on": today.isoformat(),
+                                "result": reason}
     # Keep the two source-specific approved paths unchanged, then scan
     # a bounded rotating set of signed archived organizer homepages.
     watched = dict(PINNED_ARCHIVED_HTML_SOURCES)
@@ -331,30 +339,55 @@ def run(folder, calendar, history, today, fetcher=official_text):
                 or parent.get("officialSite") != source["officialSite"]
                 or not pinned_first_party(source["officialSite"],
                                           source["proofUrl"])):
+            record(slug, "registered_origin_or_path_mismatch")
             continue
         identity = pinned_parent_identity(parent)
         if (identity is None or parent.get("lastKnownYear") != identity[1]
                 or source["year"] != identity[1] + 1):
-            # An inconsistent historic parent must not trigger even a page fetch.
+            record(slug, "historical_identity_or_year_mismatch")
             continue
         new_slug = identity[0] + "-" + str(source["year"])
-        if new_slug in published or new_slug in archive_slugs or new_slug in occupied:
+        if new_slug in published or new_slug in archive_slugs:
+            record(slug, "already_published_or_historical")
+            continue
+        if new_slug in occupied:
+            record(slug, "already_in_private_patch")
             continue
         try:
             html = fetcher(source["proofUrl"], registered=True, raw=True)
-            proposed = candidate(parent, source, html, today)
         except (OSError, ValueError, TypeError, UnicodeError):
-            proposed = None
-        if proposed is None:
+            record(slug, "official_page_fetch_failed")
+            continue
+        try:
+            proposed = candidate(parent, source, html, today)
+            if proposed is None:
+                reason = ("visible_dates_absent_or_ambiguous"
+                          if official_date(html, parent, source["year"]) is None
+                          else "exact_edition_or_publisher_proof_rejected")
+                record(slug, reason)
+                continue
+        except (ValueError, TypeError, UnicodeError):
+            record(slug, "official_page_unparseable")
             continue
         candidates += 1
         if not stability(state, proposed, source["proofUrl"], today):
+            record(slug, "second_independent_day_pending")
             continue
         if len(patch["additions"]) >= 100:
+            record(slug, "private_append_limit")
             continue
         patch["additions"].append(proposed)
         occupied.add(proposed["slug"])
         successes += 1
+        record(slug, "added_to_private_patch")
+    # Retain only recent statuses and avoid a continually growing private state.
+    # Do not include original page, title, hostname, response body or errors.
+    if len(history_status) > 40:
+        keep = sorted(history_status, key=lambda key: (
+            history_status[key].get("checked_on", ""), key), reverse=True)[:40]
+        state["archived_html_proof_last_result_private"] = {
+            key: history_status[key] for key in keep
+        }
     if patch != original_patch:
         patch["generated_at"] = today.isoformat()
         atomic_json(folder / ("patch-" + today.isoformat() + ".json"), patch)
