@@ -55,6 +55,6 @@ jobs:
           assert "oa_pk_" in source and "oa_sk_" not in source
           preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
           assert "publisher_connected" in preflight and "public_writes" in preflight
-          assert not any(x in preflight for x in ("requests.post(", "git push", "PRIVATE_INTAKE_READ_TOKEN"))
+          assert not any(x in preflight for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           print("PASS: offline-only checks, no publisher, no private actions")
           PY
