@@ -128,7 +128,8 @@ def redacted_agenda_reference(result):
 
 
 def diagnose_delegated_calendar_candidate(case, reviewed_source,
-                                          fetched_institution_page, today):
+                                          fetched_institution_page, today,
+                                          trusted_api_context=None):
     """Separately verify the institutional link, geo and direct OA event.
 
     Crucial: this is NOT the existing session proof. A calendar hyperlink
@@ -168,6 +169,30 @@ def diagnose_delegated_calendar_candidate(case, reviewed_source,
         reviewed_source, fetched_institution_page)
     if link["institutional_root_link_observed"] is not True:
         return dict(base, stage="institutional_agenda_link_not_confirmed")
+    # The standalone OA API body does not independently attest which URL
+    # was used to fetch it. A separately trusted private reader must bind
+    # its successful exact GET /v2/agendas/{agendaUID}/events/{eventUID}.
+    # The intake candidate must NEVER manufacture this context.
+    from ptitesondes_openagenda_v2_direct_evidence import API_ORIGIN, _uid
+    lead_uid = case.get("lead", {}).get("external_id")
+    selected_agenda_uid = reviewed_source.get("agenda_uid")
+    if (not isinstance(trusted_api_context, dict)
+            or set(trusted_api_context) != {
+                "agenda_uid", "event_uid", "response_url",
+                "method", "status", "key_kind"}
+            or not _uid(trusted_api_context.get("agenda_uid"))
+            or not _uid(trusted_api_context.get("event_uid"))
+            or str(trusted_api_context["agenda_uid"]) != str(selected_agenda_uid)
+            or str(trusted_api_context["event_uid"]) != str(lead_uid)
+            or trusted_api_context.get("response_url") != (
+                API_ORIGIN + "/v2/agendas/" + str(selected_agenda_uid)
+                + "/events/" + str(lead_uid))
+            or trusted_api_context.get("method") != "GET"
+            or type(trusted_api_context.get("status")) is not int
+            or trusted_api_context["status"] != 200
+            or trusted_api_context.get("key_kind") != "public_read_only"):
+        return dict(base, stage="direct_api_request_not_independently_bound",
+                    institutional_calendar_link_observed=True)
     try:
         geo = review_independent_geo(
             case["lead"], case["api_event"], case["reviewed_venue_source"],
