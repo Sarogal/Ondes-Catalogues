@@ -186,7 +186,7 @@ class EventONFirstPartyIndex(unittest.TestCase):
         self.assertFalse(result["publisher_connected"])
         self.assertIn("historic_deduplication", result["outstanding_gates"])
         case["organizer_event_page"]["html"] = organizer_html().replace(
-            "5 décembre 2026", "6 décembre 2026")
+            "2026-12-05T14:30:00+01:00", "2026-12-06T14:30:00+01:00")
         held = diagnose_eventon_candidate(
             case, REVIEWED, {"url": INDEX_URL, "html": html()}, TODAY)
         self.assertEqual(held["stage"], "organizer_session_not_confirmed")
