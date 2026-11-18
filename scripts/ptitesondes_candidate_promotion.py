@@ -729,7 +729,16 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     from collections import Counter
     reasons = Counter(x.get("status", "unknown") + ": " +
                       str(x.get("reason", ""))[:110] for x in rejected)
+    # Read-only UID-first funnel added to the PRIVATE full preview report.
+    # No API request, untrusted runtime secret, mutation, added event or
+    # public Actions log can be produced by this diagnostic. Existing
+    # permitted(), exact geographic registry and publisher gates are intact.
+    from ptitesondes_openagenda_v2_backlog_reconciliation import (
+        reconcile_backlog,
+    )
+    oa2_readonly_funnel = reconcile_backlog(leads, published, today)
     report = {
+        "openagenda_v2_readonly_funnel": oa2_readonly_funnel,
         "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
         "backlog_total": len(leads), "eligible_with_reviewed_venue": len(reviewable),
