@@ -82,14 +82,14 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
             organizer="The Black Lab",
             description="death metal live")
         candidate = lead(page, BLACK_DAHLIA)
-        with self.assertRaisesRegex(ValueError, "multi-artistes"):
+        with self.assertRaisesRegex(ValueError, "corroboré"):
             check.verify(candidate, page, catalog(), self.TODAY)
 
     def test_artist_unknown_not_created_from_title(self):
         page = DETAIL.format(
             title="NEW FANTASY BAND", date="mercredi 3 février 2027",
             organizer="The Black Lab", description="death metal live")
-        with self.assertRaisesRegex(ValueError, "canonique"):
+        with self.assertRaisesRegex(ValueError, "corroboré"):
             check.verify(lead(page), page, catalog(), self.TODAY)
 
     def test_reported_event_in_slug_refused_even_if_genre(self):
@@ -160,6 +160,43 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
                 candidate[field] = value
                 with self.assertRaises(ValueError):
                     check.verify(candidate, dahlia(), catalog(), self.TODAY)
+
+    def test_new_first_party_performer_becomes_canonical_artist(self):
+        page = DETAIL.format(title="NEW FANTASY BAND",
+                             date="mercredi 3 février 2027",
+                             organizer="The Black Lab",
+                             description="NEW FANTASY BAND death metal live")
+        record = check.verify(lead(page), page, catalog(), self.TODAY)
+        self.assertEqual(record["newArtists"],
+                         [{"id":"new-fantasy-band","name":"NEW FANTASY BAND"}])
+        self.assertEqual(record["event"]["artistIds"],["new-fantasy-band"])
+
+    def test_exact_first_party_lineup_scales_without_artist_count_cap(self):
+        for count in (2, 8, 24):
+            with self.subTest(artists=count):
+                names = [f"GROUP {i:02d}" for i in range(1,count+1)]
+                bill = " + ".join(names)
+                page = DETAIL.format(title=bill,
+                    date="mercredi 3 février 2027",
+                    organizer="The Black Lab",description=bill+" death metal live")
+                record = check.verify(lead(page), page, catalog(), self.TODAY)
+                self.assertEqual(record["officialEvidence"][0]
+                                 ["officialArtistNames"],names)
+                self.assertEqual(len(record["newArtists"]),count)
+                self.assertEqual(len(record["event"]["artistIds"]),count)
+                self.assertIsNone(record["event"]["time"])
+
+    def test_musical_influences_and_near_spelling_never_create_performers(self):
+        page = DETAIL.format(title="ME GUSTA TU",
+            date="mercredi 3 février 2027",organizer="The Black Lab",
+            description="ME GUSTAS TÚ joue du punk en hommage à Manu Chao")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(page),page,catalog(),self.TODAY)
+        wrong = DETAIL.format(title="HOULE + CÂN BARDD",
+            date="mercredi 3 février 2027",organizer="The Black Lab",
+            description="Influencé par HOULE et CÂN BARDD, death metal")
+        with self.assertRaisesRegex(ValueError,"corroboré"):
+            check.verify(lead(wrong),wrong,catalog(),self.TODAY)
 
     def test_alias_collision_never_invents_artist(self):
         cl = catalog()
