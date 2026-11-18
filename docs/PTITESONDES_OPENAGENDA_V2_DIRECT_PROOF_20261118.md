@@ -92,3 +92,15 @@ Exemple de structure du fichier temporaire (valeurs fictives, jamais de clé dan
 ```
 
 Le script n'est appelé par aucun cron et ne dispose d'aucune capacité de publication. Pour l'utiliser, il faudra d'abord préparer le fichier de cas à partir des dossiers réellement homologués, puis exécuter uniquement depuis un contexte **de confiance hors PR non fusionnée**, avec la clé de lecture du dépôt public déjà disponible en Secret GitHub Actions. Le branchement aux moteurs et l'exécution réelle ne sont pas compris dans la PR. Les tests sont **offline avec transports simulés**, sans secret, sans consommation de minutes sur le dépôt privé et sans déclencheur planifié supplémentaire.
+
+### Contre-échantillon public en lecture seule (18/11)
+
+Deux autres UID publiquement documentés ont été interrogés avec la **même requête ODS exacte** :
+
+| Identité publique | Résultat ODS | Constat sur page OpenAgenda |
+| --- | --- | --- |
+| [CINOR, `55943123`](https://openagenda.com/fr/reseau-des-mediatheques-cinor/events/55943123_activite-manuelle-8019889) | `total_count=1`, UID concordant | Atelier du 18/11/2026, 14h–16h heure de La Réunion, 6–8 ans, inscription ; concédant « Réseau de Lecture Publique de la CINOR », Licence Ouverte 2.0 |
+| [Bibliothèques de Marseille, `84874552`](https://openagenda.com/fr/bibliotheques-de-marseille/events/84874552_decouverte-des-services-en-ligne-des-bibliotheques-3983726) | `total_count=1`, UID concordant | Atelier du 12/11/2026, donc passé au 18/11, non publiable comme sortie future |
+| [Villeurbanne, `27039422`](https://openagenda.com/fr/villeurbanne2022/events/27039422_7427103) | `total_count=0` | Exposition continue à regrouper, horaires officiels uniquement pour une sous-période |
+
+Ce contre-échantillon établit que le fallback doit distinguer **absence réelle** et **fiche déjà présente dans ODS** : l'API directe n'est pas un second vote indépendant qui permettrait de supprimer la preuve de source, les restrictions de catégories ou la déduplication. Les pages OpenAgenda ont été consultées sans clé, **pas** les réponses API v2 authentifiées. Les âges, horaires et conditions ici sont des observations de fiches publiques à revalider à la date d'une éventuelle publication, jamais des attestations d'organisateur indépendantes.
