@@ -1,0 +1,60 @@
+name: Ondes — rattrapage autonome Festivals et Sorties enfants
+
+on:
+  pull_request:
+    paths:
+      - 'monitoring/ondes_schedule_catchup.py'
+      - 'monitoring/test_ondes_schedule_catchup.py'
+      - '.github/workflows/ondes-national-schedule-catchup.yml'
+  # Six independent checks per UTC day. No untrusted event, no private token,
+  # never signs or publishes directly. GitHub can still delay cron launches.
+  schedule:
+    - cron: '41 2,6,10,14,18,22 * * *'
+
+concurrency:
+  group: ondes-national-schedule-catchup
+  cancel-in-progress: false
+
+jobs:
+  offline-tests:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests autonomes sans credentials ni écriture privée
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s monitoring -p 'test_ondes_schedule_catchup.py' -v
+
+  catchup:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verifier tests de securite sur main
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s monitoring -p 'test_ondes_schedule_catchup.py' -v
+      - name: Rattraper uniquement les collectes manquantes via leurs pipelines proteges
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python monitoring/ondes_schedule_catchup.py --execute
