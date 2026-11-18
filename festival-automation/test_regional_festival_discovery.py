@@ -99,14 +99,17 @@ class RegionalTests(unittest.TestCase):
                 load_indexes({"schema":SCHEMA,"indexes":[bad]})
         with self.assertRaises(ValueError):
             load_indexes({"schema":SCHEMA,"indexes":[A,A]})
-    def test_national_config_has_thirteen_regions_and_only_curated_https(self):
+    def test_national_config_covers_overseas_and_only_curated_https(self):
         import json
         file = Path(__file__).with_name("regional_festival_indexes.json")
         source = json.loads(file.read_text(encoding="utf-8"))
         seeds = load_indexes(source)
-        self.assertEqual(len(seeds), 18)
-        self.assertEqual(len({s["region"] for s in seeds}), 13)
-        self.assertEqual(len({s["url"] for s in seeds}), 18)
+        self.assertEqual(len(seeds), 22)
+        self.assertEqual(len({s["region"] for s in seeds}), 17)
+        self.assertEqual(len({s["url"] for s in seeds}), 22)
+        self.assertEqual({
+            "La Réunion", "Martinique", "Guadeloupe", "Nouvelle-Calédonie"
+        } - {s["region"] for s in seeds}, set())
         self.assertEqual(set(APPROVED), {s["url"] for s in seeds})
         for seed in seeds:
             self.assertTrue(seed["url"].startswith("https://"))
@@ -117,6 +120,28 @@ class RegionalTests(unittest.TestCase):
         source["indexes"].append(dict(seeds[0], id="unapproved-copy"))
         with self.assertRaises(ValueError):
             load_indexes(source)
+
+    def test_overseas_seed_is_private_only_and_wrong_region_is_denied(self):
+        site = "https://www.lesilesdeguadeloupe.com/agenda/"
+        seed = {"id": "glp-tourisme", "region": "Guadeloupe", "url": site}
+        self.assertEqual(load_indexes({"schema": SCHEMA, "indexes": [seed]}),
+                         [seed])
+        for unsafe in (dict(seed, region="Martinique"),
+                       dict(seed, url="https://evil.example/agenda/"),
+                       dict(seed, url="https://www.lesilesdeguadeloupe.com/agenda/?next=https://evil.example")):
+            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
+                load_indexes({"schema": SCHEMA, "indexes": [unsafe]})
+        html = ('<main><a href="/fete-manifestation/metal-fest-2027/">'
+                'Metal Fest 2027</a></main>')
+        state, r = {}, report("2026-11-06")
+        found = scan_regional_indexes(r, state, [seed], "2026-11-06",
+                                      lambda _: html, limit=1)
+        self.assertEqual(len(found), 1)
+        self.assertIs(found[0]["publication_authorized"], False)
+        self.assertEqual(r["regional_festival_publications"], 0)
+        self.assertEqual(r["regional_festival_detail_pages_checked_review_only"], 0)
+        self.assertTrue(found[0]["candidate_url"].startswith(
+            "https://www.lesilesdeguadeloupe.com/"))
 
     def test_region_metrics_distinguish_configured_attempted_scanned(self):
         r = report()
