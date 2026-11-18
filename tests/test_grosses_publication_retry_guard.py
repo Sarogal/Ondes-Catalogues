@@ -59,7 +59,12 @@ class ConcurrentPublishRetryGuardTests(unittest.TestCase):
         w = self.workflow
         self.assertIn("if: github.event_name == 'pull_request'", w)
         self.assertIn("permissions:\n      contents: read", w)
-        self.assertIn("if: ${{ github.event_name != 'pull_request'", w)
+        # Source-triggered publication now has a stronger multiline guard.
+        # Preserve the invariant that a PR can never enter the privileged job.
+        self.assertTrue(
+            "if: ${{ github.event_name != 'pull_request'" in w or
+            ("if: >-\n      ${{\n        github.event_name != 'pull_request'" in w)
+        )
         self.assertIn("contents: write\n      actions: write", w)
         self.assertIn("cron: '47 10 * * *'", w)
         self.assertIn("cron: '45 17 * * *'", w)
