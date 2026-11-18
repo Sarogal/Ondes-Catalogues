@@ -19,37 +19,13 @@ REGISTRY_SCHEMA = "grossesondes.concert.intake.v1"
 APPROVALS_SCHEMA = "grossesondes.concert.approvals.v1"
 OUTPUT_SCHEMA = "grossesondes.concert.private-funnel.v1"
 
-# Mirrors the source dispatch allowlist in official_recheck.process.
-# Diagnostic only. Adding a value here NEVER grants publication permission.
-AUTOMATIC_RECHECK_SOURCES = frozenset({
-    "agenda_officiel_rex_genre",
-    "agenda_officiel_molotov_genre",
-    "agenda_officiel_ferrailleur_genre",
-    "agenda_officiel_backstage_detail",
-    "agenda_officiel_atabal_detail",
-    "agenda_officiel_blacklab_detail_review",
-    "agenda_officiel_laiterie_detail_review",
-    "agenda_officiel_rockstore_detail_review",
-    "bateau_ivre_official_detail_review",
-    "agenda_officiel_bonjour_minuit_detail_review",
-    "bbc_official_detail_review",
-    "agenda_officiel_cave_poetes_detail",
-})
-# Only these verifiers require discovery's officialDetailFound=True. The Rex,
-# Molotov and Backstage independently fetch and verify the first-party detail;
-# a discovery flag is not required by their actual recheck contracts.
-# This affects PRIVATE DIAGNOSTICS ONLY, not qualification or publication.
-DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES = frozenset({
-    "agenda_officiel_ferrailleur_genre",
-    "agenda_officiel_atabal_detail",
-    "agenda_officiel_blacklab_detail_review",
-    "agenda_officiel_laiterie_detail_review",
-    "agenda_officiel_rockstore_detail_review",
-    "bateau_ivre_official_detail_review",
-    "agenda_officiel_bonjour_minuit_detail_review",
-    "bbc_official_detail_review",
-    "agenda_officiel_cave_poetes_detail",
-})
+# Immutable source-wide approval contract shared with official_recheck.
+# Used ONLY to explain private blockers, never to grant publication.
+from verifier_contract import (
+    AUTOMATIC_RECHECK_SOURCES,
+    DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES,
+)
+
 TERMINAL_STATUSES = frozenset({"approved", "rejected", "superseded"})
 EXCLUDED_BUCKETS = frozenset({
     "cancellation_watch", "excluded_nonconcert", "festival_overlap_review",
