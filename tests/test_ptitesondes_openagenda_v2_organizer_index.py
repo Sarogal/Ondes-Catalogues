@@ -33,10 +33,13 @@ def document(anchor=None, before="", after=""):
             "<nav>" + anchor + "</nav>" + after + "</main></body></html>")
 
 
-def discover(*, lead=None, registry=None, index_html=None, page_url=None):
+_DEFAULT_LEAD = object()
+
+
+def discover(*, lead=_DEFAULT_LEAD, registry=None, index_html=None, page_url=None):
     registry = deepcopy(INDEX if registry is None else registry)
     return discover_from_reviewed_index(
-        deepcopy(LEAD if lead is None else lead), registry,
+        deepcopy(LEAD if lead is _DEFAULT_LEAD else lead), registry,
         {"url": INDEX["exact_index_url"] if page_url is None else page_url,
          "html": document() if index_html is None else index_html})
 
