@@ -163,8 +163,8 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
                 return html_for(), url
             raise AssertionError("Unexpected fetch: " + url)
         report = []
-        with patch.object(discover, "download", side_effect=download), \\
-             patch.object(discover, "robots_allow", return_value=True), \\
+        with patch.object(discover, "download", side_effect=download), \
+             patch.object(discover, "robots_allow", return_value=True), \
              patch.object(discover.feeds, "feed_links",
                           return_value={"ics": [], "rss": [RSS]}):
             rows = discover.scan_venues(
