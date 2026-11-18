@@ -11,6 +11,7 @@ from ptitesondes_openagenda_v2_institutional_delegation import (
     redacted_agenda_reference,
     diagnose_delegated_calendar_candidate,
     select_pinned_agenda_for_lead, census_institution_pins_on_private_backlog,
+    diagnose_legacy_ods_authenticated_mapping,
 )
 from test_ptitesondes_openagenda_v2_joined_evidence import envelope, TODAY
 
@@ -279,6 +280,86 @@ class DelegatedAgendaPreflight(unittest.TestCase):
         self.assertEqual(r["public_writes"], 0)
         for secret in (PAGE_URL, HOST, SLUG, c["title"], c["source_url"]):
             self.assertNotIn(secret, json.dumps(r))
+
+
+    def test_legacy_ods_mirror_routed_to_api_not_accepted_as_direct_proof(self):
+        c = dict(direct_case()["lead"], collector="opendatasoft-index",
+                 source_url="https://openagenda.com/" + SLUG
+                 + "/events/lecture-pour-enfants")
+        status, pin = select_pinned_agenda_for_lead(c, [REVIEWED])
+        self.assertEqual(status, "legacy_ods_mirror_needs_authenticated_api_bridge")
+        self.assertIsNone(pin)
+        out = diagnose_legacy_ods_authenticated_mapping(
+            c, REVIEWED, direct_case()["api_event"], TRUSTED)
+        self.assertEqual(out["stage"],
+                         "legacy_identity_api_bound_other_gates_pending")
+        self.assertTrue(out["api_event_identity_bound_for_review"])
+        self.assertFalse(out["canonical_source_url_verified"])
+        self.assertFalse(out["independent_event_sessions_verified"])
+        self.assertFalse(out["approval_granted"])
+        self.assertEqual(out["public_writes"], 0)
+        raw = json.dumps(out)
+        for private in (PAGE_URL, HOST, SLUG, c["title"], c["source_url"]):
+            self.assertNotIn(private, raw)
+
+    def test_legacy_bridge_requires_private_direct_get_and_true_identity(self):
+        c = dict(direct_case()["lead"], collector="opendatasoft-index",
+                 source_url="https://openagenda.com/" + SLUG
+                 + "/events/lecture-pour-enfants")
+        evt = direct_case()["api_event"]
+        for ctx in (
+            None, dict(TRUSTED, method="POST"),
+            dict(TRUSTED, status=301),
+            dict(TRUSTED, key_kind="owner_secret"),
+            dict(TRUSTED, agenda_uid="9999999"),
+            dict(TRUSTED, event_uid="77777777"),
+            dict(TRUSTED, response_url=TRUSTED["response_url"]+"?key=secret"),
+        ):
+            with self.subTest(context=bool(ctx)):
+                result = diagnose_legacy_ods_authenticated_mapping(
+                    c, REVIEWED, evt, ctx)
+                self.assertEqual(result["stage"],
+                                 "api_event_request_not_independently_bound")
+                self.assertFalse(result["api_event_identity_bound_for_review"])
+        for payload, stage in (
+            (dict(evt, uid=98765432), "api_event_uid_not_concordant"),
+            (dict(evt, title={"fr": "Spectacle adultes"}),
+             "api_event_title_not_concordant"),
+            (dict(evt, location=dict(evt["location"], name="Lieu différent")),
+             "api_event_place_identity_not_concordant"),
+        ):
+            result = diagnose_legacy_ods_authenticated_mapping(
+                c, REVIEWED, payload, TRUSTED)
+            self.assertEqual(result["stage"], stage)
+            self.assertFalse(result["approval_granted"])
+
+    def test_fake_legacy_domain_or_uid_in_url_is_never_accepted(self):
+        c = dict(direct_case()["lead"], collector="opendatasoft-index")
+        for url in (
+            "https://openagenda.com.evil.example/" + SLUG + "/events/titre",
+            "https://openagenda.com/" + SLUG + "/events/12345678_titre",
+            "https://openagenda.com/" + SLUG + "/events/titre?redirect=evil",
+            "https://openagenda.com/" + SLUG + "/events/titre#fake",
+            "http://openagenda.com/" + SLUG + "/events/titre",
+        ):
+            with self.subTest(url=url):
+                out = diagnose_legacy_ods_authenticated_mapping(
+                    dict(c, source_url=url), REVIEWED,
+                    direct_case()["api_event"], TRUSTED)
+                self.assertEqual(out["stage"],
+                                 "invalid_or_unreviewed_legacy_pointer")
+
+    def test_legacy_mirrors_counted_separately_from_strict_url_uid(self):
+        c = dict(direct_case()["lead"], collector="opendatasoft-index")
+        mirror = dict(c, source_url="https://openagenda.com/" + SLUG
+                      + "/events/lecture-pour-enfants")
+        report = census_institution_pins_on_private_backlog(
+            [c, mirror], [REVIEWED], TODAY)
+        self.assertEqual(
+            report["counts"].get("institution_pin_selected_for_verification_only"), 1)
+        self.assertEqual(
+            report["counts"].get("legacy_ods_mirror_needs_authenticated_api_bridge"), 1)
+        self.assertFalse(report["approval_granted"])
 
     def test_fail_closed_for_invalid_or_oversized_document_and_redaction(self):
         self.assertEqual(inspect(page="<html>").get("reason"),
