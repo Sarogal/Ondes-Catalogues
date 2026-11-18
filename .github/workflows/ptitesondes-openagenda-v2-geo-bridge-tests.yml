@@ -1,0 +1,42 @@
+name: "P'tites Ondes — preuve GPS institution + IGN/BAN (isolée)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'docs/PTITESONDES_OPENAGENDA_V2_GEO_BRIDGE_20261118.md'
+      - '.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  geo-adversarial-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run generic venue geocode contract tests
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_bridge.py' -v
+      - name: Verify isolated test job has no secret, publish or cron
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path('.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml').read_text()
+          assert 'contents: read' in wf
+          assert not any(line.strip().startswith('schedule:') for line in wf.splitlines())
+          assert not any(word in wf for word in ('se' + 'crets.', 'contents: write', 'git push', 'deploy-pages'))
+          src = Path('scripts/ptitesondes_openagenda_v2_geo_bridge.py').read_text()
+          assert 'public_writes' in src and 'publisher_connected' in src
+          assert not any(word in src for word in ('urlopen(', 'requests.post(', 'git push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          print('PASS: isolated offline geometry tests, zero secrets/publisher')
+          PY
