@@ -4334,8 +4334,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             not parsed_url.username and not parsed_url.password and
             not parsed_url.port and not parsed_url.query and
             not parsed_url.fragment and
-            event.get("time") is None and
-            not (approval.get("newArtists") or [])
+            event.get("time") is None
         )
         bateau_auto = (
             venue == "le-bateau-ivre-tours" and
@@ -5279,42 +5278,75 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Bateau Ivre : genre explicite insuffisant")
     elif (event.get("venueId") == "the-black-lab-wasquehal"
           and reviewer == "automated-official-recheck"):
-        # This independent gate mirrors the Black Lab's only permitted
-        # verifier: one existing canonical artist, a stable first-party
-        # event, no inferred guest, venue, or concert start.
+        # Legacy signed single-artist approvals retain their original
+        # strict contract. The reusable v2 verifier must separately prove
+        # every name (existing or new), and no musical-start inference.
         require(blacklab_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "The Black Lab"
-                and len(ids) == 1 and new_artists == []
-                and len(evidence) == 1 and isinstance(evidence[0], dict),
-                "Black Lab automatique : profil de concert non autorisé")
-        p = evidence[0]
-        require(p.get("url") == official_url
-                and p.get("proofType") == "official-organizer-or-venue"
-                and p.get("checkedAt") == reviewed_at.isoformat()
-                and p.get("checkedFields") ==
-                    ["artists", "date", "venue", "genre"]
-                and p.get("sourceStructure") ==
-                    "official-event-single-known-artist-recheck"
-                and p.get("officialArtistNames") == [event.get("title")],
-                "Black Lab automatique : preuve nominative insuffisante")
-        artist = known_artist_ids.get(ids[0])
-        require(isinstance(artist, dict)
-                and norm(artist.get("name")) == norm(event.get("title"))
-                and norm(event.get("title")) != ""
-                and event_id == ("go-c-" + event["date"].replace("-", "") +
-                                 "-wasquehal-" + ids[0]),
-                "Black Lab automatique : artiste inconnu ou titre ambigu")
-        require(norm_date(event.get("date")) > today
+                and len(evidence) == 1 and isinstance(evidence[0],dict),
+                "Black Lab automatique : concert hors périmètre")
+        proof = evidence[0]
+        require(proof.get("url") == official_url
+                and proof.get("proofType") == "official-organizer-or-venue"
+                and proof.get("checkedAt") == reviewed_at.isoformat()
+                and proof.get("checkedFields") ==
+                  ["artists","date","venue","genre"],
+                "Black Lab : preuve de source officielle absente")
+        structure = proof.get("sourceStructure")
+        if structure == "official-event-single-known-artist-recheck":
+            require(len(ids) == 1 and new_artists == []
+                    and proof.get("officialArtistNames") == [event.get("title")]
+                    and isinstance(known_artist_ids.get(ids[0]),dict)
+                    and norm(known_artist_ids[ids[0]]["name"]) ==
+                        norm(event.get("title")),
+                    "Black Lab : preuve historique canonique invalide")
+        else:
+            require(structure == "blacklab-first-party-named-bill-in-detail-v2",
+                    "Black Lab : preuve nominative non autorisée")
+            names = proof.get("officialArtistNames")
+            resolved = dict(known_artist_ids)
+            resolved.update(added)
+            require(isinstance(names,list) and len(names) == len(ids)
+                    and len(names) > 0
+                    and all(isinstance(n,str) and 3 <= len(n) <= 100
+                            and 3 <= len(norm(n)) <= 100 for n in names)
+                    and len({norm(n) for n in names}) == len(ids)
+                    and event.get("title") == " + ".join(names)
+                    and all(isinstance(resolved.get(aid),dict)
+                            and norm(resolved[aid].get("name")) == norm(name)
+                            for aid,name in zip(ids,names))
+                    and proof.get("verifiedNewArtists") ==
+                        [a["name"] for a in new_artists],
+                    "Black Lab : liste de groupes ou nouvelles identités incomplètes")
+            old_names = {norm(a.get("name")) for a in known_artist_ids.values()}
+            old_aliases = {norm(alias) for a in known_artist_ids.values()
+                           for alias in (a.get("aliases") or [])
+                           if isinstance(alias,str)}
+            require(all(norm(a["name"]) not in old_names | old_aliases
+                        and a["id"] == norm(a["name"]).replace(" ","-")[:90].strip("-")
+                        for a in new_artists),
+                    "Black Lab : collision ou alias dans les nouveaux groupes")
+            require(proof.get("unannouncedSupportLabel") is None or
+                    proof["unannouncedSupportLabel"] in {
+                        "guest","guests","special guest","special guests",
+                        "invite surprise","premiere partie surprise",
+                        "support surprise","surprise","a confirmer","tba"},
+                    "Black Lab : invité non nommé invérifiable")
+            require(not re.search(r"\\b(?:guest|guests|surprise|tba)\\b",
+                                  norm(event.get("title",""))),
+                    "Black Lab : faux artiste invité")
+        require(event_id == ("go-c-"+event["date"].replace("-","")+
+                            "-wasquehal-"+ids[0])
+                and norm_date(event.get("date"))>today
                 and event.get("time") is None,
-                "Black Lab automatique : date passée ou heure inférée")
-        require(len(event.get("genres") or []) == 1 and
+                "Black Lab : date ou début musical inventé")
+        require(len(event.get("genres") or [])==1 and
                 norm(event["genres"][0]) in {
-                    "metal", "metalcore", "deathcore", "hardcore", "punk",
-                    "stoner", "sludge", "doom", "thrash", "grind",
-                    "hard rock", "grunge", "noise rock", "post punk",
-                    "rock psychedelique",
-                },
-                "Black Lab automatique : genre de concert non explicite")
+                    "metal","metalcore","deathcore","hardcore","punk",
+                    "stoner","sludge","doom","thrash","grind",
+                    "hard rock","grunge","noise rock","post punk",
+                    "rock psychedelique"},
+                "Black Lab : genre non corroboré")
     elif (event.get("venueId") == "rockstore-montpellier"
           and reviewer == "automated-official-recheck"):
         # This publisher gate is independent from the discovery verifier.
