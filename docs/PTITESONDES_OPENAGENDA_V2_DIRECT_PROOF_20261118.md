@@ -48,3 +48,23 @@ Tests : dossier fictif de Guadeloupe avec fuseau et codes administratifs vérifi
 5. Autorisation explicite avant toute fusion, déploiement ou ouverture des nouvelles catégories à la carte.
 
 Non modifiés : scripts/ptitesondes_candidate_promotion.py, scripts/merge_policy.py, catalogues, crons, runners privés, Infomaniak et Grosses Ondes.
+
+## Lot de raccordement en lecture seule (18 novembre, après le premier audit)
+
+Le correctif du contrat `rights` exige désormais la **forme réellement documentée par API v2** : `rights.license.id` et `rights.licensor.name`, pas une licence sous forme de texte. La licence identifiée reste **non examinée** au sens éditorial : le champ `rights_reviewed` demeure faux. Selon https://developers.openagenda.com/licence/, l'identité du concédant peut différer de celle de l'éditeur de l'agenda, et une mention de source/licence/date de mise à jour sera nécessaire en cas de réutilisation réelle.
+
+Le nouveau module sans I/O `scripts/ptitesondes_openagenda_v2_preintegration.py` prépare trois contrats **sans admission ni publication** :
+
+1. **Agenda** : UID, slug, fuseau IANA et origine institutionnelle épinglés dans un registre *maintenu* par une personne, puis comparaison exacte avec les métadonnées API. Le drapeau OpenAgenda `official` ou un nom d'institution saisi librement ne remplace pas la preuve indépendante. Une page institutionnelle récupérée séparément doit contenir un véritable lien HTML HTTPS vers la racine exacte de l'agenda ; les ressemblances de slug et les domaines usurpés échouent. Même la concordance ne vaut pas attestation que **chaque événement** de l'agenda a été créé par l'organisateur. La fonction ne s'occupe pas des permissions de publication.
+2. **Regroupement** : contrôle des créneaux datés et horodatés, 24 h max, absence de chevauchement, fuseau local, UID immuable. Un UID multi-jours reste **bloqué** sans source organisatrice indépendante. Une exposition dont la période est explicitement documentée devient une proposition de **fiche de période** à examiner ; une série n'est reconnue qu'en cas de correspondance intégrale des horaires officiels. Dans les deux cas, `daily_cards_authorized=false` et `publication_authorized=false`. Les 29 journées possibles du Studio 24 ne deviennent jamais 29 cartes par cette seule qualification.
+3. **Fallback ODS** : la voie directe ne peut être envisagée qu'en cas d'UID absent du miroir ou d'indisponibilité temporaire, après preuve structurelle API, identité de l'agenda, lien institutionnel indépendant et absence d'UID historique connu. Les incohérences ou divergences d'ODS sont **bloquantes**, pas contournables. Les cas multi-jours sont retenus pour regroupement. La seule issue favorable est `direct_source_candidate_for_remaining_gates` : contrôle de l'organisateur exact, droits et crédits, âge, accès, catégories, GPS, dédoublonnage et synchronisation historique restent obligatoires.
+
+### Connexion réelle encore interdite
+
+Le promoteur `scripts/ptitesondes_candidate_promotion.py`, `merge_policy.py`, `proof_text.py`, la collecte privée, les catalogues, les crons et le site **ne sont pas modifiés**. La lecture API n'a pas été testée live sur la branche PR, faute de clé publique de lecture utilisable dans cet environnement isolé ; ne jamais injecter une clé dans le code, un rapport public ou un déclenchement PR non fiable. Un `workflow_dispatch` de lecture seule avec l'environnement de secrets sécurisé et un jeu d'UID explicitement validés devra être préparé puis exécuté **hors PR**, après revue des identités des agendas.
+
+La configuration privée `Sarogal/PtitesOndes/automation/sources.json` référence actuellement 16 UID d'agendas ; cela constitue un **inventaire de découverte**, pas 16 attestations officielles. Les métadonnées propriétaires, les domaines institutionnels, l'identité du concédant et les licences doivent être recensés et vérifiés agenda par agenda, sans recopier le registre privé dans les artefacts publics. L'API exige une clé `oa_pk_` en en-tête `key`, jamais en URL.
+
+### Couverture des tests
+
+Suites hors réseau : `test_ptitesondes_openagenda_v2_direct_evidence.py` et `test_ptitesondes_openagenda_v2_preintegration.py`. Les scénarios couvrent les structures réelles de licences v2, identifiants modifiés, fausses URL d'institution, ancre HTML absente, agenda non concordant, exposition de 29 jours, séries aux horaires incomplets, décalages horaires et chevauchements, anciennes fiches, ODS contradictoire, et les faux drapeaux d'approbation. Aucun test ne publie de fiche ni ne franchit une vérification éditoriale.
