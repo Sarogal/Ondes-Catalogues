@@ -6,7 +6,10 @@ No adb calls, no network, no APK installation. All checks fail closed.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -20,7 +23,9 @@ class ApkGuardError(ValueError):
     pass
 
 
-def check_metadata(badging: str, manifest: str, signer: str) -> None:
+def check_metadata(
+    badging: str, manifest: str, signer: str, expected_debug_sha256: str,
+) -> None:
     packages = re.findall(r"(?m)^package:\s+name='([^']+)'", badging)
     if packages != [DIAGNOSTIC]:
         raise ApkGuardError("APK is not the standalone diagnostic package; REFUSING")
@@ -47,11 +52,71 @@ def check_metadata(badging: str, manifest: str, signer: str) -> None:
     ):
         raise ApkGuardError("Android debuggable=true not proven")
 
-    if not re.search(
-        r"Signer #1 certificate DN:.*CN=Android Debug", signer,
-        flags=re.IGNORECASE,
-    ):
-        raise ApkGuardError("Certificate is not the standard Android DEBUG certificate")
+    # Subject / DN text is unreliable; compare the public X.509 cert digest
+    # with the certificate stored in the local Android debug keystore.
+    digest_lines = re.findall(
+        r"(?im)^Signer\s+#(\d+)\s+certificate SHA-256 digest:\s*"
+        r"([0-9a-f:]{64,95})\s*$", signer,
+    )
+    if len(digest_lines) != 1 or digest_lines[0][0] != "1":
+        raise ApkGuardError("Exactly one APK signing certificate is required")
+    actual = digest_lines[0][1].replace(":", "").lower()
+    expected = expected_debug_sha256.replace(":", "").lower()
+    if not re.fullmatch(r"[0-9a-f]{64}", actual):
+        raise ApkGuardError("Cannot parse APK signer SHA-256 digest")
+    if not re.fullmatch(r"[0-9a-f]{64}", expected) or actual != expected:
+        raise ApkGuardError(
+            "APK signer differs from local androiddebugkey certificate "
+            f"(APK={actual}, debug.keystore={expected})"
+        )
+
+
+def local_debug_certificate_sha256() -> str:
+    """Hash the DER public certificate exported from Android debug.keystore.
+
+    Never exports a private key. Missing or unusual keystores fail closed.
+    """
+    android_home = os.environ.get("ANDROID_USER_HOME")
+    home = Path(android_home) if android_home else Path.home() / ".android"
+    keystore = home / "debug.keystore"
+    if not keystore.is_file():
+        raise ApkGuardError(
+            f"Debug keystore missing at {keystore}. "
+            "Check Gradle signingReport; do not bypass signature verification."
+        )
+    candidates = []
+    java_home = os.environ.get("JAVA_HOME")
+    if java_home:
+        candidates.extend([
+            Path(java_home) / "bin" / "keytool.exe",
+            Path(java_home) / "bin" / "keytool",
+        ])
+    installed = shutil.which("keytool")
+    if installed:
+        candidates.append(Path(installed))
+    if os.name == "nt":
+        candidates.append(
+            Path(os.environ.get("ProgramFiles", "C:/Program Files"))
+            / "Android" / "Android Studio" / "jbr" / "bin" / "keytool.exe"
+        )
+    keytool = next((str(p) for p in candidates if p.is_file()), None)
+    if keytool is None:
+        raise ApkGuardError(
+            "keytool not found; set JAVA_HOME to a JDK, then check the "
+            "already-built APK without a Flutter rebuild."
+        )
+    result = subprocess.run(
+        [keytool, "-exportcert", "-alias", "androiddebugkey",
+         "-keystore", str(keystore), "-storepass", "android"],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        check=False, timeout=25,
+    )
+    if result.returncode or len(result.stdout) < 128 or result.stdout[:1] != b"\x30":
+        raise ApkGuardError(
+            "Cannot export local androiddebugkey public certificate; "
+            "inspect the debug signing configuration."
+        )
+    return hashlib.sha256(result.stdout).hexdigest()
 
 
 def find_tools(sdk: Path) -> tuple[Path, Path]:
@@ -92,7 +157,9 @@ def check_apk(apk: Path, sdk: Path) -> None:
     badging = command(str(aapt), "dump", "badging", str(apk))
     manifest = command(str(aapt), "dump", "xmltree", str(apk), "AndroidManifest.xml")
     signature = command(str(signer), "verify", "--print-certs", str(apk))
-    check_metadata(badging, manifest, signature)
+    check_metadata(
+        badging, manifest, signature, local_debug_certificate_sha256(),
+    )
 
 
 def main() -> int:
@@ -102,9 +169,9 @@ def main() -> int:
     args = parser.parse_args()
     try:
         check_apk(args.apk, args.sdk)
-    except (OSError, ApkGuardError) as exc:
+    except (OSError, subprocess.TimeoutExpired, ApkGuardError) as exc:
         parser.exit(1, f"REFUS APK DIAGNOSTIC: {exc}\n")
-    print("PASS: isolated package, label, provider, MediaBrowser, Android Auto, DEBUG certificate")
+    print("PASS: isolated package, label, provider, MediaBrowser, Android Auto, matched local debug certificate SHA-256")
     print("PASS: no APK installation attempted")
     return 0
 
