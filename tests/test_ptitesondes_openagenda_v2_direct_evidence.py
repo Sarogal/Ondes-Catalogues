@@ -365,7 +365,7 @@ class OA2ReadOnlyTransportTests(unittest.TestCase):
                         "919191", "oa_pk_" + "x" * 30,
                         opener=_MockHttp(payload, redirected, status))
         for key in ("oa_sk_" + "x" * 30, "legacykey",
-                    "oa_pk_" + "x" * 30 + "\\nlog: secret"):
+                    "oa_pk_" + "x" * 30 + chr(10) + "log: secret"):
             with self.subTest(key=key):
                 with self.assertRaises(ValueError):
                     read_direct_agenda_v2("919191", key, opener=_MockHttp(valid))
