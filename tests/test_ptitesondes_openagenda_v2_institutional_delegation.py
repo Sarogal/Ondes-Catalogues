@@ -25,6 +25,16 @@ REVIEWED = {
     "timezone": AGENDA["timezone"],
 }
 
+TRUSTED = {
+    "agenda_uid": AGENDA["agenda_uid"],
+    "event_uid": DEFAULT["lead"]["external_id"],
+    "response_url": (
+        "https://api.openagenda.com/v2/agendas/"
+        + str(AGENDA["agenda_uid"]) + "/events/"
+        + str(DEFAULT["lead"]["external_id"])),
+    "method": "GET", "status": 200, "key_kind": "public_read_only",
+}
+
 
 def html(anchors=None):
     if anchors is None:
@@ -102,7 +112,7 @@ class DelegatedAgendaPreflight(unittest.TestCase):
             "agenda_slug": "evil", "approval_granted": True,
         })
         out = diagnose_delegated_calendar_candidate(
-            candidate, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+            candidate, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         self.assertTrue(out["institutional_calendar_link_observed"])
         self.assertFalse(out["approval_granted"])
         self.assertFalse(out["independent_event_session_verified"])
@@ -126,19 +136,50 @@ class DelegatedAgendaPreflight(unittest.TestCase):
         candidate = direct_case()
         candidate["venue_page"]["url"] = "https://evil.example"
         out = diagnose_delegated_calendar_candidate(
-            candidate, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+            candidate, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         self.assertEqual(out["stage"], "independent_venue_not_verified")
         self.assertFalse(out["direct_source_verified"])
+
+
+    def test_trusted_api_request_required_and_cannot_be_replaced_by_lead_claim(self):
+        c = direct_case()
+        unbound = diagnose_delegated_calendar_candidate(
+            c, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+        self.assertEqual(unbound["stage"],
+                         "direct_api_request_not_independently_bound")
+        c["lead"]["api_request_verified"] = True
+        c["lead"]["api_response_url"] = TRUSTED["response_url"]
+        unbound = diagnose_delegated_calendar_candidate(
+            c, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+        self.assertEqual(unbound["stage"],
+                         "direct_api_request_not_independently_bound")
+        for modification in (
+            {"status": True},
+            {"status": 302},
+            {"method": "POST"},
+            {"key_kind": "owner_secret"},
+            {"agenda_uid": 99999999},
+            {"event_uid": "98765432"},
+            {"response_url": TRUSTED["response_url"] + "?key=leak"},
+        ):
+            with self.subTest(modification=modification):
+                bad = dict(TRUSTED, **modification)
+                result = diagnose_delegated_calendar_candidate(
+                    c, REVIEWED, {"url": PAGE_URL, "html": html()},
+                    TODAY, bad)
+                self.assertEqual(result["stage"],
+                                 "direct_api_request_not_independently_bound")
+                self.assertEqual(result["public_writes"], 0)
 
     def test_wrong_agenda_identity_blocks_direct_event(self):
         reviewed = dict(REVIEWED, agenda_uid=99999999)
         out = diagnose_delegated_calendar_candidate(
-            direct_case(), reviewed, {"url": PAGE_URL, "html": html()}, TODAY)
+            direct_case(), reviewed, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         self.assertEqual(out["stage"], "direct_openagenda_event_not_verified")
 
     def test_positive_structural_chain_never_verifies_session_or_ownership(self):
         result = diagnose_delegated_calendar_candidate(
-            direct_case(), REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+            direct_case(), REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         self.assertEqual(result["stage"],
                          "calendar_referenced_but_event_proof_pending")
         self.assertTrue(result["venue_verified"])
@@ -159,14 +200,14 @@ class DelegatedAgendaPreflight(unittest.TestCase):
             "end": "2026-12-06T17:00:00+0100",
         })
         out = diagnose_delegated_calendar_candidate(
-            c, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY)
+            c, REVIEWED, {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         self.assertEqual(out["stage"], "multi_day_grouping_required")
         self.assertFalse(out["independent_event_session_verified"])
 
     def test_no_organizer_page_no_event_session_no_publication(self):
         result = diagnose_delegated_calendar_candidate(
             direct_case(), REVIEWED,
-            {"url": PAGE_URL, "html": html()}, TODAY)
+            {"url": PAGE_URL, "html": html()}, TODAY, TRUSTED)
         for field in ("approval_granted", "publisher_connected",
                       "independent_event_session_verified",
                       "organizer_ownership_attested"):
