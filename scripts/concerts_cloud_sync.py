@@ -5340,7 +5340,13 @@ def validate_approval(approval, venues, known_artist_ids, today):
                             r"psyche|psychedelique|post rock|shoegaze|"
                             r"indus|trip hop)\b", x)
                         for x in badges)
-                and event.get("title") == " + ".join(names),
+                and event.get("title") == " + ".join(names)
+                and len(event.get("genres") or []) == 1
+                and (
+                    norm(badges[0]) == norm(event["genres"][0])
+                    or norm(badges[0]).startswith(
+                        norm(event["genres"][0]) + " ")
+                ),
                 "Bonjour Minuit auto : plateau ou badges non corroborés")
         resolved = dict(known_artist_ids)
         resolved.update(added)
