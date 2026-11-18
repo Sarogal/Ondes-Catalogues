@@ -134,3 +134,32 @@ La fonction `read_direct_agenda_v2` effectue cette lecture sans redirection, ave
 Les 16 UID listés dans la configuration sont réels ; aucune identité institutionnelle n'est affirmée automatiquement. Aucune lecture API v2 authentifiée n'a pu être exécutée depuis la PR non fusionnée : pour éviter d'exposer le secret, l'exécution doit se faire dans un contexte de confiance, **jamais dans le code d'une branche PR susceptible de changer**. Les résultats des tests simulés sont clairement distingués des données API live et des publications.
 
 Aucun changement dans `ptitesondes_candidate_promotion.py`, `merge_policy.py`, les catégories publiques, les catalogues, le site Infomaniak, les crons et Grosses Ondes.
+
+## Raccordement DIAGNOSTIQUE au prévalidateur public existant — 18/11 après-midi
+
+`scripts/ptitesondes_candidate_promotion.py:evaluate()` importe désormais `reconcile_backlog()` et joint le rapport `openagenda_v2_readonly_funnel` **uniquement à la sortie de diagnostic privé existante**. L'interface `public_run_summary()` conserve sa liste blanche numérique historique et **n'expose pas ce bloc**, les URL, les UID, les titres ou les villes dans les logs du runner public. Les fonctions `permitted()`, `registry_location()`, `covered_by_published_range()` et `merge_policy.byid()` restent les autorités de validation préexistantes.
+
+Les compteurs savent différencier : UID uniques / couples UID-date / pistes brutes, plusieurs collecteurs sur le même UID, slugs d'agendas syndiqués, conflits de titre ou de plusieurs URL pour un collecteur, UID multi-jours, lieux GPS non vérifiés, séances déjà publiées et UID d'un seul jour seulement **éligibles à une vérification supplémentaire**. Une occurrence affichée sur un seul jour FUTUR mais appartenant aussi à un UID portant une date PASSÉE dans le backlog reste classée multi-jours. Le classement **ne consulte pas de nouvelles API** et n'admet rien.
+
+### Taille de l'échantillon réellement observé dans le backlog privé
+
+Lecture du backlog de la branche privée `automation/ptitesondes-intake` le 18 novembre 2026 :
+
+| Indicateur agrégé | Comptage |
+|---|---:|
+| Pistes au total | 434 |
+| Pistes futures (jour >= 18/11/2026) | 368 |
+| UID OpenAgenda distincts dans les pistes futures | 196 |
+| Couples UID/jour dans les pistes futures | 338 |
+| UID représentés sur plusieurs jours futurs | 28 |
+| Pistes futures appartenant à ces 28 UID | 170 |
+| Slugs OpenAgenda des liens futurs | 55 |
+| Agendas explicitement configurés dans `automation/sources.json` | 16 |
+
+Les 55 slugs ne sont pas 55 organisateurs vérifiés, et les 196 UID ne sont pas 196 fiches admissibles. Il ne faut surtout pas transformer les 170 répétitions multi-jours en sorties quotidiennes fictives, ni prendre deux miroirs du même UID pour deux sources indépendantes.
+
+### État, limites et suite technique
+
+Le branchement concerne uniquement le **reporting de la prévalidation** ; le flux ancien reste inchangé : lecture du backlog privé, interrogation ODS existante, consultation de page officielle, dossier privé, contrôles GPS et historiques. Le point critique est encore l'authentification API v2 de l'UID absent du miroir, l'identité du bon agenda (notamment lors des syndications), la source organisatrice indépendante, la licence par événement, le droit d'accès, la catégorie et la déduplication. Le code de la PR ne branche aucun de ces rapports au publisher et ne change aucune catégorie de `merge_policy`.
+
+Une fois un contexte de confiance pour la clé `OPENAGENDA_READ_KEY` confirmé, exécuter le recensement des 16 agendas et un échantillon borné d'UID prouvés absents d'ODS ; les résultats restent **anonymisés**. En parallèle, faire homologuer un registre à identités d'agendas vérifiées par liens institutionnels exacts et prévoir l'extension ultérieure aux autres slugs. Aucun nouveau cron de dépôt privé n'est nécessaire pour cette étape.
