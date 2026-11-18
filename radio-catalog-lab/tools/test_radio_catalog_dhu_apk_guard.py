@@ -80,6 +80,75 @@ class StandaloneDhuGuardTests(unittest.TestCase):
         guard.check_metadata(self.badging, self.manifest, value,
                              self.debug_digest)
 
+    def test_aosp_sdk_range_signer_label_is_supported(self):
+        # Android build tooling may print scheme-specific min/max SDK signers.
+        scoped = self.signing.replace(
+            'Signer #1 certificate SHA-256 digest:',
+            'Signer (minSdkVersion=24, maxSdkVersion=32) '
+            'certificate SHA-256 digest:',
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, scoped, self.debug_digest,
+        )
+
+    def test_same_cert_for_multiple_android_sdk_ranges_is_supported(self):
+        scoped = (
+            'Signer (minSdkVersion=24, maxSdkVersion=32) '
+            f'certificate SHA-256 digest: {self.debug_digest}\n'
+            'Signer (minSdkVersion=33, maxSdkVersion=35) '
+            f'certificate SHA-256 digest: {self.debug_digest}\n'
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, scoped, self.debug_digest,
+        )
+
+    def test_mixed_signer_labels_one_cert_is_supported(self):
+        scoped = self.signing + (
+            'Signer (minSdkVersion=24, maxSdkVersion=32) '
+            f'certificate SHA-256 digest: {self.debug_digest}\n'
+        )
+        guard.check_metadata(
+            self.badging, self.manifest, scoped, self.debug_digest,
+        )
+
+    def test_different_certificate_in_second_sdk_range_is_rejected(self):
+        scoped = self.signing + (
+            'Signer (minSdkVersion=24, maxSdkVersion=32) '
+            f'certificate SHA-256 digest: {"b" * 64}\n'
+        )
+        self.assert_bad(signing=scoped)
+
+    def test_unrecognized_signer_label_must_fail_closed(self):
+        scoped = self.signing.replace('Signer #1', 'Unrecognized Signer')
+        with self.assertRaisesRegex(
+            guard.ApkGuardError, 'Unrecognized apksigner certificate',
+        ):
+            guard.check_metadata(
+                self.badging, self.manifest, scoped, self.debug_digest,
+            )
+
+    def test_no_matching_signer_line_reports_diagnostic_markers(self):
+        with self.assertRaisesRegex(
+            guard.ApkGuardError, 'No certificate SHA-256 digest found',
+        ):
+            guard.check_metadata(
+                self.badging, self.manifest,
+                'Signer unknown certificate SHA-1 digest: deadbeef',
+                self.debug_digest,
+            )
+
+    def test_explicit_multiple_signer_count_is_rejected(self):
+        self.assert_bad(signing=self.signing + 'Number of signers: 2\n')
+
+    def test_uppercase_colon_separated_cert_fingerprint_is_supported(self):
+        pairs = ':'.join(
+            self.debug_digest[i:i + 2] for i in range(0, 64, 2)
+        ).upper()
+        value = self.signing.replace(self.debug_digest, pairs)
+        guard.check_metadata(
+            self.badging, self.manifest, value, self.debug_digest,
+        )
+
     def test_missing_signer_digest_rejected(self):
         self.assert_bad(signing='Signer #1 certificate DN: CN=Android Debug')
 
