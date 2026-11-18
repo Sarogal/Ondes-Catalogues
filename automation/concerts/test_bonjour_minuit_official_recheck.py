@@ -92,6 +92,28 @@ class BonjourMinuitIndependentTests(unittest.TestCase):
         self.assertEqual(event["artistIds"], approval["event"]["artistIds"])
         self.assertEqual(len(artists), 2)
 
+    def test_second_distinct_real_bill_lajungle_doppler_hybrid_rock(self):
+        # Another live 2027 page uses "transe rock BEL" for its lead.
+        # This verifies venue-wide genre handling without naming these
+        # musicians inside the production parser.
+        url = "https://bonjour-minuit.fr/evenement/lajungle-13mars27/"
+        names = ("La Jungle", "DOPPLeR")
+        page = show(names, day="samedi 13 mars 2027",
+                    room="Grande Salle • 20h30", first_style="transe rock BEL")
+        cat = catalogue()
+        row = discovery(page, url)
+        self.assertEqual(row["classification"], ["Rock"])
+        approval = verify.verify(row, page, cat, TODAY)
+        self.assertEqual(approval["event"]["artistIds"],
+                         ["la-jungle","doppler"])
+        self.assertEqual(approval["event"]["date"], "2027-03-13")
+        self.assertEqual(approval["officialEvidence"][0]["officialRoom"],
+                         "La Grande Salle")
+        publish(approval, cat)
+        with self.assertRaises(ValueError):
+            bad = page.replace("transe rock BEL","transe electro BEL")
+            verify.verify(discovery(page, url), bad, cat, TODAY)
+
     def test_not_a_concert_allowlist_one_two_eight_twenty_named_artists(self):
         for total in (1, 2, 8, 20):
             names = tuple("ACT %02d" % index for index in range(total))
