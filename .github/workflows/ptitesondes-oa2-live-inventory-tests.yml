@@ -1,0 +1,48 @@
+name: P'tites Ondes — contrôle privé des inventaires OpenAgenda v2
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
+      - '.github/workflows/ptitesondes-oa2-live-inventory-tests.yml'
+      - 'scripts/ptitesondes_oa2_census_guard.py'
+      - 'tests/test_ptitesondes_oa2_census_guard.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
+      - '.github/workflows/ptitesondes-oa2-live-inventory-tests.yml'
+      - 'scripts/ptitesondes_oa2_census_guard.py'
+      - 'tests/test_ptitesondes_oa2_census_guard.py'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-privacy-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prouver le contrat sans cle, donnees privees ou reseau
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_oa2_census_guard.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_v2_agenda_census.py' -v
+      - name: Ne jamais utiliser les secrets en contexte PR
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path('.github/workflows/ptitesondes-oa2-live-inventory-tests.yml').read_text()
+          assert 'contents: read' in wf
+          assert 'se' + 'crets.' not in wf
+          assert 'deploy-pages' not in wf
+          assert 'git push' not in wf
+          assert 'schedule:' not in wf
+          PY
