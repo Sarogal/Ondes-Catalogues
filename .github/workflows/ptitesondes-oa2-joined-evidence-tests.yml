@@ -7,6 +7,8 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
       - 'scripts/ptitesondes_openagenda_v2_institutional_delegation.py'
       - 'tests/test_ptitesondes_openagenda_v2_institutional_delegation.py'
+      - 'scripts/ptitesondes_oa2_private_registry_census_cli.py'
+      - 'tests/test_ptitesondes_oa2_private_registry_census_cli.py'
       - 'docs/PTITESONDES_OA2_INSTITUTIONAL_DELEGATION_20261118.md'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_index.py'
       - 'docs/PTITESONDES_OA2_JOINED_EVIDENCE_20261118.md'
@@ -38,6 +40,8 @@ jobs:
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_institutional_delegation.py' -v
           python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_private_registry_census_cli.py' -v
+          python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
       - name: Assert only read-only diagnostics are exposed
         run: |
@@ -53,6 +57,9 @@ jobs:
                          for line in flow.splitlines())
           assert all(x in src for x in ("approval_granted", "public_writes", "outstanding_gates", "REMAINING_GATES"))
           assert not any(x in src for x in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          census_cli = Path("scripts/ptitesondes_oa2_private_registry_census_cli.py").read_text()
+          assert not any(x in census_cli for x in ("urlopen(", "requests.", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
+          assert "public_writes" not in census_cli or "census_institution_pins_on_private_backlog" in census_cli
           delegation = Path("scripts/ptitesondes_openagenda_v2_institutional_delegation.py").read_text()
           assert all(k in delegation for k in ("public_writes", "independent_event_session_verified", "approval_granted"))
           assert not any(k in delegation for k in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
