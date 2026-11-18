@@ -16,6 +16,9 @@ POSITIVE_GENRES = (
     # broad venue category menus. This list affects REVIEW priority, never approval.
     "heavy rock", "garage rock", "post rock", "noise rock", "electro rock",
     "psych rock", "psychedelic rock", "math rock", "shoegaze", "grunge",
+    # Extreme genres explicitly named on the *event* only. These labels never
+    # approve a concert or override the independent official-source gate.
+    "mathcore", "powerviolence", "screamo", "skramz", "blackgaze", "d beat",
 )
 NONCONCERT = re.compile(
     r"\b(atelier|conference|formation|reunion|masterclass|webinaire|blind test|"
