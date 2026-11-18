@@ -158,3 +158,32 @@ Le constat est donc une **opportunité de recouvrement de 200 pistes**,
 pas 200 sorties validées. Un futur moteur privé devra faire les
 requêtes API réelles, récupérer les preuves officielles et conserver les
 règles sur les séries, les droits, l'âge et les lieux.
+
+## CLI de diagnostic privé — aucun changement de publication
+
+`scripts/ptitesondes_oa2_private_registry_census_cli.py` permet une
+mesure reproductible dans le moteur privé :
+
+```bash
+python scripts/ptitesondes_oa2_private_registry_census_cli.py \
+  --private-backlog chemin/prive/backlog.json \
+  --independently-curated-registry chemin/prive/institutions-approuvees.json \
+  --today 2026-11-18
+```
+
+Le registre doit contenir une **liste JSON de sources revues** avec les cinq
+champs `institution_host`, `exact_page_url`, `agenda_slug`,
+`agenda_uid`, `timezone`. Ne pas fabriquer ce registre depuis les URL
+des candidats. Un registre `[]` est autorisé pour mesurer la couverture zéro
+sans prétendre avoir homologué les institutions.
+
+Le CLI refuse les fichiers excessifs, les JSON corrompus et les dates
+non conformes, n'exécute aucun réseau et ne crée aucun fichier de sortie.
+Sa sortie standard contient **des compteurs fixes uniquement**, pas de
+titre, ville, agenda, URL, UID ou chemin privé. Pour l'intégrer à un
+rapport périodique, le moteur privé doit décider séparément de la
+destination des compteurs ; aucune action GitHub de collecte n'est modifiée
+dans cette PR.
+
+Les tests s'exécutent seulement sur des documents **entièrement fictifs**
+dans la CI de PR, sans secret GitHub.
