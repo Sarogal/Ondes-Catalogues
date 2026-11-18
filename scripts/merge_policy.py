@@ -69,6 +69,8 @@ def valid(ev,categories,fields,today,*,reviewed_family_categories=None):
     if not isinstance(ev.get("id"),str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",ev["id"]): return False,"ID non conforme"
     if not all(isinstance(ev.get(k),str) and ev[k].strip() for k in ("title","city","department","region","venue","source_label","category_label")):return False,"champ vide"
     if ev.get("category") not in categories:
+        if reviewed_family_categories is None:
+            return False,"catégorie inconnue"
         # Strictly opt-in to the existing 13-category family policy, not an
         # event-supplied dynamic taxonomy. The production merge() stays
         # legacy-only until a separately reviewed cutover is approved.
