@@ -68,3 +68,27 @@ La configuration privée `Sarogal/PtitesOndes/automation/sources.json` référen
 ### Couverture des tests
 
 Suites hors réseau : `test_ptitesondes_openagenda_v2_direct_evidence.py` et `test_ptitesondes_openagenda_v2_preintegration.py`. Les scénarios couvrent les structures réelles de licences v2, identifiants modifiés, fausses URL d'institution, ancre HTML absente, agenda non concordant, exposition de 29 jours, séries aux horaires incomplets, décalages horaires et chevauchements, anciennes fiches, ODS contradictoire, et les faux drapeaux d'approbation. Aucun test ne publie de fiche ni ne franchit une vérification éditoriale.
+
+## Lecture de sources publiques réelles, sans clé OpenAgenda (18/11/2026)
+
+Un contrôle externe du miroir public OpenDataSoft a interrogé l'UID exact `27039422` (`select=uid`, `where=uid='27039422'`, `limit=2`) : **`total_count=0`, `results=[]`**. La page OpenAgenda d'origine [Villeurbanne - Agenda culturel](https://openagenda.com/fr/villeurbanne2022/events/27039422_7427103) annonce « Saint-Saëns, le Carnaval Immersif », Studio 24, **5 décembre 2026 – 3 janvier 2027**, sans certification de 29 séances horaires indépendantes. Le [programme officiel de la Fête des Lumières](https://www.fetedeslumieres.lyon.fr/fr/oeuvre/saint-saens-le-carnaval-immersif) établit **du 5 au 8 décembre, 10 h à 21 h, sur inscription**, ce qui n'établit **pas** un programme complet pour les jours restant jusqu'au 3 janvier. Le module générique de regroupement représente désormais ce cas par `partial_continuous_period_for_editorial_review`, sans création de carte ni invention de séances.
+
+Cette lecture publique de pages et du miroir **n'est pas** une lecture authentifiée de l'API v2. Le retour API de l'événement, la licence et son concédant, le type exact des créneaux, l'identité de l'agenda et le statut à l'instant de lecture restent à vérifier avec une clé `oa_pk_` accessible uniquement sur runner approuvé. Il serait faux de déclarer le smoke test v2 « live réussi » ici.
+
+### Nouveau diagnostic en lecture seule
+
+`scripts/ptitesondes_openagenda_v2_live_smoke.py` reçoit uniquement un lot borné (maximum 12 cas) dans un fichier **éphémère hors Git**. Pour chaque UID il lit le miroir ODS de manière exacte ; **seule** une réponse HTTP 200, sans redirection, dont le nombre total et la liste sont tous deux à zéro, prouve `uid_absent`. Toute panne, UID différent, réponse trop volumineuse ou structure malformée reste `unknown/conflicting`. Le script peut ensuite lire la fiche API v2 avec une clé `oa_pk_` passée par variable d'environnement sécurisée ; il réutilise le contrôle de structure v2 et classe les créneaux. Il ne retourne que des **compteurs anonymisés**, avec `approval_granted=false` et `public_writes=0` ; toutes les exceptions sont masquées pour éviter de divulguer la clé ou le backlog.
+
+Exemple de structure du fichier temporaire (valeurs fictives, jamais de clé dans ce fichier) :
+
+```json
+[
+  {
+    "lead": {"external_id": "12345678", "source_url": "https://openagenda.com/fr/commune-test/events/12345678_fete-jeunesse", "title": "Fête jeunesse", "date_start": "2026-12-05", "date_end": "2026-12-05", "city": "Villeurbanne", "venue": "Salle des familles"},
+    "reviewed_agenda": {"agenda_slug": "commune-test", "agenda_uid": "919191", "timezone": "Europe/Paris"},
+    "registered_venue": {"city": "Villeurbanne", "aliases": ["Salle des familles"], "lat": 45.758, "lng": 4.8998}
+  }
+]
+```
+
+Le script n'est appelé par aucun cron et ne dispose d'aucune capacité de publication. Pour l'utiliser, il faudra d'abord préparer le fichier de cas à partir des dossiers réellement homologués, puis exécuter uniquement depuis un contexte **de confiance hors PR non fusionnée**, avec la clé de lecture du dépôt public déjà disponible en Secret GitHub Actions. Le branchement aux moteurs et l'exécution réelle ne sont pas compris dans la PR. Les tests sont **offline avec transports simulés**, sans secret, sans consommation de minutes sur le dépôt privé et sans déclencheur planifié supplémentaire.
