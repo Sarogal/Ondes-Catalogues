@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'scripts/ptitesondes_openagenda_v2_geo_fetch.py'
       - 'tests/test_ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_fetch.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_GEO_BRIDGE_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml'
 
@@ -26,6 +28,8 @@ jobs:
         run: |
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_geo_bridge.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_fetch.py' -v
       - name: Verify isolated test job has no secret, publish or cron
         shell: bash
         run: |
@@ -38,5 +42,8 @@ jobs:
           src = Path('scripts/ptitesondes_openagenda_v2_geo_bridge.py').read_text()
           assert 'public_writes' in src and 'publisher_connected' in src
           assert not any(word in src for word in ('urlopen(', 'requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          retrieval = Path('scripts/ptitesondes_openagenda_v2_geo_fetch.py').read_text()
+          assert 'public_writes' in retrieval and 'approval_granted' in retrieval
+          assert not any(x in retrieval for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
           print('PASS: isolated offline geometry tests, zero secrets/publisher')
           PY
