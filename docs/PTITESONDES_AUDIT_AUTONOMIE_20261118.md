@@ -13,6 +13,8 @@
 - [Tableau de bord privé](https://github.com/Sarogal/PtitesOndes/blob/automation/ptitesondes-intake/automation-intake/ptitesondes/reports/dashboard.json) : 0 lot de qualification déclaré pour le 18/11 au moment de la lecture ; ce n’est PAS une preuve d’échec. Le 17/11 : 51 décisions, 1 prévalidation, 50 autres décisions.
 - L’étape [synchronisation cloud du 18/11](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44223493953) a réussi **sans exécuter** commit, build Pages ni déploiement : aucun événement admis sur ce run. Le dernier [pont public/privé](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44228003881) était un cycle lieux ; l’étape sorties y était ignorée.
 
+**Publication musicale réellement prouvée :** 13 commits `data(ptitesondes): publier les seuls événements indépendamment vérifiés` ont modifié `docs/ptitesondes/sorties.json` entre le 12 et le 17/11 ; le catalogue est passé de 522 fiches au snapshot du 12/11 à 549 au 18/11. Le [run 44041690960](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44041690960), du 17/11 à 08:49 (Europe/Paris), a réellement commité, construit, déployé et comparé les JSON GitHub Pages. **Le circuit musical publie automatiquement, mais ne couvre ni les 13 nouvelles catégories ni les cinq régions ultramarines.**
+
 Un statut GitHub Actions « success » n’atteste pas d’une publication. Le `null` d’un rapport absent n’atteste pas d’une validation à zéro.
 
 ## 2. Architecture réellement active
@@ -95,6 +97,8 @@ Une activité payante ou sur inscription ne doit pas être exclue par principe ;
 - [#361](https://github.com/Sarogal/Ondes-Catalogues/pull/361) : pilote GPS indépendant MPT.
 - [#362](https://github.com/Sarogal/Ondes-Catalogues/pull/362) : dépend de #361 ; prévalidation source/GPS.
 - [#364](https://github.com/Sarogal/Ondes-Catalogues/pull/364) : dépend de #362 et étend la géographie à 7 bâtiments ; 24 fiches, 24 séances, 15 classées pour revue, 1 prévalidée par les contrôles indépendants, 0 admission et 0 publication.
+
+Comparaison des SHA de quatre fichiers de découverte MPT : `ptitesondes_mpt_listing_discovery.py`, `ptitesondes_mpt_listing_live_smoke.py`, `ptitesondes_real_family_source_adapters.py` et `test_ptitesondes_mpt_listing_discovery.py` ont des blobs **strictement identiques** dans #360 et #364. Ne pas intégrer deux fois ces quatre contenus.
 
 Les comparaisons Git indiquent : `#361 -> #362 -> #364` en avance sur leurs branches de base ; `#364` est aussi en avance de 31 commits sur `main`, sans retard recensé lors de la comparaison. Cela **ne** vaut pas validation de fusion de toutes les PR en une étape. Réconcilier #360/#364 sur les scripts identiques et préserver les tests. #358 peut être intégré séparément après revue. Aucune fusion autorisée ici.
 
