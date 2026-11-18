@@ -1,0 +1,38 @@
+name: Grosses Ondes — veille générique des éditions depuis archives officielles
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/grossesondes_archived_html_intake.py'
+      - 'tests/test_grosses_archived_generic_rotation.py'
+      - 'tests/test_grosses_archived_html_intake.py'
+      - '.github/workflows/grossesondes-archived-organizer-rotation-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/grossesondes_archived_html_intake.py'
+      - 'tests/test_grosses_archived_generic_rotation.py'
+      - 'tests/test_grosses_archived_html_intake.py'
+      - '.github/workflows/grossesondes-archived-organizer-rotation-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-verifier:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tester les nouvelles éditions, la rotation et la contre-preuve publisher
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python -m unittest discover -s tests -p 'test_grosses_archived_*.py' -v
+          python -m unittest discover -s tests -p 'test_grosses_visible_html_edition.py' -v
+          python -m unittest discover -s tests -p 'test_grosses_structured_edition.py' -v

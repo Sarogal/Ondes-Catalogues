@@ -9,10 +9,11 @@ from __future__ import annotations
 
 import argparse
 import copy
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from hashlib import sha256
 import json
 import os
+import re
 from pathlib import Path
 import tempfile
 from urllib.parse import urlsplit
@@ -39,6 +40,111 @@ PINNED_ARCHIVED_HTML_SOURCES = {
         "year": 2027,
     },
 }
+# Generalize next-edition discovery to independently signed historic organizer
+# sites. Only the IMMUTABLE public festival-history is used as a source list.
+# Named ticket platforms, social networks and aggregators are NOT organizers.
+GENERIC_ROTATION_KEY = "archived_html_organizer_rotation_cursor"
+GENERIC_MAX_PER_RUN = 10
+GENERIC_DENY_HOSTS = frozenset({
+    "facebook.com", "instagram.com", "x.com", "twitter.com",
+    "linktr.ee", "helloasso.com", "billetweb.fr", "shotgun.live",
+    "eventbrite.com", "bandsintown.com", "songkick.com",
+    "ticketmaster.fr", "fnacspectacles.com", "weezevent.com",
+})
+
+
+def organizer_homepage(url):
+    """Only original HTTPS organizer-owned pages from the signed archive."""
+    if not isinstance(url, str) or len(url) > 600:
+        return False
+    if not pinned_first_party(url, url):
+        return False
+    try:
+        u = urlsplit(url)
+        host = u.hostname
+        if not host or host.endswith((".local", ".internal", ".localhost")):
+            return False
+        labels = host.split(".")
+        if (len(labels) < 2 or any(
+                not label or not label.isascii() or not label[0].isalnum()
+                or not label[-1].isalnum()
+                or not label.replace("-", "").isalnum()
+                for label in labels)
+                or all(part.isdigit() for part in labels)):
+            return False
+        if any(host == domain or host.endswith("." + domain)
+               for domain in GENERIC_DENY_HOSTS):
+            return False
+        return True
+    except (ValueError, AttributeError):
+        return False
+
+
+def generic_rotating_sources(archive, published, occupied, state, today,
+                             limit=GENERIC_MAX_PER_RUN):
+    """Pick bounded, diverse first-party homepages without any event hardcode.
+
+    Follow up yesterday's observed exact edition before rotating new archives:
+    two consecutive days are essential; five runs on the same day are not.
+    Returns only source specs from a signed historical catalogue. A source
+    alone never approves an event, and the real publisher re-fetches it.
+    """
+    if not isinstance(archive, dict) or not isinstance(state, dict):
+        raise ValueError("Untrusted archived source list")
+    limit = max(1, min(GENERIC_MAX_PER_RUN, int(limit)))
+    current = state.get(STATE_KEY) or {}
+    if not isinstance(current, dict):
+        raise ValueError("Untrusted archive observation state")
+    candidates = {}
+    for slug, parent in sorted(archive.items()):
+        if slug in PINNED_ARCHIVED_HTML_SOURCES or not isinstance(parent, dict):
+            continue
+        identity = pinned_parent_identity(parent)
+        if identity is None or parent.get("lastKnownYear") != identity[1]:
+            continue
+        year = identity[1] + 1
+        if year not in (2027, 2028) or year <= today.year:
+            continue
+        if not isinstance(parent.get("name"), str) or not 8 <= len(parent["name"]) <= 180:
+            continue
+        # Archive headings with embedded old edition years cannot be reused
+        # literally as the current title without a validated rename.
+        if re.search(r"(?<![0-9])20[2-4][0-9](?![0-9])", parent["name"]):
+            continue
+        new_slug = identity[0] + "-" + str(year)
+        if new_slug in published or new_slug in occupied:
+            continue
+        site = parent.get("officialSite")
+        if not organizer_homepage(site):
+            continue
+        candidates[slug] = {
+            "officialSite": site, "proofUrl": site, "year": year,
+        }
+    yesterday = today - timedelta(days=1)
+    carry = []
+    fresh = []
+    for slug, spec in candidates.items():
+        parent = archive[slug]
+        identity = pinned_parent_identity(parent)
+        record = current.get(identity[0] + "-" + str(spec["year"]))
+        if (isinstance(record, dict)
+                and record.get("lastSeen") == yesterday.isoformat()):
+            carry.append((slug, spec))
+        else:
+            fresh.append((slug, spec))
+    cursor = state.get(GENERIC_ROTATION_KEY, 0)
+    if type(cursor) is not int or cursor < 0:
+        raise ValueError("Invalid archived organizer rotation cursor")
+    selected = carry[:limit]
+    available = max(0, limit - len(selected))
+    if fresh and available:
+        index = cursor % len(fresh)
+        selected += [fresh[(index + i) % len(fresh)]
+                     for i in range(min(available, len(fresh)))]
+        state[GENERIC_ROTATION_KEY] = (index + min(available, len(fresh))) % len(fresh)
+    return dict(selected)
+
+
 STATE_KEY = "archived_html_edition_observations"
 SOURCE_MARKER = "grossesondes.patch.v1"
 ORIGIN_URL = "https://grosses-ondes.fr/data/festivals.json"
@@ -214,7 +320,12 @@ def run(folder, calendar, history, today, fetcher=official_text):
     original_patch = copy.deepcopy(patch)
     successes, candidates = 0, 0
     occupied = {row.get("slug") for row in patch["additions"]}
-    for slug, source in PINNED_ARCHIVED_HTML_SOURCES.items():
+    # Keep the two source-specific approved paths unchanged, then scan
+    # a bounded rotating set of signed archived organizer homepages.
+    watched = dict(PINNED_ARCHIVED_HTML_SOURCES)
+    watched.update(generic_rotating_sources(
+        archive, published, occupied, state, today))
+    for slug, source in watched.items():
         parent = archive.get(slug)
         if (not isinstance(parent, dict)
                 or parent.get("officialSite") != source["officialSite"]
@@ -226,7 +337,7 @@ def run(folder, calendar, history, today, fetcher=official_text):
                 or source["year"] != identity[1] + 1):
             # An inconsistent historic parent must not trigger even a page fetch.
             continue
-        new_slug = slug + "-" + str(source["year"])
+        new_slug = identity[0] + "-" + str(source["year"])
         if new_slug in published or new_slug in archive_slugs or new_slug in occupied:
             continue
         try:
