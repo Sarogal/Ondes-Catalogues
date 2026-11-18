@@ -13,6 +13,7 @@ import argparse
 import copy
 import datetime as dt
 import html.parser
+import importlib
 import json
 import re
 import unicodedata
@@ -21,6 +22,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 import discover
+from verifier_contract import VERIFIER_SPECS
 
 CLOUD = "https://sarogal.github.io/Ondes-Catalogues/grossesondes/concerts.json"
 ALLOWED_HOST = "www.lerextoulouse.com"
@@ -252,49 +254,28 @@ def rex_visible_divs_after_title(html_text):
 
 
 def verify(candidate, html_text, catalogue, today):
-    if candidate.get("source") == "bbc_official_detail_review":
-        import bbc_official_recheck
-        return bbc_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_cave_poetes_detail":
-        import cave_poetes_official_recheck
-        return cave_poetes_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_bonjour_minuit_detail_review":
-        import bonjour_minuit_official_recheck
-        return bonjour_minuit_official_recheck.verify(
-            candidate, html_text, catalogue, today)
-    if candidate.get("source") == "bateau_ivre_official_detail_review":
-        import bateau_ivre_official_recheck
-        return bateau_ivre_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_rockstore_detail_review":
-        import rockstore_official_recheck
-        return rockstore_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_laiterie_detail_review":
-        import laiterie_official_recheck
-        return laiterie_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_blacklab_detail_review":
-        import blacklab_official_recheck
-        return blacklab_official_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_atabal_detail":
+    # Admission is based on a frozen, code-reviewed source-wide contract;
+    # untrusted candidate URLs or discovery labels NEVER import a module.
+    source = candidate.get("source")
+    if not isinstance(source, str) or source not in VERIFIER_SPECS:
+        raise ValueError("Seuls les détails officiels des sources agréées sont admissibles à ce stade")
+    if source == "agenda_officiel_atabal_detail":
         import atabal_recheck
-        # Retain the previously signed pilot unchanged; all other bills pass
-        # a separate, strict header + named artist section verifier.
+        # Preserve Atabal's previously signed pilot. Every other first-party
+        # bill still uses its separate full-header multi-artist verifier.
         if candidate.get("sourceUrl") == atabal_recheck.URL:
             return atabal_recheck.verify(candidate, html_text, catalogue, today)
         import atabal_multi_recheck
         return atabal_multi_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_backstage_detail":
-        import backstage_recheck
-        return backstage_recheck.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_ferrailleur_genre":
-        # Never use an agenda card as an approval: re-fetch its own event page.
-        import ferrailleur_official
-        return ferrailleur_official.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") == "agenda_officiel_molotov_genre":
-        # Imported only when needed to avoid a circular module dependency.
-        import molotov_official
-        return molotov_official.verify(candidate, html_text, catalogue, today)
-    if candidate.get("source") != "agenda_officiel_rex_genre":
-        raise ValueError("Seul le détail officiel Le Rex est admissible à ce stade")
+    if source != "agenda_officiel_rex_genre":
+        # The exact module is fixed by trusted source code (not remote JSON).
+        handler_module = VERIFIER_SPECS[source].module
+        if handler_module is None:
+            raise ValueError("Vérificateur officiellement déclaré sans module")
+        return importlib.import_module(handler_module).verify(
+            candidate, html_text, catalogue, today)
+    # Rex: original strict first-party date, venue, genre and full-bill proof
+    # are intentionally kept below, bit-for-bit.
     if candidate.get("reviewBucket") != "genre_tag_review" or candidate.get("possibleExistingConcert"):
         raise ValueError("Piste incertaine, doublon probable ou festival")
     if candidate.get("publicationAllowed") is not False or candidate.get("reviewRequired") is not True:
@@ -421,18 +402,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
     # Raw observations can be dozens of same-day duplicate scans.
     candidates = [i for i in items if
                   i.get("stableObservations", 0) >= 2 and
-                  i.get("candidate", {}).get("source") in
-                  ("agenda_officiel_rex_genre", "agenda_officiel_molotov_genre",
-                   "agenda_officiel_ferrailleur_genre",
-                   "agenda_officiel_backstage_detail",
-                   "agenda_officiel_atabal_detail",
-                   "agenda_officiel_blacklab_detail_review",
-                   "agenda_officiel_laiterie_detail_review",
-                   "agenda_officiel_rockstore_detail_review",
-                   "bateau_ivre_official_detail_review",
-                   "agenda_officiel_bonjour_minuit_detail_review",
-                   "bbc_official_detail_review",
-                   "agenda_officiel_cave_poetes_detail") and
+                  isinstance(i.get("candidate", {}).get("source"), str) and
+                  i.get("candidate", {}).get("source") in VERIFIER_SPECS and
                   i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
