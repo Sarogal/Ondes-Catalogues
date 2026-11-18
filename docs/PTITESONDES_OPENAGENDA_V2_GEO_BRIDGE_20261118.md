@@ -67,3 +67,26 @@ Ce garde-fou sépare la **provenance de la preuve** du contenu à valider. Il ne
 Pour une capacité nationale, le lot borne le travail à **60 pistes par passage** et mutualise les lectures de la même page et les recherches IGN/BAN identiques. Ce n'est pas encore un connecteur de production : il faudra un pilote en lecture seule sur des données privées réelles pour mesurer la proportion d'UID et de lieux récupérables. Les compteurs sont anonymisés, les erreurs restent fail-closed et la chaîne de publication ne reçoit aucune décision.
 
 La documentation publique actuelle de l'IGN confirme le service `https://data.geopf.fr/geocodage/search` et une limite d'utilisation de 50 requêtes par seconde et par IP. Ce module n'a aucun déclencheur de production et ne fait pas de collecte massive en CI. Voir : https://cartes.gouv.fr/aide/fr/guides-utilisateur/utiliser-les-services-de-la-geoplateforme/geocodage/.
+
+## Bilan privé anonyme du backlog — 18 novembre, soirée
+
+Analyse en lecture seule effectuée sur les **434 pistes privées**, sans copier les fiches dans le dépôt public. Les résultats ne sont que des compteurs globaux :
+
+| Mesure | Valeur |
+| --- | ---: |
+| Pistes futures | 368 |
+| UID futurs distincts | 195 |
+| Couples UID/date futurs | 334 |
+| UID comportant plusieurs dates | 27 |
+| Couples UID/date au sein de ces séries | 166 |
+| Pistes futures dont nom + commune correspondent au registre GPS existant | environ 223 |
+| Pistes futures sans correspondance exacte au registre | environ 145 |
+| Couples lieu/commune distincts encore sans correspondance | environ 82 |
+| UID dont tous les lieux sont reconnus par nom + commune | environ 95 |
+| UID dont au moins un lieu reste à résoudre | environ 100 |
+
+Les correspondances ci-dessus sont un **préclassement par identité de lieu**, calculé sur les alias publics connus. Elles ne confirment **ni le point GPS OpenAgenda, ni la propriété de la source officielle, ni l'horaire, ni les droits, ni l'accès des enfants**. Les « environ » sont importants : un calcul de synthèse initial a recoupé les alias connus ; l'exécution du nouveau script Python avec son registre complet reste à réaliser dans un environnement de confiance.
+
+Le fichier `scripts/ptitesondes_oa2_backlog_geo_coverage.py` permet de répéter ce recensement **sans identifiants dans son résultat** : limitation à 4000 pistes, fenêtre de 184 jours, séparation des 3 familles de collecteurs, anti-inflation des UID multi-jours, vérification de la structure des points et alias existants. Il s'exécute sur un poste ou runner de confiance avec accès local au fichier privé, en mode `--private-backlog ... --today YYYY-MM-DD`. Cette PR ne crée aucun workflow qui lirait les secrets ou le backlog privé depuis une branche non fusionnée.
+
+**Constat d'architecture :** résoudre les quelque 82 identités de lieux manquantes reste utile, mais les dizaines de sources/séances déjà adossées à des lieux connus montrent que le verrou de publication est aussi en aval de la géolocalisation. Le regroupement multi-jours doit être conservé : 166 couples UID/date n'équivalent pas à 166 nouvelles sorties publiables.
