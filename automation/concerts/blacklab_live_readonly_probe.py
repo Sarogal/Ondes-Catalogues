@@ -47,14 +47,38 @@ def main():
             candidate.update({"reviewBucket":"genre_tag_review",
                               "possibleExistingConcert":False})
             approval=verifier.verify(candidate,page,working,today)
-            event,new=validate_approval(approval,
-                  {x["id"]:x for x in catalog["venues"]},
-                  {x["id"]:x for x in catalog["artists"]},today)
-            accepted=True
-            if len(event["artistIds"])!=count or event["time"] is not None:
+            if len(approval["event"]["artistIds"])!=count or (
+                    approval["event"]["time"] is not None):
                 raise RuntimeError("Incomplete bill or unproved concert start")
-            outcome={"status":"accepted","namedArtists":len(event["artistIds"]),
-                     "newArtists":len(new),"time":event["time"]}
+            preexisting=next((e for e in catalog["events"]
+                              if e.get("officialUrl")==url and
+                                 e.get("date")==approval["event"]["date"] and
+                                 e.get("venueId")==approval["event"]["venueId"]),
+                             None)
+            try:
+                event,new=validate_approval(approval,
+                      {x["id"]:x for x in catalog["venues"]},
+                      {x["id"]:x for x in catalog["artists"]},today)
+            except ValueError as exc:
+                if preexisting is None:
+                    raise
+                # Existing signed approvals are reserved permanently.
+                # The verifier may read them; the publisher MUST refuse
+                # re-approving them through a newly invented signature.
+                if preexisting["id"] != approval["event"]["id"]:
+                    raise RuntimeError("Historical ID collision") from exc
+                accepted=True
+                outcome={"status":"first_party_bill_verified_existing_signed",
+                         "publisherReapprovalRejected":True,
+                         "namedArtists":len(approval["event"]["artistIds"]),
+                         "time":approval["event"]["time"]}
+            else:
+                if preexisting is not None:
+                    raise RuntimeError("Historical signed approval was bypassed")
+                accepted=True
+                outcome={"status":"new_first_party_approval_accepted",
+                         "namedArtists":len(event["artistIds"]),
+                         "newArtists":len(new),"time":event["time"]}
         except Exception as exc:
             accepted=False
             outcome={"status":"held","reason":type(exc).__name__+": "+str(exc)[:170]}
