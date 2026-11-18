@@ -65,7 +65,10 @@ FESTIVALS_RAW = "https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/main
 TICKETMASTER = "https://app.ticketmaster.com/discovery/v2/events.json"
 AGENT = "GrossesOndesConcertWatch/0.1 (discovery only)"
 CATEGORIES = ("Metal", "Hard Rock", "Punk", "Hardcore")
-GENRE = re.compile(r"\b(metal|hardcore|punk|grind|deathcore|death metal|black metal|doom|stoner|sludge|thrash|heavy metal|post.metal|hard rock|metalcore)\b", re.I)
+GENRE = re.compile(
+    r"\b(metal|hardcore|punk|grindcore|grind|deathcore|death metal|black metal|"
+    r"doom|stoner|sludge|thrash|heavy metal|post.metal|hard rock|metalcore|"
+    r"mathcore|powerviolence|screamo|skramz|blackgaze|d[- ]?beat)\b", re.I)
 EVENT_URL = re.compile(r"(concert|event|evenement|spectacle|agenda|programmation|show|billet)", re.I)
 
 
