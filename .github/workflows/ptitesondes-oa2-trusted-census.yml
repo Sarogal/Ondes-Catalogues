@@ -1,0 +1,45 @@
+name: "P'tites Ondes — inventaire OpenAgenda v2 (manuel, branche fiable)"
+
+# IMPORTANT : no pull_request, pull_request_target, push or schedule trigger.
+# workflow_dispatch is only runnable after this file is on default branch.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trusted-oa2-agenda-census:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Checkout reviewed public main code by immutable dispatch SHA
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Checkout only approved private source configuration
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: main
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          sparse-checkout: |
+            automation/sources.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+          path: private-source-config
+      - name: Run bounded, anonymized API v2 agenda inventory
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+        run: |
+          python scripts/ptitesondes_openagenda_v2_agenda_census.py \
+            --sources private-source-config/automation/sources.json
+      - name: Discard private source checkout
+        if: always()
+        run: rm -rf private-source-config
