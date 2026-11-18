@@ -151,7 +151,8 @@ def _slots(event, timezone):
     return slots
 
 
-def group_multi_day(event, external_organizer_schedule=None):
+def group_multi_day(event, external_organizer_schedule=None,
+                    reviewed_organizer_origin=None):
     """Distinguish one-day, continuous period, series, and uncertain repeat.
 
     The externally supplied schedule MUST be separately authenticated by the
@@ -179,7 +180,9 @@ def group_multi_day(event, external_organizer_schedule=None):
     s = external_organizer_schedule
     if not isinstance(s, dict) or str(s.get("event_uid")) != identifier:
         return grouped
-    if _fixed_https(s.get("source_url")) is None:
+    source = _fixed_https(s.get("source_url"))
+    reviewed = _fixed_https(reviewed_organizer_origin)
+    if source is None or reviewed is None or source.hostname != reviewed.hostname:
         return grouped
     if s.get("presentation") == "continuous_period":
         if (s.get("date_start") == days[0]
@@ -200,7 +203,8 @@ def group_multi_day(event, external_organizer_schedule=None):
 
 
 def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
-                           grouping, historic_uid_exists=False):
+                           grouping, historic_uid_exists=False,
+                           independently_linked=False):
     """Assess whether ODS absence MAY be investigated using direct API proof.
 
     No boolean named approved; this is a non-publishing routing diagnostic.
@@ -225,6 +229,8 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
     if (not isinstance(agenda_identity, dict)
             or agenda_identity.get("identity_consistent") is not True):
         return dict(report, reason="agenda_identity_not_consistent")
+    if independently_linked is not True:
+        return dict(report, reason="institutional_agenda_link_not_verified")
     if not isinstance(grouping, dict) or grouping.get("schema") != SCHEMA:
         return dict(report, reason="grouping_not_checked")
     if grouping.get("kind") != "one_day_explicit_slots":
