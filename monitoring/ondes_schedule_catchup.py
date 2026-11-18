@@ -31,8 +31,8 @@ TARGETS = MappingProxyType({
         "workflow": "ptitesondes-private-intake-on-public-runners.yml",
         "success_gap": dt.timedelta(hours=7),
         "active_gap": dt.timedelta(hours=7),
-        # 'write' is private intake persistence, NOT public publication.
-        "inputs": {"cycle": "all", "mode": "write", "recovery": "catchup"},
+        # The existing runner allows recovery=catchup only for outings.\n        # 'write' is private intake persistence, NOT public publication.
+        "inputs": {"cycle": "outings", "mode": "write", "recovery": "catchup"},
     },
 })
 
