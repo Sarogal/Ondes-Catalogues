@@ -373,3 +373,79 @@ def census_institution_pins_on_private_backlog(leads, reviewed_sources,
         "publisher_connected": False,
         "public_writes": 0,
     }
+
+
+def diagnose_legacy_ods_authenticated_mapping(lead, reviewed_source,
+                                               api_event, trusted_api_context):
+    """Bridge a slug-only ODS mirror to EXACT verified OA API identity only.
+
+    Neither the mirror URL nor its slug is rewritten or offered to the
+    publisher. It remains a candidate pointer until a separate, trusted
+    API reader has fetched the event UID within the independently curated
+    agenda UID. All source/venue/time/age/rights gates remain outstanding.
+    """
+    from ptitesondes_openagenda_v2_direct_evidence import (
+        API_ORIGIN, _uid, _norm, _fr,
+    )
+    base = {
+        "schema": "ptitesondes.oa2.legacy_ods_authenticated_identity.v1",
+        "stage": "invalid_or_unreviewed_legacy_pointer",
+        "api_event_identity_bound_for_review": False,
+        "canonical_source_url_verified": False,
+        "institutional_ownership_attested": False,
+        "independent_venue_verified": False,
+        "independent_event_sessions_verified": False,
+        "rights_reviewed": False,
+        "approval_granted": False,
+        "publisher_connected": False,
+        "public_writes": 0,
+    }
+    if (not isinstance(lead, dict)
+            or lead.get("collector") != "opendatasoft-index"
+            or not isinstance(reviewed_source, dict)
+            or set(reviewed_source) != {
+                "institution_host", "exact_page_url", "agenda_slug",
+                "agenda_uid", "timezone"}
+            or not isinstance(reviewed_source.get("institution_host"), str)
+            or _url(reviewed_source.get("exact_page_url"),
+                    host=reviewed_source["institution_host"]) is None
+            or not _calendar_review({
+                key: reviewed_source.get(key)
+                for key in ("agenda_slug", "agenda_uid", "timezone")})
+            or _legacy_mirror_slug(lead.get("source_url"))
+            != reviewed_source["agenda_slug"]):
+        return base
+    source_uid = lead.get("external_id")
+    if not _uid(source_uid):
+        return base
+    reviewed_uid = reviewed_source["agenda_uid"]
+    if (not isinstance(trusted_api_context, dict)
+            or set(trusted_api_context) != {
+                "agenda_uid", "event_uid", "response_url",
+                "method", "status", "key_kind"}
+            or str(trusted_api_context.get("agenda_uid")) != str(reviewed_uid)
+            or str(trusted_api_context.get("event_uid")) != str(source_uid)
+            or trusted_api_context.get("response_url") != (
+                API_ORIGIN + "/v2/agendas/" + str(reviewed_uid)
+                + "/events/" + str(source_uid))
+            or trusted_api_context.get("method") != "GET"
+            or type(trusted_api_context.get("status")) is not int
+            or trusted_api_context["status"] != 200
+            or trusted_api_context.get("key_kind") != "public_read_only"):
+        return dict(base, stage="api_event_request_not_independently_bound")
+    if (not isinstance(api_event, dict)
+            or not _uid(api_event.get("uid"))
+            or str(api_event["uid"]) != str(source_uid)):
+        return dict(base, stage="api_event_uid_not_concordant")
+    if (not _norm(_fr(api_event, "title"))
+            or _norm(_fr(api_event, "title")) != _norm(lead.get("title"))):
+        return dict(base, stage="api_event_title_not_concordant")
+    place = api_event.get("location")
+    if (not isinstance(place, dict) or
+            _norm(place.get("adminLevel4")) != _norm(lead.get("city")) or
+            _norm(place.get("name")) != _norm(lead.get("venue")) or
+            not _norm(lead.get("venue")) or not _norm(lead.get("city"))):
+        return dict(base, stage="api_event_place_identity_not_concordant")
+    return dict(
+        base, stage="legacy_identity_api_bound_other_gates_pending",
+        api_event_identity_bound_for_review=True)
