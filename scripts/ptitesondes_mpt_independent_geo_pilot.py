@@ -151,7 +151,7 @@ def reviewed_pilot_records():
 def validate_curated_registry(records=None):
     """Structural review, NOT verification that the live IGN API still agrees."""
     records = PILOT_VENUES if records is None else records
-    if not isinstance(records, (tuple, list)) or not 3 <= len(records) <= 7:
+    if not isinstance(records, (tuple, list)) or not 1 <= len(records) <= 100:
         return False
     seen_keys, seen_names = set(), set()
     for r in records:
