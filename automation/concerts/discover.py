@@ -298,6 +298,15 @@ def venue_candidate(raw, source, page_url, known, day):
     if source_city and event_city and source_city != event_city:
         return None
     artist = safe_name(raw.get("performer")) or name
+    # The event's own structured genre is eligible for REVIEW triage only.
+    # Do not promote keywords or the venue's generic description to evidence.
+    event_genres = raw.get("genre", [])
+    if isinstance(event_genres, str):
+        event_genres = [event_genres]
+    if not isinstance(event_genres, list):
+        event_genres = []
+    event_genres = [item.strip() for item in event_genres
+                    if isinstance(item, str) and item.strip()][:20]
     keywords = " ".join(map(str, [raw.get("genre", ""), raw.get("keywords", ""), raw.get("description", "")]))
     if not name or not venue or not city:
         return None
@@ -311,6 +320,7 @@ def venue_candidate(raw, source, page_url, known, day):
         "source": "agenda_officiel_structuré", "sourceUrl": ref_url,
         "sourcePage": page_url, "date": date, "name": name, "leadArtist": artist,
         "venue": venue, "city": city, "department": source["department"],
+        "classification": event_genres,
         "genreToConfirm": not relevant,
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
