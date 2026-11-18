@@ -108,7 +108,7 @@ def verify(candidate, page, catalogue, today):
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
     if len(venues) != 1 or triage.words(venues[0].get("city")) != CITY or (
             any(venues[0].get(k) is None for k in ("latitude","longitude"))):
-        raise ValueError("Black Lab : salle géolocalisée non confirmée")
+        raise ValueError("Black Lab : Géolocalisation de la salle non confirmée")
 
     by_name, existing_ids, aliases = {}, set(), set()
     for artist in catalogue["artists"]:
