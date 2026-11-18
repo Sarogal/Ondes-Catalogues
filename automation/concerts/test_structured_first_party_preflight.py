@@ -91,6 +91,27 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
         self.assertEqual(json.dumps(original, ensure_ascii=False,
                                     sort_keys=True), before)
 
+    def test_unknown_guest_survives_two_independent_reads_without_artist_fabrication(self):
+        fixed = event_data(
+            name="Metal Surface + Guest",
+            performer=[
+                {"@type": "MusicGroup", "name": "Metal Surface"},
+                {"@type": "MusicGroup", "name": "Guest"},
+            ],
+        )
+        candidate = discover.venue_candidate(
+            fixed, SOURCE, SOURCE["url"], set(), TODAY.isoformat())
+        self.assertEqual(candidate["leadArtist"], "Metal Surface")
+        self.assertEqual(candidate["unannouncedSupportLabel"], "Guest")
+        candidate = triage.triage(candidate, catalogue=CATALOGUE)
+        html = ('<script type="application/ld+json">' +
+                json.dumps(fixed, ensure_ascii=False) + '</script>')
+        report = run(reg=registry([candidate]),
+                     fetch=lambda url, **kw: (html, url))
+        self.assertEqual(report["structureMatched"], 1)
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publicationAllowed"])
+
     def test_changed_official_performer_date_or_venue_is_held(self):
         variants = [
             {"performer": [
