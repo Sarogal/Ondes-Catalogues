@@ -29,11 +29,24 @@ class RecoveryTests(unittest.TestCase):
         p = recovery.TARGETS["sorties"]
         self.assertEqual(f["inputs"], {"phase": "catchup"})
         self.assertEqual(p["inputs"],
-                         {"cycle": "all", "mode": "write", "recovery": "catchup"})
+                         {"cycle": "outings", "mode": "write", "recovery": "catchup"})
         self.assertEqual(f["success_gap"], dt.timedelta(hours=14))
         self.assertEqual(p["success_gap"], dt.timedelta(hours=7))
         with self.assertRaises(TypeError):
             recovery.TARGETS["arbitrary"] = {}
+
+    def test_rescue_matches_existing_runner_fail_closed_guard(self):
+        # Main workflow rejects recovery=catchup unless CYCLE=outings,
+        # RUN_MODE=write and RUN_EVENT=external_rescue.
+        from pathlib import Path
+        script = Path(__file__).resolve().parents[1]
+        workflow = (script / ".github/workflows/ptitesondes-private-intake-on-public-runners.yml").read_text()
+        assert "if [[ \"$RECOVERY\" == 'catchup' ]]" in workflow
+        assert '"$CYCLE" != ' in workflow and "'outings'" in workflow
+        payload = recovery.TARGETS["sorties"]["inputs"]
+        self.assertEqual(payload["cycle"], "outings")
+        self.assertEqual(payload["mode"], "write")
+        self.assertEqual(payload["recovery"], "catchup")
 
     def test_recent_scheduled_run_suppresses_recovery(self):
         rows = [run(1)]
