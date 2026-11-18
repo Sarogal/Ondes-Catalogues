@@ -1,0 +1,102 @@
+name: "P'tites Ondes — OpenAgenda v2, preuve directe isolée"
+
+on:
+  push:
+    branches:
+      - feat/ptitesondes-openagenda-v2-direct-proof-20261118
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
+      - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
+      - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
+      - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_candidate_promotion.py'
+      - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
+      - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
+      - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_agenda_census.py'
+      - 'tests/test_ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
+      - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
+      - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
+      - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
+      - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_candidate_promotion.py'
+      - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
+      - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
+      - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
+      - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_agenda_census.py'
+      - 'tests/test_ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
+      - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adversarial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify direct API evidence without tokens or internet
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_direct_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_preintegration.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_dryrun_e2e.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_live_smoke.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_organizer_bridge.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_agenda_census.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_backlog_reconciliation.py' -v
+      - name: Ensure this change cannot publish, access secrets or add a cron
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path(".github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml").read_text()
+          assert "contents: read" in wf
+          assert not any(x.strip().startswith("schedule:") for x in wf.splitlines())
+          assert not any(x in wf for x in ("se" + "crets.", "git" + " push", "deploy" + "-pages", "contents:" + " write"))
+          source = Path("scripts/ptitesondes_openagenda_v2_direct_evidence.py").read_text()
+          assert "publisher_connected" in source and "public_writes" in source
+          assert "oa_pk_" in source and "oa_sk_" not in source
+          preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
+          assert "publisher_connected" in preflight and "public_writes" in preflight
+          assert not any(x in preflight for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          smoke = Path("scripts/ptitesondes_openagenda_v2_live_smoke.py").read_text()
+          assert "public_writes" in smoke and "approval_granted" in smoke
+          assert not any(x in smoke for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          organizer = Path("scripts/ptitesondes_openagenda_v2_organizer_bridge.py").read_text()
+          assert "public_writes" in organizer and "approval_granted" in organizer
+          assert not any(x in organizer for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          census = Path("scripts/ptitesondes_openagenda_v2_agenda_census.py").read_text()
+          assert "public_writes" in census and "approval_granted" in census
+          assert not any(x in census for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          funnel = Path("scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py").read_text()
+          assert "public_writes" in funnel and "approval_granted" in funnel
+          assert not any(x in funnel for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          print("PASS: offline-only checks, no publisher, no private actions")
+          PY
