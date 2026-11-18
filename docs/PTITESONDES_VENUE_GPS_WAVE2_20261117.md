@@ -41,3 +41,17 @@ Vérification faite par lecture des fiches institutionnelles et réponses de gé
 4. Attendre l'autorisation explicite pour toute fusion. Même après fusion, aucun événement ne contourne le contrôle organisateur/public/âge.
 
 **Ce lot ne prouve aucune nouvelle activité et n'autorise aucune publication.**
+
+## Vérification réutilisable (18 novembre 2026)
+
+Le module `scripts/ptitesondes_independent_ign_venue_recheck.py` est indépendant du collecteur et de la ville : une entrée **déjà documentée dans le registre** est recoupée avec une réponse IGN/BAN fournie séparément, en imposant HTTPS, domaine et chemin exacts, requête épinglée contenant un numéro et un code postal, retour de type `housenumber`, identité exacte (numéro, ville, code postal, libellé), score ≥ 0,95, coordonnées situées à 15 m maximum du point préalablement revu et **un seul résultat concordant**. Une réponse de type `street`, des similitudes de nom ou un centroïde ne sont jamais suffisants.
+
+Il s'agit d'un **recontrôle générique d'un lieu préalablement homologué**, et non d'un géocodeur qui inventerait l'adresse d'une nouvelle salle. Le module ne valide ni séance, ni public, ni âge, ni prix, ni inscription et ne touche pas aux catalogues.
+
+Le `scripts/ptitesondes_ign_geo_live_smoke.py` effectue une lecture HTTPS bornée en taille et délai, sans redirection ni secret, sur les quatre URLs IGN déjà documentées. Il n'affiche que des compteurs. Les tests spécialisés reproduisent les homonymes, duplications, adresses inexactes, coordonnées fausses, URLs usurpées, points de rue et réponses ambiguës. Le workflow en PR conserve ses permissions `contents: read`, sans cron.
+
+### Portée calculée sur le backlog privé du 18 novembre
+
+Les quatre lieux correspondent exactement à **40 pistes futures** de la branche privée d'intake : 29 Studio 24 Villeurbanne, 4 Aretha-Franklin Rouen, 4 Simone de Beauvoir Rouen et 3 La Grand-Plage Roubaix. Toutes possèdent un format `collector` reconnu et un UID de forme valide. **Ce n'est pas 40 sorties automatiquement approuvées.** Les contrôles ODS UID, véritable source organisatrice, date/heure, public familial et doublons restent nécessaires. Cette statistique n'est pas intégrée aux logs publics du workflow et ne divulgue aucune piste privée supplémentaire.
+
+La prochaine étape consistera, après revue et intégration autorisée du registre, à **mesurer combien des 40 franchissent le nouveau premier filtre puis le prévalidateur complet**, et à sélectionner les prochains lieux selon le volume de pistes réelles et l'existence d'une adresse officielle de bâtiment.
