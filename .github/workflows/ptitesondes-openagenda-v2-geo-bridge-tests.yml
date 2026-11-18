@@ -7,10 +7,12 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_geo_fetch.py'
       - 'scripts/ptitesondes_openagenda_v2_geo_batch.py'
       - 'scripts/ptitesondes_openagenda_v2_geo_registry.py'
+      - 'scripts/ptitesondes_oa2_backlog_geo_coverage.py'
       - 'tests/test_ptitesondes_openagenda_v2_geo_bridge.py'
       - 'tests/test_ptitesondes_openagenda_v2_geo_fetch.py'
       - 'tests/test_ptitesondes_openagenda_v2_geo_batch.py'
       - 'tests/test_ptitesondes_openagenda_v2_geo_registry.py'
+      - 'tests/test_ptitesondes_oa2_backlog_geo_coverage.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_GEO_BRIDGE_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml'
 
@@ -38,6 +40,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_geo_batch.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_geo_registry.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_backlog_geo_coverage.py' -v
       - name: Verify isolated test job has no secret, publish or cron
         shell: bash
         run: |
@@ -60,5 +64,9 @@ jobs:
           assert 'diagnose_batch' in registry and '_validate_registry' in registry
           assert 'source_pins_selected_from_curated_registry_only' in registry
           assert not any(x in registry for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          coverage = Path('scripts/ptitesondes_oa2_backlog_geo_coverage.py').read_text()
+          assert 'contains_candidate_identifiers' in coverage
+          assert 'public_writes' in coverage and 'approval_granted' in coverage
+          assert not any(x in coverage for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
           print('PASS: isolated offline geometry tests, zero secrets/publisher')
           PY
