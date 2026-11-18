@@ -80,3 +80,49 @@ vérification indépendante.
 
 **Ne pas lever les refus de source/organisateur, accès, droits, identité GPS, horaires et historique.
 Tout élargissement des catégories doit être explicite, versionné, testé et validé avant le publisher.**
+
+## Développement complémentaire : découverte générique depuis un index officiel
+
+`ptitesondes_openagenda_v2_organizer_index.py` fournit une première brique
+de découverte des pages d'événements **sans liste blanche par événement**.
+
+1. Un registre d'organisateur maintenu indépendamment fournit uniquement un
+   `approved_host` et une `exact_index_url` d'agenda institutionnel.
+2. L'index est téléchargé par un lecteur fiable, avec URL finale exacte,
+   aucune redirection, taille bornée et sans secret.
+3. Les liens HTML **visibles** sont analysés. Seul un intitulé exact normalisé,
+   hébergé en HTTPS sur le domaine épinglé, peut désigner une page.
+4. Plusieurs pages candidates au même titre => refus d'arbitrage. Page absente,
+   lien caché, externe ou douteux => refus.
+5. L'URL découverte reste **privée dans le processus d'analyse** ;
+   le rapport public renvoie uniquement un motif prédéfini.
+6. Le site et la page d'événement doivent encore confirmer publiquement
+   l'intégralité des séances, le titre, le lieu, la commune, le public.
+   Les validations d'identité, droits, GPS, âge, historique et publication
+   restent toutes indispensables.
+
+**Limite réelle :** cette méthode couvre les index HTML où le titre apparaît
+exactement dans le texte visible d'un lien. Elle ne couvre pas à elle seule
+les agendas uniquement JavaScript, les pages de pagination et les API
+spécialisées, les titres raccourcis ou les manifestations multi-jours.
+Elle n'atteste pas non plus la propriété de l'organisateur. Des adaptateurs
+génériques distincts seront requis, sans assouplir les preuves.
+
+## Statistiques complémentaires sur la branche de stockage privée
+
+Lecture agrégée effectuée sur les 434 pistes existantes :
+
+- 412 pistes avec URL sous `openagenda.com`, **qui ne fournit pas** en soi
+  une attestation indépendante de l'organisateur.
+- 22 autres pistes, qui doivent suivre une procédure propre à leur source.
+- 334 couples UID/date futurs distincts, 27 UID présents à plusieurs dates,
+  soit 166 pistes futures dans ces séries.
+- 7 lieux permanents publics actuellement disponibles pour la réutilisation
+  de preuves géographiques, à la date de cette lecture.
+- 549 fiches historiques et futures publiées au total ; 364 futures.
+
+Ces comptages ne constituent pas des données de validation finale.
+Les vérificateurs réunis ne peuvent pas être exécutés intégralement
+sur le seul fichier de backlog : il manque les réponses directes API v2
+correspondantes, les pages officielles indépendamment épinglées et les
+réponses géographiques IGN/BAN. **Ne jamais fabriquer ces preuves.**
