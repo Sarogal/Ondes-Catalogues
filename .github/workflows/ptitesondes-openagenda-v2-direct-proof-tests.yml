@@ -10,12 +10,15 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
+      - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'tests/test_ptitesondes_openagenda_v2_agenda_census.py'
+      - 'tests/test_ptitesondes_openagenda_v2_backlog_reconciliation.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   pull_request:
@@ -25,12 +28,15 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
+      - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'tests/test_ptitesondes_openagenda_v2_agenda_census.py'
+      - 'tests/test_ptitesondes_openagenda_v2_backlog_reconciliation.py'
       - 'docs/PTITESONDES_OPENAGENDA_V2_DIRECT_PROOF_20261118.md'
       - '.github/workflows/ptitesondes-openagenda-v2-direct-proof-tests.yml'
   workflow_dispatch:
@@ -63,6 +69,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_organizer_bridge.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_agenda_census.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_backlog_reconciliation.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
@@ -87,5 +95,8 @@ jobs:
           census = Path("scripts/ptitesondes_openagenda_v2_agenda_census.py").read_text()
           assert "public_writes" in census and "approval_granted" in census
           assert not any(x in census for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          funnel = Path("scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py").read_text()
+          assert "public_writes" in funnel and "approval_granted" in funnel
+          assert not any(x in funnel for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           print("PASS: offline-only checks, no publisher, no private actions")
           PY
