@@ -21,7 +21,8 @@ STRUCTURE = "bonjour-minuit-named-h2-and-immediate-genre-badge"
 # and supporting acts may be electro, pop, hip-hop, etc.; they must still have
 # their own first-party artist H2 and immediate genre badge.
 STYLE_PREFIX = re.compile(
-    r"^(?:rock|metal|punk|hardcore|post punk|noise|grunge|stoner|"
+    r"^(?:(?:transe|math|electro|art|indie|kraut|psych) rock|"
+    r"rock|metal|punk|hardcore|post punk|noise|grunge|stoner|"
     r"electro|electronique|pop|indie|dj set|rap|hip hop|jazz|"
     r"ska|soul|folk|new wave|ambient|experimental|chanson|"
     r"psych(?:e|edelique)|post rock|shoegaze|indus|trip hop)\b"
