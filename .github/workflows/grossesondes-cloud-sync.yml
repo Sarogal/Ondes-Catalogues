@@ -30,6 +30,12 @@ on:
     - cron: '47 10 * * *'
     # Deuxième passage quotidien : GitHub peut retarder ou manquer un cron.
     - cron: '45 17 * * *'
+  # A successful first-party private intake can immediately wake the
+  # existing strict publisher; it still re-fetches and revalidates all proofs.
+  workflow_run:
+    workflows:
+      - Grosses Ondes — moteur Festivals public, état privé protégé
+    types: [completed]
   workflow_dispatch:
     inputs:
       mode:
@@ -70,7 +76,21 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
 
   prepare:
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && (github.event_name != 'schedule' || vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') }}
+    if: >-
+      ${{
+        github.event_name != 'pull_request' &&
+        github.ref == 'refs/heads/main' &&
+        ((github.event_name != 'schedule' && github.event_name != 'workflow_run') ||
+          vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') &&
+        (github.event_name != 'workflow_run' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.status == 'completed' &&
+           github.event.workflow_run.name == 'Grosses Ondes — moteur Festivals public, état privé protégé' &&
+           (github.event.workflow_run.event == 'schedule' ||
+            github.event.workflow_run.event == 'workflow_dispatch') &&
+           github.event.workflow_run.head_branch == 'main' &&
+           github.event.workflow_run.head_repository.full_name == github.repository))
+      }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -85,6 +105,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Refuser un workflow_run non authentifié avant les secrets privés
+        if: github.event_name == 'workflow_run'
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: python scripts/grossesondes_festival_intake_trust.py --check-event
       - name: Vérifier les tests de conservation et de contrôle documentaire
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
       - name: Préparer le candidat ou la modification contrôlée
@@ -92,7 +117,7 @@ jobs:
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
           GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
-          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_run') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           python scripts/grossesondes_cloud_sync.py --mode "$MODE"
           if git diff --quiet -- docs/grossesondes/festivals.json; then
@@ -112,7 +137,7 @@ jobs:
         env:
           CHANGED: ${{ steps.sync.outputs.changed }}
           GROSSES_ENABLED: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
-          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
+          MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_run') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           if [ "$CHANGED" = "true" ] && [ "$GROSSES_ENABLED" = "enabled" ] && [ "$MODE" = "publish" ]; then
             echo "deploy=true" >> "$GITHUB_OUTPUT"
