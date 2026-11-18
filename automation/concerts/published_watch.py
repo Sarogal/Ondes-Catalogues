@@ -27,6 +27,8 @@ import trabendo_adapter
 import maroquinerie_adapter
 import boule_noire_adapter
 import bonjour_minuit_adapter
+import blacklab_adapter
+import blacklab_official_recheck
 import rocher_palmer_adapter
 
 CLOUD = "https://sarogal.github.io/Ondes-Catalogues/grossesondes/concerts.json"
@@ -56,6 +58,8 @@ SOURCES = {
         "bonjour-minuit.fr",
         re.compile(r"/evenement/(?:magma-02dec26|sbrbs-30janv27)/", re.I),
         "bonjour"),
+    "the-black-lab-wasquehal": (
+        blacklab_adapter.HOST, blacklab_adapter.PATH, "blacklab"),
 
     # First pilot for already published Rocher bills; exact official detail
     # only. Other Rocher dates still require separate lineup qualification.
@@ -184,6 +188,8 @@ def source_kind(event):
     if kind == "forum" and FORUM_WATCH_URLS.get(event.get("id")) != url:
         return None
     if kind == "bonjour" and BONJOUR_WATCH_URLS.get(event.get("id")) != url:
+        return None
+    if kind == "blacklab" and blacklab_adapter.official_slug(url) is None:
         return None
     if kind == "rocher" and event.get("id") != "go-c-20261107-cenon-gwendoline":
         return None
@@ -507,6 +513,57 @@ def rocher_inspect(event, page, artists):
                     "reason":"Début du concert différent sur la fiche officielle"}
     return {"status":"matched","observedDate":date}
 
+def blacklab_inspect(event, page, artists):
+    """Read-only review of *any* already-public named Black Lab event URL.
+
+    Identical first-party title/date/artist evidence is needed. A changed
+    date, bill or cancellation returns an anomaly only. No catalog writes,
+    new approvals or guessed musical times.
+    """
+    url = event.get("officialUrl", "")
+    if (event.get("venueId") != "the-black-lab-wasquehal"
+            or blacklab_adapter.official_slug(url) is None):
+        return {"status": "unsupported", "reason": "Fiche Black Lab non fiable"}
+    doc = blacklab_adapter._Parse()
+    doc.feed(page)
+    if doc.heading_end is None:
+        return {"status": "unverifiable", "reason": "En-tête individuel absent"}
+    chunks = doc.parts[doc.heading_end:]
+    early = blacklab_adapter.fold(" ".join(chunks[:65]))
+    if blacklab_adapter.CANCEL.search(early):
+        return {"status": "content_review",
+                "reason": "Mention de report ou d'annulation sur la fiche officielle"}
+    anchor = (dt.date.fromisoformat(event["date"]) -
+              dt.timedelta(days=180)).isoformat()
+    source = {"name": "The Black Lab", "city": "Wasquehal",
+              "department": "59", "url": blacklab_adapter.AGENDA}
+    try:
+        detail = blacklab_adapter.detail_candidate(page, url, source, anchor)
+    except (ValueError, KeyError, TypeError) as exc:
+        return {"status": "unverifiable",
+                "reason": "Fiche officielle modifiée, contrôle manuel : " + str(exc)[:100]}
+    if detail["date"] != event["date"]:
+        return {"status": "date_review", "observedDate": detail["date"],
+                "reason": "Date officielle modifiée"}
+    try:
+        names, _guest = blacklab_official_recheck.bill_from_official_body(
+            detail["name"], chunks)
+    except ValueError as exc:
+        return {"status": "unverifiable",
+                "reason": "Plateau officiel non vérifiable : " + str(exc)[:110]}
+    expected = [norm(artists.get(aid, "")) for aid in event.get("artistIds", [])]
+    if not expected or not all(expected):
+        return {"status": "unverifiable", "reason": "Artiste publié introuvable"}
+    actual = [norm(name) for name in names]
+    if actual != expected:
+        return {"status": "lineup_review", "observedDate": detail["date"],
+                "observedArtists": names,
+                "reason": "Plateau sur le site officiel différent du catalogue"}
+    # The venue's event times denote its timetable, never proven stage start.
+    return {"status": "matched", "observedDate": detail["date"],
+            "reason": "Date, salle et groupes corroborés ; horaire non inféré"}
+
+
 def trabendo_exact_named_support(event, page, artists, detail):
     """Verify BOTH named acts in the same first-party concert card.
 
@@ -568,6 +625,8 @@ def inspect(event, page, artists):
             return rocher_inspect(event,page,artists)
         if kind == "bonjour":
             return bonjour_inspect(event,page,artists)
+        if kind == "blacklab":
+            return blacklab_inspect(event,page,artists)
         if kind == "rex":
             evidence = official_recheck.parse_detail(page)
             observed_date = evidence["date"]
