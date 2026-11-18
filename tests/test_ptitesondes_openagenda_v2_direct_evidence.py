@@ -13,7 +13,8 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_openagenda_v2_direct_evidence import (
-    review_direct_v2, read_direct_v2, redacted_batch_report,
+    review_direct_v2, read_direct_v2, read_direct_agenda_v2,
+    redacted_batch_report,
 )
 
 TODAY = date(2026, 11, 18)
@@ -330,6 +331,45 @@ class _MockHttp:
 
 
 class OA2ReadOnlyTransportTests(unittest.TestCase):
+    def test_read_agenda_uid_slug_only_does_not_prove_ownership(self):
+        meta = {"uid": 919191, "slug": "commune-test",
+                "title": "Agenda fictif", "official": 1,
+                "url": "https://ville-exemple.fr/"}
+        net = _MockHttp(meta)
+        result = read_direct_agenda_v2(
+            "919191", "oa_pk_" + "x" * 30, opener=net)
+        self.assertEqual(result["uid"], 919191)
+        self.assertEqual(result["slug"], "commune-test")
+        self.assertEqual(net.url, "https://api.openagenda.com/v2/agendas/919191")
+        self.assertNotIn("oa_pk_", net.url)
+        self.assertEqual(net.request.get_header("Key"),
+                         "oa_pk_" + "x" * 30)
+        self.assertEqual(net.timeout, 18)
+        # The API's own official flag is never independent evidence.
+        self.assertNotIn("ownership_attested", result)
+        self.assertNotIn("publisher_connected", result)
+
+    def test_agenda_transport_refuses_redirect_mismatched_uid_bad_slug_and_keys(self):
+        valid = {"uid": 919191, "slug": "commune-test"}
+        fixtures = [
+            (dict(valid, uid=919192), False, 200),
+            (dict(valid, slug="unsafe/slug"), False, 200),
+            (valid, True, 200),
+            (valid, False, 401),
+        ]
+        for payload, redirected, status in fixtures:
+            with self.subTest(payload=payload, redirected=redirected,
+                              status=status):
+                with self.assertRaises(ValueError):
+                    read_direct_agenda_v2(
+                        "919191", "oa_pk_" + "x" * 30,
+                        opener=_MockHttp(payload, redirected, status))
+        for key in ("oa_sk_" + "x" * 30, "legacykey",
+                    "oa_pk_" + "x" * 30 + "\\nlog: secret"):
+            with self.subTest(key=key):
+                with self.assertRaises(ValueError):
+                    read_direct_agenda_v2("919191", key, opener=_MockHttp(valid))
+
     def test_public_key_header_only_exact_pinned_https_route(self):
         network = _MockHttp(EVENT)
         row = read_direct_v2("919191", "12345678", "oa_pk_" + "x" * 30,
