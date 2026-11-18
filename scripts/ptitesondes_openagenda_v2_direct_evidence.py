@@ -50,8 +50,10 @@ CHILD = re.compile(
     r"jeune public|petits et grands|adolescents?|ados?)\b"
 )
 EXCLUSIVELY_ADULT = re.compile(
-    r"\b(?:reserve aux adultes|adulte uniquement|interdit aux enfants|"
-    r"sans enfants|public adulte seulement)\b"
+    r"\b(?:reservee?s? aux adultes?|adultes? uniquement|"
+    r"interdit(?:e|s|es)? aux enfants|sans enfants|"
+    r"public adultes?(?: seulement)?|18 ans et plus|"
+    r"a partir de 18 ans)\b"
 )
 # Only these stable, programmer-owned reason codes may leave private audit.
 SAFE_REASONS = frozenset({
