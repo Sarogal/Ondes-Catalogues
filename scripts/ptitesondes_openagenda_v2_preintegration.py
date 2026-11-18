@@ -185,10 +185,24 @@ def group_multi_day(event, external_organizer_schedule=None,
     if source is None or reviewed is None or source.hostname != reviewed.hostname:
         return grouped
     if s.get("presentation") == "continuous_period":
-        if (s.get("date_start") == days[0]
-                and s.get("date_end") == days[-1]):
+        start, end = s.get("date_start"), s.get("date_end")
+        if start == days[0] and end == days[-1]:
             return dict(grouped, kind="continuous_period_for_editorial_review",
                         reason="range_representation_requires_editorial_review")
+        # The organiser may document only ONE portion of a much longer
+        # programme. This is not proof that the other dates, nor each
+        # individual OpenAgenda timing, is a public session. Never synthesize
+        # a daily fiche from this subset.
+        if (isinstance(start, str) and isinstance(end, str)
+                and start in days and end in days and start < end):
+            window = [day for day in days if start <= day <= end]
+            if len(window) >= 2:
+                return dict(
+                    grouped,
+                    kind="partial_continuous_period_for_editorial_review",
+                    independently_confirmed_window_days=len(window),
+                    reason="only_official_subperiod_confirmed_no_daily_sessions",
+                )
     if s.get("presentation") == "separate_sessions":
         proposed = s.get("confirmed_slots")
         if isinstance(proposed, list) and all(
