@@ -125,11 +125,24 @@ class StructuredOrganizerContract(unittest.TestCase):
             VISIBLE.replace("Lecture pour enfants", "Spectacle adulte"),
             VISIBLE.replace("Bibliothèque fictive", "Autre centre"),
             VISIBLE.replace("Villeurbanne", "Rouen"),
-            VISIBLE.replace("Pour les enfants et familles.", "Grand public."),
+            VISIBLE.replace("Pour les enfants et familles.", "Atelier adultes seulement."),
         ):
             with self.subTest(section=section):
                 self.assertFalse(verify(page_html=html(visible=section))[
                     "official_structured_sessions_concordant"])
+
+    def test_neutral_title_cannot_substitute_for_absent_visible_family_audience(self):
+        lead = deepcopy(LEAD)
+        event = deepcopy(EVENT)
+        lead["title"] = "Lecture du samedi"
+        event["title"]["fr"] = "Lecture du samedi"
+        node = dict(SESSION, name="Lecture du samedi")
+        visible = (VISIBLE.replace("Lecture pour enfants", "Lecture du samedi")
+                   .replace("Pour les enfants et familles.", "Grand public."))
+        result = verify(
+            lead=lead, event=event, page_html=html(node, visible=visible))
+        self.assertEqual(result["reason"], "organizer_family_audience_not_visible")
+        self.assertFalse(result["approval_granted"])
 
     def test_visible_explicit_adult_only_cancelled_and_full_are_blocking(self):
         for line in ("Réservé aux adultes uniquement",
