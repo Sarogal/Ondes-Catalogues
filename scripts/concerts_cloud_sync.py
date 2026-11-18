@@ -5338,7 +5338,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and isinstance(badges, list) and len(badges) == len(names)
                 and all(isinstance(x, str) and 3 <= len(x) <= 100
                         and re.match(
-                            r"^(?:rock|metal|punk|hardcore|post punk|noise|"
+                            r"^(?:(?:transe|math|electro|art|indie|kraut|psych) rock|"
+                            r"rock|metal|punk|hardcore|post punk|noise|"
                             r"grunge|stoner|electro|electronique|pop|indie|"
                             r"dj set|rap|hip hop|jazz|ska|soul|folk|"
                             r"new wave|ambient|experimental|chanson|"
@@ -5351,6 +5352,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     norm(badges[0]) == norm(event["genres"][0])
                     or norm(badges[0]).startswith(
                         norm(event["genres"][0]) + " ")
+                    or (norm(event["genres"][0]) == "rock"
+                        and bool(re.match(
+                            r"^(?:transe|math|electro|art|indie|kraut|psych) rock\b",
+                            norm(badges[0]))))
                 ),
                 "Bonjour Minuit auto : plateau ou badges non corroborés")
         label = p.get("unannouncedSupportLabel")
