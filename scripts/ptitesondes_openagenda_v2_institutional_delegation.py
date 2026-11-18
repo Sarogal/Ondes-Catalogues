@@ -225,3 +225,111 @@ def diagnose_delegated_calendar_candidate(case, reviewed_source,
             venue_verified=True, direct_source_verified=True)
     except (TypeError, ValueError, KeyError, OverflowError, OSError):
         return dict(base, stage="invalid_case")
+
+
+# Registry selection is by reviewed agenda SLUG, never by event title,
+# claimed organizer, untrusted search snippet or candidate-supplied site URL.
+MAX_REVIEWED_INSTITUTIONS = 500
+MAX_BACKLOG = 4000
+
+
+def _registry_by_slug(reviewed_sources):
+    """Validate trusted pins. Never resolve a conflicting slug automatically."""
+    if (not isinstance(reviewed_sources, list)
+            or len(reviewed_sources) > MAX_REVIEWED_INSTITUTIONS):
+        raise ValueError("invalid_trusted_institution_registry")
+    registry = {}
+    for source in reviewed_sources:
+        if (not isinstance(source, dict) or set(source) != {
+                "institution_host", "exact_page_url", "agenda_slug",
+                "agenda_uid", "timezone"}):
+            raise ValueError("invalid_trusted_institution_registry")
+        agenda = {k: source[k] for k in (
+            "agenda_slug", "agenda_uid", "timezone")}
+        if (not isinstance(source["institution_host"], str)
+                or _url(source["exact_page_url"],
+                        host=source["institution_host"]) is None
+                or not _calendar_review(agenda)):
+            raise ValueError("invalid_trusted_institution_registry")
+        slug = source["agenda_slug"]
+        registry.setdefault(slug, []).append(source)
+    return registry
+
+
+def select_pinned_agenda_for_lead(lead, reviewed_sources):
+    """Return a private registry pin, never an approval or public datum.
+
+    A lead may identify the agenda by *its strict OA URL* but can never choose
+    the institution host or an unofficial agenda. Duplicates/ambiguity HOLD.
+    """
+    from ptitesondes_openagenda_v2_direct_evidence import _source_parts
+    registry = _registry_by_slug(reviewed_sources)
+    return _select_indexed_lead(lead, registry)
+
+
+def _select_indexed_lead(lead, index):
+    from ptitesondes_openagenda_v2_direct_evidence import _source_parts
+    if not isinstance(lead, dict):
+        return "lead_identity_invalid", None
+    identity = _source_parts(lead.get("source_url"))
+    raw_uid = lead.get("external_id")
+    if (identity is None or not isinstance(raw_uid, str)
+            or raw_uid != identity[1]):
+        return "lead_identity_invalid", None
+    rows = index.get(identity[0], [])
+    if not rows:
+        return "no_independently_curated_institution", None
+    if len(rows) != 1:
+        return "institution_registry_ambiguous", None
+    return "institution_pin_selected_for_verification_only", rows[0]
+
+
+def census_institution_pins_on_private_backlog(leads, reviewed_sources,
+                                               today):
+    """Read-only aggregate of which leads can reach institution-page checks.
+
+    Intended for execution in a private trusted process, not for publishing
+    raw lead data to public Actions. No network, selectors or approval flags.
+    """
+    from collections import Counter
+    from datetime import date, timedelta
+    if (type(today) is not date or not isinstance(leads, list)
+            or len(leads) > MAX_BACKLOG):
+        raise ValueError("invalid_private_backlog")
+    index = _registry_by_slug(reviewed_sources)
+    counts = Counter()
+    cutoff = today + timedelta(days=184)
+    for lead in leads:
+        counts["raw_rows"] += 1
+        if not isinstance(lead, dict):
+            counts["malformed_rows"] += 1
+            continue
+        day = lead.get("date_start")
+        try:
+            when = date.fromisoformat(day)
+            if when.isoformat() != day:
+                raise ValueError("noncanonical")
+        except (ValueError, TypeError):
+            counts["invalid_or_missing_date"] += 1
+            continue
+        if when < today:
+            counts["expired_rows"] += 1
+            continue
+        if when > cutoff:
+            counts["outside_horizon_rows"] += 1
+            continue
+        counts["future_in_window_rows"] += 1
+        reason, _ = _select_indexed_lead(lead, index)
+        counts[reason] += 1
+    return {
+        "schema": "ptitesondes.oa2.institution_pin_private_census.v1",
+        "mode": "private_read_only_aggregate_no_source_approval",
+        "counts": dict(sorted(counts.items())),
+        "contains_private_identifiers": False,
+        "institutional_ownership_attested": False,
+        "official_session_proved": False,
+        "rights_reviewed": False,
+        "approval_granted": False,
+        "publisher_connected": False,
+        "public_writes": 0,
+    }
