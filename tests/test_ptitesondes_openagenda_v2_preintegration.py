@@ -1,5 +1,6 @@
 """Offline adversarial tests: no private backlog, credentials or publisher."""
 from copy import deepcopy
+from datetime import date, timedelta
 from pathlib import Path
 import sys
 import unittest
@@ -99,6 +100,40 @@ class MultiDayContract(unittest.TestCase):
         self.assertEqual(x["kind"], "continuous_period_for_editorial_review")
         self.assertFalse(x["daily_cards_authorized"])
         self.assertFalse(x["publication_authorized"])
+
+    def test_official_short_window_does_not_certify_entire_exhibition(self):
+        # Generic realistic pattern: one multi-day UID spans December to
+        # January, whereas a first-party programme attests only four days.
+        # The fixture asserts no inferred schedules or daily publications.
+        first = date(2026, 12, 5)
+        event = dict(EVENT, timings=[])
+        for n in range(30):
+            day = (first + timedelta(days=n)).isoformat()
+            event["timings"].append({
+                "begin": day + "T10:00:00+0100",
+                "end": day + "T18:00:00+0100",
+            })
+        limited = {
+            "event_uid": "12345678", "presentation": "continuous_period",
+            "date_start": "2026-12-05", "date_end": "2026-12-08",
+            "source_url": "https://programme.example.org/officiel",
+        }
+        x = group_multi_day(event, limited,
+                            reviewed_organizer_origin=ORGANIZER)
+        self.assertEqual(x["kind"],
+                         "partial_continuous_period_for_editorial_review")
+        self.assertEqual(x["explicit_day_count"], 30)
+        self.assertEqual(x["independently_confirmed_window_days"], 4)
+        self.assertFalse(x["daily_cards_authorized"])
+        self.assertFalse(x["publication_authorized"])
+        self.assertEqual(group_multi_day(event, limited)["kind"],
+                         "multi_day_unresolved")
+        suspect = dict(limited, date_end="2027-01-07")
+        self.assertEqual(
+            group_multi_day(event, suspect,
+                            reviewed_organizer_origin=ORGANIZER)["kind"],
+            "multi_day_unresolved",
+        )
 
     def test_continuous_period_requires_matching_range_and_official_origin(self):
         source = {"event_uid": "12345678", "presentation": "continuous_period",
