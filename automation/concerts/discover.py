@@ -15,6 +15,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import feeds
+import official_rss_jsonld_bridge
 import triage
 import venue_adapters
 import club_pages
@@ -389,6 +390,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
     chosen = p1 + [p2[(start + i) % len(p2)] for i in range(min(max_p2, len(p2)))]
     collected = {}
     robot_cache = {}
+    # Total limit prevents RSS detail expansion from becoming unbounded.
+    rss_probe_budget = 12
     for source in chosen:
         base = source["url"]
         info = {"venue": source["name"], "url": base}
@@ -2064,6 +2067,7 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             # Flux officiels déclarés dans le HTML : un maximum de deux liens de chaque type.
             # Jamais de publication : chaque événement ICS et chaque actualité RSS sont des pistes.
             feed_stats = {"ics": 0, "rss": 0, "feedErrors": []}
+            rss_leads = []
             all_links = feeds.feed_links(first, final, same_host)
             preferred_ics = source.get("preferred_ics_url")
             # Un flux officiel 'concerts uniquement' prévaut sur l'agenda général,
@@ -2086,14 +2090,44 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                         for candidate in candidates:
                             if kind == "ics":
                                 mark_match(candidate, known)
+                            else:
+                                rss_leads.append(candidate)
                             collected[candidate["candidateId"]] = candidate
                         feed_stats[kind] += len(candidates)
                     except Exception as feed_error:
                         feed_stats["feedErrors"].append({
                             "type": kind, "errorType": type(feed_error).__name__
                         })
+            # Resolve a bounded, rotating subset of first-party RSS article URLs.
+            # RSS pubDate is never a concert date. Only the article's own single
+            # MusicEvent with named performers/date/location can form a NEW
+            # quarantined discovery lead; the original undated lead remains.
+            rss_detail = {"attempted": 0, "dated": 0, "held": 0}
+            if rss_probe_budget > 0:
+                probes = official_rss_jsonld_bridge.select_leads(
+                    rss_leads, base, day, scan_slot,
+                    limit=min(2, rss_probe_budget))
+                for lead in probes:
+                    rss_probe_budget -= 1
+                    rss_detail["attempted"] += 1
+                    try:
+                        link = lead["sourceUrl"]
+                        if not robots_allow(link, robot_cache):
+                            rss_detail["held"] += 1
+                            continue
+                        body, actual = download(link, timeout=10, cap=900_000)
+                        record = official_rss_jsonld_bridge.candidate_from_event_page(
+                            lead, body, actual, source, known, day,
+                            read_ld=read_ld, venue_candidate=venue_candidate, norm=norm)
+                        if record is None:
+                            rss_detail["held"] += 1
+                            continue
+                        collected[record["candidateId"]] = record
+                        rss_detail["dated"] += 1
+                    except Exception:
+                        rss_detail["held"] += 1
             info.update({"pagesChecked": len(pages), "candidatesDetected": count,
-                         "feeds": feed_stats})
+                         "feeds": feed_stats, "rssStructured": rss_detail})
         except Exception as err:
             info["error"] = type(err).__name__ + ": " + str(err)[:130]
         report.append(info)
