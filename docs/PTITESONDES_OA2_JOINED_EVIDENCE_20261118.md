@@ -126,3 +126,20 @@ Les vérificateurs réunis ne peuvent pas être exécutés intégralement
 sur le seul fichier de backlog : il manque les réponses directes API v2
 correspondantes, les pages officielles indépendamment épinglées et les
 réponses géographiques IGN/BAN. **Ne jamais fabriquer ces preuves.**
+
+## Appel sécurisé de bout en bout
+
+Le nouveau point d'entrée `diagnose_indexed_candidate(case, reviewed_index,
+fetched_index, today)` **n'accepte aucun champ `reviewed_organizer` issu de
+la piste** : l'organisateur éligible est construit uniquement depuis le lien
+retrouvé sur un index institutionnel déjà épinglé. L'URL du document événement
+rechargé doit correspondre exactement au lien sélectionné, puis la chaîne
+préexistante vérifie GPS, UID, séances et audience.
+
+La fonction reste une PREVALIDATION structurelle sans droit de publication,
+et aucun appelant périodique ne l'utilise encore. Les pages de calendrier
+entièrement JavaScript, les flux ICS/RSS, la pagination et les widgets
+dont les liens individuels ne sont pas visibles demandent un adaptateur
+de découverte distinct ; le site public des médiathèques de Villeurbanne
+montre précisément cette limite. Les sites ne sont pas homologués à partir
+de la seule métadonnée collectée.
