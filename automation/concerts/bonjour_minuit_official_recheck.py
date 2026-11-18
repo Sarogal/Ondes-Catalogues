@@ -183,9 +183,15 @@ def verify(candidate, page, catalogue, today):
     parsed = OfficialArtistHeadings()
     parsed.feed(page)
     parsed.close()
-    if len(parsed.h1s) != 1:
+    # Actual first-party templates can include a structurally present but
+    # TEXTUALLY EMPTY H1 before the only real event H1 (18 Nov live source).
+    # Ignore empty headings, not additional named headings or conflicting
+    # bills. This is source-wide and never keyed to an event ID or URL.
+    named_h1s = [" ".join("".join(parts).split()) for parts in parsed.h1s]
+    named_h1s = [name for name in named_h1s if name]
+    if len(named_h1s) != 1:
         raise ValueError("Bonjour Minuit : unique affiche H1 obligatoire")
-    official_title = " ".join("".join(parsed.h1s[0]).split())
+    official_title = named_h1s[0]
     if venue.plain(official_title) != venue.plain(fresh["name"]):
         raise ValueError("Bonjour Minuit : intitulé officiel incohérent")
     if not parsed.sections:

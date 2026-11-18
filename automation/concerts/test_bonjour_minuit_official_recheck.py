@@ -77,6 +77,23 @@ def publish(record, cat):
 
 
 class BonjourMinuitIndependentTests(unittest.TestCase):
+    def test_empty_structural_h1_before_real_event_is_ignored_source_wide(self):
+        # Real first-party HTML has an empty H1 before the named H1.
+        # All official artist sections and the independent publisher MUST
+        # still be rechecked; no concert name is whitelisted.
+        page = "<h1>  </h1>" + show()
+        cat = catalogue()
+        record = official_recheck.verify(discovery(page), page, cat, TODAY)
+        self.assertEqual(record["event"]["title"], "Novö Data + Barre à Mine")
+        event, artists = publish(record, cat)
+        self.assertEqual(len(event["artistIds"]), 2)
+        self.assertEqual(len(artists), 2)
+
+    def test_second_nonempty_h1_cannot_be_ignored(self):
+        page = "<h1>OTHER EVENT</h1>" + show()
+        with self.assertRaises(ValueError):
+            official_recheck.verify(discovery(page), page, catalogue(), TODAY)
+
     def test_novodata_barre_a_mine_multi_artist_and_door_time(self):
         page = show()
         cat = catalogue()
