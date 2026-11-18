@@ -1,0 +1,23 @@
+name: GO Concerts — one-off Black Lab live pages (read only)
+on:
+  pull_request:
+    paths:
+      - 'automation/concerts/blacklab_live_readonly_probe.py'
+      - '.github/workflows/grossesondes-blacklab-readonly-rehearsal.yml'
+permissions:
+  contents: read
+jobs:
+  independent-live-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Official pages, no secrets, no writes
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python automation/concerts/blacklab_live_readonly_probe.py
