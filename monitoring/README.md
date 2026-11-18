@@ -2,7 +2,9 @@
 
 Le script monitoring/ondes_watchdog.php est un contrôleur **en lecture seule** du dépôt public Sarogal/Ondes-Catalogues. Il n'utilise aucun token privé et ne modifie ni intake, ni fiches, ni catalogues. Il vérifie via l'API GitHub les créneaux des collectes, prévalidations et synchronisations réellement exécutés avec succès, puis le schéma et les volumes minimum des quatre JSON servis par GitHub Pages.
 
-Le contrôle examine une fenêtre de **24 heures**, située entre **33 et 9 heures avant son lancement**, pour laisser **9 heures** de marge aux déclenchements retardés. Une exécution manuelle ne remplace pas un déclenchement programmé. **Attention :** GitHub n'expose pas l'horaire cron exact dans la liste des runs ; l'association entre un passage prévu et une exécution très retardée est indicative. Les alertes de créneau doivent donc être vérifiées avec l'historique des runs et le résultat des jobs, et non interprétées comme une preuve absolue d'absence. Ce contrôle ne garantit pas la découverte de toutes les dates et ne compare pas le JSON public au dépôt main : cela appartient à la PR de réconciliation Pages #135.
+Le contrôle v2 mesure séparément **24 heures** et **48 heures** d'exécutions programmées terminées, en excluant les **9 heures** les plus récentes (marge pour les déclenchements retardés). Il compare le nombre de runs réussis à la cadence attendue sur chaque intervalle, **sans prétendre attribuer un run à une expression cron précise** : GitHub n'expose pas ce champ dans sa liste de runs. Un déficit d'une réussite est un **avertissement**, deux réussites manquantes sur l'un ou l'autre intervalle produisent une **alerte** ; toute exécution programmée explicitement non réussie au cours des dernières 24 heures produit également une **alerte**. Une exécution manuelle ou un secours externe ne remplace jamais une exécution programmée dans ces compteurs. Les petites irrégularités sur les frontières de fenêtres ne sont plus présentées comme des « créneaux absents » certains.
+
+Le JSON du watchdog expose désormais `warnings`, `workflow_metrics` (attendus/réussis 24h et 48h) et `cadence_method`, en plus de `alerts` et `ok`. Les avertissements sont informatifs et **n'empêchent pas le ping Healthchecks**. Les alertes provoquent l'échec du job et empêchent le ping. Les alertes de cadence doivent être rapprochées des journaux et du rattrapage privé ; elles **ne prouvent pas quelle collecte nominale a été manquée**, ni que le JSON public a été enrichi. Le contrôle vérifie les schémas et volumes publics, sans comparer chaque événement à Git main.
 
 ## Contrôles locaux et GitHub
 
@@ -37,3 +39,7 @@ Le script `ondes_watchdog.php` reste disponible pour une exécution PHP **en lig
 ## Limites et coûts
 
 Le témoin externe **détecte et alerte**, mais ne relance pas les moteurs et ne publie rien. Les règles de vérification des sources restent inchangées. À la date de vérification, Healthchecks.io permet 20 contrôles dans son offre Hobbyist gratuite ; cette installation n’en utilise qu’un. Le service pourra modifier ses conditions à l’avenir. Aucun runner GitHub privé ajouté.
+
+## Cas testés lors du correctif v2 (18 novembre 2026)
+
+Le test PHP couvre les lancements retardés mais tous présents, une réussite manquante (avertissement), deux réussites manquantes (alerte), un run échoué (alerte), les déclenchements manuels non comptabilisés, la déduplication des identifiants GitHub et le contrôle des JSON. Aucun cron de collecte n'a été modifié. Le contrôle du réel ne peut s'appuyer sur une fenêtre de succès déclarés pour prétendre que les collectes publiées sont réellement complètes ; les rapports privés et les JSON Pages restent à réconcilier séparément.
