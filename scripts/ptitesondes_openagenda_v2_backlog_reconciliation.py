@@ -43,7 +43,12 @@ def _source_identity(row):
     uid = row.get("external_id") if isinstance(row, dict) else None
     if not isinstance(uid, str) or UID.fullmatch(uid) is None:
         return None
-    pair = openagenda_path_parts(row.get("source_url"))
+    try:
+        pair = openagenda_path_parts(row.get("source_url"))
+    except (ValueError, TypeError):
+        # Untrusted intake may carry a malformed IPv6 authority or URL
+        # whose parsing fails before the historical helper inspects port.
+        return None
     if pair is None:
         return None
     # Legacy mirrored URLs can use the bare slug, not a UID prefix. This is
