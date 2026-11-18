@@ -165,7 +165,10 @@ def _venue(ev, approved):
         return False
     if (not isinstance(approved.get("aliases"), list)
             or not approved.get("aliases")
-            or not _norm(approved.get("city"))
+            or any(not isinstance(a, str) or not _norm(a)
+                   for a in approved["aliases"])
+            or not _norm(approved.get("city")) or not _norm(loc.get("name"))
+            or not _norm(loc.get("adminLevel4"))
             or _norm(loc.get("adminLevel4")) != _norm(approved["city"])
             or _norm(loc.get("name")) not in {
                 _norm(name) for name in approved["aliases"]
@@ -274,11 +277,13 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
             return fail("candidate_date_invalid_or_out_of_window")
     except (ValueError, TypeError, KeyError):
         return fail("candidate_date_invalid_or_out_of_window")
-    if _norm(_fr(api_event, "title")) != _norm(lead.get("title")):
+    if (not _norm(_fr(api_event, "title")) or not _norm(lead.get("title"))
+            or _norm(_fr(api_event, "title")) != _norm(lead.get("title"))):
         return fail("api_title_mismatch")
     if not _venue(api_event, registered_venue):
         return fail("geography_not_independently_verified")
-    if (_norm(api_event["location"].get("adminLevel4")) != _norm(lead.get("city"))
+    if (not _norm(lead.get("city")) or not _norm(lead.get("venue"))
+            or _norm(api_event["location"].get("adminLevel4")) != _norm(lead.get("city"))
             or _norm(api_event["location"].get("name")) != _norm(lead.get("venue"))):
         return fail("candidate_venue_identity_mismatch")
     age = api_event.get("age")
