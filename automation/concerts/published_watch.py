@@ -28,6 +28,10 @@ import maroquinerie_adapter
 import boule_noire_adapter
 import bonjour_minuit_adapter
 import bonjour_minuit_official_recheck
+import bbc_adapter
+import bbc_official_recheck
+import cave_poetes_adapter
+import cave_poetes_official_recheck
 import rocher_palmer_adapter
 
 CLOUD = "https://sarogal.github.io/Ondes-Catalogues/grossesondes/concerts.json"
@@ -57,6 +61,10 @@ SOURCES = {
         "bonjour-minuit.fr",
         re.compile(r"/evenement/[a-z0-9-]{3,115}/", re.I),
         "bonjour"),
+    "big-band-cafe-herouville": (
+        bbc_adapter.HOST, bbc_adapter.PATH, "bbc"),
+    "la-cave-aux-poetes-roubaix": (
+        cave_poetes_adapter.HOST, cave_poetes_adapter.EVENT, "cave"),
 
     # First pilot for already published Rocher bills; exact official detail
     # only. Other Rocher dates still require separate lineup qualification.
@@ -201,6 +209,22 @@ def source_kind(event):
             return None
         if (url in BONJOUR_WATCH_URLS.values()
                 and BONJOUR_WATCH_URLS.get(event_id) != url):
+            return None
+    if kind in ("bbc", "cave"):
+        # Any FUTURE published first-party venue article may be watched;
+        # no concert-specific allowlist, no synthetic/unsigned URL.
+        day, ident = event.get("date"), event.get("id")
+        city = "herouville" if kind == "bbc" else "roubaix"
+        if (not isinstance(day, str)
+                or not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day)
+                or not isinstance(ident, str)
+                or not re.fullmatch(
+                    r"go-c-" + day.replace("-", "") + "-" + city +
+                    r"-[a-z0-9-]+", ident)):
+            return None
+        if kind == "bbc" and bbc_adapter.event_url(url) != url:
+            return None
+        if kind == "cave" and cave_poetes_adapter.url_ok(url) != url:
             return None
     if kind == "rocher" and event.get("id") != "go-c-20261107-cenon-gwendoline":
         return None
@@ -507,6 +531,117 @@ def bonjour_inspect(event, page, artists):
             "reason": "Date et plateau officiels corroborés, heure musicale non inférée"}
 
 
+
+def bbc_inspect(event, page, artists):
+    """Source-wide read-only inspection of a published Big Band Café concert."""
+    source = {"name": "Big Band Café", "city": "Hérouville-Saint-Clair",
+              "department": "14", "url": bbc_adapter.AGENDA}
+    try:
+        anchor = (dt.date.fromisoformat(event["date"]) -
+                  dt.timedelta(days=180)).isoformat()
+        fresh = bbc_adapter.candidate(page, event["officialUrl"], source, anchor)
+        catalogue = {"artists": [
+            {"id": aid, "name": artists[aid]}
+            for aid in event["artistIds"] if aid in artists
+        ]}
+        names, _guest, _collective = bbc_official_recheck.artist_parts(
+            fresh["name"], catalogue)
+        description = bbc_official_recheck.EventParagraphs()
+        description.feed(page)
+    except (ValueError, KeyError, TypeError, IndexError) as exc:
+        return {"status": "unverifiable",
+                "reason": "Fiche BBC non vérifiable : " + str(exc)[:110]}
+    expected = [norm(artists.get(aid, "")) for aid in event["artistIds"]]
+    observed = [norm(name) for name in names]
+    if not expected or not all(expected) or observed != expected:
+        return {"status": "lineup_review",
+                "reason": "Artistes BBC différents de la fiche publiée"}
+    if not description.finished or not description.paragraphs:
+        return {"status": "unverifiable",
+                "reason": "Paragraphes de la fiche BBC non accessibles"}
+    paragraphs = [norm(p) for p in description.paragraphs]
+    for artist in observed:
+        if not any(re.search(r"(?<![a-z0-9])" + re.escape(artist) +
+                             r"(?![a-z0-9])", p) for p in paragraphs):
+            return {"status": "lineup_review",
+                    "reason": "Artiste absent de la description propre à l'événement BBC"}
+    if bbc_official_recheck.BODY_UNSAFE.search(" ".join(paragraphs)):
+        return {"status": "content_review",
+                "reason": "Possible annonce d'annulation ou report BBC"}
+    if fresh["date"] != event["date"]:
+        return {"status": "date_review", "observedDate": fresh["date"],
+                "reason": "Date BBC différente, vérification indépendante nécessaire"}
+    if (event.get("genres") and fresh.get("classification")
+            and norm(fresh["classification"][0]) != norm(event["genres"][0])):
+        return {"status": "content_review",
+                "reason": "Genre BBC différent de la publication"}
+    if event.get("time") is not None:
+        return {"status": "date_only", "observedDate": fresh["date"],
+                "reason": "BBC : heure musicale publiée sans confirmation nouvelle"}
+    return {"status": "matched", "observedDate": fresh["date"],
+            "reason": "Date, genre et plateau BBC revérifiés, sans inférer l'heure"}
+
+
+def cave_inspect(event, page, artists):
+    """Source-wide read-only inspection of a published Cave aux Poètes bill."""
+    try:
+        document = cave_poetes_adapter.Page(detail=True)
+        document.feed(page)
+        if len(document.rows) != 1:
+            raise ValueError("Article officiel individuel unique absent")
+        entry = document.rows[0]
+        names = list(entry["artists"])
+        if (len(names) > 1
+                and cave_poetes_adapter.norm(names[-1])
+                in cave_poetes_official_recheck.UNANNOUNCED):
+            names.pop()
+        observed_names = [cave_poetes_adapter.norm(x) for x in names]
+        day = cave_poetes_adapter.date_of(entry.get("date"))
+        if day is None:
+            raise ValueError("Date officielle illisible")
+        if cave_poetes_adapter.norm(entry.get("venue")) != "la cave aux poetes":
+            return {"status": "content_review",
+                    "reason": "Salle Cave aux Poètes modifiée"}
+        status = cave_poetes_adapter.norm(" ".join((
+            entry.get("status", ""), entry.get("event_kind", ""))))
+        if cave_poetes_adapter.BAD.search(status):
+            return {"status": "content_review",
+                    "reason": "Statut ou type de concert Cave modifié"}
+        genre = (cave_poetes_adapter.GENRE.search(
+            cave_poetes_adapter.norm(entry.get("tags", ""))) or
+            cave_poetes_adapter.GENRE.search(
+                cave_poetes_adapter.norm(entry.get("biography", ""))))
+        if genre is None:
+            return {"status": "unverifiable",
+                    "reason": "Genre de la fiche Cave non vérifiable"}
+        clocks = cave_poetes_adapter.START.findall(
+            cave_poetes_adapter.plain(entry.get("times", "")))
+    except (ValueError, KeyError, TypeError, IndexError) as exc:
+        return {"status": "unverifiable",
+                "reason": "Fiche Cave non vérifiable : " + str(exc)[:110]}
+    expected = [cave_poetes_adapter.norm(artists.get(aid, ""))
+                for aid in event["artistIds"]]
+    if not expected or not all(expected) or observed_names != expected:
+        return {"status": "lineup_review",
+                "reason": "Artistes Cave différents de la fiche publiée"}
+    observed_date = day.isoformat()
+    if observed_date != event["date"]:
+        return {"status": "date_review", "observedDate": observed_date,
+                "reason": "Date Cave aux Poètes différente"}
+    if (event.get("genres") and
+            cave_poetes_adapter.norm(genre.group(0)) !=
+            cave_poetes_adapter.norm(event["genres"][0])):
+        return {"status": "content_review", "observedDate": observed_date,
+                "reason": "Genre Cave aux Poètes différent"}
+    start = (f"{int(clocks[0][0]):02d}:{clocks[0][1] or '00'}"
+             if len(clocks) == 1 else None)
+    if start != event.get("time"):
+        return {"status": "content_review", "observedDate": observed_date,
+                "reason": "Début musical Cave modifié ou non vérifiable"}
+    return {"status": "matched", "observedDate": observed_date,
+            "reason": "Date, artistes et début musical Cave revérifiés"}
+
+
 def rocher_inspect(event, page, artists):
     """Audit exact Gwendoline bill from the first-party named event article.
 
@@ -618,6 +753,10 @@ def inspect(event, page, artists):
             return rocher_inspect(event,page,artists)
         if kind == "bonjour":
             return bonjour_inspect(event,page,artists)
+        if kind == "bbc":
+            return bbc_inspect(event,page,artists)
+        if kind == "cave":
+            return cave_inspect(event,page,artists)
         if kind == "rex":
             evidence = official_recheck.parse_detail(page)
             observed_date = evidence["date"]
