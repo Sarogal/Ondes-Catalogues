@@ -107,3 +107,54 @@ cryptographique ; il ne peut certifier sa propre origine si le caller n'est
 pas isolé. L'absence de contexte provoque le refus
 `direct_api_request_not_independently_bound`, jamais un résultat positif.
 La chaîne de publication ne change pas.
+
+## Analyse du backlog réel : deux formats de liens OpenAgenda
+
+Le fichier privé de 434 pistes (SHA de blob
+`62133ad94d6c516068f532d6884f95b0dd222179`) a été analysé par
+comptages anonymes le 18 novembre :
+
+| Lignes futures (368) | Nombre | Traitement sécurisé |
+|---|---:|---|
+| URL événement avec UID `/<uid>_<slug>` | 162 | Vérification directe OA v2 + GPS, agenda revu |
+| URL miroir historique OpenDataSoft sans UID dans le chemin | 200 | Nouvelle étape de rapprochement API obligatoire |
+| Autres URL / fiches non conformes | 6 | Maintien hors voie OA directe |
+
+Les 162 URL strictes présentent **18 slugs d'agenda distincts**, qui ne
+sont PAS 18 organismes indépendamment attestés : les alias d'agenda,
+les miroirs et les différences de référencement sont possibles.
+
+La fonction `select_pinned_agenda_for_lead` permet uniquement une
+sélection depuis un registre de pages institutionnelles maintenu
+indépendamment. Elle ne se laisse pas dicter la page officielle par
+OpenAgenda ou le collecteur. Si plusieurs institutions revendiquent
+un slug, l'identité est mise en attente.
+
+`census_institution_pins_on_private_backlog` est un diagnostic
+**anonyme, hors réseau, sans publication** pour rendre visibles les
+cas sans épingle, ambiguës, invalides et anciens miroirs à contrôler.
+
+### Traitement des anciens miroirs OpenDataSoft
+
+`diagnose_legacy_ods_authenticated_mapping` reçoit le lien
+slug-only conservé **à l'identique**, l'UID explicite de la piste,
+l'UID du calendrier présent dans le registre d'institution,
+la réponse événement de l'API OA v2 et le reçu de requête établi par
+le lecteur privé. Il vérifie l'UID, le titre, la commune et le nom de
+lieu, avec exigence d'un GET HTTP 200
+`/v2/agendas/<agendaUID>/events/<eventUID>`.
+
+Si ces identités concordent, la sortie indique uniquement
+`legacy_identity_api_bound_other_gates_pending`. Elle ne reconstruit
+**jamais un faux lien canonical** à partir du slug fourni par ODS.
+Le validateur historique `review_direct_v2` et le publisher ne sont
+pas contournés. Le résultat conserve :
+`canonical_source_url_verified=False`,
+`independent_venue_verified=False`,
+`independent_event_sessions_verified=False`,
+`approval_granted=False`, `public_writes=0`.
+
+Le constat est donc une **opportunité de recouvrement de 200 pistes**,
+pas 200 sorties validées. Un futur moteur privé devra faire les
+requêtes API réelles, récupérer les preuves officielles et conserver les
+règles sur les séries, les droits, l'âge et les lieux.
