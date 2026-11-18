@@ -128,6 +128,56 @@ class BonjourMinuitIndependentTests(unittest.TestCase):
                 "<h2>Barre à Mine</h2>", "<h2>Unannounced Support</h2>")
             verify.verify(discovery(page), altered, catalogue(), TODAY)
 
+    def test_wordpress_markup_spans_sup_tags_resale_h2_and_style_divs(self):
+        # Same DOM structure as two live articles: several titarthome SPANs,
+        # the first musician is marked by nomartiste and styleart, and an
+        # unrelated ticket-resale H2 appears before the named acts.
+        page = show()
+        page = page.replace(
+            "<h1>Novö Data Barre à Mine</h1>",
+            '<h1 class="titevt"><span class="titarthome">Novö Data </span>'
+            '<span class="titarthome">Barre à Mine</span></h1>')
+        page = page.replace(
+            "<h2>Novö Data</h2>",
+            '<h2 class="nomartiste">Novö Data<sup>Artiste accompagné·e</sup></h2>')
+        page = page.replace(
+            '<div class=\'genre\'><span>rock post-punk Bretagne</span></div>',
+            '<div id="styleart"><span>rock post-punk</span>'
+            '<span>Bretagne</span></div>')
+        page = page.replace(
+            "<h2>Barre à Mine</h2>",
+            '<h2 class="nomartiste">Barre à Mine</h2>')
+        page = page.replace(
+            '<div class=\'genre\'><span>electro post-indus Bretagne</span></div>',
+            '<div id="styleart"><span>electro post-indus</span>'
+            '<span>Douarnenez</span></div>')
+        page = page.replace(
+            '<h2 class="nomartiste">Novö Data',
+            '<h2>Vous cherchez des billets ou vous avez un empêchement ?</h2>'
+            '<p>Consultez notre bourse aux billets officielle pour échanger.</p>'
+            '<h2 class="nomartiste">Novö Data')
+        cat = catalogue()
+        approved = verify.verify(discovery(page),page,cat,TODAY)
+        self.assertEqual(approved["event"]["artistIds"],
+                         ["novo-data", "barre-a-mine"])
+        publish(approved,cat)
+
+    def test_unnamed_support_as_explicit_headline_suffix(self):
+        page=show().replace(
+            "<h1>Novö Data Barre à Mine</h1>",
+            "<h1>Novö Data Barre à Mine + première partie surprise</h1>")
+        cat=catalogue()
+        approved=verify.verify(discovery(page),page,cat,TODAY)
+        self.assertEqual(approved["event"]["artistIds"],
+                         ["novo-data","barre-a-mine"])
+        self.assertEqual(approved["officialEvidence"][0]["unannouncedSupportLabel"],
+                         "premiere partie surprise")
+        publish(approved,cat)
+        tampered=copy.deepcopy(approved)
+        tampered["officialEvidence"][0]["unannouncedSupportLabel"]="guest"
+        with self.assertRaises(ValueError):
+            publish(tampered,cat)
+
     def test_missing_named_support_and_recommendations_are_not_evidence(self):
         page = show()
         row = discovery(page)
