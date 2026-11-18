@@ -390,7 +390,34 @@ jobs:
             echo "Aucune nouvelle piste à enregistrer."
           else
             git commit -m 'data(concerts): archiver la veille publique en registre privé'
-            git push origin HEAD:main
+            # Another PRIVATE main commit may land during the 10-12 minute
+            # discovery (e.g. a maintenance PR). Never force-push or overwrite
+            # a newer registry. Retry ONLY when a clean rebase can preserve
+            # both histories; a real data conflict stops the cycle safely.
+            pushed=false
+            for attempt in 1 2 3; do
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              if [ "$attempt" -ge 3 ]; then
+                break
+              fi
+              if ! git fetch --no-tags origin main > "$RUNNER_TEMP/concerts-private-logs/git-fetch-retry.log" 2>&1; then
+                echo "::error::Intake privé : mise à jour distante impossible, archivage suspendu."
+                exit 1
+              fi
+              if ! git -c rebase.autoStash=false rebase --no-autostash origin/main > "$RUNNER_TEMP/concerts-private-logs/git-rebase-retry.log" 2>&1; then
+                git rebase --abort > /dev/null 2>&1 || true
+                echo "::error::Intake privé : modifications concurrentes incompatibles ; aucune écriture forcée."
+                exit 1
+              fi
+              echo "::warning::Intake privé : commit concurrent réconcilié sans écrasement."
+            done
+            if [ "$pushed" != true ]; then
+              echo "::error::Intake privé : impossible de sauvegarder après 3 tentatives ; aucune écriture forcée."
+              exit 1
+            fi
           fi
           echo "Concerts : moteur public exécuté ; registre et revue confidentiels, aucune publication directe." >> "$GITHUB_STEP_SUMMARY"
 

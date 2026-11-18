@@ -3,6 +3,9 @@
 Never reads tokens, private state, GitHub APIs or actual user content.
 """
 from pathlib import Path
+import subprocess
+import tempfile
+import textwrap
 import unittest
 
 
@@ -77,6 +80,85 @@ class PrivateIntakeHandoffTests(unittest.TestCase):
         self.assertIn("automation/concerts/intake/registry.json", step)
         self.assertIn("automation/concerts/intake/official-review.json", step)
         self.assertIn("automation/concerts/intake/published-watch.json", step)
+
+
+    def test_concurrent_unrelated_main_commit_does_not_lose_intake(self):
+        """Real offline Git: a workflow maintenance commit lands while scanning.
+
+        The private intake commit must be rebased and pushed on top of that
+        unrelated commit, preserving both. No real private data or network.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            remote = root / "remote.git"
+            def git(*args, cwd=None, expect=0):
+                result = subprocess.run(
+                    ["git", *args], cwd=cwd, capture_output=True, text=True)
+                if expect is not None:
+                    self.assertEqual(result.returncode, expect,
+                        result.stdout[-1200:] + result.stderr[-1200:])
+                return result
+            git("init", "--bare", "--initial-branch=main", str(remote))
+            seed = root / "seed"
+            git("clone", str(remote), str(seed))
+            for d in (seed,):
+                git("config", "user.email", "test@example.invalid", cwd=d)
+                git("config", "user.name", "Safe Test", cwd=d)
+            (seed / "registry.json").write_text('{"entries":0}\n', encoding="utf-8")
+            (seed / "README.md").write_text("initial\n", encoding="utf-8")
+            git("add", ".", cwd=seed)
+            git("commit", "-m", "seed", cwd=seed)
+            git("push", "origin", "HEAD:main", cwd=seed)
+            worker = root / "worker"
+            maintainer = root / "maintainer"
+            git("clone", str(remote), str(worker))
+            git("clone", str(remote), str(maintainer))
+            for d in (worker, maintainer):
+                git("config", "user.email", "test@example.invalid", cwd=d)
+                git("config", "user.name", "Safe Test", cwd=d)
+            (worker / "registry.json").write_text('{"entries":1}\n',
+                                                  encoding="utf-8")
+            git("add", "registry.json", cwd=worker)
+            git("commit", "-m", "intake", cwd=worker)
+            (maintainer / "README.md").write_text("new workflow\n",
+                                                  encoding="utf-8")
+            git("add", "README.md", cwd=maintainer)
+            git("commit", "-m", "maintenance", cwd=maintainer)
+            git("push", "origin", "HEAD:main", cwd=maintainer)
+
+            # Execute the same retry code embedded in the workflow itself,
+            # not a rewritten approximation of the rebase algorithm.
+            step = self.commit_step
+            self.assertIn("            pushed=false\n", step)
+            tail = step.split("            pushed=false\n", 1)[1]
+            tail = tail.split(
+                '\n          fi\n          echo "Concerts : moteur public', 1)[0]
+            commands = textwrap.dedent("            pushed=false\n" + tail)
+            temp_logs = root / "logs"
+            (temp_logs / "concerts-private-logs").mkdir(parents=True)
+            env = {**__import__("os").environ, "RUNNER_TEMP": str(temp_logs)}
+            ran = subprocess.run(["bash", "-euo", "pipefail", "-c", commands],
+                                 cwd=worker, env=env,
+                                 capture_output=True, text=True)
+            self.assertEqual(ran.returncode, 0,
+                             ran.stdout[-1200:] + ran.stderr[-1200:])
+            final = root / "final"
+            git("clone", str(remote), str(final))
+            self.assertEqual((final / "registry.json").read_text(), '{"entries":1}\n')
+            self.assertEqual((final / "README.md").read_text(), "new workflow\n")
+            self.assertEqual(len(git("log", "--oneline", cwd=final)
+                                 .stdout.strip().splitlines()), 3)
+
+    def test_private_retry_is_bounded_and_fail_closed(self):
+        step = self.commit_step
+        self.assertIn("for attempt in 1 2 3; do", step)
+        self.assertIn("git fetch --no-tags origin main", step)
+        self.assertIn("git -c rebase.autoStash=false rebase --no-autostash origin/main", step)
+        self.assertIn("git rebase --abort", step)
+        self.assertNotIn("git push --force", step)
+        self.assertNotIn("git push -f", step)
+        self.assertIn('if [ "$pushed" != true ]; then', step)
+
 
 
 if __name__ == "__main__":
