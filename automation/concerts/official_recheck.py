@@ -258,7 +258,7 @@ def verify(candidate, html_text, catalogue, today):
     # untrusted candidate URLs or discovery labels NEVER import a module.
     source = candidate.get("source")
     if not isinstance(source, str) or source not in VERIFIER_SPECS:
-        raise ValueError("Source sans vérificateur officiel agréé")
+        raise ValueError("Seuls les détails officiels des sources agréées sont admissibles à ce stade")
     if source == "agenda_officiel_atabal_detail":
         import atabal_recheck
         # Preserve Atabal's previously signed pilot. Every other first-party
