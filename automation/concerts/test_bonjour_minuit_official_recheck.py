@@ -81,7 +81,7 @@ class BonjourMinuitIndependentTests(unittest.TestCase):
         # Real first-party HTML has an empty H1 before the named H1.
         # All official artist sections and the independent publisher MUST
         # still be rechecked; no concert name is whitelisted.
-        page = "<h1>  </h1>" + show()
+        page = show().replace("</nav><main>", "</nav><h1>  </h1><main>")
         cat = catalogue()
         record = official_recheck.verify(discovery(page), page, cat, TODAY)
         self.assertEqual(record["event"]["title"], "Novö Data + Barre à Mine")
