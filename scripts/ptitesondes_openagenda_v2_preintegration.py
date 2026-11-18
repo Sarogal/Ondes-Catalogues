@@ -208,8 +208,8 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
     """Assess whether ODS absence MAY be investigated using direct API proof.
 
     No boolean named approved; this is a non-publishing routing diagnostic.
-    ODS disagreement is a conflict, never a trigger to prefer a convenient
-    direct result. Every successful result still requires independent
+    ODS disagreement OR outage is a hold, never a trigger to prefer a
+    convenient direct result. Exact-UID absence must be proven positively. Every successful result still requires independent
     organiser, rights, access, categories and historical merge checks.
     """
     report = {
@@ -217,8 +217,10 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
         "publisher_connected": False, "approval_granted": False,
         "public_writes": 0, "reason": "not_ready",
     }
-    if ods_state not in ("uid_absent", "temporary_unavailable"):
-        return dict(report, reason="ods_present_or_conflicting")
+    # A network timeout is NOT proof the mirror lacks this immutable UID.
+    # Only a completed ODS query with exactly zero rows may enable review.
+    if ods_state != "uid_absent":
+        return dict(report, reason="ods_unavailable_present_or_conflicting")
     if historic_uid_exists is not False:
         return dict(report, reason="historical_uid_exists_or_unknown")
     if (not isinstance(direct_result, dict)
