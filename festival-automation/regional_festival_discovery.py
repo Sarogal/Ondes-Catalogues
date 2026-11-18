@@ -43,6 +43,12 @@ APPROVED = {
     "https://www.explore-grandest.com/agenda/": "Grand Est",
     "https://www.normandie-tourisme.fr/agenda/": "Normandie",
     "https://www.bourgogne-tourisme.com/sejourner/agenda/": "Bourgogne-Franche-Comté",
+    # Read-only public tourism agendas. Events remain private discovery hints;
+    # no host discovered on these pages is promoted to a trusted fetch root.
+    "https://www.reunion.fr/organisez/actualites-de-l-ile/agenda/": "La Réunion",
+    "https://www.martinique.org/fr/agenda": "Martinique",
+    "https://www.lesilesdeguadeloupe.com/agenda/": "Guadeloupe",
+    "https://www.nouvellecaledonie.travel/planifier-son-voyage/agenda/evenements-musicaux/": "Nouvelle-Calédonie",
 }
 # Only these already reviewed, public first-party search URLs are allowed.
 # Queries from discovered HTML are NEVER added as new seeds.
