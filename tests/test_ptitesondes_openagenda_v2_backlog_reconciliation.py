@@ -113,8 +113,11 @@ class BacklogReconciliationContract(unittest.TestCase):
                                      collector="opendatasoft-index")
         c, d = lead(234), lead(234, slug="other-source")
         report = audited([a, b, c, d])
-        self.assertEqual(report["counts"]["uid_day_mirror_identity_conflicts"], 1)
-        self.assertEqual(report["counts"]["single_day_uid_day_for_source_review"], 1)
+        # The first UID disagrees in title; the second repeats one UID/day
+        # with two URLs from the SAME collector. Both must be held.
+        self.assertEqual(report["counts"]["uid_day_mirror_identity_conflicts"], 2)
+        self.assertNotIn("single_day_uid_day_for_source_review",
+                         report["counts"])
         # One collector giving two different URLs for the exact UID/day is
         # ambiguous even when all titles and locations agree.
         e = lead(333)
