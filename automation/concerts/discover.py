@@ -295,7 +295,7 @@ def explicit_music_event_keyword_genres(raw):
     for entry in keywords:
         if not isinstance(entry, str) or len(entry) > 300:
             continue
-        for token in re.split(r"[,;|\\n]", entry):
+        for token in re.split(r"[,;|]", entry.replace(chr(10), ",")):
             tag = token.strip()
             key = triage.words(tag)
             if (not 2 <= len(tag) <= 80 or key not in recognized
