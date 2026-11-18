@@ -143,8 +143,10 @@ class BacklogReconciliationContract(unittest.TestCase):
         a["source_url"] = "https://openagenda.com.evil.org/fr/ville-test/events/123_abc"
         b = lead(234)
         b["external_id"] = "234<script>"
-        report = audited([a, b])
-        self.assertEqual(report["counts"]["future_leads"], 2)
+        c = lead(345)
+        c["source_url"] = "https://[unsafe-fragment"
+        report = audited([a, b, c])
+        self.assertEqual(report["counts"]["future_leads"], 3)
         self.assertNotIn("single_day_uid_day_for_source_review",
                          report["counts"])
         self.assertFalse(report["approval_granted"])
