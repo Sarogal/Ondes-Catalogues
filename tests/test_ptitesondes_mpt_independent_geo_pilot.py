@@ -147,7 +147,7 @@ class ReviewedMptVenueTests(unittest.TestCase):
         example["geo_source_url"] = (
             "https://data.geopf.fr/geocodage/search?"
             "q=44%20Rue%20des%20Tests%2034000%20Montpellier&limit=2")
-        expanded = reviewed_pilot_records() + [example]
+        expanded = list(reviewed_pilot_records()) + [example]
         self.assertTrue(validate_curated_registry(expanded))
         self.assertIsNone(review_exact_venue_name(
             "Montpellier", "Maison pour tous Synthétique"))
