@@ -147,13 +147,14 @@ def main():
     args = parser.parse_args()
     # The case file must be materialized in an ephemeral trusted environment,
     # never committed to a public or private git branch.
-    file_size = args.cases_file.stat().st_size
-    if not 0 < file_size <= MAX_INPUT_BYTES:
-        raise SystemExit("invalid_case_batch")
     try:
+        file_size = args.cases_file.stat().st_size
+        if not 0 < file_size <= MAX_INPUT_BYTES:
+            raise ValueError("invalid_case_batch")
         cases = json.loads(args.cases_file.read_text(encoding="utf-8"))
         _valid_cases(cases)
-    except (ValueError, UnicodeDecodeError):
+    except (OSError, ValueError, UnicodeDecodeError):
+        # Do not print the path of the private ephemeral input either.
         raise SystemExit("invalid_case_batch") from None
     key = os.environ.get("OPENAGENDA_READ_KEY", "")
     if not isinstance(key, str) or not key.startswith("oa_pk_"):
