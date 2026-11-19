@@ -212,44 +212,62 @@ def run_pilot(planned: list[dict], out_dir: Path, *,
     image_dir = out_dir / "evidence"
     image_dir.mkdir()
     records = []
+    failures = []
     for entry in planned:
         url = entry["source_url"]
         host = entry["allowed_host"]
-        checked_https_url(url, host)
-        bytes_, content_type = fetch(url, host)
-        if not isinstance(bytes_, bytes) or len(bytes_) > MAX_LOGO_BYTES:
-            raise ValueError("Invalid fetched image byte count")
-        mime, width, height = decode(bytes_)
-        if mime != content_type:
-            raise ValueError("HTTP MIME differs from decoded image")
-        sha = hashlib.sha256(bytes_).hexdigest()
-        target = image_dir / (sha + ".img")
-        if target.exists():
-            if target.read_bytes() != bytes_:
-                raise ValueError("Existing digest has different content")
-        else:
-            with target.open("xb") as output:
-                output.write(bytes_)
-                output.flush()
-        records.append({
-            **entry,
-            "sha256_observed_not_signed": sha,
-            "observed_bytes": len(bytes_),
-            "decoded_mime_type": mime,
-            "decoded_width": width,
-            "decoded_height": height,
-            "file": "evidence/" + sha + ".img",
-            "editorial_review_required": True,
-            "catalog_publication_authorized": False,
-        })
+        # Each candidate has an independent result. One 403/TLS error must
+        # not erase the proof gathered for other candidates, nor mark the
+        # whole pilot successful. Failed candidates remain unapproved.
+        try:
+            checked_https_url(url, host)
+            bytes_, content_type = fetch(url, host)
+            if not isinstance(bytes_, bytes) or len(bytes_) > MAX_LOGO_BYTES:
+                raise ValueError("Invalid fetched image byte count")
+            mime, width, height = decode(bytes_)
+            if mime != content_type:
+                raise ValueError("HTTP MIME differs from decoded image")
+            sha = hashlib.sha256(bytes_).hexdigest()
+            target = image_dir / (sha + ".img")
+            if target.exists():
+                if target.read_bytes() != bytes_:
+                    raise ValueError("Existing digest has different content")
+            else:
+                with target.open("xb") as output:
+                    output.write(bytes_)
+                    output.flush()
+            records.append({
+                **entry,
+                "sha256_observed_not_signed": sha,
+                "observed_bytes": len(bytes_),
+                "decoded_mime_type": mime,
+                "decoded_width": width,
+                "decoded_height": height,
+                "file": "evidence/" + sha + ".img",
+                "editorial_review_required": True,
+                "catalog_publication_authorized": False,
+            })
+        except (OSError, ValueError, RuntimeError) as exc:
+            failures.append({
+                "source_url": url,
+                "go_station_ids": entry["go_station_ids"],
+                "error_type": type(exc).__name__,
+                "diagnostic": str(exc)[:180],
+                "editorial_review_required": True,
+                "catalog_publication_authorized": False,
+            })
     report = {
-        "status": "PILOT_HTTPS_BYTES_VERIFIED_BUT_NOT_APPROVED",
+        "status": ("PILOT_PARTIAL_FAILURE_NOT_APPROVED" if failures else
+                   "PILOT_HTTPS_BYTES_VERIFIED_BUT_NOT_APPROVED"),
         "unique_fetched_urls": len(records),
+        "attempted_source_urls": len(planned),
+        "failed_source_urls": len(failures),
         "unique_sha256_objects": len(set(r["sha256_observed_not_signed"] for r in records)),
         "approved_logo_count": 0,
         "catalog_written": False,
         "play_or_informaniak_modified": False,
         "records": records,
+        "failures": failures,
     }
     (out_dir / "pilot-evidence.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
@@ -277,8 +295,11 @@ def main() -> None:
         if not args.out_dir.parts or args.out_dir.parts[0] != "build":
             parser.error("Use a fresh directory under build/ only")
         result = run_pilot(planned, args.out_dir)
-        print(json.dumps({k: v for k, v in result.items() if k != "records"},
+        print(json.dumps({k: v for k, v in result.items()
+                          if k not in ("records", "failures")},
                          ensure_ascii=False))
+        if result["failed_source_urls"]:
+            raise SystemExit(2)  # Keep partial evidence; never return fake PASS.
     else:
         if args.out_dir is not None:
             parser.error("Output only applies to an explicit --fetch")
