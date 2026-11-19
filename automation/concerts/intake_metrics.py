@@ -25,9 +25,22 @@ def describe_venue(item):
     else:
         status = "fetched"
     details = item.get("adapterDiagnostic") or {}
-    return {"name": item.get("venue", "unknown"), "status": status,
-            "detailsRead": details.get("detailPagesRead", 0),
-            "detailsErrors": details.get("detailErrors", 0)}
+    # Keep only non-sensitive bounded counters in the private report:
+    # page URL, concert ID, HTML excerpts and artist names remain private in
+    # the discovery worker and are never sent to Actions logs.
+    def count(value):
+        return value if type(value) is int and 0 <= value <= 100_000 else 0
+
+    return {
+        "name": item.get("venue", "unknown"), "status": status,
+        "detailsRead": count(details.get("detailPagesRead", 0)),
+        "detailsErrors": count(details.get("detailErrors", 0)),
+        "pagesChecked": count(item.get("pagesChecked", 0)),
+        "eventDetailLinksFound": count(item.get("eventDetailLinksFound", 0)),
+        "eventDetailPagesFetched": count(item.get("eventDetailPagesFetched", 0)),
+        "htmlVisibleBillLeads": count(item.get("htmlVisibleBillLeads", 0)),
+        "candidatesDetected": count(item.get("candidatesDetected", 0)),
+    }
 
 
 def build(discovery, tours, registry, official, watch, archive_summaries, when):
@@ -51,6 +64,12 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when):
         "publicCatalogueEventsObservedAtDiscovery": discovery.get(
             "catalogue", {}).get("events"),
         "venueSources": sources,
+        "venueHtmlVisibleBillLeads": sum(
+            x["htmlVisibleBillLeads"] for x in sources),
+        "venueEventDetailPagesFetched": sum(
+            x["eventDetailPagesFetched"] for x in sources),
+        "venueEventLinksDiscovered": sum(
+            x["eventDetailLinksFound"] for x in sources),
         "venueSourcesFetched": sum(x["status"] == "fetched" for x in sources),
         "venueSourcesRobotsDeniedOrUnavailable": sum(
             x["status"] == "robots_denied_or_unavailable" for x in sources),
