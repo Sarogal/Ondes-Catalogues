@@ -239,6 +239,53 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertEqual(result["rows"][0]["status"],
                                  "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
 
+    def test_private_rejection_codes_distinguish_missing_ranges_identity_and_conflicts(self):
+        cases = [
+            ("<h1>Festival Foudre du Nord 2027</h1><p>Dates à venir</p>",
+             "NO_EXPLICIT_VISIBLE_DATE_RANGE"),
+            ("<h1>Other Festival 2027</h1><p>4 & 5 juin 2027</p>",
+             "FESTIVAL_IDENTITY_DATE_PROXIMITY_NOT_PROVEN"),
+            ("<h1>Festival Foudre du Nord 2027</h1>"
+             "<p>4 & 5 juin 2027 et 10 & 11 juillet 2027</p>",
+             "CONFLICTING_VISIBLE_DATE_RANGES"),
+            ("<script>Festival Foudre du Nord 2027 4 & 5 juin 2027</script>",
+             "NO_VISIBLE_HTML_TEXT"),
+        ]
+        for html, expected in cases:
+            with self.subTest(expected=expected):
+                state, queue, published = fixture()
+                queue["dossiers"] = queue["dossiers"][:1]
+                result = examine(state, queue, published, DAY1,
+                                 fetch=lambda u: html)
+                row = result["rows"][0]
+                self.assertEqual(row["status"],
+                                 "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+                self.assertEqual(row["diagnostic_code"], expected)
+                self.assertEqual(
+                    row["diagnostic_surface"],
+                    "SAME_HOST_HOME" if expected in
+                    ("NO_EXPLICIT_VISIBLE_DATE_RANGE", "NO_VISIBLE_HTML_TEXT")
+                    else "SOURCE_PAGE")
+                self.assertNotIn("html", row)
+                self.assertFalse(result["publication_authorized"])
+
+    def test_private_diagnostic_codes_do_not_leak_or_approve(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                "<p>4 & 5 juin 2027</p></main>"
+                '<script type="application/ld+json">'
+                '{"@type":"MusicEvent","name":"Festival Foudre du Nord 2027",'
+                '"startDate":"2027-07-04","endDate":"2027-07-05"}</script>')
+        result = examine(state, queue, published, DAY1, fetch=lambda u: html)
+        row = result["rows"][0]
+        self.assertEqual(row["diagnostic_code"],
+                         "SOURCE_STRUCTURED_CONTRADICTION")
+        self.assertEqual(row["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        self.assertEqual(result["publications"], 0)
+        self.assertEqual(row["two_day_dates"], False)
+
     def test_published_edition_is_not_probed_as_duplicate(self):
         state, queue, published = fixture()
         published["festivals"] = [{
