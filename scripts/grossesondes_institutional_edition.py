@@ -19,6 +19,7 @@ if ENGINE not in sys.path:
 
 from grossesondes_official_html_edition import (
     VisibleText, fold, explicit_ranges, visible_official_edition,
+    dominant_visible_range,
 )
 from grossesondes_structured_edition import (
     ROW_KEYS, PRIVATE_KEYS, no_same_edition_jsonld_contradiction, conflicts_with_existing,
@@ -40,7 +41,7 @@ PUBLISHED_CONFIDENCE = "Agenda institutionnel (fiche et index relus indépendamm
 
 
 def institutional_date(html, title, year):
-    """Require ONE explicit whole-page visible range near the edition title.
+    """Require ONE noncontradictory maximal visible range near the title.
 
     Independent pure HTML parser: does not import the archived intake or
     cloud stage modules, avoiding circular dependencies with the publisher.
@@ -56,9 +57,10 @@ def institutional_date(html, title, year):
     content = " ".join(fold(" ".join(parser.parts)).split())
     unique = {(start, end) for _a, _b, start, end
               in explicit_ranges(content, year)}
-    if len(unique) != 1:
+    dates = dominant_visible_range(unique)
+    if dates is None:
         return None
-    start, end = next(iter(unique))
+    start, end = dates
     if not visible_official_edition(html, title, start, end):
         return None
     return start, end
