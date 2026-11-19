@@ -4550,20 +4550,40 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(len(evidence) == 1 and isinstance(evidence[0], dict),
                 "Générique : une preuve nominative unique est exigée")
         proof = evidence[0]
+        structure = proof.get("sourceStructure")
+        base_fields = {
+            "url", "proofType", "checkedAt", "checkedFields",
+            "sourceStructure", "officialArtistNames", "verifiedVenueId",
+        }
+        visible_fields = {"officialGenreLabels", "visibleBillProfile"}
+        expected_fields = (
+            base_fields | visible_fields
+            if structure == "verified-first-party-visible-bill-v1"
+            else base_fields
+        )
         require(
             proof.get("url") == official_url and
             proof.get("proofType") == "official-organizer-or-venue" and
             proof.get("checkedAt") == reviewed_at.isoformat() and
             proof.get("checkedFields") == ["artists", "date", "venue", "genre"] and
-            proof.get("sourceStructure") == "verified-first-party-structured-event-v1" and
+            structure in {
+                "verified-first-party-structured-event-v1",
+                "verified-first-party-visible-bill-v1",
+            } and
             proof.get("verifiedVenueId") == venue and
-            (set(proof) in (
-                {"url", "proofType", "checkedAt", "checkedFields",
-                 "sourceStructure", "officialArtistNames", "verifiedVenueId"},
-                {"url", "proofType", "checkedAt", "checkedFields",
-                 "sourceStructure", "officialArtistNames", "verifiedVenueId",
-                 "unannouncedSupportLabel"})),
-            "Générique : preuve structurée de provenance incomplète ou altérée")
+            set(proof) in (
+                expected_fields,
+                expected_fields | {"unannouncedSupportLabel"},
+            ),
+            "Générique : preuve officielle de provenance incomplète ou altérée")
+        if structure == "verified-first-party-visible-bill-v1":
+            # The HTML path must provide separately checked artist + genre
+            # headings on the exact first-party page. Mere schema Organization,
+            # title text, biographies and broad venue labels never satisfy it.
+            require(proof.get("visibleBillProfile") ==
+                    "heading-artist-genre-v1" and
+                    proof.get("officialGenreLabels") == event.get("genres"),
+                    "Générique HTML : genre ou profil officiel non corroboré")
         names = proof.get("officialArtistNames")
         require(isinstance(names, list) and len(names) == len(ids)
                 and len(names) >= 1
