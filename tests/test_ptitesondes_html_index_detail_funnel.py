@@ -174,6 +174,29 @@ class OfficialIndexToScopeTests(unittest.TestCase):
         self.assertEqual(len(pages.seen), 2)
         self.assertEqual(pages.seen[0][0], more[0])
 
+    def test_full_bounded_coverage_reads_thirty_pages_without_publication(self):
+        links = [
+            f"https://mpt.montpellier.fr/evenement/page-test-{n:02d}"
+            for n in range(35)
+        ]
+        report, _, pages = probe(
+            index_links=tuple(links),
+            details={url: MPT_HTML for url in links},
+            limit=30,
+        )
+        self.assertEqual(report["child_pages_matching_contract"], 35)
+        self.assertEqual(report["child_pages_selected"], 30)
+        self.assertEqual(report["child_pages_skipped_by_limit"], 5)
+        self.assertEqual(report["child_pages_read"], 30)
+        self.assertEqual(len(pages.seen), 30)
+        self.assertEqual(report["duplicate_child_sessions_held"], 29)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["child_pages_read"], 30)
+        self.assertFalse(public["approval_granted"])
+        self.assertFalse(public["publisher_connected"])
+        self.assertEqual(public["public_writes"], 0)
+        self.assertNotIn("/evenement/page-test-", json.dumps(public))
+
     def test_public_aggregate_report_never_exposes_dynamic_private_keys(self):
         report, _, _ = probe()
         report["secret_url"] = ONE
