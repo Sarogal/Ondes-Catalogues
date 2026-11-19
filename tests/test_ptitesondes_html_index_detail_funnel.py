@@ -334,6 +334,36 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertEqual(unpinned["registry_location_not_checked"], 2)
         self.assertEqual(unpinned["historical_not_checked"], 2)
 
+    def test_membership_and_registration_are_counted_without_publication(self):
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(report["first_party_visible_exact_sessions"], 2)
+        self.assertEqual(
+            report["access_first_party_free_with_required_membership"], 2)
+        self.assertEqual(report["access_first_party_registration_required"], 2)
+        self.assertEqual(report["access_first_party_source_review_required"], 2)
+        self.assertEqual(
+            report["access_first_party_free_without_required_membership"], 0)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(
+            public["access_first_party_free_with_required_membership"], 2)
+        self.assertNotIn("Carte MPT obligatoire", json.dumps(public))
+        self.assertFalse(public["independent_age_access_rights_verified"])
+        self.assertFalse(public["approval_granted"])
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_explicit_free_without_card_counts_as_source_claim_only(self):
+        no_card = MPT_TEMPLATE.replace("<p>Carte MPT obligatoire</p>", "")
+        no_card = no_card.replace("Sur inscription | Gratuit",
+                                  "Sans inscription | Gratuit")
+        report, _, _ = probe(details={ONE: no_card})
+        self.assertEqual(
+            report["access_first_party_free_without_required_membership"], 2)
+        self.assertEqual(
+            report["access_first_party_registration_not_required"], 2)
+        self.assertEqual(report["access_first_party_source_review_required"], 0)
+        self.assertFalse(report["independent_age_access_rights_verified"])
+        self.assertFalse(report["publication_ready"])
+
     def test_visible_event_session_is_measured_without_source_approval(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["future_child_occurrences"], 2)
