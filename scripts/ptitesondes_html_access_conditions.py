@@ -15,6 +15,10 @@ from ptitesondes_html_first_party_session_proof import (
 SCHEMA = "ptitesondes.html_visible_access_terms_readonly.v1"
 MAX_HTML = 500_000
 MAX_FRAGMENTS = 1200
+# Normal editorial descriptions often exceed 200 characters; do not reject
+# the entire page for an ordinary paragraph. Still bound each text node and
+# fail closed on enormous chunks or excessive fragment counts.
+MAX_FRAGMENT_LENGTH = 2500
 PRICE_STATES = frozenset({
     "free_disclosed", "free_with_mandatory_membership",
     "paid_disclosed", "paid_amount_unknown", "unknown", "conflicting",
@@ -76,7 +80,7 @@ class _VisibleEventAccess(_Visibility):
             for raw in data.splitlines():
                 # Preserve currency semantics through accent/punctuation fold.
                 piece = norm_text(raw.replace("€", " euros "))
-                if len(piece) > 200:
+                if len(piece) > MAX_FRAGMENT_LENGTH:
                     self.truncated = True
                 elif piece:
                     if len(self.parts) >= MAX_FRAGMENTS:
