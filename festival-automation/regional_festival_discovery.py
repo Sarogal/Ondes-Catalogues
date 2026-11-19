@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import re
 from urllib.parse import urljoin, urlsplit
+from urllib.error import HTTPError, URLError
 from zoneinfo import ZoneInfo
 
 from regional_visible_article_clues import (
@@ -458,6 +459,7 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
                          for origin, url in due_pages)
     page_attempted = page_checked = page_new = 0
     for origin, source_url, region in checks_to_run:
+        html_received = False
         outcome = {"region": region, "index_url": origin,
                    "checked_url": source_url,
                    "page_kind": ("ROOT" if source_url == origin else "PAGINATION"),
@@ -466,6 +468,7 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
             page_attempted += 1
         try:
             html = fetch(source_url)
+            html_received = True
             page_diagnostics = {}
             links = candidate_links(
                 html, origin, today, historical_hints, page_diagnostics)
@@ -527,8 +530,22 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
                 pending[url] = record
                 if old is None:
                     new.append(dict(record, new_this_pass=True))
-        except (OSError, ValueError, UnicodeError):
-            pass
+        except (OSError, ValueError, UnicodeError) as exc:
+            # Never store upstream response bodies, URLs, exception text,
+            # TLS certificate names or credentials. Only stable error kinds.
+            if isinstance(exc, HTTPError):
+                status = exc.code
+                kind = ("HTTP_DENIED_OR_RATE_LIMITED"
+                        if status in (401, 403, 429)
+                        else "HTTP_MISSING" if status in (404, 410)
+                        else "HTTP_OTHER")
+            elif isinstance(exc, (URLError, TimeoutError, OSError)):
+                kind = "TRANSPORT_OR_TLS_ERROR"
+            elif html_received:
+                kind = "HTML_PARSE_OR_VALIDATION_REJECTED"
+            else:
+                kind = "SECURITY_OR_URL_REJECTED"
+            outcome["fetch_failure_class"] = kind
         if source_url == origin:
             checks[origin] = today
         else:
