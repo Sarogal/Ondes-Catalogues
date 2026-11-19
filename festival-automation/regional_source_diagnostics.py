@@ -14,6 +14,11 @@ MAX_RECORDS = 70
 MAX_AGE_DAYS = 45
 MAX_COUNT = 10000
 STATUSES = frozenset(("SCANNED", "INACCESSIBLE"))
+FAILURE_CLASSES = frozenset((
+    "HTTP_DENIED_OR_RATE_LIMITED", "HTTP_MISSING", "HTTP_OTHER",
+    "TRANSPORT_OR_TLS_ERROR", "HTML_PARSE_OR_VALIDATION_REJECTED",
+    "SECURITY_OR_URL_REJECTED", "UNKNOWN",
+))
 DIAGNOSTICS = frozenset((
     "CANDIDATE_LINKS_REVIEW_ONLY",
     "VISIBLE_LINKS_NO_CANDIDATE",
@@ -79,6 +84,11 @@ def _safe_previous(key, row, approved, today, permitted_url):
         "thematic_links": links if status == "SCANNED" else 0,
         "possible_dynamic": row.get("possible_dynamic") is True
         if status == "SCANNED" else False,
+        "fetch_failure_class": (
+            row.get("fetch_failure_class")
+            if row.get("fetch_failure_class") in FAILURE_CLASSES
+            else "UNKNOWN"
+        ) if status == "INACCESSIBLE" else None,
         "publication_authorized": False,
     }
 
@@ -132,6 +142,11 @@ def record_regional_diagnostics(state, outcomes, approved, today, permitted_url)
             "thematic_links": links if status == "SCANNED" else 0,
             "possible_dynamic": bool(
                 status == "SCANNED" and row.get("script_backed_linkless_hint") is True),
+            "fetch_failure_class": (
+                row.get("fetch_failure_class")
+                if row.get("fetch_failure_class") in FAILURE_CLASSES
+                else "UNKNOWN"
+            ) if status == "INACCESSIBLE" else None,
             "publication_authorized": False,
         }
     # Bound private storage even if an older state contained excessive rows.
