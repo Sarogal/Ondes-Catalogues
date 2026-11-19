@@ -163,8 +163,7 @@ def validate(row, today, event_approvals, *, sources=None):
     demand(signed.get("reviewDecision") == "approved"
            and signed.get("reviewedAt") == reviewed
            and isinstance(event.get("artistIds"), list)
-           and signed.get("reviewedBy") in
-           {"independent-official-verifier", "automated-official-recheck"}
+           and signed.get("reviewedBy") == "independent-official-verifier"
            and event.get("date") == ev_day
            and event.get("officialUrl") == ev_url
            and event.get("venueId") == venue.get("id")
