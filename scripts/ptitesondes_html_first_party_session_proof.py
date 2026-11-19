@@ -9,8 +9,9 @@ from urllib.parse import urlsplit
 
 from ptitesondes_family_national_source_preflight import (
     _session_pair_on_official_page, _source_cues, official_host,
-    TIME_PATTERN,
+    TIME_PATTERN, _Visibility, _VisibleText, norm_text,
 )
+from ptitesondes_openagenda_v2_organizer_bridge import ADULT_ONLY
 
 SCHEMA = "ptitesondes.html_first_party_session_corroboration.v1"
 SOURCE_REASONS = frozenset({
@@ -39,6 +40,78 @@ AUDIENCE_REASONS = frozenset({
     "exact_age_bounds_not_confirmed",
 })
 ACCESS_REASONS = SOURCE_REASONS - HARD_REASONS - AUDIENCE_REASONS
+
+
+class _EventAudienceLabels(_Visibility):
+    """Only standalone visible audience labels after the event H1, not prose.
+
+    Stop at related-event headings. A page mentioning children somewhere in
+    its description, navigation, or hidden markup does not pass this check.
+    """
+    ACCEPTED = frozenset({
+        "famille", "familles", "enfant", "enfants",
+        "bebes", "bebe", "tout petits", "tout petits enfants",
+        "petite enfance", "jeune public", "enfants adultes",
+        "adultes enfants", "familles adultes", "adultes familles",
+    })
+    ADULT_ONLY_LABELS = frozenset({"adulte", "adultes", "seniors", "senior"})
+
+    def __init__(self):
+        super().__init__()
+        self.seen_h1 = False
+        self.in_h2 = False
+        self.in_p = False
+        self.related = False
+        self.h2 = []
+        self.paragraph = []
+        self.labels = []
+
+    def handle_starttag(self, tag, attrs):
+        hidden = super().handle_starttag(tag, attrs)
+        if hidden or self.related:
+            return
+        if tag == "h1":
+            self.seen_h1 = True
+        elif self.seen_h1 and tag == "h2":
+            self.in_h2 = True
+            self.h2 = []
+        elif self.seen_h1 and tag == "p" and not self.in_h2:
+            self.in_p = True
+            self.paragraph = []
+
+    def handle_data(self, data):
+        if self._hidden() or self.related:
+            return
+        if self.in_h2:
+            self.h2.append(data)
+        if self.in_p:
+            self.paragraph.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == "h2" and self.in_h2:
+            if norm_text(" ".join(self.h2)).startswith("autres evenements"):
+                self.related = True
+            self.in_h2 = False
+        elif tag == "p" and self.in_p:
+            label = norm_text(" ".join(self.paragraph))
+            if label in self.ACCEPTED | self.ADULT_ONLY_LABELS:
+                self.labels.append(label)
+            self.in_p = False
+        super().handle_endtag(tag)
+
+    def evidence(self):
+        if any(v in self.ADULT_ONLY_LABELS for v in self.labels):
+            return False, True
+        return any(v in self.ACCEPTED for v in self.labels), False
+
+
+def _audience_from_standalone_labels(html):
+    if not isinstance(html, str) or len(html) > 2_000_000:
+        return False, False
+    parser = _EventAudienceLabels()
+    parser.feed(html)
+    parser.close()
+    return parser.evidence()
 
 
 def corroborate_first_party_session(lead, fetched_page, trusted_index, child_prefix):
@@ -110,6 +183,15 @@ def corroborate_first_party_session(lead, fetched_page, trusted_index, child_pre
         issues = _source_cues(scope, source, html)
         if not isinstance(issues, set) or not issues <= SOURCE_REASONS:
             return out
+        label_support, adult_only_label = _audience_from_standalone_labels(html)
+        visible_words = _VisibleText()
+        visible_words.feed(html)
+        visible_words.close()
+        if (adult_only_label or
+                ADULT_ONLY.search(norm_text(" ".join(visible_words.words)))):
+            return dict(out, status="adult_only_or_contradictory_source_audience")
+        if label_support:
+            issues.discard("official_family_audience_not_confirmed")
         if issues & HARD_REASONS:
             return dict(out, status="identity_date_status_or_clock_mismatch")
         pair = _session_pair_on_official_page(html, scope, clock)
