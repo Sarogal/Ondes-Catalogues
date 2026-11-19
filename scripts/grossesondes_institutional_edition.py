@@ -89,7 +89,7 @@ def private_proposal(source, dates, today):
     except (ValueError, TypeError):
         return None
     if (not current <= first <= last
-            or first.year != last.year != spec["year"]
+            or first.year != spec["year"] or last.year != spec["year"]
             or (last - first).days > 7):
         return None
     proposal = {
