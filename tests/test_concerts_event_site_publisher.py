@@ -146,6 +146,43 @@ class EventSitePublisherContractTests(unittest.TestCase):
             site.validate(row, TODAY, events)
         self.assertEqual(events[0]["event"]["title"], "Experimental Metal Outdoor")
 
+    def test_full_publisher_adds_site_and_concert_in_same_atomic_catalogue(self):
+        import json
+        reference = json.loads(sync.REFERENCE.read_text(encoding="utf-8"))
+        current = copy.deepcopy(reference)
+        site_row, event_entries = fixtures()
+        approved = {"schema": sync.SCHEMA,
+                    "approvals": event_entries, "venueApprovals": [site_row]}
+        result, counts = sync.merge(reference, current, approved, TODAY)
+        self.assertEqual(counts["newVenues"], 1)
+        self.assertEqual(counts["newEvents"], 1)
+        self.assertIn(site_row["venue"]["id"], [v["id"] for v in result["venues"]])
+        self.assertIn(EVENT_ID, [e["id"] for e in result["events"]])
+        self.assertEqual(current, reference)
+        # Previously published site+concert remain valid after replay;
+        # the ledger authorizes them, not a new permanent venue manifest.
+        again, repeated = sync.merge(reference, result, approved, TODAY)
+        self.assertEqual(repeated["newVenues"], 0)
+        self.assertEqual(repeated["newEvents"], 0)
+        self.assertEqual(again["events"], result["events"])
+        self.assertEqual(again["venues"], result["venues"])
+
+    def test_unvalidated_event_cannot_leave_an_orphan_geographic_pin(self):
+        import json
+        reference = json.loads(sync.REFERENCE.read_text(encoding="utf-8"))
+        site_row, event_entries = fixtures()
+        event_entries[0]["event"]["sourceType"] = "unrecognized"
+        # The event-site validator can match the identity in the ledger,
+        # but the regular full publisher must still approve the event.
+        approved = {"schema": sync.SCHEMA,
+                    "approvals": event_entries, "venueApprovals": [site_row]}
+        result, counts = sync.merge(
+            reference, copy.deepcopy(reference), approved, TODAY)
+        self.assertEqual(counts["newVenues"], 0)
+        self.assertEqual(counts["newEvents"], 0)
+        self.assertNotIn(site_row["venue"]["id"],
+                         [v["id"] for v in result["venues"]])
+
     def test_stable_id_does_not_require_hall_known_in_advance(self):
         self.assertEqual(
             site.site_id(EVENT_ID, EVENT_DATE, NAME, CITY),
