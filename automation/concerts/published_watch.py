@@ -234,7 +234,7 @@ def source_kind(event):
         if (event.get("sourceType") != "salle"
                 or event.get("organizer") != spec["name"]
                 or not isinstance(day, str)
-                or not re.fullmatch(r"20\\d{2}-\\d{2}-\\d{2}", day)
+                or not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day)
                 or not isinstance(ident, str)
                 or not re.fullmatch(
                     r"go-c-" + day.replace("-", "") + "-" +
