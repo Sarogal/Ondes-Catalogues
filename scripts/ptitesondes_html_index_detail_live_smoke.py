@@ -56,6 +56,9 @@ def main():
         MPT_INDEX, "montpellier_mpt", now_local.date(),
         max_details=MAX_DETAILS, as_of=now_local,
         independent_context=context,
+        # Probe at most two distinct already-reviewed buildings, not one
+        # lookup per event. Non-structured addresses remain unverified.
+        geo_probe_limit=2,
     )
     print(json.dumps(
         redact_detail_funnel_report(report),
