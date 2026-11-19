@@ -52,7 +52,7 @@ void main() {
   test('real HTTPS v1 -> offline restart -> revision v2, preserving v1', () async {
     // flutter_test mocks HttpClient by default. This explicit opt-in test
     // temporarily enables real TLS, then restores the test environment.
-    final previousOverrides = HttpOverrides.global;
+    final previousOverrides = HttpOverrides.current;
     HttpOverrides.global = null;
     final temp = await Directory.systemTemp.createTemp('go-https-sha-lab-');
     try {
