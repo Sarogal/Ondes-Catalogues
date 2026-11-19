@@ -29,6 +29,11 @@ from grossesondes_archived_html_intake import (
     PINNED_ARCHIVED_HTML_SOURCES, pinned_first_party, organizer_homepage,
     official_date, private_date_rejection_reason,
 )
+from grossesondes_institutional_edition import (
+    PROOF_MODE as INSTITUTIONAL_PROOF_MODE,
+    independently_fetch as independently_fetch_institutional,
+    validate_independent as validate_independent_institutional,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -363,6 +368,44 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
     return sources
 
 
+def collect_registered_institutional_sources(patch, published_slugs,
+                                             today, fetcher=None):
+    """Independent first-party index recheck for never-before-published events.
+
+    Strict two-request chain per candidate: approved institution index first,
+    live title+same-origin festival link second. Never fetch untrusted private
+    addresses without an index independently resolving them.
+    """
+    sources = {}
+    checked = 0
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed catalogue identities required")
+    if not isinstance(today, str):
+        raise ValueError("Actual publisher date required")
+    for row in patch.get("additions", []):
+        if (not isinstance(row, dict)
+                or row.get("proofMode") != INSTITUTIONAL_PROOF_MODE
+                or row.get("slug") in published_slugs):
+            continue
+        if checked >= 2:
+            break
+        checked += 1
+        slug = row.get("slug")
+        try:
+            html = independently_fetch_institutional(
+                row, today, **({"fetch": fetcher} if fetcher is not None else {}))
+            verified = validate_independent_institutional(row, html, today)
+            if verified is None:
+                continue
+            sources["registered-institutional:"+slug] = html
+            sources["registered-institutional-verified:"+slug] = True
+            sources["registered-institutional-proof-url:"+slug] = verified["source"]
+        except (ValueError, OSError, UnicodeError, TypeError, KeyError):
+            # No raw URL or HTML is copied to the public publisher summary.
+            print("Date institutionnelle non revérifiée, candidate conservée en attente.")
+    return sources
+
+
 def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep):
     """Fetch only pinned organizer/municipal URLs; retry transient server errors.
 
@@ -489,6 +532,8 @@ def main():
     sources.update(collect_registered_edition_sources(
         patch, original, archived=registered_archives,
         published_slugs=signed_published_slugs))
+    sources.update(collect_registered_institutional_sources(
+        patch, signed_published_slugs, today.isoformat()))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
