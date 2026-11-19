@@ -32,6 +32,7 @@ from ptitesondes_html_independent_venue_geo import (
 )
 from ptitesondes_html_access_conditions import triage_html_access_conditions
 from ptitesondes_html_family_age import triage_html_family_age
+from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -89,6 +90,10 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "family_first_party_age_not_stated": 0,
         "family_first_party_age_conflicting": 0,
         "family_first_party_extraction_held": 0,
+        "factual_private_draft_for_rights_review": 0,
+        "factual_private_draft_family_held": 0,
+        "factual_private_draft_access_held": 0,
+        "factual_private_draft_other_held": 0,
         "first_party_access_review_pending": 0,
         "first_party_all_visible_cues": 0,
         "access_first_party_free_with_required_membership": 0,
@@ -319,6 +324,22 @@ def diagnose_html_index_detail_funnel(
                 if corroboration["status"] == "same_block_date_and_clock_not_visible":
                     result["first_party_missing_same_block"] += 1
             if corroboration["visible_exact_session"]:
+                # Private draft stays in process memory only. Report just
+                # its anonymous route; NEVER serialize source text or URLs.
+                draft_review = prepare_private_html_factual_draft(
+                    row, page, independently_pinned_index, contract["child_path"])
+                draft_reason = draft_review["reason"]
+                if draft_review["status"] == "private_draft_for_rights_review":
+                    result["factual_private_draft_for_rights_review"] += 1
+                elif draft_reason == "family_public_not_explicitly_confirmed":
+                    result["factual_private_draft_family_held"] += 1
+                elif draft_reason in (
+                        "source_access_terms_unreadable",
+                        "source_access_terms_conflicting",
+                        "unsupported_access_terms"):
+                    result["factual_private_draft_access_held"] += 1
+                else:
+                    result["factual_private_draft_other_held"] += 1
                 family = triage_html_family_age(
                     row, page, independently_pinned_index, contract["child_path"])
                 family_key = {

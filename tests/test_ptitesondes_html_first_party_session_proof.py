@@ -164,6 +164,26 @@ class FirstPartyHTMLSessionProof(unittest.TestCase):
         self.assertFalse(out["access_claims_consistent"])
         self.assertTrue(out["access_needs_review"])
 
+    def test_related_adult_event_is_not_an_adult_restriction_on_this_event(self):
+        html = PAGE.replace(
+            "</main>",
+            "<h2>Autres événements</h2><p>Adultes uniquement</p></main>",
+        )
+        out = check(html=html)
+        self.assertTrue(out["visible_exact_session"])
+        self.assertTrue(out["family_audience_source_cues_present"])
+        self.assertFalse(out["approval_granted"])
+        self.assertEqual(out["public_writes"], 0)
+
+        # Same warning in this event's own description must still block.
+        restricted = PAGE.replace(
+            "Pour les enfants de 2 à 6 ans",
+            "Pour les enfants de 2 à 6 ans — adultes uniquement",
+        )
+        held = check(html=restricted)
+        self.assertFalse(held["visible_exact_session"])
+        self.assertFalse(held["publication_ready"])
+
     def test_malformed_input_fails_without_private_data(self):
         for bad in (None, {}, [], "injected", dict(LEAD, start_local="30:99"),
                     dict(LEAD, title=None)):
