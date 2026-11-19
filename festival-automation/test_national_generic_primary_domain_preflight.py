@@ -261,7 +261,11 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertEqual(row["status"],
                                  "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
                 self.assertEqual(row["diagnostic_code"], expected)
-                self.assertEqual(row["diagnostic_surface"], "SOURCE_PAGE")
+                self.assertEqual(
+                    row["diagnostic_surface"],
+                    "SAME_HOST_HOME" if expected in
+                    ("NO_EXPLICIT_VISIBLE_DATE_RANGE", "NO_VISIBLE_HTML_TEXT")
+                    else "SOURCE_PAGE")
                 self.assertNotIn("html", row)
                 self.assertFalse(result["publication_authorized"])
 
