@@ -330,6 +330,32 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertEqual(unpinned["registry_location_not_checked"], 2)
         self.assertEqual(unpinned["historical_not_checked"], 2)
 
+    def test_visible_event_session_is_measured_without_source_approval(self):
+        result, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(result["future_child_occurrences"], 2)
+        self.assertEqual(result["first_party_visible_exact_sessions"], 2)
+        self.assertEqual(result["first_party_source_sessions_held"], 0)
+        self.assertEqual(result["first_party_missing_same_block"], 0)
+        # MPT 'gratuit' still requires a card; access remains ambiguous.
+        self.assertEqual(result["first_party_access_review_pending"], 2)
+        self.assertEqual(result["first_party_all_visible_cues"], 0)
+        public = redact_detail_funnel_report(result)
+        self.assertEqual(public["first_party_visible_exact_sessions"], 2)
+        self.assertFalse(public["independent_event_session_verified"])
+        self.assertFalse(public["independent_age_access_rights_verified"])
+        self.assertFalse(public["publisher_connected"])
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_unpaired_date_and_clock_do_not_pass_first_party_session_gate(self):
+        # The parser may extract another valid session while one pair is
+        # missing; only surviving exact paired sessions can count.
+        bad = MPT_TEMPLATE.replace(
+            "<li>21 novembre 2026 - 09:15 > 10:15</li>",
+            "<li>21 novembre 2026</li><li>09:15 > 10:15</li>")
+        result, _, _ = probe(details={ONE: bad})
+        self.assertEqual(result["first_party_visible_exact_sessions"], 1)
+        self.assertFalse(result["approval_granted"])
+
     def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["child_pages_read"], 1)
