@@ -186,9 +186,14 @@ def find_tools(sdk: Path) -> tuple[Path, Path]:
         ),
         reverse=True,
     )
+    # Windows uses aapt.exe/apksigner.bat, GitHub's Linux hosted
+    # Android build images use the native aapt/apksigner executables.
+    # Both variants are read-only inspection tools for a built APK.
+    aapt_name = "aapt.exe" if os.name == "nt" else "aapt"
+    signer_name = "apksigner.bat" if os.name == "nt" else "apksigner"
     for directory in directories:
-        aapt = directory / "aapt.exe"
-        signer = directory / "apksigner.bat"
+        aapt = directory / aapt_name
+        signer = directory / signer_name
         if aapt.is_file() and signer.is_file():
             return aapt, signer
     raise ApkGuardError("Missing aapt.exe or apksigner.bat")
