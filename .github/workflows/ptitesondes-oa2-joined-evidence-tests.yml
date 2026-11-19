@@ -1,0 +1,52 @@
+name: "P'tites Ondes — diagnostics OA2 + GPS + organisateur reunis"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_joined_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
+      - 'tests/test_ptitesondes_openagenda_v2_organizer_index.py'
+      - 'docs/PTITESONDES_OA2_JOINED_EVIDENCE_20261118.md'
+      - 'tests/test_ptitesondes_openagenda_v2_joined_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_structured_organizer.py'
+      - 'tests/test_ptitesondes_openagenda_v2_structured_organizer.py'
+      - '.github/workflows/ptitesondes-oa2-joined-evidence-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  independent-joined-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate joined proof contracts with adversarial fixtures
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_joined_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_organizer_index.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
+      - name: Assert only read-only diagnostics are exposed
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path("scripts/ptitesondes_openagenda_v2_joined_evidence.py").read_text()
+          flow = Path(".github/workflows/ptitesondes-oa2-joined-evidence-tests.yml").read_text()
+          assert "contents: read" in flow and "pull_request:" in flow
+          assert not any(line.startswith(("  schedule:", "  workflow_dispatch:")) for line in flow.splitlines())
+          assert not any(line.lstrip().startswith("uses: actions/" + "deploy-pages@")
+                         for line in flow.splitlines())
+          assert not any(line.lstrip().startswith("env: " + "\u0024{{ secrets.")
+                         for line in flow.splitlines())
+          assert all(x in src for x in ("approval_granted", "public_writes", "outstanding_gates", "REMAINING_GATES"))
+          assert not any(x in src for x in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          print("PASS: readonly, never publisher, no credentials or schedule")
+          PY
