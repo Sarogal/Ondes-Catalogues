@@ -11,12 +11,14 @@ Map<String, dynamic> concertsFixture() => {
     {'id': 'muterlein', 'name': 'Mütterlein', 'aliases': <String>[]},
   ],
   'venues': [
-    {'id': 'le-rock', 'name': 'Le Rock'},
+    {'id': 'le-rock', 'name': 'Le Rock', 'city': 'Montpellier',
+      'region': 'Occitanie'},
   ],
   'events': [
     {'id': 'a', 'title': 'Gojira + Guest', 'date': '2026-12-11',
       'status': 'confirmed', 'venueId': 'le-rock',
       'officialUrl': 'https://venue.example/a',
+      'ticketUrl': 'https://tickets.example/a',
       'artistIds': ['gojira', 'guest-surprise']},
     {'id': 'old', 'title': 'Gojira past', 'date': '2026-01-02',
       'status': 'confirmed', 'artistIds': ['gojira']},
@@ -73,7 +75,7 @@ void main() {
       festivals: festivalsFixture(),
       today: today,
     );
-    final found = resolver.resolve('GOJIRA');
+    final found = resolver.resolve('GOJIRA', asOf: today);
     expect(found, isNotNull);
     expect(found!.artistId, 'gojira');
     expect(found.artistName, 'Gojira');
@@ -92,7 +94,7 @@ void main() {
       festivals: festivalsFixture(),
       today: today,
     );
-    final found = resolver.resolve('Mutterlein');
+    final found = resolver.resolve('Mutterlein', asOf: today);
     expect(found, isNotNull);
     expect(found!.artistName, 'Mütterlein');
     expect(found.festivals, hasLength(1));
@@ -108,10 +110,10 @@ void main() {
       festivals: {'festivals': []},
       today: today,
     );
-    expect(resolver.resolve('Gojira'), isNull);
-    expect(resolver.resolve('Unknown Group'), isNull);
-    expect(resolver.resolve(''), isNull);
-    expect(resolver.resolve(null), isNull);
+    expect(resolver.resolve('Gojira', asOf: today), isNull);
+    expect(resolver.resolve('Unknown Group', asOf: today), isNull);
+    expect(resolver.resolve('', asOf: today), isNull);
+    expect(resolver.resolve(null, asOf: today), isNull);
   });
 
   test('metadata must be an exact artist or reviewed alias, never substring',
@@ -121,9 +123,9 @@ void main() {
       festivals: festivalsFixture(),
       today: today,
     );
-    expect(resolver.resolve('The Gojira Experience'), isNull);
-    expect(resolver.resolve('Gojira feat. Guest'), isNull);
-    expect(resolver.resolve('Gojira - Stranded'), isNull);
+    expect(resolver.resolve('The Gojira Experience', asOf: today), isNull);
+    expect(resolver.resolve('Gojira feat. Guest', asOf: today), isNull);
+    expect(resolver.resolve('Gojira - Stranded', asOf: today), isNull);
   });
 
   test('ambiguous canonical alias prevents link to the wrong group', () {
@@ -137,7 +139,7 @@ void main() {
       festivals: festivalsFixture(),
       today: today,
     );
-    expect(resolver.resolve('Gojira'), isNull);
+    expect(resolver.resolve('Gojira', asOf: today), isNull);
   });
 
   test('past events and cancelled festivals do not create future links', () {
@@ -154,7 +156,7 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: festivals, today: today,
     );
-    expect(resolver.resolve('Gojira'), isNull);
+    expect(resolver.resolve('Gojira', asOf: today), isNull);
   });
 
   test('festival day already passed never appears as a future performance',
@@ -179,8 +181,8 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: festivals, today: today,
     );
-    expect(resolver.resolve('Gojira'), isNull);
-    expect(resolver.resolve('Mütterlein')!.festivals.single.date,
+    expect(resolver.resolve('Gojira', asOf: today), isNull);
+    expect(resolver.resolve('Mütterlein', asOf: today)!.festivals.single.date,
         DateTime.utc(2026, 11, 20));
   });
 
@@ -191,7 +193,7 @@ void main() {
       festivals: festivalsFixture(),
       today: today,
     );
-    final profile = resolver.resolve('Mütterlein')!;
+    final profile = resolver.resolve('Mütterlein', asOf: today)!;
     expect(profile.festivals.single.isExactPerformanceDate, isFalse);
     expect(profile.festivals.single.date, DateTime.utc(2027, 6, 12));
     expect(profile.festivals.single.endDate, DateTime.utc(2027, 6, 13));
@@ -205,7 +207,7 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: festivalsFixture(), today: today,
     );
-    expect(resolver.resolve('Gojira')!.concerts.length, 1);
+    expect(resolver.resolve('Gojira', asOf: today)!.concerts.length, 1);
   });
 
   test('unknown guest never blocks known headlining artist', () {
@@ -214,7 +216,7 @@ void main() {
       festivals: {'festivals': []},
       today: today,
     );
-    expect(resolver.resolve('Gojira')!.concerts.single.eventId, 'a');
+    expect(resolver.resolve('Gojira', asOf: today)!.concerts.single.eventId, 'a');
   });
 
   test('unsafe official links are withheld, not made clickable', () {
@@ -224,7 +226,7 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: festivalsFixture(), today: today,
     );
-    expect(resolver.resolve('Gojira')!.concerts.single.officialUrl, isNull);
+    expect(resolver.resolve('Gojira', asOf: today)!.concerts.single.officialUrl, isNull);
   });
 
   test('incorrect or missing public feed shape fails explicitly', () {
@@ -255,7 +257,7 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: {'festivals': []}, today: today,
     );
-    expect(resolver.resolve('Gojira'), isNull);
+    expect(resolver.resolve('Gojira', asOf: today), isNull);
   });
 
   test('artist aliases match only explicitly registered catalogue aliases',
@@ -266,7 +268,148 @@ void main() {
     final resolver = GoArtistEventResolver.build(
       concerts: concerts, festivals: {'festivals': []}, today: today,
     );
-    expect(resolver.resolve('T.G.O.O.')!.artistId, 'the-great-old-ones');
-    expect(resolver.resolve('TG00'), isNull);
+    expect(resolver.resolve('T.G.O.O.', asOf: today)!.artistId, 'the-great-old-ones');
+    expect(resolver.resolve('TG00', asOf: today), isNull);
   });
+
+  test('festival-only artist is findable with provisional identity', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'metal-express', 'name': 'Metal Express',
+       'status': 'Confirmé', 'startDate': '2026-11-20',
+       'endDate': '2026-11-20', 'city': 'Quimperlé',
+       'region': 'Bretagne', 'lineup': ['Odd Nelson']},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    final profile = resolver.resolve('Odd Nelson', asOf: today)!;
+    expect(profile.isProvisionalIdentity, isTrue);
+    expect(profile.artistId, startsWith('festival-name:'));
+    expect(profile.concerts, isEmpty);
+    expect(profile.festivals.single.city, 'Quimperlé');
+    expect(profile.festivals.single.region, 'Bretagne');
+    expect(resolver.resolve('Odd Nelson Tribute', asOf: today), isNull);
+  });
+
+  test('canonical concert identity takes priority over festival-only IDs', () {
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivalsFixture(),
+      today: today,
+    );
+    expect(resolver.resolve('Gojira', asOf: today)!.isProvisionalIdentity,
+      isFalse);
+  });
+
+  test('conflicting festival-only spellings never join two identities', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'a', 'status': 'Confirmé',
+       'startDate': '2027-06-01', 'endDate': '2027-06-01',
+       'lineup': ['Odd Nelson', 'Odd-Nelson']},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    expect(resolver.resolve('Odd Nelson', asOf: today), isNull);
+  });
+
+  test('unknown guest placeholders never create artist identities', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'a', 'status': 'Confirmé',
+       'startDate': '2027-06-01', 'endDate': '2027-06-01',
+       'lineup': ['Guest surprise', 'TBA', 'A confirmer', 'Odd Nelson']},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    expect(resolver.resolve('Guest surprise', asOf: today), isNull);
+    expect(resolver.resolve('TBA', asOf: today), isNull);
+    expect(resolver.resolve('Odd Nelson', asOf: today), isNotNull);
+  });
+
+  test('festival lineupByDate can name a previously unknown band', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'a', 'status': 'Confirmé',
+       'startDate': '2027-06-01', 'endDate': '2027-06-02',
+       'lineup': <String>[],
+       'lineupByDate': {'2027-06-02': ['Odd Nelson']}},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    final performance = resolver.resolve('Odd Nelson', asOf: today)!
+        .festivals.single;
+    expect(performance.date, DateTime.utc(2027, 6, 2));
+    expect(performance.isExactPerformanceDate, isTrue);
+    expect(performance.performanceDates, [DateTime.utc(2027, 6, 2)]);
+  });
+
+  test('overnight rollover filters passed concerts without rebuilding index', () {
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivalsFixture(),
+      today: today,
+    );
+    final before = resolver.resolve('Gojira', asOf: today)!;
+    expect(before.concerts, hasLength(1));
+    final later = resolver.resolve('Gojira', asOf: DateTime(2026, 12, 12))!;
+    expect(later.concerts, isEmpty);
+    expect(later.festivals, hasLength(1));
+    expect(resolver.resolve('Gojira', asOf: DateTime(2027, 6, 14)), isNull);
+  });
+
+  test('festival range remains its published interval, not a fake today', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'range', 'status': 'Confirmé',
+       'startDate': '2026-11-18', 'endDate': '2026-11-21',
+       'lineup': ['Odd Nelson']},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    final item = resolver.resolve('Odd Nelson', asOf: today)!.festivals.single;
+    expect(item.isExactPerformanceDate, isFalse);
+    expect(item.date, DateTime.utc(2026, 11, 18));
+    expect(item.endDate, DateTime.utc(2026, 11, 21));
+    expect(resolver.resolve('Odd Nelson', asOf: DateTime(2026, 11, 22)),
+      isNull);
+  });
+
+  test('multiple confirmed festival slots are separate explicit dates', () {
+    final festivals = festivalsFixture();
+    festivals['festivals'] = [
+      {'slug': 'twice', 'status': 'Confirmé',
+       'startDate': '2027-06-01', 'endDate': '2027-06-04',
+       'lineup': ['Gojira'],
+       'lineupByDate': {
+         '2027-06-01': ['Gojira'],
+         '2027-06-04': ['Gojira'],
+       }},
+    ];
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: festivals, today: today,
+    );
+    final item = resolver.resolve('Gojira', asOf: today)!.festivals.single;
+    expect(item.isExactPerformanceDate, isTrue);
+    expect(item.performanceDates, [
+      DateTime.utc(2027, 6, 1), DateTime.utc(2027, 6, 4),
+    ]);
+    expect(item.endDate, isNull);
+  });
+
+  test('concert profile keeps source ticket and verified venue geography', () {
+    final resolver = GoArtistEventResolver.build(
+      concerts: concertsFixture(), festivals: {'festivals': []},
+      today: today,
+    );
+    final concert = resolver.resolve('Gojira', asOf: today)!.concerts.single;
+    expect(concert.city, 'Montpellier');
+    expect(concert.region, 'Occitanie');
+    expect(concert.ticketUrl!.host, 'tickets.example');
+    expect(concert.performanceDates, [DateTime.utc(2026, 12, 11)]);
+  });
+
 }
