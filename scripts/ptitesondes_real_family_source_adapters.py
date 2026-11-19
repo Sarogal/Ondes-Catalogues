@@ -228,6 +228,56 @@ class _MptVisible(HTMLParser):
             self.parts.append(data.strip())
 
 
+
+def _mpt_first_party_venue(parts):
+    """Named venue on the detail page, never copied from related events.
+
+    The current MPT template displays 'Maison pour tous <name>' followed by
+    'Organisé par la maison <name>'. Both cues must agree. This is only a
+    source-asserted venue string, NOT an independently geocoded place.
+    """
+    for i, raw in enumerate(parts):
+        if norm(raw) in ("lieu", "lieu :"):
+            return parts[i + 1] if i + 1 < len(parts) else None
+        if raw.casefold().startswith("lieu :"):
+            return raw.split(":", 1)[1].strip() or (
+                parts[i + 1] if i + 1 < len(parts) else None
+            )
+    for i, raw in enumerate(parts):
+        label = norm(raw)
+        if not label.startswith("maison pour tous "):
+            continue
+        organizer_name = label[len("maison pour tous "):].strip()
+        if not 3 <= len(organizer_name) <= 80:
+            continue
+        # Exact site-template crosscheck, not a city/venue guess.
+        # The marker and organizer name are often separate text nodes.
+        following = [norm(chunk) for chunk in parts[i + 1:i + 18]]
+        for j, item in enumerate(following):
+            if item == "organise par la maison" and (
+                    j + 1 < len(following)
+                    and following[j + 1] == organizer_name):
+                return raw
+            if item == "organise par la maison " + organizer_name:
+                return raw
+    return None
+
+
+def _mpt_adult_only_declared(parts):
+    """Do not treat 'children' in an adult-only description as child audience."""
+    short_labels = [norm(chunk) for chunk in parts[:8]
+                    if isinstance(chunk, str) and len(chunk) <= 85]
+    adult_tags = frozenset(("adultes", "adultes seniors", "seniors",
+                            "adultes uniquement", "public adulte"))
+    if not any(x in adult_tags for x in short_labels):
+        return False
+    youth = re.compile(
+        r"\\b(enfants?|tout petits?|bebes?|premiers ages|"
+        r"familles?|tout public|adolescents?)\\b"
+    )
+    return not any(youth.search(x) for x in short_labels)
+
+
 def parse_montpellier_mpt_detail(html, url, today):
     """Read a *detail page*, not list cards; never copy unrelated events."""
     if (type(today) is not date or not safe_https(
@@ -241,18 +291,11 @@ def parse_montpellier_mpt_detail(html, url, today):
         return []
     contents = " ".join(p.parts)
     normal = norm(contents)
-    if BLOCKED.search(normal) or not CHILD.search(normal):
+    if (BLOCKED.search(normal) or not CHILD.search(normal)
+            or _mpt_adult_only_declared(p.parts)):
         return []
-    # Venue has to be explicitly named on the organiser's page.
-    venue = None
-    for i, chunk in enumerate(p.parts):
-        if norm(chunk) in ("lieu", "lieu :"):
-            venue = p.parts[i + 1] if i + 1 < len(p.parts) else None
-            break
-        if chunk.casefold().startswith("lieu :"):
-            venue = chunk.split(":", 1)[1].strip() or (
-                p.parts[i + 1] if i + 1 < len(p.parts) else None)
-            break
+    # Explicit first-party venue only; independent venue/GPS proof is later.
+    venue = _mpt_first_party_venue(p.parts)
     if not venue:
         return []
     venue = venue.split("(", 1)[0].strip()
