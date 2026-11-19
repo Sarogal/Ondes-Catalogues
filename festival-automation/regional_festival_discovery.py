@@ -62,7 +62,7 @@ CURATED_QUERY_VIEWS = frozenset((
     "https://sortir.limoges.fr/agenda?keys=rock",
     "https://sortir.limoges.fr/agenda?keys=festival",
 ))
-MAX_INDEXES = 4
+MAX_INDEXES = 8
 MAX_NEW_PER_INDEX = 6
 MAX_PENDING = 100
 MAX_AGE = 45

@@ -517,6 +517,33 @@ class RegionalTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             archive_hints(dict(document,knownFestivals=document["knownFestivals"]*2),DAY)
 
+    def test_eight_distinct_regional_index_checks_remain_private(self):
+        # The increased bound improves geographic breadth without trusting
+        # a newly discovered domain, changing admissions, or writing a patch.
+        indexes = []
+        seen = set()
+        for url, region in APPROVED.items():
+            if region in seen:
+                continue
+            seen.add(region)
+            indexes.append({"id": "eight-" + str(len(indexes)),
+                            "region": region, "url": url})
+            if len(indexes) == 8:
+                break
+        self.assertEqual(len(indexes), 8)
+        self.assertEqual(len(select_indexes(indexes, {}, DAY, limit=8)), 8)
+        with self.assertRaises(ValueError):
+            select_indexes(indexes, {}, DAY, limit=9)
+        checked = []
+        result = report()
+        observed = scan_regional_indexes(
+            result, {}, indexes, DAY,
+            fetch=lambda url: checked.append(url) or "<main>Aucun festival métal</main>",
+            limit=8)
+        self.assertEqual(len(checked), 8)
+        self.assertEqual(observed, [])
+        self.assertEqual(result["regional_festival_publications"], 0)
+
     def test_inaccessible_is_not_public_or_confirmed(self):
         def down(_):
             raise OSError("403")
