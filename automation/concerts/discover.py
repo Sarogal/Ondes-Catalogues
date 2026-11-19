@@ -2199,6 +2199,10 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             # have been scanned. RSS pubDate is never used as event date.
             rss_detail = {"attempted": 0, "dated": 0, "held": 0}
             info.update({"pagesChecked": len(pages), "candidatesDetected": count,
+                         # Aggregates only: no concert names/URLs in public
+                         # workflow logs or per-venue private metrics.
+                         "eventDetailLinksFound": len(links),
+                         "eventDetailPagesFetched": max(len(pages) - 1, 0),
                          "htmlVisibleBillLeads": html_bill_detected,
                          "feeds": feed_stats, "rssStructured": rss_detail})
             if rss_leads:
