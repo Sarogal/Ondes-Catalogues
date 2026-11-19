@@ -7,12 +7,11 @@ approval, or publishable event is returned. Calling code only emits counts.
 The location registries are maintained separately from source discovery. Never
 build this context using a candidate's coordinates, URLs, or claimed aliases.
 """
-from datetime import date
 import math
 import re
 from urllib.parse import urlsplit
 
-from proof import norm, meters
+from proof import norm
 
 CLOCK = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d\Z")
 VENUE_KEYS = frozenset({"city", "aliases", "lat", "lng", "official", "geo_source"})
@@ -103,10 +102,16 @@ def _historical_collision(lead, events):
             continue
         if not start <= day <= end:
             continue
+        old_title, old_city, old_venue = (
+            old.get("title"), old.get("city"), old.get("venue")
+        )
+        if not all(isinstance(v, str) for v in
+                   (old_title, old_city, old_venue)):
+            return "not_checked"
         same = (
-            norm(old.get("title", "")) == norm(title)
-            and norm(old.get("city", "")) == norm(city)
-            and norm(old.get("venue", "")) == norm(venue)
+            norm(old_title) == norm(title)
+            and norm(old_city) == norm(city)
+            and norm(old_venue) == norm(venue)
         )
         if same:
             old_clock = old.get("time")
