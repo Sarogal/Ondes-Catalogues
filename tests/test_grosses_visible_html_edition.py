@@ -112,6 +112,7 @@ class VisibleHTMLTests(unittest.TestCase):
         for appended in (
                 "<p>Autre festival les 16 et 17 août 2027</p>",
                 "<p>Le festival aura lieu les 14 et 15 août 2027</p>",
+                "<p>Dates modifiées : 13 au 15 août 2027</p>",
         ):
             with self.subTest(appended=appended):
                 self.assertIsNone(institutional_date(
