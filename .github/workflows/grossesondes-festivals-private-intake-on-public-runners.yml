@@ -157,6 +157,9 @@ jobs:
           # Candidate organizer URLs from fresh institutional event links: PRIVATE research only.
           # No unknown organizer host is fetched or authorized at this step.
           run_private institutional_organizer_links python "$ENGINE/national_institutional_organizer_preflight.py" --intake "$INTAKE"
+          # Probe only independently re-derived, two-day stable institutional links.
+          # DNS pinning forbids private IPs and cross-domain redirects; output private.
+          run_private organizer_domains python "$ENGINE/national_organizer_domain_qualification.py" --intake "$INTAKE"
           # Snapshot the private prior review locally BEFORE it is overwritten.
           # It never leaves the runner except as derived PRIVATE diagnostics.
           PREVIOUS="/tmp/grossesondes-official-watch/previous-editorial-review.json"
@@ -200,6 +203,7 @@ jobs:
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
             automation-intake/grossesondes/national-institutional-organizer-links.json \
+            automation-intake/grossesondes/national-institutional-organizer-domain-review.json \
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \

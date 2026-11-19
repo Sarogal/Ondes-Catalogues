@@ -29,6 +29,32 @@ STATE_KEY = "national_institutional_organizer_links_private"
 MAX_CHECKS = 2
 
 
+def verified_event_website_links(proposal, institutional_detail_html):
+    """Extract linked candidate websites from exactly this proven edition."""
+    base_name = re.sub(r"\s+20[2-4][0-9]$", "", proposal["name"]).strip()
+    detail = proposal["source"]
+    # This institutional detail was independently validated before extraction.
+    role = lambda url: ("INSTITUTION" if url == detail else classify(url))
+    links = event_website_links(
+        institutional_detail_html, detail, base_name,
+        proposal["startDate"], proposal["endDate"],
+        clean_url, role, normalized)
+    return sorted({x["candidate_url"] for x in links
+                   if isinstance(x, dict)
+                   and isinstance(x.get("candidate_url"), str)})[:4]
+
+
+def website_link_digest(proposal, urls):
+    """Deterministic chain tying newly observed links to the exact edition."""
+    return sha256(json.dumps({
+        "index": proposal["originSlug"],
+        "detail": proposal["source"],
+        "edition": proposal["name"],
+        "dates": [proposal["startDate"], proposal["endDate"]],
+        "links": urls,
+    }, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def reprove_organizer_links(state, queue, dates_report, today, fetch=None):
     """Return a bounded private research trail, with no unknown-domain requests.
 
@@ -70,29 +96,12 @@ def reprove_organizer_links(state, queue, dates_report, today, fetch=None):
                 row["status"] = "INDEPENDENT_INSTITUTIONAL_REPROOF_FAILED"
                 rows.append(row)
                 continue
-            base_name = re.sub(r"\s+20[2-4][0-9]$", "", proposal["name"]).strip()
-            # The detail is a verified institutional source, not a new
-            # code-reviewed organizer. Override only its role for extraction;
-            # target URLs still go through the usual third-party filters.
-            role = lambda url: ("INSTITUTION" if url == detail else classify(url))
-            links = event_website_links(
-                html, detail, base_name,
-                proposal["startDate"], proposal["endDate"],
-                clean_url, role, normalized)
-            urls = sorted({x["candidate_url"] for x in links
-                           if isinstance(x, dict) and isinstance(
-                               x.get("candidate_url"), str)})[:4]
+            urls = verified_event_website_links(proposal, html)
             if not urls:
                 row["status"] = "NO_EXACT_EVENT_ORGANIZER_WEBSITE_LINK"
                 rows.append(row)
                 continue
-            digest = sha256(json.dumps({
-                "index": proposal["originSlug"],
-                "detail": detail,
-                "edition": proposal["name"],
-                "dates": [proposal["startDate"], proposal["endDate"]],
-                "links": urls,
-            }, sort_keys=True).encode("utf-8")).hexdigest()
+            digest = website_link_digest(proposal, urls)
             same = (isinstance(old, dict)
                     and old.get("digest") == digest
                     and old.get("lastSeen") in (yesterday, today)
