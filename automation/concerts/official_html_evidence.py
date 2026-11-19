@@ -26,9 +26,9 @@ MONTHS = dict(zip(
      "aout", "septembre", "octobre", "novembre", "decembre"),
     range(1, 13)))
 DATE_RE = re.compile(
-    r"(?<!\\d)([0-3]?\\d)\\s+("
+    r"(?<!\d)([0-3]?\d)\s+("
     + "|".join(MONTHS)
-    + r")\\s+(20\\d{2})(?!\\d)"
+    + r")\s+(20\d{2})(?!\d)"
 )
 END_SECTION = frozenset({
     "vous aimerez aussi", "evenements similaires", "autres concerts",
@@ -94,7 +94,7 @@ def _date_in(text):
 def _contains(text, needle):
     needle = words(needle)
     return bool(needle and re.search(
-        r"(?<!\\w)" + re.escape(needle) + r"(?!\\w)", words(text)))
+        r"(?<!\w)" + re.escape(needle) + r"(?!\w)", words(text)))
 
 
 def _explicit_label(value):
@@ -105,7 +105,7 @@ def _explicit_label(value):
     if w in ("rock", "musique", "concert", "live"):
         return None
     if not any(re.search(
-            r"(?<!\\w)" + re.escape(genre) + r"(?!\\w)", w)
+            r"(?<!\w)" + re.escape(genre) + r"(?!\w)", w)
             for genre in KNOWN_GENRES):
         return None
     return " ".join(value.split())[:80]
@@ -113,7 +113,7 @@ def _explicit_label(value):
 
 def _heading_genre(text, artists):
     """E.g. '► EISBRECHER – Metal Indus –' or '► BAND – Deathcore'."""
-    parts = re.split(r"\\s+[–—]\\s+|\\s+-\\s+", text, maxsplit=2)
+    parts = re.split(r"\s+[–—]\s+|\s+-\s+", text, maxsplit=2)
     if len(parts) < 2 or words(parts[0]) not in artists:
         return None
     return _explicit_label(parts[1])
