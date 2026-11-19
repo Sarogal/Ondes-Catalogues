@@ -146,7 +146,6 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
     has_paying_without_amount = any(PAID_WORD.search(part) for part in chunks)
     mandatory_membership = any(
         MEMBERSHIP.search(part) and MANDATORY.search(part)
-        and not OPTIONAL.search(part)
         for part in chunks
     )
     optional_membership = any(
