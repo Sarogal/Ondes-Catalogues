@@ -230,8 +230,14 @@ def examine(state, queue, published, today, fetch=None):
     other = [x for x in eligible if x not in pending]
     # A second scheduled collection on the same day must probe NEW leads,
     # not waste both slots on leads already read that morning.
-    fresh = [x for x in other if not isinstance(observed.get(x["url"]), dict)
-             or observed[x["url"]].get("lastSeen") != today]
+    # An unsuccessful source was previously never recorded and could consume
+    # both public slots on the same day. Track attempts separately from
+    # successful evidence; a failed attempt NEVER carries a proof digest.
+    def checked_today(source):
+        previous = observed.get(source["url"])
+        return (isinstance(previous, dict)
+                and previous.get("lastChecked", previous.get("lastSeen")) == today)
+    fresh = [x for x in other if not checked_today(x)]
     repeated = [x for x in other if x not in fresh]
     def rotate(rows):
         if not rows:
@@ -291,7 +297,7 @@ def examine(state, queue, published, today, fetch=None):
                     first_seen, continuous = current, False
                 observed[url] = {
                     "digest": digest, "firstSeen": first_seen.isoformat(),
-                    "lastSeen": today,
+                    "lastSeen": today, "lastChecked": today,
                 }
                 row["status"] = (
                     "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
@@ -302,6 +308,10 @@ def examine(state, queue, published, today, fetch=None):
         except (OSError, ValueError, UnicodeError, TypeError, KeyError):
             row["status"] = "GENERIC_PRIMARY_HTTPS_UNAVAILABLE"
             row["diagnostic_code"] = "SECURE_FETCH_OR_HTML_PARSE_FAILED"
+        # Negative outcomes must advance today's rotation, but can never be
+        # re-used as first-day positive evidence on a later collection.
+        if url not in observed:
+            observed[url] = {"lastChecked": today}
         rows.append(row)
     return {
         "schema": SCHEMA, "as_of": today,
