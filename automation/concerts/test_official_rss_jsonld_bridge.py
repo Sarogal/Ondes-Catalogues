@@ -84,7 +84,7 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
             norm=discover.norm, allow_generic_event=True)
         self.assertIsNotNone(row)
         self.assertEqual(row["discoveryBridge"],
-                         "independent-generic-event-genre-v1")
+                         "official-structured-generic-event-v1")
         self.assertFalse(row["publicationAllowed"])
         self.assertNotIn("officialDetailFound", row)
 
@@ -351,6 +351,56 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
             self.assertTrue(all(x["publicationAllowed"] is False for x in rows))
             venue_sets.append(set(fetched_details))
         self.assertEqual(len(venue_sets[0] | venue_sets[1]), 18)
+
+    def test_full_scan_quarantines_generic_event_with_explicit_metal_genre(self):
+        # Discovery can use the generic official Event markup without a
+        # venue-specific adapter; this is a quarantined lead, not approval.
+        xml = ('<rss><channel><item><title>Annonce du concert</title>'
+               '<pubDate>Wed, 18 Nov 2026 09:00:00 GMT</pubDate>'
+               '<link>' + EVENT_URL + '</link></item></channel></rss>')
+        cases = [
+            ({"@type": "Event", "genre": ["Death Metal"]}, True),
+            ({"@type": "Event", "genre": "Rock"}, False),
+            ({"@type": "Event", "genre": []}, False),
+            ({"@type": "Event", "genre": "Death Metal",
+              "performer": "Unknown artist"}, False),
+            ({"@type": "Event", "genre": "Death Metal",
+              "eventStatus": "https://schema.org/EventCancelled"}, False),
+            ({"@type": "Event", "genre": "Death Metal",
+              "location": {"name": "Autre salle",
+                           "address": {"addressLocality": "Nîmes",
+                                       "addressCountry": "FR"}}}, False),
+        ]
+        for overrides, accepted in cases:
+            with self.subTest(overrides=overrides):
+                def download(url, **kw):
+                    if url == SOURCE["url"]:
+                        return "<html><body>Agenda</body></html>", url
+                    if url == RSS:
+                        return xml, url
+                    if url == EVENT_URL:
+                        return html_for(**overrides), url
+                    raise AssertionError("Unexpected source " + url)
+                report = []
+                with patch.object(discover, "download", side_effect=download), \\
+                     patch.object(discover, "robots_allow", return_value=True), \\
+                     patch.object(discover.feeds, "feed_links",
+                                  return_value={"ics": [], "rss": [RSS]}):
+                    rows = discover.scan_venues(
+                        {"venues": [SOURCE]}, set(), TODAY, report, scan_slot=0)
+                self.assertEqual(len([r for r in rows if not r["date"]]), 1)
+                dated = [r for r in rows if r.get("date") == "2027-02-10"]
+                self.assertEqual(len(dated), 1 if accepted else 0)
+                self.assertEqual(report[0]["rssStructured"]["dated"],
+                                 1 if accepted else 0)
+                if accepted:
+                    lead = triage.triage(dated[0], catalogue={})
+                    self.assertEqual(lead["reviewBucket"], "genre_tag_review")
+                    self.assertEqual(lead["discoveryBridge"],
+                                     "official-structured-generic-event-v1")
+                    self.assertFalse(lead["publicationAllowed"])
+                    self.assertTrue(lead["reviewRequired"])
+                    self.assertNotIn("officialDetailFound", lead)
 
     def test_full_scan_keeps_undated_rss_and_adds_dated_event(self):
         xml = ('<rss><channel><item><title>Nouvelle date officielle</title>'
