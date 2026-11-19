@@ -90,6 +90,9 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "access_first_party_price_not_stated": 0,
         "access_first_party_price_conflicting": 0,
         "access_first_party_scan_held": 0,
+        "access_first_party_scan_length_limit": 0,
+        "access_first_party_scan_no_visible_terms": 0,
+        "access_first_party_scan_other_reason": 0,
         "access_first_party_registration_required": 0,
         "access_first_party_registration_not_required": 0,
         "access_first_party_registration_unknown_or_conflicting": 0,
@@ -320,12 +323,20 @@ def diagnose_html_index_detail_funnel(
                     "conflicting": "access_first_party_unknown_or_conflicting",
                 }[access["price_state"]]
                 result[key] += 1
-                if access["price_state"] == "unknown":
+                valid_scan = (
+                    access["reason"] == "visible_first_party_access_terms_only")
+                if not valid_scan:
+                    result["access_first_party_scan_held"] += 1
+                    if access["reason"] == "visible_terms_limit_exceeded":
+                        result["access_first_party_scan_length_limit"] += 1
+                    elif access["reason"] == "no_visible_event_terms":
+                        result["access_first_party_scan_no_visible_terms"] += 1
+                    else:
+                        result["access_first_party_scan_other_reason"] += 1
+                elif access["price_state"] == "unknown":
                     result["access_first_party_price_not_stated"] += 1
                 elif access["price_state"] == "conflicting":
                     result["access_first_party_price_conflicting"] += 1
-                if access["reason"] != "visible_first_party_access_terms_only":
-                    result["access_first_party_scan_held"] += 1
                 key = {
                     "required": "access_first_party_registration_required",
                     "explicit_not_required":
@@ -334,9 +345,9 @@ def diagnose_html_index_detail_funnel(
                     "conflicting": "access_first_party_registration_unknown_or_conflicting",
                 }[access["registration_state"]]
                 result[key] += 1
-                if access["registration_state"] == "unknown":
+                if valid_scan and access["registration_state"] == "unknown":
                     result["access_first_party_registration_not_stated"] += 1
-                elif access["registration_state"] == "conflicting":
+                elif valid_scan and access["registration_state"] == "conflicting":
                     result["access_first_party_registration_conflicting"] += 1
                 if access["first_party_source_access_review_pending"]:
                     result["access_first_party_source_review_required"] += 1
