@@ -335,6 +335,7 @@ def main():
     from grossesondes_cloud_sync import (
         MANIFEST, load_production, verify_published_head, build_candidate,
         collect_registered_edition_sources,
+        collect_registered_institutional_sources,
     )
     snapshot=load_production(json.loads(MANIFEST.read_text(encoding="utf-8")))
     production_calendar=snapshot["festivals.json"]
@@ -380,6 +381,11 @@ def main():
     archive_registered={row["slug"]: row for row in production_history["knownFestivals"]}
     evidence.update(collect_registered_edition_sources(
         patch, registered, archived=archive_registered))
+    signed_published_slugs = {
+        x["slug"] for x in cal["festivals"]
+        if isinstance(x, dict) and isinstance(x.get("slug"), str)}
+    evidence.update(collect_registered_institutional_sources(
+        patch, signed_published_slugs, today))
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(
