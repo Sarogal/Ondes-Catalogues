@@ -2137,6 +2137,12 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     mark_match(record, known)
                     collected[record["candidateId"]] = record
                     count += 1
+            # Existing individually fetched pages may have a complete
+            # visible first-party event bill but no usable MusicEvent JSON-LD.
+            # Reuse the SAME bounded network reads and separately reviewed
+            # venue/host contract. These remain private discovery leads only:
+            # no new verifier, publisher authority, or live write is granted.
+            html_bill_detected = 0
             for body, url in ([] if source.get("adapter") in (
                               "antipode_official_detail_review",
                               "bonjour_minuit_official_detail_review",
@@ -2146,6 +2152,14 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     if candidate:
                         collected[candidate["candidateId"]] = candidate
                         count += 1
+                import generic_visible_bill
+                html_candidate = generic_visible_bill.extract_candidate(
+                    body, url, source, day, known)
+                if (html_candidate is not None and
+                        html_candidate["candidateId"] not in collected):
+                    collected[html_candidate["candidateId"]] = html_candidate
+                    html_bill_detected += 1
+                    count += 1
             # Flux officiels déclarés dans le HTML : un maximum de deux liens de chaque type.
             # Jamais de publication : chaque événement ICS et chaque actualité RSS sont des pistes.
             feed_stats = {"ics": 0, "rss": 0, "feedErrors": []}
@@ -2185,6 +2199,7 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             # have been scanned. RSS pubDate is never used as event date.
             rss_detail = {"attempted": 0, "dated": 0, "held": 0}
             info.update({"pagesChecked": len(pages), "candidatesDetected": count,
+                         "htmlVisibleBillLeads": html_bill_detected,
                          "feeds": feed_stats, "rssStructured": rss_detail})
             if rss_leads:
                 rss_probe_queue.append((source, base, rss_leads, rss_detail))
