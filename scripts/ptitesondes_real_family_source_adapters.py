@@ -82,6 +82,7 @@ def classify(title, labels=""):
         ("atelier-numerique", r"\b(numerique|programmation informatique|codage)\b"),
         ("lecture-jeunesse", r"\b(conte|lecture|histoires|bebes lecteurs)\b"),
         ("atelier-creatif", r"\b(creatif|arts plastiques|cyanotype|peinture|dessin)\b"),
+        ("atelier-sensoriel", r"\b(snoezelen|ateliers? sensoriels?|eveil sensoriel|experience sensorielle|espace sensoriel|motricite sensorielle)\b"),
         ("cinema-jeunesse", r"\b(cinema|court metrage|film jeunesse)\b"),
         ("activite-sportive", r"\b(motricite|sport|parcours sensorimoteur|piscine)\b"),
         ("sortie-nature", r"\b(nature|foret|biodiversite|balade botanique)\b"),
