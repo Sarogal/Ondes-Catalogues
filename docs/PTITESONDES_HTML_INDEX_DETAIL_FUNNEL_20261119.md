@@ -116,3 +116,28 @@ Des tests hors réseau supplémentaires couvrent le gabarit actuel, les
 séances multiples, les étiquettes adultes, les publics mixtes et les
 catégories en attente. Seul un nouvel essai réseau peut confirmer
 l'efficacité de cette correction sur le site vivant.
+
+
+## Échantillonnage représentatif et dédoublonnage de diagnostic
+
+Le premier essai prenait les premières URL triées alphabétiquement, ce
+qui surreprésentait les fiches sans catégorie explicite et les variantes
+numériques d'un même spectacle.
+
+L'ordre de lecture a été adapté **uniquement pour le diagnostic** :
+- les slugs d'URL contenant des indices de catégories familiales déjà
+  reconnues sont explorés avant ceux sans catégorie ;
+- les suffixes numériques `-0`, `-1`, etc. sont répartis après les
+  premiers représentants de familles d'URL, pour diversifier l'échantillon ;
+- aucun lien n'est supprimé par ces heuristiques, et **aucune catégorie,
+  séance, âge ou preuve de source n'est déduite d'un slug**.
+
+Après lecture réelle des fiches, deux URL différentes portant exactement
+le même titre, la même ville, le même lieu, la même date **et la même
+heure de début** sont comptées une seule fois ; les autres occurrences
+restent distinctes. Les doublons comptés sont explicitement signalés par
+`duplicate_child_sessions_held`.
+
+Cette déduplication statistique ne modifie pas les règles de publication ni
+le catalogue historique. Une éventuelle fusion éditoriale nécessite les
+contrôles du moteur de qualification privé.
