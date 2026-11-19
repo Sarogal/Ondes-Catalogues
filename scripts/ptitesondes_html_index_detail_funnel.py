@@ -9,8 +9,9 @@ Only a separately maintained trusted caller may supply a source pin. This
 file never builds a pin from candidate fields or a search result.
 """
 from collections import Counter
-from datetime import date
+from datetime import date, datetime, time, timezone
 from urllib.parse import urlsplit
+from zoneinfo import ZoneInfo
 import re
 
 from ptitesondes_official_html_index_discovery import (
@@ -32,6 +33,7 @@ _FAMILY_SLUG_HINT = re.compile(
 READ_ONLY_ADAPTERS = {
     "montpellier_mpt": {
         "host": MPT_HOST, "child_path": "/evenement/",
+        "timezone": "Europe/Paris",
         "parser": parse_montpellier_mpt_detail,
     },
 }
@@ -51,6 +53,8 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "future_child_occurrences": 0,
         "unclassified_occurrences_held": 0,
         "duplicate_child_sessions_held": 0,
+        "already_started_sessions_held": 0,
+        "exact_local_clock_cutoff_applied": False,
         "structurally_plausible_for_independent_review": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
@@ -95,7 +99,8 @@ def _diverse_probe_order(children):
 
 def diagnose_html_index_detail_funnel(
         independently_pinned_index, adapter_id, today,
-        *, max_details=12, index_opener=None, detail_opener=None):
+        *, max_details=12, as_of=None, index_opener=None,
+        detail_opener=None):
     """Sample one approved official index and independently fetch child pages.
 
     A positive scope diagnostic only means a candidate has the *shape* of a
@@ -113,6 +118,17 @@ def diagnose_html_index_detail_funnel(
     contract = READ_ONLY_ADAPTERS[adapter_id]
     if independently_pinned_index["approved_host"] != contract["host"]:
         return _empty()
+    # An exact local-time cutoff comes only from the trusted caller. Without
+    # it, dates are checked by day only and the report says so explicitly.
+    source_timezone = ZoneInfo(contract["timezone"])
+    as_of_local = None
+    if as_of is not None:
+        if (type(as_of) is not datetime or as_of.tzinfo is None
+                or as_of.utcoffset() is None):
+            return _empty("invalid_trusted_local_clock")
+        as_of_local = as_of.astimezone(source_timezone)
+        if as_of_local.date() != today:
+            return _empty("trusted_local_clock_day_mismatch")
     # The GET reader checks exact HTTPS URL, host, media type, size and
     # redirects. An index HTML response is never trusted as a registered
     # organisation or source rights.
@@ -122,6 +138,7 @@ def diagnose_html_index_detail_funnel(
         return _empty("trusted_index_fetch_or_parse_held")
 
     result = _empty("sampled_child_sessions_unverified")
+    result["exact_local_clock_cutoff_applied"] = as_of_local is not None
     result["index_visible_anchors"] = index["counts"]["visible_index_anchors"]
     result["index_routed_links"] = index["counts"]["same_host_child_pages"]
     children = []
@@ -157,6 +174,31 @@ def diagnose_html_index_detail_funnel(
             result["child_pages_held"] += 1
             continue
         result["child_pages_read"] += 1
+        if as_of_local is not None:
+            kept = []
+            for row in leads:
+                try:
+                    d = date.fromisoformat(row["date_start"])
+                    t = time.fromisoformat(row["start_local"])
+                    event_local = datetime.combine(d, t, tzinfo=source_timezone)
+                    # Explicit offsets are needed for ambiguous DST folds;
+                    # never silently infer which occurrence is intended.
+                    ambiguous = (event_local.replace(fold=1).utcoffset()
+                                 != event_local.utcoffset())
+                    restored = event_local.astimezone(timezone.utc).astimezone(
+                        source_timezone)
+                    nonexistent = (restored.date() != d or
+                                   restored.replace(tzinfo=None).time() != t)
+                    if (ambiguous or nonexistent or
+                            event_local.astimezone(timezone.utc) <=
+                            as_of_local.astimezone(timezone.utc)):
+                        result["already_started_sessions_held"] += 1
+                        continue
+                except (ValueError, TypeError, KeyError, OverflowError):
+                    result["already_started_sessions_held"] += 1
+                    continue
+                kept.append(row)
+            leads = kept
         if not leads:
             result["child_pages_without_future_child_session"] += 1
             continue
@@ -208,6 +250,9 @@ def redact_detail_funnel_report(report):
     allowed_counts = tuple(k for k, v in empty.items()
                            if type(v) is int and k != "public_writes")
     out = _empty("aggregate_report_without_private_identifiers")
+    out["exact_local_clock_cutoff_applied"] = (
+        report.get("exact_local_clock_cutoff_applied") is True
+    )
     for key in allowed_counts:
         n = report.get(key)
         out[key] = n if type(n) is int and 0 <= n <= 100_000 else 0
