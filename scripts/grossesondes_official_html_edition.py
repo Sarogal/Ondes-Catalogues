@@ -105,6 +105,22 @@ def explicit_ranges(text, year):
             yield match.start(), match.end(), first, last
 
 
+def dominant_visible_range(ranges):
+    """Keep one complete interval, ignoring only contained SINGLE days.
+
+    A two-day announcement and a separate mention of its Saturday describe
+    the same period. Two different multi-day ranges (even if one contains
+    the other), disjoint days and partially overlapping claims are conflicts.
+    """
+    unique = set(ranges)
+    enclosing = [candidate for candidate in unique if all(
+        (other == candidate or
+         (other[0] == other[1] and
+          candidate[0] <= other[0] <= candidate[1]))
+        for other in unique)]
+    return enclosing[0] if len(enclosing) == 1 else None
+
+
 def visible_official_edition(html, edition_title, start, end):
     """Fail closed if the exact edition is not corroborated by visible HTML.
 
@@ -155,4 +171,4 @@ def visible_official_edition(html, edition_title, start, end):
             return False
         for _begin, _end, actual_start, actual_end in dates:
             matches.add((actual_start, actual_end))
-    return matches == {(start, end)}
+    return dominant_visible_range(matches) == (start, end)

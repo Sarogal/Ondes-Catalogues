@@ -26,7 +26,8 @@ if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 from grossesondes_institutional_edition import institutional_date
 from grossesondes_official_html_edition import (VisibleText, fold, explicit_ranges,
-                                               visible_official_edition)
+                                               visible_official_edition,
+                                               dominant_visible_range)
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
@@ -161,9 +162,10 @@ def _private_date_rejection_code(html, title, year):
     if not dates:
         return ("CURRENT_EDITION_YEAR_NOT_VISIBLE" if str(year) not in visible
                 else "NO_EXPLICIT_VISIBLE_DATE_RANGE")
-    if len(dates) > 1:
+    dominant = dominant_visible_range(dates)
+    if dominant is None:
         return "CONFLICTING_VISIBLE_DATE_RANGES"
-    first, last = next(iter(dates))
+    first, last = dominant
     if not visible_official_edition(html, title, first, last):
         return "FESTIVAL_IDENTITY_DATE_PROXIMITY_NOT_PROVEN"
     if not no_same_edition_jsonld_contradiction(html, title, first, last):

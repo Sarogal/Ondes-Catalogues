@@ -97,6 +97,28 @@ class VisibleHTMLTests(unittest.TestCase):
                 self.assertEqual([(a, b) for _, _, a, b in
                                   explicit_ranges(fold(value), 2027)], [])
 
+    def test_visible_partial_day_mentions_are_not_false_conflicts(self):
+        from datetime import date
+        html = ("<main><h1>Festival Roche Libre 2027</h1>"
+                "<p>Les 13 et 14 août 2027, deux soirées rock.</p>"
+                "<p>Samedi 14 août 2027 : programmation à venir.</p></main>")
+        self.assertTrue(visible_official_edition(
+            html, "Festival Roche Libre 2027",
+            date(2027, 8, 13), date(2027, 8, 14)))
+        from grossesondes_institutional_edition import institutional_date
+        self.assertEqual(institutional_date(
+            html, "Festival Roche Libre 2027", 2027),
+            (date(2027, 8, 13), date(2027, 8, 14)))
+        for appended in (
+                "<p>Autre festival les 16 et 17 août 2027</p>",
+                "<p>Le festival aura lieu les 14 et 15 août 2027</p>",
+                "<p>Dates modifiées : 13 au 15 août 2027</p>",
+        ):
+            with self.subTest(appended=appended):
+                self.assertIsNone(institutional_date(
+                    html.replace("</main>", appended + "</main>"),
+                    "Festival Roche Libre 2027", 2027))
+
     def test_official_poster_dates_before_name(self):
         from datetime import date
         self.assertTrue(visible_official_edition(

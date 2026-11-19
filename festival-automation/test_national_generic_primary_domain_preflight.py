@@ -129,6 +129,23 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertFalse(result["rows"][0]["two_day_dates"])
         self.assertFalse(result["publication_authorized"])
 
+    def test_contained_day_mentions_do_not_fake_conflicting_festival_dates(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                "<p>Les 13 et 14 août 2027</p>"
+                "<p>Samedi 14 août 2027 : concerts et animations.</p></main>")
+        checked = examine(state, queue, published, DAY1,
+                          fetch=lambda u: html)
+        row = checked["rows"][0]
+        self.assertEqual(row["status"],
+                         "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY")
+        self.assertEqual(row["start_date_hint"], "2027-08-13")
+        self.assertEqual(row["end_date_hint"], "2027-08-14")
+        self.assertFalse(row["two_day_dates"])
+        self.assertFalse(row["publication_authorized"])
+        self.assertFalse(checked["publication_authorized"])
+
     def test_same_host_homepage_recovers_dates_without_approving_domain(self):
         state, queue, published = fixture()
         queue["dossiers"] = queue["dossiers"][:1]
