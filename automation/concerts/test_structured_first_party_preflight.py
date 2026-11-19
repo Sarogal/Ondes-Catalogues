@@ -245,6 +245,45 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
                 self.assertEqual(report["reasonCounts"], {
                     "structured_event_proof_missing_or_ambiguous": 1})
 
+    def test_private_reason_codes_distinguish_structural_proof_failures(self):
+        cases = [
+            ("no_schema", "<html>Only visible listings</html>",
+             URL, "no_structured_event_node"),
+            ("generic_rock", page(**{"@type": "Event", "genre": "Rock"}),
+             URL, "generic_event_genre_not_confirmed"),
+            ("missing_named_performer", page(performer="Anonymous"),
+             URL, "named_performer_proof_missing"),
+            ("canonical_mismatch", page(url=URL + "other/"),
+             URL, "schema_canonical_mismatch"),
+            ("redirected", page(),
+             "https://untrusted.example/concert/elsewhere/",
+             "official_redirect_or_url_mismatch"),
+            ("missing_venue", page(location={"name": SOURCE["name"]}),
+             URL, "structured_venue_or_city_missing"),
+        ]
+        for label, html, actual, code in cases:
+            with self.subTest(label=label):
+                report = run(fetch=lambda url, **kw: (html, actual))
+                self.assertEqual(report["structureMatched"], 0)
+                self.assertEqual(report["approvalsProposed"], 0)
+                self.assertEqual(report["diagnosticReasonCounts"], {code: 1})
+                self.assertEqual(report["results"][0]["diagnosticReason"], code)
+                self.assertFalse(report["publicationAllowed"])
+                self.assertFalse(report["results"][0]["publicationAllowed"])
+
+    def test_multiple_events_and_trusted_match_diagnostics(self):
+        events = [event_data(), event_data(name="Autre groupe")]
+        html = ('<script type="application/ld+json">'
+                + json.dumps(events, ensure_ascii=False)
+                + '</script>')
+        failed = run(fetch=lambda url, **kw: (html, url))
+        self.assertEqual(failed["diagnosticReasonCounts"],
+                         {"multiple_structured_event_nodes": 1})
+        matched = run()
+        self.assertEqual(matched["structureMatched"], 1)
+        self.assertEqual(matched["diagnosticReasonCounts"], {})
+        self.assertNotIn("diagnosticReason", matched["results"][0])
+
     def test_unknown_venue_or_cross_origin_is_never_fetched(self):
         fail_fetch = lambda url, **kw: self.fail("Must not request untrusted source")
         unmatched = {**SOURCES, "venues": []}
