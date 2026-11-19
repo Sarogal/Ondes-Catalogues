@@ -167,6 +167,52 @@ class IndependentVenueForHTML(unittest.TestCase):
                                         + "</script></body></html>")["reason"],
                          "official_venue_address_not_structured")
 
+    def test_visible_contact_address_with_exact_h1_and_ban_is_verified(self):
+        visible = """<html><body><main>
+        <h1>Bibliothèque des familles</h1>
+        <h2>Contacts</h2><p>02 00 00 00 00</p>
+        <p>42 rue Henri II Plantagenet</p><p>76100 Rouen</p>
+        </main></body></html>"""
+        result = diagnose(html=visible)
+        self.assertTrue(result["geometry_evidence_consistent"])
+        self.assertEqual(result["venue_address_evidence_kind"], "visible_contacts")
+        self.assertFalse(result["publication_ready"])
+        self.assertFalse(result["approval_granted"])
+
+    def test_visible_address_requires_strict_contact_and_exact_page_identity(self):
+        base = """<html><body><main>
+        <h1>Bibliothèque des familles</h1><h2>Contacts</h2>
+        <p>42 rue Henri II Plantagenet</p><p>76100 Rouen</p>
+        </main></body></html>"""
+        variants = (
+            base.replace("Bibliothèque des familles</h1>",
+                         "Bibliothèque voisine</h1>"),
+            base.replace("<h2>Contacts</h2>", "<h2>Programme</h2>"),
+            base.replace("42 rue Henri II Plantagenet", "rue Henri II Plantagenet"),
+            base.replace("76100 Rouen", "76100 Paris"),
+            base.replace("<p>42 rue Henri II Plantagenet</p>",
+                         "<p hidden>42 rue Henri II Plantagenet</p>"),
+            base.replace("76100 Rouen</p>", "76100 Rouen</p>"
+                         "<p>43 rue Henri II Plantagenet</p><p>76100 Rouen</p>"),
+        )
+        for variant in variants:
+            with self.subTest(variant=variant[-75:]):
+                result = diagnose(html=variant)
+                self.assertEqual(
+                    result["reason"], "official_venue_address_not_structured")
+                self.assertFalse(result["geometry_evidence_consistent"])
+
+    def test_conflicting_structured_venue_claim_never_uses_visible_fallback(self):
+        place = deepcopy(PLACE)
+        place["address"]["streetAddress"] = "rue Henri II Plantagenet"
+        html = ("""<html><body><h1>Bibliothèque des familles</h1>
+        <h2>Contacts</h2><p>42 rue Henri II Plantagenet</p>
+        <p>76100 Rouen</p><script type='application/ld+json'>"""
+        + json.dumps(place) + "</script></body></html>")
+        result = diagnose(html=html)
+        self.assertEqual(result["reason"], "official_venue_address_not_structured")
+        self.assertFalse(result["geometry_evidence_consistent"])
+
     def test_wrong_venue_or_conflicting_addresses_fail_closed(self):
         wrong = deepcopy(PLACE)
         wrong["name"] = "Une autre bibliothèque"
