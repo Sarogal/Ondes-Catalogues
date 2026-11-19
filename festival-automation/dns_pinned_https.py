@@ -19,6 +19,12 @@ MAX_HTML = 650_000
 MAX_URL = 1500
 BLOCKED_SUFFIXES = (".local", ".localhost", ".internal", ".test",
                     ".invalid", ".example", ".onion", ".lan", ".home", ".arpa")
+# IPv4 embedded in globally addressed IPv6 can still reach internal IPv4
+# networks through NAT64, 6to4 or Teredo. Fail closed on those prefixes.
+EMBEDDED_IPV4_NETWORKS = tuple(ipaddress.ip_network(prefix) for prefix in (
+    "64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32",
+))
+
 HOST_PATTERN = re.compile(
     r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
     r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?"
@@ -68,8 +74,10 @@ def resolve_global_ips(host, *, resolver=None):
         mapped = getattr(ip, "ipv4_mapped", None)
         if mapped is not None:
             raise ValueError("IPv4-mapped address forbidden")
-        if not ip.is_global or ip.is_multicast or ip.is_reserved:
-            raise ValueError("Non-global DNS address")
+        if (not ip.is_global or ip.is_multicast or ip.is_reserved
+                or (ip.version == 6 and any(
+                    ip in prefix for prefix in EMBEDDED_IPV4_NETWORKS))):
+            raise ValueError("Non-global or IPv4-embedded DNS address")
         literal = str(ip)
         if literal not in public:
             public.append(literal)
