@@ -1619,7 +1619,7 @@ def read_generic_structured_specs():
                 and isinstance(dep, str)
                 and bool(re.fullmatch(r"(?:[0-9]{2,3}|2A|2B)", dep))
                 and isinstance(host, str)
-                and bool(re.fullmatch(r"(?:[a-z0-9-]+\\.)+[a-z]{2,24}", host))
+                and bool(re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z]{2,24}", host))
                 and base == "https://" + host + "/"
                 and isinstance(prefix, str)
                 and bool(re.fullmatch(r"/(?:[a-z0-9-]{2,40}/){1,3}", prefix)),
