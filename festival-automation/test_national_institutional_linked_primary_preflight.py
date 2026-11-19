@@ -12,9 +12,15 @@ from national_institutional_linked_primary_preflight import (
     run, stable_private_proposals, append_private_proposals,
 )
 from test_national_institutional_edition_preflight import fixture, INDEX, DETAIL, TITLE
-from test_grosses_institutional_linked_publisher import (
-    INDEX_HTML, DETAIL_HTML, DATES_HTML, SITE, SPEC,
-)
+SITE = "https://festival-garrigues-exemple.fr/"
+INDEX_HTML = ('<main><p>Festival metal et hardcore</p>'
+              '<a href="/evenement/metal-des-garrigues-2027">'
+              'Festival Metal des Garrigues 2027</a></main>')
+DETAIL_HTML = ('<main><h1>Festival Metal des Garrigues 2027</h1>'
+               '<p>Site officiel du Festival Metal des Garrigues 2027 : '
+               f'<a href="{SITE}">site officiel</a></p></main>')
+DATES_HTML = ('<main><h1>Festival Metal des Garrigues 2027</h1>'
+              '<p>Les 4 et 5 juin 2027 - festival metal.</p></main>')
 
 DAY1, DAY2, DAY3 = "2026-11-06", "2026-11-07", "2026-11-08"
 
