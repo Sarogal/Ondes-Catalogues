@@ -1829,8 +1829,23 @@ def norm_date(value):
     return dt.date.fromisoformat(value)
 
 
-def validate_venue_approval(row, today):
-    """No generic coordinates, no inferred location and no unreviewed venue."""
+def validate_venue_approval(row, today, event_approvals=None):
+    """Validate either a reviewed permanent venue or an event-scoped site.
+
+    Event sites are never allowed through the legacy permanent-venue allowlist:
+    they need an exact already-approved concert and a separate named geographic
+    feature attested by an independent verifier, not the discovery candidate.
+    """
+    if isinstance(row, dict) and row.get("venueKind") == "independent-event-site-v1":
+        import importlib.util
+        module_path = ROOT / "scripts/concert_event_site_contract.py"
+        spec = importlib.util.spec_from_file_location(
+            "concert_event_site_contract", module_path)
+        require(spec is not None and spec.loader is not None,
+                "Vérificateur d'emplacement événementiel manquant")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.validate(row, today, event_approvals)
     require(isinstance(row, dict) and row.get("reviewDecision") == "approved"
             and row.get("reviewedBy") == "independent-official-verifier",
             "Salle non approuvée indépendamment")
@@ -7855,7 +7870,8 @@ def merge(reference, current, approvals, today):
     # As with events, no ad-hoc catalogue edit can bypass the approval queue.
     for prior in current["venues"][len(reference["venues"]):]:
         approval = approved_venues.get(prior["id"])
-        require(approval is not None and prior == validate_venue_approval(approval, today),
+        require(approval is not None and prior == validate_venue_approval(
+                    approval, today, approvals["approvals"]),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
               "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
@@ -7872,7 +7888,8 @@ def merge(reference, current, approvals, today):
                     and v_id not in venues):
                 counts["deferredVenues"] += 1
                 continue
-            incoming = validate_venue_approval(entry, today)
+            incoming = validate_venue_approval(
+                entry, today, approvals["approvals"])
             v_id = incoming["id"]
             if v_id in venues:
                 require(venues[v_id] == incoming, "Conflit de fiche salle déjà présente")
