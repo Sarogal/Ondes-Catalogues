@@ -45,6 +45,19 @@ class StandaloneDhuGuardTests(unittest.TestCase):
         guard.check_metadata(self.badging, self.manifest, self.signing,
                              self.debug_digest)
 
+    def test_host_platform_sdk_binary_names_are_recognized(self):
+        with tempfile.TemporaryDirectory() as td:
+            sdk = Path(td)
+            target = sdk / "build-tools" / "36.0.0"
+            target.mkdir(parents=True)
+            aapt = target / ("aapt.exe" if guard.os.name == "nt" else "aapt")
+            signer = target / (
+                "apksigner.bat" if guard.os.name == "nt" else "apksigner"
+            )
+            aapt.write_bytes(b"fake")
+            signer.write_bytes(b"fake")
+            self.assertEqual(guard.find_tools(sdk), (aapt, signer))
+
     def test_https_profile_accepts_only_second_isolated_package(self):
         new_badging = self.badging.replace(
             "grosses_ondes.dhudiag", "grosses_ondes.dhunetdiag",
