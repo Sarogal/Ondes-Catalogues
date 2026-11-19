@@ -32,12 +32,10 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
             self.assertEqual(len(got), 3)
             self.assertEqual(got, discover.select_generic_official_detail_links(
                 links, day, slot, limit=3))
-        self.assertEqual(
-            discover.select_generic_official_detail_links(
-                ["one", "two"], day, 0, limit=3),
-            list(set(discover.select_generic_official_detail_links(
-                ["one", "two"], day, 0, limit=3)))
-            if len(set(["one", "two"])) == 2 else [])
+        short = discover.select_generic_official_detail_links(
+            ["one", "two"], day, 0, limit=3)
+        self.assertEqual(len(short), 2)
+        self.assertEqual(set(short), {"one", "two"})
 
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
