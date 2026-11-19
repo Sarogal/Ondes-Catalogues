@@ -36,6 +36,25 @@ map remains empty until a separate geographical approval PR; it must **never**
 be reused for generic source host registrations. The two independent schemas
 are intentionally kept separate and tested together.
 
+## HTML proof exploration (not a publisher contract)
+
+`official_html_evidence.py` detects independently fetched event-page **visible**
+genre labels, but only when the individual first-party URL has not redirected,
+the headline and complete known bill correlate, the first concert date under the
+headline matches, and the venue and city are visible on that SAME event page.
+
+Supported positive hints include a short `<p>metal</p>` event badge near the
+headline, or named performer headings such as `► ARTIST – Metal Indus –`.
+Descriptions, venue-wide navigation menus, artist biographies, unrelated
+recommendations and generic "Rock" **do not** corroborate genre. Ambiguous
+headlines, changed date, venue or cross-host URL fail closed.
+
+These signals appear only in the **private** structured preflight, retaining
+`publicationAllowed: false` and `approvalsProposed: 0`. They NEVER rewrite a
+registry lead as `genre_tag_review`, sign an approval, or satisfy the actual
+publisher. The next stage must provide a separately reviewed publisher contract
+with live first-party examples and independent provenance checks.
+
 ## Required regression matrix
 
 - At least two distinct real future bills from the same venue, plus 1/2/8/20 entirely different named artists.
