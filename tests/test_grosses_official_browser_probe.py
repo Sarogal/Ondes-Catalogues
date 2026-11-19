@@ -71,6 +71,18 @@ class BrowserPreflightTests(unittest.TestCase):
         self.assertNotIn("festival666.com", json.dumps(only_render))
         self.assertNotIn("2027-08-13", json.dumps(only_render))
 
+    def test_jsonld_alone_cannot_be_mistaken_for_visible_rendered_dates(self):
+        structured_only = (
+            '<script type="application/ld+json">'
+            '{"@context":"https://schema.org","@type":"MusicEvent",'
+            '"name":"Festival 666 2027","startDate":"2027-08-13",'
+            '"endDate":"2027-08-15"}</script>'
+        )
+        result = compare_proof(PARENT, 2027, date(2026, 11, 19),
+                               SCRIPT_ONLY, structured_only)
+        self.assertEqual(result["verdict"], "NO_BROWSER_VISIBLE_PROOF")
+        self.assertFalse(result["rendered_candidate"])
+
     def test_wrong_edition_or_missing_visible_date_not_a_proof(self):
         today = date(2026, 11, 19)
         wrong = VISIBLE.replace("2027", "2028")
