@@ -23,8 +23,12 @@ from grossesondes_stage import official_text, stage, PROOF_MODE
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    ARCHIVED_BROWSER_PROOF_MODE,
 )
-from grossesondes_archived_html_intake import PINNED_ARCHIVED_HTML_SOURCES, pinned_first_party
+from grossesondes_archived_html_intake import (
+    PINNED_ARCHIVED_HTML_SOURCES, pinned_first_party, organizer_homepage,
+    official_date, private_date_rejection_reason,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -251,7 +255,8 @@ def collect_registered_update_sources(patch, original, fetcher=official_text):
 
 
 def collect_registered_edition_sources(patch, original, fetcher=official_text,
-                                       archived=None, published_slugs=None):
+                                       archived=None, published_slugs=None,
+                                       browser_fetcher=None):
     """Fetch only registered first-party parents (published or archived).
 
     Both parent registries come from the immutable Infomaniak snapshots;
@@ -260,6 +265,7 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
     """
     sources={}
     cached={}
+    browser_checks = 0
     # Ten fresh first-party fetches per run protect latency and remote sites.
     # Crucially, skip editions ALREADY on the signed published calendar before
     # applying this batch limit. Otherwise the first ten private additions
@@ -276,18 +282,21 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
         if (addition.get("slug") not in published_slugs
                 and addition.get("proofMode") in (
                     EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
-                    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)):
+                    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+                    ARCHIVED_BROWSER_PROOF_MODE)):
             ready.append(addition)
         if len(ready) == 10:
             break
     for proposed in ready:
         mode=proposed.get("proofMode")
         if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
-                        HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE):
+                        HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+                        ARCHIVED_BROWSER_PROOF_MODE):
             continue
         slug=proposed.get("slug")
         registered = (archived if mode in (
-            ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE) else original)
+            ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+            ARCHIVED_BROWSER_PROOF_MODE) else original)
         if not isinstance(registered, dict):
             continue
         parent=registered.get(proposed.get("originSlug"),{})
@@ -306,13 +315,49 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
                     and pinned_first_party(url, pinned["proofUrl"])):
                 # A pre-reviewed fixed first-party page; NEVER from the patch.
                 proof_url=pinned["proofUrl"]
-        if proof_url not in cached:
-            try:
-                cached[proof_url]=fetcher(proof_url,registered=True,raw=True)
-            except Exception:
-                cached[proof_url]=""
-                print("Preuve officielle de nouvelle édition indisponible pour "+str(slug))
-        sources["registered-edition:"+str(slug)]=cached[proof_url]
+        browser_mode = mode == ARCHIVED_BROWSER_PROOF_MODE
+        # Browser mode is never inferred from raw HTML and cannot be
+        # satisfied by a URL, HTML, or marker carried in the private patch.
+        if browser_mode:
+            if browser_checks >= 2 or not organizer_homepage(url):
+                continue
+            browser_checks += 1
+        cache_key = (proof_url, "rendered" if browser_mode else "raw")
+        if cache_key not in cached:
+            if browser_mode:
+                try:
+                    # The browser re-fetches the IMMUTABLE archived origin in
+                    # a fresh public runner, with same-host request isolation.
+                    if browser_fetcher is None:
+                        from grossesondes_official_browser_probe import rendered_html
+                        browser_renderer = rendered_html
+                    else:
+                        browser_renderer = browser_fetcher
+                    raw = fetcher(url, registered=True, raw=True)
+                    rendered = browser_renderer(url)
+                    year = int(str(proposed.get("startDate", ""))[:4])
+                    actual = official_date(rendered, parent, year)
+                    raw_dates = official_date(raw, parent, year)
+                    conflicting_raw = (
+                        private_date_rejection_reason(raw, parent, year)
+                        == "official_html_conflicting_future_ranges")
+                    if (actual is None or conflicting_raw
+                            or (raw_dates is not None and raw_dates != actual)):
+                        raise ValueError("Conflicting browser and raw official dates")
+                    cached[cache_key] = rendered
+                except Exception:
+                    cached[cache_key] = ""
+                    print("Contre-preuve navigateur indisponible pour "+str(slug))
+            else:
+                try:
+                    cached[cache_key] = fetcher(
+                        proof_url, registered=True, raw=True)
+                except Exception:
+                    cached[cache_key] = ""
+                    print("Preuve officielle de nouvelle édition indisponible pour "+str(slug))
+        sources["registered-edition:"+str(slug)] = cached[cache_key]
+        if browser_mode and cached[cache_key]:
+            sources["registered-edition-browser-verified:"+str(slug)] = True
         if proof_url != url:
             sources["registered-edition-proof-url:"+str(slug)]=proof_url
     return sources
@@ -352,12 +397,48 @@ def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep
     return result
 
 
+def browser_needed_for_pending_patch(patch, published_slugs):
+    """Match the publisher's ten-item queue, excluding already released rows.
+
+    A cumulative private patch may retain last week's browser proposals.
+    Once they are published, do not install Chromium again on every cron.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Untrusted published identities")
+    eligible = []
+    for row in patch.get("additions", []):
+        if (isinstance(row, dict) and row.get("slug") not in published_slugs
+                and row.get("proofMode") in (
+                    EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE, HTML_PROOF_MODE,
+                    ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE)):
+            eligible.append(row)
+        if len(eligible) >= 10:
+            break
+    return any(row["proofMode"] == ARCHIVED_BROWSER_PROOF_MODE
+               for row in eligible)
+
+
 def main():
     parser=argparse.ArgumentParser()
-    parser.add_argument("--mode",choices=("preview","publish"),required=True)
+    parser.add_argument("--mode",choices=("preview","publish"))
+    parser.add_argument("--browser-needed-only", action="store_true")
     args=parser.parse_args()
     token=os.environ.get("GROSSES_ONDES_INTAKE_READ_TOKEN","")
     require(bool(token),"jeton privé absent")
+    if args.browser_needed_only:
+        # Output only a boolean; never expose private dossier fields, dates,
+        # organizer URLs, or authentication details to GitHub Action logs.
+        patch, _ = load_patch(
+            token, datetime.now(ZoneInfo("Europe/Paris")).date(),
+            allow_stale_for_reproof=True)
+        published = json.loads((ROOT / "festivals.json").read_text(encoding="utf-8"))
+        verify_published_head(published)
+        published_slugs = {row["slug"] for row in published["festivals"]
+                           if isinstance(row, dict) and isinstance(row.get("slug"), str)}
+        required = browser_needed_for_pending_patch(patch, published_slugs)
+        print("browser_required=" + ("true" if required else "false"))
+        return
+    require(args.mode is not None, "mode de synchronisation absent")
     manifest=json.loads(MANIFEST.read_text(encoding="utf-8"))
     today=datetime.now(ZoneInfo("Europe/Paris")).date()
     snapshot=load_production(manifest)

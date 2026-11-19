@@ -8,13 +8,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from grossesondes_official_html_edition import visible_official_edition
 from grossesondes_structured_edition import (
-    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE,
     PROOF_MODE, PRIVATE_CONFIDENCE, PRIVATE_NOTES, PRIVATE_STATUS,
     validate_structured_edition, validate_archived_structured_edition,
 )
 from grossesondes_stage import stage
 from grossesondes_cloud_sync import (
     collect_registered_edition_sources, build_candidate,
+    browser_needed_for_pending_patch,
 )
 from test_grosses_structured_edition import (
     PARENT, ENTRY, ARCHIVE_PARENT, ARCHIVED_ENTRY, TODAY, URL,
@@ -202,6 +203,110 @@ class VisibleHTMLTests(unittest.TestCase):
             self.assertIsNone(validate_archived_structured_edition(
                 row, altered, official_html(), TODAY,
                 proof_mode=ARCHIVED_HTML_PROOF_MODE))
+
+    def test_browser_mode_cannot_reach_publisher_without_independent_render(self):
+        cal, hist, patch = ArchivedStructuredEditionTests().archived_dataset()
+        proposal = archive_entry(proofMode=ARCHIVED_BROWSER_PROOF_MODE)
+        patch["additions"] = [proposal]
+        snapshot = {"festivals.json": cal, "festival-history.json": hist}
+        proof = official_html()
+        key = "registered-edition:" + proposal["slug"]
+        missing, held = build_candidate(
+            snapshot, snapshot, patch, {key: proof}, TODAY,
+            trusted_published=True)
+        self.assertEqual(held["accepted_additions"], [])
+        self.assertEqual(len(missing["festivals"]), len(cal["festivals"]))
+        # Neither a patch-supplied HTML value nor an ordinary HTML proof
+        # can mark a browser independently revalidated.
+        sources = {key: proof,
+                   "registered-edition-browser-verified:" + proposal["slug"]: False}
+        missing, held = build_candidate(
+            snapshot, snapshot, patch, sources, TODAY,
+            trusted_published=True)
+        self.assertEqual(held["accepted_additions"], [])
+
+    def test_browser_publisher_fetches_only_frozen_parent_and_detects_conflicts(self):
+        cal, hist, patch = ArchivedStructuredEditionTests().archived_dataset()
+        proposal = archive_entry(proofMode=ARCHIVED_BROWSER_PROOF_MODE)
+        patch["additions"] = [proposal]
+        raw = ("<html><head><script>const nextYear=2027;</script></head>"
+               "<body><h1>Winter Rising Fest</h1>"
+               "<p>Dates à annoncer</p></body></html>")
+        calls = []
+        def fetch(url, *, registered, raw):
+            calls.append(("raw", url, registered, raw))
+            return raw_page[0]
+        def render(url):
+            calls.append(("browser", url))
+            return official_html()
+        raw_page = [raw]
+        sources = collect_registered_edition_sources(
+            patch, {}, fetcher=fetch,
+            archived={ARCHIVE_PARENT["slug"]: ARCHIVE_PARENT},
+            browser_fetcher=render)
+        self.assertEqual([call[1] for call in calls], [URL, URL])
+        self.assertTrue(sources.get(
+            "registered-edition-browser-verified:" + proposal["slug"]))
+        snapshot = {"festivals.json": cal, "festival-history.json": hist}
+        accepted, report = build_candidate(
+            snapshot, snapshot, patch, sources, TODAY,
+            trusted_published=True)
+        self.assertIn(proposal["slug"], report["accepted_additions"])
+        row = accepted["festivals"][-1]
+        self.assertFalse(row["showOnMap"])
+        self.assertIsNone(row["venue"])
+        self.assertIsNone(row["lat"])
+        self.assertEqual(row["lineup"], [])
+        # If original raw page contradicts the browser, the publisher
+        # MUST veto the candidate before staging any edition.
+        raw_page[0] = official_html("12–14 août 2027")
+        denied = collect_registered_edition_sources(
+            patch, {}, fetcher=fetch,
+            archived={ARCHIVE_PARENT["slug"]: ARCHIVE_PARENT},
+            browser_fetcher=render)
+        self.assertFalse(denied.get(
+            "registered-edition-browser-verified:" + proposal["slug"]))
+        refused, report = build_candidate(
+            snapshot, snapshot, patch, denied, TODAY,
+            trusted_published=True)
+        self.assertEqual(report["accepted_additions"], [])
+        self.assertEqual(refused["festivals"], cal["festivals"])
+
+    def test_browser_install_gate_skips_already_published_proposals(self):
+        browser_row = archive_entry(proofMode=ARCHIVED_BROWSER_PROOF_MODE)
+        raw_row = archive_entry(proofMode=ARCHIVED_HTML_PROOF_MODE,
+                                slug="another-archived-2027")
+        patch = {"additions": [raw_row, browser_row]}
+        self.assertTrue(browser_needed_for_pending_patch(patch, set()))
+        self.assertFalse(browser_needed_for_pending_patch(
+            patch, {browser_row["slug"]}))
+        self.assertFalse(browser_needed_for_pending_patch(
+            {"additions": [raw_row]}, set()))
+        self.assertFalse(browser_needed_for_pending_patch(
+            {"additions": []}, set()))
+
+    def test_browser_proof_rejects_forged_fields_and_missing_browser(self):
+        parent = ARCHIVE_PARENT
+        proposal = archive_entry(proofMode=ARCHIVED_BROWSER_PROOF_MODE)
+        self.assertIsNotNone(validate_archived_structured_edition(
+            proposal, parent, official_html(), TODAY,
+            proof_mode=ARCHIVED_BROWSER_PROOF_MODE))
+        for altered in (
+                dict(proposal, showOnMap=True),
+                dict(proposal, venue="Old venue"),
+                dict(proposal, lat=48.1),
+                dict(proposal, lineup=["Old Band"], bands=1),
+                dict(proposal, evidence=["https://evil.example"])):
+            self.assertIsNone(validate_archived_structured_edition(
+                altered, parent, official_html(), TODAY,
+                proof_mode=ARCHIVED_BROWSER_PROOF_MODE))
+        sources = collect_registered_edition_sources(
+            {"additions": [proposal]}, {},
+            fetcher=lambda url, *, registered, raw: official_html(),
+            archived={parent["slug"]: parent},
+            browser_fetcher=lambda url: (_ for _ in ()).throw(OSError("down")))
+        self.assertFalse(sources.get(
+            "registered-edition-browser-verified:" + proposal["slug"]))
 
     def test_existing_parent_stage_and_publisher_stay_idempotent(self):
         cal, hist, patch = StructuredEditionStageTests.dataset()
