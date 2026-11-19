@@ -363,6 +363,21 @@ jobs:
             echo "::warning::Entonnoir privé indisponible ; registre conservé."
           fi
 
+      - name: Recenser les salles à agréer sans autoriser leur publication
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Public catalogue/source identity only. No approvals, credentials
+          # or private registry are consulted; result stays private.
+          if ! python public/automation/concerts/venue_admission_audit.py \
+              --sources public/automation/concerts/sources.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/venue-admission-audit.json \
+              > "$RUNNER_TEMP/concerts-private-logs/venue-admission-audit.log" 2>&1; then
+            echo "::warning::Audit d'agrément des salles indisponible ; aucune autorisation accordée."
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -390,6 +405,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/structured-first-party-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/structured-first-party-preflight.json
+          fi
+          if [ -f automation/concerts/intake/venue-admission-audit.json ]; then
+            git add --sparse -- automation/concerts/intake/venue-admission-audit.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
