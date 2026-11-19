@@ -370,10 +370,10 @@ jobs:
           set -euo pipefail
           # Public catalogue/source identity only. No approvals, credentials
           # or private registry are consulted; result stays private.
-          if ! python public/automation/concerts/venue_admission_audit.py \\
-              --sources public/automation/concerts/sources.json \\
-              --catalogue public/docs/grossesondes/concerts.json \\
-              --output confidential/automation/concerts/intake/venue-admission-audit.json \\
+          if ! python public/automation/concerts/venue_admission_audit.py \
+              --sources public/automation/concerts/sources.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/venue-admission-audit.json \
               > "$RUNNER_TEMP/concerts-private-logs/venue-admission-audit.log" 2>&1; then
             echo "::warning::Audit d'agrément des salles indisponible ; aucune autorisation accordée."
           fi
