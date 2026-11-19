@@ -107,6 +107,37 @@ class FirstPartyHTMLSessionProof(unittest.TestCase):
                 self.assertFalse(out["visible_exact_session"])
                 self.assertFalse(out["publication_ready"])
 
+    def test_isolated_first_party_family_label_is_valid_source_cue(self):
+        html = PAGE.replace("Pour les enfants de 2 à 6 ans",
+                            "<span>Information événement</span></p><p>Familles")
+        # Synthetic markup retains a standalone <p>Familles</p>, but not
+        # the prose expression "Pour les enfants".
+        out = check(html=html)
+        self.assertTrue(out["visible_exact_session"])
+        self.assertTrue(out["family_audience_source_cues_present"])
+        self.assertFalse(out["approval_granted"])
+
+    def test_hidden_related_or_contradictory_labels_do_not_pass(self):
+        neutral = PAGE.replace("Pour les enfants de 2 à 6 ans",
+                               "Renseignements complémentaires")
+        for html in (
+            neutral.replace("</main>", '<p hidden>Familles</p></main>'),
+            neutral.replace("</main>", '<h2>Autres événements</h2><p>Familles</p></main>'),
+            neutral.replace("</main>", '<p>Adultes</p><p>Familles</p></main>'),
+        ):
+            with self.subTest(html=html[-100:]):
+                out = check(html=html)
+                self.assertFalse(out["family_audience_source_cues_present"])
+                self.assertFalse(out["approval_granted"])
+
+    def test_explicit_mixed_children_adults_label_is_not_adult_only(self):
+        neutral = PAGE.replace("Pour les enfants de 2 à 6 ans",
+                               "Enfants, Adultes")
+        out = check(html=neutral)
+        self.assertTrue(out["family_audience_source_cues_present"])
+        self.assertTrue(out["visible_exact_session"])
+        self.assertFalse(out["publication_ready"])
+
     def test_not_stated_access_is_not_approved_as_free(self):
         lead = dict(LEAD, price_evidence="not_stated",
                     registration_evidence="not_stated")
