@@ -79,6 +79,24 @@ class VisibleHTMLTests(unittest.TestCase):
             "<p>25 &amp; 27 Juin 2027</p></main>",
             "Festibarock'in 2027", date(2027, 6, 27), date(2027, 6, 27)))
 
+    def test_dotted_adjacent_days_are_exact_and_nonadjacent_dates_not_guessed(self):
+        from datetime import date
+        exact = (date(2027, 8, 13), date(2027, 8, 14))
+        for value in ("13.14 août 2027", "13. 14 août 2027",
+                      "13 . 14 AOUT 2027"):
+            with self.subTest(value=value):
+                self.assertEqual([(a, b) for _, _, a, b in
+                                  explicit_ranges(value, 2027)], [exact])
+                self.assertTrue(visible_official_edition(
+                    "<main><h1>Colomb'in Rock Festival 2027</h1>"
+                    f"<p>Rendez-vous les {value} !</p></main>",
+                    "Colomb'in Rock Festival 2027", *exact))
+        for value in ("13.15 août 2027", "13. 16 août 2027",
+                      "13.14 août", "13.14 août 2026"):
+            with self.subTest(value=value):
+                self.assertEqual([(a, b) for _, _, a, b in
+                                  explicit_ranges(value, 2027)], [])
+
     def test_official_poster_dates_before_name(self):
         from datetime import date
         self.assertTrue(visible_official_edition(
