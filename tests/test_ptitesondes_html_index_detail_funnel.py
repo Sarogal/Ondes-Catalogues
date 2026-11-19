@@ -66,7 +66,8 @@ class MemoryWeb:
 
 
 def probe(index_links=None, details=None, limit=12, adapter="montpellier_mpt",
-          pin=None, today=TODAY, independent_context=None):
+          pin=None, today=TODAY, independent_context=None,
+          geo_probe_limit=0, geo_venue_reader=None, geo_ban_reader=None):
     if index_links is None:
         index_links = (ONE,)
     if details is None:
@@ -78,7 +79,10 @@ def probe(index_links=None, details=None, limit=12, adapter="montpellier_mpt",
     report = diagnose_html_index_detail_funnel(
         pin, adapter, today, max_details=limit,
         index_opener=index, detail_opener=pages,
-        independent_context=independent_context)
+        independent_context=independent_context,
+        geo_probe_limit=geo_probe_limit,
+        geo_venue_reader=geo_venue_reader,
+        geo_ban_reader=geo_ban_reader)
     return report, index, pages
 
 
@@ -355,6 +359,103 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         result, _, _ = probe(details={ONE: bad})
         self.assertEqual(result["first_party_visible_exact_sessions"], 1)
         self.assertFalse(result["approval_granted"])
+
+    def test_venue_ban_live_probe_is_bounded_per_building_not_per_session(self):
+        venue_url = "https://mpt.montpellier.fr/maisons/albert-camus"
+        venue = {
+            "city": "Montpellier", "aliases": ["Maison pour tous Albert Camus"],
+            "lat": 43.6, "lng": 3.85,
+            "official": venue_url,
+            "geo_source": "https://www.openstreetmap.org/way/987654",
+        }
+        context = {
+            "legacy_venues": [venue], "public_places": [],
+            "historical_catalogue": {
+                "updated_at": "2026-11-19T09:00:00+01:00",
+                "events": [],
+            },
+        }
+        place = {
+            "@type": "CommunityCenter",
+            "name": "Maison pour tous Albert Camus",
+            "address": {
+                "@type": "PostalAddress", "streetAddress": "42 rue des Lilas",
+                "postalCode": "34070", "addressLocality": "Montpellier",
+                "addressCountry": "FR",
+            },
+        }
+        official_html = (
+            "<html><body><script type='application/ld+json'>"
+            + json.dumps(place) + "</script></body></html>"
+        )
+        geo = {
+            "type": "FeatureCollection",
+            "features": [{
+                "type": "Feature",
+                "properties": {
+                    "type": "housenumber", "score": 0.98,
+                    "housenumber": "42", "street": "rue des Lilas",
+                    "postcode": "34070", "city": "Montpellier",
+                    "citycode": "34172",
+                },
+                "geometry": {"type": "Point", "coordinates": [3.85, 43.6]},
+            }],
+        }
+        trace = []
+
+        def venue_reader(pin):
+            trace.append("official")
+            self.assertEqual(pin["exact_url"], venue_url)
+            return {"url": venue_url, "html": official_html}
+
+        def ban_reader(query):
+            trace.append("ban")
+            self.assertTrue(query.startswith(
+                "https://data.geopf.fr/geocodage/search?q="))
+            return geo
+
+        report, _, _ = probe(
+            details={ONE: MPT_TEMPLATE}, independent_context=context,
+            geo_probe_limit=1, geo_venue_reader=venue_reader,
+            geo_ban_reader=ban_reader)
+        self.assertEqual(trace, ["official", "ban"])
+        self.assertEqual(report["future_child_occurrences"], 2)
+        self.assertEqual(report["geo_distinct_venues_probed"], 1)
+        self.assertEqual(report["geo_independent_ban_registry_concordant"], 1)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["geo_independent_ban_registry_concordant"], 1)
+        self.assertNotIn(venue_url, json.dumps(public))
+        self.assertFalse(public["independent_gps_refetched"])
+        self.assertFalse(public["approval_granted"])
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_ban_probe_holds_incomplete_institutional_address(self):
+        context = {
+            "legacy_venues": [{
+                "city": "Montpellier",
+                "aliases": ["Maison pour tous Albert Camus"],
+                "lat": 43.6, "lng": 3.85,
+                "official": "https://mpt.montpellier.fr/maisons/albert-camus",
+                "geo_source": "https://www.openstreetmap.org/way/987654",
+            }],
+            "public_places": [],
+            "historical_catalogue": {"updated_at": "2026-11-19", "events": []},
+        }
+        report, _, _ = probe(
+            details={ONE: MPT_TEMPLATE}, independent_context=context,
+            geo_probe_limit=1,
+            geo_venue_reader=lambda pin: {
+                "url": pin["exact_url"],
+                "html": "<html><body><p>Maison pour tous, adresse libre sans numéro</p></body></html>",
+            },
+            geo_ban_reader=lambda _: self.fail(
+                "BAN must not be queried without structured house number"),
+        )
+        self.assertEqual(report["geo_distinct_venues_probed"], 1)
+        self.assertEqual(report["geo_official_address_unstructured"], 1)
+        self.assertEqual(report["geo_independent_ban_registry_concordant"], 0)
+        self.assertFalse(report["approval_granted"])
+        self.assertEqual(report["public_writes"], 0)
 
     def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
