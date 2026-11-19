@@ -385,7 +385,7 @@ void main() {
        'startDate': '2027-06-01', 'endDate': '2027-06-04',
        'lineup': ['Gojira'],
        'lineupByDate': {
-         '2027-06-01': ['Gojira'],
+         '2027-06-01': ['Gojira', 'Gojira'],
          '2027-06-04': ['Gojira'],
        }},
     ];
@@ -398,6 +398,11 @@ void main() {
       DateTime.utc(2027, 6, 1), DateTime.utc(2027, 6, 4),
     ]);
     expect(item.endDate, isNull);
+    final remaining = resolver.resolve('Gojira',
+        asOf: DateTime(2027, 6, 2))!.festivals.single;
+    expect(remaining.date, DateTime.utc(2027, 6, 4));
+    expect(remaining.performanceDates, [DateTime.utc(2027, 6, 4)]);
+    expect(resolver.resolve('Gojira', asOf: DateTime(2027, 6, 5)), isNull);
   });
 
   test('concert profile keeps source ticket and verified venue geography', () {
