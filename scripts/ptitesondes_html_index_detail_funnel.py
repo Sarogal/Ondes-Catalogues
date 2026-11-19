@@ -19,6 +19,7 @@ from ptitesondes_openagenda_v2_geo_fetch import fetch_official_page
 from ptitesondes_real_family_source_adapters import (
     parse_montpellier_mpt_detail, scope_proposals, MPT_HOST,
 )
+from ptitesondes_family_national_scope import FAMILY_TYPES
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -43,6 +44,7 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "child_pages_held": 0,
         "child_pages_without_future_child_session": 0,
         "future_child_occurrences": 0,
+        "unclassified_occurrences_held": 0,
         "structurally_plausible_for_independent_review": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
@@ -124,6 +126,12 @@ def diagnose_html_index_detail_funnel(
             result["child_pages_without_future_child_session"] += 1
             continue
         result["future_child_occurrences"] += len(leads)
+        # The adapter may recognize a real child session whose topic is not
+        # yet one of the independently reviewed family categories. Never
+        # silently count that session as approved or in-scope.
+        result["unclassified_occurrences_held"] += sum(
+            row.get("category") not in FAMILY_TYPES for row in leads
+        )
         try:
             scopes = scope_proposals(leads, today)
             result["structurally_plausible_for_independent_review"] += sum(
