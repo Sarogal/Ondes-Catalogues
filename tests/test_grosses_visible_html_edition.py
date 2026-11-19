@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from grossesondes_official_html_edition import visible_official_edition
+from grossesondes_official_html_edition import visible_official_edition, explicit_ranges
 from grossesondes_structured_edition import (
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE,
     PROOF_MODE, PRIVATE_CONFIDENCE, PRIVATE_NOTES, PRIVATE_STATUS,
@@ -51,6 +51,7 @@ class VisibleHTMLTests(unittest.TestCase):
     def test_french_range_and_multiple_days(self):
         for dates in ("12-13 août 2027", "12 et 13 août 2027",
                       "du 12 au 13 août 2027", "12, 13 août 2027",
+                      "12 & 13 août 2027", "12 &amp; 13 août 2027",
                       "12 | 13 | AOUT | 2027"):
             with self.subTest(dates=dates):
                 self.assertIsNotNone(validate_structured_edition(
@@ -61,6 +62,22 @@ class VisibleHTMLTests(unittest.TestCase):
             "MozHell Open Air 2027",
             __import__("datetime").date(2027, 7, 23),
             __import__("datetime").date(2027, 7, 25)))
+
+    def test_ampersand_range_does_not_truncate_first_day(self):
+        from datetime import date
+        expected = [(date(2027, 6, 25), date(2027, 6, 26))]
+        self.assertEqual([(a, b) for _, _, a, b in explicit_ranges(
+            "25 & 26 Juin 2027", 2027)], expected)
+        self.assertEqual([(a, b) for _, _, a, b in explicit_ranges(
+            "25 & 27 Juin 2027", 2027)], [])
+        self.assertTrue(visible_official_edition(
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>25 &amp; 26 Juin 2027</p></main>",
+            "Festibarock'in 2027", *expected[0]))
+        self.assertFalse(visible_official_edition(
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>25 &amp; 27 Juin 2027</p></main>",
+            "Festibarock'in 2027", date(2027, 6, 27), date(2027, 6, 27)))
 
     def test_official_poster_dates_before_name(self):
         from datetime import date
