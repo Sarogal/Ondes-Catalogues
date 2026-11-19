@@ -6,6 +6,7 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_radio_flutter_lab/radio_station_stub.dart';
 import 'package:go_radio_flutter_lab/central_legacy_radio_adapter.dart';
+import 'package:go_radio_flutter_lab/central_radio_continuity_preview.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_core.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_projection.dart';
 
@@ -129,7 +130,6 @@ RadioStation _old({required String id, List<String> variants = const []}) =>
       ],
     );
 
-import 'package:go_radio_flutter_lab/central_radio_continuity_preview.dart';
 
 void main() {
   setUpAll(() async {
