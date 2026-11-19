@@ -311,6 +311,31 @@ def official_date(html, parent, year):
     return first, last
 
 
+def matching_official_jsonld_present(html, parent, year):
+    """Detect a same-edition JSON-LD claim before choosing the proof mode.
+
+    If an official page contradicts itself, we must not quietly switch to the
+    representation with favorable dates and ignore the other one.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 1_400_000:
+        return False
+    title = str(parent.get("name") or "").strip() + " " + str(year)
+    parser = JsonLD()
+    parser.feed(html)
+    parser.close()
+    for document in parser.documents[:30]:
+        for event in walk(document):
+            types = event.get("@type")
+            if not isinstance(types, list):
+                types = [types]
+            if (isinstance(event.get("name"), str)
+                    and event["name"].strip() == title
+                    and {str(t).rsplit("/", 1)[-1].casefold() for t in types}
+                       .intersection(ALLOWED_EVENT_TYPES)):
+                return True
+    return False
+
+
 def official_structured_date(html, parent, year):
     """Exact current-edition JSON-LD alternative to visible HTML evidence.
 
@@ -375,13 +400,19 @@ def candidate(parent, source, html, today):
             or source["year"] not in (2027, 2028)
             or source["year"] <= ident[1]):
         return None
-    observed = official_date(html, parent, source["year"])
-    mode = ARCHIVED_HTML_PROOF_MODE
-    if observed is None:
-        # Only a strict first-party same-edition JSON-LD may serve as a
-        # fallback. Generic page dates/metadata never confer permission.
-        observed = official_structured_date(html, parent, source["year"])
-        mode = ARCHIVED_PROOF_MODE
+    visible_observed = official_date(html, parent, source["year"])
+    structured_observed = official_structured_date(
+        html, parent, source["year"])
+    has_jsonld_claim = matching_official_jsonld_present(
+        html, parent, source["year"])
+    # When both representations claim this same edition, a contradiction or
+    # invalid JSON-LD MUST refuse admission in both proof modes.
+    if visible_observed is not None and has_jsonld_claim:
+        if structured_observed != visible_observed:
+            return None
+    observed = visible_observed if visible_observed is not None else structured_observed
+    mode = (ARCHIVED_HTML_PROOF_MODE
+            if visible_observed is not None else ARCHIVED_PROOF_MODE)
     if observed is None:
         return None
     start, end = observed
