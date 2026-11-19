@@ -204,6 +204,25 @@ class MusicalIsolationTests(unittest.TestCase):
 
 
 
+class PhysicalWorkshopAndMusicalBoundaryTests(unittest.TestCase):
+    def test_explicit_yoga_and_body_exploration_are_generic_physical_activities(self):
+        for title in ("Atelier de yoga enfant", "Éveil corporel tout-petits",
+                      "Initiation gymnastique en famille"):
+            with self.subTest(title=title):
+                self.assertEqual(classify(title), "activite-sportive")
+
+    def test_musician_and_sound_topics_do_not_enter_nonmusical_categories(self):
+        for title in ("Bambins musiciens", "Parcours sonore pour enfants",
+                      "Atelier yoga musical", "Éveil corporel et chant"):
+            with self.subTest(title=title):
+                self.assertIsNone(classify(title))
+
+    def test_unknown_or_mixed_physical_and_sensory_topics_stay_held(self):
+        self.assertIsNone(classify("Parent'aise : rendez-vous en famille"))
+        self.assertIsNone(classify("Atelier yoga et snoezelen"))
+        self.assertIsNone(classify("Cocon paisible"))
+
+
 class SensoryTopicIsolationTests(unittest.TestCase):
     def test_explicit_snoezelen_and_sensory_terms_propose_new_topic(self):
         for text in (

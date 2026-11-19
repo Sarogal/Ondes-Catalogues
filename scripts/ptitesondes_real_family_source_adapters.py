@@ -70,12 +70,24 @@ def safe_https(url, host, prefix="/"):
         return False
 
 
+# Strong explicit cues only. These are a diagnostic boundary, NOT permission
+# to publish or an assertion that any musical event has been verified.
+MUSICAL_TITLE_CUE = re.compile(
+    r"\b(musique|musical|musicale|musicaux|musicien|musiciens|"
+    r"musicienne|musiciennes|concert|chant|chorale|percussions|sonore)\b"
+)
+
+
+def has_explicit_musical_theme(text):
+    return isinstance(text, str) and bool(MUSICAL_TITLE_CUE.search(norm(text)))
+
+
 def classify(title, labels=""):
     """Only unambiguous explicit themes; all others need editorial review."""
     value = norm(title + " " + labels)
-    # Never re-route the existing seven musical categories into the
-    # experimental non-musical family contract.
-    if re.search(r"\b(musique|musical|concert|chant|chorale|percussions)\b", value):
+    # Never re-route an explicit musical topic into the experimental
+    # non-musical family contract, even if another theme also appears.
+    if has_explicit_musical_theme(value):
         return None
     patterns = (
         ("atelier-scientifique", r"\b(scientifique|astronomi|robotique|experiences de science)\b"),
@@ -84,7 +96,7 @@ def classify(title, labels=""):
         ("atelier-creatif", r"\b(creatif|arts plastiques|cyanotype|peinture|dessin)\b"),
         ("atelier-sensoriel", r"\b(snoezelen|ateliers? sensoriels?|eveil sensoriel|experience sensorielle|espace sensoriel|motricite sensorielle)\b"),
         ("cinema-jeunesse", r"\b(cinema|court metrage|film jeunesse)\b"),
-        ("activite-sportive", r"\b(motricite|sport|parcours sensorimoteur|piscine)\b"),
+        ("activite-sportive", r"\b(motricite|sport|parcours sensorimoteur|piscine|eveil corporel|yoga|gymnastique)\b"),
         ("sortie-nature", r"\b(nature|foret|biodiversite|balade botanique)\b"),
         ("animaux-ferme", r"\b(ferme pedagogique|animaux de ferme)\b"),
         ("musee-patrimoine", r"\b(musee|patrimoine|visite du chateau)\b"),

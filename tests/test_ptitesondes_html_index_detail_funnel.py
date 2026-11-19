@@ -174,6 +174,29 @@ class OfficialIndexToScopeTests(unittest.TestCase):
         self.assertEqual(len(pages.seen), 2)
         self.assertEqual(pages.seen[0][0], more[0])
 
+    def test_full_bounded_coverage_reads_thirty_pages_without_publication(self):
+        links = [
+            f"https://mpt.montpellier.fr/evenement/page-test-{n:02d}"
+            for n in range(35)
+        ]
+        report, _, pages = probe(
+            index_links=tuple(links),
+            details={url: MPT_HTML for url in links},
+            limit=30,
+        )
+        self.assertEqual(report["child_pages_matching_contract"], 35)
+        self.assertEqual(report["child_pages_selected"], 30)
+        self.assertEqual(report["child_pages_skipped_by_limit"], 5)
+        self.assertEqual(report["child_pages_read"], 30)
+        self.assertEqual(len(pages.seen), 30)
+        self.assertEqual(report["duplicate_child_sessions_held"], 29)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["child_pages_read"], 30)
+        self.assertFalse(public["approval_granted"])
+        self.assertFalse(public["publisher_connected"])
+        self.assertEqual(public["public_writes"], 0)
+        self.assertNotIn("/evenement/page-test-", json.dumps(public))
+
     def test_public_aggregate_report_never_exposes_dynamic_private_keys(self):
         report, _, _ = probe()
         report["secret_url"] = ONE
@@ -253,6 +276,25 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
             "<p>Familles</p>", "<p>Enfants, Adultes</p>")
         self.assertEqual(len(parse_montpellier_mpt_detail(
             changed, ONE, TODAY)), 2)
+
+    def test_musical_and_unknown_topics_are_counted_separately(self):
+        music = MPT_TEMPLATE.replace("Atelier snoezelen", "Atelier d'éveil musical")
+        report, _, _ = probe(details={ONE: music})
+        self.assertEqual(report["future_child_occurrences"], 2)
+        self.assertEqual(report["unclassified_occurrences_held"], 2)
+        self.assertEqual(report["explicit_musical_occurrences_held"], 2)
+        self.assertEqual(report["unclassified_nonmusical_occurrences_held"], 0)
+        self.assertEqual(report["structurally_plausible_for_independent_review"], 0)
+        unknown = MPT_TEMPLATE.replace("Atelier snoezelen", "Atelier détente bébé")
+        report, _, _ = probe(details={ONE: unknown})
+        self.assertEqual(report["unclassified_occurrences_held"], 2)
+        self.assertEqual(report["explicit_musical_occurrences_held"], 0)
+        self.assertEqual(report["unclassified_nonmusical_occurrences_held"], 2)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["unclassified_nonmusical_occurrences_held"], 2)
+        self.assertNotIn("détente bébé", json.dumps(public, ensure_ascii=False))
+        self.assertFalse(public["publisher_connected"])
+        self.assertEqual(public["public_writes"], 0)
 
     def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})

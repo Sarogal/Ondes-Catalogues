@@ -20,6 +20,7 @@ from ptitesondes_official_html_index_discovery import (
 from ptitesondes_openagenda_v2_geo_fetch import fetch_official_page
 from ptitesondes_real_family_source_adapters import (
     parse_montpellier_mpt_detail, scope_proposals, classify, norm, MPT_HOST,
+    has_explicit_musical_theme,
 )
 from ptitesondes_family_national_scope import FAMILY_TYPES
 
@@ -52,6 +53,8 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "child_pages_without_future_child_session": 0,
         "future_child_occurrences": 0,
         "unclassified_occurrences_held": 0,
+        "explicit_musical_occurrences_held": 0,
+        "unclassified_nonmusical_occurrences_held": 0,
         "duplicate_child_sessions_held": 0,
         "already_started_sessions_held": 0,
         "exact_local_clock_cutoff_applied": False,
@@ -220,8 +223,17 @@ def diagnose_html_index_detail_funnel(
         # The adapter may recognize a real child session whose topic is not
         # yet one of the independently reviewed family categories. Never
         # silently count that session as approved or in-scope.
-        result["unclassified_occurrences_held"] += sum(
-            row.get("category") not in FAMILY_TYPES for row in leads
+        unclassified = [
+            row for row in leads if row.get("category") not in FAMILY_TYPES
+        ]
+        musical = sum(
+            has_explicit_musical_theme(row.get("title", ""))
+            for row in unclassified
+        )
+        result["unclassified_occurrences_held"] += len(unclassified)
+        result["explicit_musical_occurrences_held"] += musical
+        result["unclassified_nonmusical_occurrences_held"] += (
+            len(unclassified) - musical
         )
         try:
             scopes = scope_proposals(leads, today)

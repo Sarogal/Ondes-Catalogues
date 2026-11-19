@@ -11,7 +11,7 @@ import json
 
 from ptitesondes_html_index_detail_funnel import (
     diagnose_html_index_detail_funnel,
-    redact_detail_funnel_report,
+    redact_detail_funnel_report, MAX_DETAILS,
 )
 
 # Public source already present in the pre-existing city adapter. This is
@@ -26,7 +26,7 @@ def main():
     now_local = datetime.now(ZoneInfo("Europe/Paris"))
     report = diagnose_html_index_detail_funnel(
         MPT_INDEX, "montpellier_mpt", now_local.date(),
-        max_details=3, as_of=now_local,
+        max_details=MAX_DETAILS, as_of=now_local,
     )
     print(json.dumps(
         redact_detail_funnel_report(report),
