@@ -361,6 +361,34 @@ class DelegatedAgendaPreflight(unittest.TestCase):
             report["counts"].get("legacy_ods_mirror_needs_authenticated_api_bridge"), 1)
         self.assertFalse(report["approval_granted"])
 
+    def test_legacy_mirror_pin_coverage_is_not_source_approval(self):
+        c = dict(direct_case()["lead"], collector="opendatasoft-index")
+        mirror = dict(c, source_url="https://openagenda.com/" + SLUG
+                      + "/events/lecture-pour-enfants")
+        single = census_institution_pins_on_private_backlog(
+            [mirror], [REVIEWED], TODAY)
+        self.assertEqual(
+            single["counts"]["legacy_ods_single_pin_for_review_only"], 1)
+        self.assertEqual(
+            single["counts"]["legacy_ods_mirror_needs_authenticated_api_bridge"], 1)
+        self.assertFalse(single["official_session_proved"])
+        self.assertFalse(single["approval_granted"])
+
+        absent = census_institution_pins_on_private_backlog(
+            [mirror], [], TODAY)
+        self.assertEqual(
+            absent["counts"]["legacy_ods_no_independent_pin"], 1)
+        self.assertEqual(absent["counts"]["reviewed_registry_rows_provided"], 0)
+
+        other = dict(REVIEWED, institution_host="bibliotheque-autre.fr",
+                     exact_page_url="https://bibliotheque-autre.fr/agenda")
+        ambiguous = census_institution_pins_on_private_backlog(
+            [mirror], [REVIEWED, other], TODAY)
+        self.assertEqual(
+            ambiguous["counts"]["legacy_ods_ambiguous_pins_held"], 1)
+        self.assertFalse(ambiguous["approval_granted"])
+        self.assertEqual(ambiguous["public_writes"], 0)
+
     def test_fail_closed_for_invalid_or_oversized_document_and_redaction(self):
         self.assertEqual(inspect(page="<html>").get("reason"),
                          "institutional_page_unavailable")

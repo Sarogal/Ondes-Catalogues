@@ -338,6 +338,9 @@ def census_institution_pins_on_private_backlog(leads, reviewed_sources,
         raise ValueError("invalid_private_backlog")
     index = _registry_by_slug(reviewed_sources)
     counts = Counter()
+    # These are provided reviewed pins, NOT verified site ownership or licences.
+    counts["reviewed_registry_rows_provided"] = len(reviewed_sources)
+    counts["reviewed_registry_distinct_slugs"] = len(index)
     cutoff = today + timedelta(days=184)
     for lead in leads:
         counts["raw_rows"] += 1
@@ -361,6 +364,16 @@ def census_institution_pins_on_private_backlog(leads, reviewed_sources,
         counts["future_in_window_rows"] += 1
         reason, _ = _select_indexed_lead(lead, index)
         counts[reason] += 1
+        if reason == "legacy_ods_mirror_needs_authenticated_api_bridge":
+            # The old mirror can be inventoried by slug, but cannot be
+            # promoted until a trusted reader binds agenda and event UIDs.
+            pins = index.get(_legacy_mirror_slug(lead.get("source_url")), ())
+            if len(pins) == 1:
+                counts["legacy_ods_single_pin_for_review_only"] += 1
+            elif len(pins) > 1:
+                counts["legacy_ods_ambiguous_pins_held"] += 1
+            else:
+                counts["legacy_ods_no_independent_pin"] += 1
     return {
         "schema": "ptitesondes.oa2.institution_pin_private_census.v1",
         "mode": "private_read_only_aggregate_no_source_approval",

@@ -64,6 +64,27 @@ class PrivateRegistryCLI(unittest.TestCase):
                       "--independently-curated-registry", str(registry),
                       "--today", "18-11-2026"])
 
+    def test_omitted_registry_is_explicit_zero_pin_inventory(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root)
+            backlog = folder / "backlog.json"
+            lead = direct_case()["lead"]
+            backlog.write_text(json.dumps([lead]), encoding="utf-8")
+            before = sorted(x.name for x in folder.iterdir())
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                main(["--private-backlog", str(backlog),
+                      "--today", "2026-11-18"])
+            result = json.loads(output.getvalue())
+            self.assertEqual(before, sorted(x.name for x in folder.iterdir()))
+            self.assertEqual(result["counts"]["raw_rows"], 1)
+            self.assertEqual(result["counts"]["reviewed_registry_rows_provided"], 0)
+            self.assertEqual(result["counts"]["no_independently_curated_institution"], 1)
+            self.assertFalse(result["institutional_ownership_attested"])
+            self.assertFalse(result["approval_granted"])
+            self.assertEqual(result["public_writes"], 0)
+            self.assertNotIn(lead["source_url"], output.getvalue())
+
     def test_missing_registry_cannot_be_implicitly_approved(self):
         with tempfile.TemporaryDirectory() as root:
             backlog = Path(root) / "backlog.json"
