@@ -4552,7 +4552,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and all(isinstance(g, str) and 2 <= len(g.strip()) <= 80
                         for g in genres)
                 and any(re.search(
-                    r"(?<!\\w)" + re.escape(tag) + r"(?!\\w)",
+                    r"(?<!\w)" + re.escape(tag) + r"(?!\w)",
                     norm(" ".join(genres)))
                     for tag in ("metal", "punk", "hardcore", "deathcore",
                                 "grindcore", "sludge", "stoner", "shoegaze",
