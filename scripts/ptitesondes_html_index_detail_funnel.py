@@ -24,6 +24,9 @@ from ptitesondes_real_family_source_adapters import (
 )
 from ptitesondes_family_national_scope import FAMILY_TYPES
 from ptitesondes_html_registry_history_triage import triage_independent_context
+from ptitesondes_html_first_party_session_proof import (
+    corroborate_first_party_session,
+)
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -69,6 +72,12 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "historical_ambiguous_collisions_held": 0,
         "historical_no_collision_found": 0,
         "historical_not_checked": 0,
+        "first_party_visible_exact_sessions": 0,
+        "first_party_source_sessions_held": 0,
+        "first_party_missing_same_block": 0,
+        "first_party_audience_cues_missing": 0,
+        "first_party_access_review_pending": 0,
+        "first_party_all_visible_cues": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
         "independent_venue_verified": False,
@@ -252,6 +261,20 @@ def diagnose_html_index_detail_funnel(
         for row in leads:
             if row.get("category") not in FAMILY_TYPES:
                 continue
+            corroboration = corroborate_first_party_session(
+                row, page, independently_pinned_index, contract["child_path"])
+            if corroboration["visible_exact_session"]:
+                result["first_party_visible_exact_sessions"] += 1
+                if not corroboration["family_audience_source_cues_present"]:
+                    result["first_party_audience_cues_missing"] += 1
+                if corroboration["access_needs_review"]:
+                    result["first_party_access_review_pending"] += 1
+                if corroboration["status"] == "first_party_visible_session_all_cues":
+                    result["first_party_all_visible_cues"] += 1
+            else:
+                result["first_party_source_sessions_held"] += 1
+                if corroboration["status"] == "same_block_date_and_clock_not_visible":
+                    result["first_party_missing_same_block"] += 1
             triage = triage_independent_context(row, independent_context)
             venue = triage["venue_status"]
             history = triage["history_status"]
