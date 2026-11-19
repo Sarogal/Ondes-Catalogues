@@ -30,7 +30,8 @@ FRENCH_CITIES = {
 }
 DATE = re.compile(r"^(\d{1,2})\s+([\wÀ-ÿ]+)\.?\s+(20\d{2})$", re.I)
 FOREIGN_COUNTRY = re.compile(r"\((?:[A-Za-z]{2,3})\)")
-EXCLUDE_PLACE = re.compile(r"\b(?:festival|fest|open.air)\b", re.I)
+# An Open Air location is a private lead, not proof of a festival.
+EXCLUDE_PLACE = re.compile(r"\b(?:festival|fest)\b", re.I)
 SKIP_VENUE = {"reserver", "complet", "annule", "reporte", "billetterie"}
 
 
