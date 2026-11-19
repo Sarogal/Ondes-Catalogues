@@ -45,6 +45,67 @@ class StandaloneDhuGuardTests(unittest.TestCase):
         guard.check_metadata(self.badging, self.manifest, self.signing,
                              self.debug_digest)
 
+    def test_https_profile_accepts_only_second_isolated_package(self):
+        new_badging = self.badging.replace(
+            "grosses_ondes.dhudiag", "grosses_ondes.dhunetdiag",
+        ).replace("GO Diagnostic SHA", "GO HTTPS Diagnostic")
+        new_manifest = self.manifest.replace(
+            "grosses_ondes.dhudiag.stationlogos",
+            "grosses_ondes.dhunetdiag.stationlogos",
+        )
+        guard.check_metadata(
+            new_badging, new_manifest, self.signing, self.debug_digest,
+            profile="https",
+        )
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                new_badging, new_manifest, self.signing, self.debug_digest,
+                profile="sha",
+            )
+
+    def test_https_profile_refuses_original_debug_and_public_app(self):
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                self.badging, self.manifest, self.signing, self.debug_digest,
+                profile="https",
+            )
+        public = self.badging.replace("grosses_ondes.dhudiag",
+                                      "grosses_ondes")
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                public, self.manifest, self.signing, self.debug_digest,
+                profile="https",
+            )
+
+    def test_https_profile_rejects_wrong_authority_and_label(self):
+        new_badging = self.badging.replace(
+            "grosses_ondes.dhudiag", "grosses_ondes.dhunetdiag",
+        ).replace("GO Diagnostic SHA", "GO HTTPS Diagnostic")
+        new_manifest = self.manifest.replace(
+            "grosses_ondes.dhudiag.stationlogos",
+            "grosses_ondes.dhunetdiag.stationlogos",
+        )
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                new_badging,
+                new_manifest.replace(
+                    "grosses_ondes.dhunetdiag.stationlogos",
+                    "grosses_ondes.stationlogos",
+                ),
+                self.signing, self.debug_digest, profile="https",
+            )
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                new_badging.replace("GO HTTPS Diagnostic", "Grosses Ondes"),
+                new_manifest, self.signing, self.debug_digest,
+                profile="https",
+            )
+        with self.assertRaises(guard.ApkGuardError):
+            guard.check_metadata(
+                new_badging, new_manifest, self.signing,
+                "b" * 64, profile="https",
+            )
+
     def test_production_package_rejected(self):
         self.assert_bad(badging=self.badging.replace(
             "grosses_ondes.dhudiag", "grosses_ondes"))
