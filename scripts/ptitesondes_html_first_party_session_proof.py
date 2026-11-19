@@ -65,6 +65,7 @@ class _EventAudienceLabels(_Visibility):
         self.h2 = []
         self.paragraph = []
         self.labels = []
+        self.event_words = []
 
     def handle_starttag(self, tag, attrs):
         hidden = super().handle_starttag(tag, attrs)
@@ -82,6 +83,8 @@ class _EventAudienceLabels(_Visibility):
     def handle_data(self, data):
         if self._hidden() or self.related:
             return
+        if self.seen_h1:
+            self.event_words.append(data)
         if self.in_h2:
             self.h2.append(data)
         if self.in_p:
@@ -105,13 +108,19 @@ class _EventAudienceLabels(_Visibility):
         return any(v in self.ACCEPTED for v in self.labels), False
 
 
-def _audience_from_standalone_labels(html):
+def _event_audience_and_visible_body(html):
+    """Only text from the exact event region, never navigation/related cards."""
     if not isinstance(html, str) or len(html) > 2_000_000:
-        return False, False
+        return False, False, ""
     parser = _EventAudienceLabels()
     parser.feed(html)
     parser.close()
-    return parser.evidence()
+    positive, adult = parser.evidence()
+    return positive, adult, norm_text(" ".join(parser.event_words))
+
+
+def _audience_from_standalone_labels(html):
+    return _event_audience_and_visible_body(html)[:2]
 
 
 def corroborate_first_party_session(lead, fetched_page, trusted_index, child_prefix):
@@ -183,12 +192,9 @@ def corroborate_first_party_session(lead, fetched_page, trusted_index, child_pre
         issues = _source_cues(scope, source, html)
         if not isinstance(issues, set) or not issues <= SOURCE_REASONS:
             return out
-        label_support, adult_only_label = _audience_from_standalone_labels(html)
-        visible_words = _VisibleText()
-        visible_words.feed(html)
-        visible_words.close()
-        if (adult_only_label or
-                ADULT_ONLY.search(norm_text(" ".join(visible_words.words)))):
+        label_support, adult_only_label, event_body = (
+            _event_audience_and_visible_body(html))
+        if adult_only_label or ADULT_ONLY.search(event_body):
             return dict(out, status="adult_only_or_contradictory_source_audience")
         if label_support:
             issues.discard("official_family_audience_not_confirmed")
