@@ -10,6 +10,10 @@ class GoArtistEventLink {
     required this.isExactPerformanceDate,
     required this.location,
     this.officialUrl,
+    this.ticketUrl,
+    this.city = '',
+    this.region = '',
+    this.performanceDates = const [],
     this.endDate,
   });
 
@@ -20,6 +24,12 @@ class GoArtistEventLink {
   final bool isExactPerformanceDate;
   final String location;
   final Uri? officialUrl;
+  final Uri? ticketUrl;
+  final String city;
+  final String region;
+
+  /// Dates individually verified for an artist, never a guessed date range.
+  final List<DateTime> performanceDates;
 }
 
 class GoArtistEventProfile {
@@ -28,12 +38,17 @@ class GoArtistEventProfile {
     required this.artistName,
     required this.concerts,
     required this.festivals,
+    this.isProvisionalIdentity = false,
   });
 
   final String artistId;
   final String artistName;
   final List<GoArtistEventLink> concerts;
   final List<GoArtistEventLink> festivals;
+
+  /// True when an artist is known only by a festival lineup name and has no
+  /// shared canonical concerts artist ID. Never claim this is a verified ID.
+  final bool isProvisionalIdentity;
 
   bool get hasUpcomingShows => concerts.isNotEmpty || festivals.isNotEmpty;
 }
@@ -64,6 +79,7 @@ class GoArtistEventResolver {
     final todayUtc = DateTime.utc(today.year, today.month, today.day);
     final catalog = <String, String>{};
     final byName = <String, String?>{};
+    final provisionalIds = <String>{};
 
     void registerAlias(String alias, String id) {
       final normalized = _normalize(alias);
@@ -94,22 +110,89 @@ class GoArtistEventResolver {
       }
     }
 
+    // Festival-only groups are absent from concerts.artists. Give them local,
+    // explicitly provisional identities rather than silently dropping them.
+    // Names still require exact normalized equality, never fuzzy matches.
+    // A conflicting spelling under the same normalized name blocks linking.
+    const placeholders = <String>{
+      'tba', 'a confirmer', 'artiste surprise', 'guest surprise',
+      'special guest', 'surprise', 'guest',
+    };
+    for (final edition in editions) {
+      if (edition is! Map) continue;
+      final status = _normalize(edition['status'] is String
+          ? edition['status'] as String : '');
+      final end = _date(edition['endDate']) ?? _date(edition['startDate']);
+      if (!{'confirme', 'confirmed'}.contains(status) ||
+          end == null || end.isBefore(todayUtc)) continue;
+      final names = <String>[];
+      if (edition['lineup'] is List) {
+        names.addAll((edition['lineup'] as List).whereType<String>());
+      }
+      if (edition['lineupByDate'] is Map) {
+        for (final entry in (edition['lineupByDate'] as Map).entries) {
+          final day = _date(entry.key);
+          if (day == null || day.isBefore(todayUtc) || entry.value is! List) {
+            continue;
+          }
+          names.addAll((entry.value as List).whereType<String>());
+        }
+      }
+      for (final name in names) {
+        final key = _normalize(name);
+        if (key.isEmpty || placeholders.contains(key)) continue;
+        // Existing canonical names/aliases have priority; null means an
+        // ambiguity already known and must never be overwritten.
+        if (byName.containsKey(key)) {
+          final existingId = byName[key];
+          if (existingId != null && provisionalIds.contains(existingId) &&
+              catalog[existingId]!.trim().toLowerCase() !=
+                  name.trim().toLowerCase()) {
+            byName[key] = null;
+          }
+          continue;
+        }
+        final id = 'festival-name:${key.replaceAll(' ', '-')}';
+        if (catalog.containsKey(id)) {
+          byName[key] = null;
+          continue;
+        }
+        catalog[id] = name.trim();
+        provisionalIds.add(id);
+        byName[key] = id;
+      }
+    }
+
     final concertLinks = <String, List<GoArtistEventLink>>{};
     final festivalLinks = <String, List<GoArtistEventLink>>{};
     final seenConcerts = <String>{};
     final venuesById = <String, String>{};
+    final venueCitiesById = <String, String>{};
+    final venueRegionsById = <String, String>{};
+
+    void addVenue(String id, Map venue) {
+      if (venue['name'] is String) {
+        venuesById[id] = venue['name'] as String;
+      }
+      if (venue['city'] is String) {
+        venueCitiesById[id] = venue['city'] as String;
+      }
+      if (venue['region'] is String) {
+        venueRegionsById[id] = venue['region'] as String;
+      }
+    }
     if (venues is List) {
       for (final venue in venues) {
         if (venue is! Map) continue;
         final id = venue['id'];
         final name = venue['name'];
-        if (id is String && name is String) venuesById[id] = name;
+        if (id is String && name is String) addVenue(id, venue);
       }
     } else if (venues is Map) {
       for (final entry in venues.entries) {
         final venue = entry.value;
         if (venue is Map && venue['name'] is String) {
-          venuesById[entry.key.toString()] = venue['name'] as String;
+          addVenue(entry.key.toString(), venue);
         }
       }
     }
@@ -134,7 +217,11 @@ class GoArtistEventResolver {
         date: date,
         isExactPerformanceDate: true,
         location: location,
+        city: venueCitiesById[venueId] ?? '',
+        region: venueRegionsById[venueId] ?? '',
         officialUrl: _url(event['officialUrl']),
+        ticketUrl: _url(event['ticketUrl']),
+        performanceDates: List.unmodifiable([date]),
       );
       for (final artistId in artistIds.toSet()) {
         if (artistId is String && catalog.containsKey(artistId)) {
@@ -213,8 +300,11 @@ class GoArtistEventResolver {
               date: performedDates.first,
               isExactPerformanceDate: true,
               location: place,
+              city: place,
+              region: edition['region'] is String
+                  ? edition['region'] as String : '',
               officialUrl: site,
-              endDate: performedDates.length > 1 ? performedDates.last : null,
+              performanceDates: List.unmodifiable(performedDates),
             ),
           );
         } else {
@@ -224,10 +314,13 @@ class GoArtistEventResolver {
             GoArtistEventLink(
               eventId: id,
               title: title,
-              date: start.isBefore(todayUtc) ? todayUtc : start,
+              date: start,
               endDate: end,
               isExactPerformanceDate: false,
               location: place,
+              city: place,
+              region: edition['region'] is String
+                  ? edition['region'] as String : '',
               officialUrl: site,
             ),
           );
@@ -246,6 +339,7 @@ class GoArtistEventResolver {
         artistName: entry.value,
         concerts: List.unmodifiable(concertsForArtist),
         festivals: List.unmodifiable(festivalsForArtist),
+        isProvisionalIdentity: provisionalIds.contains(entry.key),
       );
     }
     return GoArtistEventResolver._(
@@ -256,12 +350,29 @@ class GoArtistEventResolver {
 
   /// Feed with GoNowPlaying.artist; return null for metadata without a unique
   /// canonical match or without an upcoming confirmed concert/festival.
-  GoArtistEventProfile? resolve(String? nowPlayingArtist) {
+  GoArtistEventProfile? resolve(String? nowPlayingArtist, {DateTime? asOf}) {
     final normalized = _normalize(nowPlayingArtist ?? '');
     final id = _byName[normalized];
     if (id == null) return null;
     final profile = _profiles[id];
-    return profile?.hasUpcomingShows == true ? profile : null;
+    if (profile == null) return null;
+    // Indexing is expensive and done on feed changes. Date filtering is cheap
+    // and must also happen when the app stays open across midnight.
+    final now = asOf ?? DateTime.now();
+    final day = DateTime.utc(now.year, now.month, now.day);
+    bool upcoming(GoArtistEventLink link) => link.isExactPerformanceDate
+        ? link.performanceDates.any((date) => !date.isBefore(day))
+        : !(link.endDate ?? link.date).isBefore(day);
+    final concerts = profile.concerts.where(upcoming).toList(growable: false);
+    final festivals = profile.festivals.where(upcoming).toList(growable: false);
+    if (concerts.isEmpty && festivals.isEmpty) return null;
+    return GoArtistEventProfile(
+      artistId: profile.artistId,
+      artistName: profile.artistName,
+      concerts: List.unmodifiable(concerts),
+      festivals: List.unmodifiable(festivals),
+      isProvisionalIdentity: profile.isProvisionalIdentity,
+    );
   }
 
   static DateTime? _date(Object? value) {
