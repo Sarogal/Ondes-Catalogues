@@ -11,6 +11,7 @@ from ptitesondes_html_index_detail_funnel import (
     SCHEMA, diagnose_html_index_detail_funnel, redact_detail_funnel_report,
 )
 from test_ptitesondes_real_family_source_adapters import MPT_HTML
+from ptitesondes_real_family_source_adapters import parse_montpellier_mpt_detail
 
 PIN = {
     "approved_host": "mpt.montpellier.fr",
@@ -201,6 +202,65 @@ class OfficialIndexToScopeTests(unittest.TestCase):
         self.assertEqual(sanitized["future_child_occurrences"], 0)
         self.assertNotIn(ONE, json.dumps(sanitized))
         self.assertEqual(redact_detail_funnel_report({})["child_pages_read"], 0)
+
+
+
+# The actual MPT website observed on 19 November labels its location as
+# "Maison pour tous <name>" and separately "Organisé par la maison <name>".
+# This deliberately synthetic HTML models the GENERIC template, not an
+# archived verbatim copy of a third party's site.
+MPT_TEMPLATE = """<html><body><main>
+<h1>Atelier snoezelen</h1>
+<p>Atelier/Stage | Culture</p><p>Familles</p>
+<p>Partagez ce moment de découverte avec votre bébé et votre famille.</p>
+<ul><li>21 novembre 2026 - 09:15 > 10:15</li>
+<li>21 novembre 2026 - 10:30 > 11:30</li></ul>
+<p>Maison pour tous Albert Camus</p>
+<p>Allée Maurice Bonafos</p><p>34070 Montpellier</p>
+<p>Organisé par la maison</p><p>Albert Camus</p>
+<p>Sur inscription | Gratuit</p><p>Carte MPT obligatoire</p>
+<h2>Autres événements</h2>
+<p>Atelier pour enfants 23 novembre 2026 - 11:00 > 12:00</p>
+</main></body></html>"""
+
+
+class OfficialMptCurrentTemplateTests(unittest.TestCase):
+    def test_source_named_venue_and_matching_organizer_yield_two_real_sessions(self):
+        rows = parse_montpellier_mpt_detail(MPT_TEMPLATE, ONE, TODAY)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual([r["start_local"] for r in rows], ["09:15", "10:30"])
+        self.assertTrue(all(r["venue"] == "Maison pour tous Albert Camus"
+                            for r in rows))
+        self.assertTrue(all(r["price_evidence"] == "ambiguous" for r in rows))
+        self.assertTrue(all(r["category"] is None for r in rows))
+        self.assertNotIn("2026-11-23", [r["date_start"] for r in rows])
+
+    def test_wrong_house_organizer_held_without_untrusted_place_alias(self):
+        changed = MPT_TEMPLATE.replace(
+            "<p>Albert Camus</p>", "<p>Autre association</p>")
+        self.assertEqual(parse_montpellier_mpt_detail(changed, ONE, TODAY), [])
+
+    def test_adult_only_session_with_child_in_description_is_excluded(self):
+        changed = MPT_TEMPLATE.replace(
+            "<p>Familles</p>", "<p>Adultes</p>")
+        # The description still says 'bébé' and 'famille'. The visible
+        # explicit adult-only audience label must win.
+        self.assertEqual(parse_montpellier_mpt_detail(changed, ONE, TODAY), [])
+
+    def test_mixed_children_and_adults_are_not_incorrectly_rejected(self):
+        changed = MPT_TEMPLATE.replace(
+            "<p>Familles</p>", "<p>Enfants, Adultes</p>")
+        self.assertEqual(len(parse_montpellier_mpt_detail(
+            changed, ONE, TODAY)), 2)
+
+    def test_unclassified_sessions_visible_in_anonymous_funnel(self):
+        result, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(result["child_pages_read"], 1)
+        self.assertEqual(result["future_child_occurrences"], 2)
+        self.assertEqual(result["unclassified_occurrences_held"], 2)
+        self.assertEqual(result["structurally_plausible_for_independent_review"], 0)
+        self.assertEqual(result["public_writes"], 0)
+        self.assertFalse(result["approval_granted"])
 
 
 if __name__ == "__main__":
