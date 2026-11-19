@@ -16,6 +16,7 @@ from pathlib import Path
 import re
 import sys
 from zoneinfo import ZoneInfo
+from urllib.parse import urlsplit
 
 from dns_pinned_https import safe_public_url, fetch_public_html
 from source_qualification import normalized
@@ -24,6 +25,7 @@ SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 from grossesondes_institutional_edition import institutional_date
+from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
@@ -124,11 +126,60 @@ def _eligible(queue, published, today):
     return sorted(result, key=lambda x: (x["title"], x["url"]))
 
 
-def _digest(source, start, end):
+def _digest(source, start, end, proof_mode):
     return sha256(json.dumps({
         "title": source["title"], "url": source["url"],
         "year": source["year"], "start": start, "end": end,
+        "proof_mode": proof_mode,
     }, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _visible_date_ranges(html, year):
+    """Find explicit dates anywhere on a candidate page before a fallback.
+
+    An old/deep page with contradictory *visible* edition-year dates must
+    never be overridden by a convenient homepage claim. Hidden scripts do
+    not qualify as visible proof.
+    """
+    parser = VisibleText()
+    parser.feed(html)
+    parser.close()
+    visible = " ".join(fold(" ".join(parser.parts)).split())
+    return {(a, b) for _start, _end, a, b in explicit_ranges(visible, year)}
+
+
+def _bounded_same_host_home(source_url):
+    """Exactly the homepage of the already-vetted candidate host, never a new host."""
+    if safe_public_url(source_url) is None:
+        return None
+    parts = urlsplit(source_url)
+    if parts.path in ("", "/"):
+        return None
+    home = "https://" + parts.hostname + "/"
+    return home if safe_public_url(home) == home else None
+
+
+def _recheck_current_dates(source, primary_html, fetch):
+    """Try one extra same-host homepage only if the detail has NO dates.
+
+    Private research only. Both pages must be non-contradictory; neither
+    certifies official site ownership or publisher approval.
+    """
+    title, year = source["title"], source["year"]
+    dates = institutional_date(primary_html, title, year)
+    if dates is not None:
+        return dates, "SOURCE_PAGE"
+    home = _bounded_same_host_home(source["url"])
+    if home is None or _visible_date_ranges(primary_html, year):
+        return None, None
+    homepage_html = fetch(home)
+    dates = institutional_date(homepage_html, title, year)
+    if dates is None:
+        return None, None
+    if not no_same_edition_jsonld_contradiction(
+            primary_html, title, *dates):
+        return None, None
+    return dates, "SAME_HOST_HOME"
 
 
 def examine(state, queue, published, today, fetch=None):
@@ -177,10 +228,11 @@ def examine(state, queue, published, today, fetch=None):
             "publisher_gate_connected": False,
             "two_day_dates": False,
             "start_date_hint": None, "end_date_hint": None,
+            "date_source_mode": None,
         }
         try:
             html = read(url)
-            dates = institutional_date(html, source["title"], source["year"])
+            dates, proof_mode = _recheck_current_dates(source, html, read)
             if (dates is None or dates[0] < current
                     or dates[0].year != source["year"]
                     or dates[1].year != source["year"]
@@ -189,7 +241,7 @@ def examine(state, queue, published, today, fetch=None):
                 row["status"] = "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND"
             else:
                 first, last = (x.isoformat() for x in dates)
-                digest = _digest(source, first, last)
+                digest = _digest(source, first, last, proof_mode)
                 same = (isinstance(old, dict) and old.get("digest") == digest
                         and old.get("lastSeen") in (today, yesterday)
                         and isinstance(old.get("firstSeen"), str))
@@ -209,6 +261,7 @@ def examine(state, queue, published, today, fetch=None):
                     if continuous else "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY")
                 row["two_day_dates"] = continuous
                 row["start_date_hint"], row["end_date_hint"] = first, last
+                row["date_source_mode"] = proof_mode
         except (OSError, ValueError, UnicodeError, TypeError, KeyError):
             row["status"] = "GENERIC_PRIMARY_HTTPS_UNAVAILABLE"
         rows.append(row)
