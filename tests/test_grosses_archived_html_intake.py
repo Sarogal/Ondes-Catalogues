@@ -121,6 +121,31 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
         self.assertNotIn("could not reach official host",
                          (self.folder / "source-watch-state.json").read_text())
 
+    def test_private_diagnostic_identifies_year_visibility_without_leaking_html(self):
+        url = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        cases = [
+            ("<html><body><h1>Festival 666</h1>"
+             "<p>Programmation 2027 prochainement</p></body></html>",
+             "official_visible_year_without_parseable_range"),
+            ("<html><head><script>const ann = '2027';</script></head>"
+             "<body><h1>Festival 666</h1>Dates à annoncer</body></html>",
+             "official_markup_year_without_visible_year"),
+            ("<html><body><h1>Festival 666</h1>"
+             "<p>Dates à confirmer</p></body></html>",
+             "official_html_no_explicit_visible_future_range"),
+        ]
+        for page, code in cases:
+            with self.subTest(code=code):
+                self.pages[url] = page
+                engine.run(self.folder, self.calendar, self.history,
+                           self.day1, self.fetch)
+                data = (self.folder / "source-watch-state.json").read_text()
+                status = json.loads(data)["archived_html_proof_last_result_private"]
+                self.assertEqual(status["festival-666"]["result"], code)
+                self.assertNotIn("Programmation 2027", data)
+                self.assertNotIn("const ann", data)
+                self.assertNotIn("festival666.com", data)
+
     def test_private_diagnostic_distinguishes_missing_and_conflicting_ranges(self):
         url = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
         for html, expected in (
