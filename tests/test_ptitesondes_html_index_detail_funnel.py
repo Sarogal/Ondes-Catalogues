@@ -66,7 +66,7 @@ class MemoryWeb:
 
 
 def probe(index_links=None, details=None, limit=12, adapter="montpellier_mpt",
-          pin=None, today=TODAY):
+          pin=None, today=TODAY, independent_context=None):
     if index_links is None:
         index_links = (ONE,)
     if details is None:
@@ -77,7 +77,8 @@ def probe(index_links=None, details=None, limit=12, adapter="montpellier_mpt",
     pages = MemoryWeb(details)
     report = diagnose_html_index_detail_funnel(
         pin, adapter, today, max_details=limit,
-        index_opener=index, detail_opener=pages)
+        index_opener=index, detail_opener=pages,
+        independent_context=independent_context)
     return report, index, pages
 
 
@@ -295,6 +296,39 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertNotIn("détente bébé", json.dumps(public, ensure_ascii=False))
         self.assertFalse(public["publisher_connected"])
         self.assertEqual(public["public_writes"], 0)
+
+    def test_sensory_registry_and_history_are_only_readonly_counts(self):
+        independently_reviewed = {
+            "city": "Montpellier",
+            "aliases": ["Maison pour tous Albert Camus"],
+            "lat": 43.60, "lng": 3.85,
+            "official": "https://mpt.montpellier.fr/maisons/albert-camus",
+            "geo_source": "https://www.openstreetmap.org/way/12345",
+        }
+        context = {
+            "legacy_venues": [independently_reviewed],
+            "public_places": [],
+            "historical_catalogue": {
+                "updated_at": "2026-11-19T09:00:00+01:00",
+                "events": [],
+            },
+        }
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE},
+                             independent_context=context)
+        self.assertEqual(report["future_child_occurrences"], 2)
+        self.assertEqual(report["registry_location_exact_matches"], 2)
+        self.assertEqual(report["historical_no_collision_found"], 2)
+        self.assertEqual(report["historical_exact_duplicates_held"], 0)
+        self.assertFalse(report["independent_venue_verified"])
+        self.assertFalse(report["independent_gps_refetched"])
+        self.assertFalse(report["publisher_connected"])
+        self.assertEqual(report["public_writes"], 0)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["registry_location_exact_matches"], 2)
+        self.assertNotIn("Albert Camus", json.dumps(public, ensure_ascii=False))
+        unpinned, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(unpinned["registry_location_not_checked"], 2)
+        self.assertEqual(unpinned["historical_not_checked"], 2)
 
     def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
