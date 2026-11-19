@@ -6,6 +6,8 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_joined_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
       - 'scripts/ptitesondes_openagenda_v2_institutional_delegation.py'
+      - 'scripts/ptitesondes_oa2_live_pinned_bridge.py'
+      - 'tests/test_ptitesondes_oa2_live_pinned_bridge.py'
       - 'tests/test_ptitesondes_openagenda_v2_institutional_delegation.py'
       - 'scripts/ptitesondes_oa2_private_registry_census_cli.py'
       - 'tests/test_ptitesondes_oa2_private_registry_census_cli.py'
@@ -42,6 +44,8 @@ jobs:
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_oa2_private_registry_census_cli.py' -v
           python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_live_pinned_bridge.py' -v
+          python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
       - name: Assert only read-only diagnostics are exposed
         run: |
@@ -63,5 +67,8 @@ jobs:
           delegation = Path("scripts/ptitesondes_openagenda_v2_institutional_delegation.py").read_text()
           assert all(k in delegation for k in ("public_writes", "independent_event_session_verified", "approval_granted"))
           assert not any(k in delegation for k in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
+          live = Path("scripts/ptitesondes_oa2_live_pinned_bridge.py").read_text()
+          assert all(x in live for x in ("read_direct_v2", "fetch_official_page", "approval_granted", "public_writes"))
+          assert not any(x in live for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
           print("PASS: readonly, never publisher, no credentials or schedule")
           PY
