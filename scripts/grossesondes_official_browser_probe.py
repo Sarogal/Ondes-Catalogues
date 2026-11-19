@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 from datetime import datetime
 
-from grossesondes_archived_html_intake import organizer_homepage, candidate
+from grossesondes_archived_html_intake import organizer_homepage, candidate, official_date
 from grossesondes_stage import official_text
 from grossesondes_structured_edition import pinned_parent_identity
 
@@ -60,7 +60,9 @@ def compare_proof(parent, year, today, raw, rendered):
     source = {"officialSite": parent["officialSite"], "year": year}
     def possible(html):
         try:
-            return bool(candidate(parent, source, html, today))
+            # JSON-LD by itself cannot count as a rendered *visible* DOM date.
+            return (official_date(html, parent, year) is not None
+                    and candidate(parent, source, html, today) is not None)
         except (ValueError, TypeError, UnicodeError):
             return False
     # In particular, embedded JSON-LD alone is never reported as a visible
