@@ -57,6 +57,53 @@ class FunnelTests(unittest.TestCase):
         self.assertEqual(out["readyForIndependentRecheck"], 0)
         self.assertEqual(out["exclusiveBlockingReasons"]["awaiting_distinct_day_stability"], 1)
 
+    def test_unlisted_outdoor_places_are_reported_without_granting_trust(self):
+        r, a, c = fixtures(
+            row("synthetic-unlisted-place", source="artist_official_tour",
+                venue="Esplanade de la place publique", city="Paris",
+                newVenueToReview=True, reviewBucket="genre_tag_review",
+                sameCityArtistCollisionAdvisory=True),
+            row("synthetic-genre-unknown", source="promoter_official_tour",
+                venue="Parc municipal", city="Nîmes",
+                reviewBucket="genre_unknown", newVenueToReview=True,
+                _record={"stableObservations": 1}),
+            row("known-salle", newVenueToReview=False),
+            row("missing-place", venue="", city=""),
+        )
+        before = copy.deepcopy((r, a, c))
+        report = f.build(r, a, c, dt.date(2026, 11, 9))
+        loc = report["eventLocationReview"]
+        self.assertEqual(loc["futureUnlistedLocationLeads"], 2)
+        self.assertEqual(loc["genreEvidencePresent"], 1)
+        self.assertEqual(loc["stableOnDistinctDays"], 1)
+        self.assertEqual(loc["differentNamedVenueCollisionAdvisories"], 1)
+        self.assertEqual(loc["missingNamedPlaceOrCity"], 1)
+        self.assertIs(loc["publicationAllowed"], False)
+        self.assertEqual((r, a, c), before)
+        for secret in ("synthetic-unlisted-place", "Esplanade de la place publique",
+                       "synthetic-genre-unknown", "Parc municipal"):
+            self.assertNotIn(secret, str(report))
+
+    def test_unlisted_location_counters_ignore_expired_published_and_future_decided(self):
+        arow = row("to-ignore", newVenueToReview=True,
+                   sameCityArtistCollisionAdvisory=True)
+        r, a, c = fixtures(
+            arow,
+            row("expired", date="2026-10-01", newVenueToReview=True),
+            row("published", newVenueToReview=True),
+            row("rejected", newVenueToReview=True,
+                _record={"status": "rejected"}),
+        )
+        c["events"].append({
+            "id": "published-id", "date": "2027-03-11",
+            "officialUrl": "https://official.example/events/published",
+            "venueId": "known",
+        })
+        out = f.build(r, a, c, dt.date(2026, 11, 9))
+        self.assertEqual(out["eventLocationReview"]["futureUnlistedLocationLeads"], 1)
+        self.assertEqual(out["eventLocationReview"]["differentNamedVenueCollisionAdvisories"], 1)
+        self.assertIs(out["publicationAllowed"], False)
+
     def test_supported_source_is_required_for_current_auto_recheck(self):
         x = row("one", source="agenda_officiel_future_venue_detail")
         r, a, c = fixtures(x)
