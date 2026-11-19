@@ -17,13 +17,14 @@ MAX_HTML = 500_000
 MAX_FRAGMENTS = 1200
 PRICE_STATES = frozenset({
     "free_disclosed", "free_with_mandatory_membership",
-    "paid_disclosed", "unknown", "conflicting",
+    "paid_disclosed", "paid_amount_unknown", "unknown", "conflicting",
 })
 REGISTRATION_STATES = frozenset({
     "required", "explicit_not_required", "unknown", "conflicting",
 })
 FREE = re.compile(r"\b(?:gratuit|gratuite|gratuits|gratuites|entree gratuite|acces gratuit)\b")
-PRICE = re.compile(r"\b\d{1,4}(?:[,.]\d{1,2})?\s*(?:€|euros?\b|eur\b)")
+PRICE = re.compile(r"\b\d{1,4}(?:[,.]\d{1,2})?\s*(?:euros?\b|eur\b)")
+PAID_WORD = re.compile(r"\b(?:payant|payante|payants|payantes|non gratuit|non gratuite)\b")
 MEMBERSHIP = re.compile(
     r"\b(?:carte(?:\s+mpt)?|carte\s+d\s+adhesion|"
     r"adhesion|adherent(?:s|e|es)?)\b"
@@ -72,7 +73,8 @@ class _VisibleEventAccess(_Visibility):
             self.heading_parts.append(data)
         elif self.h1_seen and not self.in_h1:
             for raw in data.splitlines():
-                piece = norm_text(raw)
+                # Preserve currency semantics through accent/punctuation fold.
+                piece = norm_text(raw.replace("€", " euros "))
                 if 0 < len(piece) <= 200 and len(self.parts) < MAX_FRAGMENTS:
                     self.parts.append(piece)
 
@@ -96,6 +98,7 @@ def _default(reason):
         "price_state": "unknown",
         "registration_state": "unknown",
         "mandatory_card_or_membership_claimed": False,
+        "membership_fee_stated_on_source": False,
         "membership_cost_independently_verified": False,
         "first_party_visible_session_required": True,
         "first_party_source_access_review_pending": True,
@@ -127,7 +130,12 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
 
     chunks = parser.parts
     has_free = any(FREE.search(part) for part in chunks)
-    has_price = any(PRICE.search(part) for part in chunks)
+    # A membership card fee is NOT necessarily the session ticket price.
+    membership_fee = any(PRICE.search(part) and MEMBERSHIP.search(part)
+                         for part in chunks)
+    event_price = any(PRICE.search(part) and not MEMBERSHIP.search(part)
+                      for part in chunks)
+    has_paying_without_amount = any(PAID_WORD.search(part) for part in chunks)
     mandatory_membership = any(
         MEMBERSHIP.search(part) and MANDATORY.search(part)
         and not OPTIONAL.search(part)
@@ -141,13 +149,16 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
     reg_not_required = any(NOT_REQUIRED_REG.search(part) for part in chunks)
     # Contradictory statements anywhere in this event's visible body must
     # remain a review case, not be "solved" by trusting a preferred phrase.
-    if has_free and has_price or mandatory_membership and optional_membership:
+    if ((has_free and (event_price or has_paying_without_amount))
+            or (mandatory_membership and optional_membership)):
         price_state = "conflicting"
     elif has_free:
         price_state = ("free_with_mandatory_membership" if mandatory_membership
                        else "free_disclosed")
-    elif has_price:
+    elif event_price:
         price_state = "paid_disclosed"
+    elif has_paying_without_amount:
+        price_state = "paid_amount_unknown"
     else:
         price_state = "unknown"
     if reg_required and reg_not_required:
@@ -162,7 +173,7 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
     # Even if price/booking terms are explicit, reuse rights or actual
     # membership fee is NOT independently established. No publisher gate.
     needs_review = (
-        price_state in ("unknown", "conflicting",
+        price_state in ("unknown", "conflicting", "paid_amount_unknown",
                         "free_with_mandatory_membership")
         or registration_state in ("unknown", "conflicting")
     )
@@ -171,5 +182,6 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
         price_state=price_state,
         registration_state=registration_state,
         mandatory_card_or_membership_claimed=bool(mandatory_membership),
+        membership_fee_stated_on_source=bool(membership_fee),
         first_party_source_access_review_pending=bool(needs_review),
     )
