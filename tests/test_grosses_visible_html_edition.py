@@ -15,6 +15,7 @@ from grossesondes_structured_edition import (
 from grossesondes_stage import stage
 from grossesondes_cloud_sync import (
     collect_registered_edition_sources, build_candidate,
+    browser_needed_for_pending_patch,
 )
 from test_grosses_structured_edition import (
     PARENT, ENTRY, ARCHIVE_PARENT, ARCHIVED_ENTRY, TODAY, URL,
@@ -270,6 +271,19 @@ class VisibleHTMLTests(unittest.TestCase):
             trusted_published=True)
         self.assertEqual(report["accepted_additions"], [])
         self.assertEqual(refused["festivals"], cal["festivals"])
+
+    def test_browser_install_gate_skips_already_published_proposals(self):
+        browser_row = archive_entry(proofMode=ARCHIVED_BROWSER_PROOF_MODE)
+        raw_row = archive_entry(proofMode=ARCHIVED_HTML_PROOF_MODE,
+                                slug="another-archived-2027")
+        patch = {"additions": [raw_row, browser_row]}
+        self.assertTrue(browser_needed_for_pending_patch(patch, set()))
+        self.assertFalse(browser_needed_for_pending_patch(
+            patch, {browser_row["slug"]}))
+        self.assertFalse(browser_needed_for_pending_patch(
+            {"additions": [raw_row]}, set()))
+        self.assertFalse(browser_needed_for_pending_patch(
+            {"additions": []}, set()))
 
     def test_browser_proof_rejects_forged_fields_and_missing_browser(self):
         parent = ARCHIVE_PARENT
