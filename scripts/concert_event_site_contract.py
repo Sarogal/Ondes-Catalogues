@@ -43,6 +43,32 @@ GEO_FIELDS = frozenset({
 DEPT = re.compile(r"(?:0[1-9]|[1-8][0-9]|9[0-5]|2A|2B|97[1-8]|98[0-9])")
 ZIP = re.compile(r"(?:[0-9]{5})")
 SLUG = re.compile(r"go-c-[a-z0-9-]{7,150}")
+MUSIC = re.compile(
+    r"(?<![a-z])(?:metal|metalcore|deathcore|thrash|grindcore|"
+    r"blackgaze|doom|sludge|stoner|punk|post punk|hard rock|"
+    r"hardcore|screamo|skramz|shoegaze|grunge|"
+    r"garage rock|noise rock|post rock|psych rock|"
+    r"psychedelic rock|math rock|progressive rock)(?![a-z])"
+)
+ELECTRONIC_ONLY = re.compile(
+    r"(?<![a-z])(?:hardcore techno|hardtek|frenchcore|gabber|"
+    r"hardcore electronic|hardcore electro)(?![a-z])"
+)
+
+
+def relevant_genres(labels):
+    if not isinstance(labels, list) or not 1 <= len(labels) <= 20:
+        return False
+    def normalize(value):
+        import unicodedata
+        v = unicodedata.normalize("NFKD", value.casefold())
+        return re.sub(r"[^a-z0-9]+", " ", v.encode("ascii", "ignore").decode()).strip()
+    return any(
+        isinstance(value, str) and 2 <= len(value) <= 80
+        and MUSIC.search(normalize(value))
+        and not ELECTRONIC_ONLY.search(normalize(value))
+        for value in labels
+    )
 
 
 def demand(condition, msg):
@@ -168,8 +194,9 @@ def validate(row, today, event_approvals, *, sources=None):
            and event.get("officialUrl") == ev_url
            and event.get("venueId") == venue.get("id")
            and authority_id in event.get("artistIds", [])
-           and event.get("status") == "confirmed",
-           "event/artist/date/site binding mismatch")
+           and event.get("status") == "confirmed"
+           and relevant_genres(event.get("genres")),
+           "event/artist/date/site/genre binding mismatch")
     event_proof = signed.get("officialEvidence")
     demand(isinstance(event_proof, list) and any(
         isinstance(p, dict) and p.get("url") == ev_url
