@@ -7873,6 +7873,7 @@ def merge(reference, current, approvals, today):
         require(approval is not None and prior == validate_venue_approval(
                     approval, today, approvals["approvals"]),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
+    event_sites_added_this_run = {}
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
               "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0,
@@ -7899,6 +7900,30 @@ def merge(reference, current, approvals, today):
                             norm(v["city"]) == norm(incoming["city"])
                             for v in venues.values()),
                     "Salle déjà connue sous un autre identifiant")
+            if entry.get("venueKind") == "independent-event-site-v1":
+                # A temporary pin can NEVER be published as an orphan. It
+                # belongs to a signed concert which must be in this event
+                # batch and already pass the full publisher validator.
+                linked_event = entry["eventBinding"]["eventId"]
+                require(linked_event not in ids,
+                        "Emplacement événementiel rattaché à un concert déjà publié")
+                candidates_in_batch = [
+                    signed["event"]["id"]
+                    for signed in approvals["approvals"]
+                    if isinstance(signed, dict)
+                    and signed.get("reviewDecision") == "approved"
+                    and isinstance(signed.get("event"), dict)
+                    and signed["event"].get("id") not in ids
+                ][:MAX_NEW_EVENTS_PER_SYNC]
+                if linked_event not in candidates_in_batch:
+                    counts["deferredVenues"] += 1
+                    continue
+                require(linked_event in approved_ids,
+                        "Concert approuvé absent du registre privé")
+                validate_approval(
+                    approved_ids[linked_event],
+                    {**venues, v_id: incoming}, artists, today)
+                event_sites_added_this_run[v_id] = linked_event
             result["venues"].append(incoming)
             venues[v_id] = incoming
             counts["newVenues"] += 1
@@ -7960,6 +7985,25 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("event", {}).get("id"),
                                    "reason": str(ex)})
+    # A location-only proof cannot create a new public map pin when the
+    # linked event is held or deferred. This cleanup happens before the
+    # catalogue is validated or published; private approvals stay intact.
+    published_by_id = {
+        event["id"]: event for event in result["events"]
+        if isinstance(event, dict) and isinstance(event.get("id"), str)
+    }
+    for site_id, linked_id in event_sites_added_this_run.items():
+        published = published_by_id.get(linked_id)
+        if published is None or published.get("venueId") != site_id:
+            result["venues"] = [
+                v for v in result["venues"] if v.get("id") != site_id
+            ]
+            venues.pop(site_id, None)
+            counts["newVenues"] -= 1
+            counts["held"].append({
+                "candidateId": site_id,
+                "reason": "Emplacement provisoire non publié sans concert lié",
+            })
     # Invariant: no run can publish above the atomically reviewed batch size.
     # The remaining approvals are not discarded and cannot circumvent
     # validate_approval: the next run checks them before publishing.
