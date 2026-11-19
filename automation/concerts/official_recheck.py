@@ -37,7 +37,7 @@ GENRES = {
     "metalcore", "deathcore", "thrash", "thrash metal", "grindcore",
     "progressive metal", "post metal"
 }
-BANNED = re.compile(r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|open air|"
+BANNED = re.compile(r"\b(guest|invite|surprise|tba|a confirmer|festival|fest|"
                     r"annule|annulee|report[eé]|postponed|cancelled|sold out)\b", re.I)
 # An unnamed guest is not a musician identity. It may be omitted ONLY as an
 # explicit final suffix, never from the middle of a named bill.
@@ -48,7 +48,7 @@ UNNAMED_GUEST_SUFFIX = re.compile(
 # are handled by the named-lineup verifier. Sold out is availability, not
 # cancellation, and must not block a verified concert.
 BANNED_STATUS = re.compile(
-    r"\b(?:tba|a confirmer|festival|fest|open air|annule|annulee|"
+    r"\b(?:tba|a confirmer|festival|fest|annule|annulee|"
     r"reporte|postponed|cancelled)\b", re.I)
 
 

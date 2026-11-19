@@ -128,7 +128,14 @@ def make_known_keys(catalogue):
     for event in catalogue.get("events", []):
         venue = venues.get(str(event.get("venueId")), {})
         if event.get("date") and venue.get("city"):
-            keys.add((event["date"], norm(venue["city"]), norm(artist_name(event, artists))))
+            # Same-city artist is an ADVISORY collision only. The same artist
+            # may appear at a different place (including a one-off outdoor
+            # stage) without making it the already-published concert.
+            common = (event["date"], norm(venue["city"]),
+                      norm(artist_name(event, artists)))
+            keys.add(common)
+            if venue.get("name"):
+                keys.add((common[0], common[1], norm(venue["name"]), common[2]))
         # Identical first-party detail URLs are a strong published-record
         # match, even when an agenda title omits supporting artists.
         source_url=event.get("officialUrl")
@@ -139,10 +146,25 @@ def make_known_keys(catalogue):
 
 def mark_match(event, known):
     artist = event.get("leadArtist") or event.get("name") or ""
-    match = (event.get("date"), norm(event.get("city")), norm(artist))
-    url=event.get("sourceUrl")
-    event["possibleExistingConcert"] = (match in known or
-        (isinstance(url,str) and ("officialUrl",url) in known))
+    day, city, name = (event.get("date"), norm(event.get("city")), norm(artist))
+    location = norm(event.get("venue"))
+    same_city_artist = (day, city, name) in known
+    same_place_artist = (day, city, location, name) in known if location else False
+    url = event.get("sourceUrl")
+    same_url = isinstance(url, str) and ("officialUrl", url) in known
+    # A bare legacy city/artist key cannot prove which venue was published.
+    # Release its duplicate hold ONLY if the known catalogue also supplies
+    # at least one named place for that same artist, city and day.
+    has_named_reference = bool(same_city_artist and any(
+        isinstance(key, tuple) and len(key) == 4
+        and (key[0], key[1], key[3]) == (day, city, name)
+        and bool(key[2]) for key in known))
+    event["sameCityArtistCollisionAdvisory"] = bool(
+        same_city_artist and location and has_named_reference
+        and not same_place_artist and not same_url)
+    event["possibleExistingConcert"] = bool(
+        same_url or same_place_artist or
+        (same_city_artist and (not location or not has_named_reference)))
     event["publicationAllowed"] = False
     event["reviewRequired"] = True
     return event
