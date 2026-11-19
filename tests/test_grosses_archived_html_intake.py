@@ -333,6 +333,73 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
                          pinned)
         self.assertNotIn("evil.example", str(urls))
 
+    def test_browser_rendered_archive_requires_real_second_calendar_day(self):
+        official = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        self.pages[official] = (
+            "<html><head><script>window.year = 2027;</script></head>"
+            "<body><h1>Festival 666</h1><p>Dates annoncées</p></body></html>"
+        )
+        visits = []
+        def render(url):
+            visits.append(url)
+            return SIXSIXSIX
+
+        first = engine.run(self.folder, self.calendar, self.history,
+                           self.day1, self.fetch, browser_fetcher=render)
+        self.assertEqual(first["privateCandidatesAdded"], 0)
+        status = json.loads((self.folder / "source-watch-state.json").read_text())
+        self.assertEqual(status["archived_html_proof_last_result_private"]
+                         ["festival-666"]["result"], "second_independent_day_pending")
+        second_same_day = engine.run(self.folder, self.calendar, self.history,
+                                     self.day1, self.fetch, browser_fetcher=render)
+        self.assertEqual(second_same_day["privateCandidatesAdded"], 0)
+        second = engine.run(self.folder, self.calendar, self.history,
+                            self.day2, self.fetch, browser_fetcher=render)
+        self.assertEqual(second["privateCandidatesAdded"], 2)
+        patch = json.loads((self.folder / "patch-2026-11-18.json").read_text())
+        browser_row = next(x for x in patch["additions"]
+                           if x["slug"] == "festival-666-2027")
+        self.assertEqual(browser_row["proofMode"],
+                         engine.ARCHIVED_BROWSER_PROOF_MODE)
+        self.assertFalse(browser_row["showOnMap"])
+        self.assertIsNone(browser_row["lat"])
+        self.assertIsNone(browser_row["city"])
+        self.assertEqual(browser_row["lineup"], [])
+        self.assertTrue(all(url == official for url in visits))
+        self.assertNotIn("www.festival666.com",
+                         (self.folder / "source-watch-state.json").read_text())
+
+    def test_browser_cannot_override_conflicting_visible_official_dates(self):
+        official = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        self.pages[official] = SIXSIXSIX + "<p>20, 21 et 22 août 2027</p>"
+        attempts = []
+        result = engine.run(
+            self.folder, self.calendar, self.history, self.day1, self.fetch,
+            browser_fetcher=lambda url: attempts.append(url) or SIXSIXSIX)
+        self.assertEqual(result["officialProofsEligible"], 1)
+        self.assertEqual(attempts, [])
+        state = json.loads((self.folder / "source-watch-state.json").read_text())
+        self.assertEqual(state["archived_html_proof_last_result_private"]
+                         ["festival-666"]["result"],
+                         "official_html_conflicting_future_ranges")
+
+    def test_browser_unavailable_keeps_private_failure_only(self):
+        official = engine.PINNED_ARCHIVED_HTML_SOURCES["festival-666"]["proofUrl"]
+        self.pages[official] = (
+            "<html><script>const year=2027;</script><body>"
+            "Festival 666</body></html>"
+        )
+        def fail(url):
+            raise OSError("Private browser network failure")
+        engine.run(self.folder, self.calendar, self.history, self.day1,
+                   self.fetch, browser_fetcher=fail)
+        data = (self.folder / "source-watch-state.json").read_text()
+        self.assertEqual(json.loads(data)[
+            "archived_html_proof_last_result_private"]["festival-666"]["result"],
+            "official_browser_render_unavailable")
+        self.assertNotIn("Private browser network failure", data)
+        self.assertNotIn("festival666.com", data)
+
     def test_a_gap_in_daily_observation_resets_continuity(self):
         engine.run(self.folder, self.calendar, self.history,
                    self.day1, self.fetch)
