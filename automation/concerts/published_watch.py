@@ -96,7 +96,7 @@ for _venue_id, _source in generic_music_event.SPECS.items():
         raise ValueError("Contrat de surveillance structurée en conflit")
     SOURCES[_venue_id] = (
         _source["host"],
-        re.compile(r"/evenement/[a-z0-9-]{5,160}/?"),
+        re.compile(re.escape(_source["eventPathPrefix"]) + r"[a-z0-9-]{5,160}/?"),
         "generic_structured",
     )
 
