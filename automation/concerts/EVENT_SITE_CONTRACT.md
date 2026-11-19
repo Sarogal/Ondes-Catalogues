@@ -34,8 +34,9 @@ n'est signé ou ajouté par cette PR.
 5. La commune, le département, le code postal, le nom du site et la précision
    géographique sont connus. Aucun centre de ville n'est substitué aux
    coordonnées absentes. Aucune preuve n'est inférée d'un nom d'artiste.
-6. Le lieu public reçoit un ID dérivé de l'événement et de sa localisation
-   exacte ; il n'est pas déclaré « salle de concert agréée » réutilisable.
+6. Le lieu public reçoit un ID stable dérivé de son nom, sa commune et son
+   objet géographique OSM ; plusieurs concerts peuvent partager ce repère,
+   mais aucun n'hérite automatiquement de la preuve événementielle du premier.
 7. Le publisher vérifie l'événement complet, puis ajoute le site et le concert
    au **même lot**. Si le concert n'est finalement pas publié, le site provisoire
    disparaît de la sortie du lot. Les dossiers d'approbation privés restent
