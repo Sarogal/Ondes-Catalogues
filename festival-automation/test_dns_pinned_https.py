@@ -41,6 +41,8 @@ class PinnedOrganizerHTTPSTests(TestCase):
             "127.0.0.1", "10.0.0.5", "172.16.0.3", "192.168.1.1",
             "169.254.169.254", "100.64.0.1", "::1", "fc00::1",
             "fe80::1", "::ffff:127.0.0.1", "2001:db8::1",
+            "64:ff9b::7f00:1", "64:ff9b:1::a00:1",
+            "2002:c0a8:101::1", "2001:0:c000:201::1",
         ):
             with self.subTest(addr=addr):
                 with self.assertRaises(ValueError):
