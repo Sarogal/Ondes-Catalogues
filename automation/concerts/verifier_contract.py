@@ -28,6 +28,9 @@ VERIFIER_SPECS = MappingProxyType({
     # Source-wide parser; the exact two trusted venue hosts are frozen in
     # generic_music_event.SPECS, never imported from discovery candidates.
     "agenda_officiel_structuré": VerifierSpec("generic_music_event", False),
+    # Same first-party host allowlist, but with complete visible first-party
+    # performer+genre headings and a second independent official re-fetch.
+    "agenda_officiel_visible_bill": VerifierSpec("generic_visible_bill", True),
     "agenda_officiel_molotov_genre": VerifierSpec("molotov_official", False),
     "agenda_officiel_ferrailleur_genre": VerifierSpec("ferrailleur_official", True),
     "agenda_officiel_backstage_detail": VerifierSpec("backstage_recheck", False),
