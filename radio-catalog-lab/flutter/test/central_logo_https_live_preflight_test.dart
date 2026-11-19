@@ -16,22 +16,22 @@ const enabled = bool.fromEnvironment('GO_HTTPS_LOGO_PREFLIGHT', defaultValue: fa
 
 // Immutable commit in the public LAB branch, not Github Pages, not a
 // radio's copyrighted logo, not a release or production endpoint.
-// Both are real, independently decoded 128x128 PNGs served over HTTPS.
+// Both are real, independently decoded 64x64 PNGs served over HTTPS.
 const root = 'https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/'
-    '3a6b8c46bcb16da5a6ce69602a5b59e9aa04255c/radio-catalog-lab/fixtures/';
+    '2a31215f6f8e101e8b1f1000dc38b1b7a788e628/radio-catalog-lab/fixtures/';
 
 CentralLogoDescriptor descriptor(int revision) {
   final first = revision == 1;
   assert(revision == 1 || revision == 2);
   return CentralLogoDescriptor(
     sha256: first
-        ? 'f30bd8c316c3846af7fe042a7ee6411bb89c969f34010514658d803fb91bffe4'
-        : '9bcb2e7d972fdf711d63a16c9a8bb93b1a094a04994ea83db495d5494f46b6b6',
-    byteSize: first ? 1147 : 1224,
+        ? '0e3073fc00b4c24524db33279dad8c7669285d80e9f27cc4a220371e7921e625'
+        : '65d0a5219636e337bdc2ee97e458628722eb0f2d96be98c00b9804913fe70e1c',
+    byteSize: 181,
     revision: revision,
     url: '${root}logo_https_lab_v${revision}.png',
-    width: 128,
-    height: 128,
+    width: 64,
+    height: 64,
     mimeType: 'image/png',
   );
 }
@@ -96,10 +96,10 @@ void main() {
       }
       expect(first.entries.single.outcome, CentralLogoPrefetchOutcome.downloaded);
       expect(first.reservedAttempts, 1);
-      expect(first.reservedBytes, 1147);
+      expect(first.reservedBytes, 181);
       final original = first.entries.single.file!;
       final originalBytes = await original.readAsBytes();
-      expect(originalBytes.length, 1147);
+      expect(originalBytes.length, 181);
       expect(crypto.sha256.convert(originalBytes).toString(), v1.sha256);
       expect(await store().findVerified(v1), isNotNull);
 
@@ -140,7 +140,7 @@ void main() {
       expect(changed.status, CentralLogoCacheStatus.downloaded);
       expect(changed.usedOlderLogo, isFalse);
       final nextBytes = await changed.image!.readAsBytes();
-      expect(nextBytes.length, 1224);
+      expect(nextBytes.length, 181);
       expect(crypto.sha256.convert(nextBytes).toString(), v2.sha256);
       expect(changed.image!.path, isNot(original.path));
       expect(await original.readAsBytes(), originalBytes);
