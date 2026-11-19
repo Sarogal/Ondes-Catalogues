@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-18",
+  "updatedAt": "2026-11-19",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2365,6 +2365,11 @@
     {
       "id": "dalaidrama",
       "name": "DALAÏDRAMA",
+      "aliases": []
+    },
+    {
+      "id": "doppler",
+      "name": "DOPPLeR",
       "aliases": []
     }
   ],
@@ -15012,6 +15017,36 @@
       "history": [
         {
           "date": "2026-11-18",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270313-saint-brieuc-la-jungle",
+      "title": "La Jungle + DOPPLeR",
+      "date": "2027-03-13",
+      "artistIds": [
+        "la-jungle",
+        "doppler"
+      ],
+      "venueId": "bonjour-minuit-saint-brieuc",
+      "genres": [
+        "Rock"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://bonjour-minuit.fr/evenement/lajungle-13mars27/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Bonjour Minuit",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-19",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-19",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
