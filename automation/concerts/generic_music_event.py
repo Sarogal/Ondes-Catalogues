@@ -1,0 +1,180 @@
+"""Source-wide first-party structured concert verifier for explicitly reviewed venues.
+
+Discovery feeds, registry rows and sources.json never grant an additional
+publishing host: this small immutable map is reviewed independently from them.
+There are NO per-concert names, IDs, dates or acceptance URLs in this module.
+"""
+from __future__ import annotations
+
+import datetime as dt
+from types import MappingProxyType
+from urllib.parse import urlsplit
+
+import discover
+import official_rss_jsonld_bridge as bridge
+import triage
+from official_recheck import norm, slug
+
+# Pilot: named official venues already represented by verified public
+# catalogue entries; expand ONLY in a reviewed pull request with real tests.
+SPECS = MappingProxyType({
+    "la-rayonne": MappingProxyType({
+        "name": "La Rayonne", "city": "Villeurbanne", "department": "69",
+        "host": "larayonne.org", "base": "https://larayonne.org/",
+    }),
+    "le-metronum": MappingProxyType({
+        "name": "Le Metronum", "city": "Toulouse", "department": "31",
+        "host": "lemetronum.fr", "base": "https://lemetronum.fr/",
+    }),
+})
+ALLOWED_HOSTS = frozenset(row["host"] for row in SPECS.values())
+
+
+def trusted_spec(candidate):
+    """Select a committed venue identity, not a venue claimed by a feed."""
+    if not isinstance(candidate, dict):
+        return None
+    for venue_id, spec in SPECS.items():
+        if (norm(candidate.get("venue")) != norm(spec["name"])
+                or norm(candidate.get("city")) != norm(spec["city"])
+                or str(candidate.get("department")) != spec["department"]):
+            continue
+        url = candidate.get("sourceUrl")
+        if (bridge.official_event_url(url, spec["base"])
+                and urlsplit(url).hostname == spec["host"]):
+            return venue_id, spec
+    return None
+
+
+def verify(candidate, html_text, catalogue, today):
+    """Re-fetching is performed by official_recheck, before this verifier."""
+    if (not isinstance(today, dt.date)
+            or not isinstance(candidate, dict)
+            or candidate.get("source") != "agenda_officiel_structuré"
+            or candidate.get("reviewBucket") != "genre_tag_review"
+            or candidate.get("possibleExistingConcert") is True
+            or candidate.get("publicationAllowed") is not False
+            or candidate.get("reviewRequired") is not True):
+        raise ValueError("Piste structurée non agréée")
+    match = trusted_spec(candidate)
+    if match is None:
+        raise ValueError("Salle/domaine non agréés pour la voie structurée")
+    venue_id, source = match
+    url = candidate["sourceUrl"]
+    # The sourcePage is advisory only but must be on the same first-party host;
+    # it cannot launder third-party discovery into a trusted event.
+    page = candidate.get("sourcePage")
+    if page is not None and not discover.same_host(page, source["base"]):
+        raise ValueError("Page de découverte hors domaine de la salle")
+    if not isinstance(catalogue, dict):
+        raise ValueError("Catalogue absent")
+    venues = [v for v in catalogue.get("venues", [])
+              if v.get("id") == venue_id]
+    if (len(venues) != 1
+            or norm(venues[0].get("name")) != norm(source["name"])
+            or norm(venues[0].get("city")) != norm(source["city"])
+            or str(venues[0].get("department")) != source["department"]):
+        raise ValueError("Salle publique non réconciliée avec sa source")
+    if not isinstance(html_text, str) or len(html_text) > 1_000_000:
+        raise ValueError("Preuve structurée illisible")
+
+    first_party = {
+        "url": source["base"], "name": source["name"],
+        "city": source["city"], "department": source["department"],
+    }
+    fresh = bridge.candidate_from_event_page(
+        candidate, html_text, url, first_party, set(), today,
+        read_ld=discover.read_ld, venue_candidate=discover.venue_candidate,
+        norm=discover.norm, allow_generic_event=True)
+    if fresh is None:
+        raise ValueError("Détail de concert officiel non corroboré")
+    for field in ("date", "name", "leadArtist", "venue", "city",
+                  "department", "classification", "sourceUrl",
+                  "unannouncedSupportLabel"):
+        if fresh.get(field) != candidate.get(field):
+            raise ValueError("Identité du concert changée lors de la revue: " + field)
+
+    # Require exactly ONE event node. A mixed MusicEvent + unrelated Event in
+    # the same page must never lend the former its genre or artist names.
+    events = [v for v in discover.read_ld(html_text)
+              if isinstance(v, dict) and (
+                  bridge._event_types(v.get("@type")) & {"MusicEvent", "Event"})]
+    if len(events) != 1:
+        raise ValueError("Plusieurs événements structurés ou aucun")
+    event = events[0]
+    raw_genres = event.get("genre")
+    if isinstance(raw_genres, str):
+        raw_genres = [raw_genres]
+    if (not isinstance(raw_genres, list)
+            or not 1 <= len(raw_genres) <= 20
+            or not all(isinstance(g, str) and 2 <= len(g.strip()) <= 80
+                       for g in raw_genres)
+            or not triage.genre_evidence({"classification": raw_genres})):
+        raise ValueError("Genre musical officiel précis absent")
+    genres = [g.strip() for g in raw_genres]
+    if genres != fresh.get("classification"):
+        raise ValueError("Genre officiel différent de la découverte")
+    bill = bridge.official_named_bill(event.get("performer"))
+    if bill is None:
+        raise ValueError("Interprètes nominatifs non corroborés")
+    names, unnamed = bill
+    if fresh.get("leadArtist") != " + ".join(names):
+        raise ValueError("Programmation structurée non réconciliée")
+    if unnamed != fresh.get("unannouncedSupportLabel"):
+        raise ValueError("Guest non nommé ambigu")
+
+    known_names, aliases = {}, set()
+    for a in catalogue.get("artists", []):
+        if not isinstance(a, dict):
+            raise ValueError("Catalogue artiste invalide")
+        known_names.setdefault(norm(a.get("name")), []).append(a)
+        aliases.update(norm(x) for x in a.get("aliases", [])
+                       if isinstance(x, str) and norm(x))
+    existing_ids = {a.get("id") for a in catalogue.get("artists", [])}
+    ids, new_artists = [], []
+    for name in names:
+        matching = known_names.get(norm(name), [])
+        if len(matching) > 1 or (not matching and norm(name) in aliases):
+            raise ValueError("Artiste ou alias ambigu")
+        ident = matching[0]["id"] if matching else slug(name)
+        if (not isinstance(ident, str) or len(ident) < 3
+                or (not matching and ident in existing_ids)):
+            raise ValueError("Identifiant artiste ambigu")
+        ids.append(ident)
+        if not matching:
+            new_artists.append({"id": ident, "name": name})
+    if len(set(ids)) != len(ids):
+        raise ValueError("Interprètes doublonnés")
+    when = fresh["date"]
+    for e in catalogue.get("events", []):
+        if not isinstance(e, dict):
+            raise ValueError("Catalogue événement invalide")
+        if e.get("officialUrl") == url:
+            raise ValueError("URL officielle déjà publiée")
+        if (e.get("date") == when and e.get("venueId") == venue_id
+                and set(e.get("artistIds") or []).intersection(ids)):
+            raise ValueError("Concert déjà publié au même endroit ce jour")
+    concert_id = "go-c-" + when.replace("-", "") + "-" + slug(source["city"]) + "-" + slug(names[0])
+    if any(e.get("id") == concert_id for e in catalogue.get("events", [])):
+        raise ValueError("Collision identifiant de concert")
+    return {
+        "reviewDecision": "approved",
+        "reviewedBy": "automated-official-recheck",
+        "reviewedAt": today.isoformat(),
+        "officialEvidence": [{
+            "url": url, "proofType": "official-organizer-or-venue",
+            "checkedAt": today.isoformat(),
+            "checkedFields": ["artists", "date", "venue", "genre"],
+            "sourceStructure": "verified-first-party-structured-event-v1",
+            "officialArtistNames": names,
+            "verifiedVenueId": venue_id,
+            **({"unannouncedSupportLabel": unnamed} if unnamed else {}),
+        }],
+        "event": {
+            "id": concert_id, "title": " + ".join(names), "date": when,
+            "time": None, "artistIds": ids, "venueId": venue_id,
+            "genres": genres, "status": "confirmed", "officialUrl": url,
+            "sourceType": "salle", "organizer": source["name"],
+        },
+        "newArtists": new_artists,
+    }
