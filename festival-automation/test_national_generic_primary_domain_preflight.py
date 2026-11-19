@@ -1,5 +1,6 @@
 """Generic national source research: synthetic, offline, no publication."""
 from copy import deepcopy
+from pathlib import Path
 import json
 import unittest
 
