@@ -35,6 +35,8 @@ import bbc_official_recheck
 import cave_poetes_adapter
 import cave_poetes_official_recheck
 import rocher_palmer_adapter
+import generic_music_event
+import official_rss_jsonld_bridge as structured_bridge
 
 CLOUD = "https://sarogal.github.io/Ondes-Catalogues/grossesondes/concerts.json"
 MONTHS_EN = dict(zip("jan feb mar apr may jun jul aug sep oct nov dec".split(),
@@ -86,6 +88,18 @@ SOURCES = {
         re.compile(r"/ice-sealed-eyes/",re.I),
         "boule-noire"),
 }
+# Every source-wide structured venue approved by the code-reviewed
+# verifier also becomes eligible for read-only monitoring. New concerts need
+# NO additional event IDs or per-show watch rules.
+for _venue_id, _source in generic_music_event.SPECS.items():
+    if _venue_id in SOURCES:
+        raise ValueError("Contrat de surveillance structurée en conflit")
+    SOURCES[_venue_id] = (
+        _source["host"],
+        re.compile(r"/evenement/[a-z0-9-]{5,160}/?"),
+        "generic_structured",
+    )
+
 BONJOUR_WATCH_URLS = {
     "go-c-20261202-saint-brieuc-magma":
         "https://bonjour-minuit.fr/evenement/magma-02dec26/",
@@ -213,6 +227,19 @@ def source_kind(event):
             return None
         if (url in BONJOUR_WATCH_URLS.values()
                 and BONJOUR_WATCH_URLS.get(event_id) != url):
+            return None
+    if kind == "generic_structured":
+        spec = generic_music_event.SPECS[event["venueId"]]
+        day, ident = event.get("date"), event.get("id")
+        if (event.get("sourceType") != "salle"
+                or event.get("organizer") != spec["name"]
+                or not isinstance(day, str)
+                or not re.fullmatch(r"20\d{2}-\d{2}-\d{2}", day)
+                or not isinstance(ident, str)
+                or not re.fullmatch(
+                    r"go-c-" + day.replace("-", "") + "-" +
+                    generic_music_event.slug(spec["city"]) + r"-[a-z0-9-]+",
+                    ident)):
             return None
     if kind in ("bbc", "cave"):
         # Any FUTURE published first-party venue article may be watched;
@@ -809,12 +836,83 @@ def trabendo_exact_named_support(event, page, artists, detail):
     ))
 
 
+def inspect_generic_structured(event, page, artists):
+    """A fresh first-party MusicEvent can ONLY raise anomalies, not edit data."""
+    if not isinstance(page, str) or len(page) > 1_000_000:
+        return {"status": "source_unavailable",
+                "reason": "Document structuré officiel illisible"}
+    spec = generic_music_event.SPECS.get(event.get("venueId"))
+    if spec is None:
+        return {"status": "unsupported",
+                "reason": "Salle non agréée par le vérificateur générique"}
+    nodes = [
+        row for row in discover.read_ld(page)
+        if isinstance(row, dict) and (
+            structured_bridge._event_types(row.get("@type")) & {"MusicEvent", "Event"})
+    ]
+    if len(nodes) != 1:
+        return {"status": "content_review",
+                "reason": "Fiche événement officielle absente ou ambiguë"}
+    raw = nodes[0]
+    canonical = raw.get("url")
+    if canonical is not None and canonical.rstrip("/") != event["officialUrl"].rstrip("/"):
+        return {"status": "content_review",
+                "reason": "URL canonique de l'événement modifiée"}
+    status = raw.get("eventStatus")
+    if isinstance(status, dict):
+        status = status.get("@id") or status.get("name") or ""
+    if isinstance(status, str) and re.search(
+            r"cancel|postpon|reschedul|report|annul", status, re.I):
+        return {"status": "content_review",
+                "reason": "Changement de statut officiel à vérifier, sans annulation automatique"}
+    location = raw.get("location")
+    if isinstance(location, list):
+        location = location[0] if len(location) == 1 else None
+    address = location.get("address") if isinstance(location, dict) else None
+    if (not isinstance(location, dict)
+            or norm(location.get("name")) != norm(spec["name"])
+            or not isinstance(address, dict)
+            or norm(address.get("addressLocality")) != norm(spec["city"])):
+        return {"status": "content_review",
+                "reason": "Salle ou commune officielle modifiée"}
+    when = discover.iso_day(raw.get("startDate"))
+    if when is None:
+        return {"status": "content_review",
+                "reason": "Date officielle supprimée ou illisible"}
+    if when != event.get("date"):
+        return {"status": "date_review", "observedDate": when,
+                "reason": "Date officielle différente : confirmation nécessaire"}
+    bill = structured_bridge.official_named_bill(raw.get("performer"))
+    if bill is None:
+        return {"status": "lineup_review",
+                "reason": "Programmation nominative disparue ou ambiguë"}
+    names, _unnamed = bill
+    published = [artists.get(aid) for aid in event.get("artistIds", [])]
+    if (len(names) != len(published)
+            or any(not isinstance(n, str) or
+                   norm(n) != norm(name)
+                   for n, name in zip(published, names))):
+        return {"status": "lineup_review",
+                "reason": "Artistes officiellement annoncés différents"}
+    genre = raw.get("genre")
+    if isinstance(genre, str):
+        genre = [genre]
+    if (not isinstance(genre, list)
+            or [norm(x) for x in genre] !=
+                [norm(x) for x in event.get("genres", [])]):
+        return {"status": "content_review",
+                "reason": "Classification officielle de l'événement modifiée"}
+    return {"status": "matched", "observedDate": when}
+
+
 def inspect(event, page, artists):
     """Parse source-specific *positive evidence*. Never infer cancellation."""
     kind = source_kind(event)
     if kind is None:
         return {"status": "unsupported", "reason": "No trusted individual venue page"}
     try:
+        if kind == "generic_structured":
+            return inspect_generic_structured(event, page, artists)
         if kind == "rocher":
             return rocher_inspect(event,page,artists)
         if kind == "bonjour":
