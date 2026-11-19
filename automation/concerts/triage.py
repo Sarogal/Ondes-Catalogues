@@ -26,7 +26,9 @@ NONCONCERT = re.compile(
     r"communiquer son projet|wikipaloma|comedie|spectacle jeune public)\b",
     re.I,
 )
-FESTIVAL_WORD = re.compile(r"\b(festival|fest|open air)\b", re.I)
+# Open Air describes a format/location, not automatically a festival.
+# A real festival is still flagged by an explicit festival name or context.
+FESTIVAL_WORD = re.compile(r"\b(festival|fest)\b", re.I)
 
 
 def words(value):
@@ -71,6 +73,7 @@ def catalogue_index(catalogue):
             "artists": [words(artists.get(str(a), "")) for a in event.get("artistIds", [])],
             "artistIds": list(event.get("artistIds", [])),
             "venueId": event.get("venueId"),
+            "venueName": words(venue.get("name")),
         }
         index.setdefault(key, []).append(entry)
         # Index par salle : les tournées peuvent annoncer Toulouse pour
@@ -103,10 +106,17 @@ def possible_duplicates(candidate, index):
     city = words(candidate.get("city"))
     name = words(candidate.get("name"))
     artist = words(candidate.get("leadArtist"))
+    candidate_venue = words(candidate.get("venue"))
     if not date or not city:
         return []
     matches = exact_catalogue_matches(candidate, index)
     for event in index.get((date, city), []):
+        # Same city/date/headliner is only an advisory when the two places
+        # are explicitly DIFFERENT. When either venue is missing, keep the
+        # conservative duplicate hold until a location can be established.
+        known_venue = event.get("venueName")
+        if candidate_venue and known_venue and candidate_venue != known_venue:
+            continue
         headline = event["title"]
         if name and headline and name == headline:
             matches.append(event["eventId"])
