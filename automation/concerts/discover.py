@@ -152,13 +152,19 @@ def mark_match(event, known):
     same_place_artist = (day, city, location, name) in known if location else False
     url = event.get("sourceUrl")
     same_url = isinstance(url, str) and ("officialUrl", url) in known
-    # Without a place, the collision stays conservative; with two different
-    # explicitly named places, record the warning but do not block a verified
-    # new event merely because the artist plays in the same city and day.
+    # A bare legacy city/artist key cannot prove which venue was published.
+    # Release its duplicate hold ONLY if the known catalogue also supplies
+    # at least one named place for that same artist, city and day.
+    has_named_reference = bool(same_city_artist and any(
+        isinstance(key, tuple) and len(key) == 4
+        and (key[0], key[1], key[3]) == (day, city, name)
+        and bool(key[2]) for key in known))
     event["sameCityArtistCollisionAdvisory"] = bool(
-        same_city_artist and location and not same_place_artist and not same_url)
+        same_city_artist and location and has_named_reference
+        and not same_place_artist and not same_url)
     event["possibleExistingConcert"] = bool(
-        same_url or same_place_artist or (same_city_artist and not location))
+        same_url or same_place_artist or
+        (same_city_artist and (not location or not has_named_reference)))
     event["publicationAllowed"] = False
     event["reviewRequired"] = True
     return event
