@@ -316,7 +316,10 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(unavailable["two_day_dates_count"], 0)
         self.assertTrue(all(x["status"] ==
             "GENERIC_PRIMARY_HTTPS_UNAVAILABLE" for x in unavailable["rows"]))
-        self.assertEqual(other["national_generic_primary_date_observations_private"], {})
+        self.assertTrue(all("digest" not in observation
+                            for observation in other[
+                                "national_generic_primary_date_observations_private"
+                            ].values()))
 
     def test_forged_favorable_input_flags_fail_before_network(self):
         state, queue, published = fixture()
@@ -363,6 +366,54 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         late = examine(state, queue, published, DAY2, fetch=html)
         self.assertEqual(early["two_day_dates_count"], 4)
         self.assertEqual(late["two_day_dates_count"], 4)
+
+    def test_twice_daily_rejections_rotate_to_new_domains_without_approval(self):
+        state, queue, published = fixture()
+        queue["dossiers"].extend([
+            dossier("Festival Granit et Feu", "https://granit-feu.fr/", DAY1),
+            dossier("Festival Lames de Nuit", "https://lames-nuit.fr/", DAY1),
+            dossier("Festival Roche et Riff", "https://roche-riff.fr/", DAY1),
+            dossier("Festival Poussiere Rouge", "https://poussiere-rouge.fr/", DAY1),
+            dossier("Festival Coups de Tonnerre", "https://coups-tonnerre.fr/", DAY1),
+            dossier("Festival Sons Nocturnes", "https://sons-nocturnes.fr/", DAY1),
+        ])
+        expected = {d["sources"][0]["url"] for d in queue["dossiers"]}
+        attempts = []
+        def unavailable_dates(url):
+            if url in expected:
+                attempts.append(url)
+            return "<html><body><p>Programmation à venir</p></body></html>"
+        morning = examine(state, queue, published, DAY1, fetch=unavailable_dates)
+        morning_urls = set(attempts)
+        self.assertEqual(morning["checked_count"], 4)
+        self.assertEqual(len(morning_urls), 4)
+        self.assertTrue(all(not row["two_day_dates"] for row in morning["rows"]))
+        attempts.clear()
+        evening = examine(state, queue, published, DAY1, fetch=unavailable_dates)
+        evening_urls = set(attempts)
+        self.assertEqual(evening["checked_count"], 4)
+        self.assertEqual(len(evening_urls), 4)
+        self.assertFalse(morning_urls & evening_urls)
+        self.assertEqual(morning_urls | evening_urls, expected)
+        self.assertEqual(evening["two_day_dates_count"], 0)
+        observations = state[
+            "national_generic_primary_date_observations_private"]
+        self.assertEqual(len(observations), 8)
+        self.assertTrue(all("digest" not in value for value in
+                            observations.values()))
+        # Even the next morning's valid claim is a FIRST observation.
+        queue["as_of"] = DAY2
+        for candidate in queue["dossiers"]:
+            candidate["sources"][0]["lastSeen"] = DAY2
+        def valid_dates(url):
+            name = next(d["name_hint"] for d in queue["dossiers"]
+                        if d["sources"][0]["url"] == url)
+            return f"<h1>{name} 2027</h1><p>4 et 5 juin 2027</p>"
+        next_day = examine(state, queue, published, DAY2, fetch=valid_dates)
+        self.assertEqual(next_day["two_day_dates_count"], 0)
+        self.assertTrue(all(x["status"] ==
+            "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY"
+            for x in next_day["rows"]))
 
     def test_two_day_rotation_prioritizes_stable_next_day(self):
         state, queue, published = fixture()
