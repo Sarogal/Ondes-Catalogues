@@ -137,8 +137,13 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
                 self.assertIsNone(independently_verify(
                     row, TODAY, institution_fetch=lambda u: self.fail("Forged proposal requested network"),
                     organizer_fetch=lambda u: self.fail("Forged domain requested network")))
+        changed_date = DATES_HTML.replace("4 et 5", "4 et 6")
+        self.assertEqual(prove_dates(changed_date, TITLE, 2027, TODAY),
+                         ("2027-06-04", "2027-06-06"))
+        self.assertIsNone(independently_verify(
+            p, TODAY, institution_fetch=institutional,
+            organizer_fetch=lambda u: changed_date))
         for html in (
-            DATES_HTML.replace("4 et 5", "4 et 6"),
             DATES_HTML.replace("2027", "2026"),
             DATES_HTML.replace("Festival Metal des Garrigues", "Autre Festival"),
             DATES_HTML.replace("festival metal", "festival annulé"),
@@ -150,7 +155,7 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
             with self.subTest(html=html[:70]):
                 self.assertIsNone(prove_dates(html, TITLE, 2027, TODAY))
                 self.assertIsNone(independently_verify(
-                    p, TODAY, institution_fetch=institution,
+                    p, TODAY, institution_fetch=institutional,
                     organizer_fetch=lambda u: html))
 
     def test_new_festival_stage_requires_independent_publisher_sources(self):
@@ -163,7 +168,7 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
         self.assertEqual(len(old["festivals"]), len(cal["festivals"]))
         sources = collect_registered_linked_sources(
             patch, frozenset(), TODAY,
-            institution_fetch=institution, organizer_fetch=website)
+            institution_fetch=institutional, organizer_fetch=website)
         self.assertTrue(sources.get("registered-linked-verified:"+p["slug"]))
         approved, report = stage(cal, history, patch, sources, TODAY)
         self.assertEqual(report["accepted_additions"], [p["slug"]])
@@ -198,7 +203,7 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
         patch["updates"] = []
         sources = collect_registered_linked_sources(
             patch, frozenset(), TODAY,
-            institution_fetch=institution, organizer_fetch=website)
+            institution_fetch=institutional, organizer_fetch=website)
         cal["festivals"][0] = {
             "slug": "already-published-matching",
             "name": TITLE, "startDate": "2027-06-04", "endDate": "2027-06-05",
