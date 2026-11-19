@@ -53,6 +53,21 @@ class FirstPartyFetchHostTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Redirection hors domaine"):
                     self.fetch(original, destination)
 
+    def test_generic_official_proof_never_follows_a_redirect(self):
+        for host in ("larayonne.org", "lemetronum.fr"):
+            original = "https://" + host + "/evenement/verified-metal/"
+            self.assertIn("official event", self.fetch(original, original))
+            for final in (
+                "https://other.example/evenement/verified-metal/",
+                "https://rockstore.fr/evenement/verified-metal/",
+                "https://" + host + "/evenement/other-date/",
+                "http://" + host + "/evenement/verified-metal/",
+            ):
+                with self.subTest(host=host, final=final):
+                    with self.assertRaisesRegex(
+                            ValueError, "Redirection générique"):
+                        self.fetch(original, final)
+
     def test_robots_denial_never_opens_url(self):
         with patch.object(engine.discover, "robots_allow", return_value=False), \
              patch.object(engine, "urlopen") as opened:

@@ -25,6 +25,9 @@ class VerifierSpec:
 # registry candidate data or an external JSON response.
 VERIFIER_SPECS = MappingProxyType({
     "agenda_officiel_rex_genre": VerifierSpec(None, False),
+    # Source-wide parser; the exact two trusted venue hosts are frozen in
+    # generic_music_event.SPECS, never imported from discovery candidates.
+    "agenda_officiel_structuré": VerifierSpec("generic_music_event", False),
     "agenda_officiel_molotov_genre": VerifierSpec("molotov_official", False),
     "agenda_officiel_ferrailleur_genre": VerifierSpec("ferrailleur_official", True),
     "agenda_officiel_backstage_detail": VerifierSpec("backstage_recheck", False),

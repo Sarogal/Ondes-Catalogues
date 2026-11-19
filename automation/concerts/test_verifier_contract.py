@@ -146,8 +146,16 @@ class VerifiedSourceContractTests(unittest.TestCase):
                 rows, public, ledger, TODAY,
                 fetch=lambda url, cache: "<main>synthetic</main>",
                 limit=30)
+        # The generic structured source is registered, but unlike fixed
+        # legacy verifiers it still requires an independently pinned venue
+        # and an exact first-party HTTPS host BEFORE any network call.
+        permitted = len(sources) - 1
         self.assertEqual(report["evaluated"], len(sources))
-        self.assertEqual(len(report["newApprovals"]), len(sources))
+        self.assertEqual(len(report["newApprovals"]), permitted)
+        self.assertTrue(any(
+            row["candidateId"] == "synthetic-" + str(sources.index(
+                "agenda_officiel_structuré"))
+            for row in report["held"]))
         self.assertNotIn("synthetic-" + str(len(sources)), report["newApprovals"])
 
     def test_private_funnel_and_rechecker_classify_same_eligible_sources(self):
