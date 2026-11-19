@@ -5,7 +5,8 @@ Invoked only by a PR diagnostic workflow. No secrets, scheduling,
 catalogue access, incoming candidate URLs, private state or publishing.
 Never logs page contents, titles, child URLs, city/venue or exceptions.
 """
-from datetime import date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import json
 
 from ptitesondes_html_index_detail_funnel import (
@@ -22,9 +23,10 @@ MPT_INDEX = {
 
 
 def main():
+    now_local = datetime.now(ZoneInfo("Europe/Paris"))
     report = diagnose_html_index_detail_funnel(
-        MPT_INDEX, "montpellier_mpt", date.today(),
-        max_details=3,
+        MPT_INDEX, "montpellier_mpt", now_local.date(),
+        max_details=3, as_of=now_local,
     )
     print(json.dumps(
         redact_detail_funnel_report(report),
