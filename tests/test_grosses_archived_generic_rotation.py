@@ -14,7 +14,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import grossesondes_archived_html_intake as engine
 from grossesondes_cloud_sync import collect_registered_edition_sources
 from grossesondes_structured_edition import (
-    ARCHIVED_HTML_PROOF_MODE, validate_archived_structured_edition,
+    ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    validate_archived_structured_edition,
 )
 
 
@@ -199,6 +200,90 @@ class GenericArchivedOrganizerTests(unittest.TestCase):
         self.assertEqual(engine.national_archived_priority(
             self.root, {historic["slug"]: historic}, self.today),
             {historic["slug"]})
+
+    def test_official_archived_jsonld_proof_requires_two_days_and_publisher_recheck(self):
+        source = archive("ash-lantern", "Ash Lantern Festival",
+                         "https://ashlantern.example/")
+        self.history["knownFestivals"].append(source)
+        page = (
+            '<html><head><script type="application/ld+json">'
+            '{"@context":"https://schema.org","@type":"MusicFestival",'
+            '"name":"Ash Lantern Festival 2027",'
+            '"startDate":"2027-09-18","endDate":"2027-09-19"}'
+            '</script></head><body><h1>Ash Lantern Festival</h1>'
+            '<p>Nouvelle édition annoncée.</p></body></html>'
+        )
+        self.pages[source["officialSite"]] = page
+        first = engine.run(self.root, self.public, self.history,
+                           self.today, self.fetch)
+        self.assertEqual(first["privateCandidatesAdded"], 0)
+        second = engine.run(self.root, self.public, self.history,
+                            self.nextday, self.fetch)
+        self.assertEqual(second["privateCandidatesAdded"], 3)
+        patch = json.loads((self.root / "patch-2026-11-18.json").read_text())
+        proposed = next(p for p in patch["additions"]
+                        if p["slug"] == "ash-lantern-2027")
+        self.assertEqual(proposed["proofMode"], ARCHIVED_PROOF_MODE)
+        self.assertEqual(proposed["startDate"], "2027-09-18")
+        self.assertEqual(proposed["endDate"], "2027-09-19")
+        self.assertFalse(proposed["showOnMap"])
+        self.assertEqual(proposed["lineup"], [])
+        self.assertIsNone(proposed["venue"])
+        self.assertIsNone(proposed["lat"])
+        self.assertIsNotNone(validate_archived_structured_edition(
+            proposed, source, page, self.nextday.isoformat(),
+            proof_mode=ARCHIVED_PROOF_MODE))
+        self.assertIsNone(validate_archived_structured_edition(
+            proposed, source, page.replace("2027-09-19", "2027-09-20"),
+            self.nextday.isoformat(), proof_mode=ARCHIVED_PROOF_MODE))
+        self.assertFalse(patch["safe_to_publish"])
+
+    def test_archived_jsonld_fallback_rejects_conflict_cancellation_and_wrong_identity(self):
+        source = archive("ash-lantern", "Ash Lantern Festival",
+                         "https://ashlantern.example/")
+        spec = {"officialSite": source["officialSite"],
+                "proofUrl": source["officialSite"], "year": 2027}
+        event = ('{"@context":"https://schema.org",'
+                 '"@type":"MusicFestival","name":"Ash Lantern Festival 2027",'
+                 '"startDate":"2027-09-18","endDate":"2027-09-19"}')
+        def html(data, suffix=""):
+            return ('<html><head><script type="application/ld+json">' +
+                    data + '</script></head><body><h1>Ash Lantern Festival</h1>' +
+                    suffix + '</body></html>')
+        for page in (
+            html(event.replace("Ash Lantern Festival 2027", "Other Fest 2027")),
+            html(event.replace("2027-09-18", "2026-09-18")),
+            html(event.replace("2027-09-19", "2027-09-30")),
+            html(event.replace("MusicFestival", "LocalBusiness")),
+            html(event.replace('"endDate":"2027-09-19"', '')),
+            html(event.replace("2027-09-19", "2027-09-19").replace(
+                 '"startDate":"2027-09-18",', 
+                 '"eventStatus":"EventCancelled","startDate":"2027-09-18",')),
+            html(event, '<p>Ce festival 2027 est annulé.</p>'),
+            html(event, '<p>Les 20 et 21 septembre 2027.</p>'),
+            html("[" + event + "," +
+                 event.replace("2027-09-19", "2027-09-20") + "]"),
+        ):
+            with self.subTest(page=page[-120:]):
+                self.assertIsNone(engine.candidate(source, spec, page,
+                                                    self.today))
+
+    def test_different_evidence_modes_cannot_share_a_two_day_observation(self):
+        source = archive("ash-lantern", "Ash Lantern Festival",
+                         "https://ashlantern.example/")
+        mode1 = {
+            "slug": "ash-lantern-2027", "name": "Ash Lantern Festival 2027",
+            "originSlug": source["slug"],
+            "startDate": "2027-09-18", "endDate": "2027-09-19",
+            "officialSite": source["officialSite"],
+            "proofMode": ARCHIVED_HTML_PROOF_MODE,
+        }
+        state = {}
+        self.assertFalse(engine.stability(state, mode1,
+                          source["officialSite"], self.today))
+        self.assertFalse(engine.stability(
+            state, dict(mode1, proofMode=ARCHIVED_PROOF_MODE),
+            source["officialSite"], self.nextday))
 
     def test_bounded_rotation_scans_more_than_two_festivals_without_manual_ids(self):
         sources = {
