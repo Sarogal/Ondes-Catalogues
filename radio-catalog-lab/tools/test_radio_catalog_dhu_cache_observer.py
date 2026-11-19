@@ -61,6 +61,22 @@ class CacheObserverTests(unittest.TestCase):
         later = observer.observe(SERIAL, self.reader)
         observer.compare_baseline(earlier, later)
 
+    def test_new_wifi_port_does_not_invalidate_same_phone_cache(self):
+        """ADB IP:port is an ephemeral transport, never a device identity."""
+        earlier = observer.observe(SERIAL, self.reader)
+        later = observer.observe("192.168.1.30:39895", self.reader)
+        self.assertNotEqual(earlier["serial_tag"], later["serial_tag"])
+        observer.compare_baseline(earlier, later)
+
+    def test_new_wifi_port_still_rejects_changed_disk_object(self):
+        earlier = observer.observe(SERIAL, self.reader)
+        later = observer.observe("192.168.1.30:39895", self.reader)
+        later["modified"] = "2026-11-19 06:00:00 +0100"
+        with self.assertRaisesRegex(
+            observer.CacheObservationError, "modified changed"
+        ):
+            observer.compare_baseline(earlier, later)
+
     def test_rewritten_file_same_bytes_is_not_a_persistence_proof(self):
         earlier = observer.observe(SERIAL, self.reader)
         later = dict(earlier)
