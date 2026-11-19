@@ -169,6 +169,9 @@ jobs:
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
           run_private candidate_preflight python "$ENGINE/national_candidate_promotion.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private publisher_handoff python "$ENGINE/national_admission_handoff.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          # Research generic national domains beyond legacy one-event registry.
+          # DNS-pinned rechecks and two-day observations, never a patch or approval.
+          run_private generic_primary_domains python "$ENGINE/national_generic_primary_domain_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json
           run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
           # Official archived pages: TWO consecutive days, private patch only.
           # No private scheduled Actions, no proposed row goes to a public log.
@@ -204,6 +207,7 @@ jobs:
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
             automation-intake/grossesondes/national-institutional-organizer-links.json \
             automation-intake/grossesondes/national-institutional-organizer-domain-review.json \
+            automation-intake/grossesondes/national-generic-primary-date-review.json \
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \
