@@ -7,6 +7,8 @@ on:
     paths:
       - 'scripts/ptitesondes_html_index_detail_live_smoke.py'
       - 'scripts/ptitesondes_html_index_detail_funnel.py'
+      - 'scripts/ptitesondes_real_family_source_adapters.py'
+      - 'scripts/ptitesondes_family_national_scope.py'
       - '.github/workflows/ptitesondes-html-index-live-smoke.yml'
 
 permissions:
