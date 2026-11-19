@@ -29,6 +29,7 @@ from grossesondes_structured_roster import (
 )
 from grossesondes_structured_edition import (
     ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    ARCHIVED_BROWSER_PROOF_MODE,
     PRIVATE_CONFIDENCE, PRIVATE_NOTES, PRIVATE_STATUS,
     pinned_parent_identity, validate_archived_structured_edition,
     conflicts_with_existing,
@@ -527,7 +528,8 @@ def atomic_json(path, value):
             os.unlink(temp)
 
 
-def run(folder, calendar, history, today, fetcher=official_text):
+def run(folder, calendar, history, today, fetcher=official_text,
+        browser_fetcher=None):
     if not isinstance(today, date):
         raise TypeError("today must be a date")
     statefile = folder / "source-watch-state.json"
@@ -540,6 +542,7 @@ def run(folder, calendar, history, today, fetcher=official_text):
     patch = latest_patch(folder, today)
     original_patch = copy.deepcopy(patch)
     successes, candidates = 0, 0
+    browser_attempts = 0  # At most two JS renders per public runner execution.
     occupied = {row.get("slug") for row in patch["additions"]}
     # Long-lived PRIVATE aggregate coverage, distinct from the rolling 40
     # diagnostic reasons. Only an archived slug and attempted date are kept.
@@ -618,8 +621,39 @@ def run(folder, calendar, history, today, fetcher=official_text):
                     html, parent, source["year"])
                     if official_date(html, parent, source["year"]) is None
                     else "exact_edition_or_publisher_proof_rejected")
-                record(slug, reason)
-                continue
+                # A code-reviewed ARCHIVED organizer can show its date only
+                # after JavaScript runs. Browser output is not proof by itself:
+                # the exact publisher validator is applied to the rendered
+                # DOM here, again on the next calendar day, AND on an
+                # independent browser fetch by the public publisher.
+                if (browser_fetcher is not None and browser_attempts < 2
+                        and reason in (
+                            "official_markup_year_without_visible_year",
+                            "official_visible_year_without_parseable_range")
+                        and source["proofUrl"] == source["officialSite"]
+                        and organizer_homepage(source["officialSite"])):
+                    browser_attempts += 1
+                    try:
+                        rendered = browser_fetcher(source["officialSite"])
+                        proposed = candidate(parent, source, rendered, today)
+                        if (proposed is not None
+                                and proposed["proofMode"] == ARCHIVED_HTML_PROOF_MODE
+                                and official_date(rendered, parent, source["year"])
+                                    is not None):
+                            proposed["proofMode"] = ARCHIVED_BROWSER_PROOF_MODE
+                            if validate_archived_structured_edition(
+                                    proposed, parent, rendered,
+                                    today.isoformat(), proof_mode=ARCHIVED_BROWSER_PROOF_MODE
+                                    ) is None:
+                                proposed = None
+                        else:
+                            proposed = None
+                    except Exception:
+                        proposed = None
+                        reason = "official_browser_render_unavailable"
+                if proposed is None:
+                    record(slug, reason)
+                    continue
         except (ValueError, TypeError, UnicodeError):
             record(slug, "official_page_unparseable")
             continue
@@ -680,7 +714,14 @@ def main():
     today = datetime.now(ZoneInfo("Europe/Paris")).date()
     calendar = json.loads(args.catalog.read_text(encoding="utf-8"))
     history = json.loads(args.history.read_text(encoding="utf-8"))
-    result = run(args.intake, calendar, history, today)
+    # No browser is imported or executed without the explicit, trusted
+    # public-runner switch. Unit tests inject their own deterministic renderer.
+    browser_fetcher = None
+    if os.environ.get("GROSSES_ONDES_BROWSER_INTAKE") == "enabled":
+        from grossesondes_official_browser_probe import rendered_html
+        browser_fetcher = rendered_html
+    result = run(args.intake, calendar, history, today,
+                 browser_fetcher=browser_fetcher)
     print(json.dumps(result, sort_keys=True))
 
 
