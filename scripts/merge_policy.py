@@ -58,11 +58,30 @@ def validate_patch(p,ref,day,today):
     guard(not p["updates"],"les corrections de fiches existantes demandent une autre procédure")
     guard(p.get("checks",{}).get("ids_unique") is True,"contrôle d'identifiants manquant")
 
-def valid(ev,categories,fields,today):
+def valid(ev,categories,fields,today,*,reviewed_family_categories=None):
+    """Structural check. New family types require an explicit POLICY input.
+
+    reviewed_family_categories is programmer-owned, never collected from an
+    event, OpenAgenda, or a proposed patch. The active merge() deliberately
+    DOES NOT pass it. Category eligibility is not source/rights approval.
+    """
     if not isinstance(ev,dict) or REQUIRED-set(ev) or set(ev)-fields: return False,"champs inconnus ou absents"
     if not isinstance(ev.get("id"),str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",ev["id"]): return False,"ID non conforme"
     if not all(isinstance(ev.get(k),str) and ev[k].strip() for k in ("title","city","department","region","venue","source_label","category_label")):return False,"champ vide"
-    if ev.get("category") not in categories:return False,"catégorie inconnue"
+    if ev.get("category") not in categories:
+        if reviewed_family_categories is None:
+            return False,"catégorie inconnue"
+        # Strictly opt-in to the existing 13-category family policy, not an
+        # event-supplied dynamic taxonomy. The production merge() stays
+        # legacy-only until a separately reviewed cutover is approved.
+        from ptitesondes_family_national_scope import FAMILY_TYPES
+        if (type(reviewed_family_categories) not in (tuple, frozenset)
+                or not reviewed_family_categories
+                or any(type(v) is not str or v not in FAMILY_TYPES
+                       for v in reviewed_family_categories)
+                or ev.get("category") not in reviewed_family_categories
+                or ev.get("category_label") != FAMILY_TYPES[ev["category"]][0]):
+            return False,"catégorie inconnue ou non homologuée"
     try:
         start,end=date.fromisoformat(ev["date_start"]),date.fromisoformat(ev["date_end"])
         verified=date.fromisoformat(ev["verified_at"])
