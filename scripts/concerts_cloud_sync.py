@@ -7870,8 +7870,11 @@ def merge(reference, current, approvals, today):
     # As with events, no ad-hoc catalogue edit can bypass the approval queue.
     for prior in current["venues"][len(reference["venues"]):]:
         approval = approved_venues.get(prior["id"])
-        require(approval is not None and prior == validate_venue_approval(
-                    approval, today, approvals["approvals"]),
+        require(approval is not None and prior == (
+                    validate_venue_approval(
+                        approval, today, approvals["approvals"])
+                    if approval.get("venueKind") == "independent-event-site-v1"
+                    else validate_venue_approval(approval, today)),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     event_sites_added_this_run = {}
     counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
@@ -7889,8 +7892,10 @@ def merge(reference, current, approvals, today):
                     and v_id not in venues):
                 counts["deferredVenues"] += 1
                 continue
-            incoming = validate_venue_approval(
+            incoming = (validate_venue_approval(
                 entry, today, approvals["approvals"])
+                if entry.get("venueKind") == "independent-event-site-v1"
+                else validate_venue_approval(entry, today))
             v_id = incoming["id"]
             if v_id in venues:
                 require(venues[v_id] == incoming, "Conflit de fiche salle déjà présente")
