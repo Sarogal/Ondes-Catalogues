@@ -10,6 +10,9 @@ on:
   # never signs or publishes directly. GitHub can still delay cron launches.
   schedule:
     - cron: '41 2,6,10,14,18,22 * * *'
+    # First slot-aware recovery 70 / 52 min after the existing Festivals
+    # 06:24 / 18:42 UTC intake windows. Public-only GitHub runner.
+    - cron: '34 7,19 * * *'
 
 concurrency:
   group: ondes-national-schedule-catchup
