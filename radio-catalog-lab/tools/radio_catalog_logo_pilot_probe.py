@@ -247,7 +247,7 @@ def run_pilot(planned: list[dict], out_dir: Path, *,
                 "editorial_review_required": True,
                 "catalog_publication_authorized": False,
             })
-        except (OSError, ValueError, RuntimeError) as exc:
+        except Exception as exc:
             failures.append({
                 "source_url": url,
                 "go_station_ids": entry["go_station_ids"],
@@ -275,6 +275,18 @@ def run_pilot(planned: list[dict], out_dir: Path, *,
     return report
 
 
+def checked_local_output_dir(directory: Path, worktree: Path) -> Path:
+    """Resolve relative build/ output; reject absolute paths and traversal."""
+    root = (worktree / "build")
+    if directory.is_absolute() or root.is_symlink():
+        raise ValueError("Pilot output must be a relative path inside local build/")
+    base = root.resolve()
+    target = (worktree / directory).resolve()
+    if target == base or not target.is_relative_to(base):
+        raise ValueError("Pilot output escapes the worktree build/ sandbox")
+    return target
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pilot", type=Path, required=True)
@@ -291,10 +303,13 @@ def main() -> None:
     if args.fetch:
         if args.out_dir is None:
             parser.error("--fetch requires --out-dir for local proof files")
-        # Refuse output outside a build/ sandbox in this isolated checkout.
-        if not args.out_dir.parts or args.out_dir.parts[0] != "build":
-            parser.error("Use a fresh directory under build/ only")
-        result = run_pilot(planned, args.out_dir)
+        # No absolute path, traversal or symlink bypass of the checkout's
+        # designated untracked build sandbox, even if the input looks benign.
+        try:
+            safe_output = checked_local_output_dir(args.out_dir, Path.cwd())
+        except ValueError as exc:
+            parser.error(str(exc))
+        result = run_pilot(planned, safe_output)
         print(json.dumps({k: v for k, v in result.items()
                           if k not in ("records", "failures")},
                          ensure_ascii=False))
