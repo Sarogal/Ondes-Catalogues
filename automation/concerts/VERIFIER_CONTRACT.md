@@ -70,6 +70,29 @@ verified structured line-up, the private HTML preflight records a distinct
 `html_event_genre_visible_lineup_unverified` reason. This is useful for
 future source verification and **never** grants approval or publication.
 
+## First-party visible-bill discovery (no publishing)
+
+`generic_visible_bill.py` reuses the **already approved** HTTPS host, venue
+identity and individual event URL path from the generic first-party manifest.
+It examines only event pages that `discover.scan_venues` has **already**
+fetched within the normal three-link rotating window. No additional
+requests, scraping sweep or per-concert exceptions are introduced.
+
+For a newly discovered individual HTML event, the visible page must contain
+a single concert heading, a future show date (not a ticket-sale date), the
+reviewed venue and city, and a complete bill of individually named
+`► ARTIST – Genre` headings in precisely the order of the event headline.
+Every artist must have a recognized explicit event-level genre. The number
+of named acts is not arbitrarily capped. An unannounced trailing guest is
+kept separately and never invented as an artist.
+
+Candidates have the distinct source `agenda_officiel_visible_bill`,
+`publicationAllowed: false` and `reviewRequired: true`. This new source
+is intentionally **absent from VERIFIER_SPECS** and therefore cannot
+trigger a publisher approval, even with two distinct days of discovery.
+A separate publisher proof contract, a fresh independent recheck, and
+post-publication monitoring must pass review before this source can publish.
+
 ## Required regression matrix
 
 - At least two distinct real future bills from the same venue, plus 1/2/8/20 entirely different named artists.
