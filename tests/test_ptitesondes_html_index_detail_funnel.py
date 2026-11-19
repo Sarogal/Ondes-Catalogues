@@ -1,6 +1,7 @@
 """Adversarial end-to-end diagnostic: official index -> detail -> child scope."""
 import json
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 import sys
 import unittest
@@ -316,6 +317,68 @@ class RepresentativeSamplingAndDedupTests(unittest.TestCase):
         self.assertEqual({url for url, _, _ in pages.seen},
                          {stems[0], stems[2]})
         self.assertFalse(result["publisher_connected"])
+
+
+
+class ExactLocalClockTests(unittest.TestCase):
+    def test_live_clock_holds_started_morning_slot_but_keeps_later_slot(self):
+        zone = ZoneInfo("Europe/Paris")
+        now = datetime(2026, 11, 21, 10, 0, tzinfo=zone)
+        index = MemoryWeb({PIN["exact_index_url"]: html_index(ONE)})
+        pages = MemoryWeb({ONE: MPT_TEMPLATE})
+        report = diagnose_html_index_detail_funnel(
+            PIN, "montpellier_mpt", now.date(), as_of=now,
+            index_opener=index, detail_opener=pages,
+        )
+        self.assertTrue(report["exact_local_clock_cutoff_applied"])
+        self.assertEqual(report["already_started_sessions_held"], 1)
+        self.assertEqual(report["future_child_occurrences"], 1)
+        self.assertEqual(report["unclassified_occurrences_held"], 1)
+        self.assertEqual(
+            redact_detail_funnel_report(report)["already_started_sessions_held"], 1)
+
+    def test_naive_or_wrong_local_clock_fails_before_network(self):
+        for moment in (
+            datetime(2026, 11, 21, 10, 0),
+            datetime(2026, 11, 20, 10, 0, tzinfo=ZoneInfo("Europe/Paris")),
+            "2026-11-21",
+        ):
+            index = MemoryWeb({PIN["exact_index_url"]: html_index(ONE)})
+            pages = MemoryWeb({ONE: MPT_TEMPLATE})
+            out = diagnose_html_index_detail_funnel(
+                PIN, "montpellier_mpt", date(2026, 11, 21),
+                as_of=moment, index_opener=index, detail_opener=pages,
+            )
+            self.assertIn(out["stage"], (
+                "invalid_trusted_local_clock",
+                "trusted_local_clock_day_mismatch",
+            ))
+            self.assertEqual(index.seen, [])
+            self.assertEqual(pages.seen, [])
+
+    def test_ambiguous_spring_or_fall_dst_clock_is_never_inferred(self):
+        zone = ZoneInfo("Europe/Paris")
+        for day, raw_date, year in (
+            (date(2026, 3, 29), "29 mars 2026", 2026),
+            (date(2026, 10, 25), "25 octobre 2026", 2026),
+        ):
+            with self.subTest(day=day):
+                source = MPT_TEMPLATE.replace(
+                    "21 novembre 2026", raw_date).replace(
+                        "09:15 > 10:15", "02:15 > 03:15").replace(
+                            "10:30 > 11:30", "02:30 > 03:30")
+                # At 00:00 both 02:15 and 02:30 are either nonexistent or
+                # ambiguous, and must not be treated as verified sessions.
+                now = datetime(year, day.month, day.day, 0, 0, tzinfo=zone)
+                index = MemoryWeb({PIN["exact_index_url"]: html_index(ONE)})
+                pages = MemoryWeb({ONE: source})
+                out = diagnose_html_index_detail_funnel(
+                    PIN, "montpellier_mpt", day, as_of=now,
+                    index_opener=index, detail_opener=pages,
+                )
+                self.assertEqual(out["future_child_occurrences"], 0)
+                self.assertEqual(out["already_started_sessions_held"], 2)
+                self.assertEqual(out["public_writes"], 0)
 
 
 if __name__ == "__main__":
