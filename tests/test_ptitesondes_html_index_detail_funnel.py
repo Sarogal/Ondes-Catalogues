@@ -263,5 +263,60 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertFalse(result["approval_granted"])
 
 
+
+class RepresentativeSamplingAndDedupTests(unittest.TestCase):
+    def test_sampling_prefers_supported_topics_but_never_claims_event_proof(self):
+        relevant = "https://mpt.montpellier.fr/evenement/zzz-atelier-motricite"
+        nonspecific = "https://mpt.montpellier.fr/evenement/aaa-information"
+        result, _, pages = probe(
+            index_links=(nonspecific, relevant),
+            details={nonspecific: MPT_HTML, relevant: MPT_HTML},
+            limit=1,
+        )
+        self.assertEqual(pages.seen[0][0], relevant)
+        self.assertEqual(result["child_pages_skipped_by_limit"], 1)
+        self.assertFalse(result["independent_event_session_verified"])
+        self.assertFalse(result["approval_granted"])
+
+    def test_duplicate_official_urls_for_same_session_not_counted_twice(self):
+        other = "https://mpt.montpellier.fr/evenement/autre-parcours-motricite"
+        result, _, _ = probe(
+            index_links=(ONE, other),
+            details={ONE: MPT_HTML, other: MPT_HTML},
+        )
+        self.assertEqual(result["child_pages_read"], 2)
+        self.assertEqual(result["future_child_occurrences"], 1)
+        self.assertEqual(result["duplicate_child_sessions_held"], 1)
+        self.assertEqual(result["structurally_plausible_for_independent_review"], 1)
+
+    def test_different_exact_session_times_never_deduplicate(self):
+        other = "https://mpt.montpellier.fr/evenement/second-parcours-motricite"
+        second = MPT_HTML.replace("10:00 > 11:00", "15:00 > 16:00")
+        result, _, _ = probe(
+            index_links=(ONE, other),
+            details={ONE: MPT_HTML, other: second},
+        )
+        self.assertEqual(result["future_child_occurrences"], 2)
+        self.assertEqual(result["duplicate_child_sessions_held"], 0)
+
+    def test_numeric_url_variants_still_available_when_sampling_limit_grows(self):
+        stems = [
+            "https://mpt.montpellier.fr/evenement/attention-cirque",
+            "https://mpt.montpellier.fr/evenement/attention-cirque-0",
+            "https://mpt.montpellier.fr/evenement/parcours-motricite",
+        ]
+        result, _, pages = probe(
+            index_links=tuple(stems),
+            details={url: MPT_HTML for url in stems},
+            limit=2,
+        )
+        self.assertEqual(result["child_pages_matching_contract"], 3)
+        self.assertEqual(result["child_pages_selected"], 2)
+        self.assertEqual(result["child_pages_skipped_by_limit"], 1)
+        self.assertEqual({url for url, _, _ in pages.seen},
+                         {stems[0], stems[2]})
+        self.assertFalse(result["publisher_connected"])
+
+
 if __name__ == "__main__":
     unittest.main()
