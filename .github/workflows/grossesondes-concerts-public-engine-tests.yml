@@ -4,12 +4,18 @@ on:
   pull_request:
     paths:
       - 'automation/concerts/**'
+      - 'scripts/concerts_cloud_sync.py'
+      - 'scripts/concert_event_site_contract.py'
+      - 'tests/test_concerts_event_site_publisher.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   push:
     branches: [main]
     paths:
       - 'automation/concerts/**'
+      - 'scripts/concerts_cloud_sync.py'
+      - 'scripts/concert_event_site_contract.py'
+      - 'tests/test_concerts_event_site_publisher.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
