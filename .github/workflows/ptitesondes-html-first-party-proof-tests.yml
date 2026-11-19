@@ -1,0 +1,31 @@
+name: "P'tites Ondes — preuve de séance HTML en lecture seule"
+
+# Prévalidation hors réseau des trois couches HTML ; ne publie aucune donnée.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_html_first_party_session_proof.py'
+      - 'scripts/ptitesondes_html_index_detail_funnel.py'
+      - 'scripts/ptitesondes_html_registry_history_triage.py'
+      - 'tests/test_ptitesondes_html_*.py'
+      - '.github/workflows/ptitesondes-html-first-party-proof-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-html-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Refuser faux horaires, étiquettes masquées et droits implicites
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_html_*.py' -v
