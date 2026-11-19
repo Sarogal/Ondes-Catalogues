@@ -111,6 +111,24 @@ class EventSitePublisherContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     sync.validate_venue_approval(r, TODAY, e)
 
+    def test_event_site_does_not_approve_pop_techno_or_unknown_genres(self):
+        row, events = fixtures()
+        for labels in ([], ["Pop"], ["Hardcore Techno"], ["Rap"],
+                       ["Hardtek"], ["Électro"], ["Rock"]):
+            with self.subTest(genres=labels):
+                signed = copy.deepcopy(events)
+                signed[0]["event"]["genres"] = labels
+                with self.assertRaises(ValueError):
+                    sync.validate_venue_approval(row, TODAY, signed)
+        for labels in (["Heavy Metal"], ["Hard Rock"], ["Punk Rock"],
+                       ["Deathcore"], ["Stoner Rock"], ["Shoegaze"]):
+            with self.subTest(relevant=labels):
+                signed = copy.deepcopy(events)
+                signed[0]["event"]["genres"] = labels
+                self.assertEqual(
+                    sync.validate_venue_approval(row, TODAY, signed),
+                    row["venue"])
+
     def test_site_geography_and_independent_source_are_not_guessed(self):
         row, events = fixtures()
         cases = (
