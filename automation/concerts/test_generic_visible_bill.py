@@ -167,6 +167,43 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
             "</script>")
         self.assertIsNone(extract(misleading))
 
+    def test_reviewed_venue_skips_agenda_and_filter_pages_before_finite_probes(self):
+        # These listing links all match the old broad EVENT_URL regexp, but
+        # cannot satisfy the independently approved individual-event path.
+        homepage = (
+            '<a href="https://larayonne.org/agenda/">Agenda</a>'
+            '<a href="https://larayonne.org/agenda/?type=metal">Metal</a>'
+            '<a href="https://larayonne.org/programmation/">Programme</a>'
+            '<a href="' + URL + '">Official concert</a>'
+        )
+        requested = []
+        def fetch(url, *args, **kwargs):
+            requested.append(url)
+            if url == SOURCE["url"]:
+                return homepage, url
+            if url == URL:
+                return page(), url
+            raise AssertionError("Generic listing wasted a detail read: " + str(url))
+
+        report = []
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
+             mock.patch.object(discover.feeds, "feed_links",
+                               return_value={"rss": [], "ics": []}):
+            rows = discover.scan_venues(
+                {"venues": [SOURCE]}, set(), TODAY, report, scan_slot=2)
+        self.assertEqual(requested, [SOURCE["url"], URL])
+        self.assertEqual(report[0]["eventDetailLinksFound"], 1)
+        self.assertEqual(report[0]["eventDetailPagesFetched"], 1)
+        self.assertEqual(report[0]["htmlVisibleBillLeads"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["source"], "agenda_officiel_visible_bill")
+
+    def test_unreviewed_sources_cannot_use_generic_event_trust(self):
+        unknown = {**SOURCE, "name": "Unreviewed Hall",
+                   "url": "https://unreviewed.example/"}
+        self.assertIsNone(extract(source=unknown))
+
     def test_integration_uses_same_three_preexisting_official_http_reads(self):
         # The official homepage lists a genuine first-party event. The
         # previously fetched individual page is reused, with NO extra fetch.

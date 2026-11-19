@@ -492,6 +492,32 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                 if same_host(next_url, base) and EVENT_URL.search(urllib.parse.urlsplit(next_url).path):
                     if next_url not in links and next_url != final:
                         links.append(next_url)
+            # The code-reviewed generic venue contract accepts INDIVIDUAL
+            # show pages only. Generic /agenda/, /programmation/ and filtered
+            # listings previously consumed the three daily detail probes even
+            # though they can never prove a concert via the HTML verifier.
+            # This restricts reads ONLY for venues already present in the
+            # immutable verified host/venue manifest. Other collectors keep
+            # their existing navigation behaviour and network budget.
+            import generic_music_event
+            reviewed_generic_source = any(
+                norm(source.get("name")) == norm(spec["name"])
+                and norm(source.get("city")) == norm(spec["city"])
+                and str(source.get("department")) == spec["department"]
+                and urllib.parse.urlsplit(base).hostname == spec["host"]
+                for spec in generic_music_event.SPECS.values()
+            )
+            if reviewed_generic_source:
+                identity = {
+                    "venue": source.get("name"), "city": source.get("city"),
+                    "department": source.get("department"),
+                }
+                links = [
+                    link for link in links
+                    if generic_music_event.trusted_spec({
+                        **identity, "sourceUrl": link,
+                    }) is not None
+                ]
             for link in ([] if source.get("adapter") in (
                     "tetris_official_detail_review", "cargo_official_detail_review",
                     "bbc_official_detail_review",
