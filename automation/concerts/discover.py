@@ -128,7 +128,14 @@ def make_known_keys(catalogue):
     for event in catalogue.get("events", []):
         venue = venues.get(str(event.get("venueId")), {})
         if event.get("date") and venue.get("city"):
-            keys.add((event["date"], norm(venue["city"]), norm(artist_name(event, artists))))
+            # Same-city artist is an ADVISORY collision only. The same artist
+            # may appear at a different place (including a one-off outdoor
+            # stage) without making it the already-published concert.
+            common = (event["date"], norm(venue["city"]),
+                      norm(artist_name(event, artists)))
+            keys.add(common)
+            if venue.get("name"):
+                keys.add((common[0], common[1], norm(venue["name"]), common[2]))
         # Identical first-party detail URLs are a strong published-record
         # match, even when an agenda title omits supporting artists.
         source_url=event.get("officialUrl")
@@ -139,10 +146,19 @@ def make_known_keys(catalogue):
 
 def mark_match(event, known):
     artist = event.get("leadArtist") or event.get("name") or ""
-    match = (event.get("date"), norm(event.get("city")), norm(artist))
-    url=event.get("sourceUrl")
-    event["possibleExistingConcert"] = (match in known or
-        (isinstance(url,str) and ("officialUrl",url) in known))
+    day, city, name = (event.get("date"), norm(event.get("city")), norm(artist))
+    location = norm(event.get("venue"))
+    same_city_artist = (day, city, name) in known
+    same_place_artist = (day, city, location, name) in known if location else False
+    url = event.get("sourceUrl")
+    same_url = isinstance(url, str) and ("officialUrl", url) in known
+    # Without a place, the collision stays conservative; with two different
+    # explicitly named places, record the warning but do not block a verified
+    # new event merely because the artist plays in the same city and day.
+    event["sameCityArtistCollisionAdvisory"] = bool(
+        same_city_artist and location and not same_place_artist and not same_url)
+    event["possibleExistingConcert"] = bool(
+        same_url or same_place_artist or (same_city_artist and not location))
     event["publicationAllowed"] = False
     event["reviewRequired"] = True
     return event
