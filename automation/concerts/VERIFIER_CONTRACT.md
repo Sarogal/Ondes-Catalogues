@@ -15,6 +15,21 @@ A new verifier must accept **future concerts from the venue**. The code must nev
 7. Door opening hours never become musical start hours. A concert being sold out is not a cancellation.
 8. Any **published** event from an officially supported venue is eligible for a read-only published-watch review, **without adding its ID to the code**. Change detection never deletes or cancels an event by itself.
 
+## Source-wide first-party venue registry
+
+`reviewed_venue_specs_v1.json` is the **only committed venue authority** for
+the generic structured verifier. The verifier reads it through a strict,
+immutable, fail-closed loader: source discovery feeds and private registries
+cannot register or alter an authorized host. Each new entry requires a reviewed
+official host, venue identity, geography and real representative event proofs,
+plus contract/publisher regression tests. Never add individual concert IDs,
+artist names, dates or event URLs as admission rules.
+
+`venue_admission_audit.py` is a **read-only, non-authorizing** discovery
+report. Exact source/catalogue venue matches, HTTPS and geography are triage
+inputs only. Even an apparently perfect match never changes the trusted
+registry, signs an approval or publishes an event.
+
 ## Required regression matrix
 
 - At least two distinct real future bills from the same venue, plus 1/2/8/20 entirely different named artists.
@@ -24,4 +39,4 @@ A new verifier must accept **future concerts from the venue**. The code must nev
 - Forged approvals and identity/provenance/time metadata must fail the **publisher**, not merely the source parser.
 - Successful Concerts engine and synchronizer CI on the final change, and source-wide read-only watchdog coverage.
 
-Operational boundary: isolated branches and draft PRs only until authorized. Never silently merge, alter Infomaniak, write private approvals or public catalogue JSON, or change production workflows.
+Operational boundary: CI-validated, controlled merges only. Never alter Infomaniak, write private approvals or public catalogue JSON during a venue admission audit, or change unrelated production workflows.
