@@ -17,7 +17,7 @@ A new verifier must accept **future concerts from the venue**. The code must nev
 
 ## Source-wide first-party venue registry
 
-`reviewed_venue_specs_v1.json` is the **only committed venue authority** for
+`generic_first_party_venue_specs_v1.json` is the **only committed venue authority** for
 the generic structured verifier. The verifier reads it through a strict,
 immutable, fail-closed loader: source discovery feeds and private registries
 cannot register or alter an authorized host. Each new entry requires a reviewed
@@ -29,6 +29,12 @@ artist names, dates or event URLs as admission rules.
 report. Exact source/catalogue venue matches, HTTPS and geography are triage
 inputs only. Even an apparently perfect match never changes the trusted
 registry, signs an approval or publishes an event.
+
+`reviewed_venue_specs_v1.json` is a **different publisher contract** for
+independently reviewed *new venue address/location* evidence. Its `venues`
+map remains empty until a separate geographical approval PR; it must **never**
+be reused for generic source host registrations. The two independent schemas
+are intentionally kept separate and tested together.
 
 ## Required regression matrix
 
