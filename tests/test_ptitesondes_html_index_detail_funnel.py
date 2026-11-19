@@ -233,7 +233,7 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertTrue(all(r["venue"] == "Maison pour tous Albert Camus"
                             for r in rows))
         self.assertTrue(all(r["price_evidence"] == "ambiguous" for r in rows))
-        self.assertTrue(all(r["category"] is None for r in rows))
+        self.assertTrue(all(r["category"] == "atelier-sensoriel" for r in rows))
         self.assertNotIn("2026-11-23", [r["date_start"] for r in rows])
 
     def test_wrong_house_organizer_held_without_untrusted_place_alias(self):
@@ -254,12 +254,12 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertEqual(len(parse_montpellier_mpt_detail(
             changed, ONE, TODAY)), 2)
 
-    def test_unclassified_sessions_visible_in_anonymous_funnel(self):
+    def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["child_pages_read"], 1)
         self.assertEqual(result["future_child_occurrences"], 2)
-        self.assertEqual(result["unclassified_occurrences_held"], 2)
-        self.assertEqual(result["structurally_plausible_for_independent_review"], 0)
+        self.assertEqual(result["unclassified_occurrences_held"], 0)
+        self.assertEqual(result["structurally_plausible_for_independent_review"], 2)
         self.assertEqual(result["public_writes"], 0)
         self.assertFalse(result["approval_granted"])
 
@@ -333,7 +333,8 @@ class ExactLocalClockTests(unittest.TestCase):
         self.assertTrue(report["exact_local_clock_cutoff_applied"])
         self.assertEqual(report["already_started_sessions_held"], 1)
         self.assertEqual(report["future_child_occurrences"], 1)
-        self.assertEqual(report["unclassified_occurrences_held"], 1)
+        self.assertEqual(report["unclassified_occurrences_held"], 0)
+        self.assertEqual(report["structurally_plausible_for_independent_review"], 1)
         self.assertEqual(
             redact_detail_funnel_report(report)["already_started_sessions_held"], 1)
 
