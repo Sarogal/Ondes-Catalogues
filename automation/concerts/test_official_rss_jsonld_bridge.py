@@ -72,6 +72,22 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertIs(checked["publicationAllowed"], False)
         self.assertIs(checked["reviewRequired"], True)
 
+    def test_generic_event_cannot_be_accepted_by_first_discovery_alone(self):
+        # Opt-in to generic Event is limited to independent diagnostics:
+        # the RSS first-pass discovery policy still requires MusicEvent.
+        generic = html_for(**{"@type": "Event"})
+        self.assertIsNone(evaluate(page=generic))
+        row = bridge.candidate_from_event_page(
+            LEAD, generic, EVENT_URL, SOURCE, set(), TODAY,
+            read_ld=discover.read_ld,
+            venue_candidate=discover.venue_candidate,
+            norm=discover.norm, allow_generic_event=True)
+        self.assertIsNotNone(row)
+        self.assertEqual(row["discoveryBridge"],
+                         "independent-generic-event-genre-v1")
+        self.assertFalse(row["publicationAllowed"])
+        self.assertNotIn("officialDetailFound", row)
+
     def test_confirmed_headliner_and_trailing_surprise_guest_are_discoverable(self):
         import copy
         sample = [

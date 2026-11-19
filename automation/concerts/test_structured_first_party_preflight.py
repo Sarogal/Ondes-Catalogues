@@ -206,6 +206,45 @@ class StructuredIndependentPreflightTests(unittest.TestCase):
                 self.assertEqual(result["structureMatched"], 0)
                 self.assertEqual(result["results"][0]["status"], "held")
 
+    def test_explicit_metal_generic_event_is_independent_evidence_only(self):
+        # Real first-party sites can encode concerts as schema.org Event, not
+        # MusicEvent. Exact venue/date/artists and a tagged music genre remain
+        # mandatory; a structural match never signs a publication.
+        report = run(fetch=lambda url, **kw: (
+            page(**{"@type": "Event"}), url))
+        self.assertEqual(report["structureMatched"], 1)
+        self.assertEqual(report["results"][0]["status"],
+                         "independent_structure_matched")
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publicationAllowed"])
+
+    def test_unknown_genre_generic_event_can_recover_explicit_tag_only(self):
+        old = candidate()
+        old["classification"] = []
+        old["reviewBucket"] = "genre_unknown"
+        old["genreEvidence"] = None
+        report = run(reg=registry([old]), fetch=lambda url, **kw: (
+            page(**{"@type": "Event"}), url))
+        self.assertEqual(report["exploratoryGenreRecovered"], 1)
+        self.assertEqual(report["structureMatched"], 0)
+        self.assertEqual(report["approvalsProposed"], 0)
+
+    def test_generic_event_rejects_generic_rock_missing_artist_or_many_cards(self):
+        rejected = [
+            page(**{"@type": "Event", "genre": "Rock"}),
+            page(**{"@type": "Event", "performer": "Unverified group"}),
+            ('<script type="application/ld+json">' + json.dumps([
+                event_data(**{"@type": "Event"}),
+                event_data(**{"@type": "Event", "name": "Another concert"}),
+            ], ensure_ascii=False) + '</script>'),
+        ]
+        for html in rejected:
+            with self.subTest(html=html[:90]):
+                report = run(fetch=lambda url, **kw: (html, url))
+                self.assertEqual(report["structureMatched"], 0)
+                self.assertEqual(report["reasonCounts"], {
+                    "structured_event_proof_missing_or_ambiguous": 1})
+
     def test_unknown_venue_or_cross_origin_is_never_fetched(self):
         fail_fetch = lambda url, **kw: self.fail("Must not request untrusted source")
         unmatched = {**SOURCES, "venues": []}

@@ -139,7 +139,8 @@ def build(registry, sources, catalogue, approvals, today, *,
                         candidate, page, actual, source, set(),
                         today, read_ld=discover.read_ld,
                         venue_candidate=discover.venue_candidate,
-                        norm=discover.norm)
+                        norm=discover.norm,
+                        allow_generic_event=True)
                     if not fresh:
                         reason = "structured_event_proof_missing_or_ambiguous"
                     elif any(fresh.get(field) != candidate.get(field)

@@ -11,6 +11,8 @@ import datetime as dt
 import re
 from urllib.parse import urlsplit
 
+import triage
+
 _UNANNOUNCED = frozenset({
     "guest", "guests", "special guest", "surprise", "tba", "to be announced",
     "premiere partie", "première partie", "a confirmer", "à confirmer",
@@ -143,7 +145,7 @@ def official_named_bill(value):
 
 def candidate_from_event_page(
         lead, html, actual_url, source, known, day, *,
-        read_ld, venue_candidate, norm):
+        read_ld, venue_candidate, norm, allow_generic_event=False):
     """Require one event, a real named performer, venue and source corroboration.
 
     This function returns a QUARANTINED discovery lead only. In particular,
@@ -155,13 +157,26 @@ def candidate_from_event_page(
             or expected.rstrip("/") != actual_url.rstrip("/")
             or not isinstance(html, str) or len(html) > 1_000_000):
         return None
-    music = [e for e in read_ld(html)
-             if isinstance(e, dict)
-             and "MusicEvent" in _event_types(e.get("@type"))]
-    # A page presenting several future shows is not an individual event proof.
-    if len(music) != 1:
+    structures = [e for e in read_ld(html) if isinstance(e, dict)]
+    music = [e for e in structures
+             if "MusicEvent" in _event_types(e.get("@type"))]
+    # The ordinary RSS bridge retains its original MusicEvent-only policy.
+    # During independent recheck we may also inspect a generic schema.org
+    # Event, but only with an explicit, recognized event-level music genre.
+    # A venue's global tags, an artist biography or generic Rock do not count.
+    generic_event = False
+    if len(music) == 1:
+        event = music[0]
+    elif len(music) == 0 and allow_generic_event:
+        generic = [e for e in structures
+                   if "Event" in _event_types(e.get("@type"))]
+        if len(generic) != 1 or not triage.genre_evidence(
+                {"classification": generic[0].get("genre")}):
+            return None
+        event = generic[0]
+        generic_event = True
+    else:
         return None
-    event = music[0]
     canonical = event.get("url")
     if (canonical is not None
             and (not official_event_url(canonical, source.get("url"))
@@ -203,5 +218,8 @@ def candidate_from_event_page(
         return None
     # Do not set officialDetailFound: this is the first discovery proof,
     # not an independent verification of a new performance or band.
-    row["discoveryBridge"] = "official-rss-music-event-v1"
+    row["discoveryBridge"] = (
+        "independent-generic-event-genre-v1" if generic_event
+        else "official-rss-music-event-v1"
+    )
     return row
