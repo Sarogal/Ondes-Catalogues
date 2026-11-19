@@ -18,6 +18,7 @@ from grossesondes_institutional_edition import (
 )
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from grossesondes_institutional_edition import institutional_date
+from grossesondes_official_html_edition import VisibleText, fold
 from national_detail_qualification import _seen_again
 from regional_festival_discovery import candidate_links
 from source_qualification import Anchors, clean_url, classify, normalized
@@ -83,8 +84,22 @@ def trusted_live_link(spec, today, institution_fetch=get_page):
 
 
 def prove_dates(site_html, title, year, today):
-    """Whole, exact-year visible dates and no contradictory same-edition JSON-LD."""
+    """Whole, exact-year visible dates and no contradictory same-edition JSON-LD.
+
+    A concert tour with 'Fest' in the marketing name is not automatically
+    a distinct festival edition. Require the absence of an explicit
+    same-page touring-concert declaration close to the event announcement.
+    """
     try:
+        visible = VisibleText()
+        visible.feed(site_html)
+        visible.close()
+        text = " ".join(fold(" ".join(visible.parts)).split())
+        # A strong touring statement vetoes an otherwise ambiguous Fest name.
+        if re.search(r"\b(?:tournee itinerante|tournee de [0-9]+ concerts?|"
+                     r"concerts? de la tournee|date de la tournee|"
+                     r"concert tour|tour de concerts?)\b", text):
+            return None
         start, end = institutional_date(site_html, title, year)
         if (start < date.fromisoformat(today) or
                 start.year != year or end.year != year or
