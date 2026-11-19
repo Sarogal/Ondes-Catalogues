@@ -264,18 +264,35 @@ def _mpt_first_party_venue(parts):
 
 
 def _mpt_adult_only_declared(parts):
-    """Do not treat 'children' in an adult-only description as child audience."""
-    short_labels = [norm(chunk) for chunk in parts[:8]
-                    if isinstance(chunk, str) and len(chunk) <= 85]
-    adult_tags = frozenset(("adultes", "adultes seniors", "seniors",
-                            "adultes uniquement", "public adulte"))
-    if not any(x in adult_tags for x in short_labels):
+    """Use explicit template audience *labels*, not descriptive child words.
+
+    A description about a young child is not evidence that the workshop
+    welcomes children. A genuine mixed label such as 'Enfants, Adultes'
+    must remain eligible for later independent review.
+    """
+    vocabulary = frozenset((
+        "enfant", "enfants", "adultes", "adulte", "seniors", "senior",
+        "famille", "familles", "tout", "tous", "public", "petit", "petits",
+        "bebe", "bebes", "premiers", "ages", "adolescent", "adolescents",
+        "seulement", "uniquement",
+    ))
+    audience_rows = []
+    for chunk in parts[:10]:
+        if not isinstance(chunk, str) or len(chunk) > 80:
+            continue
+        tokens = norm(chunk).split()
+        if 1 <= len(tokens) <= 6 and set(tokens) <= vocabulary:
+            audience_rows.append(set(tokens))
+    if not any(row & {"adultes", "adulte", "seniors", "senior"}
+               for row in audience_rows):
         return False
-    youth = re.compile(
-        r"\b(enfants?|tout petits?|bebes?|premiers ages|"
-        r"familles?|tout public|adolescents?)\b"
-    )
-    return not any(youth.search(x) for x in short_labels)
+    child_cues = {
+        "enfant", "enfants", "famille", "familles", "bebe", "bebes",
+        "petit", "petits", "premiers", "adolescent", "adolescents",
+    }
+    return not any((row & child_cues or
+                    {"tout", "public"} <= row)
+                   for row in audience_rows)
 
 
 def parse_montpellier_mpt_detail(html, url, today):
