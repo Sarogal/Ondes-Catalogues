@@ -27,6 +27,9 @@ from ptitesondes_html_registry_history_triage import triage_independent_context
 from ptitesondes_html_first_party_session_proof import (
     corroborate_first_party_session,
 )
+from ptitesondes_html_independent_venue_geo import (
+    diagnose_html_independent_venue,
+)
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -78,6 +81,12 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "first_party_audience_cues_missing": 0,
         "first_party_access_review_pending": 0,
         "first_party_all_visible_cues": 0,
+        "geo_distinct_venues_probed": 0,
+        "geo_independent_ban_registry_concordant": 0,
+        "geo_official_address_unstructured": 0,
+        "geo_ban_housenumber_unverified": 0,
+        "geo_ban_registry_conflict": 0,
+        "geo_other_unverified": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
         "independent_venue_verified": False,
@@ -122,7 +131,8 @@ def _diverse_probe_order(children):
 def diagnose_html_index_detail_funnel(
         independently_pinned_index, adapter_id, today,
         *, max_details=12, as_of=None, index_opener=None,
-        detail_opener=None, independent_context=None):
+        detail_opener=None, independent_context=None,
+        geo_probe_limit=0, geo_venue_reader=None, geo_ban_reader=None):
     """Sample one approved official index and independently fetch child pages.
 
     A positive scope diagnostic only means a candidate has the *shape* of a
@@ -135,7 +145,12 @@ def diagnose_html_index_detail_funnel(
             or set(independently_pinned_index)
             != {"approved_host", "exact_index_url"}
             or not isinstance(adapter_id, str)
-            or adapter_id not in READ_ONLY_ADAPTERS):
+            or adapter_id not in READ_ONLY_ADAPTERS
+            or type(geo_probe_limit) is not int
+            or not 0 <= geo_probe_limit <= 3
+            or (geo_venue_reader is None) != (geo_ban_reader is None)
+            or (geo_venue_reader is not None and
+                (not callable(geo_venue_reader) or not callable(geo_ban_reader)))):
         return _empty()
     contract = READ_ONLY_ADAPTERS[adapter_id]
     if independently_pinned_index["approved_host"] != contract["host"]:
@@ -184,6 +199,7 @@ def diagnose_html_index_detail_funnel(
     result["child_pages_skipped_by_limit"] = len(children) - len(selected)
 
     seen_sessions = set()
+    probed_geo_venues = set()
     for child in selected:
         try:
             page = fetch_official_page({
@@ -291,6 +307,35 @@ def diagnose_html_index_detail_funnel(
                 "clear": "historical_no_collision_found",
                 "not_checked": "historical_not_checked",
             }[history]] += 1
+            # Only a bounded, independently reviewed *unique building* is
+            # probed. An event's claimed coordinates and URL never create the
+            # registry pin. This is a read-only venue-only diagnostic.
+            if (geo_probe_limit and venue == "matched" and
+                    history == "clear" and
+                    corroboration["visible_exact_session"]):
+                key = (norm(row.get("city")), norm(row.get("venue")))
+                if (key not in probed_geo_venues and
+                        len(probed_geo_venues) < geo_probe_limit):
+                    probed_geo_venues.add(key)
+                    kwargs = {}
+                    if geo_venue_reader is not None:
+                        kwargs = {
+                            "venue_reader": geo_venue_reader,
+                            "ban_reader": geo_ban_reader,
+                        }
+                    geo = diagnose_html_independent_venue(
+                        row, independent_context, **kwargs)
+                    result["geo_distinct_venues_probed"] += 1
+                    if geo["geometry_evidence_consistent"]:
+                        result["geo_independent_ban_registry_concordant"] += 1
+                    elif geo["reason"] == "official_venue_address_not_structured":
+                        result["geo_official_address_unstructured"] += 1
+                    elif geo["reason"] == "ban_housenumber_missing_or_ambiguous":
+                        result["geo_ban_housenumber_unverified"] += 1
+                    elif geo["reason"] == "ban_conflicts_with_reviewed_venue":
+                        result["geo_ban_registry_conflict"] += 1
+                    else:
+                        result["geo_other_unverified"] += 1
         try:
             scopes = scope_proposals(leads, today)
             result["structurally_plausible_for_independent_review"] += sum(
