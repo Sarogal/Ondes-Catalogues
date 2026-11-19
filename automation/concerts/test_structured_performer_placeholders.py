@@ -91,7 +91,7 @@ class StructuredPerformerPlaceholderTests(unittest.TestCase):
         row = discovered()
         result = official_html_evidence.inspect(row, html(), URL, SOURCE)
         self.assertEqual(result["status"],
-                         "html_event_genre_visible_lineup_unverified")
+                         "html_explicit_named_artist_headings_review_only")
         self.assertEqual(result["genres"], ["Metal Indus"])
         self.assertFalse(result["publicationAllowed"])
         self.assertEqual(result["approvalsProposed"], 0)
@@ -110,7 +110,8 @@ class StructuredPerformerPlaceholderTests(unittest.TestCase):
             robots=lambda url, cache: True, limit=8,
         )
         self.assertEqual(report["exploratoryAttempted"], 1)
-        self.assertEqual(report["htmlGenreVisibleLineupUnverified"], 1)
+        self.assertEqual(report["htmlGenreVisibleLineupUnverified"], 0)
+        self.assertEqual(report["htmlFullyNamedArtistHeadingReviewOnly"], 1)
         self.assertEqual(report["htmlGenreEvidenceFound"], 0)
         self.assertEqual(report["structureMatched"], 0)
         self.assertEqual(report["approvalsProposed"], 0)
