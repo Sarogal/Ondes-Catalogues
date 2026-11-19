@@ -269,7 +269,8 @@ class GoArtistEventResolver {
             // upcoming performance just because the festival runs today.
             if (date.isBefore(todayUtc)) continue;
             announced.add(name);
-            datesByArtist.putIfAbsent(artistId, () => []).add(date);
+            final days = datesByArtist.putIfAbsent(artistId, () => []);
+            if (!days.contains(date)) days.add(date);
           }
         }
       }
@@ -360,11 +361,33 @@ class GoArtistEventResolver {
     // and must also happen when the app stays open across midnight.
     final now = asOf ?? DateTime.now();
     final day = DateTime.utc(now.year, now.month, now.day);
-    bool upcoming(GoArtistEventLink link) => link.isExactPerformanceDate
-        ? link.performanceDates.any((date) => !date.isBefore(day))
-        : !(link.endDate ?? link.date).isBefore(day);
-    final concerts = profile.concerts.where(upcoming).toList(growable: false);
-    final festivals = profile.festivals.where(upcoming).toList(growable: false);
+    GoArtistEventLink? remaining(GoArtistEventLink link) {
+      if (!link.isExactPerformanceDate) {
+        return (link.endDate ?? link.date).isBefore(day) ? null : link;
+      }
+      final futureDays = link.performanceDates
+          .where((date) => !date.isBefore(day)).toList(growable: false);
+      if (futureDays.isEmpty) return null;
+      if (futureDays.length == link.performanceDates.length) return link;
+      // A band playing twice at the same festival may have one date already
+      // passed. Promote the earliest remaining *verified* slot, not a range.
+      return GoArtistEventLink(
+        eventId: link.eventId,
+        title: link.title,
+        date: futureDays.first,
+        isExactPerformanceDate: true,
+        location: link.location,
+        city: link.city,
+        region: link.region,
+        officialUrl: link.officialUrl,
+        ticketUrl: link.ticketUrl,
+        performanceDates: List.unmodifiable(futureDays),
+      );
+    }
+    final concerts = profile.concerts
+        .map(remaining).whereType<GoArtistEventLink>().toList(growable: false);
+    final festivals = profile.festivals
+        .map(remaining).whereType<GoArtistEventLink>().toList(growable: false);
     if (concerts.isEmpty && festivals.isEmpty) return null;
     return GoArtistEventProfile(
       artistId: profile.artistId,
