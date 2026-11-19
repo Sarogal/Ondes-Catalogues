@@ -19,6 +19,7 @@ PROOF_MODE = "structured-edition.v1"
 ARCHIVED_PROOF_MODE = "structured-archived-edition.v1"
 HTML_PROOF_MODE = "official-html-edition.v1"
 ARCHIVED_HTML_PROOF_MODE = "official-html-archived-edition.v1"
+ARCHIVED_BROWSER_PROOF_MODE = "official-browser-archived-edition.v1"
 SLUG = re.compile(r"^(.+)-(20[2-4][0-9])$")
 EMBEDDED_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 
@@ -217,7 +218,8 @@ def validate_archived_structured_edition(proposal, archived, html, today,
     existing public cloud publisher, not supplied from the private proposal.
     """
     if (not isinstance(proposal, dict) or not isinstance(archived, dict)
-            or proof_mode not in (ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)
+            or proof_mode not in (ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+                                  ARCHIVED_BROWSER_PROOF_MODE)
             or proposal.get("proofMode") != proof_mode
             or proposal.get("originSlug") != archived.get("slug")):
         return None
@@ -234,8 +236,8 @@ def validate_archived_structured_edition(proposal, archived, html, today,
         return None
     # Reuse the stricter published-parent validator unchanged, with an
     # internal proof-mode adapter. A forged field or extra key still fails.
-    internal_mode = (HTML_PROOF_MODE if proof_mode == ARCHIVED_HTML_PROOF_MODE
-                     else PROOF_MODE)
+    internal_mode = (HTML_PROOF_MODE if proof_mode in (
+        ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE) else PROOF_MODE)
     adapted = dict(proposal, proofMode=internal_mode)
     result = validate_structured_edition(
         adapted, archived, html, today, proof_mode=internal_mode,
