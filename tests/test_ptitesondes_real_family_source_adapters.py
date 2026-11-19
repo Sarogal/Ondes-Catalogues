@@ -203,6 +203,32 @@ class MusicalIsolationTests(unittest.TestCase):
                          "lecture-jeunesse")
 
 
+
+class SensoryTopicIsolationTests(unittest.TestCase):
+    def test_explicit_snoezelen_and_sensory_terms_propose_new_topic(self):
+        for text in (
+            "Atelier snoezelen bébé",
+            "Espace sensoriel tout-petits",
+            "Éveil sensoriel pour les enfants",
+            "Ateliers sensoriels en famille",
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(classify(text), "atelier-sensoriel")
+
+    def test_sensory_topic_never_overrides_music_or_multi_topic_ambiguity(self):
+        for title in (
+            "Éveil musical et sensoriel",
+            "Concert snoezelen",
+            "Atelier motricité sensorielle",
+        ):
+            with self.subTest(title=title):
+                self.assertIsNone(classify(title))
+
+    def test_weak_generic_words_do_not_create_sensorial_topic(self):
+        for title in ("Atelier bébé", "Espace famille", "Atelier détente"):
+            self.assertIsNone(classify(title))
+
+
 class IsolationTests(unittest.TestCase):
     def test_scope_contract_and_no_approval(self):
         mpt = parse_montpellier_mpt_detail(MPT_HTML, MPT, TODAY)
