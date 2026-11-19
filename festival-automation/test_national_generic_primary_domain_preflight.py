@@ -172,11 +172,15 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                     examine(state, bad, published, DAY1,
                             fetch=lambda u: self.fail("forged queue fetched"))
 
-    def test_twice_daily_passes_discover_four_distinct_sources(self):
+    def test_twice_daily_passes_discover_eight_distinct_sources(self):
         state, queue, published = fixture()
         queue["dossiers"].extend([
             dossier("Festival Granit et Feu", "https://granit-feu.fr/", DAY1),
             dossier("Festival Lames de Nuit", "https://lames-nuit.fr/", DAY1),
+            dossier("Festival Roche et Riff", "https://roche-riff.fr/", DAY1),
+            dossier("Festival Poussiere Rouge", "https://poussiere-rouge.fr/", DAY1),
+            dossier("Festival Coups de Tonnerre", "https://coups-tonnerre.fr/", DAY1),
+            dossier("Festival Sons Nocturnes", "https://sons-nocturnes.fr/", DAY1),
         ])
         visited = []
         def html(url):
@@ -185,21 +189,21 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                         if d["sources"][0]["url"] == url)
             return f"<main><h1>{name} 2027</h1><p>Les 4 et 5 juin 2027.</p></main>"
         morning = examine(state, queue, published, DAY1, fetch=html)
-        self.assertEqual(morning["checked_count"], 2)
-        first_two = set(visited)
+        self.assertEqual(morning["checked_count"], 4)
+        first_four = set(visited)
         visited.clear()
         evening = examine(state, queue, published, DAY1, fetch=html)
-        self.assertEqual(evening["checked_count"], 2)
-        self.assertFalse(first_two.intersection(visited))
-        self.assertEqual(len(first_two.union(visited)), 4)
+        self.assertEqual(evening["checked_count"], 4)
+        self.assertFalse(first_four.intersection(visited))
+        self.assertEqual(len(first_four.union(visited)), 8)
         self.assertEqual(evening["two_day_dates_count"], 0)
         queue["as_of"] = DAY2
         for d in queue["dossiers"]:
             d["sources"][0]["lastSeen"] = DAY2
         early = examine(state, queue, published, DAY2, fetch=html)
         late = examine(state, queue, published, DAY2, fetch=html)
-        self.assertEqual(early["two_day_dates_count"], 2)
-        self.assertEqual(late["two_day_dates_count"], 2)
+        self.assertEqual(early["two_day_dates_count"], 4)
+        self.assertEqual(late["two_day_dates_count"], 4)
 
     def test_two_day_rotation_prioritizes_stable_next_day(self):
         state, queue, published = fixture()
@@ -214,7 +218,7 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                         if d["sources"][0]["url"] == url)
             return f"<main><h1>{name} 2027</h1><p>Les 4 et 5 juin 2027.</p></main>"
         first = examine(state, queue, published, DAY1, fetch=html)
-        self.assertEqual(first["checked_count"], 2)
+        self.assertEqual(first["checked_count"], 4)
         before = set(visited)
         queue["as_of"] = DAY2
         for d in queue["dossiers"]:
@@ -222,7 +226,7 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         visited.clear()
         second = examine(state, queue, published, DAY2, fetch=html)
         self.assertEqual(set(visited), before)
-        self.assertEqual(second["two_day_dates_count"], 2)
+        self.assertEqual(second["two_day_dates_count"], 4)
 
 
 if __name__ == "__main__":
