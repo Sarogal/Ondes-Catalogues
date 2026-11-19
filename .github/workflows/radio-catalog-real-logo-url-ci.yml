@@ -1,0 +1,90 @@
+name: "GO — contrôle HTTPS de huit images publiques (sans artefact ni déploiement)"
+on:
+  push:
+    branches:
+      - audit/radio-catalog-contract-ci-20261115
+    paths:
+      - ".github/workflows/radio-catalog-real-logo-url-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-real-logo-8-url-probe
+  cancel-in-progress: false
+
+jobs:
+  verify-public-urls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: "Install image decoder only"
+        run: python -m pip install --disable-pip-version-check "Pillow==11.3.0"
+      - name: "Probe 8 explicitly pinned public HTTPS image URLs, never publish files"
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import sys
+          from urllib.parse import urlsplit
+          sys.path.insert(0, "radio-catalog-lab/tools")
+          from radio_catalog_logo_pilot_probe import fetch_strict_https, decode_image
+
+          # Only publicly visible image URLs; no private GO IDs,
+          # private staging, user credentials, secrets or radio-catalog bytes.
+          # One HTTPS request maximum per URL; no redirects. The input order
+          # is stable, and only digest/metadata/error is emitted, not image bytes.
+          urls = [
+            "https://somafm.com/img3/metal-400.png",
+            "https://www.lagrosseradio.com/wp-content/uploads/2025/03/LGR_Metal_carre-3.png",
+            "https://cdn1.lagrosseradio.com/wp-content/uploads/2025/03/LaGrosseRadio_Logo_Full_White_Metal%404x-1024x585.png",
+            "https://www.metalheartradio.com/assets/images/logo-mhr.png",
+            "https://arfm.co.uk/wp-content/uploads/2021/10/ARFM-White-Logo-2024-2.png",
+            "https://badrockradio.net/wp-content/uploads/2021/10/BadRock-Logo-tvoyat1.png",
+            "https://metalscena.sk/wp-content/uploads/2025/02/cropped-Metalscena_logo_2025.png",
+            "https://images.radiobob.de/files/2025-05/death_metal_stream_schrift.jpg?width=360&height=360",
+          ]
+          results = []
+          for i, url in enumerate(urls, 1):
+              # No attachment, app upload, caches or GitHub artifacts.
+              entry = {"candidate": i, "source_url": url,
+                       "status": "NOT_EDITORIALLY_APPROVED"}
+              try:
+                  host = urlsplit(url).hostname
+                  data, http_mime = fetch_strict_https(url, host)
+                  decoded_mime, width, height = decode_image(data)
+                  if http_mime != decoded_mime:
+                      raise ValueError("HTTP MIME differs from decoded image")
+                  entry.update({"retrieval": "PASS", "bytes": len(data),
+                                "sha256_observed": hashlib.sha256(data).hexdigest(),
+                                "mime": decoded_mime, "width": width,
+                                "height": height})
+              except Exception as exc:
+                  # No unexpected tracebacks containing tokens / payload bytes.
+                  entry.update({"retrieval": "FAILED", "error_type": type(exc).__name__,
+                                "error": str(exc)[:150]})
+              results.append(entry)
+          report = {
+              "phase": "NETWORK_PROBE_ONLY_NO_CATALOG_RELEASE",
+              "attempted": len(results),
+              "retrieved_and_decoded": sum(r["retrieval"] == "PASS" for r in results),
+              "failed": sum(r["retrieval"] == "FAILED" for r in results),
+              "approved_logos": 0,
+              "downloads_saved_or_uploaded": 0,
+              "production_modified": False,
+              "results": results,
+          }
+          print("GO_REAL_LOGO_PROBE_REPORT_BEGIN")
+          print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+          print("GO_REAL_LOGO_PROBE_REPORT_END")
+          if not report["retrieved_and_decoded"]:
+              sys.exit(2)
+          PY
