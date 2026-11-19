@@ -198,4 +198,9 @@ def inspect(candidate, html, actual_url, source):
                 genres.append(g)
     if not genres:
         return outcome("html_event_genre_unconfirmed")
+    # A source's JSON-LD may contain the generic Organization placeholder
+    # instead of real named MusicGroup/Person performers. A matching event
+    # headline is not independent line-up proof: keep this signal separate.
+    if candidate.get("structuredPerformerProof") == "missing_review_only":
+        return outcome("html_event_genre_visible_lineup_unverified", genres[:20])
     return outcome("html_explicit_event_genre_correlated", genres[:20])
