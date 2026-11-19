@@ -42,7 +42,7 @@ def _visible_event(html_text, spec, day):
     if len(headings) != 1:
         return None
     index, title = headings[0]
-    if not isinstance(title, str) or not 2 <= len(title) <= 500:
+    if not isinstance(title, str) or not 2 <= len(title) <= 1000:
         return None
 
     detail = blocks[index + 1:index + 201]
