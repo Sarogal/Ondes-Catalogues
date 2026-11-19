@@ -12,6 +12,7 @@ from unittest.mock import patch
 from radio_catalog_logo_pilot_probe import (
     MAX_LOGO_BYTES,
     checked_https_url,
+    checked_local_output_dir,
     fetch_strict_https,
     plan_pilot,
     run_pilot,
@@ -220,6 +221,37 @@ class PilotGuardTests(unittest.TestCase):
                                   ("10.0.0.1", 443))]):
             with self.assertRaisesRegex(ValueError, "Private/reserved"):
                 fetch_strict_https(URL_A, "radio.example.org")
+
+    def test_output_stays_inside_fresh_build_subfolder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(
+                checked_local_output_dir(Path("build/new-pilot"), root),
+                (root / "build" / "new-pilot").resolve(),
+            )
+            for path in [
+                Path("../other/pilot"),
+                Path("build/../outside"),
+                Path("build/../../escape"),
+                Path("build"),
+                root / "build" / "absolute",
+            ]:
+                with self.subTest(path=path), self.assertRaises(ValueError):
+                    checked_local_output_dir(path, root)
+
+    def test_build_symlink_outside_worktree_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            external = root / "outside"
+            external.mkdir()
+            worktree = root / "worktree"
+            worktree.mkdir()
+            try:
+                (worktree / "build").symlink_to(external, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                self.skipTest("Symlink creation not supported by filesystem")
+            with self.assertRaises(ValueError):
+                checked_local_output_dir(Path("build/new"), worktree)
 
     def test_empty_source_selection_not_allowed(self):
         pilot, stage, reuse = sample()
