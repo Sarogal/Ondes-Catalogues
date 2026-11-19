@@ -36,14 +36,17 @@ def run(backlog_path, source_registry_path, day):
     if today.isoformat() != day:
         raise ValueError("invalid_day")
     backlog = _read(backlog_path, MAX_BACKLOG_BYTES)
-    sources = _read(source_registry_path, MAX_REGISTRY_BYTES)
+    # No independently reviewed register is a legitimate inventory baseline.
+    # This NEVER promotes candidate metadata into an approved source.
+    sources = ([] if source_registry_path is None else
+               _read(source_registry_path, MAX_REGISTRY_BYTES))
     return census_institution_pins_on_private_backlog(backlog, sources, today)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--private-backlog", required=True)
-    parser.add_argument("--independently-curated-registry", required=True)
+    parser.add_argument("--independently-curated-registry")
     parser.add_argument("--today", required=True)
     args = parser.parse_args(argv)
     try:
