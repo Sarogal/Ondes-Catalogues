@@ -1,7 +1,8 @@
 """Reusable first-party RSS -> individually dated MusicEvent discovery bridge.
 
-RSS publishing timestamps are NEVER concert dates. Only a fresh first-party
-event page with exactly one structured MusicEvent can contribute a dated lead.
+RSS publishing timestamps are NEVER concert dates. A fresh first-party
+event page must present exactly one structured MusicEvent, or an explicitly
+genre-tagged Event on a trusted, opt-in first-party discovery path.
 Discovery remains quarantined: no signature, automatic approval or publisher
 invocation occurs here. Designed for different official venues, not one concert.
 """
@@ -219,7 +220,7 @@ def candidate_from_event_page(
     # Do not set officialDetailFound: this is the first discovery proof,
     # not an independent verification of a new performance or band.
     row["discoveryBridge"] = (
-        "independent-generic-event-genre-v1" if generic_event
+        "official-structured-generic-event-v1" if generic_event
         else "official-rss-music-event-v1"
     )
     return row
