@@ -7,6 +7,9 @@ There are NO per-concert names, IDs, dates or acceptance URLs in this module.
 from __future__ import annotations
 
 import datetime as dt
+import json
+import re
+from pathlib import Path
 from types import MappingProxyType
 from urllib.parse import urlsplit
 
@@ -15,18 +18,52 @@ import official_rss_jsonld_bridge as bridge
 import triage
 from official_recheck import norm, slug
 
-# Pilot: named official venues already represented by verified public
-# catalogue entries; expand ONLY in a reviewed pull request with real tests.
-SPECS = MappingProxyType({
-    "la-rayonne": MappingProxyType({
-        "name": "La Rayonne", "city": "Villeurbanne", "department": "69",
-        "host": "larayonne.org", "base": "https://larayonne.org/",
-    }),
-    "le-metronum": MappingProxyType({
-        "name": "Le Metronum", "city": "Toulouse", "department": "31",
-        "host": "lemetronum.fr", "base": "https://lemetronum.fr/",
-    }),
-})
+# Only the independently reviewed, COMMITTED manifest is allowed to grant
+# a first-party venue scope. Sources, candidates and private registry entries
+# never update this map. Adding a venue requires review and contract CI.
+MANIFEST = Path(__file__).with_name("reviewed_venue_specs_v1.json")
+
+
+def load_specs(path=MANIFEST):
+    """Read a strict manifest; malformed authority fails CLOSED at startup."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if (not isinstance(data, dict)
+            or set(data) != {"schema", "venues"}
+            or data["schema"] != "grossesondes.concert.reviewed-venue-specs.v1"
+            or not isinstance(data["venues"], dict)
+            or not data["venues"]):
+        raise ValueError("Manifeste de salles agréées invalide")
+    specs, seen = {}, set()
+    for venue_id, row in data["venues"].items():
+        if (not isinstance(venue_id, str)
+                or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", venue_id)
+                or not isinstance(row, dict)
+                or set(row) != {"name", "city", "department", "host", "base"}):
+            raise ValueError("Identité de salle agréée non conforme")
+        name, city, department, host, base = (
+            row["name"], row["city"], row["department"],
+            row["host"], row["base"])
+        if (not isinstance(name, str) or not 2 <= len(name) <= 100
+                or name != name.strip()
+                or not isinstance(city, str) or not 2 <= len(city) <= 100
+                or city != city.strip()
+                or not isinstance(department, str)
+                or not re.fullmatch(r"(?:[0-9]{2,3}|2A|2B)", department)
+                or not isinstance(host, str)
+                or not re.fullmatch(r"(?:[a-z0-9-]+\\.)+[a-z]{2,24}", host)
+                or host.startswith("www.")
+                or not isinstance(base, str)
+                or base != "https://" + host + "/"):
+            raise ValueError("Domaine HTTPS / géographie agréés non conformes")
+        identity = (norm(name), norm(city), department)
+        if identity in seen or host in (r["host"] for r in specs.values()):
+            raise ValueError("Salle ou hôte officiel agréé en doublon")
+        seen.add(identity)
+        specs[venue_id] = MappingProxyType(dict(row))
+    return MappingProxyType(specs)
+
+
+SPECS = load_specs()
 ALLOWED_HOSTS = frozenset(row["host"] for row in SPECS.values())
 
 
