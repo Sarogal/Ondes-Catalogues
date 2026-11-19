@@ -85,3 +85,34 @@ compté comme une veille réussie**.
 Ceci n'homologue ni les pages, ni les droits, ni les lieux et ne déclenche
 aucune écriture. Une CI réseau verte confirme **seulement la capacité de
 lecture du petit échantillon à la date de son exécution**.
+
+
+## Résultat initial réel et correction du format de la page
+
+Premier essai réseau public du 19/11, avant correction de l'adaptateur :
+**24 liens repérés, 3 fiches lues, 0 séance extraite**, 0 écriture.
+Ce constat ne valide pas les 21 autres fiches non échantillonnées.
+
+L'examen indépendant de plusieurs de ces pages a mis en évidence deux
+règles techniques trop fragiles, non liées à la sécurité :
+1. La plupart des pages portent la mention « Maison pour tous X », suivie
+   plus bas d'une mention d'organisateur « Organisé par la maison X » ;
+   l'ancien parseur cherchait surtout un libellé « Lieu : ».
+2. Une page explicitement étiquetée **Adultes** peut mentionner des
+   « familles » ou des « enfants » dans son texte descriptif.
+
+L'adaptateur partagé a été corrigé de façon générique : il exige un
+**accord de nom exact** entre la maison affichée et la maison organisatrice
+pour le nouveau format, sans déduire le GPS ; il bloque les pages déclarées
+adultes uniquement même si leur description mentionne des enfants.
+
+Le rapport ajoute **`unclassified_occurrences_held`** : les séances
+réellement datées mais dont le thème n'appartient pas aux 13 catégories
+familiales approuvées restent visibles dans les compteurs de blocage,
+et ne sont jamais reclassées arbitrairement. Exemple de sujet à
+évaluer éditorialement : ateliers sensoriels « snoezelen ».
+
+Des tests hors réseau supplémentaires couvrent le gabarit actuel, les
+séances multiples, les étiquettes adultes, les publics mixtes et les
+catégories en attente. Seul un nouvel essai réseau peut confirmer
+l'efficacité de cette correction sur le site vivant.
