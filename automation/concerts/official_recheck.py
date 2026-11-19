@@ -437,11 +437,15 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
     for row in chosen:
         c = row["candidate"]
         try:
-            if c.get("source") == "agenda_officiel_structuré":
+            if c.get("source") in {
+                    "agenda_officiel_structuré",
+                    "agenda_officiel_visible_bill",
+            }:
                 # Untrusted registry hosts must not even reach the network.
+                # Both generic verifiers use the same reviewed venue manifest.
                 import generic_music_event
                 if generic_music_event.trusted_spec(c) is None:
-                    raise ValueError("Salle structurée non agréée : pas de réseau")
+                    raise ValueError("Salle générique non agréée : pas de réseau")
             html_text = fetch(c["sourceUrl"], cache)
             approval = verify(c, html_text, catalogue, today)
             if approval["event"]["id"] in known:
