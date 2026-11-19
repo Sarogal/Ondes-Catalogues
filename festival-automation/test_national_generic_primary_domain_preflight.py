@@ -239,6 +239,18 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertEqual(result["rows"][0]["status"],
                                  "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
 
+    def test_main_branch_intake_reacts_to_generic_date_preflight_fixes(self):
+        workflow = (Path(__file__).resolve().parents[1] / ".github" /
+                    "workflows" /
+                    "grossesondes-festivals-private-intake-on-public-runners.yml"
+                    ).read_text(encoding="utf-8")
+        self.assertIn(
+            "'festival-automation/national_generic_primary_domain_preflight.py'",
+            workflow)
+        self.assertIn("    branches: [main]", workflow)
+        self.assertIn("    runs-on: ubuntu-24.04", workflow)
+        self.assertNotIn("pull_request_target:", workflow)
+
     def test_private_rejection_codes_distinguish_missing_ranges_identity_and_conflicts(self):
         cases = [
             ("<h1>Festival Foudre du Nord 2027</h1><p>Dates à venir</p>",
