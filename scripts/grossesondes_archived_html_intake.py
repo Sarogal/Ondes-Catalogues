@@ -341,7 +341,7 @@ def official_structured_date(html, parent, year):
             if (not isinstance(name, str) or name.strip() != title
                     or edition_name(name) != edition_name(title)
                     or str(year) not in
-                       re.findall(r"\\b20[2-4][0-9]\\b", name)):
+                       re.findall(r"\b20[2-4][0-9]\b", name)):
                 continue
             matching_events += 1
             first = iso_day(event.get("startDate"))
