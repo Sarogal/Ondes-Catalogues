@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_radio_flutter_lab/radio_station_stub.dart';
 import 'package:go_radio_flutter_lab/central_legacy_radio_adapter.dart';
 import 'package:go_radio_flutter_lab/central_radio_continuity_preview.dart';
+import 'package:go_radio_flutter_lab/central_legacy_playback_session.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_core.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_projection.dart';
 
@@ -266,6 +267,30 @@ void main() {
     );
     expect(preview.stations, hasLength(1));
     expect(preview.blockedCentralGoIds, ['go-station-000001']);
+  });
+
+  test('Android Auto preview keeps legacy logo and favorite artwork',
+      () async {
+    final verified = await _valid([_station()]);
+    final old = _old(id: 'old-primary').copyWith(
+      logoUrl: 'https://existing.example/bob-art.png',
+      logoSource: 'legacy-override',
+    );
+    final preferred = const CentralLegacyRadioAdapter()
+        .preferredMediaIdsFromLegacy(catalog: verified, legacyStations: [old]);
+    final projection = const CentralCatalogProjector().preview(
+      catalog: verified, preferredLegacyMediaIds: preferred,
+      legacyFavoriteIds: ['old-primary'],
+    );
+    final playback = CentralLegacyPlaybackSession(
+      catalog: verified, preview: projection, legacyStations: [old]);
+    final media = playback.resolveAndroidAutoMediaId(
+      'go:auto:station:old-primary');
+    expect(media.playable, isTrue);
+    expect(media.station!.logoUrl, old.logoUrl);
+    expect(media.station!.logoSource, old.logoSource);
+    expect(playback.activeFavorites(['old-primary']).single.logoUrl,
+        old.logoUrl);
   });
 
   test('duplicate primary IDs fail rather than lose a station', () async {
