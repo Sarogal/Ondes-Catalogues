@@ -3,12 +3,13 @@ from copy import deepcopy
 from datetime import date
 import json
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from national_discovery_queue import build_queue
-from national_institutional_edition_preflight import run, _exact_edition
+from national_institutional_edition_preflight import run, _exact_edition, stable_private_proposals, append_private_proposals
 
 DAY1 = "2026-11-06"
 DAY2 = "2026-11-07"
@@ -74,6 +75,66 @@ class InstitutionalPreflightTests(unittest.TestCase):
         self.assertNotIn("showOnMap", json.dumps(result))
         self.assertNotIn("lat", json.dumps(result))
         self.assertNotIn("lineup", json.dumps(result))
+
+    def test_stable_index_dates_become_private_patch_only_and_are_idempotent(self):
+        state, queue = fixture(DAY1)
+        first = run(state, queue, DAY1, fetch=good_fetch)
+        self.assertEqual(stable_private_proposals(state,queue,first,DAY1),[])
+        newer, q2 = fixture(DAY2)
+        newer["national_institutional_dates_private"] = deepcopy(
+            state["national_institutional_dates_private"])
+        second = run(newer,q2,DAY2,fetch=good_fetch)
+        prospective = stable_private_proposals(newer,q2,second,DAY2)
+        self.assertEqual(len(prospective), 1)
+        self.assertEqual(prospective[0]["startDate"], "2027-06-04")
+        self.assertEqual(prospective[0]["endDate"], "2027-06-05")
+        self.assertFalse(prospective[0]["showOnMap"])
+        self.assertIsNone(prospective[0]["venue"])
+        self.assertEqual(prospective[0]["lineup"],[])
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            source = {
+                "schema":"grossesondes.patch.v1", "generated_at":DAY1,
+                "safe_to_publish":False,
+                "source":{"festivals":{
+                    "url":"https://grosses-ondes.fr/data/festivals.json"}},
+                "additions":[], "updates":[], "deferred":[],
+                "history_additions":[], "history_updates":[],
+            }
+            (folder / ("patch-"+DAY1+".json")).write_text(json.dumps(source))
+            catalog={"schema":1,"festivals":[]}
+            history={"schema":2,"knownFestivals":[]}
+            self.assertEqual(append_private_proposals(
+                folder,catalog,history,newer,q2,second,DAY2),1)
+            patch=json.loads((folder / ("patch-"+DAY2+".json")).read_text())
+            self.assertEqual(len(patch["additions"]),1)
+            self.assertFalse(patch["safe_to_publish"])
+            self.assertEqual(patch["additions"][0]["proofMode"],
+                             "institutional-visible-edition.v1")
+            self.assertEqual(append_private_proposals(
+                folder,catalog,history,newer,q2,second,DAY2),0)
+            self.assertEqual(len(json.loads(
+                (folder / ("patch-"+DAY2+".json")).read_text())["additions"]),1)
+            catalog["festivals"] = [{
+                "slug":patch["additions"][0]["slug"],
+                "name":patch["additions"][0]["name"],
+                "startDate":patch["additions"][0]["startDate"]}]
+            patch["additions"] = []
+            (folder / ("patch-"+DAY2+".json")).write_text(json.dumps(patch))
+            self.assertEqual(append_private_proposals(
+                folder,catalog,history,newer,q2,second,DAY2),0)
+
+    def test_forged_stable_report_cannot_add_without_matching_state_digest(self):
+        state, queue = fixture(DAY1)
+        first = run(state,queue,DAY1,fetch=good_fetch)
+        fake = deepcopy(first)
+        fake["rows"][0].update(
+            status="TWO_DAY_INSTITUTIONAL_DATE_RECHECKED_PRIVATE",
+            two_day_observation=True)
+        self.assertEqual(stable_private_proposals(state,queue,fake,DAY1),[])
+        fake["publication_authorized"] = True
+        with self.assertRaises(ValueError):
+            stable_private_proposals(state,queue,fake,DAY1)
 
     def test_unverified_dates_or_disappeared_link_never_pass(self):
         for index, detail in (

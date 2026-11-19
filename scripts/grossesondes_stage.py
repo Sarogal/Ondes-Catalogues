@@ -29,6 +29,11 @@ from grossesondes_structured_edition import (
     validate_structured_edition,
     validate_archived_structured_edition, conflicts_with_existing,
 )
+from grossesondes_institutional_edition import (
+    PROOF_MODE as INSTITUTIONAL_PROOF_MODE,
+    validate_independent as validate_institutional_independent,
+    conflicts_with_signed_catalogue as institutional_conflicts,
+)
 from grossesondes_history_guard import validate_history_extension
 from grossesondes_noel_2026 import (
     PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
@@ -169,7 +174,29 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
-        if e.get("proofMode") in (
+        if e.get("proofMode") == INSTITUTIONAL_PROOF_MODE:
+            known_rows = rows + (
+                published_calendar.get("festivals", []) if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", []) if published_history else [])
+            if (sources.get("registered-institutional-verified:"+slug) is not True
+                    or institutional_conflicts(e, known_rows, known_history)):
+                report["held"].append({
+                    "slug":slug, "reason":"agenda institutionnel non revérifié ou doublon"})
+                continue
+            independent_html = sources.get("registered-institutional:"+slug,"")
+            proposed = validate_institutional_independent(
+                e, independent_html, today)
+            if proposed is None:
+                report["held"].append({
+                    "slug":slug, "reason":"date institutionnelle indépendante insuffisante"})
+                continue
+            rows.append(proposed)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].append(
+                sources.get("registered-institutional-proof-url:"+slug,
+                            proposed["source"]))
+        elif e.get("proofMode") in (
                 EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
                 HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
                 ARCHIVED_BROWSER_PROOF_MODE):
@@ -308,6 +335,7 @@ def main():
     from grossesondes_cloud_sync import (
         MANIFEST, load_production, verify_published_head, build_candidate,
         collect_registered_edition_sources,
+        collect_registered_institutional_sources,
     )
     snapshot=load_production(json.loads(MANIFEST.read_text(encoding="utf-8")))
     production_calendar=snapshot["festivals.json"]
@@ -353,6 +381,11 @@ def main():
     archive_registered={row["slug"]: row for row in production_history["knownFestivals"]}
     evidence.update(collect_registered_edition_sources(
         patch, registered, archived=archive_registered))
+    signed_published_slugs = {
+        x["slug"] for x in cal["festivals"]
+        if isinstance(x, dict) and isinstance(x.get("slug"), str)}
+    evidence.update(collect_registered_institutional_sources(
+        patch, signed_published_slugs, today))
     # Identical merge, history protection and anti-regression checks to
     # grossesondes_cloud_sync.py. Preview never writes the public JSON.
     out,report=build_candidate(
