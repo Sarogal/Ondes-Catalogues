@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from grossesondes_official_html_edition import visible_official_edition, explicit_ranges
+from grossesondes_official_html_edition import visible_official_edition, explicit_ranges, fold
 from grossesondes_structured_edition import (
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE,
     PROOF_MODE, PRIVATE_CONFIDENCE, PRIVATE_NOTES, PRIVATE_STATUS,
@@ -86,7 +86,7 @@ class VisibleHTMLTests(unittest.TestCase):
                       "13 . 14 AOUT 2027"):
             with self.subTest(value=value):
                 self.assertEqual([(a, b) for _, _, a, b in
-                                  explicit_ranges(value, 2027)], [exact])
+                                  explicit_ranges(fold(value), 2027)], [exact])
                 self.assertTrue(visible_official_edition(
                     "<main><h1>Colomb'in Rock Festival 2027</h1>"
                     f"<p>Rendez-vous les {value} !</p></main>",
@@ -95,7 +95,7 @@ class VisibleHTMLTests(unittest.TestCase):
                       "13.14 août", "13.14 août 2026"):
             with self.subTest(value=value):
                 self.assertEqual([(a, b) for _, _, a, b in
-                                  explicit_ranges(value, 2027)], [])
+                                  explicit_ranges(fold(value), 2027)], [])
 
     def test_official_poster_dates_before_name(self):
         from datetime import date
