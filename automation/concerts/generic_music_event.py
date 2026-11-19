@@ -50,13 +50,12 @@ def load_specs(path=MANIFEST):
                 or not isinstance(department, str)
                 or not re.fullmatch(r"(?:[0-9]{2,3}|2A|2B)", department)
                 or not isinstance(host, str)
-                or not re.fullmatch(r"(?:[a-z0-9-]+\\.)+[a-z]{2,24}", host)
-                or host.startswith("www.")
+                or not re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z]{2,24}", host)
                 or not isinstance(base, str)
                 or base != "https://" + host + "/"):
             raise ValueError("Domaine HTTPS / géographie agréés non conformes")
         identity = (norm(name), norm(city), department)
-        if identity in seen or host in (r["host"] for r in specs.values()):
+        if identity in seen:
             raise ValueError("Salle ou hôte officiel agréé en doublon")
         seen.add(identity)
         specs[venue_id] = MappingProxyType(dict(row))
