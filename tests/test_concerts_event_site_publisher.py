@@ -30,7 +30,7 @@ def fixtures():
     }
     event = {
         "reviewDecision": "approved",
-        "reviewedBy": "automated-official-recheck",
+        "reviewedBy": "independent-official-verifier",
         "reviewedAt": TODAY.isoformat(),
         "officialEvidence": [{
             "url": EVENT_URL, "proofType": "official-organizer-or-venue",
