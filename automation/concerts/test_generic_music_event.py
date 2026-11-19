@@ -19,7 +19,7 @@ import discover
 import generic_music_event as gen
 import official_recheck
 import triage
-from concerts_cloud_sync import validate_approval
+from concerts_cloud_sync import validate_approval, merge
 
 TODAY = dt.date(2026, 11, 19)
 DATE = "2027-03-13"
@@ -79,6 +79,37 @@ class GenericStructuredNationalContractTests(unittest.TestCase):
                     ev, added = publish(app, cat)
                     self.assertEqual(len(ev["artistIds"]), n)
                     self.assertEqual(len(added), n)
+
+    def test_two_unrelated_future_concerts_from_same_venue_publish_without_patch(self):
+        # Real publisher merge (not just validate_approval). A source-wide
+        # contract admits multiple new first-party concerts across dates.
+        base = json.loads((ROOT / "docs/grossesondes/concerts-reference.json")
+                          .read_text(encoding="utf-8"))
+        lead1, html1, _, _ = make(names=("ACT ONE", "ACT TWO"))
+        app1 = official_recheck.verify(lead1, html1, base, TODAY)
+        lead2, html2, _, raw2 = make(names=("ACT THREE", "ACT FOUR"))
+        raw2["url"] = "https://larayonne.org/evenement/next-month-verified/"
+        raw2["startDate"] = "2027-04-13T20:00:00+02:00"
+        raw2["name"] = "ACT THREE + ACT FOUR"
+        spec = gen.SPECS["la-rayonne"]
+        src = {"name": spec["name"], "city": spec["city"],
+               "department": spec["department"], "url": spec["base"]}
+        lead2 = discover.venue_candidate(raw2, src, raw2["url"],
+                                         set(), TODAY.isoformat())
+        lead2 = triage.triage(lead2, catalogue=base)
+        html2 = '<script type="application/ld+json">' + json.dumps(
+            raw2) + '</script>'
+        app2 = official_recheck.verify(lead2, html2, base, TODAY)
+        queue = {"schema": "grossesondes.concert.approvals.v1",
+                 "approvals": [app1, app2]}
+        published, stats = merge(base, base, queue, TODAY)
+        self.assertEqual(stats["newEvents"], 2)
+        self.assertTrue(all(any(
+            event["id"] == app["event"]["id"] for event in published["events"])
+            for app in queue["approvals"]))
+        again, repeated = merge(base, published, queue, TODAY)
+        self.assertEqual(repeated["newEvents"], 0)
+        self.assertEqual(again, published)
 
     def test_generic_event_with_explicit_metal_genre_may_pass(self):
         lead, page, cat, _ = make(kind="Event")
