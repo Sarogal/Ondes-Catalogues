@@ -106,15 +106,17 @@ def explicit_ranges(text, year):
 
 
 def dominant_visible_range(ranges):
-    """Keep one explicit complete interval, ignoring only contained dates.
+    """Keep one complete interval, ignoring only contained SINGLE days.
 
-    A visible two-day announcement and a separate mention of its Saturday
-    describe the same period. Disjoint or merely overlapping ranges never
-    become a single guessed festival period.
+    A two-day announcement and a separate mention of its Saturday describe
+    the same period. Two different multi-day ranges (even if one contains
+    the other), disjoint days and partially overlapping claims are conflicts.
     """
     unique = set(ranges)
     enclosing = [candidate for candidate in unique if all(
-        candidate[0] <= other[0] <= other[1] <= candidate[1]
+        (other == candidate or
+         (other[0] == other[1] and
+          candidate[0] <= other[0] <= candidate[1]))
         for other in unique)]
     return enclosing[0] if len(enclosing) == 1 else None
 
