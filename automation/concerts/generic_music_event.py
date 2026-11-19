@@ -21,7 +21,7 @@ from official_recheck import norm, slug
 # Only the independently reviewed, COMMITTED manifest is allowed to grant
 # a first-party venue scope. Sources, candidates and private registry entries
 # never update this map. Adding a venue requires review and contract CI.
-MANIFEST = Path(__file__).with_name("reviewed_venue_specs_v1.json")
+MANIFEST = Path(__file__).with_name("generic_first_party_venue_specs_v1.json")
 
 
 def load_specs(path=MANIFEST):

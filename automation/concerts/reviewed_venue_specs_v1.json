@@ -1,19 +1,4 @@
 {
   "schema": "grossesondes.concert.reviewed-venue-specs.v1",
-  "venues": {
-    "la-rayonne": {
-      "name": "La Rayonne",
-      "city": "Villeurbanne",
-      "department": "69",
-      "host": "larayonne.org",
-      "base": "https://larayonne.org/"
-    },
-    "le-metronum": {
-      "name": "Le Metronum",
-      "city": "Toulouse",
-      "department": "31",
-      "host": "lemetronum.fr",
-      "base": "https://lemetronum.fr/"
-    }
-  }
+  "venues": {}
 }

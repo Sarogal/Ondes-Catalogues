@@ -34,6 +34,23 @@ class ReviewedVenueManifestTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             generic.SPECS["la-rayonne"]["host"] = "evil.example"
 
+    def test_publisher_location_registry_is_independent_and_compatible(self):
+        # The publisher already reads reviewed_venue_specs_v1.json with an
+        # independent, incompatible location-proof schema. Never reuse it as
+        # a first-party host allowlist.
+        location_path = HERE / "reviewed_venue_specs_v1.json"
+        self.assertNotEqual(generic.MANIFEST, location_path)
+        location_registry = json.loads(location_path.read_text(encoding="utf-8"))
+        self.assertEqual(location_registry, {
+            "schema": "grossesondes.concert.reviewed-venue-specs.v1",
+            "venues": {},
+        })
+        sys.path.insert(0, str(HERE.parents[1] / "scripts"))
+        from concerts_cloud_sync import read_reviewed_venue_specs
+        read_reviewed_venue_specs.cache_clear()
+        self.assertEqual(read_reviewed_venue_specs(), {})
+        self.assertEqual(set(generic.SPECS), {"la-rayonne", "le-metronum"})
+
     def test_unreviewed_discovery_cannot_grant_host(self):
         malicious = {
             "venue": "Fake Venue", "city": "Paris", "department": "75",
