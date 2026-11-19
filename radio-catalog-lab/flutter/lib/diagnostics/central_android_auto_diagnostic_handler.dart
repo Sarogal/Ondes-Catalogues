@@ -12,6 +12,7 @@ class CentralAndroidAutoDiagnosticHandler extends BaseAudioHandler {
     required List<MediaItem> legacyItems,
     required CentralAndroidAutoArtworkIndex artworkIndex,
     bool enableVerifiedArtwork = false,
+    this.rootSubtitle = 'Aucun flux réseau, aucun audio',
   }) : _browseItems = List<MediaItem>.unmodifiable(
           legacyItems.map(
             CentralAndroidAutoMediaItemArtworkAdapter(
@@ -36,6 +37,7 @@ class CentralAndroidAutoDiagnosticHandler extends BaseAudioHandler {
 
   static const String browseId = 'go:diagnostic:auto:all';
   final List<MediaItem> _browseItems;
+  final String rootSubtitle;
   final BehaviorSubject<Map<String, dynamic>> _rootChanges =
       BehaviorSubject<Map<String, dynamic>>.seeded(const {});
   final BehaviorSubject<Map<String, dynamic>> _stationChanges =
@@ -55,11 +57,11 @@ class CentralAndroidAutoDiagnosticHandler extends BaseAudioHandler {
   ]) async {
     if (parentMediaId == AudioService.browsableRootId) {
       return <MediaItem>[
-        const MediaItem(
+        MediaItem(
           id: browseId,
           title: 'Radios — Diagnostic',
           playable: false,
-          displaySubtitle: 'Aucun flux réseau, aucun audio',
+          displaySubtitle: rootSubtitle,
         ),
       ];
     }
