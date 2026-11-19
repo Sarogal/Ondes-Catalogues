@@ -887,10 +887,18 @@ def inspect_generic_structured(event, page, artists):
                 "reason": "Date officielle différente : confirmation nécessaire"}
     bill = structured_bridge.official_named_bill(raw.get("performer"))
     if bill is None:
-        # schema.org Organization is NOT a performer. An independently
-        # named visible HTML bill may still corroborate an unchanged concert.
+        # schema.org Organization is NOT a performer. A complete visible
+        # HTML bill can independently corroborate the same event. Preserve
+        # legacy lineup_review when no visible named bill exists at all.
         import generic_visible_bill
-        return generic_visible_bill.inspect_published(event, page, artists)
+        html_review = generic_visible_bill.inspect_published(
+            event, page, artists)
+        if (html_review.get("status") == "content_review" and
+                html_review.get("reason") ==
+                    "Plateau HTML officiel disparu ou ambigu"):
+            return {"status": "lineup_review",
+                    "reason": "Programmation nominative disparue ou ambiguë"}
+        return html_review
     names, _unnamed = bill
     published = [artists.get(aid) for aid in event.get("artistIds", [])]
     if (len(names) != len(published)
