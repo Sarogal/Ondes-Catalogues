@@ -104,11 +104,12 @@ class RegionalTests(unittest.TestCase):
         file = Path(__file__).with_name("regional_festival_indexes.json")
         source = json.loads(file.read_text(encoding="utf-8"))
         seeds = load_indexes(source)
-        self.assertEqual(len(seeds), 22)
-        self.assertEqual(len({s["region"] for s in seeds}), 17)
-        self.assertEqual(len({s["url"] for s in seeds}), 22)
+        self.assertEqual(len(seeds), 25)
+        self.assertEqual(len({s["region"] for s in seeds}), 20)
+        self.assertEqual(len({s["url"] for s in seeds}), 25)
         self.assertEqual({
-            "La Réunion", "Martinique", "Guadeloupe", "Nouvelle-Calédonie"
+            "La Réunion", "Martinique", "Guadeloupe", "Nouvelle-Calédonie",
+            "Guyane", "Mayotte", "Polynésie française"
         } - {s["region"] for s in seeds}, set())
         self.assertEqual(set(APPROVED), {s["url"] for s in seeds})
         for seed in seeds:
@@ -120,6 +121,43 @@ class RegionalTests(unittest.TestCase):
         source["indexes"].append(dict(seeds[0], id="unapproved-copy"))
         with self.assertRaises(ValueError):
             load_indexes(source)
+
+    def test_additional_overseas_indexes_never_authorize_a_festival(self):
+        from regional_festival_discovery import MAX_INDEXES
+        first_party_indexes = [
+            {"id": "guy-trois-fleuves", "region": "Guyane",
+             "url": "https://troisfleuves.fr/etn_category/concerts/"},
+            {"id": "myt-departement-festivals", "region": "Mayotte",
+             "url": "https://www.mayotte.fr/vie-locale/evenements/festivals"},
+            {"id": "pyf-tahiti-tourisme", "region": "Polynésie française",
+             "url": "https://tahititourisme.pf/agenda/"},
+        ]
+        self.assertEqual(load_indexes(
+            {"schema": SCHEMA, "indexes": first_party_indexes}),
+            first_party_indexes)
+        self.assertLessEqual(len(first_party_indexes), MAX_INDEXES)
+        for seed in first_party_indexes:
+            with self.subTest(territory=seed["region"]):
+                bad_region = dict(seed, region="Corse")
+                bad_host = dict(seed, url="https://unapproved.example/agenda/")
+                for mutated in (bad_region, bad_host):
+                    with self.assertRaises(ValueError):
+                        load_indexes({"schema": SCHEMA, "indexes": [mutated]})
+                state = {}
+                r = report("2026-11-06")
+                html = (
+                    '<article><a href="' + seed["url"].rstrip("/") +
+                    '/metal-festival-2027">Rock Metal Festival 2027</a></article>'
+                )
+                scan_regional_indexes(
+                    r, state, [seed], "2026-11-06",
+                    lambda url: html, limit=1)
+                self.assertEqual(r["regional_festival_publications"], 0)
+                self.assertEqual(
+                    r["regional_festival_detail_pages_checked_review_only"], 0)
+                for item in state.get(
+                        "regional_festival_candidates_review_only", {}).values():
+                    self.assertIs(item["publication_authorized"], False)
 
     def test_overseas_seed_is_private_only_and_wrong_region_is_denied(self):
         site = "https://www.lesilesdeguadeloupe.com/agenda/"

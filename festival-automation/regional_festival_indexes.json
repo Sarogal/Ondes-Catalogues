@@ -110,6 +110,21 @@
       "id": "ncl-tourisme-music",
       "region": "Nouvelle-Calédonie",
       "url": "https://www.nouvellecaledonie.travel/planifier-son-voyage/agenda/evenements-musicaux/"
+    },
+    {
+      "id": "guy-trois-fleuves",
+      "region": "Guyane",
+      "url": "https://troisfleuves.fr/etn_category/concerts/"
+    },
+    {
+      "id": "myt-departement-festivals",
+      "region": "Mayotte",
+      "url": "https://www.mayotte.fr/vie-locale/evenements/festivals"
+    },
+    {
+      "id": "pyf-tahiti-tourisme",
+      "region": "Polynésie française",
+      "url": "https://tahititourisme.pf/agenda/"
     }
   ]
 }
