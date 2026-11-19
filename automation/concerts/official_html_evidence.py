@@ -99,7 +99,8 @@ def _contains(text, needle):
 
 def _explicit_label(value):
     """Only a compact single genre label, never natural-language biographies."""
-    w = words(value)
+    label = " ".join(value.strip(" \\t\\r\\n–—-:•").split())
+    w = words(label)
     if not (2 <= len(w) <= 48 and len(w.split()) <= 4):
         return None
     if w in ("rock", "musique", "concert", "live"):
@@ -108,7 +109,7 @@ def _explicit_label(value):
             r"(?<!\w)" + re.escape(genre) + r"(?!\w)", w)
             for genre in KNOWN_GENRES):
         return None
-    return " ".join(value.split())[:80]
+    return label[:80]
 
 
 def _heading_genre(text, artists):
