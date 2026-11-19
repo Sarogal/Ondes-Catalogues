@@ -151,6 +151,40 @@ class InstitutionalPublisherTests(unittest.TestCase):
         self.assertFalse(conflicts_with_signed_catalogue(
             p,cal["festivals"],hist["knownFestivals"]))
 
+    def test_four_pending_institutions_rotate_two_per_day(self):
+        proposals = []
+        anchors = []
+        details = {}
+        for name in ("Nord", "Sud", "Est", "Ouest"):
+            title = "Festival Metal des " + name + " 2027"
+            url = INDEX + "evenement/festival-metal-des-" + name.lower() + "-2027"
+            proposal = private_proposal({
+                "index_url":INDEX, "index_page":INDEX,
+                "url":url, "title":title, "year":2027,
+            }, ("2027-06-04","2027-06-05"), TODAY)
+            self.assertIsNotNone(proposal)
+            proposals.append(proposal)
+            anchors.append('<a href="' + url + '">' + title + '</a>')
+            details[url] = ('<h1>' + title + '</h1>'
+                            '<p>4 et 5 juin 2027, festival de metal</p>')
+        index_html = "<main>" + "".join(anchors) + "</main>"
+        def run_day(day):
+            checked = []
+            def fetch(url):
+                checked.append(url)
+                return index_html if url == INDEX else details[url]
+            sources=collect_registered_institutional_sources(
+                {"additions":proposals}, set(), day, fetcher=fetch)
+            return set(k for k in sources if
+                       k.startswith("registered-institutional-verified:")), checked
+        first, visits1 = run_day(TODAY)
+        second, visits2 = run_day("2026-11-08")
+        self.assertEqual(len(first),2)
+        self.assertEqual(len(second),2)
+        self.assertEqual(len(first|second),4)
+        self.assertEqual(len(visits1),4)
+        self.assertEqual(len(visits2),4)
+
     def test_publisher_recheck_skips_already_published_slug(self):
         p=proposed()
         visited=[]
