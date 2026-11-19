@@ -148,6 +148,20 @@ def validate_private_proposal(proposal, today):
     return spec if expected == proposal else None
 
 
+def validate_verified_row(proposal, verified, today):
+    """The stage accepts only the exact map-free, independent row contract."""
+    if validate_private_proposal(proposal, today) is None:
+        return None
+    expected = {key: proposal[key] for key in ROW_KEYS}
+    expected.update(
+        verificationStatus=PUBLISHED_STATUS, sourceConfidence=PUBLISHED_CONFIDENCE,
+        notes=("Fiche institutionnelle relue et lien vers le site du festival "
+               "revérifié ; dates exactes confirmées sur le site lié. "
+               "Artistes, lieu, coordonnées et tarifs à confirmer."),
+    )
+    return expected if verified == expected else None
+
+
 def independently_verify(proposal, today, institution_fetch=get_page,
                          organizer_fetch=fetch_public_html):
     """Publisher redoes trusted index, exact link and fresh organizer HTTPS."""
