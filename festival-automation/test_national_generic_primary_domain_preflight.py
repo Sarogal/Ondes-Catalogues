@@ -97,6 +97,25 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertEqual(result["checked_count"], 0)
                 self.assertEqual(visited, [])
 
+    def test_dotted_two_day_official_edition_never_loses_first_day(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                "<p>13.14 août 2027</p></main>")
+        observed = examine(state, queue, published, DAY1, fetch=lambda u: html)
+        self.assertEqual(observed["rows"][0]["start_date_hint"], "2027-08-13")
+        self.assertEqual(observed["rows"][0]["end_date_hint"], "2027-08-14")
+        self.assertFalse(observed["rows"][0]["two_day_dates"])
+        self.assertFalse(observed["publication_authorized"])
+        # A dotted gap is NOT the same as a continuous 13-15 August edition.
+        state2, queue2, pub2 = fixture()
+        queue2["dossiers"] = queue2["dossiers"][:1]
+        changed = examine(
+            state2, queue2, pub2, DAY1,
+            fetch=lambda u: html.replace("13.14", "13.15"))
+        self.assertEqual(changed["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+
     def test_ampersand_dates_recover_both_days_from_official_markup(self):
         state, queue, published = fixture()
         queue["dossiers"] = queue["dossiers"][:1]
