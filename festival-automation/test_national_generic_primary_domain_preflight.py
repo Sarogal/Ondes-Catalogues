@@ -299,6 +299,30 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertNotIn("html", row)
                 self.assertFalse(result["publication_authorized"])
 
+    def test_conflicting_visible_date_ranges_stay_bounded_and_private(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        source = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                  "<p>4 et 5 juin 2027</p>"
+                  "<p>11 et 12 juillet 2027</p></main>")
+        result = examine(state, queue, published, DAY1,
+                         fetch=lambda u: source)
+        row = result["rows"][0]
+        self.assertEqual(row["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        self.assertEqual(row["diagnostic_code"],
+                         "CONFLICTING_VISIBLE_DATE_RANGES")
+        self.assertEqual(row["visible_range_count_review_only"], 2)
+        self.assertEqual(row["visible_ranges_review_only"], [
+            {"start": "2027-06-04", "end": "2027-06-05"},
+            {"start": "2027-07-11", "end": "2027-07-12"},
+        ])
+        self.assertNotIn("html", str(row).lower())
+        self.assertNotIn("url", str(row).lower())
+        self.assertFalse(row["publication_authorized"])
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["publications"], 0)
+
     def test_private_diagnostic_codes_do_not_leak_or_approve(self):
         state, queue, published = fixture()
         queue["dossiers"] = queue["dossiers"][:1]
