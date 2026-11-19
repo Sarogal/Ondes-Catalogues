@@ -136,6 +136,7 @@ def build(registry, approvals, catalogue, as_of):
     signature_missing = 0
     sources_with_new_potential = Counter()
     effective_states = Counter()
+    unlisted_location_reviews = Counter()
     first_seen_by_published_pair = {}
 
     for record in registry["items"].values():
@@ -181,6 +182,22 @@ def build(registry, approvals, catalogue, as_of):
         stable = isinstance(record.get("stableObservations"), int) and (
             record["stableObservations"] >= 2
         )
+        # A concert does not have to be in a previously known venue.
+        # These source-claimed location markers are PRIVATE prioritization
+        # only: a real show, source identity and coordinates still need
+        # independent proof before adding any public pin.
+        if (date_status == "future" and not published and not approved
+                and status == "pending_review"):
+            if item.get("newVenueToReview") is True:
+                unlisted_location_reviews["futureUnlistedLocationLeads"] += 1
+                if item.get("reviewBucket") == "genre_tag_review":
+                    unlisted_location_reviews["genreEvidencePresent"] += 1
+                if stable:
+                    unlisted_location_reviews["stableOnDistinctDays"] += 1
+            if item.get("sameCityArtistCollisionAdvisory") is True:
+                unlisted_location_reviews["differentNamedVenueCollisionAdvisories"] += 1
+            if not item.get("venue") or not item.get("city"):
+                unlisted_location_reviews["missingNamedPlaceOrCity"] += 1
         official_detail = item.get("officialDetailFound") is True
         genre_tag = bucket == "genre_tag_review"
         first_party = (source.startswith("agenda_officiel_")
@@ -309,6 +326,20 @@ def build(registry, approvals, catalogue, as_of):
         "candidateReviewBuckets": dict(sorted(bucket_counts.items())),
         "candidatePrivateStatuses": dict(sorted(status_counts.items())),
         "effectiveCandidateStates": dict(sorted(effective_states.items())),
+        "eventLocationReview": {
+            "futureUnlistedLocationLeads": unlisted_location_reviews[
+                "futureUnlistedLocationLeads"],
+            "genreEvidencePresent": unlisted_location_reviews[
+                "genreEvidencePresent"],
+            "stableOnDistinctDays": unlisted_location_reviews[
+                "stableOnDistinctDays"],
+            "differentNamedVenueCollisionAdvisories": unlisted_location_reviews[
+                "differentNamedVenueCollisionAdvisories"],
+            "missingNamedPlaceOrCity": unlisted_location_reviews[
+                "missingNamedPlaceOrCity"],
+            "publicationAllowed": False,
+            "note": "An unlisted or outdoor site needs independent event and location proof",
+        },
         "discoveryToFirstRecordedPublication": {
             "estimated": True,
             "unit": "whole Paris calendar days",
