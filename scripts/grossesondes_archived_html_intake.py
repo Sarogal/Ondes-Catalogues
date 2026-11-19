@@ -46,6 +46,9 @@ PINNED_ARCHIVED_HTML_SOURCES = {
 # Named ticket platforms, social networks and aggregators are NOT organizers.
 GENERIC_ROTATION_KEY = "archived_html_organizer_rotation_cursor"
 GENERIC_MAX_PER_RUN = 10
+# Review hints cannot consume all slots or starve the unbiased rotation.
+GENERIC_NATIONAL_PRIORITY_MAX_PER_RUN = 3
+NATIONAL_REVIEW_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
 GENERIC_DENY_HOSTS = frozenset({
     "facebook.com", "instagram.com", "x.com", "twitter.com",
     "linktr.ee", "helloasso.com", "billetweb.fr", "shotgun.live",
@@ -100,8 +103,80 @@ def already_published_next_edition(parent, year, published_rows):
     }, published_rows, [])
 
 
+def _hint_identity(value):
+    """Comparison only; no dossier text or URL becomes official evidence."""
+    return " ".join(re.findall(r"[a-z0-9]+", fold(value)))
+
+
+def national_archived_priority(folder, archive, today):
+    """A review-only lead may prioritize an ALREADY SIGNED archive source.
+
+    Private hint URLs are never read or fetched. Even a forged lead cannot
+    authorize an origin absent from the historical source catalogue.
+    Invalid/missing/stale optional review data simply yields no priorities.
+    """
+    path = folder / "national-festival-discovery-review.json"
+    try:
+        review = json.loads(path.read_text(encoding="utf-8"))
+        if (not isinstance(review, dict)
+                or review.get("schema") != NATIONAL_REVIEW_SCHEMA
+                or review.get("review_only") is not True
+                or review.get("safe_to_publish") is not False
+                or review.get("publication_authorized") is not False):
+            return frozenset()
+        reviewed = date.fromisoformat(review.get("as_of", ""))
+        if not timedelta(0) <= today - reviewed <= timedelta(days=2):
+            return frozenset()
+        dossiers = review.get("dossiers")
+        if not isinstance(dossiers, list) or len(dossiers) > 200:
+            return frozenset()
+    except (OSError, ValueError, TypeError, UnicodeError):
+        return frozenset()
+    trusted = set()
+    for row in dossiers:
+        if (not isinstance(row, dict)
+                or row.get("status") != "DISCOVERED_REVIEW_REQUIRED"
+                or row.get("publication_authorized") is not False
+                or row.get("safe_to_publish") is not False):
+            continue
+        slug = row.get("archive_slug_hint")
+        parent = archive.get(slug) if isinstance(slug, str) else None
+        if not isinstance(parent, dict):
+            continue
+        ident = pinned_parent_identity(parent)
+        if (ident is None or parent.get("lastKnownYear") != ident[1]
+                or type(row.get("edition_year_hint")) is not int
+                or row["edition_year_hint"] != max(today.year + 1, ident[1] + 1)
+                or row["edition_year_hint"] not in (2027, 2028)
+                or _hint_identity(row.get("name_hint")) !=
+                   _hint_identity(parent.get("name"))
+                or _hint_identity(row.get("region_hint")) !=
+                   _hint_identity(parent.get("region"))):
+            continue
+        trusted.add(slug)
+    return frozenset(trusted)
+
+
+def private_date_rejection_reason(html, parent, year):
+    """Safe bounded enum, not raw content or untrusted exception text."""
+    if not isinstance(html, str) or not 0 < len(html) <= 1_400_000:
+        return "official_html_invalid_or_oversized"
+    parser = VisibleText()
+    parser.feed(html)
+    parser.close()
+    content = " ".join(fold(" ".join(parser.parts)).split())
+    ranges = {(first, last) for _a, _b, first, last
+              in explicit_ranges(content, year)}
+    if not ranges:
+        return "official_html_no_explicit_visible_future_range"
+    if len(ranges) > 1:
+        return "official_html_conflicting_future_ranges"
+    return "official_html_range_identity_or_context_rejected"
+
+
 def generic_rotating_sources(archive, published, occupied, state, today,
-                             limit=GENERIC_MAX_PER_RUN, published_rows=()):
+                             limit=GENERIC_MAX_PER_RUN, published_rows=(),
+                             priority_slugs=()):
     """Pick bounded, diverse first-party homepages without any event hardcode.
 
     Follow up yesterday's observed exact edition before rotating new archives:
@@ -162,11 +237,22 @@ def generic_rotating_sources(archive, published, occupied, state, today,
         raise ValueError("Invalid archived organizer rotation cursor")
     selected = carry[:limit]
     available = max(0, limit - len(selected))
+    # At most three verified-archive identity matches may influence order.
+    # They do NOT extend the ten-source budget or certify dates.
+    priority = set(priority_slugs)
+    prioritized = [pair for pair in fresh if pair[0] in priority][
+        :min(available, GENERIC_NATIONAL_PRIORITY_MAX_PER_RUN)]
+    selected.extend(prioritized)
+    if prioritized:
+        selected_slugs = {slug for slug, _ in prioritized}
+        fresh = [pair for pair in fresh if pair[0] not in selected_slugs]
+    available = max(0, limit - len(selected))
     if fresh and available:
         index = cursor % len(fresh)
+        picked = min(available, len(fresh))
         selected += [fresh[(index + i) % len(fresh)]
-                     for i in range(min(available, len(fresh)))]
-        state[GENERIC_ROTATION_KEY] = (index + min(available, len(fresh))) % len(fresh)
+                     for i in range(picked)]
+        state[GENERIC_ROTATION_KEY] = (index + picked) % len(fresh)
     return dict(selected)
 
 
@@ -381,7 +467,8 @@ def run(folder, calendar, history, today, fetcher=official_text):
     watched = dict(PINNED_ARCHIVED_HTML_SOURCES)
     watched.update(generic_rotating_sources(
         archive, published, occupied, state, today,
-        published_rows=calendar["festivals"]))
+        published_rows=calendar["festivals"],
+        priority_slugs=national_archived_priority(folder, archive, today)))
     for slug, source in watched.items():
         parent = archive.get(slug)
         if (not isinstance(parent, dict)
@@ -418,9 +505,10 @@ def run(folder, calendar, history, today, fetcher=official_text):
         try:
             proposed = candidate(parent, source, html, today)
             if proposed is None:
-                reason = ("visible_dates_absent_or_ambiguous"
-                          if official_date(html, parent, source["year"]) is None
-                          else "exact_edition_or_publisher_proof_rejected")
+                reason = (private_date_rejection_reason(
+                    html, parent, source["year"])
+                    if official_date(html, parent, source["year"]) is None
+                    else "exact_edition_or_publisher_proof_rejected")
                 record(slug, reason)
                 continue
         except (ValueError, TypeError, UnicodeError):
