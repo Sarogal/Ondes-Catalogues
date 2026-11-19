@@ -175,6 +175,13 @@ def private_date_rejection_reason(html, parent, year):
     ranges = {(first, last) for _a, _b, first, last
               in explicit_ranges(content, year)}
     if not ranges:
+        # Diagnostic only: a raw-markup year is not itself proof of an event.
+        # Never persist page text, URLs, dates or parser exceptions.
+        year_token = re.compile(r"(?<![0-9])" + str(year) + r"(?![0-9])")
+        if year_token.search(content):
+            return "official_visible_year_without_parseable_range"
+        if year_token.search(html):
+            return "official_markup_year_without_visible_year"
         return "official_html_no_explicit_visible_future_range"
     if len(ranges) > 1:
         return "official_html_conflicting_future_ranges"
