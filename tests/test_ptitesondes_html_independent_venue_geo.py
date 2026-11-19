@@ -70,7 +70,10 @@ def context(venues=None, public=None):
     }
 
 
-def diagnose(lead=None, registry=None, html=HTML, ban=None, trace=None,
+_DEFAULT_CONTEXT = object()
+
+
+def diagnose(lead=None, registry=_DEFAULT_CONTEXT, html=HTML, ban=None, trace=None,
              official_page_url=SOURCE):
     seen = [] if trace is None else trace
 
@@ -86,7 +89,7 @@ def diagnose(lead=None, registry=None, html=HTML, ban=None, trace=None,
 
     return diagnose_html_independent_venue(
         deepcopy(LEAD) if lead is None else lead,
-        context() if registry is None else registry,
+        context() if registry is _DEFAULT_CONTEXT else registry,
         venue_reader=official_reader, ban_reader=geo_reader,
     )
 
