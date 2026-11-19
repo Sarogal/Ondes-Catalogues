@@ -55,6 +55,7 @@ class _VisibleEventAccess(_Visibility):
         self.heading_parts = []
         self.stop = False
         self.parts = []
+        self.truncated = False
 
     def handle_starttag(self, tag, attrs):
         hidden = super().handle_starttag(tag, attrs)
@@ -75,8 +76,13 @@ class _VisibleEventAccess(_Visibility):
             for raw in data.splitlines():
                 # Preserve currency semantics through accent/punctuation fold.
                 piece = norm_text(raw.replace("€", " euros "))
-                if 0 < len(piece) <= 200 and len(self.parts) < MAX_FRAGMENTS:
-                    self.parts.append(piece)
+                if len(piece) > 200:
+                    self.truncated = True
+                elif piece:
+                    if len(self.parts) >= MAX_FRAGMENTS:
+                        self.truncated = True
+                    else:
+                        self.parts.append(piece)
 
     def handle_endtag(self, tag):
         if tag == "h1" and self.in_h1:
@@ -125,6 +131,8 @@ def triage_html_access_conditions(lead, page, index_pin, child_path):
         parser.close()
     except (ValueError, TypeError):
         return _default("unreadable_visible_terms")
+    if parser.truncated:
+        return _default("visible_terms_limit_exceeded")
     if not parser.h1_seen or not parser.parts:
         return _default("no_visible_event_terms")
 
