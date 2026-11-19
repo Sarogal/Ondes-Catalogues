@@ -35,7 +35,7 @@ def safe_host(url):
         host = parsed.hostname
         if (parsed.scheme != "https" or not host or parsed.username
                 or parsed.password or parsed.port is not None
-                or not re.fullmatch(r"(?:[a-z0-9-]+\\.)+[a-z]{2,24}", host)):
+                or not re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z]{2,24}", host)):
             return None
         return host
     except ValueError:
@@ -89,7 +89,7 @@ def evaluate(sources, catalogue, specs=None):
         geo = venue.get("geoSource")
         geo_proof = (
             isinstance(address, str) and len(address.strip()) >= 5
-            and "vérifier" not in normalized(address)
+            and "verifier" not in normalized(address)
             and safe_host(geo) is not None)
         spec = specs.get(venue.get("id"))
         trusted = bool(
