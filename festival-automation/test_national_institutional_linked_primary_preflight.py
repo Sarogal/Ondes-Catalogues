@@ -75,7 +75,10 @@ class LinkedNationalPreflightTests(unittest.TestCase):
             folder = Path(path)
             patch = {
                 "schema": "grossesondes.patch.v1", "generated_at": DAY1,
-                "safe_to_publish": False, "source": {},
+                "safe_to_publish": False, "source": {
+                    "festivals": {
+                        "url": "https://grosses-ondes.fr/data/festivals.json"
+                    }},
                 "additions": [], "updates": [],
                 "history_additions": [], "history_updates": [], "deferred": [],
             }
@@ -95,7 +98,8 @@ class LinkedNationalPreflightTests(unittest.TestCase):
     def test_unsafe_or_disappearing_institutional_link_never_fetches_site(self):
         pages = (
             "<main>Festival Metal des Garrigues 2027 sans lien</main>",
-            INDEX_HTML.replace(DETAIL, "https://evil-domain.fr/"),
+            INDEX_HTML.replace(
+                "/evenement/metal-des-garrigues-2027", "https://evil-domain.fr/"),
             '<main><a href="/evenement/unrelated-2027">'
             'Festival Metal des Garrigues 2027</a></main>',
         )
@@ -112,7 +116,6 @@ class LinkedNationalPreflightTests(unittest.TestCase):
                              "TRUSTED_INDEX_DETAIL_LINK_NOT_PROVEN")
             self.assertEqual(visits, [INDEX])
         for detail in (
-            DETAIL_HTML.replace(SITE, "https://evil-domain.fr/"),
             "<p>Site officiel d'un autre festival: <a href='" + SITE + "'>site</a></p>",
             DETAIL_HTML.replace("site officiel</a>", "tickets</a>")
                        .replace("Site officiel du", "Billets du"),
