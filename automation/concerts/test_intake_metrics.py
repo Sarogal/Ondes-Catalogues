@@ -13,7 +13,11 @@ class PrivateMetricsTests(unittest.TestCase):
                      "catalogue": {"events": 353},
                      "venueChecks": [
                          {"venue": "A", "adapterDiagnostic": {
-                             "detailPagesRead": 3, "detailErrors": 1}},
+                             "detailPagesRead": 3, "detailErrors": 1},
+                          "pagesChecked": 4, "eventDetailLinksFound": 54,
+                          "eventDetailPagesFetched": 3,
+                          "htmlVisibleBillLeads": 2,
+                          "candidatesDetected": 2},
                          {"venue": "B", "error": "robots.txt indisponible"},
                          {"venue": "C", "error": "timeout"},
                      ], "partnerChecks": [],
@@ -38,6 +42,13 @@ class PrivateMetricsTests(unittest.TestCase):
         self.assertEqual(report["venueSourcesFetched"], 1)
         self.assertEqual(report["venueSourcesRobotsDeniedOrUnavailable"], 1)
         self.assertEqual(report["venueSourcesOtherErrors"], 1)
+        self.assertEqual(report["venueSources"][0]["pagesChecked"], 4)
+        self.assertEqual(report["venueSources"][0]["eventDetailLinksFound"], 54)
+        self.assertEqual(report["venueSources"][0]["eventDetailPagesFetched"], 3)
+        self.assertEqual(report["venueSources"][0]["htmlVisibleBillLeads"], 2)
+        self.assertEqual(report["venueHtmlVisibleBillLeads"], 2)
+        self.assertEqual(report["venueEventDetailPagesFetched"], 3)
+        self.assertEqual(report["venueEventLinksDiscovered"], 54)
         self.assertEqual(report["tourSources"][0]["candidateCount"], 2)
         self.assertEqual(report["newPrivateCandidates"], 3)
         self.assertEqual(report["privatePending"], 2)
@@ -47,6 +58,24 @@ class PrivateMetricsTests(unittest.TestCase):
         self.assertEqual(report["publishedWatchAnomalies"], 1)
         self.assertEqual(report["actuallyPublishedByThisIntake"], 0)
         self.assertNotIn("https://", str(report))
+
+    def test_invalid_or_untrusted_counts_cannot_escape_into_metrics(self):
+        a = m.describe_venue({
+            "venue": "La Rayonne",
+            "pagesChecked": True, "eventDetailLinksFound": -1,
+            "eventDetailPagesFetched": "secret count",
+            "htmlVisibleBillLeads": 100001,
+            "candidatesDetected": None,
+            "adapterDiagnostic": {"detailPagesRead": "bad"},
+        })
+        self.assertEqual(a["pagesChecked"], 0)
+        self.assertEqual(a["eventDetailLinksFound"], 0)
+        self.assertEqual(a["eventDetailPagesFetched"], 0)
+        self.assertEqual(a["htmlVisibleBillLeads"], 0)
+        self.assertEqual(a["detailsRead"], 0)
+        self.assertEqual(a["candidatesDetected"], 0)
+        self.assertNotIn("url", a)
+        self.assertNotIn("artist", str(a))
 
     def test_rejects_broken_or_missing_source_payload(self):
         with self.assertRaises(ValueError):
