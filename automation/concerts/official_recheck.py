@@ -371,7 +371,7 @@ def download_official(url, robots_cache):
         raise ValueError("robots.txt interdit la récupération")
     response = Request(url, headers={"User-Agent": discover.AGENT})
     with urlopen(response, timeout=12) as r:
-        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com"):
+        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com", "larayonne.org", "lemetronum.fr"):
             raise ValueError("Redirection hors domaine officiel")
         raw = r.read(500_001)
         if len(raw) > 500_000:
@@ -430,6 +430,11 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
     for row in chosen:
         c = row["candidate"]
         try:
+            if c.get("source") == "agenda_officiel_structuré":
+                # Untrusted registry hosts must not even reach the network.
+                import generic_music_event
+                if generic_music_event.trusted_spec(c) is None:
+                    raise ValueError("Salle structurée non agréée : pas de réseau")
             html_text = fetch(c["sourceUrl"], cache)
             approval = verify(c, html_text, catalogue, today)
             if approval["event"]["id"] in known:
