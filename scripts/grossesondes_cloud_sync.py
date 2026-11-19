@@ -33,6 +33,7 @@ from grossesondes_institutional_edition import (
     PROOF_MODE as INSTITUTIONAL_PROOF_MODE,
     independently_fetch as independently_fetch_institutional,
     validate_independent as validate_independent_institutional,
+    validate_private_proposal as validate_private_institutional,
 )
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
@@ -377,20 +378,30 @@ def collect_registered_institutional_sources(patch, published_slugs,
     addresses without an index independently resolving them.
     """
     sources = {}
-    checked = 0
     if not isinstance(published_slugs, (set, frozenset)):
         raise ValueError("Signed catalogue identities required")
-    if not isinstance(today, str):
-        raise ValueError("Actual publisher date required")
-    for row in patch.get("additions", []):
-        if (not isinstance(row, dict)
-                or row.get("proofMode") != INSTITUTIONAL_PROOF_MODE
-                or row.get("slug") in published_slugs):
-            continue
-        if checked >= 2:
-            break
-        checked += 1
-        slug = row.get("slug")
+    try:
+        ordinal = datetime.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual publisher date required") from exc
+    eligible = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == INSTITUTIONAL_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_institutional(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not eligible:
+        return sources
+    # Daily round-robin keeps a permanently inaccessible first source from
+    # starving later institutions, without widening the two-probe budget.
+    begin = (ordinal * 2) % len(eligible)
+    selected = [
+        eligible[(begin+i) % len(eligible)]
+        for i in range(min(2, len(eligible)))
+    ]
+    for row in selected:
+        slug = row["slug"]
         try:
             html = independently_fetch_institutional(
                 row, today, **({"fetch": fetcher} if fetcher is not None else {}))
