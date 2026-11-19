@@ -211,5 +211,29 @@ class PrivatePreflightHtmlIntegrationTests(unittest.TestCase):
         self.assertEqual(row["reviewBucket"], "genre_unknown")
 
 
+    def test_full_named_html_lineup_is_counted_but_never_signed(self):
+        row = {**CANDIDATE, "structuredPerformerProof": "missing_review_only"}
+        registry = {"schema": "grossesondes.concert.intake.v1",
+                    "items": {"item": {"candidate": row,
+                                       "stableObservations": 2,
+                                       "status": "pending_review"}}}
+        sources = {"schema": "grossesondes.concert.sourcelist.v1",
+                   "venues": [SOURCE]}
+        catalogue = {"schemaVersion": 1, "mode": "preview-public-unlisted",
+                     "events": [], "venues": [], "artists": []}
+        approved = {"schema": "grossesondes.concert.approvals.v1",
+                    "approvals": []}
+        report = preflight.build(
+            registry, sources, catalogue, approved, dt.date(2026, 11, 19),
+            fetch=lambda url, **kwargs: (PAGE, url),
+            robots=lambda url, cache: True, limit=8)
+        self.assertEqual(report["htmlFullyNamedArtistHeadingReviewOnly"], 1)
+        self.assertEqual(report["htmlGenreEvidenceFound"], 0)
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publicationAllowed"])
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
