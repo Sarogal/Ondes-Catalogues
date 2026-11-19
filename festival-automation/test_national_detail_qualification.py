@@ -386,11 +386,44 @@ class NationalDetailQualificationTests(unittest.TestCase):
                   "date": TODAY, "source_reference_leads_review_only": []}
         queue = build_queue(state, report, [], TODAY)
         visited = []
-        scan(state, queue, TODAY,
+        scan(state, queue, TODAY, limit=1,
              fetch=lambda u: (visited.append(u),
                               HTML_INDEX if u == ORIGIN else HTML_DETAIL)[1])
         self.assertLessEqual(len(visited), 2)
         self.assertEqual(len(state["national_detail_last_attempted_private"]), 1)
+
+    def test_two_detail_probes_per_cycle_remain_review_only(self):
+        state, _ = self.data()
+        url2 = "https://agenda.montpellier.fr/evenement/rock-doccitanie-2027"
+        title2 = "Festival Rock Occitanie 2027"
+        state["regional_festival_candidates_review_only"][url2] = dict(
+            state["regional_festival_candidates_review_only"][URL],
+            candidate_url=url2, title=title2)
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": TODAY, "source_reference_leads_review_only": []}
+        queue = build_queue(state, report, [], TODAY)
+        index_html = (HTML_INDEX +
+            '<a href="/evenement/rock-doccitanie-2027">'
+            'Festival Rock Occitanie 2027</a>')
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            if url == ORIGIN:
+                return index_html
+            if url == URL:
+                return HTML_DETAIL
+            if url == url2:
+                return ('<h1>Festival Rock Occitanie 2027</h1>'
+                        '<p>Les 11 et 12 juin 2027, festival de metal.</p>')
+            raise AssertionError("Unexpected destination")
+        results = scan(state, queue, TODAY, fetch=fetch, limit=2)
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len(state["national_detail_last_attempted_private"]), 2)
+        self.assertEqual(set(visited), {ORIGIN, URL, url2})
+        self.assertEqual(len(visited), 4)
+        self.assertTrue(all(x["publication_authorized"] is False for x in results))
+        review = build_review(state, queue, TODAY)
+        self.assertEqual(review["publications"], 0)
 
     def test_unknown_index_failure_has_no_old_positive_status(self):
         state, queue = self.data()
