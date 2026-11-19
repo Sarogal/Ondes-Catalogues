@@ -272,8 +272,8 @@ def _mpt_adult_only_declared(parts):
     if not any(x in adult_tags for x in short_labels):
         return False
     youth = re.compile(
-        r"\\b(enfants?|tout petits?|bebes?|premiers ages|"
-        r"familles?|tout public|adolescents?)\\b"
+        r"\b(enfants?|tout petits?|bebes?|premiers ages|"
+        r"familles?|tout public|adolescents?)\b"
     )
     return not any(youth.search(x) for x in short_labels)
 
