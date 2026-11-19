@@ -88,6 +88,8 @@ def _eligible(queue, published, today):
         if (not isinstance(dossier, dict)
                 or dossier.get("publication_authorized") is not False
                 or dossier.get("safe_to_publish") is not False
+                or not isinstance(dossier.get("id"), str)
+                or not re.fullmatch(r"national-[a-z0-9-]{8,120}", dossier["id"])
                 or not isinstance(dossier.get("sources"), list)
                 or len(dossier["sources"]) > MAX_SOURCES_PER_DOSSIER):
             continue
@@ -149,10 +151,17 @@ def examine(state, queue, published, today, fetch=None):
                and observed[x["url"]].get("lastSeen") == yesterday
                and observed[x["url"]].get("firstSeen") == yesterday]
     other = [x for x in eligible if x not in pending]
-    if other:
-        offset = (current.toordinal() // 2 * MAX_CHECKS) % len(other)
-        other = other[offset:] + other[:offset]
-    selected = (pending + other)[:MAX_CHECKS]
+    # A second scheduled collection on the same day must probe NEW leads,
+    # not waste both slots on leads already read that morning.
+    fresh = [x for x in other if not isinstance(observed.get(x["url"]), dict)
+             or observed[x["url"]].get("lastSeen") != today]
+    repeated = [x for x in other if x not in fresh]
+    def rotate(rows):
+        if not rows:
+            return rows
+        offset = (current.toordinal() // 2 * MAX_CHECKS) % len(rows)
+        return rows[offset:] + rows[:offset]
+    selected = (pending + rotate(fresh) + rotate(repeated))[:MAX_CHECKS]
     read = fetch_public_html if fetch is None else fetch
     rows = []
     for source in selected:
