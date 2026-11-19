@@ -42,6 +42,47 @@ class RegionalSourceDiagnosticsTests(unittest.TestCase):
         self.assertNotIn("html", saved)
         self.assertNotIn("candidate_url", saved)
 
+    def test_network_failure_class_is_strictly_private_and_safe(self):
+        from urllib.error import HTTPError, URLError
+        cases = [
+            (HTTPError(BASE, 403, "private internal body", {}, None),
+             "HTTP_DENIED_OR_RATE_LIMITED"),
+            (HTTPError(BASE, 404, "secret 404", {}, None), "HTTP_MISSING"),
+            (URLError("internal host TLS details, access_token=test"),
+             "TRANSPORT_OR_TLS_ERROR"),
+            (ValueError("confidential cross-domain redirect"),
+             "SECURITY_OR_URL_REJECTED"),
+        ]
+        for failure, expected in cases:
+            with self.subTest(kind=expected, failure=type(failure).__name__):
+                state, r = {}, {"schema": "grossesondes.source-watch-report.v1",
+                                "date": DAY}
+                def error_fetch(_url):
+                    raise failure
+                scan_regional_indexes(
+                    r, state, [{"id": "na-limoges", "url": BASE,
+                                "region": REGION}], DAY,
+                    fetch=error_fetch, limit=1)
+                saved = state[KEY][BASE]
+                self.assertEqual(saved["status"], "INACCESSIBLE")
+                self.assertEqual(saved["fetch_failure_class"], expected)
+                self.assertFalse(saved["publication_authorized"])
+                self.assertNotIn("private internal", str(saved))
+                self.assertNotIn("access_token", str(saved))
+                self.assertNotIn("cross-domain", str(saved))
+
+    def test_fetch_failure_class_cannot_be_injected_from_private_state(self):
+        state = {}
+        obs = observation(status="INACCESSIBLE")
+        obs["fetch_failure_class"] = "FORGED_APPROVED"
+        record_regional_diagnostics(state, [obs], APPROVED, DAY, permitted_url)
+        self.assertEqual(state[KEY][BASE]["fetch_failure_class"], "UNKNOWN")
+        self.assertFalse(state[KEY][BASE]["publication_authorized"])
+        next_day = "2026-11-07"
+        record_regional_diagnostics(state, [], APPROVED,
+                                    next_day, permitted_url)
+        self.assertEqual(state[KEY][BASE]["fetch_failure_class"], "UNKNOWN")
+
     def test_failure_after_success_preserves_success_date_not_success_status(self):
         state = {}
         record_regional_diagnostics(state, [observation()],
