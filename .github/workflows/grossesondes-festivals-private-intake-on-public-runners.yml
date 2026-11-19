@@ -154,6 +154,10 @@ jobs:
           # Newly found municipal agenda editions: strict visible dates and
           # two-day provenance review only, never a public patch or approval.
           run_private institutional_dates python "$ENGINE/national_institutional_edition_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          # NEW festivals without signed archive: only a verified institutional
+          # index->detail->visible festival site link may select the HTTPS target.
+          # Two days of evidence; private patch; independent publisher recheck.
+          run_private institutional_linked python "$ENGINE/national_institutional_linked_primary_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           # Candidate organizer URLs from fresh institutional event links: PRIVATE research only.
           # No unknown organizer host is fetched or authorized at this step.
           run_private institutional_organizer_links python "$ENGINE/national_institutional_organizer_preflight.py" --intake "$INTAKE"
@@ -205,6 +209,7 @@ jobs:
             automation-intake/grossesondes/national-festival-discovery-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
+            automation-intake/grossesondes/national-institutional-linked-dates.json \
             automation-intake/grossesondes/national-institutional-organizer-links.json \
             automation-intake/grossesondes/national-institutional-organizer-domain-review.json \
             automation-intake/grossesondes/national-generic-primary-date-review.json \
