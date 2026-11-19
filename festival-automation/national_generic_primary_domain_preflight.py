@@ -264,6 +264,8 @@ def examine(state, queue, published, today, fetch=None):
             "start_date_hint": None, "end_date_hint": None,
             "date_source_mode": None,
             "diagnostic_code": None, "diagnostic_surface": None,
+            "visible_range_count_review_only": 0,
+            "visible_ranges_review_only": [],
         }
         try:
             html = read(url)
@@ -307,6 +309,15 @@ def examine(state, queue, published, today, fetch=None):
                 row["two_day_dates"] = continuous
                 row["start_date_hint"], row["end_date_hint"] = first, last
                 row["date_source_mode"] = proof_mode
+            if (row["diagnostic_code"] == "CONFLICTING_VISIBLE_DATE_RANGES"
+                    and row["diagnostic_surface"] == "SOURCE_PAGE"):
+                # Bounded ISO dates only; never export HTML, URLs or private
+                # observations to the public publisher.
+                ranges = sorted(_visible_date_ranges(html, source["year"]))
+                row["visible_range_count_review_only"] = len(ranges)
+                row["visible_ranges_review_only"] = [
+                    {"start":a.isoformat(), "end":b.isoformat()}
+                    for a, b in ranges[:8]]
         except (OSError, ValueError, UnicodeError, TypeError, KeyError):
             row["status"] = "GENERIC_PRIMARY_HTTPS_UNAVAILABLE"
             row["diagnostic_code"] = "SECURE_FETCH_OR_HTML_PARSE_FAILED"
