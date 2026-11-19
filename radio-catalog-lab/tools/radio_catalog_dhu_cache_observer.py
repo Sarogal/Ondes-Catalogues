@@ -123,8 +123,13 @@ def observe(serial: str, read) -> dict:
 
 
 def compare_baseline(baseline: dict, current: dict) -> None:
+    # A wireless ADB endpoint is NOT a device identity: the phone keeps the
+    # same disk cache when its Wi-Fi debugging port changes. Older baselines
+    # already contain serial_tag, so retain that field for compatibility but
+    # never use it as a persistence gate. The physical-phone/model/package
+    # checks in observe() and the object bytes/inode/mtime remain mandatory.
     for field in (
-        "schema", "target", "serial_tag", "package",
+        "schema", "target", "package",
         "sha256", "byte_size", "inode", "modified",
     ):
         if baseline.get(field) != current.get(field):
@@ -173,6 +178,8 @@ def main() -> int:
             print(f"BASELINE OK: {args.baseline}")
         else:
             compare_baseline(previous, current)
+            if previous.get("serial_tag") != current.get("serial_tag"):
+                print("INFO: wireless ADB port changed; port is not a device identity")
             print("PASS: verified same SHA bytes, size, inode and mtime after restart")
         print(f"SHA-256: {current['sha256']}")
         print(f"Bytes: {current['byte_size']}")
