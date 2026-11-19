@@ -25,6 +25,7 @@ from grossesondes_structured_tickets import (
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE,
     ARCHIVED_PROOF_MODE, HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    ARCHIVED_BROWSER_PROOF_MODE,
     validate_structured_edition,
     validate_archived_structured_edition, conflicts_with_existing,
 )
@@ -170,9 +171,11 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
         slug=e["slug"]
         if e.get("proofMode") in (
                 EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
-                HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE):
+                HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+                ARCHIVED_BROWSER_PROOF_MODE):
             archived_parent = e["proofMode"] in (
-                ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE)
+                ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+                ARCHIVED_BROWSER_PROOF_MODE)
             origin = e.get("originSlug")
             parent = (next((h for h in history["knownFestivals"]
                             if h.get("slug") == origin), None)
@@ -184,6 +187,15 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             if parent is None or conflicts_with_existing(
                     e,known_rows,known_history):
                 report["held"].append({"slug":slug,"reason":"édition parente absente ou doublon"})
+                continue
+            # The new browser mode must be independently fetched and verified
+            # by the publisher itself. A private patch, a raw HTML fetch, or
+            # synthetic caller supplied rendered text cannot set this marker.
+            if (e["proofMode"] == ARCHIVED_BROWSER_PROOF_MODE
+                    and sources.get("registered-edition-browser-verified:"+slug)
+                        is not True):
+                report["held"].append({
+                    "slug": slug, "reason": "rendu navigateur indépendant manquant"})
                 continue
             validator = (validate_archived_structured_edition
                          if archived_parent else validate_structured_edition)
