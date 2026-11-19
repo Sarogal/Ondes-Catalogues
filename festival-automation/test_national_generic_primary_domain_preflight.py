@@ -109,6 +109,99 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertFalse(result["rows"][0]["two_day_dates"])
         self.assertFalse(result["publication_authorized"])
 
+    def test_same_host_homepage_recovers_dates_without_approving_domain(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        deep = "<main><h1>Festival Foudre du Nord 2027</h1><p>Programmation à venir</p></main>"
+        home = "https://foudre-metal.fr/"
+        visits = []
+        def fetch(url):
+            visits.append(url)
+            return page(URL_A) if url == home else deep
+        first = examine(state, queue, published, DAY1, fetch=fetch)
+        self.assertEqual(visits, [URL_A, home])
+        self.assertEqual(first["rows"][0]["date_source_mode"], "SAME_HOST_HOME")
+        self.assertEqual(first["rows"][0]["start_date_hint"], "2027-06-04")
+        self.assertEqual(first["rows"][0]["end_date_hint"], "2027-06-05")
+        self.assertFalse(first["official_site_authorized"])
+        self.assertFalse(first["publication_authorized"])
+        second_state, second_queue, _ = fixture(DAY2)
+        second_state.update(state)
+        second = examine(second_state, second_queue, published, DAY2,
+                         fetch=fetch)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        self.assertEqual(second["rows"][0]["date_source_mode"], "SAME_HOST_HOME")
+        self.assertEqual(second["publications"], 0)
+
+    def test_homepage_fallback_never_overrides_visible_date_or_jsonld_conflict(self):
+        deep = "<main><h1>Festival Foudre du Nord 2027</h1><p>Programmation</p></main>"
+        broken = [
+            deep.replace("Programmation", "Annulé 25 et 26 juillet 2027"),
+            deep.replace("Programmation", "25 et 26 juillet 2027"),
+        ]
+        for detail in broken:
+            with self.subTest(detail=detail):
+                state, queue, published = fixture()
+                queue["dossiers"] = queue["dossiers"][:1]
+                visited = []
+                result = examine(state, queue, published, DAY1,
+                                 fetch=lambda u: visited.append(u) or detail)
+                self.assertEqual(visited, [URL_A])
+                self.assertEqual(result["rows"][0]["status"],
+                                 "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        # Hidden structured data cannot certify dates, but a same-edition
+        # contradictory JSON-LD document vetoes the later homepage proof.
+        conflict = deep + ('<script type="application/ld+json">'
+            '{"@type":"MusicEvent","name":"Festival Foudre du Nord 2027",'
+            '"startDate":"2027-07-04","endDate":"2027-07-05"}</script>')
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        visited = []
+        result = examine(
+            state, queue, published, DAY1,
+            fetch=lambda url: visited.append(url) or
+                (page(URL_A) if url == "https://foudre-metal.fr/" else conflict))
+        self.assertEqual(visited, [URL_A, "https://foudre-metal.fr/"])
+        self.assertEqual(result["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+
+    def test_no_extra_fetch_for_home_source_or_valid_detail(self):
+        for source_url, detail_html in (
+                (URL_A, page(URL_A)),
+                (URL_B, "<h1>Festival Nuit d Acier 2027</h1><p>Dates à venir</p>")):
+            with self.subTest(source_url=source_url):
+                state, queue, published = fixture()
+                queue["dossiers"] = [dossier(
+                    NAMES[0] if source_url == URL_A else NAMES[1],
+                    source_url, DAY1)]
+                visited = []
+                result = examine(state, queue, published, DAY1,
+                                 fetch=lambda url: visited.append(url) or detail_html)
+                self.assertEqual(visited, [source_url])
+                if source_url == URL_A:
+                    self.assertEqual(result["rows"][0]["date_source_mode"],
+                                     "SOURCE_PAGE")
+                else:
+                    self.assertIsNone(result["rows"][0]["date_source_mode"])
+
+    def test_mode_change_resets_two_day_evidence(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        deep = "<h1>Festival Foudre du Nord 2027</h1><p>Programme en cours</p>"
+        home = "https://foudre-metal.fr/"
+        examine(state, queue, published, DAY1,
+                fetch=lambda u: page(URL_A) if u == home else deep)
+        changed_state, changed_queue, _ = fixture(DAY2)
+        changed_state.update(state)
+        changed = examine(changed_state, changed_queue, published, DAY2,
+                          fetch=lambda u: page(URL_A))
+        self.assertEqual(changed["two_day_dates_count"], 0)
+        self.assertEqual(changed["rows"][0]["date_source_mode"], "SOURCE_PAGE")
+        final_queue = fixture(DAY3)[1]
+        stable = examine(changed_state, final_queue, published, DAY3,
+                         fetch=lambda u: page(URL_A))
+        self.assertEqual(stable["two_day_dates_count"], 1)
+
     def test_bad_dates_annulations_jsonld_conflicts_do_not_stabilize(self):
         cases = (
             "<h1>Festival Foudre du Nord 2027</h1><p>Dates à venir</p>",
