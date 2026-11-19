@@ -68,6 +68,41 @@ ROW_KEYS = {
 PRIVATE_KEYS = {"proofMode", "originSlug", "evidence", "verified_at"}
 
 
+
+def no_same_edition_jsonld_contradiction(html, title, start, end):
+    """Visible HTML is proof only when matching official JSON-LD agrees.
+
+    An unrelated or previous-year event does not veto the future edition.
+    Same-edition JSON-LD is never itself proof in HTML mode: it can only
+    contradict, cancel, or corroborate the visible, independently fetched page.
+    """
+    parser = JsonLD()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError):
+        return False
+    for document in parser.documents[:30]:
+        for event in walk(document):
+            types = event.get("@type")
+            if not isinstance(types, list):
+                types = [types]
+            types = {str(t).rsplit("/", 1)[-1].casefold() for t in types}
+            if not types.intersection(ALLOWED_EVENT_TYPES):
+                continue
+            name = event.get("name")
+            if (not isinstance(name, str)
+                    or edition_name(name) != edition_name(title)
+                    or str(start.year) not in
+                       re.findall(r"\b20[2-4][0-9]\b", name)):
+                continue
+            status = str(event.get("eventStatus", "")).rsplit("/", 1)[-1].casefold()
+            if (iso_day(event.get("startDate")) != start
+                    or iso_day(event.get("endDate")) != end
+                    or status in SENSITIVE_STATUSES):
+                return False
+    return True
+
 def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_MODE,
                                 allow_skipped_archive_years=False):
     """Return sanitized new row or None; never partially accept."""
@@ -127,7 +162,9 @@ def validate_structured_edition(proposal, parent, html, today, proof_mode=PROOF_
             and proposal["sourceConfidence"] == PRIVATE_CONFIDENCE):
         return None
     if proof_mode == HTML_PROOF_MODE:
-        if not visible_official_edition(html, title, start, end):
+        if (not visible_official_edition(html, title, start, end)
+                or not no_same_edition_jsonld_contradiction(
+                    html, title, start, end)):
             return None
     else:
         parser = JsonLD()
