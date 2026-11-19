@@ -17,6 +17,9 @@ from concerts_schedule_catchup import iso, request
 REPO = "Sarogal/Ondes-Catalogues"
 API = "https://api.github.com/repos/" + REPO
 FAILURE_GAP = dt.timedelta(minutes=90)
+# UTC slots of the existing trusted Festivals intake (not new pipelines).
+FESTIVAL_SLOTS_UTC = ((6, 24), (18, 42))
+FESTIVAL_SLOT_GRACE = dt.timedelta(minutes=45)
 
 # Verified workflow_dispatch inputs, committed in the trusted main branch.
 # A call to either target only restarts its normal evidence/approval pipeline.
@@ -78,15 +81,73 @@ def decide(rows, now, success_gap, active_gap):
     return age >= FAILURE_GAP, "last-failure"
 
 
+def festival_slot_decide(rows, now):
+    """Rescue a *missed slot*, not merely an old last successful run.
+
+    A source-engine push in the afternoon must not hide a missed evening
+    schedule. A real main-branch intake created after the expected UTC slot
+    (schedule, push or dispatch) satisfies the slot; a very recent failed
+    attempt is allowed 90 minutes before retry. This function never calls
+    a publisher, adds permissions, or interprets publication success.
+    """
+    if (not isinstance(rows, list) or not isinstance(now, dt.datetime)
+            or now.tzinfo is None):
+        raise ValueError("Invalid Festivals run history")
+    utc = now.astimezone(dt.timezone.utc)
+    slots = []
+    for offset in (0, 1):
+        day = (utc - dt.timedelta(days=offset)).date()
+        for hour, minute in FESTIVAL_SLOTS_UTC:
+            slot = dt.datetime.combine(
+                day, dt.time(hour, minute, tzinfo=dt.timezone.utc))
+            if slot + FESTIVAL_SLOT_GRACE <= utc:
+                slots.append(slot)
+    if not slots:
+        return False, "slot-not-due"
+    latest_slot = max(slots)
+    eligible = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("Malformed Festivals run")
+        if (row.get("event") not in ("schedule", "workflow_dispatch", "push")
+                or row.get("head_branch") != "main"):
+            continue
+        stamp = iso(row.get("created_at"))
+        if stamp > utc + dt.timedelta(minutes=3):
+            return False, "clock-skew"
+        if stamp >= latest_slot:
+            eligible.append((stamp, row))
+    if not eligible:
+        return True, "expected-festivals-slot-missing"
+    stamp, newest = max(eligible, key=lambda item: item[0])
+    status = newest.get("status")
+    if status in ("requested", "queued", "in_progress", "pending", "waiting"):
+        return False, "slot-started-active"
+    if status != "completed":
+        return False, "unknown-run-status"
+    if newest.get("conclusion") == "success":
+        return False, "slot-succeeded"
+    if utc - stamp < FAILURE_GAP:
+        return False, "slot-failure-retry-grace"
+    return True, "expected-festivals-slot-failed"
+
+
 def plan(run_history, now):
     """Diagnostic-only, with fixed predefined workflow names."""
     if not isinstance(run_history, dict) or set(run_history) != set(TARGETS):
         raise ValueError("Unexpected target history")
     decision = {}
     for key, spec in TARGETS.items():
-        should, reason = decide(
+        age_due, age_reason = decide(
             run_history[key], now, spec["success_gap"], spec["active_gap"])
-        decision[key] = {"dispatch": should, "reason": reason}
+        if key == "festivals":
+            slot_due, slot_reason = festival_slot_decide(run_history[key], now)
+            decision[key] = {
+                "dispatch": age_due or slot_due,
+                "reason": slot_reason if slot_due else age_reason,
+            }
+        else:
+            decision[key] = {"dispatch": age_due, "reason": age_reason}
     return decision
 
 
