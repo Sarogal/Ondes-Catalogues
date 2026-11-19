@@ -34,6 +34,10 @@ from grossesondes_institutional_edition import (
     validate_independent as validate_institutional_independent,
     conflicts_with_signed_catalogue as institutional_conflicts,
 )
+from grossesondes_institutional_linked_edition import (
+    PROOF_MODE as INSTITUTIONAL_LINKED_PROOF_MODE,
+    validate_verified_row as validate_institutional_linked_row,
+)
 from grossesondes_history_guard import validate_history_extension
 from grossesondes_noel_2026 import (
     PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
@@ -174,7 +178,25 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
-        if e.get("proofMode") == INSTITUTIONAL_PROOF_MODE:
+        if e.get("proofMode") == INSTITUTIONAL_LINKED_PROOF_MODE:
+            known_rows = rows + (
+                published_calendar.get("festivals", []) if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", []) if published_history else [])
+            independently_checked = sources.get("registered-linked:"+slug)
+            accepted = validate_institutional_linked_row(
+                e, independently_checked, today)
+            if (sources.get("registered-linked-verified:"+slug) is not True
+                    or accepted is None
+                    or institutional_conflicts(e, known_rows, known_history)):
+                report["held"].append({
+                    "slug": slug,
+                    "reason": "nouveau festival sans lien institutionnel et dates indépendants"})
+                continue
+            rows.append(accepted)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].extend(e["evidence"][:3] + [accepted["officialSite"]])
+        elif e.get("proofMode") == INSTITUTIONAL_PROOF_MODE:
             known_rows = rows + (
                 published_calendar.get("festivals", []) if published_calendar else [])
             known_history = history["knownFestivals"] + (
