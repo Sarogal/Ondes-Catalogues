@@ -67,3 +67,21 @@ une nouvelle sortie publiée.
 de confiance sur des index officiellement revus, puis compléter les
 preuves indépendantes de séance/âge/lieu/droits et les règles
 anti-doublons. Rien ne doit être activé en production sans validation.
+
+
+## Essai réseau public contrôlé (nouveau)
+
+Un workflow **PR-only** `.github/workflows/ptitesondes-html-index-live-smoke.yml`
+exécute `scripts/ptitesondes_html_index_detail_live_smoke.py`.
+Il lit uniquement le domaine institutionnel public préexistant
+`mpt.montpellier.fr`, récupère l'index exact et **au maximum trois fiches
+enfants par essai**. Il ne lit aucun secret, backlog ou catalogue privé.
+
+Sa sortie standard est uniquement `redact_detail_funnel_report` :
+nombres de fiches tentées, lues et de séances extraites. Il échoue avec un
+code fixe si aucune fiche ne peut être lue ; ce cas **ne doit jamais être
+compté comme une veille réussie**.
+
+Ceci n'homologue ni les pages, ni les droits, ni les lieux et ne déclenche
+aucune écriture. Une CI réseau verte confirme **seulement la capacité de
+lecture du petit échantillon à la date de son exécution**.
