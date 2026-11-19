@@ -186,8 +186,8 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
             raise AssertionError("Generic listing wasted a detail read: " + str(url))
 
         report = []
-        with mock.patch.object(discover, "download", side_effect=fetch), \\
-             mock.patch.object(discover, "robots_allow", return_value=True), \\
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
              mock.patch.object(discover.feeds, "feed_links",
                                return_value={"rss": [], "ics": []}):
             rows = discover.scan_venues(
