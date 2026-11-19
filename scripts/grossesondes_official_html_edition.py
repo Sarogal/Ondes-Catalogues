@@ -121,6 +121,53 @@ def dominant_visible_range(ranges):
     return enclosing[0] if len(enclosing) == 1 else None
 
 
+class VisibleParagraphs(VisibleText):
+    """A conservative visible-paragraph view for year-specific identity checks.
+
+    Metadata, scripts, hidden elements and text spread across unrelated
+    paragraphs never form a same-paragraph edition announcement.
+    """
+    PARAGRAPHS = frozenset({"p", "h1", "h2", "h3", "h4", "li"})
+    SEP = "\x1f"
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.PARAGRAPHS and not self.hidden():
+            self.parts.append(self.SEP)
+        super().handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag in self.PARAGRAPHS and not self.hidden():
+            self.parts.append(self.SEP)
+        super().handle_endtag(tag)
+
+
+def _current_edition_same_paragraph(html, name, start, end):
+    """An explicit, noncancelled current-year name/date in ONE visible block."""
+    parser = VisibleParagraphs()
+    parser.feed(html)
+    parser.close()
+    year = start.year
+    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        if not 0 < len(raw) <= 1600:
+            continue
+        paragraph = " ".join(fold(raw).split())
+        if not name.search(paragraph) or CANCEL.search(paragraph):
+            continue
+        years = {int(x) for x in re.findall(
+            r"(?<!\d)20[2-4]\d(?!\d)", paragraph)}
+        if not years or years != {year}:
+            continue
+        dates = {(a, b) for _x, _y, a, b in explicit_ranges(paragraph, year)}
+        if dominant_visible_range(dates) != (start, end):
+            continue
+        for mention in name.finditer(paragraph):
+            after = re.match(r"\s*(20[2-4]\d)(?!\d)",
+                             paragraph[mention.end():mention.end() + 14])
+            if after is None or int(after.group(1)) == year:
+                return True
+    return False
+
+
 def visible_official_edition(html, edition_title, start, end):
     """Fail closed if the exact edition is not corroborated by visible HTML.
 
@@ -159,12 +206,18 @@ def visible_official_edition(html, edition_title, start, end):
         dates = list(explicit_ranges(excerpt, year))
         if not dates:
             continue
-        # An adjacent edition label for another year is a contradiction,
-        # even when a nearby generic paragraph advertises this year.
+        # A historical-year label cannot itself corroborate this edition.
+        # It remains a veto UNLESS the current edition has an independent,
+        # exact name/year/date statement within the same visible paragraph.
+        # This avoids mistaking archived 2026 recaps near a 2027 announcement
+        # for a contradiction, without trusting generic adjacent text.
         after_name = re.match(r"\s*(20[2-4]\d)(?!\d)",
                               text[mention.end():mention.end() + 14])
         if after_name and int(after_name.group(1)) != year:
-            return False
+            if not _current_edition_same_paragraph(
+                    html, name, start, end):
+                return False
+            continue
         # A cancellation or unresolved postponement of the same edition
         # anywhere in the relevant announcement blocks forbids admission.
         if CANCEL.search(excerpt):
