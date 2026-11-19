@@ -433,6 +433,27 @@ def scan_slot_for_hour(hour):
     return 0 if hour < 12 else 1 if hour < 18 else 2
 
 
+def select_generic_official_detail_links(links, day, scan_slot, limit=3):
+    """Rotate filtered same-host event links without increasing probes.
+
+    The previous fixed first-three selection reread the same front-page
+    URLs each day and permanently starved later individual events.
+    Three daily slots now visit distinct cohorts; later days complete
+    the queue. Discovery only, never a publisher approval.
+    """
+    if (not isinstance(day, dt.date) or isinstance(day, dt.datetime)
+            or scan_slot not in (0, 1, 2)
+            or not isinstance(limit, int) or not 0 <= limit <= 3):
+        raise ValueError("Invalid official venue detail rotation")
+    ordered = list(dict.fromkeys(link for link in links
+                                  if isinstance(link, str) and link))
+    if not ordered or not limit:
+        return []
+    offset = ((day.toordinal() * 3 + scan_slot) * limit) % len(ordered)
+    return [ordered[(offset + i) % len(ordered)]
+            for i in range(min(limit, len(ordered)))]
+
+
 def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
     if scan_slot not in (0, 1, 2):
         raise ValueError("Only the three bounded local scan windows are allowed")
@@ -478,7 +499,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     "bateau_ivre_official_detail_review",
                     "laiterie_official_detail_review",
                     "echonova_official_detail_review")
-                         else links[:3]):
+                         else select_generic_official_detail_links(
+                             links, day, scan_slot, limit=3)):
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)
