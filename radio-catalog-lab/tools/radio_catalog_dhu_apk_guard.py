@@ -17,6 +17,13 @@ PRODUCTION = "fr.grossesondes.grosses_ondes"
 DIAGNOSTIC = PRODUCTION + ".dhudiag"
 AUTHORITY = DIAGNOSTIC + ".stationlogos"
 LABEL = "GO Diagnostic SHA"
+HTTPS_DIAGNOSTIC = PRODUCTION + ".dhunetdiag"
+HTTPS_AUTHORITY = HTTPS_DIAGNOSTIC + ".stationlogos"
+HTTPS_LABEL = "GO HTTPS Diagnostic"
+PROFILES = {
+    "sha": (DIAGNOSTIC, AUTHORITY, LABEL),
+    "https": (HTTPS_DIAGNOSTIC, HTTPS_AUTHORITY, HTTPS_LABEL),
+}
 
 
 class ApkGuardError(ValueError):
@@ -25,17 +32,22 @@ class ApkGuardError(ValueError):
 
 def check_metadata(
     badging: str, manifest: str, signer: str, expected_debug_sha256: str,
+    *, profile: str = "sha",
 ) -> None:
+    try:
+        app_package, artwork_authority, app_label = PROFILES[profile]
+    except KeyError as exc:
+        raise ApkGuardError("Unknown diagnostic build profile") from exc
     packages = re.findall(r"(?m)^package:\s+name='([^']+)'", badging)
-    if packages != [DIAGNOSTIC]:
+    if packages != [app_package]:
         raise ApkGuardError("APK is not the standalone diagnostic package; REFUSING")
 
     labels = re.findall(r"(?m)^application-label:'([^']*)'", badging)
-    if labels != [LABEL]:
+    if labels != [app_label]:
         raise ApkGuardError("Diagnostic app label is missing or ambiguous")
 
     authorities = re.findall(r'android:authorities(?:\([^)]*\))?="([^"]+)"', manifest)
-    if authorities.count(AUTHORITY) != 1:
+    if authorities.count(artwork_authority) != 1:
         raise ApkGuardError("The exact standalone artwork authority was not found once")
     if PRODUCTION + ".stationlogos" in authorities:
         raise ApkGuardError("Production ContentProvider authority is present")
@@ -194,7 +206,7 @@ def command(*args: str) -> str:
     return result.stdout.decode("utf-8", "replace")
 
 
-def check_apk(apk: Path, sdk: Path) -> None:
+def check_apk(apk: Path, sdk: Path, *, profile: str = "sha") -> None:
     if not apk.is_file():
         raise ApkGuardError("Diagnostic APK was not built")
     aapt, signer = find_tools(sdk)
@@ -203,6 +215,7 @@ def check_apk(apk: Path, sdk: Path) -> None:
     signature = command(str(signer), "verify", "--print-certs", str(apk))
     check_metadata(
         badging, manifest, signature, local_debug_certificate_sha256(),
+        profile=profile,
     )
 
 
@@ -210,9 +223,13 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apk", required=True, type=Path)
     parser.add_argument("--sdk", required=True, type=Path)
+    parser.add_argument(
+        "--profile", choices=tuple(PROFILES), default="sha",
+        help="Explicit standalone application identity to verify",
+    )
     args = parser.parse_args()
     try:
-        check_apk(args.apk, args.sdk)
+        check_apk(args.apk, args.sdk, profile=args.profile)
     except (OSError, subprocess.TimeoutExpired, ApkGuardError) as exc:
         parser.exit(1, f"REFUS APK DIAGNOSTIC: {exc}\n")
     print("PASS: isolated package, label, provider, MediaBrowser, Android Auto, matched local debug certificate SHA-256")
