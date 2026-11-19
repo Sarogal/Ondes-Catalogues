@@ -31,6 +31,7 @@ from ptitesondes_html_independent_venue_geo import (
     diagnose_html_independent_venue,
 )
 from ptitesondes_html_access_conditions import triage_html_access_conditions
+from ptitesondes_html_family_age import triage_html_family_age
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -80,6 +81,14 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "first_party_source_sessions_held": 0,
         "first_party_missing_same_block": 0,
         "first_party_audience_cues_missing": 0,
+        "family_first_party_explicit_family": 0,
+        "family_first_party_explicit_children": 0,
+        "family_first_party_explicit_mixed": 0,
+        "family_first_party_missing_or_held": 0,
+        "family_first_party_age_limits_stated": 0,
+        "family_first_party_age_not_stated": 0,
+        "family_first_party_age_conflicting": 0,
+        "family_first_party_extraction_held": 0,
         "first_party_access_review_pending": 0,
         "first_party_all_visible_cues": 0,
         "access_first_party_free_with_required_membership": 0,
@@ -310,6 +319,23 @@ def diagnose_html_index_detail_funnel(
                 if corroboration["status"] == "same_block_date_and_clock_not_visible":
                     result["first_party_missing_same_block"] += 1
             if corroboration["visible_exact_session"]:
+                family = triage_html_family_age(
+                    row, page, independently_pinned_index, contract["child_path"])
+                family_key = {
+                    "explicit_family": "family_first_party_explicit_family",
+                    "explicit_children": "family_first_party_explicit_children",
+                    "explicit_mixed": "family_first_party_explicit_mixed",
+                }.get(family["audience_state"], "family_first_party_missing_or_held")
+                result[family_key] += 1
+                age_state = family["age_state"]
+                if age_state == "conflicting":
+                    result["family_first_party_age_conflicting"] += 1
+                elif age_state == "not_stated":
+                    result["family_first_party_age_not_stated"] += 1
+                else:
+                    result["family_first_party_age_limits_stated"] += 1
+                if family["reason"] != "visible_first_party_family_age_terms_only":
+                    result["family_first_party_extraction_held"] += 1
                 access = triage_html_access_conditions(
                     row, page, independently_pinned_index, contract["child_path"])
                 key = {
