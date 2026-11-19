@@ -19,11 +19,18 @@ import tempfile
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
-from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges, visible_official_edition
+from grossesondes_official_html_edition import (
+    VisibleText, CANCEL, fold, explicit_ranges, visible_official_edition,
+)
 from grossesondes_stage import official_text
+from grossesondes_structured_roster import (
+    JsonLD, walk, iso_day, edition_name, ALLOWED_EVENT_TYPES,
+    SENSITIVE_STATUSES,
+)
 from grossesondes_structured_edition import (
-    ARCHIVED_HTML_PROOF_MODE, PRIVATE_CONFIDENCE, PRIVATE_NOTES,
-    PRIVATE_STATUS, pinned_parent_identity, validate_archived_structured_edition,
+    ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
+    PRIVATE_CONFIDENCE, PRIVATE_NOTES, PRIVATE_STATUS,
+    pinned_parent_identity, validate_archived_structured_edition,
     conflicts_with_existing,
 )
 
@@ -304,6 +311,63 @@ def official_date(html, parent, year):
     return first, last
 
 
+def official_structured_date(html, parent, year):
+    """Exact current-edition JSON-LD alternative to visible HTML evidence.
+
+    Untrusted page data supplies no destination, signed parent, publisher
+    approval, location, line-up or inherited artist. The real publisher still
+    independently validates the SAME event on the frozen organizer homepage.
+    A contrary visible current-edition range or cancellation blocks admission.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 1_400_000:
+        return None
+    title = str(parent.get("name") or "").strip() + " " + str(year)
+    if not 8 <= len(title) <= 180:
+        return None
+    parser = JsonLD()
+    parser.feed(html)
+    parser.close()
+    matches = set()
+    matching_events = 0
+    for document in parser.documents[:30]:
+        for event in walk(document):
+            types = event.get("@type")
+            if not isinstance(types, list):
+                types = [types]
+            allowed = {str(t).rsplit("/", 1)[-1].casefold() for t in types}
+            if not allowed.intersection(ALLOWED_EVENT_TYPES):
+                continue
+            name = event.get("name")
+            if (not isinstance(name, str) or name.strip() != title
+                    or edition_name(name) != edition_name(title)
+                    or str(year) not in
+                       re.findall(r"\\b20[2-4][0-9]\\b", name)):
+                continue
+            matching_events += 1
+            first = iso_day(event.get("startDate"))
+            last = iso_day(event.get("endDate"))
+            status = str(event.get("eventStatus", "")).rsplit("/", 1)[-1].casefold()
+            if (not first or not last or first.year != year
+                    or last.year != year or not first <= last
+                    or (last - first).days > 7
+                    or status in SENSITIVE_STATUSES):
+                return None
+            matches.add((first, last))
+    if matching_events < 1 or len(matches) != 1:
+        return None
+    visible = VisibleText()
+    visible.feed(html)
+    visible.close()
+    content = " ".join(fold(" ".join(visible.parts)).split())
+    if CANCEL.search(content):
+        return None
+    visible_ranges = {(first, last) for _a, _b, first, last
+                      in explicit_ranges(content, year)}
+    if visible_ranges and visible_ranges != matches:
+        return None
+    return next(iter(matches))
+
+
 def candidate(parent, source, html, today):
     ident = pinned_parent_identity(parent)
     if (ident is None or parent.get("officialSite") != source["officialSite"]
@@ -312,6 +376,12 @@ def candidate(parent, source, html, today):
             or source["year"] <= ident[1]):
         return None
     observed = official_date(html, parent, source["year"])
+    mode = ARCHIVED_HTML_PROOF_MODE
+    if observed is None:
+        # Only a strict first-party same-edition JSON-LD may serve as a
+        # fallback. Generic page dates/metadata never confer permission.
+        observed = official_structured_date(html, parent, source["year"])
+        mode = ARCHIVED_PROOF_MODE
     if observed is None:
         return None
     start, end = observed
@@ -330,7 +400,7 @@ def candidate(parent, source, html, today):
         "lastVerified": today.isoformat(), "notes": PRIVATE_NOTES,
         "verificationStatus": PRIVATE_STATUS,
         "sourceConfidence": PRIVATE_CONFIDENCE,
-        "proofMode": ARCHIVED_HTML_PROOF_MODE,
+        "proofMode": mode,
         "originSlug": parent["slug"],
         "evidence": [source["officialSite"]],
         "verified_at": today.isoformat(),
@@ -339,7 +409,7 @@ def candidate(parent, source, html, today):
     # approval, as the publisher independently re-downloads on another run.
     if validate_archived_structured_edition(
             proposal, parent, html, today.isoformat(),
-            proof_mode=ARCHIVED_HTML_PROOF_MODE) is None:
+            proof_mode=mode) is None:
         return None
     return proposal
 
@@ -351,7 +421,8 @@ def stability(state, proposal, proof_url, today):
     slug = proposal["slug"]
     stable = {
         field: proposal[field] for field in
-        ("slug", "name", "originSlug", "startDate", "endDate", "officialSite")
+        ("slug", "name", "originSlug", "startDate", "endDate",
+         "officialSite", "proofMode")
     }
     stable["pinnedProofUrl"] = proof_url
     digest = sha256(json.dumps(stable, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
