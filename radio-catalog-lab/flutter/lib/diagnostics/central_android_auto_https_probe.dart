@@ -8,7 +8,7 @@ import 'dart:typed_data';
 import 'package:audio_service/audio_service.dart';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
-import 'package:flutter/foundation.dart' show kReleaseMode, debugPrint;
+import 'package:flutter/foundation.dart' show kReleaseMode, debugPrint, ValueNotifier;
 import 'package:flutter/widgets.dart';
 
 import '../android_auto_artwork_uris.dart';
@@ -322,10 +322,19 @@ List<MediaItem> httpsDiagnosticMediaItems() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const Directionality(
+  final status = ValueNotifier<String>(
+    'GO HTTPS Diagnostic\nPreparation securisee des logos...'
+  );
+  runApp(Directionality(
     textDirection: TextDirection.ltr,
     child: Center(
-      child: Text('GO HTTPS Diagnostic - silent Android Auto laboratory'),
+      child: ValueListenableBuilder<String>(
+        valueListenable: status,
+        builder: (context, value, child) => Text(
+          value,
+          textAlign: TextAlign.center,
+        ),
+      ),
     ),
   ));
   try {
@@ -373,12 +382,19 @@ void main() async {
         handler.playbackState.value.playing) {
       throw const CentralCatalogException('MediaBrowser HTTPS fixture mismatch');
     }
+    status.value = 'GO HTTPS Diagnostic : VALIDE\n'
+        'HTTPS telechargements : ' + proof.networkFetches.toString() + '\n'
+        'SHA V1 et V2 verifies, 3 vignettes Android Auto\n'
+        'Flux audio : aucun';
     debugPrint('GO_HTTPS_PHONE_READY networkFetches=' +
         proof.networkFetches.toString() +
         ' offlineOldFallback=' + proof.offlineOldFallbackChecked.toString() +
         ' replayFetches=' + proof.replayFetches.toString() +
         ' images=3 playing=false');
   } catch (error) {
+    status.value = 'GO HTTPS Diagnostic : ECHEC\n'
+        'Controle HTTPS non valide : ' + error.runtimeType.toString() +
+        '\nNe rien reinstaller ni effacer';
     debugPrint('GO_HTTPS_PHONE_FAIL ' + error.runtimeType.toString() +
         ' ' + error.toString());
   }
