@@ -1,0 +1,81 @@
+name: Grosses Ondes — navigateur officiel Festivals, diagnostic isolé
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/grossesondes_official_browser_probe.py'
+      - 'tests/test_grosses_official_browser_probe.py'
+      - '.github/workflows/grossesondes-festivals-browser-preflight.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/grossesondes_official_browser_probe.py'
+      - 'tests/test_grosses_official_browser_probe.py'
+      - '.github/workflows/grossesondes-festivals-browser-preflight.yml'
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Identifiant du festival du registre historique public, jamais une URL
+        required: true
+        default: festival-666
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grossesondes-festivals-browser-preflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Contrats locaux de provenance, réseau et absence d'autorisation
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: python -m unittest discover -s tests -p 'test_grosses_official_browser_probe.py' -v
+
+  read-only-browser:
+    needs: offline-tests
+    if: >-
+      ${{ github.repository == 'Sarogal/Ondes-Catalogues' &&
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Installer navigateur temporaire sur runner public sans secrets
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
+          python -m playwright install --with-deps chromium
+      - name: Vérifier uniquement un site issu de l'archive publique certifiée
+        env:
+          ARCHIVE_SLUG: ${{ github.event_name == 'workflow_dispatch' && inputs.slug || 'festival-666' }}
+        run: |
+          python scripts/grossesondes_official_browser_probe.py \
+            --archive docs/grossesondes/festival-history.json \
+            --slug "$ARCHIVE_SLUG" \
+            --output "${RUNNER_TEMP}/festivals-browser-diagnostic.json"
+          python - "${RUNNER_TEMP}/festivals-browser-diagnostic.json" <<'PY'
+          import json, sys
+          report = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert report["review_only"] and not report["publication_authorized"]
+          assert not report["safe_to_publish"]
+          assert not report["publisher_independent_recheck"]
+          print("Diagnostic navigateur seulement :", report["verdict"])
+          PY
