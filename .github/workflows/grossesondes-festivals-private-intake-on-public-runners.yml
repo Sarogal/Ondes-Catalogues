@@ -151,6 +151,9 @@ jobs:
           run_private first_party_2027 python "$ENGINE/targeted_first_party_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --phase "$PHASE"
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
+          # Newly found municipal agenda editions: strict visible dates and
+          # two-day provenance review only, never a public patch or approval.
+          run_private institutional_dates python "$ENGINE/national_institutional_edition_preflight.py" --intake "$INTAKE"
           # Snapshot the private prior review locally BEFORE it is overwritten.
           # It never leaves the runner except as derived PRIVATE diagnostics.
           PREVIOUS="/tmp/grossesondes-official-watch/previous-editorial-review.json"
@@ -192,6 +195,7 @@ jobs:
             automation-intake/grossesondes/curated-secondary-sources-review.json \
             automation-intake/grossesondes/national-festival-discovery-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
+            automation-intake/grossesondes/national-institutional-edition-preflight.json \
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \
