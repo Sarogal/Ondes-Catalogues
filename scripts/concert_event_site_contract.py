@@ -75,8 +75,12 @@ def number(x):
     return type(x) in (int, float) and math.isfinite(x)
 
 
-def site_id(event_id, event_date, name, city):
-    text = "|".join((event_id, event_date, name.casefold().strip(), city.casefold().strip()))
+def site_id(name, city, geo_source):
+    """Stable physical site ID across concerts, without trusting the site."""
+    text = "|".join((
+        name.casefold().strip(), city.casefold().strip(),
+        geo_source.rstrip("/").casefold(),
+    ))
     return "go-site-" + hashlib.sha256(text.encode("utf-8")).hexdigest()[:20]
 
 
@@ -189,8 +193,8 @@ def validate(row, today, event_approvals, *, sources=None):
            and type(venue.get("postalCode")) is str
            and ZIP.fullmatch(venue["postalCode"]) is not None,
            "unknown department or postcode")
-    demand(venue.get("id") == site_id(ev_id, ev_day, name, city),
-           "site identifier does not match the event")
+    demand(venue.get("id") == site_id(name, city, venue.get("geoSource", "")),
+           "site identifier does not match the named geographic feature")
     lat, lon = venue.get("latitude"), venue.get("longitude")
     demand(number(lat) and number(lon) and -56 <= lat <= 52
            and -180 <= lon <= 180 and not (lat == 0 and lon == 0),
