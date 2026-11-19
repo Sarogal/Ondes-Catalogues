@@ -121,6 +121,25 @@ class VisibleAccessConditions(unittest.TestCase):
                 self.assertEqual(out["registration_state"], "unknown")
                 self.assertTrue(out["first_party_source_access_review_pending"])
 
+    def test_normal_long_official_description_does_not_block_access_terms(self):
+        description = "<p>" + ("Découverte et motricité, " * 42) + "</p>"
+        out = run(description + "<p>Gratuit | Sur inscription</p>")
+        self.assertEqual(out["reason"], "visible_first_party_access_terms_only")
+        self.assertEqual(out["price_state"], "free_disclosed")
+        self.assertEqual(out["registration_state"], "required")
+        self.assertFalse(out["publication_ready"])
+
+    def test_extremely_long_single_fragment_and_fragment_flood_fail_closed(self):
+        gigantic = "<p>" + ("activité " * 600) + "</p>"
+        out = run(gigantic + "<p>Gratuit | Sur inscription</p>")
+        self.assertEqual(out["reason"], "visible_terms_limit_exceeded")
+        self.assertEqual(out["price_state"], "unknown")
+        self.assertFalse(out["approval_granted"])
+        tiny = "".join("<span>jour</span>" for _ in range(1300))
+        out = run(tiny + "<p>Gratuit | Sur inscription</p>")
+        self.assertEqual(out["reason"], "visible_terms_limit_exceeded")
+        self.assertFalse(out["publication_ready"])
+
     def test_without_valid_exact_session_no_access_is_attested(self):
         variants = [
             (dict(LEAD, source_url="https://evil.test/redirect"), URL),
