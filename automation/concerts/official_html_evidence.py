@@ -184,6 +184,7 @@ def inspect(candidate, html, actual_url, source):
         return outcome("html_visible_venue_or_city_missing")
 
     genres = []
+    named_genre_headings = set()
     for tag, text in detail[:16]:
         # A standalone event tag near the title, not a genre mentioned in a
         # biography or an unrelated link. 'Rock' alone is too broad.
@@ -194,13 +195,26 @@ def inspect(candidate, html, actual_url, source):
     for tag, text in detail:
         if tag == "h4":
             g = _heading_genre(text, set(artists))
-            if g and g not in genres:
-                genres.append(g)
+            if g:
+                # An explicit artist-genre heading is stronger than an
+                # event title alone. Capture every artist, even when
+                # several headings share a single genre label.
+                heading_name = re.split(
+                    r"\s+[–—]\s+|\s+-\s+", text, maxsplit=1)[0]
+                named_genre_headings.add(words(heading_name))
+                if g not in genres:
+                    genres.append(g)
     if not genres:
         return outcome("html_event_genre_unconfirmed")
     # A source's JSON-LD may contain the generic Organization placeholder
     # instead of real named MusicGroup/Person performers. A matching event
     # headline is not independent line-up proof: keep this signal separate.
     if candidate.get("structuredPerformerProof") == "missing_review_only":
+        # The structured performer was missing/Organization. Full-band
+        # headings are useful PRIVATE evidence, but never a publisher
+        # signature or a source trust grant.
+        if named_genre_headings == set(artists) and len(set(artists)) == len(artists):
+            return outcome("html_explicit_named_artist_headings_review_only",
+                           genres[:20])
         return outcome("html_event_genre_visible_lineup_unverified", genres[:20])
     return outcome("html_explicit_event_genre_correlated", genres[:20])
