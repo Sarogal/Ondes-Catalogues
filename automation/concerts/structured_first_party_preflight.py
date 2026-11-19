@@ -277,6 +277,8 @@ def build(registry, sources, catalogue, approvals, today, *,
         "htmlEvidenceReasonCounts": dict(sorted(html_counts.items())),
         "htmlGenreEvidenceFound": html_counts[
             "html_explicit_event_genre_correlated"],
+        "htmlGenreVisibleLineupUnverified": html_counts[
+            "html_event_genre_visible_lineup_unverified"],
         "results": results, "approvalsProposed": 0, "publicationAllowed": False,
         "note": "Independent evidence preview only; publisher trust contract unchanged",
     }
@@ -306,7 +308,9 @@ def main():
           + str(report["structureMatched"]) + " concordances ; "
           + str(report["exploratoryAttempted"]) + " explorations de genre "
           + "(" + str(report["exploratoryGenreRecovered"]) + " tags retrouvés), "
-          + str(report["htmlGenreEvidenceFound"]) + " genres HTML visibles, "
+          + str(report["htmlGenreEvidenceFound"]) + " genres HTML corroborés, "
+          + str(report["htmlGenreVisibleLineupUnverified"])
+          + " genres HTML avec plateau non prouvé, "
           "aucune approbation ou publication.")
 
 

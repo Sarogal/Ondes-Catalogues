@@ -55,6 +55,21 @@ registry lead as `genre_tag_review`, sign an approval, or satisfy the actual
 publisher. The next stage must provide a separately reviewed publisher contract
 with live first-party examples and independent provenance checks.
 
+## Placeholder performers in official structured pages
+
+Some real first-party sites emit schema.org `Event.performer` as
+`{"@type":"Organization","name":"Organization"}`. The word "Organization"
+is a **schema placeholder**, not evidence of a band. The discovery engine
+retains the visible event title as an **unverified review hint** and marks
+`structuredPerformerProof: missing_review_only` instead of creating a
+fictional artist. That hint cannot satisfy the verifier/publisher, which
+require genuinely named `MusicGroup` or `Person` performers.
+
+If the same official page shows an exact visible genre label but has no
+verified structured line-up, the private HTML preflight records a distinct
+`html_event_genre_visible_lineup_unverified` reason. This is useful for
+future source verification and **never** grants approval or publication.
+
 ## Required regression matrix
 
 - At least two distinct real future bills from the same venue, plus 1/2/8/20 entirely different named artists.

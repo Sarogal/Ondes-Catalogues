@@ -338,14 +338,15 @@ def venue_candidate(raw, source, page_url, known, day):
         return None
     if source_city and event_city and source_city != event_city:
         return None
-    artist = safe_name(raw.get("performer")) or name
-    # An expressly unannounced guest at the end is not an artist identity.
-    # Keep confirmed names and store the unspecified support separately.
-    unnamed_support = None
+    # Only an explicitly typed schema.org MusicGroup/Person is a named
+    # performer. Many real official event pages expose a WordPress plugin's
+    # generic {"@type": "Organization", "name": "Organization"} value
+    # as performer; never turn that placeholder into a fictitious artist.
+    # Keep the event title only as a discovery/review hint. It cannot satisfy
+    # the independent official_named_bill() publisher verification.
     bill = official_rss_jsonld_bridge.official_named_bill(raw.get("performer"))
-    if bill is not None and bill[1] is not None:
-        artist = " + ".join(bill[0])
-        unnamed_support = bill[1]
+    artist = " + ".join(bill[0]) if bill is not None else name
+    unnamed_support = bill[1] if bill is not None else None
     # The event's own structured genre is eligible for REVIEW triage only.
     # Do not promote keywords or the venue's generic description to evidence.
     event_genres = raw.get("genre", [])
@@ -378,6 +379,8 @@ def venue_candidate(raw, source, page_url, known, day):
         "genreToConfirm": not relevant,
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
+    if bill is None:
+        record["structuredPerformerProof"] = "missing_review_only"
     if unnamed_support is not None:
         record["unannouncedSupportLabel"] = unnamed_support
     return mark_match(record, known)
