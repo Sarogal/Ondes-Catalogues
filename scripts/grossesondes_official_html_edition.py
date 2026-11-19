@@ -97,8 +97,8 @@ def explicit_ranges(text, year):
             if days[1] != days[0] + 1:
                 continue
         try:
-            first = date(year, MONTHS[match.group("month")], days[0])
-            last = date(year, MONTHS[match.group("month")], days[-1])
+            first = date(year, MONTHS[fold(match.group("month"))], days[0])
+            last = date(year, MONTHS[fold(match.group("month"))], days[-1])
         except ValueError:
             continue
         if first <= last and (last - first).days <= 7:
