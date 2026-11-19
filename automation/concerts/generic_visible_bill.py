@@ -157,3 +157,90 @@ def extract_candidate(html_text, url, source, day, known):
     if event["unnamedSupportLabel"]:
         row["unannouncedSupportLabel"] = event["unnamedSupportLabel"]
     return discover.mark_match(row, known)
+
+
+
+def verify(candidate, html_text, catalogue, today):
+    """Independently re-fetch and sign an EXACT visible venue bill.
+
+    Approval is never made from the first discovery snapshot: the existing
+    official_recheck worker fetches the official page again only after the
+    two-distinct-day stability gate. All identity, genre, room and host fields
+    must be unchanged from the quarantined lead.
+    """
+    if (not isinstance(candidate, dict)
+            or not isinstance(today, dt.date)
+            or candidate.get("source") != "agenda_officiel_visible_bill"
+            or candidate.get("reviewBucket") != "genre_tag_review"
+            or candidate.get("possibleExistingConcert") is True
+            or candidate.get("publicationAllowed") is not False
+            or candidate.get("reviewRequired") is not True
+            or candidate.get("officialDetailFound") is not True):
+        raise ValueError("Piste HTML officielle non agréée")
+    match = trusted.trusted_spec(candidate)
+    if match is None:
+        raise ValueError("Salle ou domaine HTML officiel non agréés")
+    venue_id, spec = match
+    import discover
+    page = candidate.get("sourcePage")
+    if page is not None and not discover.same_host(page, spec["base"]):
+        raise ValueError("Page d'origine non officielle")
+    if not isinstance(catalogue, dict):
+        raise ValueError("Catalogue absent")
+    catalogued = [v for v in catalogue.get("venues", [])
+                  if isinstance(v, dict) and v.get("id") == venue_id]
+    if (len(catalogued) != 1 or
+            trusted.norm(catalogued[0].get("name")) != trusted.norm(spec["name"])
+            or trusted.norm(catalogued[0].get("city")) != trusted.norm(spec["city"])
+            or str(catalogued[0].get("department")) != spec["department"]):
+        raise ValueError("Identité de salle HTML non corroborée au catalogue")
+
+    official_source = {"name": spec["name"], "city": spec["city"],
+                       "department": spec["department"], "url": spec["base"]}
+    fresh = extract_candidate(
+        html_text, candidate["sourceUrl"], official_source, today, set())
+    if fresh is None:
+        raise ValueError("Plateau HTML officiel complet non corroboré")
+    for field in ("date", "name", "leadArtist", "venue", "city",
+                  "department", "classification", "sourceUrl",
+                  "unannouncedSupportLabel", "verifiedVenueIdHint"):
+        if candidate.get(field) != fresh.get(field):
+            raise ValueError("Identité de la fiche HTML modifiée : " + field)
+    if candidate.get("verifiedVenueIdHint") != venue_id:
+        raise ValueError("Salle HTML candidate altérée")
+
+    # The artist names come from corroborating individual h4 genre headings,
+    # NOT from JSON-LD Organization, title keywords or biographies.
+    names = fresh["leadArtist"].split(" + ")
+    return trusted.approve_verified_bill(
+        catalogue, venue_id, spec, candidate["sourceUrl"], today,
+        fresh["date"], names, fresh["classification"],
+        fresh.get("unannouncedSupportLabel"),
+        "verified-first-party-visible-bill-v1")
+
+
+def inspect_published(event, html_text, artists):
+    """Read-only venue-wide watchdog: never auto-cancel or rewrite."""
+    spec = trusted.SPECS.get(event.get("venueId"))
+    if spec is None:
+        return {"status": "unsupported",
+                "reason": "Salle non agréée pour le détail officiel"}
+    current = _visible_event(html_text, spec, dt.date(1900, 1, 1))
+    if current is None:
+        return {"status": "content_review",
+                "reason": "Plateau HTML officiel disparu ou ambigu"}
+    if current["date"] != event.get("date"):
+        return {"status": "date_review", "observedDate": current["date"],
+                "reason": "Date HTML officielle différente, confirmation requise"}
+    expected = [artists.get(aid) for aid in event.get("artistIds", [])]
+    if (len(current["names"]) != len(expected)
+            or any(not isinstance(name, str)
+                   or trusted.norm(name) != trusted.norm(observed)
+                   for name, observed in zip(expected, current["names"]))):
+        return {"status": "lineup_review",
+                "reason": "Plateau HTML officiel différent du catalogue"}
+    if ([trusted.norm(x) for x in current["genres"]] !=
+            [trusted.norm(x) for x in event.get("genres", [])]):
+        return {"status": "content_review",
+                "reason": "Genres HTML officiels modifiés"}
+    return {"status": "matched", "observedDate": current["date"]}
