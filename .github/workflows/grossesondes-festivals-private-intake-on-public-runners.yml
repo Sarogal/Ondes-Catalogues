@@ -111,6 +111,13 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Préparer Chromium pour les preuves officielles dynamiques
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
+          python -m playwright install --with-deps chromium
+
       - name: Exécuter la découverte et la qualification sans afficher les dossiers
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -156,7 +163,7 @@ jobs:
           run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
           # Official archived pages: TWO consecutive days, private patch only.
           # No private scheduled Actions, no proposed row goes to a public log.
-          run_private archived_2027 python application/scripts/grossesondes_archived_html_intake.py --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          run_private archived_2027 env GROSSES_ONDES_BROWSER_INTAKE=enabled python application/scripts/grossesondes_archived_html_intake.py --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           test -s "$REPORT"
           python - "$REPORT" <<'PY'
           import json, sys
