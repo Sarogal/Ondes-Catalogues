@@ -149,6 +149,38 @@ class VisibleHtmlEvidenceTests(unittest.TestCase):
         self.assertNotIn("event", result)
 
 
+    def test_structured_organization_placeholder_with_named_heading_stays_review_only(self):
+        row = {**CANDIDATE, "structuredPerformerProof": "missing_review_only"}
+        result = check(candidate=row)
+        self.assertEqual(result["status"],
+                         "html_explicit_named_artist_headings_review_only")
+        self.assertEqual(result["genres"], ["Metal Indus"])
+        self.assertFalse(result["publicationAllowed"])
+        self.assertEqual(result["approvalsProposed"], 0)
+
+    def test_multi_artist_heading_corroboration_requires_every_named_artist(self):
+        row = {**CANDIDATE,
+               "name": "EISBRECHER + HELDMASCHINE",
+               "leadArtist": "EISBRECHER + HELDMASCHINE",
+               "structuredPerformerProof": "missing_review_only"}
+        page = PAGE.replace("<h1>EISBRECHER</h1>",
+                            "<h1>EISBRECHER + HELDMASCHINE</h1>")
+        missing_support = check(page, row)
+        self.assertEqual(missing_support["status"],
+                         "html_event_genre_visible_lineup_unverified")
+        both = page.replace(
+            "<h4>► EISBRECHER – Metal Indus –</h4>",
+            "<h4>► EISBRECHER – Metal Indus –</h4>"
+            "<h4>► HELDMASCHINE – Industrial Metal –</h4>")
+        complete = check(both, row)
+        self.assertEqual(complete["status"],
+                         "html_explicit_named_artist_headings_review_only")
+        self.assertEqual(complete["genres"], ["Metal Indus", "Industrial Metal"])
+        self.assertFalse(complete["publicationAllowed"])
+
+
+
+
 class PrivatePreflightHtmlIntegrationTests(unittest.TestCase):
     def test_structure_missing_but_visible_html_evidence_is_quarantined(self):
         row = copy.deepcopy(CANDIDATE)
@@ -177,6 +209,30 @@ class PrivatePreflightHtmlIntegrationTests(unittest.TestCase):
                          ["Metal Indus"])
         self.assertEqual(report["results"][0]["status"], "held")
         self.assertEqual(row["reviewBucket"], "genre_unknown")
+
+
+    def test_full_named_html_lineup_is_counted_but_never_signed(self):
+        row = {**CANDIDATE, "structuredPerformerProof": "missing_review_only"}
+        registry = {"schema": "grossesondes.concert.intake.v1",
+                    "items": {"item": {"candidate": row,
+                                       "stableObservations": 2,
+                                       "status": "pending_review"}}}
+        sources = {"schema": "grossesondes.concert.sourcelist.v1",
+                   "venues": [SOURCE]}
+        catalogue = {"schemaVersion": 1, "mode": "preview-public-unlisted",
+                     "events": [], "venues": [], "artists": []}
+        approved = {"schema": "grossesondes.concert.approvals.v1",
+                    "approvals": []}
+        report = preflight.build(
+            registry, sources, catalogue, approved, dt.date(2026, 11, 19),
+            fetch=lambda url, **kwargs: (PAGE, url),
+            robots=lambda url, cache: True, limit=8)
+        self.assertEqual(report["htmlFullyNamedArtistHeadingReviewOnly"], 1)
+        self.assertEqual(report["htmlGenreEvidenceFound"], 0)
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publicationAllowed"])
+
+
 
 
 if __name__ == "__main__":
