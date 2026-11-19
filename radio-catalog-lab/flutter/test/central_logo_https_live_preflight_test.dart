@@ -81,6 +81,19 @@ void main() {
         policy: policy,
         fetch: fetcher.fetch,
       );
+      if (first.entries.single.outcome != CentralLogoPrefetchOutcome.downloaded) {
+        // The store deliberately hides transport exceptions; recover the
+        // diagnostic reason via an explicit HTTPS read for this LAB only.
+        try {
+          final probe = await fetcher.fetch(Uri.parse(v1.url), v1.byteSize);
+          print('GO_HTTPS_DIAGNOSTIC direct_len=${probe.length} '
+              'direct_sha=${crypto.sha256.convert(probe)} '
+              'url_host=${Uri.parse(v1.url).host}');
+        } catch (error) {
+          print('GO_HTTPS_DIAGNOSTIC failed=$error '
+              'override=${HttpOverrides.current.runtimeType}');
+        }
+      }
       expect(first.entries.single.outcome, CentralLogoPrefetchOutcome.downloaded);
       expect(first.reservedAttempts, 1);
       expect(first.reservedBytes, 1147);
