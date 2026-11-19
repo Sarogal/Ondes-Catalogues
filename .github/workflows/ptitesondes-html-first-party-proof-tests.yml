@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_html_first_party_session_proof.py'
+      - 'scripts/ptitesondes_html_access_conditions.py'
       - 'scripts/ptitesondes_html_index_detail_funnel.py'
       - 'scripts/ptitesondes_html_registry_history_triage.py'
       - 'tests/test_ptitesondes_html_*.py'

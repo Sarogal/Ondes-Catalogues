@@ -30,6 +30,7 @@ from ptitesondes_html_first_party_session_proof import (
 from ptitesondes_html_independent_venue_geo import (
     diagnose_html_independent_venue,
 )
+from ptitesondes_html_access_conditions import triage_html_access_conditions
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -81,6 +82,23 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "first_party_audience_cues_missing": 0,
         "first_party_access_review_pending": 0,
         "first_party_all_visible_cues": 0,
+        "access_first_party_free_with_required_membership": 0,
+        "access_first_party_free_without_required_membership": 0,
+        "access_first_party_paid_declared": 0,
+        "access_first_party_paid_without_amount": 0,
+        "access_first_party_unknown_or_conflicting": 0,
+        "access_first_party_price_not_stated": 0,
+        "access_first_party_price_conflicting": 0,
+        "access_first_party_scan_held": 0,
+        "access_first_party_scan_length_limit": 0,
+        "access_first_party_scan_no_visible_terms": 0,
+        "access_first_party_scan_other_reason": 0,
+        "access_first_party_registration_required": 0,
+        "access_first_party_registration_not_required": 0,
+        "access_first_party_registration_unknown_or_conflicting": 0,
+        "access_first_party_registration_not_stated": 0,
+        "access_first_party_registration_conflicting": 0,
+        "access_first_party_source_review_required": 0,
         "geo_distinct_venues_probed": 0,
         "geo_independent_ban_registry_concordant": 0,
         "geo_official_address_unstructured": 0,
@@ -291,6 +309,48 @@ def diagnose_html_index_detail_funnel(
                 result["first_party_source_sessions_held"] += 1
                 if corroboration["status"] == "same_block_date_and_clock_not_visible":
                     result["first_party_missing_same_block"] += 1
+            if corroboration["visible_exact_session"]:
+                access = triage_html_access_conditions(
+                    row, page, independently_pinned_index, contract["child_path"])
+                key = {
+                    "free_with_mandatory_membership":
+                        "access_first_party_free_with_required_membership",
+                    "free_disclosed":
+                        "access_first_party_free_without_required_membership",
+                    "paid_disclosed": "access_first_party_paid_declared",
+                    "paid_amount_unknown": "access_first_party_paid_without_amount",
+                    "unknown": "access_first_party_unknown_or_conflicting",
+                    "conflicting": "access_first_party_unknown_or_conflicting",
+                }[access["price_state"]]
+                result[key] += 1
+                valid_scan = (
+                    access["reason"] == "visible_first_party_access_terms_only")
+                if not valid_scan:
+                    result["access_first_party_scan_held"] += 1
+                    if access["reason"] == "visible_terms_limit_exceeded":
+                        result["access_first_party_scan_length_limit"] += 1
+                    elif access["reason"] == "no_visible_event_terms":
+                        result["access_first_party_scan_no_visible_terms"] += 1
+                    else:
+                        result["access_first_party_scan_other_reason"] += 1
+                elif access["price_state"] == "unknown":
+                    result["access_first_party_price_not_stated"] += 1
+                elif access["price_state"] == "conflicting":
+                    result["access_first_party_price_conflicting"] += 1
+                key = {
+                    "required": "access_first_party_registration_required",
+                    "explicit_not_required":
+                        "access_first_party_registration_not_required",
+                    "unknown": "access_first_party_registration_unknown_or_conflicting",
+                    "conflicting": "access_first_party_registration_unknown_or_conflicting",
+                }[access["registration_state"]]
+                result[key] += 1
+                if valid_scan and access["registration_state"] == "unknown":
+                    result["access_first_party_registration_not_stated"] += 1
+                elif valid_scan and access["registration_state"] == "conflicting":
+                    result["access_first_party_registration_conflicting"] += 1
+                if access["first_party_source_access_review_pending"]:
+                    result["access_first_party_source_review_required"] += 1
             triage = triage_independent_context(row, independent_context)
             venue = triage["venue_status"]
             history = triage["history_status"]
