@@ -50,6 +50,11 @@ APPROVED = {
     "https://www.martinique.org/fr/agenda": "Martinique",
     "https://www.lesilesdeguadeloupe.com/agenda/": "Guadeloupe",
     "https://www.nouvellecaledonie.travel/planifier-son-voyage/agenda/evenements-musicaux/": "Nouvelle-Calédonie",
+    # Additional first-party cultural/tourism indexes, selected only as
+    # review-only theme hints. The venue/organizer must still prove an edition.
+    "https://troisfleuves.fr/etn_category/concerts/": "Guyane",
+    "https://www.mayotte.fr/vie-locale/evenements/festivals": "Mayotte",
+    "https://tahititourisme.pf/agenda/": "Polynésie française",
 }
 # Only these already reviewed, public first-party search URLs are allowed.
 # Queries from discovered HTML are NEVER added as new seeds.
