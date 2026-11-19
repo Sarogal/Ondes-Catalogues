@@ -4434,7 +4434,26 @@ def validate_approval(approval, venues, known_artist_ids, today):
             event.get("time") is None and
             not (approval.get("newArtists") or [])
         )
+        # New source-wide generic first-party branch. Only code-reviewed
+        # venue/hostname pairs can ever pass; an external source list or a
+        # registry candidate cannot add a publishing domain.
+        generic_structured_hosts = {
+            "la-rayonne": "larayonne.org",
+            "le-metronum": "lemetronum.fr",
+        }
+        generic_auto = (
+            venue in generic_structured_hosts and
+            parsed_url.scheme == "https" and
+            parsed_url.hostname == generic_structured_hosts.get(venue) and
+            bool(re.fullmatch(r"/evenement/[a-z0-9-]{5,160}/?",
+                              parsed_url.path)) and
+            not parsed_url.username and not parsed_url.password and
+            not parsed_url.port and not parsed_url.query and
+            not parsed_url.fragment and
+            event.get("time") is None
+        )
         require(bool(rex or molotov or ferrailleur or backstage
+                     or generic_auto
                      or atabal_pilot or atabal_multi or blacklab_auto
                      or laiterie_auto or rockstore_auto or bateau_auto
                      or bonjour_auto or bbc_auto or cave_auto)
@@ -4474,6 +4493,82 @@ def validate_approval(approval, venues, known_artist_ids, today):
         added[aid] = {"id": aid, "name": name, "aliases": []}
     require(all(x in known_artist_ids or x in added for x in ids),
             "Artiste non reconnu par le catalogue")
+    if reviewer == "automated-official-recheck" and generic_auto:
+        # Independently enforce one complete, individually named event-level
+        # structured proof. The original venue/domain pairing is pinned above;
+        # no private ledger field can grant another source a publishing route.
+        require(len(evidence) == 1 and isinstance(evidence[0], dict),
+                "Générique : une preuve nominative unique est exigée")
+        proof = evidence[0]
+        require(
+            proof.get("url") == official_url and
+            proof.get("proofType") == "official-organizer-or-venue" and
+            proof.get("checkedAt") == reviewed_at.isoformat() and
+            proof.get("checkedFields") == ["artists", "date", "venue", "genre"] and
+            proof.get("sourceStructure") == "verified-first-party-structured-event-v1" and
+            proof.get("verifiedVenueId") == venue and
+            (set(proof) in (
+                {"url", "proofType", "checkedAt", "checkedFields",
+                 "sourceStructure", "officialArtistNames", "verifiedVenueId"},
+                {"url", "proofType", "checkedAt", "checkedFields",
+                 "sourceStructure", "officialArtistNames", "verifiedVenueId",
+                 "unannouncedSupportLabel"})),
+            "Générique : preuve structurée de provenance incomplète ou altérée")
+        names = proof.get("officialArtistNames")
+        require(isinstance(names, list) and len(names) == len(ids)
+                and len(names) >= 1
+                and all(isinstance(name, str) and 3 <= len(norm(name)) <= 120
+                        for name in names)
+                and len({norm(name) for name in names}) == len(names)
+                and event.get("title") == " + ".join(names),
+                "Générique : artistes nominatifs ou titre non corroborés")
+        resolved = dict(known_artist_ids)
+        resolved.update(added)
+        require(all(aid in resolved and
+                    norm(resolved[aid]["name"]) == norm(name)
+                    for aid, name in zip(ids, names)),
+                "Générique : identité d'artiste différente de la preuve")
+        existing_aliases = {norm(alias)
+                            for a in known_artist_ids.values()
+                            for alias in a.get("aliases", [])
+                            if isinstance(alias, str)}
+        require(all(norm(a["name"]) not in existing_aliases
+                    and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                    for a in new_artists),
+                "Générique : nouvel artiste en collision avec un alias")
+        require(event.get("status") == "confirmed"
+                and event.get("sourceType") == "salle"
+                and event.get("organizer") ==
+                    {"la-rayonne": "La Rayonne",
+                     "le-metronum": "Le Metronum"}[venue]
+                and event_id ==
+                    "go-c-" + event["date"].replace("-", "") + "-" +
+                    {"la-rayonne": "villeurbanne",
+                     "le-metronum": "toulouse"}[venue] + "-" +
+                    norm(names[0]).replace(" ", "-")[:72].strip("-"),
+                "Générique : concert, organisme ou ID non déterministe")
+        genres = event.get("genres")
+        require(isinstance(genres, list) and len(genres) >= 1
+                and all(isinstance(g, str) and 2 <= len(g.strip()) <= 80
+                        for g in genres)
+                and any(re.search(
+                    r"(?<!\\w)" + re.escape(tag) + r"(?!\\w)",
+                    norm(" ".join(genres)))
+                    for tag in ("metal", "punk", "hardcore", "deathcore",
+                                "grindcore", "sludge", "stoner", "shoegaze",
+                                "grunge", "blackgaze", "screamo", "mathcore",
+                                "post rock", "noise rock", "psychedelic rock",
+                                "hard rock", "garage rock", "psych rock")),
+                "Générique : genre musical précis non attesté")
+        # The only unnamed trailing guest is not an identity. It cannot
+        # affect the canonical title or IDs even if the venue lists a guest.
+        if "unannouncedSupportLabel" in proof:
+            require(norm(proof["unannouncedSupportLabel"]) in
+                    ("guest", "guests", "special guest", "surprise",
+                     "tba", "to be announced", "premiere partie",
+                     "a confirmer", "various artists", "invite surprise",
+                     "artiste surprise", "guest surprise"),
+                    "Générique : guest non nommé invalide")
     if reviewer == "automated-official-recheck" and rex:
         # Rex time on public pages refers to admission, not proven concert start.
         require(event.get("time") is None,
