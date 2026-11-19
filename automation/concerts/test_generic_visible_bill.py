@@ -72,7 +72,8 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
         self.assertTrue(row["reviewRequired"])
         self.assertTrue(row["officialDetailFound"])
         self.assertEqual(triage.triage(row)["reviewBucket"], "genre_tag_review")
-        self.assertNotIn("agenda_officiel_visible_bill", VERIFIER_SPECS)
+        self.assertEqual(VERIFIER_SPECS["agenda_officiel_visible_bill"].module,
+                         "generic_visible_bill")
         with self.assertRaises(ValueError):
             official_recheck.verify(
                 triage.triage(row), page(),

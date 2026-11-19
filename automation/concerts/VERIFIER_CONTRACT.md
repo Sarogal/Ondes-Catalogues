@@ -87,11 +87,25 @@ of named acts is not arbitrarily capped. An unannounced trailing guest is
 kept separately and never invented as an artist.
 
 Candidates have the distinct source `agenda_officiel_visible_bill`,
-`publicationAllowed: false` and `reviewRequired: true`. This new source
-is intentionally **absent from VERIFIER_SPECS** and therefore cannot
-trigger a publisher approval, even with two distinct days of discovery.
-A separate publisher proof contract, a fresh independent recheck, and
-post-publication monitoring must pass review before this source can publish.
+`publicationAllowed: false` and `reviewRequired: true`. They never
+approve during discovery. Only after **two distinct stable days** does
+`official_recheck` fetch the exact HTTPS event page independently and
+run the entire visible artist/date/genre/venue proof again.
+
+The independently checked official evidence has
+`sourceStructure=verified-first-party-visible-bill-v1`, a fixed
+`visibleBillProfile=heading-artist-genre-v1`, the complete list of
+`officialArtistNames`, `officialGenreLabels`, `verifiedVenueId`, and
+the date of the second fetch. The separate publisher strictly validates
+this exact proof shape, venue/host/path, genre list, name-to-artist-ID
+reconciliation, duplicates, event identity and time provenance. No
+genre label or artist inferred from the venue's global menu, biography,
+an `Organization` placeholder or a ticket-sale date may pass.
+
+The source-wide read-only `published_watch` checks later official HTML
+for bill, genre, date and venue changes; it never cancels, deletes or edits
+an event itself. No event names, dates, artist IDs or event URLs become
+special-case approval rules.
 
 ## Required regression matrix
 

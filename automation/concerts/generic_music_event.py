@@ -169,6 +169,41 @@ def verify(candidate, html_text, catalogue, today):
     if unnamed != fresh.get("unannouncedSupportLabel"):
         raise ValueError("Guest non nommé ambigu")
 
+    return approve_verified_bill(
+        catalogue, venue_id, source, url, today, fresh["date"],
+        names, genres, unnamed, "verified-first-party-structured-event-v1")
+
+
+def approve_verified_bill(catalogue, venue_id, source, url, today,
+                          when, names, genres, unnamed, structure):
+    """Common, strict artist/duplicate/approval builder for official proofs.
+
+    Called only after an independent fresh first-party STRUCTURED or VISIBLE
+    exact-lineup verifier. Discovery data NEVER reaches this function alone.
+    The publisher separately enforces both proof schemas.
+    """
+    if (not isinstance(catalogue, dict) or not isinstance(today, dt.date)
+            or venue_id not in SPECS or source != SPECS[venue_id]
+            or not isinstance(when, str)
+            or not isinstance(names, list) or not names
+            or any(not isinstance(n, str) or not 2 <= len(n.strip()) <= 120
+                   for n in names)
+            or len({norm(n) for n in names}) != len(names)
+            or not isinstance(genres, list) or not genres
+            or any(not isinstance(g, str) or not 2 <= len(g.strip()) <= 80
+                   for g in genres)
+            or not triage.genre_evidence({"classification": genres})
+            or structure not in {
+                "verified-first-party-structured-event-v1",
+                "verified-first-party-visible-bill-v1",
+            }):
+        raise ValueError("Preuve officielle ou programmation générique invalide")
+    try:
+        event_date = dt.date.fromisoformat(when)
+    except (TypeError, ValueError):
+        raise ValueError("Date officielle invalide")
+    if event_date < today:
+        raise ValueError("Concert officiel passé")
     known_names, aliases = {}, set()
     for a in catalogue.get("artists", []):
         if not isinstance(a, dict):
@@ -191,7 +226,6 @@ def verify(candidate, html_text, catalogue, today):
             new_artists.append({"id": ident, "name": name})
     if len(set(ids)) != len(ids):
         raise ValueError("Interprètes doublonnés")
-    when = fresh["date"]
     for e in catalogue.get("events", []):
         if not isinstance(e, dict):
             raise ValueError("Catalogue événement invalide")
@@ -200,7 +234,8 @@ def verify(candidate, html_text, catalogue, today):
         if (e.get("date") == when and e.get("venueId") == venue_id
                 and set(e.get("artistIds") or []).intersection(ids)):
             raise ValueError("Concert déjà publié au même endroit ce jour")
-    concert_id = "go-c-" + when.replace("-", "") + "-" + slug(source["city"]) + "-" + slug(names[0])
+    concert_id = ("go-c-" + when.replace("-", "") + "-"
+                  + slug(source["city"]) + "-" + slug(names[0]))
     if any(e.get("id") == concert_id for e in catalogue.get("events", [])):
         raise ValueError("Collision identifiant de concert")
     return {
@@ -211,9 +246,12 @@ def verify(candidate, html_text, catalogue, today):
             "url": url, "proofType": "official-organizer-or-venue",
             "checkedAt": today.isoformat(),
             "checkedFields": ["artists", "date", "venue", "genre"],
-            "sourceStructure": "verified-first-party-structured-event-v1",
+            "sourceStructure": structure,
             "officialArtistNames": names,
             "verifiedVenueId": venue_id,
+            **({"officialGenreLabels": genres,
+                "visibleBillProfile": "heading-artist-genre-v1"}
+               if structure == "verified-first-party-visible-bill-v1" else {}),
             **({"unannouncedSupportLabel": unnamed} if unnamed else {}),
         }],
         "event": {
