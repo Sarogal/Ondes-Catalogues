@@ -97,6 +97,18 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 self.assertEqual(result["checked_count"], 0)
                 self.assertEqual(visited, [])
 
+    def test_ampersand_dates_recover_both_days_from_official_markup(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                "<p>25 &amp; 26 Juin 2027</p></main>")
+        result = examine(state, queue, published, DAY1, fetch=lambda u: html)
+        self.assertEqual(result["checked_count"], 1)
+        self.assertEqual(result["rows"][0]["start_date_hint"], "2027-06-25")
+        self.assertEqual(result["rows"][0]["end_date_hint"], "2027-06-26")
+        self.assertFalse(result["rows"][0]["two_day_dates"])
+        self.assertFalse(result["publication_authorized"])
+
     def test_bad_dates_annulations_jsonld_conflicts_do_not_stabilize(self):
         cases = (
             "<h1>Festival Foudre du Nord 2027</h1><p>Dates à venir</p>",
