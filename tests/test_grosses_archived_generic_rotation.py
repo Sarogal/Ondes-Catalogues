@@ -109,6 +109,97 @@ class GenericArchivedOrganizerTests(unittest.TestCase):
         self.assertEqual(urls, [FIRST["officialSite"]])
         self.assertEqual(result["registered-edition:" + p["slug"]], HTML_FIRST)
 
+    def test_private_national_hints_prioritize_only_signed_matching_archives(self):
+        # Thirty safe archives; one exact private name+region/year matches.
+        sources = {
+            "hint-" + str(i): archive(
+                "hint-" + str(i), "Festival " + str(i) + " Steel",
+                "https://festival" + str(i) + ".example/")
+            for i in range(30)
+        }
+        sources["hint-29"]["region"] = "Occitanie"
+        review = {
+            "schema": engine.NATIONAL_REVIEW_SCHEMA,
+            "as_of": "2026-11-17",
+            "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False,
+            "dossiers": [
+                {"status": "DISCOVERED_REVIEW_REQUIRED",
+                 "archive_slug_hint": "hint-29",
+                 "name_hint": "Festival 29 Steel", "region_hint": "Occitanie",
+                 "edition_year_hint": 2027, "safe_to_publish": False,
+                 "publication_authorized": False},
+                {"status": "DISCOVERED_REVIEW_REQUIRED",
+                 "archive_slug_hint": "evil-external",
+                 "name_hint": "Arbitrary Fest", "region_hint": "Occitanie",
+                 "edition_year_hint": 2027, "safe_to_publish": False,
+                 "publication_authorized": False},
+                {"status": "DISCOVERED_REVIEW_REQUIRED",
+                 "archive_slug_hint": "hint-28",
+                 "name_hint": "Forged Event", "region_hint": "Other Region",
+                 "edition_year_hint": 2027, "safe_to_publish": False,
+                 "publication_authorized": False},
+            ],
+        }
+        (self.root / "national-festival-discovery-review.json").write_text(
+            json.dumps(review))
+        priority = engine.national_archived_priority(
+            self.root, sources, self.today)
+        self.assertEqual(priority, {"hint-29"})
+        chosen = engine.generic_rotating_sources(
+            sources, set(), set(), {}, self.today, priority_slugs=priority)
+        self.assertEqual(len(chosen), 10)
+        self.assertIn("hint-29", chosen)
+        self.assertEqual(chosen["hint-29"]["proofUrl"],
+                         sources["hint-29"]["officialSite"])
+
+    def test_priority_is_only_hint_and_does_not_starve_rotation(self):
+        sources = {
+            "group-" + str(i): archive(
+                "group-" + str(i), "Metal Group " + str(i),
+                "https://group" + str(i) + ".example/")
+            for i in range(30)
+        }
+        state = {}
+        visits = []
+        for _ in range(4):
+            chosen = engine.generic_rotating_sources(
+                sources, set(), set(), state, self.today,
+                priority_slugs={"group-29", "group-28", "group-27"})
+            self.assertLessEqual(len(chosen), 10)
+            visits.extend(chosen)
+        self.assertEqual(len(set(visits)), 30)
+
+    def test_stale_private_review_and_mismatched_year_never_prioritize(self):
+        historic = archive("steel-2025", "Steel Reunion",
+                           "https://steel.example/")
+        historic["region"] = "Occitanie"
+        historic.update(startDate="2025-06-04", endDate="2025-06-06",
+                        lastKnownYear=2025)
+        record = {"schema": engine.NATIONAL_REVIEW_SCHEMA,
+                  "as_of": "2026-11-12", "review_only": True,
+                  "safe_to_publish": False, "publication_authorized": False,
+                  "dossiers": [{"status": "DISCOVERED_REVIEW_REQUIRED",
+                                "archive_slug_hint": historic["slug"],
+                                "name_hint": historic["name"],
+                                "region_hint": historic["region"],
+                                "edition_year_hint": 2026,
+                                "safe_to_publish": False,
+                                "publication_authorized": False}]}
+        path = self.root / "national-festival-discovery-review.json"
+        path.write_text(json.dumps(record))
+        self.assertEqual(engine.national_archived_priority(
+            self.root, {historic["slug"]: historic}, self.today), set())
+        record["as_of"] = "2026-11-17"
+        path.write_text(json.dumps(record))
+        self.assertEqual(engine.national_archived_priority(
+            self.root, {historic["slug"]: historic}, self.today), set())
+        record["dossiers"][0]["edition_year_hint"] = 2027
+        path.write_text(json.dumps(record))
+        self.assertEqual(engine.national_archived_priority(
+            self.root, {historic["slug"]: historic}, self.today),
+            {historic["slug"]})
+
     def test_bounded_rotation_scans_more_than_two_festivals_without_manual_ids(self):
         sources = {
             "new-" + str(i): archive(
