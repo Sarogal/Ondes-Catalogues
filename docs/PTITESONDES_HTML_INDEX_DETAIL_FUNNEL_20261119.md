@@ -141,3 +141,28 @@ restent distinctes. Les doublons comptés sont explicitement signalés par
 Cette déduplication statistique ne modifie pas les règles de publication ni
 le catalogue historique. Une éventuelle fusion éditoriale nécessite les
 contrôles du moteur de qualification privé.
+
+
+## Refus des séances déjà commencées et des heures DST ambiguës
+
+Le live smoke utilise **l'heure réelle de Montpellier** en
+`Europe/Paris`, pas le jour UTC du runner GitHub. Le paramètre
+`as_of` est fourni exclusivement par le caller de confiance, jamais
+depuis les fiches collectées.
+
+Le diagnostic vérifie chaque jour et heure locale avant de compter une
+séance future. Les débuts déjà passés, les heures locales inexistantes
+au passage à l'heure d'été, et les heures ambiguës au passage à l'heure
+d'hiver (sans décalage explicite) restent **bloqués**, même si la date
+de l'événement est aujourd'hui.
+
+Le rapport distingue `already_started_sessions_held` et
+`exact_local_clock_cutoff_applied`. Les exécutions hors réseau
+sans `as_of` conservent volontairement un précontrôle **date seule** :
+elles ne sauraient être décrites comme des validations temporelles
+complètes en conditions réelles.
+
+L'échantillon live antérieur à cette correction donnait 3 séances
+datées après le début du jour et 1 proposition structurellement
+plausible. **Un nouveau contrôle temporel est nécessaire** avant de
+compter combien de ces séances étaient encore à venir à l'heure locale.
