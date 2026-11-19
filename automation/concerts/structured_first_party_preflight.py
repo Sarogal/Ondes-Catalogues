@@ -48,6 +48,63 @@ def trusted_source(candidate, sources):
     return None
 
 
+
+def explain_structured_nonmatch(page, actual_url, candidate, source):
+    """Private diagnostic only; never grants admission or revises an approval.
+
+    All return values are fixed reason codes. No source URL, page excerpt,
+    performer name, exception message or private discovery detail is logged.
+    """
+    if not isinstance(page, str) or len(page) > 1_000_000:
+        return "structured_page_unreadable"
+    url = candidate.get("sourceUrl")
+    if (not bridge.official_event_url(actual_url, source.get("url"))
+            or not isinstance(url, str)
+            or url.rstrip("/") != actual_url.rstrip("/")):
+        return "official_redirect_or_url_mismatch"
+    structures = [x for x in discover.read_ld(page) if isinstance(x, dict)]
+    music = [x for x in structures
+             if "MusicEvent" in bridge._event_types(x.get("@type"))]
+    if len(music) > 1:
+        return "multiple_structured_event_nodes"
+    if music:
+        event = music[0]
+    else:
+        generic = [x for x in structures
+                   if "Event" in bridge._event_types(x.get("@type"))]
+        if len(generic) > 1:
+            return "multiple_structured_event_nodes"
+        if not generic:
+            return "no_structured_event_node"
+        event = generic[0]
+        if not triage.genre_evidence(
+                {"classification": event.get("genre")}):
+            return "generic_event_genre_not_confirmed"
+    canonical = event.get("url")
+    if (canonical is not None and
+            (not bridge.official_event_url(canonical, source.get("url"))
+             or canonical.rstrip("/") != url.rstrip("/"))):
+        return "schema_canonical_mismatch"
+    status = event.get("eventStatus")
+    if isinstance(status, dict):
+        status = status.get("@id") or status.get("name") or ""
+    if isinstance(status, str) and any(
+            flag in status.casefold()
+            for flag in ("cancel", "postpon", "reschedul", "report", "annul")):
+        return "official_event_cancelled_or_postponed"
+    if bridge.official_named_bill(event.get("performer")) is None:
+        return "named_performer_proof_missing"
+    location = event.get("location")
+    if isinstance(location, list):
+        location = location[0] if len(location) == 1 else None
+    if (not isinstance(location, dict)
+            or not isinstance(location.get("name"), str)
+            or not isinstance(location.get("address"), dict)
+            or not location["address"].get("addressLocality")):
+        return "structured_venue_or_city_missing"
+    return "structured_event_fields_unmatched"
+
+
 def build(registry, sources, catalogue, approvals, today, *,
           fetch=discover.download, robots=discover.robots_allow, limit=8,
           scan_slot=0):
@@ -119,12 +176,13 @@ def build(registry, sources, catalogue, approvals, today, *,
 
     selected = choose(eligible, limit)
     selected_exploratory = choose(exploratory, limit - len(selected))
-    results, counts, robot_cache = [], Counter(), {}
+    results, counts, diagnostics, robot_cache = [], Counter(), Counter(), {}
     for diagnostic_only, candidate in (
             [(False, c) for c in selected]
             + [(True, c) for c in selected_exploratory]):
         reason = "unknown"
         status = "held"
+        diagnostic = None
         source = trusted_source(candidate, sources)
         if source is None:
             reason = "source_not_independently_mapped"
@@ -143,6 +201,8 @@ def build(registry, sources, catalogue, approvals, today, *,
                         allow_generic_event=True)
                     if not fresh:
                         reason = "structured_event_proof_missing_or_ambiguous"
+                        diagnostic = explain_structured_nonmatch(
+                            page, actual, candidate, source)
                     elif any(fresh.get(field) != candidate.get(field)
                              for field in IDENTITY_FIELDS
                              if not diagnostic_only or field != "classification"):
@@ -170,11 +230,14 @@ def build(registry, sources, catalogue, approvals, today, *,
                 # must never appear in public logs.
                 reason = "fetch_unavailable_or_invalid"
         counts[reason] += 1
+        if diagnostic is not None:
+            diagnostics[diagnostic] += 1
         results.append({
             "candidateId": candidate.get("candidateId"),
             "probeKind": ("genre_unknown_diagnostic" if diagnostic_only
                           else "genre_review_preflight"),
             "status": status, "reason": reason,
+            **({"diagnosticReason": diagnostic} if diagnostic else {}),
             "publicationAllowed": False,
         })
     return {
@@ -190,6 +253,7 @@ def build(registry, sources, catalogue, approvals, today, *,
         "structureMatched": sum(r["status"] == "independent_structure_matched"
                                 for r in results),
         "reasonCounts": dict(sorted(counts.items())),
+        "diagnosticReasonCounts": dict(sorted(diagnostics.items())),
         "results": results, "approvalsProposed": 0, "publicationAllowed": False,
         "note": "Independent evidence preview only; publisher trust contract unchanged",
     }
