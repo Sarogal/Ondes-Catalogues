@@ -851,8 +851,11 @@ def inspect_generic_structured(event, page, artists):
             structured_bridge._event_types(row.get("@type")) & {"MusicEvent", "Event"})
     ]
     if len(nodes) != 1:
-        return {"status": "content_review",
-                "reason": "Fiche événement officielle absente ou ambiguë"}
+        # Some officially reviewed venue pages provide complete per-artist
+        # heading genres but no individually typed Event node. The HTML
+        # evidence path remains read-only: never cancel or edit automatically.
+        import generic_visible_bill
+        return generic_visible_bill.inspect_published(event, page, artists)
     raw = nodes[0]
     canonical = raw.get("url")
     if canonical is not None and canonical.rstrip("/") != event["officialUrl"].rstrip("/"):
@@ -884,8 +887,10 @@ def inspect_generic_structured(event, page, artists):
                 "reason": "Date officielle différente : confirmation nécessaire"}
     bill = structured_bridge.official_named_bill(raw.get("performer"))
     if bill is None:
-        return {"status": "lineup_review",
-                "reason": "Programmation nominative disparue ou ambiguë"}
+        # schema.org Organization is NOT a performer. An independently
+        # named visible HTML bill may still corroborate an unchanged concert.
+        import generic_visible_bill
+        return generic_visible_bill.inspect_published(event, page, artists)
     names, _unnamed = bill
     published = [artists.get(aid) for aid in event.get("artistIds", [])]
     if (len(names) != len(published)
