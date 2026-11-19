@@ -14,6 +14,7 @@ on:
       - 'automation/concerts/triage.py'
       - 'automation/concerts/sources.json'
       - 'automation/concerts/generic_music_event.py'
+      - 'automation/concerts/generic_visible_bill.py'
       - 'automation/concerts/generic_first_party_venue_specs_v1.json'
       - 'automation/concerts/official_html_evidence.py'
       - 'automation/concerts/published_watch.py'
