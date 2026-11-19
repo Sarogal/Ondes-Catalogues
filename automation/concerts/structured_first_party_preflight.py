@@ -279,6 +279,8 @@ def build(registry, sources, catalogue, approvals, today, *,
             "html_explicit_event_genre_correlated"],
         "htmlGenreVisibleLineupUnverified": html_counts[
             "html_event_genre_visible_lineup_unverified"],
+        "htmlFullyNamedArtistHeadingReviewOnly": html_counts[
+            "html_explicit_named_artist_headings_review_only"],
         "results": results, "approvalsProposed": 0, "publicationAllowed": False,
         "note": "Independent evidence preview only; publisher trust contract unchanged",
     }
