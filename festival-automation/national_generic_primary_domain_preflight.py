@@ -25,7 +25,8 @@ SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 from grossesondes_institutional_edition import institutional_date
-from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges
+from grossesondes_official_html_edition import (VisibleText, fold, explicit_ranges,
+                                               visible_official_edition)
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
@@ -148,6 +149,28 @@ def _visible_date_ranges(html, year):
     return {(a, b) for _start, _end, a, b in explicit_ranges(visible, year)}
 
 
+def _private_date_rejection_code(html, title, year):
+    """Explain rejection without exporting untrusted HTML or relaxing any gate."""
+    parser = VisibleText()
+    parser.feed(html)
+    parser.close()
+    visible = " ".join(fold(" ".join(parser.parts)).split())
+    if not visible:
+        return "NO_VISIBLE_HTML_TEXT"
+    dates = _visible_date_ranges(html, year)
+    if not dates:
+        return ("CURRENT_EDITION_YEAR_NOT_VISIBLE" if str(year) not in visible
+                else "NO_EXPLICIT_VISIBLE_DATE_RANGE")
+    if len(dates) > 1:
+        return "CONFLICTING_VISIBLE_DATE_RANGES"
+    first, last = next(iter(dates))
+    if not visible_official_edition(html, title, first, last):
+        return "FESTIVAL_IDENTITY_DATE_PROXIMITY_NOT_PROVEN"
+    if not no_same_edition_jsonld_contradiction(html, title, first, last):
+        return "SAME_EDITION_STRUCTURED_CONTRADICTION"
+    return "STRICT_EDITION_VALIDATION_REJECTED"
+
+
 def _bounded_same_host_home(source_url):
     """Exactly the homepage of the already-vetted candidate host, never a new host."""
     if safe_public_url(source_url) is None:
@@ -168,18 +191,21 @@ def _recheck_current_dates(source, primary_html, fetch):
     title, year = source["title"], source["year"]
     dates = institutional_date(primary_html, title, year)
     if dates is not None:
-        return dates, "SOURCE_PAGE"
+        return dates, "SOURCE_PAGE", None, "SOURCE_PAGE"
+    primary_code = _private_date_rejection_code(primary_html, title, year)
     home = _bounded_same_host_home(source["url"])
     if home is None or _visible_date_ranges(primary_html, year):
-        return None, None
+        return None, None, primary_code, "SOURCE_PAGE"
     homepage_html = fetch(home)
     dates = institutional_date(homepage_html, title, year)
     if dates is None:
-        return None, None
+        return (None, None,
+                _private_date_rejection_code(homepage_html, title, year),
+                "SAME_HOST_HOME")
     if not no_same_edition_jsonld_contradiction(
             primary_html, title, *dates):
-        return None, None
-    return dates, "SAME_HOST_HOME"
+        return None, None, "SOURCE_STRUCTURED_CONTRADICTION", "SOURCE_PAGE"
+    return dates, "SAME_HOST_HOME", None, "SAME_HOST_HOME"
 
 
 def examine(state, queue, published, today, fetch=None):
@@ -229,16 +255,27 @@ def examine(state, queue, published, today, fetch=None):
             "two_day_dates": False,
             "start_date_hint": None, "end_date_hint": None,
             "date_source_mode": None,
+            "diagnostic_code": None, "diagnostic_surface": None,
         }
         try:
             html = read(url)
-            dates, proof_mode = _recheck_current_dates(source, html, read)
-            if (dates is None or dates[0] < current
-                    or dates[0].year != source["year"]
-                    or dates[1].year != source["year"]
-                    or not no_same_edition_jsonld_contradiction(
-                        html, source["title"], *dates)):
+            dates, proof_mode, rejection_code, rejection_surface = (
+                _recheck_current_dates(source, html, read))
+            if dates is None:
                 row["status"] = "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND"
+                row["diagnostic_code"] = rejection_code
+                row["diagnostic_surface"] = rejection_surface
+            elif (dates[0] < current
+                  or dates[0].year != source["year"]
+                  or dates[1].year != source["year"]):
+                row["status"] = "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND"
+                row["diagnostic_code"] = "NOT_FUTURE_OR_WRONG_EDITION_YEAR"
+                row["diagnostic_surface"] = proof_mode
+            elif not no_same_edition_jsonld_contradiction(
+                    html, source["title"], *dates):
+                row["status"] = "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND"
+                row["diagnostic_code"] = "SOURCE_STRUCTURED_CONTRADICTION"
+                row["diagnostic_surface"] = "SOURCE_PAGE"
             else:
                 first, last = (x.isoformat() for x in dates)
                 digest = _digest(source, first, last, proof_mode)
@@ -264,6 +301,7 @@ def examine(state, queue, published, today, fetch=None):
                 row["date_source_mode"] = proof_mode
         except (OSError, ValueError, UnicodeError, TypeError, KeyError):
             row["status"] = "GENERIC_PRIMARY_HTTPS_UNAVAILABLE"
+            row["diagnostic_code"] = "SECURE_FETCH_OR_HTML_PARSE_FAILED"
         rows.append(row)
     return {
         "schema": SCHEMA, "as_of": today,
