@@ -177,6 +177,34 @@ champs `institution_host`, `exact_page_url`, `agenda_slug`,
 des candidats. Un registre `[]` est autorisé pour mesurer la couverture zéro
 sans prétendre avoir homologué les institutions.
 
+### Inventaire privé sans registre (correctif du 19 novembre)
+
+En attendant qu'un **registre institutionnel réellement vérifié** existe,
+le paramètre `--independently-curated-registry` peut être omis.
+Dans ce cas, le diagnostic utilise uniquement `[]` : aucune source
+n'est homologuée, aucune piste ne peut obtenir de preuve institutionnelle,
+et le comptage des formats du backlog reste disponible.
+
+Le rapport distingue en outre les anciens miroirs ODS selon leur couverture
+par le registre indépendant fourni : `legacy_ods_no_independent_pin`,
+`legacy_ods_single_pin_for_review_only` et
+`legacy_ods_ambiguous_pins_held`. Une épingle unique n'est **pas** une
+attestation de propriétaire, un reçu d'API, une preuve de séance, une licence,
+ni un feu vert de publication.
+
+Exemple strictement local dans l'environnement privé :
+
+```bash
+python scripts/ptitesondes_oa2_private_registry_census_cli.py \\
+  --private-backlog chemin/prive/backlog.json \\
+  --today 2026-11-19
+```
+
+Aucun chemin privé, identifiant d'agenda, URL ou contenu d'événement n'est
+inclus dans la sortie ; les compteurs ne doivent pas être interprétés comme
+des sorties publiables. Fournir un chemin de registre explicitement erroné
+reste une erreur : seul l'argument omis autorise l'inventaire à zéro épingle.
+
 Le CLI refuse les fichiers excessifs, les JSON corrompus et les dates
 non conformes, n'exécute aucun réseau et ne crée aucun fichier de sortie.
 Sa sortie standard contient **des compteurs fixes uniquement**, pas de
