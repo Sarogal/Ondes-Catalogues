@@ -371,6 +371,13 @@ def download_official(url, robots_cache):
         raise ValueError("robots.txt interdit la récupération")
     response = Request(url, headers={"User-Agent": discover.AGENT})
     with urlopen(response, timeout=12) as r:
+        # Generic source-wide venues cannot delegate their event proof through
+        # any redirect, even to another already trusted official domain.
+        original_host = urlsplit(url).hostname
+        if original_host in ("larayonne.org", "lemetronum.fr"):
+            if (urlsplit(r.geturl()).hostname != original_host or
+                    r.geturl().rstrip("/") != url.rstrip("/")):
+                raise ValueError("Redirection générique hors fiche officielle")
         if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com", "larayonne.org", "lemetronum.fr"):
             raise ValueError("Redirection hors domaine officiel")
         raw = r.read(500_001)
