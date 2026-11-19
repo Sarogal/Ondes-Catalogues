@@ -364,6 +364,25 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertFalse(report["independent_age_access_rights_verified"])
         self.assertFalse(report["publication_ready"])
 
+    def test_unknown_access_is_separate_from_scan_failure_and_conflict(self):
+        unknown = MPT_TEMPLATE.replace(
+            "<p>Sur inscription | Gratuit</p>", "<p>Sur inscription</p>"
+        ).replace("<p>Carte MPT obligatoire</p>", "")
+        result, _, _ = probe(details={ONE: unknown})
+        self.assertEqual(result["access_first_party_price_not_stated"], 2)
+        self.assertEqual(result["access_first_party_price_conflicting"], 0)
+        self.assertEqual(result["access_first_party_scan_held"], 0)
+        self.assertEqual(result["access_first_party_registration_not_stated"], 0)
+        conflict = MPT_TEMPLATE.replace(
+            "<p>Sur inscription | Gratuit</p>",
+            "<p>Sur inscription | Gratuit</p><p>Tarif 10 €</p>",
+        )
+        result, _, _ = probe(details={ONE: conflict})
+        self.assertEqual(result["access_first_party_price_conflicting"], 2)
+        self.assertEqual(result["access_first_party_price_not_stated"], 0)
+        self.assertEqual(result["access_first_party_scan_held"], 0)
+        self.assertFalse(result["publication_ready"])
+
     def test_visible_event_session_is_measured_without_source_approval(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["future_child_occurrences"], 2)
