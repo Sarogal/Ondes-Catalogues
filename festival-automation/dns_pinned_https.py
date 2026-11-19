@@ -20,7 +20,7 @@ MAX_URL = 1500
 BLOCKED_SUFFIXES = (".local", ".localhost", ".internal", ".test",
                     ".invalid", ".example", ".onion", ".lan", ".home", ".arpa")
 HOST_PATTERN = re.compile(
-    r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\\.)+"
+    r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
     r"[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?"
 )
 
@@ -150,7 +150,7 @@ def fetch_public_html(url, *, opener=None, max_redirects=2):
             raise ValueError("Non-HTML response")
         if not isinstance(body, bytes) or len(body) > MAX_HTML:
             raise ValueError("Invalid bounded HTML body")
-        charset_match = re.search(r"charset\\s*=\\s*([a-zA-Z0-9_-]+)",
+        charset_match = re.search(r"charset\s*=\s*([a-zA-Z0-9_-]+)",
                                   headers.get("content-type", ""), re.I)
         charset = charset_match.group(1) if charset_match else "utf-8"
         try:
