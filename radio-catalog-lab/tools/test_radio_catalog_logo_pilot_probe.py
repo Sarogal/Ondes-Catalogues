@@ -165,25 +165,54 @@ class PilotGuardTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "exists"):
                 run_pilot(planned, destination, fetch=fetch, decode=decode)
 
-    def test_mime_mismatch_refused_before_writing_evidence_report(self):
+    def test_mime_mismatch_keeps_partial_report_and_explicit_failure(self):
         pilot, stage, reuse = sample()
         planned = plan_pilot(pilot, stage, reuse)
         with tempfile.TemporaryDirectory() as tmp:
             destination = Path(tmp) / "candidate"
-            with self.assertRaisesRegex(ValueError, "MIME"):
-                run_pilot(planned, destination,
-                          fetch=lambda u, h: (b"test-image", "image/jpeg"),
-                          decode=lambda d: ("image/png", 64, 64))
-            self.assertFalse((destination / "pilot-evidence.json").exists())
+            report = run_pilot(planned, destination,
+                               fetch=lambda u, h: (b"test-image", "image/jpeg"),
+                               decode=lambda d: ("image/png", 64, 64))
+            self.assertEqual(report["status"], "PILOT_PARTIAL_FAILURE_NOT_APPROVED")
+            self.assertEqual(report["failed_source_urls"], 2)
+            self.assertEqual(report["unique_fetched_urls"], 0)
+            self.assertEqual(report["approved_logo_count"], 0)
+            self.assertEqual(
+                json.loads((destination / "pilot-evidence.json").read_text())["failed_source_urls"],
+                2,
+            )
 
-    def test_oversized_payload_refused_even_with_decoder_injected(self):
+    def test_oversized_payload_fails_independently_with_no_success_claim(self):
         pilot, stage, reuse = sample()
         planned = plan_pilot(pilot, stage, reuse)
         with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaisesRegex(ValueError, "byte count"):
-                run_pilot(planned, Path(tmp) / "new",
-                          fetch=lambda u, h: (b"x" * (MAX_LOGO_BYTES + 1), "image/png"),
-                          decode=lambda d: ("image/png", 64, 64))
+            report = run_pilot(planned, Path(tmp) / "new",
+                               fetch=lambda u, h: (b"x" * (MAX_LOGO_BYTES + 1), "image/png"),
+                               decode=lambda d: ("image/png", 64, 64))
+            self.assertEqual(report["failed_source_urls"], 2)
+            self.assertEqual(report["unique_sha256_objects"], 0)
+
+    def test_one_403_does_not_destroy_independent_success_evidence(self):
+        pilot, stage, reuse = sample()
+        planned = plan_pilot(pilot, stage, reuse)
+        sample_bytes = b"synthetic-offline-only"
+        def fetch(url, host):
+            if url == URL_A:
+                raise ValueError("HTTP status 403")
+            return sample_bytes, "image/png"
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "new"
+            report = run_pilot(planned, dest,
+                               fetch=fetch,
+                               decode=lambda d: ("image/png", 100, 100))
+            self.assertEqual(report["status"], "PILOT_PARTIAL_FAILURE_NOT_APPROVED")
+            self.assertEqual(report["failed_source_urls"], 1)
+            self.assertEqual(report["unique_fetched_urls"], 1)
+            self.assertEqual(report["approved_logo_count"], 0)
+            self.assertEqual(report["records"][0]["source_url"], URL_B)
+            self.assertEqual(report["failures"][0]["source_url"], URL_A)
+            sha = hashlib.sha256(sample_bytes).hexdigest()
+            self.assertEqual((dest / "evidence" / (sha + ".img")).read_bytes(), sample_bytes)
 
     def test_dns_rebinding_to_private_ip_is_rejected_before_tls(self):
         with patch("radio_catalog_logo_pilot_probe.socket.getaddrinfo",
