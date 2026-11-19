@@ -2179,7 +2179,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             body, actual = download(link, timeout=10, cap=900_000)
             record = official_rss_jsonld_bridge.candidate_from_event_page(
                 lead, body, actual, source, known, day,
-                read_ld=read_ld, venue_candidate=venue_candidate, norm=norm)
+                read_ld=read_ld, venue_candidate=venue_candidate, norm=norm,
+                allow_generic_event=True)
             if record is None:
                 stats["held"] += 1
                 continue
