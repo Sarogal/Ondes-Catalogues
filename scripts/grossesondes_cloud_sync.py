@@ -397,6 +397,27 @@ def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep
     return result
 
 
+def browser_needed_for_pending_patch(patch, published_slugs):
+    """Match the publisher's ten-item queue, excluding already released rows.
+
+    A cumulative private patch may retain last week's browser proposals.
+    Once they are published, do not install Chromium again on every cron.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Untrusted published identities")
+    eligible = []
+    for row in patch.get("additions", []):
+        if (isinstance(row, dict) and row.get("slug") not in published_slugs
+                and row.get("proofMode") in (
+                    EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE, HTML_PROOF_MODE,
+                    ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE)):
+            eligible.append(row)
+        if len(eligible) >= 10:
+            break
+    return any(row["proofMode"] == ARCHIVED_BROWSER_PROOF_MODE
+               for row in eligible)
+
+
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument("--mode",choices=("preview","publish"))
@@ -410,10 +431,11 @@ def main():
         patch, _ = load_patch(
             token, datetime.now(ZoneInfo("Europe/Paris")).date(),
             allow_stale_for_reproof=True)
-        required = any(
-            isinstance(row, dict)
-            and row.get("proofMode") == ARCHIVED_BROWSER_PROOF_MODE
-            for row in patch.get("additions", []))
+        published = json.loads((ROOT / "festivals.json").read_text(encoding="utf-8"))
+        verify_published_head(published)
+        published_slugs = {row["slug"] for row in published["festivals"]
+                           if isinstance(row, dict) and isinstance(row.get("slug"), str)}
+        required = browser_needed_for_pending_patch(patch, published_slugs)
         print("browser_required=" + ("true" if required else "false"))
         return
     require(args.mode is not None, "mode de synchronisation absent")
