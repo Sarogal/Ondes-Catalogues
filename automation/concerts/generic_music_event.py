@@ -38,11 +38,13 @@ def load_specs(path=MANIFEST):
         if (not isinstance(venue_id, str)
                 or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", venue_id)
                 or not isinstance(row, dict)
-                or set(row) != {"name", "city", "department", "host", "base"}):
+                or set(row) != {"name", "city", "department", "host", "base",
+                                "eventPathPrefix"}):
             raise ValueError("Identité de salle agréée non conforme")
         name, city, department, host, base = (
             row["name"], row["city"], row["department"],
             row["host"], row["base"])
+        event_prefix = row["eventPathPrefix"]
         if (not isinstance(name, str) or not 2 <= len(name) <= 100
                 or name != name.strip()
                 or not isinstance(city, str) or not 2 <= len(city) <= 100
@@ -52,7 +54,9 @@ def load_specs(path=MANIFEST):
                 or not isinstance(host, str)
                 or not re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z]{2,24}", host)
                 or not isinstance(base, str)
-                or base != "https://" + host + "/"):
+                or base != "https://" + host + "/"
+                or not isinstance(event_prefix, str)
+                or not re.fullmatch(r"/(?:[a-z0-9-]{2,40}/){1,3}", event_prefix)):
             raise ValueError("Domaine HTTPS / géographie agréés non conformes")
         identity = (norm(name), norm(city), department)
         if identity in seen:
@@ -76,9 +80,15 @@ def trusted_spec(candidate):
                 or str(candidate.get("department")) != spec["department"]):
             continue
         url = candidate.get("sourceUrl")
-        if (bridge.official_event_url(url, spec["base"])
-                and urlsplit(url).hostname == spec["host"]):
-            return venue_id, spec
+        if bridge.official_event_url(url, spec["base"]):
+            parts = urlsplit(url)
+            path = parts.path
+            prefix = spec["eventPathPrefix"]
+            if (parts.hostname == spec["host"]
+                    and path.startswith(prefix)
+                    and re.fullmatch(r"[a-z0-9-]{5,160}/?",
+                                     path[len(prefix):])):
+                return venue_id, spec
     return None
 
 

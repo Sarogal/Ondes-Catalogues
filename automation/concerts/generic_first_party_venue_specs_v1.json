@@ -6,14 +6,16 @@
       "city": "Villeurbanne",
       "department": "69",
       "host": "larayonne.org",
-      "base": "https://larayonne.org/"
+      "base": "https://larayonne.org/",
+      "eventPathPrefix": "/evenement/"
     },
     "le-metronum": {
       "name": "Le Metronum",
       "city": "Toulouse",
       "department": "31",
       "host": "lemetronum.fr",
-      "base": "https://lemetronum.fr/"
+      "base": "https://lemetronum.fr/",
+      "eventPathPrefix": "/evenement/"
     }
   }
 }

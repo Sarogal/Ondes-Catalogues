@@ -71,6 +71,11 @@ class ReviewedVenueManifestTests(unittest.TestCase):
             lambda x: x["venues"]["la-rayonne"].update(
                 host="larayonne.org.evil.example"),
             lambda x: x["venues"]["la-rayonne"].update(
+                eventPathPrefix="/../untrusted/"),
+            lambda x: x["venues"]["la-rayonne"].update(
+                eventPathPrefix="/"),
+
+            lambda x: x["venues"]["la-rayonne"].update(
                 host="www.larayonne.org"),
             lambda x: x["venues"]["la-rayonne"].update(
                 name=" "),
@@ -92,7 +97,8 @@ class ReviewedVenueManifestTests(unittest.TestCase):
         data = copy.deepcopy(self.pilot)
         data["venues"]["second-hall"] = {
             "name": "Second Hall", "city": "Lyon", "department": "69",
-            "host": "larayonne.org", "base": "https://larayonne.org/"}
+            "host": "larayonne.org", "base": "https://larayonne.org/",
+            "eventPathPrefix": "/agenda/concerts/"}
         specs = load(data)
         self.assertEqual(specs["second-hall"]["name"], "Second Hall")
 
@@ -100,7 +106,8 @@ class ReviewedVenueManifestTests(unittest.TestCase):
         data = copy.deepcopy(self.pilot)
         data["venues"]["corsica-hall"] = {
             "name": "Corsica Hall", "city": "Ajaccio", "department": "2A",
-            "host": "www.corsica.example", "base": "https://www.corsica.example/"}
+            "host": "www.corsica.example", "base": "https://www.corsica.example/",
+            "eventPathPrefix": "/evenement/"}
         self.assertIn("corsica-hall", load(data))
 
 

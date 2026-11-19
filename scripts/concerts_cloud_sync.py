@@ -1584,6 +1584,53 @@ def require(check, message):
 
 REVIEWED_VENUE_SPECS_PATH = ROOT / "automation/concerts/reviewed_venue_specs_v1.json"
 
+# A separate, code-reviewed first-party source contract. It must NEVER be
+# merged into REVIEWED_VENUE_SPECS_PATH, which has a different GPS schema.
+GENERIC_STRUCTURED_SPECS_PATH = (
+    ROOT / "automation/concerts/generic_first_party_venue_specs_v1.json"
+)
+
+
+@lru_cache(maxsize=1)
+def read_generic_structured_specs():
+    """Publisher-side independent, fail-closed validation of allowed hosts."""
+    data = json.loads(GENERIC_STRUCTURED_SPECS_PATH.read_text(encoding="utf-8"))
+    require(isinstance(data, dict)
+            and set(data) == {"schema", "venues"}
+            and data["schema"] == "grossesondes.concert.reviewed-venue-specs.v1"
+            and isinstance(data["venues"], dict)
+            and bool(data["venues"]),
+            "Générique : manifeste public de domaines invalide")
+    seen, validated = set(), {}
+    for ident, spec in data["venues"].items():
+        require(isinstance(ident, str)
+                and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", ident)
+                and isinstance(spec, dict)
+                and set(spec) == {
+                    "name", "city", "department", "host", "base", "eventPathPrefix"
+                }, "Générique : dossier de salle autorisée non conforme")
+        name, city, dep, host, base, prefix = (
+            spec["name"], spec["city"], spec["department"],
+            spec["host"], spec["base"], spec["eventPathPrefix"])
+        require(isinstance(name, str) and 2 <= len(name) <= 100
+                and name == name.strip()
+                and isinstance(city, str) and 2 <= len(city) <= 100
+                and city == city.strip()
+                and isinstance(dep, str)
+                and bool(re.fullmatch(r"(?:[0-9]{2,3}|2A|2B)", dep))
+                and isinstance(host, str)
+                and bool(re.fullmatch(r"(?:[a-z0-9-]+\.)+[a-z]{2,24}", host))
+                and base == "https://" + host + "/"
+                and isinstance(prefix, str)
+                and bool(re.fullmatch(r"/(?:[a-z0-9-]{2,40}/){1,3}", prefix)),
+                "Générique : source ou modèle de fiche officielle invalide")
+        key = (norm(name), norm(city), dep)
+        require(key not in seen, "Générique : salle agréée en doublon")
+        seen.add(key)
+        validated[ident] = dict(spec)
+    return validated
+
+
 
 @lru_cache(maxsize=1)
 def read_reviewed_venue_specs():
@@ -4437,16 +4484,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # New source-wide generic first-party branch. Only code-reviewed
         # venue/hostname pairs can ever pass; an external source list or a
         # registry candidate cannot add a publishing domain.
-        generic_structured_hosts = {
-            "la-rayonne": "larayonne.org",
-            "le-metronum": "lemetronum.fr",
-        }
+        generic_spec = read_generic_structured_specs().get(venue)
+        registered_venue = venues.get(venue)
         generic_auto = (
-            venue in generic_structured_hosts and
+            generic_spec is not None and
+            isinstance(registered_venue, dict) and
+            norm(registered_venue.get("name")) == norm(generic_spec["name"]) and
+            norm(registered_venue.get("city")) == norm(generic_spec["city"]) and
+            str(registered_venue.get("department")) == generic_spec["department"] and
             parsed_url.scheme == "https" and
-            parsed_url.hostname == generic_structured_hosts.get(venue) and
-            bool(re.fullmatch(r"/evenement/[a-z0-9-]{5,160}/?",
-                              parsed_url.path)) and
+            parsed_url.hostname == generic_spec["host"] and
+            bool(re.fullmatch(
+                re.escape(generic_spec["eventPathPrefix"]) +
+                r"[a-z0-9-]{5,160}/?", parsed_url.path)) and
             not parsed_url.username and not parsed_url.password and
             not parsed_url.port and not parsed_url.query and
             not parsed_url.fragment and
@@ -4538,14 +4588,11 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Générique : nouvel artiste en collision avec un alias")
         require(event.get("status") == "confirmed"
                 and event.get("sourceType") == "salle"
-                and event.get("organizer") ==
-                    {"la-rayonne": "La Rayonne",
-                     "le-metronum": "Le Metronum"}[venue]
+                and event.get("organizer") == generic_spec["name"]
                 and event_id ==
                     "go-c-" + event["date"].replace("-", "") + "-" +
-                    {"la-rayonne": "villeurbanne",
-                     "le-metronum": "toulouse"}[venue] + "-" +
-                    norm(names[0]).replace(" ", "-")[:72].strip("-"),
+                    norm(generic_spec["city"]).replace(" ", "-")[:72].strip("-") +
+                    "-" + norm(names[0]).replace(" ", "-")[:72].strip("-"),
                 "Générique : concert, organisme ou ID non déterministe")
         genres = event.get("genres")
         require(isinstance(genres, list) and len(genres) >= 1
