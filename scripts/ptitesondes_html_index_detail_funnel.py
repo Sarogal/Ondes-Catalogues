@@ -23,6 +23,7 @@ from ptitesondes_real_family_source_adapters import (
     has_explicit_musical_theme,
 )
 from ptitesondes_family_national_scope import FAMILY_TYPES
+from ptitesondes_html_registry_history_triage import triage_independent_context
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -59,6 +60,15 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "already_started_sessions_held": 0,
         "exact_local_clock_cutoff_applied": False,
         "structurally_plausible_for_independent_review": 0,
+        "registry_location_exact_matches": 0,
+        "registry_location_missing": 0,
+        "registry_location_ambiguous": 0,
+        "registry_location_untrusted": 0,
+        "registry_location_not_checked": 0,
+        "historical_exact_duplicates_held": 0,
+        "historical_ambiguous_collisions_held": 0,
+        "historical_no_collision_found": 0,
+        "historical_not_checked": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
         "independent_venue_verified": False,
@@ -103,7 +113,7 @@ def _diverse_probe_order(children):
 def diagnose_html_index_detail_funnel(
         independently_pinned_index, adapter_id, today,
         *, max_details=12, as_of=None, index_opener=None,
-        detail_opener=None):
+        detail_opener=None, independent_context=None):
     """Sample one approved official index and independently fetch child pages.
 
     A positive scope diagnostic only means a candidate has the *shape* of a
@@ -235,6 +245,29 @@ def diagnose_html_index_detail_funnel(
         result["unclassified_nonmusical_occurrences_held"] += (
             len(unclassified) - musical
         )
+        # Context is separately supplied by the caller from reviewed place
+        # registries and a pinned historical snapshot. A match is NOT a new
+        # geocoder request or proof of this event. Never return individual
+        # candidate data from this diagnostic.
+        for row in leads:
+            if row.get("category") not in FAMILY_TYPES:
+                continue
+            triage = triage_independent_context(row, independent_context)
+            venue = triage["venue_status"]
+            history = triage["history_status"]
+            result[{
+                "matched": "registry_location_exact_matches",
+                "missing": "registry_location_missing",
+                "ambiguous": "registry_location_ambiguous",
+                "untrusted": "registry_location_untrusted",
+                "not_checked": "registry_location_not_checked",
+            }[venue]] += 1
+            result[{
+                "duplicate": "historical_exact_duplicates_held",
+                "ambiguous": "historical_ambiguous_collisions_held",
+                "clear": "historical_no_collision_found",
+                "not_checked": "historical_not_checked",
+            }[history]] += 1
         try:
             scopes = scope_proposals(leads, today)
             result["structurally_plausible_for_independent_review"] += sum(
