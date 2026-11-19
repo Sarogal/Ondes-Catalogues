@@ -21,7 +21,7 @@ SCHEMA = "ptitesondes.html_family_age_source_triage.v1"
 ADULT_EXCLUSION = re.compile(
     r"\b(?:reserve(?:e|s|es)? aux adultes|adultes uniquement|"
     r"adultes seulement|sans enfants|mineurs non admis|"
-    r"enfants non admis|interdit aux mineurs|"
+    r"enfants non admis|enfants interdits|interdit aux mineurs|"
     r"interdit aux enfants|moins de 18 ans interdits|"
     r"a partir de 18 ans|18 ans et plus|parents uniquement|"
     r"pour les parents d enfants)\b"
