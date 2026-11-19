@@ -22,7 +22,7 @@ CITY = "Paris"
 
 def fixtures():
     venue = {
-        "id": site.site_id(EVENT_ID, EVENT_DATE, NAME, CITY),
+        "id": site.site_id(NAME, CITY, GEO),
         "name": NAME, "address": "Parvis de l'esplanade",
         "postalCode": "75007", "city": CITY, "department": "75",
         "region": "Île-de-France", "latitude": 48.858, "longitude": 2.294,
@@ -185,11 +185,13 @@ class EventSitePublisherContractTests(unittest.TestCase):
 
     def test_stable_id_does_not_require_hall_known_in_advance(self):
         self.assertEqual(
-            site.site_id(EVENT_ID, EVENT_DATE, NAME, CITY),
-            site.site_id(EVENT_ID, EVENT_DATE, NAME, CITY))
+            site.site_id(NAME, CITY, GEO),
+            site.site_id(NAME, CITY, GEO))
+        # Different concerts at the SAME geographic feature can share one
+        # catalogue pin. Different OSM features cannot impersonate it.
         self.assertNotEqual(
-            site.site_id(EVENT_ID, EVENT_DATE, NAME, CITY),
-            site.site_id("go-c-20270428-paris-experimental-metal", EVENT_DATE, NAME, CITY))
+            site.site_id(NAME, CITY, GEO),
+            site.site_id(NAME, CITY, "https://www.openstreetmap.org/way/987654321"))
 
 
 if __name__ == "__main__":
