@@ -12,6 +12,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import discover
 import triage
+import official_recheck
+import radical_slift_tour_adapter
 
 CATALOGUE = {
     "venues": [
@@ -92,6 +94,19 @@ class AnywhereConcertsSafetyTests(unittest.TestCase):
             catalogue={"events": [], "venues": [], "artists": []})
         self.assertEqual(festival["reviewBucket"], "festival_overlap_review")
         self.assertFalse(festival["publicationAllowed"])
+
+    def test_other_open_air_name_filters_only_explicit_festivals(self):
+        self.assertEqual(
+            official_recheck.artist_names("Metal Orchestra Open Air"),
+            ["Metal Orchestra Open Air"])
+        self.assertIsNone(
+            official_recheck.BANNED_STATUS.search("Metal Orchestra Open Air"))
+        self.assertFalse(
+            radical_slift_tour_adapter.EXCLUDE_PLACE.search("Place Open Air"))
+        self.assertTrue(
+            radical_slift_tour_adapter.EXCLUDE_PLACE.search("Metal Festival"))
+        with self.assertRaises(ValueError):
+            official_recheck.artist_names("Metal Orchestra Festival")
 
     def test_location_is_not_authority_and_unknown_genre_stays_held(self):
         row = triage.triage(
