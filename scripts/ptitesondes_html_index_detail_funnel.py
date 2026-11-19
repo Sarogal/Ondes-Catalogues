@@ -72,6 +72,7 @@ def diagnose_html_index_detail_funnel(
             or not isinstance(independently_pinned_index, dict)
             or set(independently_pinned_index)
             != {"approved_host", "exact_index_url"}
+            or not isinstance(adapter_id, str)
             or adapter_id not in READ_ONLY_ADAPTERS):
         return _empty()
     contract = READ_ONLY_ADAPTERS[adapter_id]
@@ -147,7 +148,8 @@ def redact_detail_funnel_report(report):
     empty = _empty()
     if not isinstance(report, dict) or report.get("schema") != SCHEMA:
         report = empty
-    allowed_counts = tuple(k for k, v in empty.items() if type(v) is int)
+    allowed_counts = tuple(k for k, v in empty.items()
+                           if type(v) is int and k != "public_writes")
     out = _empty("aggregate_report_without_private_identifiers")
     for key in allowed_counts:
         n = report.get(key)
