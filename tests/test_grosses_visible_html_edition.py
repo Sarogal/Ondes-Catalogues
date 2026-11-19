@@ -19,6 +19,7 @@ from grossesondes_cloud_sync import (
 from test_grosses_structured_edition import (
     PARENT, ENTRY, ARCHIVE_PARENT, ARCHIVED_ENTRY, TODAY, URL,
     StructuredEditionStageTests, ArchivedStructuredEditionTests,
+    event, html as jsonld_html,
 )
 
 
@@ -117,6 +118,37 @@ class VisibleHTMLTests(unittest.TestCase):
                 self.assertIsNone(validate_structured_edition(
                     html_entry(), PARENT, page, TODAY,
                     proof_mode=HTML_PROOF_MODE))
+
+    def test_publisher_rejects_html_jsonld_contradictions(self):
+        # The publisher independently fetches the page again. Contradictory
+        # embedded same-edition data must not be silently ignored in HTML mode.
+        visible = official_html()
+        mismatches = (
+            event(startDate="2027-08-14"),
+            event(endDate="2027-08-14"),
+            event(eventStatus="https://schema.org/EventCancelled"),
+            event(eventStatus="https://schema.org/EventPostponed"),
+        )
+        for claim in mismatches:
+            with self.subTest(claim=claim):
+                proof = visible + jsonld_html(claim)
+                self.assertIsNone(validate_structured_edition(
+                    html_entry(), PARENT, proof, TODAY,
+                    proof_mode=HTML_PROOF_MODE))
+                self.assertIsNone(validate_archived_structured_edition(
+                    archive_entry(), ARCHIVE_PARENT, proof, TODAY,
+                    proof_mode=ARCHIVED_HTML_PROOF_MODE))
+        # Agreement is admissible, but the structured claim alone never is.
+        self.assertIsNotNone(validate_structured_edition(
+            html_entry(), PARENT, visible + jsonld_html(event()), TODAY,
+            proof_mode=HTML_PROOF_MODE))
+        self.assertIsNotNone(validate_structured_edition(
+            html_entry(), PARENT, visible + jsonld_html(event(
+                name="Other Festival 2027", startDate="2027-01-01")), TODAY,
+            proof_mode=HTML_PROOF_MODE))
+        self.assertIsNone(validate_structured_edition(
+            html_entry(), PARENT, jsonld_html(event()), TODAY,
+            proof_mode=HTML_PROOF_MODE))
 
     def test_private_proposal_never_proves_status_geolocation_lineup_or_origin(self):
         page = official_html()

@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - 'scripts/grossesondes_archived_html_intake.py'
+      - 'scripts/grossesondes_structured_edition.py'
+      - 'scripts/grossesondes_official_html_edition.py'
+      - 'tests/test_grosses_visible_html_edition.py'
+      - 'tests/test_grosses_structured_edition.py'
       - 'tests/test_grosses_archived_generic_rotation.py'
       - 'tests/test_grosses_archived_html_intake.py'
       - '.github/workflows/grossesondes-archived-organizer-rotation-tests.yml'
@@ -11,6 +15,10 @@ on:
     branches: [main]
     paths:
       - 'scripts/grossesondes_archived_html_intake.py'
+      - 'scripts/grossesondes_structured_edition.py'
+      - 'scripts/grossesondes_official_html_edition.py'
+      - 'tests/test_grosses_visible_html_edition.py'
+      - 'tests/test_grosses_structured_edition.py'
       - 'tests/test_grosses_archived_generic_rotation.py'
       - 'tests/test_grosses_archived_html_intake.py'
       - '.github/workflows/grossesondes-archived-organizer-rotation-tests.yml'
