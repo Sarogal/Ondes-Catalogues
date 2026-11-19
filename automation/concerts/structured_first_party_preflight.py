@@ -15,6 +15,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import discover
+import official_html_evidence as html_evidence
 import official_rss_jsonld_bridge as bridge
 import triage
 
@@ -176,13 +177,15 @@ def build(registry, sources, catalogue, approvals, today, *,
 
     selected = choose(eligible, limit)
     selected_exploratory = choose(exploratory, limit - len(selected))
-    results, counts, diagnostics, robot_cache = [], Counter(), Counter(), {}
+    results, counts, diagnostics, html_counts, robot_cache = ([], Counter(), Counter(), Counter(), {})
     for diagnostic_only, candidate in (
             [(False, c) for c in selected]
             + [(True, c) for c in selected_exploratory]):
         reason = "unknown"
         status = "held"
         diagnostic = None
+        html_status = None
+        html_genres = []
         source = trusted_source(candidate, sources)
         if source is None:
             reason = "source_not_independently_mapped"
@@ -203,6 +206,21 @@ def build(registry, sources, catalogue, approvals, today, *,
                         reason = "structured_event_proof_missing_or_ambiguous"
                         diagnostic = explain_structured_nonmatch(
                             page, actual, candidate, source)
+                        # HTML diagnosis is read-only, never a substitute for
+                        # the structured reviewer/publisher contract. The
+                        # relevant event must still match its own headline,
+                        # date, geographic identity and visible genre label.
+                        if diagnostic in {
+                                "no_structured_event_node",
+                                "generic_event_genre_not_confirmed",
+                                "named_performer_proof_missing",
+                                "structured_event_fields_unmatched",
+                        }:
+                            html_report = html_evidence.inspect(
+                                candidate, page, actual, source)
+                            html_status = html_report["status"]
+                            html_genres = html_report["genres"]
+                            html_counts[html_status] += 1
                     elif any(fresh.get(field) != candidate.get(field)
                              for field in IDENTITY_FIELDS
                              if not diagnostic_only or field != "classification"):
@@ -238,6 +256,8 @@ def build(registry, sources, catalogue, approvals, today, *,
                           else "genre_review_preflight"),
             "status": status, "reason": reason,
             **({"diagnosticReason": diagnostic} if diagnostic else {}),
+            **({"htmlEvidenceStatus": html_status} if html_status else {}),
+            **({"htmlGenreLabels": html_genres} if html_genres else {}),
             "publicationAllowed": False,
         })
     return {
@@ -254,6 +274,9 @@ def build(registry, sources, catalogue, approvals, today, *,
                                 for r in results),
         "reasonCounts": dict(sorted(counts.items())),
         "diagnosticReasonCounts": dict(sorted(diagnostics.items())),
+        "htmlEvidenceReasonCounts": dict(sorted(html_counts.items())),
+        "htmlGenreEvidenceFound": html_counts[
+            "html_explicit_event_genre_correlated"],
         "results": results, "approvalsProposed": 0, "publicationAllowed": False,
         "note": "Independent evidence preview only; publisher trust contract unchanged",
     }
@@ -283,6 +306,7 @@ def main():
           + str(report["structureMatched"]) + " concordances ; "
           + str(report["exploratoryAttempted"]) + " explorations de genre "
           + "(" + str(report["exploratoryGenreRecovered"]) + " tags retrouvés), "
+          + str(report["htmlGenreEvidenceFound"]) + " genres HTML visibles, "
           "aucune approbation ou publication.")
 
 
