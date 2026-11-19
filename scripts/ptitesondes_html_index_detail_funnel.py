@@ -11,18 +11,23 @@ file never builds a pin from candidate fields or a search result.
 from collections import Counter
 from datetime import date
 from urllib.parse import urlsplit
+import re
 
 from ptitesondes_official_html_index_discovery import (
     discover_live_html_event_pages,
 )
 from ptitesondes_openagenda_v2_geo_fetch import fetch_official_page
 from ptitesondes_real_family_source_adapters import (
-    parse_montpellier_mpt_detail, scope_proposals, MPT_HOST,
+    parse_montpellier_mpt_detail, scope_proposals, classify, norm, MPT_HOST,
 )
 from ptitesondes_family_national_scope import FAMILY_TYPES
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
+_FAMILY_SLUG_HINT = re.compile(
+    r"\b(enfant|enfants|bebe|bebes|famille|familles|"
+    r"petit|petits|jeunesse|motricite|atelier|cirque|spectacle)\b"
+)
 # Registry is an adapter contract (one site family), NOT per event.
 READ_ONLY_ADAPTERS = {
     "montpellier_mpt": {
@@ -45,6 +50,7 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "child_pages_without_future_child_session": 0,
         "future_child_occurrences": 0,
         "unclassified_occurrences_held": 0,
+        "duplicate_child_sessions_held": 0,
         "structurally_plausible_for_independent_review": 0,
         "scope_blocked_reason_counts": {},
         "independent_institution_owner_attested": False,
@@ -58,6 +64,33 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "public_writes": 0,
         "candidate_details_redacted": True,
     }
+
+
+def _sample_priority(url):
+    """URL text helps choose a diverse DIAGNOSTIC sample, never prove content."""
+    slug = urlsplit(url).path.rsplit("/", 1)[-1].replace("-", " ")
+    return (classify(slug) is None,
+            _FAMILY_SLUG_HINT.search(norm(slug)) is None,
+            url)
+
+
+def _diverse_probe_order(children):
+    """Spread fixed-cap probes over distinct URL families *for sampling only*.
+
+    Numeric URL suffixes may be real separate sessions. No child link is
+    discarded or declared a duplicate; all remain available when the sample
+    limit grows. Cross-page session identity is checked separately.
+    """
+    selected, later, stems = [], [], set()
+    for url in sorted(set(children), key=_sample_priority):
+        slug = urlsplit(url).path.rsplit("/", 1)[-1]
+        stem = re.sub(r"-[0-9]{1,3}$", "", slug)
+        if stem in stems:
+            later.append(url)
+        else:
+            stems.add(stem)
+            selected.append(url)
+    return selected + later
 
 
 def diagnose_html_index_detail_funnel(
@@ -103,13 +136,15 @@ def diagnose_html_index_detail_funnel(
                 children.append(raw_url)
         except ValueError:
             continue
-    # Bound and deterministic. A sample is NOT a comprehensive collection.
-    children = sorted(set(children))
+    # Bound, coverage-biased and deterministic. A URL slug only changes
+    # diagnostic reading order; it never supplies category or age evidence.
+    children = _diverse_probe_order(children)
     result["child_pages_matching_contract"] = len(children)
     selected = children[:max_details]
     result["child_pages_selected"] = len(selected)
     result["child_pages_skipped_by_limit"] = len(children) - len(selected)
 
+    seen_sessions = set()
     for child in selected:
         try:
             page = fetch_official_page({
@@ -125,6 +160,20 @@ def diagnose_html_index_detail_funnel(
         if not leads:
             result["child_pages_without_future_child_session"] += 1
             continue
+        # Different official URLs can represent the SAME occurrence.
+        # Compare venue + title + city + exact day/start clock, never URL
+        # suffixes or event title alone; separate hours remain separate.
+        deduplicated = []
+        for row in leads:
+            signature = (norm(row.get("title")), norm(row.get("city")),
+                         norm(row.get("venue")), row.get("date_start"),
+                         row.get("start_local"))
+            if signature in seen_sessions:
+                result["duplicate_child_sessions_held"] += 1
+            else:
+                seen_sessions.add(signature)
+                deduplicated.append(row)
+        leads = deduplicated
         result["future_child_occurrences"] += len(leads)
         # The adapter may recognize a real child session whose topic is not
         # yet one of the independently reviewed family categories. Never
