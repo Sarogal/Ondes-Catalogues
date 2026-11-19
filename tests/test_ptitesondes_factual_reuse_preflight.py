@@ -202,7 +202,7 @@ class HTMLFactualDraftTests(unittest.TestCase):
 
 
 class OALicenceTests(unittest.TestCase):
-    def test_event_et alab_license_with_attribution_is_only_reviewable(self):
+    def test_event_etalab_license_with_attribution_is_only_reviewable(self):
         out = triage_openagenda_licence_metadata(OA_EVENT, DIRECT)
         self.assertEqual(out["route"], "open_licence_claim_ready_for_independent_rights_review")
         self.assertTrue(out["recognized_open_licence_claim"])
