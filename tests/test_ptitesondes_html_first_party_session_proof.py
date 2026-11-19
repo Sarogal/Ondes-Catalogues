@@ -34,9 +34,12 @@ PAGE = """<html><body><main>
 </main></body></html>"""
 
 
-def check(lead=None, html=PAGE, pin=PIN, url=SOURCE):
+_DEFAULT = object()
+
+
+def check(lead=_DEFAULT, html=PAGE, pin=PIN, url=SOURCE):
     return corroborate_first_party_session(
-        LEAD if lead is None else lead,
+        LEAD if lead is _DEFAULT else lead,
         {"url": url, "html": html},
         pin, "/evenement/",
     )
