@@ -17,6 +17,8 @@ on:
       - 'festival-automation/national_discovery_queue.py'
       - 'festival-automation/national_candidate_promotion.py'
       - 'festival-automation/national_admission_handoff.py'
+      - 'festival-automation/national_institutional_linked_primary_preflight.py'
+      - 'scripts/grossesondes_institutional_linked_edition.py'
   workflow_dispatch:
     inputs:
       phase:
