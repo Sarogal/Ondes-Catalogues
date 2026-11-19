@@ -1,8 +1,8 @@
 {
   "schema": "grossesondes.published-head.v1",
   "genesisBlobSha": "7fca36caba870d327ec5aadb504c46c251956c6d",
-  "currentBlobSha": "65fdf48fd0fa30ccc7b87f7bc5570473e10ce1cd",
+  "currentBlobSha": "fb15bf5d5d2f08035e0d696d306d346456f1d18d",
   "calendarCount": 125,
-  "generatedAt": "2026-11-18",
+  "generatedAt": "2026-11-19",
   "description": "Dernier calendrier public archivé après vérification indépendante. Chaque prochaine publication atomique actualise la signature et les métadonnées."
 }
