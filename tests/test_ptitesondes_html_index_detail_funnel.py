@@ -530,6 +530,37 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
 
 
 
+class FactualReviewHandoffCountsTests(unittest.TestCase):
+    def test_official_sensory_sessions_yield_private_only_factual_proposals(self):
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(report["first_party_visible_exact_sessions"], 2)
+        self.assertEqual(report["factual_private_draft_for_rights_review"], 2)
+        self.assertEqual(report["factual_private_draft_family_held"], 0)
+        self.assertEqual(report["factual_private_draft_access_held"], 0)
+        self.assertEqual(report["factual_private_draft_other_held"], 0)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["factual_private_draft_for_rights_review"], 2)
+        self.assertNotIn("source_url", json.dumps(public))
+        self.assertNotIn("Maison pour tous Albert Camus", json.dumps(public))
+        self.assertNotIn("09:15", json.dumps(public))
+        self.assertFalse(public["publisher_connected"])
+        self.assertFalse(public["approval_granted"])
+        self.assertFalse(public["publication_ready"])
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_no_family_admission_never_becomes_a_private_draft(self):
+        neutral = MPT_TEMPLATE.replace(
+            "<p>Atelier/Stage | Culture</p><p>Familles</p>",
+            "<p>Atelier/Stage | Culture</p><p>Renseignements</p>",
+        ).replace(
+            "Partagez ce moment de découverte avec votre bébé et votre famille.",
+            "Événement portant sur les albums illustrés.",
+        )
+        report, _, _ = probe(details={ONE: neutral})
+        self.assertEqual(report["factual_private_draft_for_rights_review"], 0)
+        self.assertEqual(report["public_writes"], 0)
+
+
 class RepresentativeSamplingAndDedupTests(unittest.TestCase):
     def test_sampling_prefers_supported_topics_but_never_claims_event_proof(self):
         relevant = "https://mpt.montpellier.fr/evenement/zzz-atelier-motricite"
