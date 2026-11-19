@@ -1,0 +1,30 @@
+name: "P'tites Ondes — fumee HTML institutionnel reel (sans publication)"
+
+# Prend un tres petit echantillon sur une source publique deja connue.
+# Aucune publication, aucun secret, aucun declenchement programme.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_html_index_detail_live_smoke.py'
+      - 'scripts/ptitesondes_html_index_detail_funnel.py'
+      - '.github/workflows/ptitesondes-html-index-live-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  trusted-public-source-sample:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Lire un index public et trois fiches au maximum — rapport anonyme
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python scripts/ptitesondes_html_index_detail_live_smoke.py

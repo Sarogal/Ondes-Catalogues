@@ -9,6 +9,8 @@ on:
       - 'scripts/ptitesondes_oa2_live_pinned_bridge.py'
       - 'scripts/ptitesondes_oa2_official_index_discovery.py'
       - 'scripts/ptitesondes_official_html_index_discovery.py'
+      - 'scripts/ptitesondes_html_index_detail_funnel.py'
+      - 'tests/test_ptitesondes_html_index_detail_funnel.py'
       - 'tests/test_ptitesondes_official_html_index_discovery.py'
       - 'tests/test_ptitesondes_oa2_official_index_discovery.py'
       - 'tests/test_ptitesondes_oa2_live_pinned_bridge.py'
@@ -54,6 +56,8 @@ jobs:
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_official_html_index_discovery.py' -v
           python -m unittest discover -s tests \
+            -p 'test_ptitesondes_html_index_detail_funnel.py' -v
+          python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
       - name: Assert only read-only diagnostics are exposed
         run: |
@@ -84,5 +88,8 @@ jobs:
           html_index = Path("scripts/ptitesondes_official_html_index_discovery.py").read_text()
           assert all(x in html_index for x in ("private_routing_proposals", "redacted_html_index_counts", "approval_granted", "public_writes"))
           assert not any(x in html_index for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
+          funnel = Path("scripts/ptitesondes_html_index_detail_funnel.py").read_text()
+          assert all(x in funnel for x in ("discover_live_html_event_pages", "parse_montpellier_mpt_detail", "scope_proposals", "publisher_connected", "public_writes"))
+          assert not any(x in funnel for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
           print("PASS: readonly, never publisher, no credentials or schedule")
           PY
