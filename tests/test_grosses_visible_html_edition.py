@@ -141,6 +141,39 @@ class VisibleHTMLTests(unittest.TestCase):
                     html_entry(), PARENT, page, TODAY,
                     proof_mode=HTML_PROOF_MODE))
 
+    def test_current_edition_paragraph_is_not_vetoed_by_separate_archive_title(self):
+        from datetime import date
+        from grossesondes_institutional_edition import institutional_date
+        start, end = date(2027, 4, 23), date(2027, 4, 24)
+        html = ("<main><p>Rendez-vous les 23 et 24 avril 2027 "
+                "pour la deuxième édition du Festival Spirale Rock !</p>"
+                "<p>Le Festival Spirale Rock 2026, c'était ça !</p>"
+                "<section><h2>Photos et souvenirs de 2026</h2></section></main>")
+        self.assertTrue(visible_official_edition(
+            html, "Festival Spirale Rock 2027", start, end))
+        self.assertEqual(institutional_date(
+            html, "Festival Spirale Rock 2027", 2027), (start, end))
+        wrong = (
+            "<h1>Festival Spirale Rock 2026</h1>"
+            "<p>Rendez-vous les 23 et 24 avril 2027.</p>"
+            "<footer>Festival Spirale Rock</footer>")
+        self.assertFalse(visible_official_edition(
+            wrong, "Festival Spirale Rock 2027", start, end))
+        self.assertIsNone(institutional_date(
+            wrong, "Festival Spirale Rock 2027", 2027))
+        # Even in one paragraph, 2026 cannot be read as a 2027 identity.
+        same_block = ("<p>Festival Spirale Rock 2026 et 2027 : "
+                      "23 et 24 avril 2027</p>")
+        self.assertFalse(visible_official_edition(
+            same_block, "Festival Spirale Rock 2027", start, end))
+        # Hidden current claims cannot neutralize a visible old-year title.
+        hidden = (
+            "<h1>Festival Spirale Rock 2026</h1>"
+            '<p hidden>Festival Spirale Rock les 23 et 24 avril 2027</p>'
+            "<p>23 et 24 avril 2027</p>")
+        self.assertFalse(visible_official_edition(
+            hidden, "Festival Spirale Rock 2027", start, end))
+
     def test_other_edition_year_near_name_never_qualifies(self):
         page = "<h1>Winter Rising Fest 2026</h1><p>12-13 août 2027</p>"
         self.assertIsNone(validate_structured_edition(
