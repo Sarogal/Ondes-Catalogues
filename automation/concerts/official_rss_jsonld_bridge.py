@@ -119,7 +119,7 @@ def official_named_bill(value):
     MusicGroup/Person; never invent the support's identity.
     """
     performers = value if isinstance(value, list) else [value]
-    if not performers or len(performers) > 40:
+    if not performers:
         return None
     names, identities, unnamed = [], set(), None
     for index, performer in enumerate(performers):

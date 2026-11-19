@@ -109,6 +109,54 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertEqual(reviewed["reviewBucket"], "genre_tag_review")
         self.assertFalse(reviewed["publicationAllowed"])
 
+    def test_large_named_bills_are_not_rejected_by_artist_count(self):
+        # A real concert announcement can list more than 40 bands.
+        # Every name is explicitly first-party and individually typed.
+        # No threshold based solely on the number of new bands is allowed.
+        performers = [
+            {"@type": "MusicGroup", "name": f"Artiste confirmé {i:02d}"}
+            for i in range(52)
+        ]
+        self.assertEqual(
+            bridge.official_named_bill(performers),
+            ([p["name"] for p in performers], None),
+        )
+        result = evaluate(page=html_for(performer=performers))
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result["leadArtist"].split(" + ")), 52)
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_large_bill_with_last_minute_unnamed_guest_is_not_fabricated(self):
+        # A festival-sized concert programme is still not capped, and a
+        # genuine unnamed support is excluded from the published identities.
+        performers = [
+            {"@type": "MusicGroup", "name": f"Groupe vérifié {i:03d}"}
+            for i in range(100)
+        ] + [{"@type": "MusicGroup", "name": "Invité surprise"}]
+        result = bridge.official_named_bill(performers)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result[0]), 100)
+        self.assertEqual(result[1], "Invité surprise")
+        lead = evaluate(page=html_for(performer=performers))
+        self.assertIsNotNone(lead)
+        self.assertEqual(lead["unannouncedSupportLabel"], "Invité surprise")
+        self.assertEqual(len(lead["leadArtist"].split(" + ")), 100)
+        self.assertFalse(lead["publicationAllowed"])
+
+    def test_large_bill_still_rejects_duplicate_and_invalid_artist(self):
+        valid = [
+            {"@type": "MusicGroup", "name": f"Groupe {i:02d}"}
+            for i in range(52)
+        ]
+        for malicious in (
+            valid + [valid[0]],
+            valid + [{"@type": "Event", "name": "Not a performer"}],
+            valid[:-1] + [{"@type": "MusicGroup", "name": "Surprise"}] + valid[-1:],
+        ):
+            with self.subTest(last=malicious[-1]):
+                self.assertIsNone(bridge.official_named_bill(malicious))
+                self.assertIsNone(evaluate(page=html_for(performer=malicious)))
+
     def test_unannounced_guest_must_be_trailing_and_follow_named_artist(self):
         named = {"@type": "MusicGroup", "name": "Groupe Metal"}
         unnamed = {"@type": "MusicGroup", "name": "Guest"}
