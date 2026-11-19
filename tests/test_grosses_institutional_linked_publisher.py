@@ -177,6 +177,15 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
         self.assertEqual(len(approved["festivals"]), len(cal["festivals"])+1)
         self.assertEqual(approved["festivals"][-1]["lineup"], [])
         self.assertFalse(approved["festivals"][-1]["showOnMap"])
+        # Exercise the publisher's signed-calendar reconciliation, not just
+        # the private stage, to ensure the newly linked row survives unchanged.
+        snapshot = {"festivals.json": cal, "festival-history.json": history}
+        final, publishing = build_candidate(
+            snapshot, snapshot, patch, sources, TODAY, trusted_published=True)
+        self.assertTrue(publishing["changed"])
+        self.assertIn(p["slug"], publishing["accepted_additions"])
+        self.assertEqual(len(final["festivals"]), len(cal["festivals"]) + 1)
+        self.assertFalse(final["festivals"][-1]["showOnMap"])
         # A manufactured marker is NOT enough to put forged fields into
         # the published catalogue.
         forged_sources = dict(sources)
