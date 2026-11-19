@@ -35,6 +35,11 @@ from grossesondes_institutional_edition import (
     validate_independent as validate_independent_institutional,
     validate_private_proposal as validate_private_institutional,
 )
+from grossesondes_institutional_linked_edition import (
+    PROOF_MODE as LINKED_PROOF_MODE,
+    independently_verify as independently_verify_linked,
+    validate_private_proposal as validate_private_linked,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -417,6 +422,52 @@ def collect_registered_institutional_sources(patch, published_slugs,
     return sources
 
 
+def collect_registered_linked_sources(patch, published_slugs, today,
+                                      institution_fetch=None, organizer_fetch=None):
+    """Independently rederive a newly trusted website from an approved agenda.
+
+    A private link, URL, signature, dates, or favorable flag never expands
+    the network allowlist. The destination must first be rediscovered by a
+    fresh approved institutional index -> exact detail -> visible festival
+    website link. Then safe pinned HTTPS verifies complete organizer dates.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed catalogue identities required")
+    try:
+        ordinal = datetime.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Publisher date required") from exc
+    eligible = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == LINKED_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_linked(row, today) is not None)
+    ), key=lambda r: r["slug"])
+    if not eligible:
+        return {}
+    begin = (ordinal * 2) % len(eligible)
+    selected = [eligible[(begin+i) % len(eligible)]
+                for i in range(min(2, len(eligible)))]
+    result = {}
+    for row in selected:
+        slug = row["slug"]
+        try:
+            kwargs = {}
+            if institution_fetch is not None:
+                kwargs["institution_fetch"] = institution_fetch
+            if organizer_fetch is not None:
+                kwargs["organizer_fetch"] = organizer_fetch
+            checked = independently_verify_linked(row, today, **kwargs)
+            if checked is None:
+                continue
+            result["registered-linked:"+slug] = checked
+            result["registered-linked-verified:"+slug] = True
+        except (OSError, TypeError, ValueError, UnicodeError, KeyError):
+            print("Lien institutionnel / site festival non revérifié ; nouvelle édition retenue.")
+    return result
+
+
 def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep):
     """Fetch only pinned organizer/municipal URLs; retry transient server errors.
 
@@ -544,6 +595,8 @@ def main():
         patch, original, archived=registered_archives,
         published_slugs=signed_published_slugs))
     sources.update(collect_registered_institutional_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_linked_sources(
         patch, signed_published_slugs, today.isoformat()))
     out,report=build_candidate(snapshot,published,patch,sources,today.isoformat(),trusted_published=True)
     report["patch"]=path
