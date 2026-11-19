@@ -153,7 +153,7 @@ jobs:
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           # Newly found municipal agenda editions: strict visible dates and
           # two-day provenance review only, never a public patch or approval.
-          run_private institutional_dates python "$ENGINE/national_institutional_edition_preflight.py" --intake "$INTAKE"
+          run_private institutional_dates python "$ENGINE/national_institutional_edition_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           # Snapshot the private prior review locally BEFORE it is overwritten.
           # It never leaves the runner except as derived PRIVATE diagnostics.
           PREVIOUS="/tmp/grossesondes-official-watch/previous-editorial-review.json"
