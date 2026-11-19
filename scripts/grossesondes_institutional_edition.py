@@ -17,7 +17,9 @@ ENGINE = str(Path(__file__).resolve().parents[1] / "festival-automation")
 if ENGINE not in sys.path:
     sys.path.insert(0, ENGINE)
 
-from grossesondes_archived_html_intake import official_date
+from grossesondes_official_html_edition import (
+    VisibleText, fold, explicit_ranges, visible_official_edition,
+)
 from grossesondes_structured_edition import (
     ROW_KEYS, PRIVATE_KEYS, no_same_edition_jsonld_contradiction, conflicts_with_existing,
 )
@@ -35,6 +37,31 @@ PRIVATE_STATUS = "Dates institutionnelles à revérifier indépendamment avant p
 PRIVATE_CONFIDENCE = "Agenda institutionnel (observation privée)"
 PUBLISHED_STATUS = "Dates revérifiées sur agenda institutionnel ; lieu et coordonnées non confirmés"
 PUBLISHED_CONFIDENCE = "Agenda institutionnel (fiche et index relus indépendamment)"
+
+
+def institutional_date(html, title, year):
+    """Require ONE explicit whole-page visible range near the edition title.
+
+    Independent pure HTML parser: does not import the archived intake or
+    cloud stage modules, avoiding circular dependencies with the publisher.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 1_400_000:
+        return None
+    parser = VisibleText()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    content = " ".join(fold(" ".join(parser.parts)).split())
+    unique = {(start, end) for _a, _b, start, end
+              in explicit_ranges(content, year)}
+    if len(unique) != 1:
+        return None
+    start, end = next(iter(unique))
+    if not visible_official_edition(html, title, start, end):
+        return None
+    return start, end
 
 
 def slug_for(title):
@@ -187,7 +214,7 @@ def validate_independent(proposal, html, today):
     if name is None or int(name.group(2)) != spec["year"]:
         return None
     try:
-        dates = official_date(html, {"name": name.group(1)}, spec["year"])
+        dates = institutional_date(html, proposal["name"], spec["year"])
     except (ValueError, TypeError, UnicodeError):
         return None
     if dates is None or tuple(x.isoformat() for x in dates) != (
