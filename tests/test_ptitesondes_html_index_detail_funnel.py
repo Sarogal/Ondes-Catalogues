@@ -383,6 +383,19 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertEqual(result["access_first_party_scan_held"], 0)
         self.assertFalse(result["publication_ready"])
 
+    def test_oversized_event_fragment_is_not_counted_as_missing_price(self):
+        too_long = MPT_TEMPLATE.replace(
+            "Partagez ce moment de découverte avec votre bébé et votre famille.",
+            "Découvrez " + ("une activité familiale " * 190),
+        )
+        report, _, _ = probe(details={ONE: too_long})
+        self.assertEqual(report["first_party_visible_exact_sessions"], 2)
+        self.assertEqual(report["access_first_party_scan_held"], 2)
+        self.assertEqual(report["access_first_party_scan_length_limit"], 2)
+        self.assertEqual(report["access_first_party_price_not_stated"], 0)
+        self.assertEqual(report["access_first_party_registration_not_stated"], 0)
+        self.assertFalse(report["publication_ready"])
+
     def test_visible_event_session_is_measured_without_source_approval(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["future_child_occurrences"], 2)
