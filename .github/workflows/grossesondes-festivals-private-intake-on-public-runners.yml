@@ -150,7 +150,7 @@ jobs:
           run_private press_2027 python "$ENGINE/targeted_press_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           run_private first_party_2027 python "$ENGINE/targeted_first_party_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --phase "$PHASE"
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
-          run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 1
+          run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           # Snapshot the private prior review locally BEFORE it is overwritten.
           # It never leaves the runner except as derived PRIVATE diagnostics.
           PREVIOUS="/tmp/grossesondes-official-watch/previous-editorial-review.json"
