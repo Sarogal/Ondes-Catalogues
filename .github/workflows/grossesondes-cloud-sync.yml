@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/grossesondes_cloud_sync.py'
       - 'scripts/grossesondes_institutional_edition.py'
+      - 'scripts/grossesondes_institutional_linked_edition.py'
+      - 'tests/test_grosses_institutional_linked_publisher.py'
       - 'tests/test_grosses_institutional_publisher.py'
       - 'scripts/grossesondes_structured_edition.py'
       - 'scripts/grossesondes_archived_html_intake.py'
@@ -22,6 +24,8 @@ on:
       - '.github/workflows/grossesondes-cloud-sync.yml'
       - 'scripts/grossesondes_cloud_sync.py'
       - 'scripts/grossesondes_institutional_edition.py'
+      - 'scripts/grossesondes_institutional_linked_edition.py'
+      - 'tests/test_grosses_institutional_linked_publisher.py'
       - 'tests/test_grosses_institutional_publisher.py'
       - 'scripts/grossesondes_structured_edition.py'
       - 'scripts/grossesondes_archived_html_intake.py'
