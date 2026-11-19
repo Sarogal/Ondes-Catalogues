@@ -147,6 +147,8 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
             DATES_HTML.replace("2027", "2026"),
             DATES_HTML.replace("Festival Metal des Garrigues", "Autre Festival"),
             DATES_HTML.replace("festival metal", "festival annulé"),
+            DATES_HTML.replace("festival metal.",
+                               "tournée itinérante de 39 concerts."),
             "<script>Festival Metal des Garrigues 2027 4 et 5 juin 2027</script>",
             DATES_HTML + '<script type="application/ld+json">' +
             '{"@type":"MusicEvent","name":"Festival Metal des Garrigues 2027",'
