@@ -277,6 +277,25 @@ class OfficialMptCurrentTemplateTests(unittest.TestCase):
         self.assertEqual(len(parse_montpellier_mpt_detail(
             changed, ONE, TODAY)), 2)
 
+    def test_musical_and_unknown_topics_are_counted_separately(self):
+        music = MPT_TEMPLATE.replace("Atelier snoezelen", "Atelier d'éveil musical")
+        report, _, _ = probe(details={ONE: music})
+        self.assertEqual(report["future_child_occurrences"], 2)
+        self.assertEqual(report["unclassified_occurrences_held"], 2)
+        self.assertEqual(report["explicit_musical_occurrences_held"], 2)
+        self.assertEqual(report["unclassified_nonmusical_occurrences_held"], 0)
+        self.assertEqual(report["structurally_plausible_for_independent_review"], 0)
+        unknown = MPT_TEMPLATE.replace("Atelier snoezelen", "Atelier détente bébé")
+        report, _, _ = probe(details={ONE: unknown})
+        self.assertEqual(report["unclassified_occurrences_held"], 2)
+        self.assertEqual(report["explicit_musical_occurrences_held"], 0)
+        self.assertEqual(report["unclassified_nonmusical_occurrences_held"], 2)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["unclassified_nonmusical_occurrences_held"], 2)
+        self.assertNotIn("détente bébé", json.dumps(public, ensure_ascii=False))
+        self.assertFalse(public["publisher_connected"])
+        self.assertEqual(public["public_writes"], 0)
+
     def test_sensory_sessions_are_only_structurally_plausible(self):
         result, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(result["child_pages_read"], 1)
