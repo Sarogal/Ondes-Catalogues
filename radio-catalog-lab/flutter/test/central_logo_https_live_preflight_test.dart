@@ -48,12 +48,15 @@ CentralLogoPreparationPlan oneLogo(CentralLogoDescriptor spec) =>
       excludedInactive: const [],
     );
 
+// Restores real TLS clients inside the opt-in test zone, leaving all other
+// flutter_test HTTP mocks and production settings untouched.
+class _RealNetworkHttpOverrides extends HttpOverrides {}
+
 void main() {
   test('real HTTPS v1 -> offline restart -> revision v2, preserving v1', () async {
     // flutter_test mocks HttpClient by default. This explicit opt-in test
     // temporarily enables real TLS, then restores the test environment.
-    final previousOverrides = HttpOverrides.current;
-    HttpOverrides.global = null;
+    await HttpOverrides.runWithHttpOverrides(() async {
     final temp = await Directory.systemTemp.createTemp('go-https-sha-lab-');
     try {
       final v1 = descriptor(1);
@@ -138,8 +141,8 @@ void main() {
           'bytes_v1=${v1.byteSize} bytes_v2=${v2.byteSize} '
           'offline_cache_hit=true older_sha_preserved=true');
     } finally {
-      HttpOverrides.global = previousOverrides;
       if (await temp.exists()) await temp.delete(recursive: true);
     }
+    }, _RealNetworkHttpOverrides());
   }, skip: !enabled);
 }
