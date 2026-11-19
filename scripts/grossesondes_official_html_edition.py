@@ -19,7 +19,7 @@ MONTHS = {
 MONTH_WORD = "|".join(sorted(MONTHS, key=len, reverse=True))
 DATE_EXPRESSION = re.compile(
     r"(?<![0-9])(?:du\s+|les\s+)?"
-    r"(?P<days>[0-3]?\d(?:\s*(?:[,/|&–—-]|\bet\b|\bau\b|\band\b|\bto\b)\s*[0-3]?\d){0,5})"
+    r"(?P<days>[0-3]?\d(?:\s*(?:[.,/|&–—-]|\bet\b|\bau\b|\band\b|\bto\b)\s*[0-3]?\d){0,5})"
     r"\s*(?:[|,–—-]\s*)?(?P<month>" + MONTH_WORD + r")"
     r"\s*(?:[|,–—-]\s*)?(?P<year>20[2-4]\d)(?!\d)",
     re.IGNORECASE,
@@ -91,9 +91,9 @@ def explicit_ranges(text, year):
         if len(days) > 2 and days != list(range(days[0], days[-1] + 1)):
             continue
         if len(days) == 2 and any(
-                separator in match.group("days") for separator in (",", "&")):
+                separator in match.group("days") for separator in (",", "&", ".")):
             # "25 & 26 juin" is a full two-day range, not merely June 26.
-            # "25 & 27" or "13, 15" are enumerations, not continuous proof.
+            # "25 & 27", "13, 15" and "13.15" are not continuous proof.
             if days[1] != days[0] + 1:
                 continue
         try:
