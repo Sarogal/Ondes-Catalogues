@@ -137,7 +137,7 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         deep = "<main><h1>Festival Foudre du Nord 2027</h1><p>Programmation</p></main>"
         broken = [
             deep.replace("Programmation", "Annulé 25 et 26 juillet 2027"),
-            deep.replace("Programmation", "25 et 26 juillet 2027"),
+            deep.replace("Programmation", "4 et 5 juin 2027, puis 25 et 26 juillet 2027"),
         ]
         for detail in broken:
             with self.subTest(detail=detail):
