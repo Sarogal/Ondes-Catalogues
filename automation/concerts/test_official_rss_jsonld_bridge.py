@@ -134,7 +134,7 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         for malicious in (
             valid + [valid[0]],
             valid + [{"@type": "Event", "name": "Not a performer"}],
-            valid + [{"@type": "MusicGroup", "name": "Surprise"}],
+            valid[:-1] + [{"@type": "MusicGroup", "name": "Surprise"}] + valid[-1:],
         ):
             with self.subTest(last=malicious[-1]):
                 self.assertIsNone(bridge.official_named_bill(malicious))
