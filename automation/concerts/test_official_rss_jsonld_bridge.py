@@ -126,6 +126,23 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertEqual(len(result["leadArtist"].split(" + ")), 52)
         self.assertFalse(result["publicationAllowed"])
 
+    def test_large_bill_with_last_minute_unnamed_guest_is_not_fabricated(self):
+        # A festival-sized concert programme is still not capped, and a
+        # genuine unnamed support is excluded from the published identities.
+        performers = [
+            {"@type": "MusicGroup", "name": f"Groupe vérifié {i:03d}"}
+            for i in range(100)
+        ] + [{"@type": "MusicGroup", "name": "Invité surprise"}]
+        result = bridge.official_named_bill(performers)
+        self.assertIsNotNone(result)
+        self.assertEqual(len(result[0]), 100)
+        self.assertEqual(result[1], "Invité surprise")
+        lead = evaluate(page=html_for(performer=performers))
+        self.assertIsNotNone(lead)
+        self.assertEqual(lead["unannouncedSupportLabel"], "Invité surprise")
+        self.assertEqual(len(lead["leadArtist"].split(" + ")), 100)
+        self.assertFalse(lead["publicationAllowed"])
+
     def test_large_bill_still_rejects_duplicate_and_invalid_artist(self):
         valid = [
             {"@type": "MusicGroup", "name": f"Groupe {i:02d}"}
