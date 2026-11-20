@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from scripts import concert_event_site_contract as contract
 
 import discover
+import independent_named_site_geo
 import official_rss_jsonld_bridge as bridge
 import triage
 
@@ -200,17 +201,24 @@ def _official_event(lead, html, url, today):
     region = str(addr.get("addressRegion") or "").strip()
     require(len(street) >= 3 and len(region) >= 3,
             "official street address or region missing")
-    geo_links = location.get("sameAs") or location.get("url")
-    if isinstance(geo_links, str):
-        geo_links = [geo_links]
-    require(isinstance(geo_links, list)
-            and len(geo_links) == 1
-            and OSM_NODE.fullmatch(geo_links[0]) is not None,
-            "one explicit OSM site identity required on official page")
+    # The producer may know the exact named site without linking OSM.
+    # The IGN BAN + named OSM fallback is independent of that producer.
+    links = location.get("sameAs") or location.get("url") or []
+    if isinstance(links, str):
+        links = [links]
+    require(isinstance(links, list) and len(links) <= 8
+            and all(isinstance(link, str) for link in links),
+            "invalid official site links")
+    require(not any("openstreetmap.org" in link
+                    and OSM_NODE.fullmatch(link) is None
+                    for link in links),
+            "invalid official OSM site identity")
+    osm_links = [link for link in links if OSM_NODE.fullmatch(link)]
+    require(len(osm_links) <= 1, "ambiguous official OSM site identity")
     return raw, names, unnamed, genres, {
         "name": venue, "city": city, "address": street,
         "postalCode": postal, "department": _department(postal, addr),
-        "region": region, "geoSource": geo_links[0],
+        "region": region, "geoSource": osm_links[0] if osm_links else None,
     }
 
 
@@ -258,10 +266,18 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
         lead, html, url, today)
     ids, fresh = _artists(names, catalogue)
     require(lead["artistId"] in ids, "authority artist missing from official bill")
-    lat, lon = _read_osm_node(location["geoSource"], location, fetch)
+    if location["geoSource"] is not None:
+        lat, lon = _read_osm_node(location["geoSource"], location, fetch)
+        precision = "named-site-point"
+    else:
+        # The official address locates the search only: never publish a BAN
+        # coordinate or a street midpoint as the actual concert site.
+        osm_url, lat, lon, precision = independent_named_site_geo.verify(
+            location, fetch)
+        location["geoSource"] = osm_url
     location.update({
         "latitude": lat, "longitude": lon,
-        "geoPrecision": "named-site-point",
+        "geoPrecision": precision,
         "id": contract.site_id(location["name"], location["city"],
                                location["geoSource"]),
     })
@@ -303,7 +319,7 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
          "checkedFields": ["venueName", "city", "coordinates", "country"],
          "venueName": location["name"], "city": location["city"],
          "country": "FR", "latitude": lat, "longitude": lon,
-         "geoPrecision": "named-site-point"}
+         "geoPrecision": precision}
     kind = "named-physical-site"
     site = {
         "reviewDecision": "approved",

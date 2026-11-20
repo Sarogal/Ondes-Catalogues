@@ -410,5 +410,171 @@ class GenericFirstPartyStructuredEventTests(unittest.TestCase):
                     fetch=fake_fetch({**raw, **changed}, osm, []))
 
 
+class IndependentBANAndNamedOSMWithoutOfficialLinkTests(unittest.TestCase):
+    """Two independent remote datasets, simulated; no street centroid is signed."""
+
+    @staticmethod
+    def setup(kind="node"):
+        lead, raw, cat, osm = fixture()
+        raw["@type"] = "Event"
+        raw["location"].pop("sameAs")
+        raw["location"]["address"]["streetAddress"] = "12 Avenue des Essais"
+        ban = {
+            "type": "FeatureCollection",
+            "features": [{"type": "Feature",
+                "properties": {"postcode": "75007", "city": "Paris",
+                               "street": "Avenue des Essais",
+                               "housenumber": "12", "type": "housenumber",
+                               "score": 0.98},
+                "geometry": {"type": "Point",
+                             "coordinates": [2.29401, 48.85802]},
+            }],
+        }
+        node = ('<node id="123456789" lat="48.8580" lon="2.2940">'
+                '<tag k="name" v="Esplanade des Tests"/>'
+                '<tag k="addr:city" v="Paris"/>'
+                '<tag k="addr:postcode" v="75007"/>'
+                '<tag k="addr:street" v="Avenue des Essais"/>'
+                '<tag k="addr:housenumber" v="12"/>'
+                '</node>')
+        if kind == "way":
+            node = ('<node id="110" lat="48.85795" lon="2.29395"/>'
+                    '<node id="111" lat="48.85810" lon="2.29395"/>'
+                    '<node id="112" lat="48.85810" lon="2.29410"/>'
+                    '<way id="456789">'
+                    '<nd ref="110"/><nd ref="111"/><nd ref="112"/>'
+                    '<tag k="name" v="Esplanade des Tests"/>'
+                    '<tag k="addr:city" v="Paris"/>'
+                    '<tag k="addr:postcode" v="75007"/>'
+                    '</way>')
+        return lead, raw, cat, ban, '<osm version="0.6">' + node + '</osm>'
+
+    @staticmethod
+    def fetched(raw, ban, map_data, calls):
+        import independent_named_site_geo as geocoder
+        def fetch(url, byte_limit):
+            calls.append(url)
+            if url == EVENT:
+                return '<script type="application/ld+json">' + json.dumps(
+                    raw, ensure_ascii=False) + '</script>', url
+            if url.startswith(geocoder.BAN + "?"):
+                return json.dumps(ban, ensure_ascii=False), url
+            if url.startswith(geocoder.OSM_MAP + "?bbox="):
+                return map_data, url
+            raise AssertionError("Unexpected URL (no arbitrary candidate host): "
+                                 + str(url))
+        return fetch
+
+    def test_event_without_any_osm_url_verifies_named_site_and_real_publisher(self):
+        lead, raw, cat, ban, map_data = self.setup()
+        calls = []
+        fetch = self.fetched(raw, ban, map_data, calls)
+        app, site = reviewer.verify(lead, cat, DAY, fetch=fetch)
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(calls[1].startswith(
+            "https://data.geopf.fr/geocodage/search/?q="))
+        self.assertTrue(calls[2].startswith(
+            "https://api.openstreetmap.org/api/0.6/map?bbox="))
+        self.assertEqual(site["venue"]["geoSource"], OSM)
+        self.assertEqual(site["venue"]["geoPrecision"], "named-site-point")
+        self.assertEqual(site["venue"]["latitude"], 48.858)
+        self.assertNotEqual(site["venue"]["latitude"], 48.85802)
+        ledger = {"schema": publisher.SCHEMA,
+                  "approvals": [], "venueApprovals": []}
+        registry = {"items": {"synthetic": {
+            "status": "pending_review", "stableObservations": 2,
+            "candidate": lead,
+        }}}
+        proposed, report = official_recheck.process(
+            registry, cat, ledger, DAY, site_fetch=fetch)
+        self.assertEqual(len(report["newSiteApprovals"]), 1)
+        reference = json.loads(publisher.REFERENCE.read_text(encoding="utf-8"))
+        validated = gate.validate_proposal(
+            ledger, proposed, reference, copy.deepcopy(reference),
+            DAY, publisher.merge)
+        self.assertTrue(validated["validatedByPublisher"])
+        self.assertEqual(validated["publishableEvents"], 1)
+
+    def test_named_physical_area_is_not_reduced_to_a_city_centroid(self):
+        lead, raw, cat, ban, map_data = self.setup("way")
+        app, site = reviewer.verify(
+            lead, cat, DAY, fetch=self.fetched(raw, ban, map_data, []))
+        self.assertEqual(site["venue"]["geoSource"],
+                         "https://www.openstreetmap.org/way/456789")
+        self.assertEqual(site["venue"]["geoPrecision"], "named-site-area")
+        self.assertEqual(site["locationKind"], "named-physical-site")
+        self.assertEqual(site["eventBinding"]["eventId"], app["event"]["id"])
+
+    def test_bad_government_address_cannot_send_a_guess_to_osm(self):
+        lead, raw, cat, ban, map_data = self.setup()
+        import copy as cp
+        for modified in (
+            {"score": 0.6},
+            {"postcode": "69007"},
+            {"city": "Lyon"},
+            {"street": "Rue de la République"},
+            {"type": "street"},
+            {"housenumber": "18"},
+        ):
+            bad = cp.deepcopy(ban)
+            bad["features"][0]["properties"].update(modified)
+            calls = []
+            with self.subTest(modified=modified), self.assertRaises(ValueError):
+                reviewer.verify(
+                    lead, cat, DAY,
+                    fetch=self.fetched(raw, bad, map_data, calls))
+            self.assertEqual(len(calls), 2)
+        ambiguous = cp.deepcopy(ban)
+        ambiguous["features"].append(cp.deepcopy(ambiguous["features"][0]))
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                lead, cat, DAY,
+                fetch=self.fetched(raw, ambiguous, map_data, []))
+
+    def test_wrong_osm_name_postcode_or_duplicate_stays_blocked(self):
+        lead, raw, cat, ban, map_data = self.setup()
+        bad_maps = (
+            map_data.replace("Esplanade des Tests", "Unrelated Building"),
+            map_data.replace("75007", "69000"),
+            map_data.replace('v="Paris"', 'v="Lyon"'),
+            map_data.replace('lon="2.2940"', 'lon="3.2940"'),
+            map_data.replace("</osm>",
+                '<node id="123456790" lat="48.858" lon="2.294">'
+                '<tag k="name" v="Esplanade des Tests"/>'
+                '<tag k="addr:city" v="Paris"/>'
+                '<tag k="addr:postcode" v="75007"/></node></osm>'),
+        )
+        for bad in bad_maps:
+            with self.subTest(map=bad[:70]), self.assertRaises(ValueError):
+                reviewer.verify(lead, cat, DAY,
+                    fetch=self.fetched(raw, ban, bad, []))
+
+    def test_official_venue_website_link_does_not_become_geo_authority(self):
+        lead, raw, cat, ban, map_data = self.setup()
+        raw["location"]["url"] = "https://venue.example/infos-pratiques"
+        calls = []
+        reviewer.verify(lead, cat, DAY,
+                        fetch=self.fetched(raw, ban, map_data, calls))
+        self.assertEqual(len(calls), 3)
+        self.assertFalse(any("venue.example" in call for call in calls))
+
+    def test_empty_or_ambiguous_geography_fails_closed(self):
+        lead, raw, cat, ban, map_data = self.setup()
+        bad = dict(ban, features=[])
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                lead, cat, DAY,
+                fetch=self.fetched(raw, bad, map_data, []))
+        raw["location"]["address"]["addressCountry"] = "BE"
+        calls = []
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                lead, cat, DAY,
+                fetch=self.fetched(raw, ban, map_data, calls))
+        # Reading the first-party event is necessary to detect its country.
+        # A falsified country MUST never reach external geography services.
+        self.assertEqual(calls, [EVENT])
+
+
 if __name__ == "__main__":
     unittest.main()
