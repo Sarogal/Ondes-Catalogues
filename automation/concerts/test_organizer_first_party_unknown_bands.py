@@ -132,6 +132,34 @@ class OrganizerWithoutAnyKnownBandTests(unittest.TestCase):
         self.assertTrue(checked["validatedByPublisher"])
         self.assertEqual(checked["publishableEvents"], 1)
 
+    def test_independent_recheck_accepts_only_named_performer_genre_in_same_event(self):
+        lead, raw, catalogue, osm = fixture()
+        raw.pop("genre")
+        for band in raw["performer"]:
+            band["genre"] = ("Black Metal" if band["name"] == ARTISTS[0]
+                             else "Jazz")
+        event, site = reviewer.verify(lead, catalogue, DAY,
+                                      fetch=fetch(raw, osm, []))
+        self.assertIn("Black Metal", event["event"]["genres"])
+        self.assertEqual(len(event["newArtists"]), 3)
+        self.assertEqual(site["venue"]["geoSource"], OSM)
+
+        for bad in ("Hardcore Techno", "Jazz"):
+            altered = copy.deepcopy(raw)
+            for band in altered["performer"]:
+                band["genre"] = bad
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                reviewer.verify(lead, catalogue, DAY,
+                                fetch=fetch(altered, osm, []))
+
+        # No performer-level genre may override a contradictory explicit
+        # unrelated event-level genre, and no artist biography is consulted.
+        altered = copy.deepcopy(raw)
+        altered["genre"] = ["Jazz"]
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, catalogue, DAY,
+                            fetch=fetch(altered, osm, []))
+
     def test_no_source_lead_can_invent_a_reviewed_organizer(self):
         lead, event, catalogue, osm = fixture()
         for update in (
