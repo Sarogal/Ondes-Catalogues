@@ -18,6 +18,14 @@ Le nouveau `scripts/ptitesondes_private_national_event_campaign.py` orchestre pl
 - L'option `--execute-live` est obligatoire pour le réseau. Par défaut le script contrôle les fichiers et annonce la progression, sans réseau ni mutation d'état.
 - En sortie standard, **uniquement des compteurs**, sans titre, lieu, URL, agenda UID, ni données privées.
 
+## Renforcements de reprise et de sélection
+
+- Même si plusieurs appels préparent un plan avant l'acquisition du verrou, **le checkpoint est relu sous verrou** avant toute consultation ou récupération de rapport. Le second appel ne peut plus faire reculer l'index avec son plan périmé.
+- Les informations éditoriales sont recherchées dans le titre, la description courte **et la description longue** fournie par l'API. Un titre d'œuvre opaque ne devient pas un motif de rejet lorsque la nature du spectacle apparaît dans le texte.
+- Un événement OpenAgenda de statut **2 (reprogrammé)** reste une piste de recherche. Il porte le drapeau `requires_reprogramming_verification` : ses nouveaux horaires doivent toujours être vérifiés indépendamment. Les statuts déplacé en ligne, reporté sans nouvelle date, complet et annulé ne sont pas admis par cette exploration.
+- Un lieu annoncé sans commune, ou une commune sans nom de salle, déclenche encore une recherche géographique en aval ; aucune coordonnée n'est inventée.
+- Ces règles créent seulement des **pistes privées non publiables**, jamais des ajouts automatiques au catalogue.
+
 ## Commande illustrative (espace privé)
 
 Les chemins ci-dessous sont indicatifs : ils ne doivent **pas** pointer dans le dépôt GitHub public. L'environnement doit fournir une clé OpenAgenda **publique de lecture** dans `OPENAGENDA_READ_KEY`.
