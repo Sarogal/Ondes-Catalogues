@@ -35,6 +35,32 @@ def proposed():
 
 
 class InstitutionalPublisherTests(unittest.TestCase):
+    def test_rolling_year_gate_requires_explicit_current_or_two_future_years(self):
+        for today, year, expected in (
+            ("2026-11-20", 2026, True),
+            ("2026-11-20", 2027, True),
+            ("2026-11-20", 2028, True),
+            ("2026-11-20", 2029, False),
+            ("2027-11-20", 2026, False),
+            ("2027-11-20", 2029, True),
+            ("2028-11-20", 2029, True),
+            ("2030-01-01", 2029, False),
+        ):
+            with self.subTest(today=today, year=year):
+                title = "Festival Metal des Garrigues " + str(year)
+                row = trusted_source(
+                    INDEX, INDEX, DETAIL, title, today)
+                self.assertEqual(row is not None, expected)
+                if row is not None:
+                    self.assertEqual(row["year"], year)
+        # Any year outside current +2 is refused BEFORE network access.
+        self.assertIsNone(trusted_source(
+            INDEX, INDEX, "https://evil.example/2029",
+            "Festival Metal des Garrigues 2029", "2027-11-20"))
+        self.assertIsNone(trusted_source(
+            INDEX, INDEX, DETAIL,
+            "Festival Metal des Garrigues 2029", "2026-11-20"))
+
     def test_generic_edition_enters_catalogue_only_after_independent_live_reproof(self):
         p = proposed()
         self.assertIsNotNone(p)
