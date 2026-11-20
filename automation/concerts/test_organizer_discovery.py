@@ -105,6 +105,29 @@ class OrganizerNationalDiscoveryTests(unittest.TestCase):
             raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY
         )["classification"], [])
 
+    def test_mixed_bill_qualifies_even_when_global_event_genre_is_jazz(self):
+        import triage
+        _, raw, _, _ = fixture()
+        raw["genre"] = ["Jazz"]  # Event's broad theme is not every band's style.
+        for band in raw["performer"]:
+            band["genre"] = "Jazz"
+        raw["performer"][-1]["genre"] = "Death Metal"
+
+        candidate = discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
+        self.assertEqual(candidate["classification"], ["Jazz", "Death Metal"])
+        self.assertEqual(candidate["genreEvidenceScope"],
+                         "official_artist_in_event_detail")
+        _, _, buckets = triage.classify([candidate], CATALOGUE)
+        self.assertEqual(buckets, {"genre_tag_review": 1})
+
+        # Only irrelevant performer genres + an irrelevant Event.genre = hold.
+        raw["performer"][-1]["genre"] = "Jazz"
+        candidate = discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
+        _, _, buckets = triage.classify([candidate], CATALOGUE)
+        self.assertEqual(buckets, {"genre_unknown": 1})
+
     def test_large_bill_does_not_truncate_only_metal_artist_at_end(self):
         import official_rss_jsonld_bridge as bridge
         raw = {"performer": [
