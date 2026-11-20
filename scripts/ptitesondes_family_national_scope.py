@@ -32,13 +32,6 @@ FAMILY_TYPES = {
     "activite-sportive": ("Activité sportive jeunesse", "sport"),
 }
 
-# Editorial policy: P'tites Ondes is a children's RADIO app, not a
-# general-purpose family outing directory. Retain the historical taxonomy
-# for compatibility, but propose only storytelling or youth performances.
-RADIO_EDITORIAL_NONMUSIC = frozenset({
-    "lecture-jeunesse", "spectacle-jeunesse",
-})
-
 # Existing musical publishing categories are not re-routed or revalidated by
 # this experimental contract. Their own proof and OpenAgenda path is retained.
 LEGACY_MUSICAL = frozenset({
@@ -150,8 +143,6 @@ def _candidate_issues(row, today):
             if row.get("category_label") != label:
                 blockers.add("category_label_mismatch")
             category = code
-            if code not in RADIO_EDITORIAL_NONMUSIC:
-                blockers.add("outside_radio_editorial_scope")
         if not _event_dates(row, today):
             blockers.add("dated_occurrence_unverified_or_expired")
     elif kind == "permanent_place":
