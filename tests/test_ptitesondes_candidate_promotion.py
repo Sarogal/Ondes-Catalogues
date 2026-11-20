@@ -245,6 +245,33 @@ class CandidatePromotionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             confirmed_session([{"begin":"2027-02-10T14:30"}], DAY)
 
+    def test_more_than_four_genuine_sessions_are_not_arbitrarily_rejected(self):
+        times = [
+            {"begin": f"2027-02-10T{hour:02d}:00:00+01:00"}
+            for hour in range(8, 20)
+        ]
+        # Duplicated collector observations are not extra performances.
+        times.append({"begin": "2027-02-10T08:00:00+01:00"})
+        times.append({"begin": "2027-02-11T20:00:00+01:00"})
+        result = confirmed_session(times, DAY, "11111")
+        self.assertEqual(result.split(", "), [
+            f"{hour:02d}:00" for hour in range(8, 20)
+        ])
+        self.assertEqual(len(result.split(", ")), 12)
+
+    def test_school_only_time_is_excluded_even_on_busy_days(self):
+        sample = [
+            {"begin": "2027-01-22T14:30:00+01:00"}
+        ] + [
+            {"begin": f"2027-01-22T{hour:02d}:00:00+01:00"}
+            for hour in range(16, 22)
+        ]
+        slots = confirmed_session(sample, "2027-01-22", "54065371")
+        self.assertNotIn("14:30", slots)
+        self.assertEqual(slots.split(", "), [
+            f"{hour:02d}:00" for hour in range(16, 22)
+        ])
+
     def test_curated_school_only_slots_are_never_published_as_family_outings(self):
         # First-party organizer schedules differentiate schools and family seats.
         momo = [
