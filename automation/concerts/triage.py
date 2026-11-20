@@ -183,7 +183,34 @@ def triage(candidate, catalogue=None, index=None):
 
 def classify(candidates, catalogue):
     idx = catalogue_index(catalogue)
-    classified = [triage(item, index=idx) for item in candidates]
+    # Existing public venues improve identity matching, but their absence
+    # MUST generate a new-place lead, never an exclusion or source approval.
+    venue_keys = set()
+    for venue in catalogue.get("venues", []):
+        if not isinstance(venue, dict):
+            continue
+        key = (words(venue.get("name")), words(venue.get("city")),
+               str(venue.get("department") or ""))
+        if all(key):
+            venue_keys.add(key)
+    candidates_with_place_review = []
+    for candidate in candidates:
+        row = dict(candidate)
+        key = (words(row.get("venue")), words(row.get("city")),
+               str(row.get("department") or ""))
+        if (all(key) and key not in venue_keys
+                and words(row.get("venue")) not in {
+                    "a confirmer", "inconnu", "unknown", "tba", "non communique",
+                }):
+            row["newVenueToReview"] = True
+            row["venueDiscoveryReason"] = "not_exactly_in_public_catalogue"
+        elif key in venue_keys:
+            # An event outside its announcing venue can be at another ALREADY
+            # known location. Keep its provenance, but don't invent a new one.
+            row["newVenueToReview"] = False
+            row.pop("venueDiscoveryReason", None)
+        candidates_with_place_review.append(row)
+    classified = [triage(item, index=idx) for item in candidates_with_place_review]
     counts = dict(Counter(x["reviewBucket"] for x in classified))
     # Des alertes de priorité vont en premier; les annonces sans date restent à part.
     priorities = {
