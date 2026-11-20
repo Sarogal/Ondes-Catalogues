@@ -119,6 +119,69 @@ class VisibleHTMLTests(unittest.TestCase):
                     html.replace("</main>", appended + "</main>"),
                     "Festival Roche Libre 2027", 2027))
 
+    def test_independent_ticket_sale_day_not_an_extra_festival_date(self):
+        from datetime import date
+        from grossesondes_institutional_edition import institutional_date
+        from grossesondes_official_html_edition import administrative_calendar_dates
+        festival = (
+            "<main><p>Festival des Roches Libres 2027 : "
+            "rendez-vous les 13 et 14 août 2027 pour deux jours de métal.</p>"
+        )
+        administrative = "<p>Ouverture de la billetterie le 26 mars 2027.</p>"
+        html = festival + administrative + "</main>"
+        start, end = date(2027, 8, 13), date(2027, 8, 14)
+        self.assertEqual(administrative_calendar_dates(
+            html, "Festival des Roches Libres 2027", 2027),
+            {(date(2027, 3, 26), date(2027, 3, 26))})
+        self.assertTrue(visible_official_edition(
+            html, "Festival des Roches Libres 2027", start, end))
+        self.assertEqual(institutional_date(
+            html, "Festival des Roches Libres 2027", 2027), (start, end))
+
+    def test_conflicting_festival_dates_still_fail_despite_ticket_milestone(self):
+        from datetime import date
+        from grossesondes_institutional_edition import institutional_date
+        title = "Festival des Roches Libres 2027"
+        intro = "<main><p>Festival des Roches Libres 2027 : 13 et 14 août 2027.</p>"
+        outro = "</main>"
+        cases = (
+            "<p>Le Festival des Roches Libres 2027 se tiendra le 26 mars 2027.</p>",
+            "<p>Autre festival : 26 mars 2027.</p>",
+            "<p>Ouverture de la billetterie du Festival des Roches Libres "
+            "le 26 mars 2027.</p>",
+            "<p>Ouverture de la billetterie les 26 et 27 mars 2027.</p>",
+            "<p>Ouverture de la billetterie le 26 mars 2027, "
+            "mais festival les 11 et 12 août 2027.</p>",
+            "<p>Le Festival des Roches Libres 2027 est annulé.</p>",
+            '<p hidden>Ouverture de la billetterie le 26 mars 2027</p>'
+            "<p>Autre festival : 26 mars 2027.</p>",
+        )
+        for extra in cases:
+            with self.subTest(extra=extra):
+                page = intro + extra + outro
+                self.assertIsNone(institutional_date(page, title, 2027))
+                self.assertFalse(visible_official_edition(
+                    page, title, date(2027, 8, 13), date(2027, 8, 14)))
+
+    def test_unspecific_dates_or_scripts_never_create_an_administrative_exception(self):
+        from datetime import date
+        from grossesondes_official_html_edition import administrative_calendar_dates
+        title = "Festival des Roches Libres 2027"
+        cases = (
+            "<p>Billetterie : 26 mars 2027.</p>",
+            "<p>Mars 2027 : ouverture bientôt.</p>",
+            "<p>Ouverture de la billetterie le 26 mars.</p>",
+            "<p>Ouverture de la billetterie 26 et 27 mars 2027.</p>",
+            '<script>Ouverture de la billetterie le 26 mars 2027</script>',
+            '<div hidden><p>Ouverture de la billetterie le 26 mars 2027</p></div>',
+            "<p>Festival des Roches Libres 2027 : ouverture "
+            "de la billetterie le 26 mars 2027.</p>",
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual(administrative_calendar_dates(
+                    html, title, 2027), set())
+
     def test_official_poster_dates_before_name(self):
         from datetime import date
         self.assertTrue(visible_official_edition(
