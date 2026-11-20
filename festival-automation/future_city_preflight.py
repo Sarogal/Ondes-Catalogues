@@ -37,6 +37,7 @@ SCHEMA = "grossesondes.future-festival-city-private.v1"
 STATE_KEY = "future_edition_city_observations_private"
 CURSOR_KEY = "future_edition_city_rotation_cursor"
 MAX_INTERNAL_PAGES = 2
+MAX_NESTED_NEWS_PAGES = 2
 CITY_PATTERN = re.compile(
     r"\b(?:à|au|in|at)\s+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+"
     r"(?:[-'][A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+)*"
@@ -151,13 +152,16 @@ def exact_edition_city(html, row):
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
 
 
-def official_city_links(home_html, homepage):
+def official_city_links(home_html, homepage, edition_year=None):
     """Select only same-host current-edition news + access pages.
 
     Link text is NOT trusted as evidence, merely a bounded discovery hint.
     """
     if (safe_public_url(homepage) is None or not isinstance(home_html, str)
-            or not 0 < len(home_html) <= 650_000):
+            or not 0 < len(home_html) <= 650_000
+            or (edition_year is not None
+                and (type(edition_year) is not int
+                     or not 2026 <= edition_year <= 2049))):
         return []
     parser = _VisibleOrganizerLinks()
     try:
@@ -183,36 +187,74 @@ def official_city_links(home_html, homepage):
                 continue
             target = decoded.replace("-", " ").replace("_", " ")
             text = f"{target} {label}"
-            if EXCLUDE.search(target) or not CURRENT.search(text):
+            if (EXCLUDE.search(target) or not CURRENT.search(text)
+                    or (edition_year is not None
+                        and str(edition_year) not in text)):
                 continue
             selected[url] = 0 if re.search(r"\b20[2-4]\d\b", text) else 1
         except (ValueError, TypeError, UnicodeError):
             continue
-    for i, url in enumerate(official_access_links(home_html, homepage)):
-        selected.setdefault(url, 3 + i)
+    if edition_year is None:
+        for i, url in enumerate(official_access_links(home_html, homepage)):
+            selected.setdefault(url, 3 + i)
     return sorted(selected, key=lambda url: (selected[url], len(url), url))[:MAX_INTERNAL_PAGES]
 
 
 def exact_city_from_official_site(row, fetcher=fetch_public_html):
-    """A fresh bounded first-party download; never trust a private URL."""
+    """Bounded current-edition proof across same-host home, index, and news.
+
+    At most 1 homepage + 2 first-level pages + 2 edition-year news items.
+    Every network URL is discovered again from fetched first-party HTML,
+    checked with safe_public_url, DNS-pinned TLS and same-host restrictions.
+    All *claims* must identify the current event and agree on one commune.
+    """
     home = row.get("officialSite")
     if safe_public_url(home) is None:
+        return None
+    year = iso_day(row.get("startDate"))
+    if year is None:
         return None
     body = fetcher(home)
     facts = []
     claim = exact_edition_city(body, row)
     if claim is not None:
         facts.append(claim)
+    visited = {home}
+    news_indexes = []
     for url in official_city_links(body, home):
+        if url in visited:
+            continue
+        visited.add(url)
+        try:
+            page = fetcher(url)
+        except (OSError, ValueError, TimeoutError, UnicodeError):
+            continue
+        claim = exact_edition_city(page, row)
+        if claim is not None:
+            facts.append(claim)
+        path = unquote(urlsplit(url).path).casefold()
+        if re.search(r"(?:actu|news|nouveaute|articles)", path):
+            news_indexes.append((url, page))
+    further = []
+    for index_url, index_page in news_indexes:
+        for linked in official_city_links(index_page, index_url, edition_year=year.year):
+            if linked not in visited and linked not in further:
+                further.append(linked)
+            if len(further) >= MAX_NESTED_NEWS_PAGES:
+                break
+        if len(further) >= MAX_NESTED_NEWS_PAGES:
+            break
+    for url in further:
+        visited.add(url)
         try:
             claim = exact_edition_city(fetcher(url), row)
         except (OSError, ValueError, TimeoutError, UnicodeError):
             continue
         if claim is not None:
             facts.append(claim)
-    if not facts or any(_normal(c["city"]) != _normal(facts[0]["city"]) for c in facts):
-        return None
-    return facts[0]
+    return (facts[0] if facts and
+            all(_normal(x["city"]) == _normal(facts[0]["city"]) for x in facts)
+            else None)
 
 
 def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
