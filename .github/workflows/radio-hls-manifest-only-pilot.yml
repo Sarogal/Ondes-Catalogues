@@ -8,6 +8,8 @@ on:
       - ".github/workflows/radio-hls-manifest-only-pilot.yml"
       - "radio-catalog-lab/tools/radio_hls_manifest_evidence.py"
       - "radio-catalog-lab/tools/test_radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/radio_hls_segment_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_hls_segment_evidence.py"
       - "radio-catalog-lab/tools/radio_hls_daily_pilot.py"
       - "radio-catalog-lab/tools/test_radio_hls_daily_pilot.py"
       - "radio-catalog-lab/tools/radio_stream_technical_probe.py"
@@ -31,16 +33,17 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_manifest_evidence.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_daily_pilot.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_segment_evidence.py" -v
       - name: Discover Radio Browser metal and rock candidates
         shell: bash
         run: |
           set -euo pipefail
           python radio-catalog-lab/tools/radio_daily_discovery.py --tags "metal,hard rock,rock,punk,black metal,death metal,thrash metal" --names "metal,punk,hard rock,rock" --page-size 100 --max-pages 2 --crawl-delay 0.2 --output candidate-manifest-scan.json
-      - name: Observe at most five HLS manifest URLs (no segments)
+      - name: Observe at most five manifests and one 16KiB segment (preview only)
         shell: bash
         run: |
           set -euo pipefail
-          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network
+          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network --check-one-segment
       - name: Verify no publication or stream data
         shell: bash
         run: |
@@ -51,10 +54,16 @@ jobs:
           assert report["publicationAllowed"] is False
           assert report["technicalVerifiedCount"] == 0
           assert report["checkedCount"] <= 5
+          assert report["segmentVerificationAttemptCount"] <= 1
+          assert report["segmentStructuralEvidenceCount"] <= 1
           assert all(x["publicationAllowed"] is False for x in report["checks"])
           assert all("streamUrl" not in x and "segments" not in x for x in report["checks"])
+          assert all("http:" not in str(x) and "https:" not in str(x) for x in report["checks"])
           print("HLS_MANIFEST_AUDIT_ONLY", report["checkedCount"],
-                "kinds", report["manifestKinds"], "verified=0 published=false")
+                "kinds", report["manifestKinds"],
+                "segment_attempts", report["segmentVerificationAttemptCount"],
+                "segment_structures", report["segmentStructuralEvidenceCount"],
+                "verified=0 published=false")
           PY
       - name: Upload redacted evidence only (not candidate URLs)
         uses: actions/upload-artifact@v4
