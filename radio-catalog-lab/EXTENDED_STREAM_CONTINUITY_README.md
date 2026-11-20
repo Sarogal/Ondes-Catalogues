@@ -41,3 +41,17 @@ Validation générale : run #44724323883, 152 tests Python réussis (37 + 11 + 4
 Pilote réseau et conservation des preuves : run #44724530213, SUCCESS. Sur 13 requêtes Radio Browser, 383 UUID distincts dans les réponses (sans rapprochement avec le catalogue), cinq URLs contrôlées ; trois en-têtes audio reconnus, trois transmissions soutenues, trois chaînes de trames cohérentes, deux cas audio_mime_only et zéro admission. Le registre a conservé trois observations frameChainDates pour cette première journée, sans qualification finale ni publication.
 
 Le prochain verrou est le **décodage réel**, avec validation par un décodeur audio isolé, limites de CPU, mémoire et durée, et gestion générique des variantes Ogg/Opus/Vorbis, FLAC, HLS et métadonnées ICY. Il faudra ensuite des contrôles sur plusieurs jours réels et une réconciliation complète avant l'intégration au catalogue signé.
+
+## Vérification PCM expérimentale — 20 novembre, après 11 h UTC
+
+Le module radio_stream_decode_evidence.py n'est appelé que si la CLI reçoit simultanément --allow-network, --extended-continuity et --experimental-decode, et seulement après une transmission soutenue sur la même connexion. Le format d'entrée est un ensemble restreint de flux MP3/MPEG, AAC ADTS, Ogg audio, FLAC et WAV. La preuve audio est un court décodage vers du PCM mono 8 kHz, trois trames au maximum. Ni les octets du flux ni les échantillons PCM ne sont écrits dans les artefacts : seuls le format, la taille décodée et l'état sont enregistrés.
+
+Le décodeur externe FFmpeg ne reçoit que des octets via stdin et ne dispose que du protocole pipe; aucune URL n'est transmise au processus. Sous Linux, des limites de CPU, mémoire, fichiers ouverts, durée et taille des entrées sont imposées au sous-processus. Il demeure un prototype non certifiant : le décodage ne prouve pas que la radio est live ni que le contenu correspond au genre annoncé. La durée du décodage s'ajoute au budget d'observation transport.
+
+Un premier pilote sans FFmpeg préinstallé (#44726119179) a retourné decoder_unavailable pour les trois échantillons, puis le runner éphémère a installé FFmpeg 8.0.1-3ubuntu2. Le pilote réel #44726421472 a alors réussi : trois décodages PCM sur cinq flux sondés (les trois flux présentant déjà une chaîne de trames); technicalVerifiedCount=0, aucune publication.
+
+Le registre conserve en outre decodedPcmDates, indépendamment des trois niveaux précédents : en-tête, transport et trames. Une date de décodage PCM ne peut pas être inventée rétroactivement ni survivre à un changement d'empreinte de flux sans être remise à zéro. Deux décodages sur deux journées distinctes restent des preuves d'observation, jamais une admission.
+
+Pour pallier les réponses Radio Browser 502 observées dans le run #44725618088, fetch_page réalise maintenant jusqu'à trois tours bornés des miroirs connus et fail-closed si tous les essais échouent. Une collecte incomplète n'est jamais publiée comme un catalogue vide.
+
+La validation de prévisualisation #44726817529 est verte : 173 tests Python (40 + 11 + 40 + 15 + 3 + 32 + 13 + 11 + 8). Cela reste un laboratoire pré-publication, sans fusion, cron effectif ou changement de l'application Android.
