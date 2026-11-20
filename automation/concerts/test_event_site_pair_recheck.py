@@ -336,5 +336,79 @@ class ReviewedPromoterIndividualDetailTests(unittest.TestCase):
                 fetch=lambda *_: self.fail("Listing cannot be a proof"))
 
 
+class GenericFirstPartyStructuredEventTests(unittest.TestCase):
+    """Site attestation can use a full Event with genre, never genre by guess."""
+
+    def test_generic_event_with_complete_individual_music_proof_is_publishable(self):
+        lead, raw, cat, osm = fixture()
+        raw["@type"] = "Event"
+        calls = []
+        event, site = reviewer.verify(
+            lead, cat, DAY, fetch=fake_fetch(raw, osm, calls))
+        self.assertEqual(calls, [EVENT, API])
+        self.assertEqual(event["event"]["genres"], ["Heavy Metal"])
+        self.assertEqual(site["venue"]["geoSource"], OSM)
+        original = {"schema": publisher.SCHEMA,
+                    "approvals": [], "venueApprovals": []}
+        registry = {"items": {"fixture": {
+            "candidate": lead, "status": "pending_review",
+            "stableObservations": 2,
+        }}}
+        proposed, report = official_recheck.process(
+            registry, cat, original, DAY,
+            site_fetch=fake_fetch(raw, osm, []))
+        self.assertEqual(len(report["newApprovals"]), 1)
+        self.assertEqual(len(report["newSiteApprovals"]), 1)
+        reference = json.loads(publisher.REFERENCE.read_text(encoding="utf-8"))
+        validated = gate.validate_proposal(
+            original, proposed, reference, copy.deepcopy(reference),
+            DAY, publisher.merge)
+        self.assertTrue(validated["validatedByPublisher"])
+        self.assertEqual(validated["publishableEvents"], 1)
+
+    def test_generic_event_with_venue_rock_menu_only_is_rejected(self):
+        lead, raw, cat, osm = fixture()
+        raw["@type"] = "Event"
+        raw.pop("genre")
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(raw, osm, []))
+        raw["genre"] = "Rock"  # generic venue category, not a precise genre
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(raw, osm, []))
+
+    def test_mixed_event_and_musicevent_pages_cannot_lend_proofs(self):
+        lead, raw, cat, osm = fixture()
+        for alt in (
+            {**raw, "@type": "Event", "name": "Other festival"},
+            {**raw, "@type": "MusicEvent", "name": "Other show"},
+        ):
+            page = ('<script type="application/ld+json">'
+                    + json.dumps({"@graph": [raw, alt]}, ensure_ascii=False)
+                    + '</script>')
+            def fetched(url, limit):
+                if url == EVENT:
+                    return page, EVENT
+                self.fail("No geography should be requested from mixed events")
+            with self.subTest(alt=alt["@type"]), self.assertRaises(ValueError):
+                reviewer.verify(lead, cat, DAY, fetch=fetched)
+
+    def test_generic_event_bad_country_or_unnamed_artist_is_rejected(self):
+        lead, raw, cat, osm = fixture()
+        raw["@type"] = "Event"
+        for changed in (
+            {"performer": [{"@type": "Organization", "name": "Guest"}]},
+            {"location": {**raw["location"], "address": {
+                **raw["location"]["address"], "addressCountry": "BE"}}},
+            {"genre": ["Hardcore Techno"]},
+            {"startDate": "2027-06-17"},
+        ):
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                reviewer.verify(
+                    lead, cat, DAY,
+                    fetch=fake_fetch({**raw, **changed}, osm, []))
+
+
 if __name__ == "__main__":
     unittest.main()
