@@ -77,6 +77,52 @@ class UnknownLocationDiscoveryTests(unittest.TestCase):
         self.assertEqual(rows[0]["venueDiscoveryReason"],
                          "not_exactly_in_public_catalogue")
 
+    def test_first_party_agenda_only_keeps_discovery_and_flags_missing_detail(self):
+        raw = event()
+        raw["url"] = "https://tickets.external.example/live/band/"
+        row = discover.venue_candidate(
+            raw, SOURCE, SOURCE["url"], set(), "2026-11-20")
+        self.assertIsNotNone(row)
+        self.assertTrue(row["venueOutsideSource"])
+        self.assertEqual(row["sourceUrl"], SOURCE["url"])
+        self.assertTrue(row["individualOfficialDetailMissing"])
+        self.assertFalse(row["publicationAllowed"])
+        self.assertTrue(row["newVenueToReview"])
+        self.assertEqual(row["department"], "75")
+
+    def test_official_agenda_with_individual_link_keeps_detail_as_authority(self):
+        row = discover.venue_candidate(
+            event(), SOURCE, SOURCE["url"], set(), "2026-11-20")
+        self.assertEqual(row["sourceUrl"], EVENT_URL)
+        self.assertFalse(row["individualOfficialDetailMissing"])
+        self.assertEqual(row["sourcePage"], SOURCE["url"])
+
+    def test_first_party_agenda_only_remains_outside_private_verifier_budget(self):
+        raw = event()
+        raw.pop("url")
+        private = triage.classify([discover.venue_candidate(
+            raw, SOURCE, SOURCE["url"], set(), "2026-11-20")],
+            catalogue())[0][0]
+        registry = {
+            "schema": preview.INTAKE,
+            "items": {"synthetic": {
+                "candidate": private, "status": "pending_review",
+                "stableObservations": 2,
+            }},
+        }
+        sources = {"schema": preview.SOURCES, "venues": [SOURCE]}
+        approved = {"schema": preview.APPROVALS, "approvals": []}
+        report = preview.build(
+            registry, sources, catalogue(), approved, DAY,
+            fetch=lambda *a, **k: self.fail("Cannot verify generic agenda"),
+            robots=lambda *a: self.fail("Should not check index robots"),
+            geo_fetch=lambda *a: self.fail("No OSM without event detail"))
+        self.assertEqual(report["awaitingIndividualOfficialDetail"], 1)
+        self.assertEqual(report["attempted"], 0)
+        self.assertEqual(report["eligible"], 0)
+        self.assertEqual(report["approvalsProposed"], 0)
+        self.assertFalse(report["publisherTrustGranted"])
+
     def test_missing_postcode_is_research_not_rejected_and_not_approved(self):
         p = proposal(event(postcode=""))
         self.assertIsNotNone(p)
@@ -109,6 +155,7 @@ class UnknownLocationDiscoveryTests(unittest.TestCase):
             (event(country="BE"), SOURCE, EVENT_URL),
             (event(), SOURCE, "https://external.example/evenements/fake/"),
             (event(), {**SOURCE, "url": "https://external.example/agenda/"}, EVENT_URL),
+            (event(), {**SOURCE, "url": "http://official-stage.example/agenda/"}, EVENT_URL),
             ({**event(), "@type": "Organization"}, SOURCE, EVENT_URL),
         ]
         for raw, source, page_url in invalid:

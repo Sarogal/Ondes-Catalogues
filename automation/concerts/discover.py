@@ -366,9 +366,13 @@ def venue_candidate(raw, source, page_url, known, day):
     if offsite:
         origin = source.get("url")
         if (not isinstance(origin, str)
-                or not official_rss_jsonld_bridge.official_event_url(
-                    page_url, origin)):
+                or urllib.parse.urlsplit(origin).scheme != "https"
+                or not same_host(page_url, origin)):
             return None
+        # The official agenda may contain an individually dated MusicEvent
+        # without linking its own detail page. Discovery must preserve it as
+        # a private search lead; publisher-level attestation is IMPOSSIBLE
+        # until a real individual first-party page is independently found.
         types = official_rss_jsonld_bridge._event_types(raw.get("@type"))
         if "MusicEvent" not in types:
             return None
@@ -469,6 +473,9 @@ def venue_candidate(raw, source, page_url, known, day):
             "sourceVenueCity": source["city"],
             "sourceVenueDepartment": source["department"],
             "sitePostalCodeFromOfficialEvent": postcode,
+            "individualOfficialDetailMissing": not bool(
+                official_rss_jsonld_bridge.official_event_url(
+                    ref_url, source["url"])),
             "officialLocationIncomplete": not bool(
                 re.fullmatch(r"[0-9]{5}", postcode)
                 and address.get("addressCountry")),
@@ -2552,6 +2559,9 @@ def main():
                    "officialOffsiteVenueLeads": sum(
                        x.get("source") == "agenda_officiel_lieu_a_verifier"
                        for x in classified),
+                   "offsiteLeadsAwaitingDetailPage": sum(
+                       x.get("individualOfficialDetailMissing") is True
+                       for x in classified),
                    "newVenueDiscoveryLeads": sum(
                        x.get("newVenueToReview") is True for x in classified),
                    "possibleExistingConcerts": sum(x.get("possibleExistingConcert", False) for x in classified),
@@ -2594,6 +2604,8 @@ def main():
         + str(review["counts"]["newVenueDiscoveryLeads"]) + ".",
         "Concerts officiellement annoncés dans un lieu distinct de la source : "
         + str(review["counts"]["officialOffsiteVenueLeads"]) + ".",
+        "Concerts dans des lieux distincts sans fiche individuelle : "
+        + str(review["counts"]["offsiteLeadsAwaitingDetailPage"]) + ".",
         "Classement des pistes (aucune confirmation automatique) :",
         *["  - " + bucket + " : " + str(total) for bucket, total in sorted(triage_counts.items())],
         "À examiner en priorité : " + str(len(shortlist)) + " (annulations, doublons, genre ou festival).",
