@@ -10,8 +10,13 @@ import json
 from math import isfinite
 import re
 import ssl
+from pathlib import Path
+import sys
 from urllib.parse import urlencode
 
+SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
 from dns_pinned_https import DNSPinnedHTTPSConnection
 from grossesondes_official_html_edition import fold
 
