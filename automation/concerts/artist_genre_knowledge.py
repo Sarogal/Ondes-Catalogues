@@ -23,7 +23,7 @@ SCHEMA = "grossesondes.concert.artist-genre-evidence.v1"
 REVIEW_SCHEMA = "grossesondes.concert.artist-genre-review.v1"
 _DISALLOWED = (
     "hardcore techno", "techno hardcore", "electronic hardcore",
-    "hardcore edm", "hardcore electronic",
+    "hardcore edm", "hardcore electronic", "electronic hardcore",
 )
 
 
@@ -66,7 +66,7 @@ def private_genre_review(registry, catalogue, as_of):
     if (registry.get("schema") != "grossesondes.concert.intake.v1"
             or not isinstance(registry.get("items"), dict)
             or catalogue.get("schemaVersion") != 1
-            or not isinstance(catalogue.get("artists"), list)
+            or not isinstance(catalogue.get("artists", []), list)
             or not isinstance(catalogue.get("events"), list)
             or not isinstance(as_of, dt.date)):
         raise ValueError("Artist genre review: incompatible inputs")
