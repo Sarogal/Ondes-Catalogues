@@ -51,23 +51,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Scan Radio Browser without UUID allowlist
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/go-radio-discovery"
-          # On branch pushes, only a tiny real-network sample is used.
-          # Scheduled/manual runs explore many music tags and rotated pages.
-          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            python radio-catalog-lab/tools/radio_daily_discovery.py \
-              --tags "metal,punk" --names "metal,punk" \
-              --page-size 50 --max-pages 1 --crawl-delay 0.3 \
-              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
-          else
-            python radio-catalog-lab/tools/radio_daily_discovery.py \
-              --page-size 100 --max-pages 3 --crawl-delay 0.3 \
-              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
-          fi
       - name: Restore previous candidate ledger when available
         if: github.event_name != 'push'
         shell: bash
@@ -86,6 +69,30 @@ jobs:
               --dir "$RUNNER_TEMP/go-radio-previous"; then
               echo "Previous evidence unavailable; candidate history starts anew"
             fi
+          fi
+      - name: Scan Radio Browser without UUID allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-radio-discovery"
+          # On branch pushes, only a tiny real-network sample is used.
+          # Scheduled/manual runs explore many music tags and rotated pages.
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --tags "metal,punk" --names "metal,punk" \
+              --page-size 50 --max-pages 1 --crawl-delay 0.3 \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          else
+            # Previous review-only tags are allowed to extend the taxonomy,
+            # but never authorize a radio, stream, logo or station deletion.
+            prior=()
+            if [[ -f "$RUNNER_TEMP/go-radio-previous/candidates.json" ]]; then
+              prior=(--previous-report "$RUNNER_TEMP/go-radio-previous/candidates.json")
+            fi
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --page-size 100 --max-pages 3 --crawl-delay 0.3 \
+              "${prior[@]}" \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
       - name: Retain cross-day candidates without approving any stream
         shell: bash
