@@ -88,6 +88,7 @@ def hls_preview(
     segment_checks = 0
     structural_evidence = 0
     pcm_evidence = 0
+    decode_states: dict[str, int] = {}
     segment_states: dict[str, int] = {}
     planning_reasons: dict[str, int] = {}
     safe_options: list[tuple[int, dict, str]] = []
@@ -125,7 +126,10 @@ def hls_preview(
         planning_reasons[reason] = 1
         if state == "segment_structural_evidence":
             structural_evidence = 1
-        if (outcome.get("segmentDecodeEvidence") or {}).get("state") == "decoded_pcm":
+        decode_state = (outcome.get("segmentDecodeEvidence") or {}).get("state")
+        if decode_state is not None:
+            decode_states[decode_state] = decode_states.get(decode_state, 0) + 1
+        if decode_state == "decoded_pcm":
             pcm_evidence = 1
     return {
         "schemaVersion": 1,
@@ -136,6 +140,7 @@ def hls_preview(
         "segmentVerificationAttemptCount": segment_checks,
         "segmentStructuralEvidenceCount": structural_evidence,
         "decodedPcmSegmentCount": pcm_evidence,
+        "segmentDecodeStates": dict(sorted(decode_states.items())),
         "segmentStates": dict(sorted(segment_states.items())),
         "segmentPlanningReasons": dict(sorted(planning_reasons.items())),
         "technicalVerifiedCount": 0,
@@ -179,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
           f"segment_attempts={output['segmentVerificationAttemptCount']} "
           f"segment_structures={output['segmentStructuralEvidenceCount']} "
           f"segment_pcm={output['decodedPcmSegmentCount']} "
+          f"segment_decoder_states={output['segmentDecodeStates']} "
           f"segment_states={output['segmentStates']} "
           f"segment_planning={output['segmentPlanningReasons']} "
           "verified=0 published=false")
