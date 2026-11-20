@@ -72,11 +72,19 @@ def plan_campaign(index_doc, digest, day, output_dir, steps=MAX_STEPS):
             or type(steps) is not int or not 1 <= steps <= MAX_STEPS):
         raise ValueError("invalid_campaign_plan_arguments")
     if (not isinstance(index_doc, dict)
+            or index_doc.get("schema") !=
+            "ptitesondes.private_national_oa_index.v1"
+            or index_doc.get("mode") !=
+            "private_index_readonly_discovery_not_admission"
+            or index_doc.get("publication_ready") is not False
+            or index_doc.get("public_writes") != 0
             or not isinstance(index_doc.get("new_agenda_candidates"), list)
-            or not 1 <= len(index_doc["new_agenda_candidates"]) <= MAX_INDEX_AGENDAS):
+            or not 0 <= len(index_doc["new_agenda_candidates"]) <= MAX_INDEX_AGENDAS):
         raise ValueError("invalid_campaign_index_size")
-    # Validate the entire private index, never just the selected first row.
-    select_index_candidate(index_doc, 0)
+    # A valid page may contain ZERO previously unknown agendas. That is
+    # a successful empty batch, not a deployment failure or missing data.
+    if index_doc["new_agenda_candidates"]:
+        select_index_candidate(index_doc, 0)
     state = load_checkpoint(output_dir, digest, day,
                             len(index_doc["new_agenda_candidates"]))
     return {"state": state, "steps": steps,
