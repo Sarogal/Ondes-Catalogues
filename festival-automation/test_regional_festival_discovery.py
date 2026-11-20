@@ -372,6 +372,78 @@ class RegionalTests(unittest.TestCase):
         self.assertEqual(private_prior_primary_name_hints(
             good, "2026-11-07"), frozenset())
 
+    def test_openagenda_compound_brand_exact_match_to_institution_stays_private(self):
+        from national_openagenda_research import scan as scan_openagenda
+        from regional_festival_discovery import (
+            CROSS_SOURCE_SIGNAL, private_openagenda_name_hints)
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources
+        from grossesondes_institutional_edition import (
+            private_proposal, independently_fetch)
+        today = "2026-11-20"
+        tomorrow = "2026-11-21"
+        title = "ForgeFest 2027"
+        target = ("https://www.angers.fr/actualites-sorties/agenda/"
+                  "forgefest-2027")
+        html = '<a href="' + target + '">' + title + '</a>'
+        event = {
+            "title_fr": title,
+            "canonicalurl": "https://openagenda.com/metal/events/forgefest-2027",
+            "description_fr": "Festival de punk rock et thrash metal",
+            "keywords_fr": ["thrash metal"],
+            "location_countrycode": "FR",
+            "location_region": "Pays de la Loire",
+            "firstdate_begin": "2027-06-25T19:00:00+02:00",
+            "lastdate_begin": "2027-06-26T23:00:00+02:00",
+        }
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        scan_openagenda(state, today, fetch=lambda _: {
+            "total_count": 1, "results": [event]})
+        hints = private_openagenda_name_hints(state, today)
+        self.assertEqual(hints, frozenset({
+            ("forgefest", 2027, "Pays de la Loire")}))
+        self.assertEqual(candidate_links(html, ANGERS, today), [])
+        found = candidate_links(html, ANGERS, today,
+                                openagenda_name_hints=hints)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["candidate_url"], target)
+        self.assertEqual(found[0]["signal"], CROSS_SOURCE_SIGNAL)
+        self.assertEqual(candidate_links(html, LIMOGES, today,
+                                         openagenda_name_hints=hints), [])
+        no_year = html.replace("ForgeFest 2027", "ForgeFest")
+        self.assertEqual(candidate_links(no_year, ANGERS, today,
+                                         openagenda_name_hints=hints), [])
+        visits = []
+        recorded = scan_regional_indexes(
+            {"schema": "grossesondes.source-watch-report.v1",
+             "date": today, "source_reference_leads_review_only": []},
+            state, [B], today, fetch=lambda url: visits.append(url) or html,
+            limit=1)
+        self.assertEqual(visits, [ANGERS])
+        self.assertEqual(len(recorded), 1)
+        self.assertFalse(recorded[0]["publication_authorized"])
+        self.assertFalse(recorded[0]["date_verified"])
+        queue = build_queue(
+            state, {"schema": "grossesondes.source-watch-report.v1",
+                    "date": tomorrow, "source_reference_leads_review_only": []},
+            [], tomorrow)
+        sources = _eligible_sources(state, queue, tomorrow, due_only=False)
+        self.assertEqual(len(sources), 1)
+        proposal = private_proposal(
+            sources[0], ("2027-06-25", "2027-06-26"), tomorrow)
+        self.assertIsNotNone(proposal)
+        # An OpenAgenda genre is not independent evidence. The trusted
+        # institution has not itself confirmed rock/punk/metal on its detail,
+        # so the real publisher refuses admission.
+        publisher_fetches = []
+        self.assertIsNone(independently_fetch(
+            proposal, tomorrow,
+            fetch=lambda url: publisher_fetches.append(url) or html))
+        self.assertEqual(publisher_fetches, [ANGERS, target])
+        self.assertFalse(queue["publication_authorized"])
+
     def test_openagenda_name_plus_year_and_region_can_nominate_only_a_live_institutional_link(self):
         """A research clue can find a genre-less title, NEVER authorize publication."""
         from national_openagenda_research import scan as scan_openagenda
