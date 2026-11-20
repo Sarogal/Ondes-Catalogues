@@ -20,6 +20,13 @@ POSITIVE_GENRES = (
     # approve a concert or override the independent official-source gate.
     "mathcore", "powerviolence", "screamo", "skramz", "blackgaze", "d beat",
 )
+# Electronic homonyms must never be confused with hardcore punk/metal.
+# Filter individual labels, preserving other genuine labels on mixed events.
+ELECTRONIC_HARDCORE_HOMONYMS = frozenset({
+    "hardcore techno", "techno hardcore", "electronic hardcore",
+    "hardcore electronic", "hardcore edm", "gabber hardcore",
+    "hardcore gabber",
+})
 NONCONCERT = re.compile(
     r"\b(atelier|conference|formation|reunion|masterclass|webinaire|blind test|"
     r"cours|portes ouvertes|writing camp|stage de|structuration de l artiste|"
@@ -46,7 +53,9 @@ def genre_evidence(candidate):
     labels = candidate.get("classification") or []
     if isinstance(labels, str):
         labels = [labels]
-    text = " | ".join(words(x) for x in labels)
+    text = " | ".join(
+        words(x) for x in labels
+        if words(x) not in ELECTRONIC_HARDCORE_HOMONYMS)
     if any(re.search(r"(?<!\w)" + re.escape(genre) + r"(?!\w)", text)
            for genre in POSITIVE_GENRES):
         return "tag_genre_source"
