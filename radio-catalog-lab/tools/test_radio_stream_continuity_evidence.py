@@ -2,7 +2,7 @@
 import unittest
 
 from radio_stream_continuity_evidence import (
-    MAX_OBSERVED_BYTES, MIN_SECONDS, observe_continuity,
+    MAX_OBSERVED_BYTES, MAX_READ_CHUNKS, MIN_SECONDS, observe_continuity,
 )
 
 
@@ -120,6 +120,15 @@ class ContinuityEvidenceTests(unittest.TestCase):
         self.assertEqual(report["technicalVerifiedCount"], 0)
         self.assertFalse(report["publicationAllowed"])
         self.assertFalse(report["checks"][0]["publicationAllowed"])
+
+
+    def test_tiny_chunk_flood_hits_read_budget_without_unbounded_loop(self):
+        clock = Clock()
+        result = observe_continuity(
+            Reader(clock, [b"x"] * (MAX_READ_CHUNKS + 20), interval=0.0),
+            b"ID3" + b"\0" * 509, clock=clock)
+        self.assertEqual(result.reason, "chunk_budget_reached")
+        self.assertEqual(result.read_chunks, MAX_READ_CHUNKS)
 
 if __name__ == "__main__":
     unittest.main()
