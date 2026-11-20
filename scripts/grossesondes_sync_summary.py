@@ -80,6 +80,37 @@ def render(report, deploy_decision=False):
             f"- Coordonnées présentes, sans désactivation explicite : **{map_report['coordinates_present_not_explicitly_hidden']}**",
             "- Des coordonnées présentes ou un drapeau absent ne garantissent pas l'affichage sur la carte ni le lieu de la nouvelle édition.",
         ])
+    geo = report.get("future_geo_publisher")
+    if geo is not None:
+        required = {
+            "private_report", "private_two_day_candidates",
+            "independent_rechecks", "accepted_geo_updates", "held_geo",
+            "publication_authorized_by_private_report",
+        }
+        if not isinstance(geo, dict) or set(geo) != required:
+            raise ValueError("rapport de seconde vérification géographique invalide")
+        values = ("private_two_day_candidates", "independent_rechecks", "held_geo")
+        if (any(type(geo[k]) is not int or geo[k] < 0 for k in values)
+                or not isinstance(geo["accepted_geo_updates"], list)
+                or not all(isinstance(slug, str) for slug in geo["accepted_geo_updates"])
+                or len(set(geo["accepted_geo_updates"])) != len(geo["accepted_geo_updates"])
+                or geo["publication_authorized_by_private_report"] is not False
+                or geo["independent_rechecks"] > geo["private_two_day_candidates"]
+                or len(geo["accepted_geo_updates"]) > geo["independent_rechecks"]
+                or len(geo["accepted_geo_updates"]) + geo["held_geo"]
+                   != geo["private_two_day_candidates"]
+                or geo["private_report"] not in (
+                    "unavailable", "invalid_or_stale", "valid",
+                    "signed_head_not_verified")):
+            raise ValueError("compteurs de contre-vérification géographique invalides")
+        lines.extend([
+            "",
+            "Géolocalisation des éditions futures (revérification indépendante) :",
+            f"- Rapport privé : **{safe(geo['private_report'])}** (simple piste, jamais autorisation)",
+            f"- Indices J+1 : **{geo['private_two_day_candidates']}** ; pages officielles retéléchargées : **{geo['independent_rechecks']}**",
+            f"- Enrichissements géographiques du candidat : **{len(geo['accepted_geo_updates'])}** ; différés : **{geo['held_geo']}**",
+            "- Un enrichissement n'est publié qu'après commit signé et déploiement Pages réussi.",
+        ])
     if changed:
         lines.append("- Différence de contenu validée : **oui**")
         lines.append("- Déploiement autorisé par la décision du job : "
