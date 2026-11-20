@@ -19,6 +19,134 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_openagenda_name_plus_year_and_region_can_nominate_only_a_live_institutional_link(self):
+        """A research clue can find a genre-less title, NEVER authorize publication."""
+        from national_openagenda_research import scan as scan_openagenda
+        from regional_festival_discovery import (
+            private_openagenda_name_hints, CROSS_SOURCE_SIGNAL)
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources
+        from grossesondes_institutional_edition import (
+            independently_fetch, private_proposal)
+        source = ANGERS
+        title = "Festival des Rivages 2027"
+        detail = "https://www.angers.fr/actualites-sorties/agenda/festival-des-rivages-2027"
+        event = {
+            "title_fr": title,
+            "canonicalurl": "https://openagenda.com/agenda-rock/events/festival-des-rivages-2027",
+            "description_fr": "Festival rock et métal.",
+            "keywords_fr": ["rock"],
+            "location_countrycode": "FR",
+            "location_region": "Pays de la Loire",
+            "firstdate_begin": "2027-06-04T18:00:00+02:00",
+            "lastdate_begin": "2027-06-05T23:00:00+02:00",
+        }
+        body = '<main><a href="' + detail + '">' + title + '</a></main>'
+        today = "2026-11-05"
+        self.assertEqual(candidate_links(body, source, today), [])
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        research = scan_openagenda(
+            state, today, fetch=lambda _: {"total_count": 1, "results": [event]})
+        self.assertEqual(research["leads_count"], 1)
+        hints = private_openagenda_name_hints(state, today)
+        self.assertEqual(hints, frozenset({
+            ("festival des rivages", 2027, "Pays de la Loire")}))
+        direct = candidate_links(
+            body, source, today, openagenda_name_hints=hints)
+        self.assertEqual(len(direct), 1)
+        self.assertEqual(direct[0]["candidate_url"], detail)
+        self.assertEqual(direct[0]["signal"], CROSS_SOURCE_SIGNAL)
+        self.assertEqual(direct[0]["archive_slug"], None)
+        visits = []
+        recorded = scan_regional_indexes(
+            {"schema": "grossesondes.source-watch-report.v1",
+             "date": today, "source_reference_leads_review_only": []},
+            state, [B], today,
+            fetch=lambda u: visits.append(u) or body, limit=1)
+        self.assertEqual(visits, [source])  # No OpenAgenda/detail request.
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0]["discovery_signal"], CROSS_SOURCE_SIGNAL)
+        self.assertIs(recorded[0]["publication_authorized"], False)
+        self.assertIs(recorded[0]["date_verified"], False)
+        self.assertEqual(recorded[0]["source_index"], source)
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": "2026-11-06", "source_reference_leads_review_only": []}
+        national = build_queue(state, report, [], "2026-11-06")
+        self.assertEqual(national["candidate_dossiers_count"], 1)
+        self.assertEqual(national["publications"], 0)
+        self.assertFalse(national["dossiers"][0]["festival_verified"])
+        self.assertFalse(national["dossiers"][0]["edition_dates_verified"])
+        sources = _eligible_sources(state, national, "2026-11-06", due_only=False)
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(sources[0]["url"], detail)
+        self.assertEqual(sources[0]["index_url"], source)
+        # No publisher admission from the research clue: an index-only
+        # link without independent music context still fails publisher.
+        proposal = private_proposal(sources[0],
+                                    ("2027-06-04", "2027-06-05"),
+                                    "2026-11-06")
+        self.assertIsNotNone(proposal)
+        checked = []
+        self.assertIsNone(independently_fetch(
+            proposal, "2026-11-06",
+            fetch=lambda u: checked.append(u) or body))
+        self.assertEqual(checked, [source])
+        self.assertEqual(national["publications"], 0)
+
+    def test_openagenda_crossmatch_cannot_override_source_year_or_region(self):
+        from national_openagenda_research import scan as scan_openagenda
+        from regional_festival_discovery import private_openagenda_name_hints
+        year = "2026-11-05"
+        template = {
+            "title_fr": "Festival des Rivages 2027",
+            "canonicalurl": "https://openagenda.com/agenda-rock/events/festival-des-rivages-2027",
+            "description_fr": "Festival metal et rock",
+            "keywords_fr": ["metal"],
+            "location_countrycode": "FR",
+            "location_region": "Pays de la Loire",
+            "firstdate_begin": "2027-06-04T18:00:00+02:00",
+            "lastdate_begin": "2027-06-05T23:00:00+02:00",
+        }
+        state = {"schema": "grossesondes.source-watch.v1"}
+        scan_openagenda(state, year, fetch=lambda _: {
+            "total_count": 1, "results": [template]})
+        hints = private_openagenda_name_hints(state, year)
+        url = "https://www.angers.fr/actualites-sorties/agenda/festival-des-rivages-2027"
+        variants = (
+            ("Festival des Rivages 2028", url),
+            ("Festival des Rivages 2026", url),
+            ("Festival des Rivages 2027 Junior", url),
+            ("Festival des Rivages 2027 / Spectacle", url),
+            ("Festival des Rivages 2027", "https://evil.example/invalid"),
+            ("Festival des Rivages 2027", "http://www.angers.fr/invalid"),
+            ("Festival des Rivages 2027", "https://www.angers.fr/piece.pdf"),
+        )
+        for title, location in variants:
+            with self.subTest(title=title, url=location):
+                html = '<a href="' + location + '">' + title + '</a>'
+                self.assertEqual(candidate_links(
+                    html, ANGERS, year, openagenda_name_hints=hints), [])
+        # The same title observed on a different reviewed REGION is not
+        # a counterpart, and a yearless source may not borrow a year.
+        limoges = (
+            '<a href="/agenda/festival-des-rivages-2027">'
+            'Festival des Rivages 2027</a>')
+        self.assertEqual(candidate_links(
+            limoges, LIMOGES, year, openagenda_name_hints=hints), [])
+        self.assertEqual(candidate_links(
+            '<a href="/actualites-sorties/agenda/festival-des-rivages">'
+            'Festival des Rivages</a>',
+            ANGERS, year, openagenda_name_hints=hints), [])
+        # Poisoning a private research report cannot add an independent link.
+        state["national_openagenda_research_private"]["publication_authorized"] = True
+        self.assertEqual(private_openagenda_name_hints(state, year), frozenset())
+        state["national_openagenda_research_private"]["publication_authorized"] = False
+        state["national_openagenda_research_private"]["leads"][0]["source_url"] = (
+            "https://127.0.0.1/admin")
+        self.assertEqual(private_openagenda_name_hints(state, year), frozenset())
+
     def test_municipal_event_label_recovers_archive_identity_not_navigation(self):
         # Municipal agenda labels are longer than the event's real title.
         source = ANGERS
