@@ -164,14 +164,16 @@ def event_genres_from_own_bill(raw):
             return None
         return [x.strip() for x in value]
 
+    # Event.genre is an aggregate classification, not a required common
+    # genre for every opening act. Check each named performer first.
     direct = raw.get("genre")
-    if direct is not None and direct != [] and direct != "":
-        checked = labels(direct)
-        return (checked or []), "official_event_card"
+    event_labels = labels(direct) if direct not in (None, "", []) else []
+    if event_labels is None:
+        event_labels = []
 
     bill = official_named_bill(raw.get("performer"))
     if bill is None:
-        return [], "official_artist_in_event_detail"
+        return event_labels, "official_event_card"
     names = {x.casefold() for x in bill[0]}
     performers = raw.get("performer")
     performers = performers if isinstance(performers, list) else [performers]
@@ -200,9 +202,17 @@ def event_genres_from_own_bill(raw):
                     if triage.genre_evidence({"classification": [label]})]
         irrelevant = [label for label in unique if label not in relevant]
         unique = (relevant + irrelevant)[:20]
-    # At least one label must still pass the unchanged independent publisher
-    # genre gate; electronic-only homonyms cannot be promoted.
-    return unique, "official_artist_in_event_detail"
+    # An explicitly named metal/punk/hard-rock performer makes a mixed
+    # bill eligible even when the general event tag says Jazz, Pop, etc.
+    # Conversely, do not treat that general tag as the genre of *all* bands.
+    # When performer genre evidence is absent or irrelevant, retain the
+    # historical event-level evidence as a fallback, never as a per-band fact.
+    if triage.genre_evidence({"classification": unique}):
+        return unique, "official_artist_in_event_detail"
+    if triage.genre_evidence({"classification": event_labels}):
+        return event_labels, "official_event_card"
+    return unique or event_labels, (
+        "official_artist_in_event_detail" if unique else "official_event_card")
 
 
 def candidate_from_event_page(
