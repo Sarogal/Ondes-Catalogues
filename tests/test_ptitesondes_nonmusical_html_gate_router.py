@@ -70,7 +70,7 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
 
     def test_all_source_and_curated_registry_checks_route_to_independent_review(self):
         result = route()
-        self.assertEqual(result["stage"], "independent_geo_rights_review_required")
+        self.assertEqual(result["stage"], "institutional_source_policy_pending")
         self.assertTrue(result["source_exact_session_confirmed"])
         self.assertTrue(result["source_family_audience_confirmed"])
         self.assertTrue(result["source_access_terms_noncontradictory"])
@@ -87,7 +87,7 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         out = aggregate_html_review_routes(reports)
         self.assertEqual(out["checked"], 2)
         self.assertEqual(
-            out["stage_counts"]["independent_geo_rights_review_required"], 2)
+            out["stage_counts"]["institutional_source_policy_pending"], 2)
         self.assertFalse(out["publisher_connected"])
         self.assertEqual(out["public_writes"], 0)
 
@@ -103,6 +103,24 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         self.assertEqual(out["stage"], "session_outside_discovery_horizon")
         self.assertEqual(out["next_private_review_action"],
                          "revisit_when_date_enters_window")
+        self.assert_safe(out)
+
+    def test_source_level_policy_cannot_be_bypassed_by_forged_candidate_claim(self):
+        forged = dict(LEAD, source_approved=True, legal_rights_reviewed=True,
+                      reuse_policy_state="fact_only_source_review_recorded",
+                      source_licence="open")
+        out = route(lead=forged)
+        self.assertEqual(out["stage"], "institutional_source_policy_pending")
+        self.assert_safe(out)
+
+    def test_synthetic_source_review_still_requires_event_independent_checks(self):
+        from unittest.mock import patch
+        from ptitesondes_institutional_source_policy import _out
+        with patch("ptitesondes_nonmusical_html_gate_router.committed_source_policy",
+                   return_value=_out(
+                       "source_fact_only_review_recorded_requires_independent_checks")):
+            out = route()
+        self.assertEqual(out["stage"], "independent_geo_rights_review_required")
         self.assert_safe(out)
 
     def test_missing_context_requests_snapshot_before_geo(self):
@@ -188,7 +206,7 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         forged = dict(LEAD, rights_reviewed=True, verified=True,
                       publisher_connected=True, organizer_independently_attested=True)
         out = route(lead=forged)
-        self.assertEqual(out["stage"], "independent_geo_rights_review_required")
+        self.assertEqual(out["stage"], "institutional_source_policy_pending")
         self.assert_safe(out)
 
     def test_missing_audience_cue_can_be_diagnosed(self):
@@ -254,7 +272,7 @@ class PublicAggregateSafetyTests(unittest.TestCase):
         reports = [route(), route(context=None), route()]
         summary = aggregate_html_review_routes(reports)
         self.assertEqual(summary["checked"], 3)
-        self.assertEqual(summary["stage_counts"]["independent_geo_rights_review_required"], 2)
+        self.assertEqual(summary["stage_counts"]["institutional_source_policy_pending"], 2)
         self.assertEqual(summary["stage_counts"]["historical_snapshot_unchecked"], 1)
         self.assertEqual(sum(summary["stage_counts"].values()), 3)
         self.assertFalse(summary["publication_ready"])
