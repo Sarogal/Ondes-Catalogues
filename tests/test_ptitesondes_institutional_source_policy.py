@@ -226,6 +226,25 @@ class InstitutionalPolicyTest(unittest.TestCase):
                 page = dict(AUTHORITY, html=html)
                 self.assertFalse(corroborate_independent_authority_link(ENTRY, page))
 
+    def test_malformed_closing_tags_cannot_unhide_an_authority_link(self):
+        markup = (
+            "<html><body><main><div hidden></p>"
+            '<a href="https://mpt.montpellier.fr/maisons/albert-camus">'
+            "Do not trust</a></div></main></body></html>"
+            + (" " * 150)
+        )
+        self.assertFalse(corroborate_independent_authority_link(
+            ENTRY, dict(AUTHORITY, html=markup)))
+
+    def test_visible_link_after_hidden_sibling_is_still_legitimate(self):
+        markup = (
+            "<html><body><main><div hidden>Nothing here</div>"
+            '<a href="https://mpt.montpellier.fr/maisons/albert-camus">'
+            "Visible authority link</a></main></body></html>"
+        )
+        self.assertTrue(corroborate_independent_authority_link(
+            ENTRY, dict(AUTHORITY, html=markup)))
+
     def test_wrong_identity_redirect_or_oversized_authority_page_refused(self):
         for page in (
             dict(AUTHORITY, url="https://evil.example/authority"),
