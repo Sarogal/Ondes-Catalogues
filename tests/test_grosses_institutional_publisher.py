@@ -36,6 +36,35 @@ def proposed():
 
 
 class InstitutionalPublisherTests(unittest.TestCase):
+    def test_music_category_is_only_a_lead_not_independent_genre_proof(self):
+        from regional_festival_discovery import (
+            candidate_links, MUSIC_CATEGORY_PENDING_SIGNAL)
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index = ('<main><div>Musique / Concert '
+                 '<a href="' + detail + '">' + title + '</a></div></main>')
+        candidates = candidate_links(index, INDEX, TODAY)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
+        spec = trusted_source(INDEX, INDEX, detail, title, TODAY)
+        proposal = private_proposal(spec, ("2027-06-04", "2027-06-05"), TODAY)
+        unqualified = ("<h1>Festival des Rivages 2027</h1>"
+                       "<p>Les 4 et 5 juin 2027.</p>")
+        visited = []
+        def fetch(url, html):
+            visited.append(url)
+            return index if url == INDEX else html
+        self.assertIsNone(independently_fetch(
+            proposal, TODAY, fetch=lambda url: fetch(url, unqualified)))
+        self.assertEqual(visited, [INDEX, detail])
+        qualified = ("<h1>Festival des Rivages 2027</h1>"
+                     "<p>Les 4 et 5 juin 2027, festival de métal.</p>")
+        self.assertEqual(independently_fetch(
+            proposal, TODAY, fetch=lambda url: fetch(url, qualified)),
+            qualified)
+        self.assertIsNotNone(validate_independent(proposal, qualified, TODAY))
+        self.assertEqual(visited, [INDEX, detail, INDEX, detail])
+
     def test_rolling_year_gate_requires_explicit_current_or_two_future_years(self):
         for today, year, expected in (
             ("2026-11-20", 2026, True),

@@ -54,6 +54,33 @@ def proposal():
 
 
 class InstitutionalLinkedPublisherTests(unittest.TestCase):
+    def test_music_category_never_authorizes_genreless_external_domain(self):
+        from regional_festival_discovery import (
+            candidate_links, MUSIC_CATEGORY_PENDING_SIGNAL)
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index = ('<main><div>Musique / Concert '
+                 '<a href="' + detail + '">' + title + '</a></div></main>')
+        self.assertEqual(candidate_links(index, INDEX, TODAY)[0]["signal"],
+                         MUSIC_CATEGORY_PENDING_SIGNAL)
+        spec = {"index_url": INDEX, "index_page": INDEX,
+                "url": detail, "title": title, "year": 2027}
+        unqualified = (
+            "<h1>Festival des Rivages 2027</h1>"
+            '<p>Site officiel du Festival des Rivages 2027 : '
+            f'<a href="{SITE}">site officiel</a></p>')
+        def fetch(url, body):
+            return index if url == INDEX else body
+        self.assertIsNone(trusted_live_link(
+            spec, TODAY, lambda u: fetch(u, unqualified)))
+        qualified = (
+            '<h1>Festival des Rivages 2027</h1>'
+            '<p>Festival de punk et metal.</p>'
+            '<p>Site officiel du Festival des Rivages 2027 : '
+            f'<a href="{SITE}">site officiel</a></p>')
+        self.assertEqual(trusted_live_link(
+            spec, TODAY, lambda u: fetch(u, qualified)), SITE)
+
     def test_new_festival_without_genre_on_index_requires_independent_detail_genre(self):
         from regional_festival_discovery import candidate_links
         title = "Festival des Rivages 2027"
