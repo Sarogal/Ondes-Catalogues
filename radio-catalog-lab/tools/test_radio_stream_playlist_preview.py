@@ -70,7 +70,7 @@ class RadioPlaylistPreviewTests(unittest.TestCase):
     def test_empty_or_unrecognized_playlist_not_followed(self):
         for data, mime, path, expected in (
             (b"#EXTM3U", "audio/x-mpegurl", BASE, "playlist_no_target"),
-            (b"<html>not a playlist</html>", "text/html", BASE, "playlist_unknown_format"),
+            (b"<html>not a playlist</html>", "text/html", BASE, "playlist_non_manifest_content"),
             (b"[playlist]\nnumberofentries=1", "audio/x-scpls",
              "https://radio.example.org/listen.pls", "playlist_no_target"),
         ):
