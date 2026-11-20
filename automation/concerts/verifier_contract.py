@@ -31,6 +31,9 @@ VERIFIER_SPECS = MappingProxyType({
     # Same first-party host allowlist, but with complete visible first-party
     # performer+genre headings and a second independent official re-fetch.
     "agenda_officiel_visible_bill": VerifierSpec("generic_visible_bill", True),
+    # One source-wide official HTML paragraph-bill verifier (not per concert).
+    "agenda_officiel_astrolabe_detail_review": VerifierSpec(
+        "official_paragraph_bill", True),
     "agenda_officiel_molotov_genre": VerifierSpec("molotov_official", False),
     "agenda_officiel_ferrailleur_genre": VerifierSpec("ferrailleur_official", True),
     "agenda_officiel_backstage_detail": VerifierSpec("backstage_recheck", False),
