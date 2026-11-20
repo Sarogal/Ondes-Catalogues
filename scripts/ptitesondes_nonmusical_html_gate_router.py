@@ -8,7 +8,7 @@ rights, register a source or emit an event into a queue.
 
 The existing music/OpenAgenda publisher remains entirely unchanged.
 """
-from datetime import date
+from datetime import date, timedelta
 from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
 from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
 from ptitesondes_html_first_party_session_proof import corroborate_first_party_session
@@ -19,6 +19,7 @@ from ptitesondes_html_registry_history_triage import triage_independent_context
 SCHEMA = "ptitesondes.nonmusical_html_gate_router_readonly.v1"
 STAGES = frozenset({
     "session_source_unverified", "nonmusical_scope_unrecognized",
+    "session_already_expired", "session_outside_discovery_horizon",
     "source_visible_terms_over_limit",
     "family_audience_unconfirmed", "access_terms_unreadable",
     "access_terms_conflicting", "source_facts_not_structured",
@@ -29,6 +30,8 @@ STAGES = frozenset({
 })
 ACTIONS = {
     "session_source_unverified": "recheck_exact_pinned_session",
+    "session_already_expired": "archive_expired_session_no_publish",
+    "session_outside_discovery_horizon": "revisit_when_date_enters_window",
     "nonmusical_scope_unrecognized": "review_family_taxonomy",
     "source_visible_terms_over_limit": "recheck_bounded_visible_source_terms",
     "family_audience_unconfirmed": "check_official_audience",
@@ -103,6 +106,18 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
     if corroboration.get("visible_exact_session") is not True:
         return _result("session_source_unverified")
     exact = True
+    # A historic HTML page can still show a *correct* dated session. The
+    # current intake must not pass expired sessions into further review.
+    try:
+        d = date.fromisoformat(lead["date_start"])
+        if d.isoformat() != lead["date_start"] or lead.get("date_end") != d.isoformat():
+            raise ValueError("non_exact_single_day")
+    except (TypeError, ValueError, KeyError):
+        return _result("session_source_unverified")
+    if d < today:
+        return _result("session_already_expired", child_session=exact)
+    if d > today + timedelta(days=184):
+        return _result("session_outside_discovery_horizon", child_session=exact)
     if (not isinstance(lead, dict)
             or not isinstance(lead.get("category"), str)
             or lead.get("category") not in FAMILY_TYPES
