@@ -417,8 +417,11 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         calls = []
         def request(url):
             calls.append(url)
+            target = ("https://radio.example.org/another.m3u"
+                      if url.endswith("listen.m3u")
+                      else "https://radio.example.org/final.mp3")
             return sample(mime="audio/x-mpegurl",
-                          data=b"#EXTM3U\nhttps://radio.example.org/another.m3u\n")
+                          data=("#EXTM3U\n" + target + "\n").encode())
         result = probe_url("https://radio.example.org/listen.m3u", request)
         self.assertEqual(result["verdict"], "playlist_pending")
         self.assertEqual(result["reason"], "playlist_chain_limit")
