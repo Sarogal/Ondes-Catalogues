@@ -8,7 +8,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_ods_direct_mirror_absence_audit import (
-    audit_missing_ods_direct, _safe_row, _exact_event_claim, SCHEMA,
+    audit_missing_ods_direct, _safe_row, _exact_event_claim, _source, SCHEMA,
 )
 
 TODAY = date(2026, 11, 20)
@@ -89,6 +89,13 @@ class MirrorAbsencePrivateEvidenceTests(unittest.TestCase):
                 self.assertEqual(out["private_rows"], [])
                 self.assertEqual(out["report"]["mirror_uid_absent"], 0)
                 self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 0)
+
+    def test_arbitrary_unusual_venues_remain_eligible_if_present(self):
+        unusual = dict(lead(), city="Paris", venue="Place de la Tour Eiffel")
+        self.assertIsNotNone(_source(unusual))
+        for key in ("venue", "city"):
+            bad = dict(unusual, **{key: ""})
+            self.assertIsNone(_source(bad))
 
     def test_mismatch_not_claimed_as_verified(self):
         for patch in (
