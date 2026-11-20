@@ -34,6 +34,8 @@ on:
       - 'scripts/ptitesondes_generic_venue_official_geocode.py'
       - 'scripts/ptitesondes_shared_venue_location_evidence.py'
       - 'tests/test_ptitesondes_shared_venue_location_evidence.py'
+      - 'scripts/ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'tests/test_ptitesondes_unnumbered_venue_osm_official_hint.py'
       - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
@@ -81,6 +83,8 @@ on:
       - 'scripts/ptitesondes_generic_venue_official_geocode.py'
       - 'scripts/ptitesondes_shared_venue_location_evidence.py'
       - 'tests/test_ptitesondes_shared_venue_location_evidence.py'
+      - 'scripts/ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'tests/test_ptitesondes_unnumbered_venue_osm_official_hint.py'
       - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
@@ -157,6 +161,8 @@ jobs:
             -p 'test_ptitesondes_generic_venue_official_geocode.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_shared_venue_location_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_unnumbered_venue_osm_official_hint.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
