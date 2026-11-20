@@ -43,8 +43,13 @@ n'est signé ou ajouté par cette PR.
    disponibles pour revue.
 
 ## Champs privés
-`venueKind = independent-event-site-v1`, `locationKind` parmi
-`public-square`, `street`, `park`, `temporary-stage`, `outdoor-site`.
+`venueKind = independent-event-site-v1`. `locationKind` décrit
+librement le type d'emplacement physique en un identifiant court
+(`public-square`, `street`, `park`, `temporary-stage`,
+`outdoor-site`, `quarry`, `rooftop`, etc.). **Cette étiquette ne crée
+aucune confiance** et ne constitue pas une liste limitative. Les valeurs
+virtuelles ou non localisées (`online`, `unknown`, `city-centre`...) sont
+refusées. La preuve géographique nominative reste obligatoire.
 
 `eventBinding` contient l'ID, la date, l'URL officielle du concert,
 `authoritySourceUrl` (source revue) et `authorityArtistId`.
