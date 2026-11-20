@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
 from ptitesondes_ods_oa_source_binding import (
     ods_source_parts, ods_immutable_source_match,
+    ods_origin_agenda_uid, independently_confirm_ods_agenda,
 )
 from ptitesondes_municipal_official_page_reader import MunicipalOfficialPageReader
 
@@ -147,6 +148,85 @@ class ODSOAVenueBindingTests(unittest.TestCase):
             OFFICIAL, "<html><p>Lieu vérifiable</p></html>"))
         self.assertEqual(site.call_count, 2)
         self.assertFalse(hasattr(reader, "publisher"))
+
+    def test_dynamic_unlisted_agenda_confirmed_by_direct_oa(self):
+        agenda_id = 887766
+        row = {**ods(), "originagenda_uid": agenda_id}
+        official_html = "<html><h1>Maison des enfants</h1></html>"
+        direct_agenda = Mock(return_value={
+            "uid": agenda_id, "slug": SLUG})
+        direct_event = Mock(return_value=event())
+        website = Mock(return_value=official_html)
+        # EMPTY curated list: discovery must not depend on exhaustive
+        # pre-registration of every agenda on French territory.
+        reader = MunicipalOfficialPageReader(
+            [lead()], [], "private-test-read-only-key",
+            agenda_reader=direct_agenda, event_reader=direct_event,
+            directory_reader=lambda city:dila(), html_reader=website,
+            ods_reader=lambda uid:row)
+        self.assertEqual(reader.official_page_get(group()),
+                         (OFFICIAL, official_html))
+        direct_agenda.assert_called_once_with(agenda_id,
+                                              "private-test-read-only-key")
+        direct_event.assert_called_once_with(
+            agenda_id, UID, "private-test-read-only-key")
+        website.assert_called_once_with(OFFICIAL)
+        self.assertEqual(reader.dynamic_agenda_slug_map, {SLUG: agenda_id})
+
+    def test_unlisted_agenda_missing_or_invalid_uid_blocks(self):
+        for bad_id in (None, "not-an-id", 0, False, 10**15):
+            row = {**ods(), "originagenda_uid": bad_id}
+            direct_agenda = Mock(return_value={"uid": 887766, "slug": SLUG})
+            official = Mock(return_value="unreachable")
+            reader = MunicipalOfficialPageReader(
+                [lead()], [], "private-test-read-only-key",
+                agenda_reader=direct_agenda, event_reader=lambda *a:event(),
+                directory_reader=lambda city:dila(), html_reader=official,
+                ods_reader=lambda uid:row)
+            with self.subTest(uid_type=str(bad_id)):
+                self.assertEqual(reader.official_page_get(group()),
+                                 (None, None))
+                direct_agenda.assert_not_called()
+                official.assert_not_called()
+
+    def test_unlisted_agenda_wrong_direct_slug_or_uid_blocks(self):
+        agenda_id = 887766
+        for wrong in ({"uid": agenda_id, "slug": "different-calendar"},
+                      {"uid": 123, "slug": SLUG}):
+            direct = Mock(return_value=wrong)
+            official = Mock(return_value="unreachable")
+            reader = MunicipalOfficialPageReader(
+                [lead()], [], "private-test-read-only-key",
+                agenda_reader=direct, event_reader=lambda *a:event(),
+                directory_reader=lambda city:dila(), html_reader=official,
+                ods_reader=lambda uid:{**ods(), "originagenda_uid":agenda_id})
+            self.assertEqual(reader.official_page_get(group()),
+                             (None, None))
+            official.assert_not_called()
+
+    def test_curated_agenda_identity_cannot_be_overridden_by_ods(self):
+        official = Mock(return_value="unreachable")
+        reader = MunicipalOfficialPageReader(
+            [lead()], [994311], "private-test-read-only-key",
+            agenda_reader=lambda aid, key:{"uid":aid, "slug":SLUG},
+            event_reader=lambda *a:event(),
+            directory_reader=lambda city:dila(),
+            html_reader=official,
+            ods_reader=lambda uid:{**ods(), "originagenda_uid": 887766})
+        self.assertEqual(reader.official_page_get(group()), (None, None))
+        official.assert_not_called()
+
+    def test_direct_agenda_uid_corroboration_is_not_ownership_proof(self):
+        row={**ods(), "originagenda_uid":"887766"}
+        self.assertEqual(ods_origin_agenda_uid(row),887766)
+        self.assertEqual(independently_confirm_ods_agenda(
+            row, SLUG,
+            lambda uid,key: {"uid":uid, "slug":SLUG},
+            "private-test-read-only-key"),887766)
+        self.assertIsNone(independently_confirm_ods_agenda(
+            row, SLUG,
+            lambda uid,key: {"uid":uid, "slug":"other-agenda"},
+            "private-test-read-only-key"))
 
     def test_wrong_ods_record_blocks_oa_and_official_read(self):
         oda = Mock(return_value={**ods(), "uid": 8})
