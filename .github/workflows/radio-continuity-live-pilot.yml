@@ -88,8 +88,9 @@ jobs:
           assert ledger['publicationAllowed'] is False
           assert ledger['technicallyQualifiedCount'] == 0
           assert len(ledger['records']) == data['checkedCount']
+          assert sum(bool(x['decodedPcmDates']) for x in ledger['records']) == data['decodedPcmEvidenceCount']
           assert all(x['technicalQualified'] is False and x['publicationAllowed'] is False for x in ledger['records'])
-          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'decoder_states=', dict(decoder_states), 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'approved=0')
+          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'decoder_states=', dict(decoder_states), 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'stored_first_day_decodes=', sum(bool(x['decodedPcmDates']) for x in ledger['records']), 'approved=0')
           PY
       - name: Upload technical evidence only (no stream URLs or bytes)
         uses: actions/upload-artifact@v4
