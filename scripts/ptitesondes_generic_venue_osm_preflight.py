@@ -330,6 +330,24 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
             result["unnumbered_named_venue_hint"] = (
                 unnumbered_named_venue_hint(
                     group, center, response, directory, url, html))
+            # Extra private-only corroboration: a DILA-authenticated page
+            # with explicit official coordinates + unique named OSM geometry
+            # can prove a physical place WITHOUT a postal street number.
+            # The source centre is an index hint, never the published point.
+            if shared_proof_day is not None:
+                from ptitesondes_unnumbered_official_geo_proof import (
+                    mint_private_unnumbered_location_proof,
+                )
+                from ptitesondes_shared_venue_location_evidence import (
+                    location_from_proof,
+                )
+                witness = mint_private_unnumbered_location_proof(
+                    group, directory, url, html, response, center,
+                    shared_proof_day)
+                result["shared_location_proof_private_review"] = (
+                    location_from_proof(
+                        witness, group["city"], group["venue"],
+                        shared_proof_day, source_point=center) is not None)
         except (OSError, ValueError, KeyError, TypeError,
                 TimeoutError, UnicodeError):
             result["unnumbered_named_venue_hint"] = {

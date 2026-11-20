@@ -24,14 +24,17 @@ class VenueLocationProof:
     __slots__ = ("city", "venue", "lat", "lng", "checked_on",
                  "official_page", "method", "_seal")
 
-    def __init__(self, city, venue, lat, lng, checked_on, official_page, seal):
-        if seal is not _SEAL:
+    def __init__(self, city, venue, lat, lng, checked_on, official_page, seal,
+                 method="dila_official_page_plus_exact_ban"):
+        if (seal is not _SEAL or method not in (
+                "dila_official_page_plus_exact_ban",
+                "dila_official_geo_plus_named_osm")):
             raise ValueError("venue_proof_must_be_minted_by_verifier")
         self.city, self.venue = city, venue
         self.lat, self.lng = lat, lng
         self.checked_on = checked_on
         self.official_page = official_page
-        self.method = "dila_official_page_plus_exact_ban"
+        self.method = method
         self._seal = seal
 
     def __setattr__(self, name, value):
@@ -144,7 +147,10 @@ def location_from_proof(proof, city, venue, checked_on, source_point=None):
     return {"city": proof.city, "aliases": [proof.venue],
             "lat": proof.lat, "lng": proof.lng,
             "official": proof.official_page,
-            "geo_source": "IGN/BAN verified exact housenumber"}
+            "geo_source": (
+                "Municipal official coordinates + named OSM"
+                if proof.method == "dila_official_geo_plus_named_osm"
+                else "IGN/BAN verified exact housenumber")}
 
 
 __all__ = ["VenueLocationProof", "mint_private_location_proof",
