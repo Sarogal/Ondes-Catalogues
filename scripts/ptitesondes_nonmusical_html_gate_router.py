@@ -99,6 +99,7 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
         return _result("session_source_unverified")
     exact = True
     if (not isinstance(lead, dict)
+            or not isinstance(lead.get("category"), str)
             or lead.get("category") not in FAMILY_TYPES
             or lead.get("category") in LEGACY_MUSICAL):
         return _result("nonmusical_scope_unrecognized", child_session=exact)
