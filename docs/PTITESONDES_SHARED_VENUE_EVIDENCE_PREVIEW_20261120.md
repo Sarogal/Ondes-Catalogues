@@ -225,3 +225,45 @@ Pour exploiter les résultats de façon fiable, distinguer :
 
 Ne pas additionner plusieurs rapports issus de backlogs différents,
 ni prétendre que les 138 séances peuvent toutes être publiées.
+
+
+## Lieux sans adresse postale numérotée — piste générique privée
+
+Les parcs, places publiques, jardins, esplanades et autres lieux
+temporaires n'ont pas toujours de numéro de rue. Le vérificateur
+`extract_official_address()` ne doit **pas inventer de numéro** ni
+substituer l'adresse de la mairie à celle de la sortie.
+
+Le module `ptitesondes_unnumbered_venue_osm_official_hint.py` fournit
+un contrôle **en lecture seule, uniquement pour la recherche** :
+1. obtenir un point OA/ODS lié à l'UID et à une commune (indice non fiable) ;
+2. identifier un **seul objet OSM au nom exact** à 65 m maximum,
+   avec information contradictoire de commune écartée ;
+3. obtenir une **page précise** (pas l'accueil générique d'une mairie)
+   sur le domaine municipal corroboré indépendamment par DILA ;
+4. retrouver le **nom exact du lieu** dans une structure `Place`
+   unique ou un H1 visible unique, sans autre lieu structuré contradictoire ;
+5. comparer toute coordonnée officiellement déclarée avec l'objet OSM
+   sans exiger d'adresse numérotée.
+
+Il n'y a **pas de liste fermée de types de lieux** : un OSM
+`leisure=park`, `highway=pedestrian` ou un autre objet nommé peut
+fournir une piste. Un OSM sans étiquette de commune reste une piste
+avec `city_osm_tag_confirmed=false`, pas une preuve.
+
+Le rapport privé distingue :
+- `unnumbered_named_venue_private_hints` : lieux ayant une piste
+  à corroborer ;
+- `candidate_sessions_with_unnumbered_private_hint` : séances UID+date
+  concernées ;
+- `private_reusable_location_proofs` : **inchangé**, ces indices ne
+  créent aucune preuve réutilisable, et n'ouvrent pas le préfiltre
+  `permitted(evidence=...)`.
+
+Les drapeaux `gps_verified`, `official_venue_verified`,
+`event_sessions_verified` et `publication_ready` restent tous
+à `false`, avec `public_writes=0`.
+
+**Un contrôle indépendant de géographie est encore nécessaire**
+avant qu'un tel lieu puisse être approuvé. Les horaires, âges, droits,
+organisateurs, dates et doublons de chaque séance restent distincts.
