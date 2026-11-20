@@ -34,6 +34,14 @@ class VenueLocationProof:
         self.method = "dila_official_page_plus_exact_ban"
         self._seal = seal
 
+    def __setattr__(self, name, value):
+        if hasattr(self, "_seal"):
+            raise AttributeError("venue_proof_is_immutable")
+        object.__setattr__(self, name, value)
+
+    def __delattr__(self, name):
+        raise AttributeError("venue_proof_is_immutable")
+
 
 def _coordinates(value):
     if (not isinstance(value, (list, tuple)) or len(value) != 2
