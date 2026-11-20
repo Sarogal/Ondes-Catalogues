@@ -313,6 +313,35 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
             result["official_page"] = official_venue_page_proof(
                 group, independent["address_candidate_private"],
                 independent, page_url, html, hosts)
+    # A park, public square or other venue without a numbered address may
+    # still merit private research. Require one named OSM geometry and a
+    # DILA-authenticated *specific* municipal venue page. The correlation
+    # is NEVER a certified venue point or publisher admission.
+    if (len(evidence) == 1 and official_page_get is not None
+            and dila_directory_get is not None
+            and not result.get("independent_address", {}).get(
+                "address_correlated", False)):
+        from ptitesondes_unnumbered_venue_osm_official_hint import (
+            unnumbered_named_venue_hint,
+        )
+        try:
+            directory = dila_directory_get(group["city"])
+            url, html = official_page_get(group)
+            result["unnumbered_named_venue_hint"] = (
+                unnumbered_named_venue_hint(
+                    group, center, response, directory, url, html))
+        except (OSError, ValueError, KeyError, TypeError,
+                TimeoutError, UnicodeError):
+            result["unnumbered_named_venue_hint"] = {
+                "status": "municipal_source_unavailable",
+                "official_name_correlated": False,
+                "osm_geometry_correlated": False,
+                "gps_verified": False,
+                "official_venue_verified": False,
+                "event_sessions_verified": False,
+                "publication_ready": False,
+                "public_writes": 0,
+            }
     return result
 
 
@@ -355,6 +384,11 @@ def audit(backlog, today, record_fetch=api_record,
     ]
     reusable = [x for x in checked
                 if x.get("shared_location_proof_private_review") is True]
+    unnumbered = [x for x in checked
+                  if x.get("unnumbered_named_venue_hint", {}).get(
+                      "official_name_correlated") is True
+                  and x["unnumbered_named_venue_hint"].get(
+                      "osm_geometry_correlated") is True]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
         "mode": "private_osm_hints_no_publisher_access",
@@ -388,6 +422,9 @@ def audit(backlog, today, record_fetch=api_record,
             x["lead_count"] for x in reusable),
         "candidate_sessions_with_private_reusable_proof": sum(
             x["unique_candidate_sessions"] for x in reusable),
+        "unnumbered_named_venue_private_hints": len(unnumbered),
+        "candidate_sessions_with_unnumbered_private_hint": sum(
+            x["unique_candidate_sessions"] for x in unnumbered),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
