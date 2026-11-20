@@ -381,3 +381,85 @@ la page initiale et laisse le dossier non homologué.
 **Aucune vérification réelle des pages des 60 lieux** n'est revendiquée
 à ce stade ; les cas de navigation valides ont des tests hors réseau,
 et l'option réseau demeure inactive dans les workflows du projet.
+
+## Nouveau lot : pont OpenDataSoft UID et voie officielle sans OSM
+
+Le backlog du 20 novembre contient **149 dossiers** `venue_gps_unverified`,
+dont **94 issus d'OpenDataSoft** répartis sur 58 groupes géographiques,
+et **55 issus directement d'OpenAgenda**. Le premier lecteur des sites
+municipaux ne considérait que la seconde catégorie : cela constituait
+une vraie limite de couverture.
+
+Le module `ptitesondes_ods_oa_source_binding.py` traite les URL
+OpenAgenda « humaines » (sans préfixe UID). Il ne leur attribue jamais
+un UID par déduction : il exige une **lecture séparée ODS par UID immuable**,
+une égalité exacte entre l'URL d'origine et `canonicalurl`, une
+coïncidence exacte du nom du lieu et de la commune, un statut programmé
+(`status` ODS fourni sous forme JSON avec `id=1`), un pays français
+et des coordonnées source finies. Le lecteur officiel exige ensuite
+une **deuxième lecture directe OpenAgenda v2** de l'UID sur un agenda
+figurant dans le registre de configuration privée.
+
+Sur les 94 dossiers ODS bloqués par lieu/GPS, **92 URL** suivent le
+format humain strict attendu par ce lecteur. Un échantillon en lecture
+réelle de **10 fiches distinctes parmi les groupes bloqués** a donné
+**10/10 UID + URL canonique + commune + nom de lieu + statut + pays
+et coordonnées source concordants**. Ces 10 résultats sont des
+**liaisons de source**, pas une preuve géographique indépendante.
+
+Si `location.website` est absent dans OpenAgenda, le lecteur peut
+désormais rechercher **une seule page au nom exact du lieu** sur
+l'accueil du site de mairie authentifié indépendamment par DILA.
+Un site auto-déclaré mais **contradictoire** ne peut jamais être
+silencieusement remplacé par cette recherche municipale.
+
+### Deux voies de preuves géographiques, sans aucune homologation automatique
+
+1. **OSM → adresse explicite → IGN/BAN → page officielle** :
+   objet OSM nommé au lieu exact, adresse et coordonnées cohérentes
+   avec OpenAgenda/ODS, page sur hôte approuvé par DILA.
+2. **Page officielle municipale → adresse explicite → IGN/BAN** :
+   voie **indépendante d'OSM** ajoutée dans
+   `ptitesondes_generic_venue_official_geocode.py`. Elle ne repose
+   que sur un `schema.org/Place` au nom exact et à l'adresse complète,
+   ou sur **un seul H1 visible et un seul bloc HTML `<address>`**
+   contenant une adresse postale explicitement complète.
+   La réponse IGN/BAN doit être un unique numéro de rue, score ≥ 0,95,
+   même adresse et même commune, situé à 65 mètres maximum du centre
+   UID ODS/OA et des coordonnées officielles si elles sont publiées.
+
+Les informations `schema.org` contradictoires ne peuvent pas être
+neutralisées par une page HTML visuelle ; une adresse cachée, un pied
+de page municipal, une ambiguïté, un numéro de rue différent ou une
+erreur réseau font échouer la vérification.
+
+### Exécution isolée, après validation technique
+
+```bash
+# Utiliser un runner de prévisualisation disposant du checkout privé
+# src/ de Sarogal/PtitesOndes:main (sources.json), du backlog privé
+# state/ et de la clé OPENAGENDA_READ_KEY en secret d'environnement.
+python public/scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog state/automation-intake/ptitesondes/backlog.json \
+  --private-source-config src/automation/sources.json \
+  --output-private-report "${RUNNER_TEMP}/ptitesondes-private-venue-geocode.json" \
+  --day 2026-11-20 --live-probe --official-municipal-pages \
+  --official-address-geocode
+```
+
+Cette commande ne doit **pas** être incluse dans les workflows de
+production avant arbitrage. Elle exige l'accord explicite de lecture
+réseau, utilise des chemins de rapport privés, n'effectue aucun
+`git push`, n'active aucun cron, ne modifie ni le registre de lieux
+ni les fiches du catalogue, et n'approuve aucune séance.
+
+En cas de géocodage indépendant positif, le rapport sépare
+`independent_official_ban_address_matches` et
+`leads_with_official_ban_geo_private_review` des champs
+`verified_venue_leads=0`, `publication_ready=false`,
+`public_writes=0` qui restent verrouillés.
+
+**Attention :** ces corrections ont été validées par simulation hors
+réseau, mais aucune lecture complète du vrai backlog sur un runner
+privé avec accès OA+DILA+BAN n'a été effectuée. Aucune venue ni sortie
+supplémentaire homologuée ou publiée n'est revendiquée.
