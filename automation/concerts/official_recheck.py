@@ -402,7 +402,7 @@ def scheduled_review_cohort(eligible, today, scan_slot, limit):
     """
     if (not isinstance(today, dt.date) or type(scan_slot) is not int
             or scan_slot not in (0, 1, 2) or type(limit) is not int
-            or not 1 <= limit <= 24):
+            or not 1 <= limit <= 40):
         raise ValueError("Invalid bounded recheck cohort arguments")
     n = len(eligible)
     if n <= limit:
