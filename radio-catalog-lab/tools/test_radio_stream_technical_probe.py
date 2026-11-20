@@ -92,16 +92,26 @@ class TechnicalStreamProbeTests(unittest.TestCase):
             b"ID3\x04\x00\x00" + b"\x00"*32: "mp3_id3",
             b"\xff\xfb\x90\x64" + b"\x00"*30: "mpeg_or_aac_frame",
             b"\xff\xf1\x50\x80" + b"\x00"*30: "mpeg_or_aac_frame",
-            b"OggS\x00\x02" + b"\x00"*32: "ogg",
+            b"OggS\x00\x02" + b"\x00"*20 + b"OpusHead" + b"\x00"*12: "ogg_audio_codec",
             b"fLaC" + b"\x00"*32: "flac",
             b"RIFF\x00\x00\x00\x00WAVEfmt ": "wav",
-            b"\x1a\x45\xdf\xa3" + b"\x00"*32: "webm",
-            b"\x00\x00\x00\x18ftypisom": "mp4_container",
+
         }
         for payload, expected in formats.items():
             with self.subTest(expected=expected):
                 self.assertEqual(classify_sample(payload, "application/octet-stream"),
                                  ("audio_sample_ok", expected))
+
+    def test_container_signatures_alone_do_not_prove_audio(self):
+        for payload, expected in (
+            (b"OggS\x00\x02" + b"\x00" * 64, "ogg_codec_unconfirmed"),
+            (b"\x1a\x45\xdf\xa3" + b"\x00"*64, "webm_codec_unconfirmed"),
+            (b"\x00\x00\x00\x18ftypisom", "mp4_codec_unconfirmed"),
+        ):
+            with self.subTest(expected=expected):
+                self.assertEqual(
+                    classify_sample(payload, "application/octet-stream"),
+                    ("container_pending", expected))
 
     def test_playlist_urls_are_not_blindly_followed_or_approved(self):
         for data, mime in (
