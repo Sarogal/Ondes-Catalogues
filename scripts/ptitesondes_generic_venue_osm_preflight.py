@@ -184,7 +184,13 @@ def osm_hints(group, center, response):
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                   ign_fetch=None, official_page_get=None,
                   approved_official_hosts=(), dila_directory_get=None,
-                  official_geocode=False):
+                  official_geocode=False, source_record_from_reader=None):
+    # Direct OA-v2 UID data may supply a *search hint*, avoiding an ODS-only
+    # dependency. This is NOT independent GPS proof or publisher admission.
+    if source_record_from_reader is not None:
+        if not callable(source_record_from_reader):
+            raise ValueError("invalid_private_source_callback")
+        record_fetch = lambda uid: source_record_from_reader(group, uid)
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
@@ -274,7 +280,8 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
 def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
           official_page_get=None, approved_official_hosts=(),
-          dila_directory_get=None, official_geocode=False):
+          dila_directory_get=None, official_geocode=False,
+          source_record_from_reader=None):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
@@ -282,7 +289,8 @@ def audit(backlog, today, record_fetch=api_record,
         result = (inspect_group(group, record_fetch, osm_fetch,
                                 ign_fetch, official_page_get,
                                 approved_official_hosts, dila_directory_get,
-                                official_geocode)
+                                official_geocode,
+                                source_record_from_reader)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
@@ -380,6 +388,7 @@ def main():
             callbacks = {
                 "official_page_get": reader.official_page_get,
                 "dila_directory_get": reader.dila_directory_get,
+                "source_record_from_reader": reader.source_record_for_group,
             }
         report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
                        official_geocode=args.official_address_geocode,
