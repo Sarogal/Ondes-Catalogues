@@ -58,16 +58,20 @@ Le workflow dispose d'une entrée manuelle explicite `run_stream_probes=true` : 
 
 ## Essai réel isolé : ICY, M3U, PLS et limites de confirmation (20/11)
 
-Les tests ont été étendus à **114 contrôles Python hors réseau** dans [CI #44689331104](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44689331104), sans changement du catalogue en exploitation.
+Les tests ont été étendus à **117 contrôles Python sans accès aux radios externes** dans [CI #44690187807](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44690187807) : 114 tests unitaires/synthétiques et **3 tests de transport utilisant un serveur de radio fictif local**. Aucun catalogue en exploitation n'a été modifié.
 
 - `radio_stream_playlist_preview.py` lit des playlists **M3U et PLS** de taille limitée, identifie une URL unique et confie sa validation au transport épinglé DNS/HTTPS avant tout nouvel accès. Les playlists à plusieurs URL, imbriquées ou pointant vers une adresse privée restent en attente ou sont bloquées ; une seule URL de playlist supplémentaire est autorisée.
 - `IcyCompatibleHTTPResponse` accepte une réponse Icecast historique `ICY 200 OK` en conservant la validation de statut HTTP. Les tests couvrent les cas malformés.
 - Les manifestes **HLS** sont reconnus mais **pas suivis** vers leurs segments ou variantes. Une playlist HLS accessible ne constitue ni une preuve audio, ni une qualification technique finale.
 - La limite reste fixée à **512 octets maximum par réponse** et 3 sauts maximum. Les preuves audio et la notion de « radio en direct » nécessitent encore une validation sur durée, sur plusieurs exécutions et une reconnaissance de codecs plus complète.
 
-Exception d'essai **ponctuel, isolé et non récurrent** : le workflow `.github/workflows/radio-catalog-live-probe-smoke-20261120.yml` a été ajouté sur cette branche de prévalidation, sans cron, avec **`contents: read`**, déclenché uniquement lorsque son propre fichier de workflow change. [Exécution #44689500394](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44689500394) **SUCCESS** : 77 UUID repérés dans quatre recherches limitées, 2 URL de diffusion effectivement sondées, **0 flux techniquement confirmé**. Verdicts : 1 `audio_mime_only`, 1 `not_confirmed_audio`. Aucun statut « audio confirmé » ou publication n'a été émis. Seul le rapport technique dépourvu d'URL et d'octets audio a été conservé.
+Exception d'essai **ponctuel, isolé et non récurrent** : le workflow `.github/workflows/radio-catalog-live-probe-smoke-20261120.yml` a été **ajouté temporairement puis supprimé de la branche après exécution**, sans cron, avec **`contents: read`**. Son rapport de run reste disponible sur GitHub. [Exécution #44689500394](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44689500394) **SUCCESS** : 77 UUID repérés dans quatre recherches limitées, 2 URL de diffusion effectivement sondées, **0 flux techniquement confirmé**. Verdicts : 1 `audio_mime_only`, 1 `not_confirmed_audio`. Aucun statut « audio confirmé » ou publication n'a été émis. Seul le rapport technique dépourvu d'URL et d'octets audio a été conservé.
 
-Le workflow quotidien `radio-catalog-daily-discovery.yml` conserve sa règle **aucun flux sondé automatiquement sur push ou cron**, sauf déclenchement manuel explicite `run_stream_probes=true`. Cette exception de recette ponctuelle ne doit pas être réutilisée comme mécanisme de surveillance ni fusionnée par inadvertance dans `main`. Le programme quotidien demeure inactif sur cette branche non par défaut.
+Le workflow quotidien `radio-catalog-daily-discovery.yml` conserve sa règle **aucun flux sondé automatiquement sur push ou cron**, sauf déclenchement manuel explicite `run_stream_probes=true`. Le workflow temporaire de recette a été retiré : aucune sonde de flux ne sera automatiquement exécutée via cette exception après fusion. Seule l'entrée manuelle explicitement contrôlée demeure sur le workflow principal. Le programme quotidien demeure inactif sur cette branche non par défaut.
+
+### Recette locale intégrée (sans internet)
+
+`test_radio_stream_socket_integration.py` utilise un serveur TCP de test attaché à `127.0.0.1`, uniquement dans la suite de tests. Le résolveur renvoie une adresse publique **simulée**, puis un faux connecteur redirige localement les sockets de ce **test uniquement** ; la sécurité réseau du vrai vérificateur continue à rejeter les adresses privées. Trois scénarios vérifient le code de transport de bout en bout : réponse `ICY 200 OK` avec octets MP3, M3U à URL unique puis ICY, et manifeste HLS ne déclenchant aucun accès à ses segments.
 
 ## Validation avant branche principale
 
