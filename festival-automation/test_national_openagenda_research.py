@@ -103,7 +103,9 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         forged[STATE_KEY]["leads"][0]["year_source_review_only"] = "TITLE"
         self.assertEqual(validated_leads(forged, DAY), [])
         mismatched = dict(item, firstdate_begin="2028-05-23T18:00:00+02:00")
-        self.assertEqual(candidate(mismatched, DAY)["edition_year_hint"], 2028)
+        self.assertIsNone(candidate(mismatched, DAY))
+        both_2028 = dict(mismatched, lastdate_begin="2028-05-24T20:00:00+02:00")
+        self.assertEqual(candidate(both_2028, DAY)["edition_year_hint"], 2028)
 
     def test_overseas_eligible_as_research_not_geographic_proof(self):
         for country, region in [
