@@ -10,6 +10,7 @@ from collections import defaultdict
 from datetime import date
 import json
 import math
+import os
 from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
@@ -296,6 +297,8 @@ def main():
     parser.add_argument("--day", type=date.fromisoformat,
                         default=date.today())
     parser.add_argument("--live-probe", action="store_true")
+    parser.add_argument("--official-municipal-pages", action="store_true")
+    parser.add_argument("--private-source-config", type=Path)
     args = parser.parse_args()
     # Block BOTH private input and output paths inside the public checkout.
     # A future workflow must explicitly use a private runner workspace and
@@ -304,12 +307,40 @@ def main():
     if (args.output_private_report.resolve().is_relative_to(repository)
             or args.backlog.resolve().is_relative_to(repository)):
         raise ValueError("private_backlog_and_report_outside_public_repo_required")
+    if (args.official_municipal_pages and
+            (not args.live_probe or args.private_source_config is None)):
+        raise ValueError("private_municipal_preview_requires_explicit_opt_in")
+    if (args.private_source_config is not None
+            and args.private_source_config.resolve().is_relative_to(repository)):
+        raise ValueError("source_config_outside_public_repo_required")
     if args.backlog.stat().st_size > 1_000_000:
         raise ValueError("oversized_private_backlog")
     backlog = json.loads(args.backlog.read_text(encoding="utf-8"))
     if args.live_probe:
         from ptitesondes_generic_venue_ign_corroboration import fetch_ign
-        report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign)
+        callbacks = {}
+        if args.official_municipal_pages:
+            if (not args.private_source_config.is_file()
+                    or args.private_source_config.is_symlink()
+                    or args.private_source_config.stat().st_size > 60_000):
+                raise ValueError("private_source_config_invalid")
+            cfg = json.loads(args.private_source_config.read_text(encoding="utf-8"))
+            if (not isinstance(cfg, dict)
+                    or cfg.get("schema") != "ptitesondes.sources.v1"
+                    or not isinstance(cfg.get("openagenda_agendas"), list)):
+                raise ValueError("private_source_config_schema_invalid")
+            from ptitesondes_municipal_official_page_reader import (
+                MunicipalOfficialPageReader,
+            )
+            key = os.environ.get("OPENAGENDA_READ_KEY", "")
+            reader = MunicipalOfficialPageReader(
+                backlog, cfg["openagenda_agendas"], key)
+            callbacks = {
+                "official_page_get": reader.official_page_get,
+                "dila_directory_get": reader.dila_directory_get,
+            }
+        report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
+                       **callbacks)
     else:
         report = audit(backlog, args.day, live=False)
     args.output_private_report.write_text(
