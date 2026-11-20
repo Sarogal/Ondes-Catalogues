@@ -36,6 +36,13 @@ SOURCE_CHALLENGES = {
     "institutional_source_policy_expired": "renew_source_factual_reuse_review",
     "institutional_source_policy_restricted": "maintain_restricted_source_hold",
 }
+SOURCE_RESTRICTION_PRIORITY = {
+    "institutional_source_policy_restricted": 0,
+    "institutional_source_policy_invalid": 1,
+    "institutional_source_policy_expired": 2,
+    "institutional_source_policy_missing": 3,
+    "institutional_source_policy_pending": 4,
+}
 COLLISION_CHALLENGES = {
     "historical_collision_ambiguous": "independently_recheck_distinct_clock",
 }
@@ -129,7 +136,11 @@ def plan_independent_reviews(queue, today, *, limit=40, source_limit=12):
         # legal tasks for N workshops in the same institution.
         if reason in SOURCE_CHALLENGES:
             hostname = urlsplit(row["source_url"]).hostname
-            if hostname and hostname not in source_records:
+            if hostname and (
+                    hostname not in source_records
+                    or SOURCE_RESTRICTION_PRIORITY[reason] <
+                    SOURCE_RESTRICTION_PRIORITY[
+                        source_records[hostname]["reason_code"]]):
                 source_records[hostname] = row
     for items in groups.values():
         items.sort(key=lambda r: (
@@ -152,10 +163,13 @@ def plan_independent_reviews(queue, today, *, limit=40, source_limit=12):
             "review_id": row["review_id"], "challenges": tasks,
             "evidence_verified": False, "admission_authorized": False,
         })
-    source_items = sorted(
-        source_records.values(),
-        key=lambda r: (r["first_seen"], r["review_id"]),
-    )[:source_limit]
+    # Rotate source-level reviews too: a fixed first N hosts would starve
+    # every other institution permanently, undermining national autonomy.
+    source_hosts = sorted(source_records)
+    if source_hosts:
+        shift = today.toordinal() % len(source_hosts)
+        source_hosts = source_hosts[shift:] + source_hosts[:shift]
+    source_items = [source_records[h] for h in source_hosts[:source_limit]]
     source_tasks = [{
         "sample_private_review_id": row["review_id"],
         "challenge": SOURCE_CHALLENGES[row["reason_code"]],
