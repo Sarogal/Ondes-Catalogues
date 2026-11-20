@@ -411,8 +411,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
     candidates = [i for i in items if
                   i.get("stableObservations", 0) >= 2 and
                   isinstance(i.get("candidate", {}).get("source"), str) and
-                  i.get("candidate", {}).get("source") in VERIFIER_SPECS and
-                  (i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"
+                  ((i.get("candidate", {}).get("source") in VERIFIER_SPECS
+                    and i.get("candidate", {}).get("reviewBucket") == "genre_tag_review")
                    or (i.get("candidate", {}).get("source") == "agenda_officiel_structuré"
                        and i.get("candidate", {}).get("reviewBucket") == "genre_unknown")
                    or (i.get("candidate", {}).get("source")
