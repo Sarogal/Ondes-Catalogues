@@ -110,6 +110,34 @@ class GeoPublisherTests(unittest.TestCase):
         self.assertEqual(old["festivals"][0], ROW)
         self.assertFalse(summary["publication_authorized_by_private_report"])
 
+    def test_publisher_rederives_same_host_access_page_from_signed_home(self):
+        access = SITE + "infos-pratiques/acces"
+        home = (
+            '<a href="infos-pratiques/acces">Accès - Parkings</a>'
+            '<a href="https://external.example/faux-acces">Accès externe</a>'
+        )
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return home if url == SITE else page()
+        out, summary = apply_independently_verified_geo(
+            calendar(), calendar(), review(), "2026-11-21", fetch)
+        self.assertEqual(calls, [SITE, access])
+        self.assertEqual(summary["accepted_geo_updates"], [ROW["slug"]])
+        self.assertTrue(out["festivals"][0]["showOnMap"])
+        self.assertEqual(out["festivals"][0]["geoSource"], SITE)
+        self.assertNotIn("external.example", str(calls))
+
+    def test_publisher_does_not_certify_old_access_page(self):
+        home = '<a href="/acces">Accès au festival</a>'
+        old_event = page(name="Festival Exemple 2026")
+        out, summary = apply_independently_verified_geo(
+            calendar(), calendar(), review(), "2026-11-21",
+            lambda url: home if url == SITE else old_event)
+        self.assertEqual(out, calendar())
+        self.assertEqual(summary["accepted_geo_updates"], [])
+        self.assertEqual(summary["held_geo"], 1)
+
     def test_replay_does_not_publish_again_and_legacy_patch_is_idempotent(self):
         updated, summary = apply_independently_verified_geo(
             calendar(), calendar(), review(), "2026-11-21", lambda _: page())
