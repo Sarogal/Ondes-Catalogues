@@ -4,10 +4,54 @@ from pathlib import Path
 import sys
 import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from grossesondes_cloud_sync import safe_target, build_candidate, load_production
+from grossesondes_cloud_sync import (safe_target, build_candidate, load_production,
+                                   future_map_coverage)
 from test_grosses_stage import fixtures
 
 class CloudSyncTests(unittest.TestCase):
+    def test_future_map_coverage_tracks_coordinates_and_visibility_separately(self):
+        rows=[
+            {"slug":"x","startDate":"2027-06-01","city":"Paris",
+             "lat":48.85,"lon":2.35},                  # flag absent
+            {"slug":"y","startDate":"2027-07-01","city":None,
+             "lat":None,"lon":None,"showOnMap":False},
+            {"slug":"z","startDate":"2027-07-02","city":"Lyon",
+             "lat":45.76,"lon":4.84,"showOnMap":False},
+            {"slug":"a","startDate":"2027-08-01","city":"Lille",
+             "lat":50.63,"lon":3.06,"showOnMap":True},
+            {"slug":"old","startDate":"2026-10-01","city":"Paris",
+             "lat":48.85,"lon":2.35},
+            {"slug":"unknown","startDate":None},
+        ]
+        metrics=future_map_coverage(
+            {"schema":1,"festivals":rows},"2026-11-20")
+        self.assertEqual(metrics, {
+            "dated_future_editions":4,"undated_catalogue_editions":1,
+            "coordinates_present":3,"coordinates_missing":1,
+            "explicitly_hidden":2,"explicitly_visible_flag":1,
+            "visibility_flag_absent":1,
+            "coordinates_present_not_explicitly_hidden":2,"city_missing":1,
+        })
+        self.assertEqual(rows[0]["showOnMap"] if "showOnMap" in rows[0]
+                         else None, None)
+
+    def test_future_map_coverage_invalid_coordinates_are_not_pins(self):
+        rows=[
+            {"startDate":"2027-01-01","lat":float("nan"),"lon":3},
+            {"startDate":"2027-01-02","lat":True,"lon":3},
+            {"startDate":"2027-01-03","lat":95,"lon":3},
+            {"startDate":"2027-01-04","lat":43,"lon":190},
+        ]
+        got=future_map_coverage(
+            {"schema":1,"festivals":rows},"2026-11-20")
+        self.assertEqual(got["coordinates_missing"],4)
+        self.assertEqual(got["coordinates_present"],0)
+        with self.assertRaises(ValueError):
+            future_map_coverage({"schema":1,"festivals":[
+                {"startDate":"not-a-date"}]},"2026-11-20")
+        with self.assertRaises(ValueError):
+            future_map_coverage({"schema":2,"festivals":[]},"2026-11-20")
+
     def test_initial_change_allowed(self):
         c,h,p=fixtures()
         candidate=dict(c,festivals=[dict(e) for e in c["festivals"]])
