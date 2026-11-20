@@ -242,8 +242,12 @@ def candidate_from_event_page(
     elif len(music) == 0 and allow_generic_event:
         generic = [e for e in structures
                    if "Event" in _event_types(e.get("@type"))]
-        if len(generic) != 1 or not triage.genre_evidence(
-                {"classification": generic[0].get("genre")}):
+        if len(generic) != 1:
+            return None
+        # A MusicGroup on this exact official Event can establish a relevant
+        # genre even if the overall Event.genre is missing or unrelated.
+        scoped_genres, _ = event_genres_from_own_bill(generic[0])
+        if not triage.genre_evidence({"classification": scoped_genres}):
             return None
         event = generic[0]
         generic_event = True
@@ -282,6 +286,13 @@ def candidate_from_event_page(
     row = venue_candidate(event, source, actual_url, known, day.isoformat())
     if not row or row.get("sourceUrl", "").rstrip("/") != actual_url.rstrip("/"):
         return None
+    # Keep individual performer genre evidence attached to the current
+    # reviewed Event, rather than relying on the page's aggregate category.
+    scoped_genres, genre_scope = event_genres_from_own_bill(event)
+    if scoped_genres and triage.genre_evidence(
+            {"classification": scoped_genres}):
+        row["classification"] = scoped_genres
+        row["genreEvidenceScope"] = genre_scope
     if row.get("publicationAllowed") is not False:
         return None
     if bill[1] is not None and (
