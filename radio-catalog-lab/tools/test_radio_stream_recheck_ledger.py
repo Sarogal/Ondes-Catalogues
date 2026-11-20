@@ -92,6 +92,14 @@ class StreamRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             next_evidence_report(probe("2026-11-21"), bad)
 
+    def test_webm_mp4_or_ogg_container_without_codec_never_counts(self):
+        first = next_evidence_report(probe(checks=[row()]))
+        later = next_evidence_report(
+            probe("2026-11-21", [row(verdict="container_pending")]), first)
+        self.assertFalse(later["records"][0]["repeatAudioSample"])
+        self.assertEqual(later["records"][0]["audioEvidenceDates"], ["2026-11-20"])
+        self.assertEqual(later["technicallyQualifiedCount"], 0)
+
     def test_multi_radio_evidence_independent(self):
         first = next_evidence_report(probe(checks=[row(A), row(B)]))
         now = next_evidence_report(probe("2026-11-21",
