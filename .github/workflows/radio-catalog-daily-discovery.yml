@@ -131,16 +131,21 @@ jobs:
               --output "$RUNNER_TEMP/go-radio-discovery/ledger.json"
           fi
       - name: Optional bounded audio byte sampling (manual only)
-        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true)
         shell: bash
         run: |
           set -euo pipefail
+          # Five safe samples per scheduled run, two for manually requested checks.
+          limit=2
+          if [[ "$GITHUB_EVENT_NAME" == "schedule" ]]; then
+            limit=5
+          fi
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
             --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
-            --limit 2 --allow-network --extended-continuity
+            --limit "$limit" --allow-network --extended-continuity
       - name: Track technical samples over separate days (never approve streams)
-        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true)
         shell: bash
         run: |
           set -euo pipefail
