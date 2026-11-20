@@ -87,14 +87,15 @@ MUSICAL = re.compile(
     r"spectacle musical|cine concert)\b"
 )
 
-if set(ACTIVITY_PATTERNS) != set(FAMILY_TYPES):
+if not set(FAMILY_TYPES).issubset(ACTIVITY_PATTERNS):
     raise RuntimeError("national_family_category_taxonomy_drift")
 
 
 def _category_matches(text):
     return sorted(
         key for key, patterns in ACTIVITY_PATTERNS.items()
-        if any(re.search(pattern, text) for pattern in patterns)
+        if key in FAMILY_TYPES
+        and any(re.search(pattern, text) for pattern in patterns)
     )
 
 
