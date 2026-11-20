@@ -92,7 +92,7 @@ class OrganizerNationalDiscoveryTests(unittest.TestCase):
         result = discovery.candidate(
             raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
         self.assertIsNotNone(result)
-        self.assertEqual(result["classification"], ["Black Metal", "Jazz", "Jazz"])
+        self.assertEqual(result["classification"], ["Black Metal", "Jazz"])
         self.assertEqual(result["genreEvidenceScope"],
                          "official_artist_in_event_detail")
         rows, _, buckets = __import__("triage").classify([result], CATALOGUE)
