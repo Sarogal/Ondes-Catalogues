@@ -76,7 +76,10 @@ def hls_preview(
     *, day: dt.date, limit: int = MAX_HLS_CANDIDATES,
     check_one_segment: bool = False,
     segment_request: Callable[[str], ResponseSample] | None = None,
+    experimental_decode_segment: bool = False,
 ) -> dict:
+    if experimental_decode_segment and not check_one_segment:
+        raise ValueError("PCM decoding requires explicit segment checking")
     if check_one_segment and segment_request is None:
         raise ValueError("Explicit segment sampler required")
     selected = select_hls_candidates(discovery, day=day, limit=limit)
@@ -84,6 +87,7 @@ def hls_preview(
     kinds: dict[str, int] = {}
     segment_checks = 0
     structural_evidence = 0
+    pcm_evidence = 0
     segment_states: dict[str, int] = {}
     planning_reasons: dict[str, int] = {}
     safe_options: list[tuple[int, dict, str]] = []
@@ -111,7 +115,9 @@ def hls_preview(
         # descend a master when there is no simpler live-media candidate.
         _, check, raw_url = sorted(safe_options, key=lambda pair: pair[0])[0]
         segment_checks = 1
-        outcome = verify_one_segment(raw_url, request, segment_request)
+        outcome = verify_one_segment(
+            raw_url, request, segment_request,
+            experimental_decode=experimental_decode_segment)
         check["segmentCheck"] = outcome
         state = outcome["state"]
         segment_states[state] = 1
@@ -119,6 +125,8 @@ def hls_preview(
         planning_reasons[reason] = 1
         if state == "segment_structural_evidence":
             structural_evidence = 1
+        if (outcome.get("segmentDecodeEvidence") or {}).get("state") == "decoded_pcm":
+            pcm_evidence = 1
     return {
         "schemaVersion": 1,
         "observationDate": day.isoformat(),
@@ -127,6 +135,7 @@ def hls_preview(
         "manifestKinds": dict(sorted(kinds.items())),
         "segmentVerificationAttemptCount": segment_checks,
         "segmentStructuralEvidenceCount": structural_evidence,
+        "decodedPcmSegmentCount": pcm_evidence,
         "segmentStates": dict(sorted(segment_states.items())),
         "segmentPlanningReasons": dict(sorted(planning_reasons.items())),
         "technicalVerifiedCount": 0,
@@ -142,8 +151,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--allow-network", action="store_true")
     parser.add_argument("--check-one-segment", action="store_true",
-                        help="Experimental: at most one same-origin 16KiB HLS segment; NO admission")
+                        help="Experimental: at most one 16KiB HLS segment; NO admission")
+    parser.add_argument("--experimental-decode-segment", action="store_true",
+                        help="Decode PCM on an isolated FFmpeg runner after structure checks")
     args = parser.parse_args(argv)
+    if args.experimental_decode_segment and not args.check_one_segment:
+        parser.error("PCM decoding requires --check-one-segment")
     if not args.allow_network:
         parser.error("HLS network preview requires --allow-network")
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
@@ -155,6 +168,7 @@ def main(argv: list[str] | None = None) -> int:
         check_one_segment=args.check_one_segment,
         segment_request=(safe_segment_transport().request
                          if args.check_one_segment else None),
+        experimental_decode_segment=args.experimental_decode_segment,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n",
@@ -164,6 +178,7 @@ def main(argv: list[str] | None = None) -> int:
           f"types={output['manifestKinds']} "
           f"segment_attempts={output['segmentVerificationAttemptCount']} "
           f"segment_structures={output['segmentStructuralEvidenceCount']} "
+          f"segment_pcm={output['decodedPcmSegmentCount']} "
           f"segment_states={output['segmentStates']} "
           f"segment_planning={output['segmentPlanningReasons']} "
           "verified=0 published=false")
