@@ -27,6 +27,7 @@ from source_qualification import Anchors, clean_url, classify, normalized
 from festival_website_discovery import visible_event_website_links
 from dns_pinned_https import safe_public_url, fetch_public_html
 from official_watch import get_page
+from festival_event_kind import touring_concert_stop
 
 PROOF_MODE = "institutional-linked-organizer-edition.v1"
 PRIVATE_NOTES = ("Site de festival associé par une fiche institutionnelle ; dates "
@@ -109,6 +110,8 @@ def prove_dates(site_html, title, year, today):
                      r"concert tour|tour de concerts?)\b", text):
             return None
         start, end = institutional_date(site_html, title, year)
+        if touring_concert_stop(site_html, start, end):
+            return None
         if (start < date.fromisoformat(today) or
                 start.year != year or end.year != year or
                 not no_same_edition_jsonld_contradiction(site_html, title, start, end)):
