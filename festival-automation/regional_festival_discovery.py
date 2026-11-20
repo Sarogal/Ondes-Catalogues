@@ -210,8 +210,26 @@ class RegionalEventAnchors(Anchors):
     def __init__(self):
         super().__init__()
         self.accessible_event_label = None
+        self.article_stack = []
+        self.article_music_categories = {}
 
     def handle_starttag(self, tag, attrs):
+        # A city event card often renders the visible music category in a
+        # sibling <p>, while its title is in an <h3><a>. The generic anchor
+        # parser intentionally does not inherit text across sibling <div>s.
+        # Keep an isolated, bounded ARTICLE-only hint; it is NOT genre proof.
+        if tag.lower() == "article" and not self.hidden and not self.concealed:
+            attributes = dict(attrs)
+            style = (attributes.get("style") or "").replace(" ", "").lower()
+            if ("hidden" not in attributes
+                    and attributes.get("aria-hidden") != "true"
+                    and "display:none" not in style):
+                if self.article_stack:
+                    self.article_stack[-1]["nested"] = True
+                self.article_stack.append({
+                    "start": len(self.anchors), "text": [],
+                    "nested": False,
+                })
         if tag.lower() == "a":
             self.accessible_event_label = None
         super().handle_starttag(tag, attrs)
@@ -223,6 +241,14 @@ class RegionalEventAnchors(Anchors):
                     self.accessible_event_label = label
                     break
 
+    def handle_data(self, data):
+        if (self.article_stack and not self.hidden and not self.concealed
+                and self.current is None):
+            parts = self.article_stack[-1]["text"]
+            if len(parts) < 32:
+                parts.append(data[:160])
+        super().handle_data(data)
+
     def handle_endtag(self, tag):
         if tag.lower() == "a":
             if self.current is not None and self.accessible_event_label:
@@ -230,6 +256,16 @@ class RegionalEventAnchors(Anchors):
                 if not visible or GENERIC_LINK_TEXT.fullmatch(visible):
                     self.current[1].clear()
                     self.current[1].append(self.accessible_event_label)
+        if (tag.lower() == "article" and self.article_stack
+                and not self.hidden and not self.concealed):
+            frame = self.article_stack.pop()
+            # Exactly ONE visible anchor in an un-nested article. A category
+            # cannot leak into other cards or borrow another event's link.
+            if not frame["nested"] and len(self.anchors) == frame["start"] + 1:
+                visible = normalized(" ".join(frame["text"]))
+                if MUSIC_EVENT_CATEGORY.search(visible):
+                    self.article_music_categories[frame["start"]] = (
+                        "musique concerts")
         super().handle_endtag(tag)
         if tag.lower() == "a":
             self.accessible_event_label = None
@@ -275,7 +311,7 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                    if isinstance(openagenda_name_hints, (set, frozenset))
                    and len(openagenda_name_hints) <= 60
                    else frozenset())
-    for href, label, prefix in parser.anchors[:650]:
+    for anchor_number, (href, label, prefix) in enumerate(parser.anchors[:650]):
         if not isinstance(href, str) or not isinstance(label, str):
             continue
         event_title = municipal_event_title(label)
@@ -310,7 +346,9 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
             and not NON_MUSIC_TITLE.search(name)
             and len(years) == 1
             and re.search(r"\b20[2-4]\d$", name)
-            and MUSIC_EVENT_CATEGORY.search(nearby)
+            and (MUSIC_EVENT_CATEGORY.search(nearby)
+                 or parser.article_music_categories.get(anchor_number)
+                    == "musique concerts")
         )
         # An archive title must have a *new* explicit edition year, and the
         # normalized title must be exactly the historical identity + year.
