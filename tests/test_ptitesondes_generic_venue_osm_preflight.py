@@ -55,6 +55,23 @@ class GenericVenueOSMTests(unittest.TestCase):
         self.assertEqual(groups[0]["lead_count"], 2)
         self.assertEqual(set(groups[0]["uids"]), {"100", "101"})
 
+    def test_mirrored_leads_are_not_double_counted_as_sessions(self):
+        event_a = lead("100")
+        mirror = {**event_a, "collector":"opendatasoft-index"}
+        second_session = lead("100", when="2026-12-13")
+        records = [event_a, mirror, second_session]
+        group = groups_for_review(records, DAY)[0]
+        self.assertEqual(group["lead_count"], 3)
+        self.assertEqual(group["unique_candidate_sessions"], 2)
+        report = audit(records, DAY, live=False)
+        self.assertEqual(report["unknown_venue_leads"], 3)
+        self.assertEqual(report["unknown_candidate_sessions"], 2)
+        self.assertEqual(report["duplicate_collector_or_repeated_leads"], 1)
+        self.assertEqual(report["queried_venues"], 0)
+        self.assertEqual(report["verified_venue_leads"], 0)
+        self.assertFalse(report["publication_ready"])
+        self.assertEqual(report["public_writes"], 0)
+
     def test_rotation_repeats_nothing_within_cycle(self):
         groups = [{"key": ["c", str(i)]} for i in range(37)]
         for d in (date(2026, 11, 20), date(2026, 11, 21)):
