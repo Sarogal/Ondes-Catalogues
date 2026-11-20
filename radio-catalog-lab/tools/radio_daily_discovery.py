@@ -228,6 +228,92 @@ def known_uuids(path: Path | None) -> set[str]:
     return result
 
 
+MAX_DAILY_QUERIES = 40
+
+
+def plan_daily_queries(day: dt.date, tags: list[str] | tuple[str, ...],
+                       names: list[str] | tuple[str, ...],
+                       max_queries: int = MAX_DAILY_QUERIES
+                       ) -> tuple[list[str], list[str]]:
+    """Core families every day; rotate every specialist term over subsequent days.
+
+    The fixed limit is a per-run *request budget*, not a permanent catalogue
+    ceiling. Appending a genre never requires adding any particular radio UUID.
+    """
+    if not 1 <= max_queries <= MAX_DAILY_QUERIES:
+        raise ValueError("Daily query budget out of bounds")
+    used: set[tuple[str, str]] = set()
+    def uniq(field: str, terms) -> list[tuple[str, str]]:
+        result = []
+        for raw in terms:
+            if not isinstance(raw, str):
+                raise ValueError("Invalid genre term")
+            term = raw.strip()
+            if not term or len(term) > 60 or not re.fullmatch(r"[\w !&+/\-]+", term, re.UNICODE):
+                raise ValueError("Unsafe genre query")
+            identity = (field, term.casefold())
+            if identity not in used:
+                used.add(identity)
+                result.append((field, term))
+        return result
+
+    all_queries = uniq("tag", tags) + uniq("name", names)
+    known = set(all_queries)
+    core = [(field, term) for field, sources in (
+        ("tag", CORE_TAGS), ("name", CORE_NAMES),
+    ) for term in sources if (field, term) in known]
+    core_ids = set(core)
+    rest = [query for query in all_queries if query not in core_ids]
+    if len(core) > max_queries:
+        raise ValueError("Insufficient budget for mandatory core genres")
+    places = max_queries - len(core)
+    # Consecutive daily windows traverse all remaining tags, without hiding
+    # deep subgenres forever behind a popularity-ordered first page.
+    if rest and places:
+        start = (day.toordinal() * places) % len(rest)
+        rotated = [rest[(start + i) % len(rest)] for i in range(min(places, len(rest)))]
+    else:
+        rotated = []
+    selected = core + rotated
+    return ([value for field, value in selected if field == "tag"],
+            [value for field, value in selected if field == "name"])
+
+
+def suggest_related_tags(rows: list[dict], *, limit: int = 100) -> list[str]:
+    """Metadata-driven hints for *future searches*, never station approvals."""
+    if not 0 <= limit <= 200:
+        raise ValueError("Invalid tag suggestion budget")
+    known = {normalize(term) for term in DEFAULT_TAGS}
+    suggestions: dict[str, str] = {}
+    for row in rows:
+        for tag in str(row.get("tags") or "").split(",")[:80]:
+            raw = tag.strip()
+            key = normalize(raw)
+            if (not 3 <= len(raw) <= 60 or key in known or
+                    not re.fullmatch(r"[\w &+!/\-]+", raw, re.UNICODE)):
+                continue
+            if not genre_evidence("", raw):
+                continue
+            suggestions.setdefault(key, raw)
+    return sorted(suggestions.values(), key=lambda term: normalize(term))[:limit]
+
+
+def previous_genre_hints(path: Path | None) -> list[str]:
+    if path is None or not path.is_file():
+        return []
+    if path.stat().st_size > MAX_JSON_BYTES:
+        raise ValueError("Previous genre report too large")
+    prior = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(prior, dict) or prior.get("schemaVersion") != 1 or (
+        prior.get("publicationAllowed") is not False
+    ):
+        raise ValueError("Untrusted previous discovery report")
+    hints = prior.get("suggestedGenreTags", [])
+    if not isinstance(hints, list) or len(hints) > 200:
+        raise ValueError("Unbounded discovered genre list")
+    return suggest_related_tags([{"tags": ",".join(hints)}], limit=100)
+
+
 class NoRedirects(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
@@ -338,6 +424,7 @@ def discover(*, fetch, tags: list[str], names: list[str],
         "schemaVersion": 1,
         "scanDate": day.isoformat(),
         "source": "Radio Browser",
+        "suggestedGenreTags": suggest_related_tags(rows),
         "publicationAllowed": False,
         "qualifiedStreamCount": 0,
         "knownUuidInputCount": len(known_ids),
@@ -353,23 +440,34 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--known-uuids-file", type=Path)
     parser.add_argument("--date", default=dt.datetime.now(dt.timezone.utc).date().isoformat())
-    parser.add_argument("--tags", default=",".join(DEFAULT_TAGS))
-    parser.add_argument("--names", default=",".join(DEFAULT_NAMES))
+    parser.add_argument("--tags", help="Explicit diagnostic tag override; no rotation")
+    parser.add_argument("--names", help="Explicit diagnostic name override; no rotation")
+    parser.add_argument("--previous-report", type=Path,
+                        help="Optional last candidate report for emerging genre tags")
     parser.add_argument("--page-size", type=int, default=100)
     parser.add_argument("--max-pages", type=int, default=3)
     parser.add_argument("--crawl-delay", type=float, default=0.15)
     args = parser.parse_args(argv)
     day = dt.date.fromisoformat(args.date)
     known = known_uuids(args.known_uuids_file)
+    if args.tags is None and args.names is None:
+        new_terms = previous_genre_hints(args.previous_report)
+        selected_tags, selected_names = plan_daily_queries(
+            day, list(DEFAULT_TAGS) + new_terms, list(DEFAULT_NAMES))
+    else:
+        selected_tags = [x.strip() for x in (args.tags or "").split(",") if x.strip()]
+        selected_names = [x.strip() for x in (args.names or "").split(",") if x.strip()]
     hosts = resolve_api_mirrors()
     def remote(field: str, term: str, offset: int, limit: int) -> list[dict]:
         return fetch_page(hosts, field, term, offset, limit)
     report = discover(
-        fetch=remote, tags=[x.strip() for x in args.tags.split(",") if x.strip()],
-        names=[x.strip() for x in args.names.split(",") if x.strip()],
+        fetch=remote, tags=selected_tags, names=selected_names,
         day=day, page_size=args.page_size, max_pages=args.max_pages,
         known_ids=known, sleep_seconds=args.crawl_delay,
     )
+    report["configuredGenreQueries"] = len(DEFAULT_TAGS) + len(DEFAULT_NAMES)
+    report["selectedDailyQueries"] = len(selected_tags) + len(selected_names)
+    report["coreQueries"] = len(CORE_TAGS) + len(CORE_NAMES)
     target = Path(args.output)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
