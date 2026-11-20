@@ -43,8 +43,8 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
         self.assertEqual(u.scheme, "https")
         self.assertEqual(u.hostname, "api-lannuaire.service-public.gouv.fr")
         fields = parse_qs(u.query)
-        self.assertIn('nom LIKE "Saint-Étienne"', fields["where"][0])
-        self.assertIn('pivot LIKE "mairie"', fields["where"][0])
+        self.assertEqual(fields["where"], ['nom = "Mairie - Saint-Étienne"'])
+        self.assertIn("version_type", fields["select"][0])
         self.assertEqual(fields["limit"], ["30"])
 
     def test_no_query_injection_from_city(self):
