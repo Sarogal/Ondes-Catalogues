@@ -22,6 +22,14 @@ def render(report, deploy_decision=False):
     additions = report.get("accepted_additions")
     updates = report.get("accepted_updates")
     held = report.get("held")
+    already_published = report.get("already_published", [])
+    if not all(isinstance(k, list) for k in (additions, updates, held,
+                                              already_published)):
+        raise ValueError("rapport de preuve incomplet")
+    if (any(not isinstance(slug, str) for slug in already_published)
+            or len(set(already_published)) != len(already_published)
+            or set(already_published) & set(additions)):
+        raise ValueError("identités publiques dupliquées invalides")
     if not all(isinstance(k, list) for k in (additions, updates, held)):
         raise ValueError("rapport de preuve incomplet")
     count = report.get("candidate_total")
@@ -32,11 +40,46 @@ def render(report, deploy_decision=False):
         "",
         f"- Éditions du catalogue candidat : **{count}**",
         f"- Propositions revalidées sur sources officielles : {len(additions)} ajout(s), {len(updates)} mise(s) à jour",
+        f"- Déjà présentes dans le catalogue signé : **{len(already_published)}** (sans réinsertion)",
         f"- Propositions différées ou refusées : **{len(held)}**",
         f"- Âge du patch privé : {safe(report.get('patch_age_days', '?'))} jour(s)",
         f"- Archives historiques inchangées : {'oui' if report.get('unchanged_history') is True else 'non attesté'}",
         f"- Mode de travail : {safe(report.get('mode', '?'))}",
     ]
+    map_report = report.get("future_map_coverage")
+    if map_report is not None:
+        if not isinstance(map_report, dict):
+            raise ValueError("rapport cartographique invalide")
+        required = (
+            "dated_future_editions", "undated_catalogue_editions",
+            "coordinates_present", "coordinates_missing",
+            "explicitly_hidden", "explicitly_visible_flag",
+            "visibility_flag_absent",
+            "coordinates_present_not_explicitly_hidden", "city_missing",
+        )
+        if (set(map_report) != set(required)
+                or any(type(map_report[key]) is not int or map_report[key] < 0
+                       for key in required)):
+            raise ValueError("compteurs cartographiques invalides")
+        future = map_report["dated_future_editions"]
+        if (map_report["coordinates_present"] + map_report["coordinates_missing"]
+                != future
+                or map_report["explicitly_hidden"]
+                + map_report["explicitly_visible_flag"]
+                + map_report["visibility_flag_absent"] != future
+                or map_report["coordinates_present_not_explicitly_hidden"]
+                > map_report["coordinates_present"]
+                or map_report["city_missing"] > future):
+            raise ValueError("réconciliation cartographique invalide")
+        lines.extend([
+            "",
+            "Couverture des éditions futures datées (catalogue candidat) :",
+            f"- Éditions futures : **{future}**",
+            f"- Avec coordonnées plausibles : **{map_report['coordinates_present']}** ; sans coordonnées : **{map_report['coordinates_missing']}**",
+            f"- Marqueur explicitement désactivé : **{map_report['explicitly_hidden']}** ; drapeau absent : **{map_report['visibility_flag_absent']}**",
+            f"- Coordonnées présentes, sans désactivation explicite : **{map_report['coordinates_present_not_explicitly_hidden']}**",
+            "- Des coordonnées présentes ou un drapeau absent ne garantissent pas l'affichage sur la carte ni le lieu de la nouvelle édition.",
+        ])
     if changed:
         lines.append("- Différence de contenu validée : **oui**")
         lines.append("- Déploiement autorisé par la décision du job : "

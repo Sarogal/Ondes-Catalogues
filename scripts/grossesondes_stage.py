@@ -163,6 +163,33 @@ def apply_changes(entry,changes,slug,today):
     updated["lastVerified"]=next((c["after"] for c in changes if c["field"]=="lastVerified"),entry.get("lastVerified",today))
     return updated
 
+# Reporting only. A cumulative private patch may contain editions already in
+# the independently signed public calendar. Do not spend source-validation
+# budget on an exact published identity; nevertheless reject mismatched fields
+# rather than letting a forged same-slug row disguise a conflicting proposal.
+_PUBLISHED_IDENTITY_FIELDS = (
+    "slug", "name", "startDate", "endDate", "officialSite", "source",
+    "city", "department", "region", "venue", "lat", "lon",
+    "showOnMap", "status",
+)
+
+
+def published_patch_duplicate(proposal, published_calendar):
+    if (not isinstance(proposal, dict) or not isinstance(published_calendar, dict)
+            or not isinstance(published_calendar.get("festivals"), list)):
+        return "NOT_PUBLISHED"
+    slug = proposal.get("slug")
+    rows = [item for item in published_calendar["festivals"]
+            if isinstance(item, dict) and item.get("slug") == slug]
+    if not rows:
+        return "NOT_PUBLISHED"
+    if len(rows) != 1 or any(
+            proposal.get(key, None) != rows[0].get(key, None)
+            for key in _PUBLISHED_IDENTITY_FIELDS):
+        return "PUBLISHED_COLLISION"
+    return "ALREADY_PUBLISHED"
+
+
 def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None,
           published_calendar=None,published_history=None):
     # Lors d'une prévisualisation autonome, les JSON publics historiques
@@ -175,9 +202,18 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
     rows=list(calendar["festivals"])
     report={"original":len(rows),"history":len(history["knownFestivals"]),
             "accepted_additions":[],"accepted_updates":[],
+            "already_published":[],
             "held":[],"source_proofs":[],"automatic_publication":False}
     for e in patch["additions"]:
         slug=e["slug"]
+        duplicate = published_patch_duplicate(e, published_calendar)
+        if duplicate == "ALREADY_PUBLISHED":
+            report["already_published"].append(slug)
+            continue
+        if duplicate == "PUBLISHED_COLLISION":
+            report["held"].append({
+                "slug": slug, "reason": "conflit avec l'édition déjà publiée"})
+            continue
         if e.get("proofMode") == INSTITUTIONAL_LINKED_PROOF_MODE:
             known_rows = rows + (
                 published_calendar.get("festivals", []) if published_calendar else [])
