@@ -267,3 +267,46 @@ Les drapeaux `gps_verified`, `official_venue_verified`,
 **Un contrôle indépendant de géographie est encore nécessaire**
 avant qu'un tel lieu puisse être approuvé. Les horaires, âges, droits,
 organisateurs, dates et doublons de chaque séance restent distincts.
+
+
+## Consolidation des sept rapports privés — compteurs uniquement
+
+Le module `scripts/ptitesondes_private_venue_batch_rollup.py` regroupe
+les rapports privés d'une même campagne, **sans accès réseau, token,
+backend, publisher ni catalogue**. Il refuse :
+- un lot manquant, répété, hors plage ou daté différemment ;
+- des compteurs globaux incompatibles entre lots ;
+- un lieu répété dans deux lots, un nombre de séances incohérent, ou
+  une couverture partielle ;
+- les déclarations `publication_ready=true`, `public_writes>0` ou
+  `verified_venue_leads>0`.
+
+Le résultat contient exclusivement les nombres de lieux examinés,
+de séances distinctes, de véritables preuves privées, de pistes pour
+lieux non numérotés et d'exécutions réseau déclarées. **Aucun nom,
+UID, adresse, URL, latitude, longitude ou événement brut n'y figure.**
+Le fichier de sortie est créé par remplacement atomique d'un
+temporaire privé à permissions restrictives. Il ne peut pas être
+enregistré dans le checkout public.
+
+Commande après création et sauvegarde privée des 7 lots issus du
+même snapshot et de la même date :
+
+```bash
+python scripts/ptitesondes_private_venue_batch_rollup.py \
+  --reports /espace-prive/rapport-0.json /espace-prive/rapport-1.json \
+            /espace-prive/rapport-2.json /espace-prive/rapport-3.json \
+            /espace-prive/rapport-4.json /espace-prive/rapport-5.json \
+            /espace-prive/rapport-6.json \
+  --output-private-summary /espace-prive/rapport-chiffre.json
+```
+
+Le champ `full_live_scan` vérifie seulement que chaque lot **déclare**
+avoir interrogé ses lieux. Il ne certifie pas l'authenticité des
+réponses de fournisseurs ou la fraîcheur de la preuve et ne vaut pas
+audit public indépendant. Si les lots n'ont pas été exécutés avec les
+accès privés requis, les compteurs de preuve resteront nuls.
+
+**Aucune de ces procédures n'est encore activée par un scheduler ou
+un workflow de production.** Aucun résultat de vérification live
+des 79 lieux n'est revendiqué.
