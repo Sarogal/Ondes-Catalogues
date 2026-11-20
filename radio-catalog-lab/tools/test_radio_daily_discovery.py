@@ -169,6 +169,13 @@ class DailyDiscoveryTests(unittest.TestCase):
                          ["metal"])
         self.assertIn("hard rock", genre_evidence("Pure Hard Rock", ""))
 
+    def test_metalcore_and_grindcore_are_included_as_candidate_genres(self):
+        for label in ("metalcore", "deathcore", "grindcore", "post metal"):
+            with self.subTest(label=label):
+                self.assertTrue(genre_evidence("Underground FM", label))
+                row = candidate(station(name="Underground FM", tags=label), set())
+                self.assertIsNotNone(row)
+
     def test_bad_api_host_not_followed(self):
         with self.assertRaises(RuntimeError):
             fetch_page(["attacker.example"], "tag", "metal", 0, 2)
