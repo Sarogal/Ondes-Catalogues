@@ -217,6 +217,14 @@ class VisibleHtmlEvidenceTests(unittest.TestCase):
         self.assertEqual(check(body)["status"],
                          "html_event_date_not_correlated")
 
+    def test_hardcore_techno_html_badge_is_not_accepted(self):
+        body = PAGE.replace(
+            '<h4>► EISBRECHER – Metal Indus –</h4>',
+            '<p>Hardcore Techno</p>')
+        result = check(body)
+        self.assertEqual(result["status"], "html_event_genre_unconfirmed")
+        self.assertIs(result["publicationAllowed"], False)
+
     def test_partial_yearless_date_does_not_count_as_show_date(self):
         body = PAGE.replace(
             '<strong>samedi 18 septembre 2027</strong>',
