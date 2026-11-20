@@ -1,0 +1,38 @@
+name: "Grosses Ondes — multiple stream evidence retention (offline preview)"
+
+on:
+  push:
+    branches:
+      - feature/radio-per-stream-evidence-ledger-20261120
+    paths:
+      - ".github/workflows/radio-stream-multivariant-ledger-ci.yml"
+      - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_multivariant_ledger.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-radio-multivariant-ledger-offline
+  cancel-in-progress: true
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check existing evidence ledger and new opt-in multivariant mode
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_multivariant_ledger.py" -v
+      - name: Check tracked files unmodified
+        run: |
+          git diff --quiet --exit-code
+          git diff --cached --quiet --exit-code
+          echo "MULTIVARIANT_LEDGER_OFFLINE_PASS no live probes or publication"
