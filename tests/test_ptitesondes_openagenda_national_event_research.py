@@ -102,6 +102,47 @@ class NationalOAEventResearchTests(unittest.TestCase):
                 self.assertEqual(status, "editorial_candidate")
                 self.assertEqual(x["editorial_category_proposal"], category)
 
+    def test_work_title_uses_long_description_for_youth_performance(self):
+        doc = event(title="Le Voyage des étoiles", desc="")
+        doc["longDescription"] = {
+            "fr": "Spectacle de marionnettes pour enfants et familles."
+        }
+        proposed, status = propose_event(doc, AGENDA, DAY)
+        self.assertEqual(status, "editorial_candidate")
+        self.assertEqual(proposed["editorial_category_proposal"],
+                         "spectacle-jeunesse")
+        self.assertFalse(proposed["publication_ready"])
+        self.assertFalse(proposed["official_organiser_verified"])
+
+    def test_rescheduled_openagenda_event_is_research_not_publication(self):
+        for status_value in (2, {"id": 2, "label": {"fr": "Reprogrammé"}}):
+            with self.subTest(status=status_value):
+                doc = event(title="Conte musical jeune public", desc="Pour enfants")
+                doc["status"] = status_value
+                proposed, reason = propose_event(doc, AGENDA, DAY)
+                self.assertEqual(reason, "editorial_candidate")
+                self.assertTrue(proposed["requires_reprogramming_verification"])
+                self.assertFalse(proposed["session_verified"])
+                self.assertFalse(proposed["publication_ready"])
+        for impossible in (3, 4, 5, 6):
+            with self.subTest(rejected_status=impossible):
+                doc = event()
+                doc["status"] = impossible
+                proposed, reason = propose_event(doc, AGENDA, DAY)
+                self.assertIsNone(proposed)
+                self.assertEqual(reason, "cancelled_or_unconfirmed_event")
+
+    def test_venue_research_is_not_limited_to_known_city_and_name(self):
+        for city, venue in (("Ville fictive", None),
+                            (None, "Scène temporaire"),
+                            ("Ville fictive", "Place sans numéro")):
+            with self.subTest(city=city, venue=venue):
+                proposed, reason = propose_event(
+                    event(city=city, venue=venue), AGENDA, DAY)
+                self.assertEqual(reason, "editorial_candidate")
+                self.assertTrue(proposed["requires_new_venue_search"])
+                self.assertFalse(proposed["location_verified"])
+
     def test_gouter_sport_nature_and_crafts_not_promoted(self):
         for title in (
             "Goûter au parc pour enfants",
@@ -131,6 +172,20 @@ class NationalOAEventResearchTests(unittest.TestCase):
                 x, status = propose_event(doc, AGENDA, DAY)
                 self.assertIsNone(x)
                 self.assertNotEqual(status, "editorial_candidate")
+
+    def test_numeric_published_status_may_have_localized_label(self):
+        doc = event()
+        doc["status"] = {"id": 1, "label": {"fr": "Programmé"}}
+        outcome, reason = propose_event(doc, AGENDA, DAY)
+        self.assertEqual(reason, "editorial_candidate")
+        self.assertEqual(outcome["editorial_category_proposal"], "concert")
+        for forbidden in ({"id": 4, "label": {"fr": "Annulé"}},
+                          {"id": "1"}, True):
+            with self.subTest(status=forbidden):
+                doc["status"] = forbidden
+                self.assertEqual(
+                    propose_event(doc, AGENDA, DAY)[1],
+                    "cancelled_or_unconfirmed_event")
 
     def test_no_schedule_does_not_invent_any_event_time(self):
         bad = event(times=0)
