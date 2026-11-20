@@ -59,6 +59,7 @@ def load_checkpoint(output_dir, digest, day, total):
             or not 0 <= state["segment"] <= 10000
             or (state["event_after"] is not None
                 and not valid_after(state["event_after"]))
+            or ((state["segment"] == 0) != (state["event_after"] is None))
             or (state["next_agenda_index"] == total
                 and (state["event_after"] is not None
                      or state["segment"] != 0))):
@@ -112,9 +113,25 @@ def _segment_meta(plan, state):
 
 
 def _validate_segment(report, agenda, expected_meta):
+    counts = report.get("counts") if isinstance(report, dict) else None
+    leads = report.get("event_leads") if isinstance(report, dict) else None
+    if (not isinstance(counts, dict)
+            or type(counts.get("pages_read")) is not int
+            or not 1 <= counts["pages_read"] <= 3
+            or type(counts.get("public_event_uids_seen")) is not int
+            or not 0 <= counts["public_event_uids_seen"] <= 60
+            or not isinstance(leads, list)
+            or len(leads) > counts["public_event_uids_seen"]
+            or any(not isinstance(lead, dict)
+                   or lead.get("publication_ready") is not False
+                   or lead.get("public_writes") != 0
+                   for lead in leads)):
+        raise ValueError("invalid_private_agenda_segment")
     if (not isinstance(report, dict)
             or report.get("schema") !=
             "ptitesondes.private_oa_agenda_event_exploration.v1"
+            or report.get("mode") != "private_research_event_leads_only"
+            or report.get("no_publisher_bridge") is not True
             or report.get("agenda_uid") != agenda["agenda_uid"]
             or report.get("agenda_slug") != agenda["agenda_slug"]
             or report.get("campaign_meta") != expected_meta
