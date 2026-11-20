@@ -140,14 +140,16 @@ class PairedEventSitePreflightTests(unittest.TestCase):
         for mode in ("missing", "changed", "extra", "orphan-event"):
             def evil(reference, current, approvals, today):
                 actual, counts = publisher(reference, current, approvals, today)
-                if mode == "missing":
-                    actual["venues"] = []
-                elif mode == "changed":
-                    actual["venues"][0]["name"] = "Substituted"
-                elif mode == "extra":
-                    actual["venues"].append({"id": "unsigned-map-pin"})
-                elif mode == "orphan-event":
-                    actual["events"] = []
+                # Baseline must remain honest; test the forged PROPOSAL only.
+                if approvals["approvals"]:
+                    if mode == "missing":
+                        actual["venues"] = []
+                    elif mode == "changed":
+                        actual["venues"][0]["name"] = "Substituted"
+                    elif mode == "extra":
+                        actual["venues"].append({"id": "unsigned-map-pin"})
+                    elif mode == "orphan-event":
+                        actual["events"] = []
                 return actual, counts
             with self.subTest(mode=mode), self.assertRaises(ValueError):
                 gate.validate_proposal(self.before, self.proposed, {},
