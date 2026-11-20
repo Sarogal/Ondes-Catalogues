@@ -6,6 +6,10 @@ from unittest import TestCase, main
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
+from grossesondes_cloud_sync import collect_registered_directory_sources
+from grossesondes_stage import stage
+from test_grosses_stage import fixtures
 from grossesondes_generic_directory_edition import (
     directory_url, trusted_linked_site, verify_primary, private_proposal,
     validate_private_proposal, independently_verify, validate_verified_row,
@@ -127,6 +131,72 @@ class GenericDirectoryProofTests(TestCase):
             self.assertEqual(verify_primary(OFFICIAL, TITLE, 2027, DAY), DATES)
             self.assertIsNone(verify_primary(
                 "<main>Festival jazz 2027</main>", TITLE, 2027, DAY))
+
+
+    def test_publisher_collector_and_stage_accept_only_independently_verified(self):
+        candidate = private_proposal(TITLE, SITE, DATES, DAY)
+        cal, hist, patch_data = fixtures()
+        patch_data["additions"] = [candidate]
+        patch_data["updates"] = []
+        with patch("grossesondes_generic_directory_edition.verify_primary",
+                   return_value=DATES):
+            proven = collect_registered_directory_sources(
+                patch_data, set(), DAY,
+                directory_fetch=lambda url: ENTRY,
+                organizer_fetch=lambda url: OFFICIAL)
+        self.assertTrue(proven.get(
+            "registered-directory-verified:" + candidate["slug"]))
+        staged, report = stage(
+            cal, hist, patch_data, proven, DAY,
+            published_calendar=cal, published_history=hist)
+        self.assertEqual(report["accepted_additions"], [candidate["slug"]])
+        self.assertEqual(len(staged["festivals"]), len(cal["festivals"]) + 1)
+        self.assertIs(staged["festivals"][-1]["showOnMap"], False)
+
+    def test_absent_independent_recheck_and_existing_duplicate_are_held(self):
+        candidate = private_proposal(TITLE, SITE, DATES, DAY)
+        cal, hist, patch_data = fixtures()
+        patch_data["additions"] = [candidate]
+        patch_data["updates"] = []
+        attempts = []
+        absent = collect_registered_directory_sources(
+            patch_data, set(), DAY,
+            directory_fetch=lambda url: attempts.append(url) or
+                                     "<h1>Different Event</h1>",
+            organizer_fetch=lambda url: self.fail(
+                "No website request without independent link"))
+        self.assertEqual(attempts, [DIRECTORY])
+        self.assertFalse(absent)
+        staged, held = stage(
+            cal, hist, patch_data, absent, DAY,
+            published_calendar=cal, published_history=hist)
+        self.assertNotIn(candidate["slug"], [
+            row["slug"] for row in staged["festivals"]])
+        self.assertEqual(len(held["held"]), 1)
+        duplicate_cal = deepcopy(cal)
+        duplicate_cal["festivals"][3].update(
+            officialSite=SITE, startDate=DATES[0], endDate=DATES[1])
+        with patch("grossesondes_generic_directory_edition.verify_primary",
+                   return_value=DATES):
+            trusted = collect_registered_directory_sources(
+                patch_data, set(), DAY,
+                directory_fetch=lambda _: ENTRY,
+                organizer_fetch=lambda _: OFFICIAL)
+        _, rejected = stage(
+            cal, hist, patch_data, trusted, DAY,
+            published_calendar=duplicate_cal, published_history=hist)
+        self.assertEqual(rejected["accepted_additions"], [])
+        self.assertTrue(rejected["held"])
+
+    def test_forged_site_cannot_be_dereferenced_by_publisher_collector(self):
+        candidate = private_proposal(TITLE, SITE, DATES, DAY)
+        candidate["officialSite"] = "https://127.0.0.1/"
+        patch_data = {"additions": [candidate]}
+        sources = collect_registered_directory_sources(
+            patch_data, set(), DAY,
+            directory_fetch=lambda _: self.fail("Untrusted proposal"),
+            organizer_fetch=lambda _: self.fail("Untrusted organizer"))
+        self.assertEqual(sources, {})
 
 
 if __name__ == "__main__":
