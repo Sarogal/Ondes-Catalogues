@@ -119,6 +119,36 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         self.assertEqual(a.call_count, 1)
         self.assertEqual(p.call_count, 1)
 
+    def test_municipality_homepage_one_hop_to_named_venue(self):
+        homepage = "https://www.ville-les-bois.fr/"
+        venue_page = homepage + "lieux/maison-enfants"
+        listing = ("<html><main><a href='/lieux/maison-enfants'>"
+                   "Maison des enfants</a></main></html>")
+        page = Mock(side_effect=lambda url:
+                    listing if url == homepage else html())
+        reader, d, a, e, p = self.reader(
+            events=Mock(return_value=event(website=homepage)), page=page)
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (venue_page, html()))
+        self.assertEqual(page.call_count, 2)
+        self.assertEqual(reader.official_page_get(group), (venue_page, html()))
+        self.assertEqual(page.call_count, 2)
+        # No third-level navigation or publication.
+        self.assertFalse(hasattr(reader, "publisher"))
+
+    def test_ambiguous_homepage_links_never_crawl(self):
+        homepage = "https://www.ville-les-bois.fr/"
+        html_home = ("<html><main>"
+                     "<a href='/lieux/maison-enfants'>Maison des enfants</a>"
+                     "<a href='/lieux/maison-enfants-2'>Maison des enfants</a>"
+                     "</main></html>")
+        page = Mock(return_value=html_home)
+        reader, d, a, e, p = self.reader(
+            events=Mock(return_value=event(website=homepage)), page=page)
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (homepage, html_home))
+        self.assertEqual(page.call_count, 1)
+
     def test_untrusted_oa_website_never_fetched(self):
         reader, d, a, e, p = self.reader(events=Mock(return_value=event(
             website="https://pretend-official.example/lieu")))
