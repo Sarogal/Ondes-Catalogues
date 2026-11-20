@@ -571,7 +571,7 @@ def linked_first_party_dated_card_urls(page_html, source_url, today):
             attributes = dict(attrs)
             if tag == "a" and self.current is None:
                 style = str(attributes.get("style") or "")
-                if (attributes.get("hidden") is not None
+                if ("hidden" in attributes
                         or attributes.get("aria-hidden") == "true"
                         or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
                                      style, re.I)):
