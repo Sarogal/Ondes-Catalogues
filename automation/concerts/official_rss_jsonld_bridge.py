@@ -144,6 +144,77 @@ def official_named_bill(value):
     return (names, unnamed) if names else None
 
 
+def event_genres_from_own_bill(raw):
+    """Read explicit genre attached to THIS Event or its named performers only.
+
+    This does not consult artist catalogs, biographies, venue-wide menus or
+    adjacent Events. Non-string, excessive or ambiguous labels fail closed.
+    The independent reviewer and publisher remain genre authorities.
+    Returns (labels, provenance_scope).
+    """
+    if not isinstance(raw, dict):
+        return [], "official_event_card"
+
+    def labels(value):
+        if isinstance(value, str):
+            value = [value]
+        if (not isinstance(value, list) or len(value) > 20
+                or any(not isinstance(x, str) or
+                       not 2 <= len(x.strip()) <= 80 for x in value)):
+            return None
+        return [x.strip() for x in value]
+
+    # Event.genre is an aggregate classification, not a required common
+    # genre for every opening act. Check each named performer first.
+    direct = raw.get("genre")
+    event_labels = labels(direct) if direct not in (None, "", []) else []
+    if event_labels is None:
+        event_labels = []
+
+    bill = official_named_bill(raw.get("performer"))
+    if bill is None:
+        return event_labels, "official_event_card"
+    names = {x.casefold() for x in bill[0]}
+    performers = raw.get("performer")
+    performers = performers if isinstance(performers, list) else [performers]
+    collected = []
+    for performer in performers:
+        if not isinstance(performer, dict):
+            return [], "official_artist_in_event_detail"
+        if performer.get("name", "").strip().casefold() not in names:
+            if bill[1] and performer.get("name", "").strip().casefold() == bill[1].casefold():
+                continue  # An explicitly unnamed support is not genre proof.
+            return [], "official_artist_in_event_detail"
+        genre = performer.get("genre")
+        if genre is None:
+            continue
+        values = labels(genre)
+        if values is None:
+            return [], "official_artist_in_event_detail"
+        collected.extend(values)
+    # The publisher caps serialized GENRE labels to 20, never the number of
+    # artists in the bill. For large mixed lineups, retain recognized rock/
+    # metal/punk labels first: an eligible act at position 30 cannot disappear
+    # because 29 earlier acts had different, irrelevant genre descriptions.
+    unique = list(dict.fromkeys(collected))
+    if len(unique) > 20:
+        relevant = [label for label in unique
+                    if triage.genre_evidence({"classification": [label]})]
+        irrelevant = [label for label in unique if label not in relevant]
+        unique = (relevant + irrelevant)[:20]
+    # An explicitly named metal/punk/hard-rock performer makes a mixed
+    # bill eligible even when the general event tag says Jazz, Pop, etc.
+    # Conversely, do not treat that general tag as the genre of *all* bands.
+    # When performer genre evidence is absent or irrelevant, retain the
+    # historical event-level evidence as a fallback, never as a per-band fact.
+    if triage.genre_evidence({"classification": unique}):
+        return unique, "official_artist_in_event_detail"
+    if triage.genre_evidence({"classification": event_labels}):
+        return event_labels, "official_event_card"
+    return unique or event_labels, (
+        "official_artist_in_event_detail" if unique else "official_event_card")
+
+
 def candidate_from_event_page(
         lead, html, actual_url, source, known, day, *,
         read_ld, venue_candidate, norm, allow_generic_event=False):
@@ -171,8 +242,12 @@ def candidate_from_event_page(
     elif len(music) == 0 and allow_generic_event:
         generic = [e for e in structures
                    if "Event" in _event_types(e.get("@type"))]
-        if len(generic) != 1 or not triage.genre_evidence(
-                {"classification": generic[0].get("genre")}):
+        if len(generic) != 1:
+            return None
+        # A MusicGroup on this exact official Event can establish a relevant
+        # genre even if the overall Event.genre is missing or unrelated.
+        scoped_genres, _ = event_genres_from_own_bill(generic[0])
+        if not triage.genre_evidence({"classification": scoped_genres}):
             return None
         event = generic[0]
         generic_event = True
@@ -211,6 +286,13 @@ def candidate_from_event_page(
     row = venue_candidate(event, source, actual_url, known, day.isoformat())
     if not row or row.get("sourceUrl", "").rstrip("/") != actual_url.rstrip("/"):
         return None
+    # Keep individual performer genre evidence attached to the current
+    # reviewed Event, rather than relying on the page's aggregate category.
+    scoped_genres, genre_scope = event_genres_from_own_bill(event)
+    if scoped_genres and triage.genre_evidence(
+            {"classification": scoped_genres}):
+        row["classification"] = scoped_genres
+        row["genreEvidenceScope"] = genre_scope
     if row.get("publicationAllowed") is not False:
         return None
     if bill[1] is not None and (

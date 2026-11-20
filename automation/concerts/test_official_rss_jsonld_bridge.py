@@ -88,6 +88,44 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertFalse(row["publicationAllowed"])
         self.assertNotIn("officialDetailFound", row)
 
+    def test_mixed_genres_per_group_not_blocked_by_event_jazz_category(self):
+        performers = [
+            {"@type": "MusicGroup", "name": "Groupe Metal",
+             "genre": "Death Metal"},
+            {"@type": "MusicGroup", "name": "Nouvelle Première Partie",
+             "genre": "Jazz"},
+        ]
+        # The Event's global Jazz label does not cancel a metal headliner.
+        for kind in ("Event", "MusicEvent"):
+            with self.subTest(kind=kind):
+                page = html_for(**{
+                    "@type": kind, "genre": "Jazz",
+                    "performer": performers})
+                row = bridge.candidate_from_event_page(
+                    LEAD, page, EVENT_URL, SOURCE, set(), TODAY,
+                    read_ld=discover.read_ld,
+                    venue_candidate=discover.venue_candidate,
+                    norm=discover.norm, allow_generic_event=True)
+                self.assertIsNotNone(row)
+                self.assertEqual(row["classification"], ["Death Metal", "Jazz"])
+                self.assertEqual(row["genreEvidenceScope"],
+                                 "official_artist_in_event_detail")
+                self.assertEqual(triage.triage(
+                    row, catalogue={})["reviewBucket"], "genre_tag_review")
+                self.assertIs(row["publicationAllowed"], False)
+
+        # Without performer-specific positive proof, an unrelated aggregate
+        # Jazz category must not turn the bill into a metal concert.
+        for artist in performers:
+            artist["genre"] = "Jazz"
+        page = html_for(**{"@type": "Event", "genre": "Jazz",
+                           "performer": performers})
+        self.assertIsNone(bridge.candidate_from_event_page(
+            LEAD, page, EVENT_URL, SOURCE, set(), TODAY,
+            read_ld=discover.read_ld,
+            venue_candidate=discover.venue_candidate,
+            norm=discover.norm, allow_generic_event=True))
+
     def test_confirmed_headliner_and_trailing_surprise_guest_are_discoverable(self):
         import copy
         sample = [

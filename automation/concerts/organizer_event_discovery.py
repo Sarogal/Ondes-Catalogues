@@ -133,14 +133,7 @@ def candidate(raw, source, url, catalogue, today):
     dept = postal[:3] if postal.startswith(("97", "98")) else postal[:2]
     if postal.startswith("20"):
         dept = str(address.get("department") or "")  # Corsica: no inference.
-    genres = raw.get("genre") or []
-    if isinstance(genres, str):
-        genres = [genres]
-    if not isinstance(genres, list):
-        genres = []
-    if (any(not isinstance(x, str) for x in genres)
-            or len(genres) > 20):
-        genres = []
+    genres, genre_scope = bridge.event_genres_from_own_bill(raw)
     key = source["id"] + "|" + url + "|" + date
     cid = "organizer:" + hashlib.sha256(key.encode("utf-8")).hexdigest()[:24]
     known = {
@@ -160,7 +153,7 @@ def candidate(raw, source, url, catalogue, today):
         "department": dept, "venueIdIfKnown": venue_id,
         "newVenueToReview": venue_id is None,
         "classification": genres,
-        "genreEvidenceScope": "official_event_card",
+        "genreEvidenceScope": genre_scope,
         "officialDetailFound": True,
         "lineupToConfirm": True, "genreToConfirm": True,
         "venueAddressToVerify": True,

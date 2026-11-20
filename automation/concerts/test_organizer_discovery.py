@@ -84,6 +84,64 @@ class OrganizerNationalDiscoveryTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(discovery.listing_urls(str(value), spec), [])
 
+    def test_performer_level_official_genre_is_discovered_without_event_genre(self):
+        lead, raw, catalogue, osm = fixture()
+        raw.pop("genre")
+        for band in raw["performer"]:
+            band["genre"] = "Black Metal" if band["name"] == ARTISTS[0] else "Jazz"
+        result = discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
+        self.assertIsNotNone(result)
+        self.assertEqual(result["classification"], ["Black Metal", "Jazz"])
+        self.assertEqual(result["genreEvidenceScope"],
+                         "official_artist_in_event_detail")
+        rows, _, buckets = __import__("triage").classify([result], CATALOGUE)
+        self.assertEqual(buckets, {"genre_tag_review": 1})
+        self.assertEqual(rows[0]["leadArtist"], ARTISTS[0])
+        # A genre on an adjacent Event or a generic venue menu is not evidence.
+        for band in raw["performer"]:
+            band.pop("genre")
+        self.assertEqual(discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY
+        )["classification"], [])
+
+    def test_mixed_bill_qualifies_even_when_global_event_genre_is_jazz(self):
+        import triage
+        _, raw, _, _ = fixture()
+        raw["genre"] = ["Jazz"]  # Event's broad theme is not every band's style.
+        for band in raw["performer"]:
+            band["genre"] = "Jazz"
+        raw["performer"][-1]["genre"] = "Death Metal"
+
+        candidate = discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
+        self.assertEqual(candidate["classification"], ["Jazz", "Death Metal"])
+        self.assertEqual(candidate["genreEvidenceScope"],
+                         "official_artist_in_event_detail")
+        _, _, buckets = triage.classify([candidate], CATALOGUE)
+        self.assertEqual(buckets, {"genre_tag_review": 1})
+
+        # Only irrelevant performer genres + an irrelevant Event.genre = hold.
+        raw["performer"][-1]["genre"] = "Jazz"
+        candidate = discovery.candidate(
+            raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY)
+        _, _, buckets = triage.classify([candidate], CATALOGUE)
+        self.assertEqual(buckets, {"genre_unknown": 1})
+
+    def test_large_bill_does_not_truncate_only_metal_artist_at_end(self):
+        import official_rss_jsonld_bridge as bridge
+        raw = {"performer": [
+            {"@type": "MusicGroup", "name": f"ACT {i:02d}",
+             "genre": f"Jazz Variation {i:02d}"}
+            for i in range(25)
+        ] + [{"@type": "MusicGroup", "name": "FINALE METAL",
+              "genre": "Black Metal"}]}
+        labels, scope = bridge.event_genres_from_own_bill(raw)
+        self.assertIn("Black Metal", labels)
+        self.assertLessEqual(len(labels), 20)
+        self.assertEqual(scope, "official_artist_in_event_detail")
+        self.assertEqual(len(bridge.official_named_bill(raw["performer"])[0]), 26)
+
     def test_source_redirect_is_held_before_detail_network(self):
         listing, page = documents()
         calls = []
