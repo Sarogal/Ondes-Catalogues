@@ -142,3 +142,54 @@ n'est **pas** une permission de publier : `verified_venue_leads=0`,
 raccordement authentifié des sources officielles, l'admission de chaque séance
 et le publisher, explicitement hors périmètre de cette PR. Le test d'intégration
 couvre l'ensemble ODS → OSM → IGN/BAN → HTML officiel, sans connexion réseau.
+
+## 20 novembre — provenance municipale automatisable via DILA
+
+**Mesure actualisée du backlog privé** : **449 dossiers**, dont **149 classés
+`venue_gps_unverified`**, toujours **79 couples ville+lieu distincts**
+(52 communes lors de la mesure initiale). Les 209 admissibles au premier
+filtre ne sont pas prêts à publier.
+
+La Direction de l'information légale et administrative (DILA) publie
+l'annuaire officiel de l'administration et des services publics, source :
+- https://www.data.gouv.fr/dataservices/api-annuaire-de-ladministration-et-des-services-publics
+- API `https://api-lannuaire.service-public.gouv.fr/api/explore/v2.1`
+- Données `api-lannuaire-administration`, champs `nom`, `pivot`,
+  `code_insee_commune`, `adresse`, `site_internet`, `categorie`,
+  `statut_de_diffusion` et `url_service_public`.
+
+Le module **`scripts/ptitesondes_dila_municipal_domains.py`** fournit
+la vérification générique d'un **domaine municipal indépendant** :
+- recherche bornée par nom de commune et `mairie`, sans liste de villes ;
+- revue exacte du nom de mairie, du code INSEE, de l'adresse en France,
+  du caractère public de la fiche et de l'éditeur DILA ;
+- vérification de la présence d'un unique résultat municipal non ambigu ;
+- hôtes HTTPS des sites répertoriés par DILA (jamais une URL inventée
+  ou déclarée `official=1` par OpenAgenda) ;
+- refus des réseaux sociaux, hébergeurs mutualisés et domaines trompeurs ;
+- restriction aux sites de la commune identifiée, sans accorder confiance
+  à l'ensemble des sites en `.fr` ou `.gouv.fr`.
+
+La preuve DILA est raccordée **par injection d'une lecture du répertoire**
+dans `inspect_group()`/`audit()`. Lorsqu'un lecteur DILA est fourni,
+il **remplace** la liste d'hôtes déclarée par l'appelant : une erreur de
+l'annuaire, une mairie ambiguë ou un hôte différent bloque la preuve du lieu.
+Le contrôle d'identité sur une page officielle reste strict et séparé du
+contrôle du site municipal. Un domaine municipal **ne suffit pas** à prouver
+qu'un événement se tient dans le lieu mentionné.
+
+**Aucune activation en production :** le CLI de préflight n'a pas encore
+de découverte fiable du détail officiel du lieu à ouvrir ; les tests
+simulent des cas positifs/négatifs hors réseau. Pour achever l'autonomie,
+il faut obtenir la page d'établissement au sein du domaine DILA confirmé,
+vérifier l'identité/coordonnées puis transmettre un résultat réutilisable
+au publisher après toutes les autres vérifications de la séance.
+
+**Attribution future en cas de réutilisation des données DILA** :
+mentionner « Service-Public.gouv.fr / DILA », la source et la date,
+selon la notice officielle (aucun nouveau jeu de données n'est publié ici).
+
+Les parcs et lieux éphémères sans adresse numérotée nécessitent une branche
+géographique distincte ; la voie IGN/BAN numéro de rue ne doit pas les
+bloquer définitivement. `verified_venue_leads=0`, aucun raccordement
+publisher, aucun déploiement GitHub Pages/Infomaniak.
