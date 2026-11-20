@@ -23,7 +23,7 @@ def sample(venue_id="la-rayonne", *, kind="MusicEvent",
            performers=("ACT ONE", "ACT TWO")):
     source = gen.SPECS[venue_id]
     day = "2027-03-13"
-    url = source["base"] + "evenement/verified-metal-night/"
+    url = source["base"] + source["eventPathPrefix"].lstrip("/") + "verified-metal-night/"
     names = [x for x in performers if x != "Guest"]
     record = {
         "id": "go-c-20270313-" + gen.slug(source["city"]) + "-act-one",
