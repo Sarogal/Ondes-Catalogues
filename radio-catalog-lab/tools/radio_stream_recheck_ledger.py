@@ -16,7 +16,7 @@ from pathlib import Path
 
 VALID_VERDICTS = frozenset({
     "audio_sample_ok", "audio_mime_only", "playlist_pending",
-    "not_confirmed_audio", "needs_review", "blocked_unsafe",
+    "not_confirmed_audio", "needs_review", "blocked_unsafe", "container_pending",
 })
 SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 
