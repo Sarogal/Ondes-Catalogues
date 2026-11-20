@@ -158,9 +158,13 @@ def run_campaign(plan, *, public_key, explorer=scan_agenda):
         raise ValueError("private_oa_public_read_key_required")
     output_dir = plan["output_dir"]
     marker = _lock(output_dir)
-    state = dict(plan["state"])
     attempted, freshly_scanned, recovered = 0, 0, 0
     try:
+        # Plans can be prepared before another process finishes. Always read
+        # the durable checkpoint *after* obtaining the exclusive lock;
+        # otherwise an old plan could replay segments and roll back progress.
+        state = load_checkpoint(output_dir, plan["digest"], plan["day"],
+                                plan["total"])
         while (attempted < plan["steps"]
                and state["next_agenda_index"] < plan["total"]):
             idx, segment = state["next_agenda_index"], state["segment"]
