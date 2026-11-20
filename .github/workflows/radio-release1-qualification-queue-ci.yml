@@ -1,0 +1,38 @@
+name: "Grosses Ondes — Release 1 progressive radio qualification (offline only)"
+
+on:
+  push:
+    branches:
+      - feature/radio-release1-qualification-queue-20261120
+    paths:
+      - ".github/workflows/radio-release1-qualification-queue-ci.yml"
+      - "radio-catalog-lab/tools/radio_catalog_qualification_queue.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_qualification_queue.py"
+      - "radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-radio-release1-qualification-queue
+  cancel-in-progress: true
+
+jobs:
+  test-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test reusable candidate reconciler and qualification queue
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_qualification_queue.py" -v
+      - name: Assert no tracked source changes or publication
+        run: |
+          git diff --quiet --exit-code
+          git diff --cached --quiet --exit-code
+          echo "OFFLINE_QUALIFICATION_QUEUE_TEST_PASS - no radio was certified or published"
