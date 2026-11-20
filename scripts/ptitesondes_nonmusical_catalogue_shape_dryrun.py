@@ -191,7 +191,12 @@ def _prototype(lead, page, index, prefix, context, admin, today):
     }
     lo, hi = private["age_min"], private["age_max"]
     if lo is None and hi is None:
-        event["age_label"] = "En famille"  # only explicit family evidence
+        event["age_label"] = (
+            "En famille"
+            if private["audience_source_claim"] in (
+                "explicit_family", "explicit_mixed")
+            else "Enfants"
+        )  # public evidence, never an inferred age limit
     else:
         if not all(
             (v is None or
