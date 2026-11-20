@@ -180,12 +180,14 @@ def osm_hints(group, center, response):
     return sorted(found, key=lambda x: x["osm_object_hint"])
 
 
-def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass):
+def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
+                  ign_fetch=None):
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
     try:
-        evidence = osm_hints(group, center, osm_fetch(center))
+        response = osm_fetch(center)
+        evidence = osm_hints(group, center, response)
     except (ValueError, OSError, TypeError, KeyError):
         return {"status": "independent_provider_unavailable_or_incomplete",
                 "osm_candidates_unverified": []}
@@ -195,21 +197,35 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass):
         status = "multiple_osm_hints_ambiguous"
     else:
         status = "no_exact_osm_venue_found"
-    return {"status": status, "osm_candidates_unverified": evidence}
+    result = {"status": status, "osm_candidates_unverified": evidence}
+    if len(evidence) == 1 and ign_fetch is not None:
+        from ptitesondes_generic_venue_ign_corroboration import (
+            corroborate_osm_records,
+        )
+        independent = corroborate_osm_records(
+            group, response, center, ign_fetch)
+        # A matching BAN address is geography corroboration only.
+        # Never use this flag to modify VENUES or authorize publication.
+        result["independent_address"] = independent
+    return result
 
 
 def audit(backlog, today, record_fetch=api_record,
-          osm_fetch=fetch_overpass, live=False):
+          osm_fetch=fetch_overpass, live=False, ign_fetch=None):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
     for group in chosen:
-        result = (inspect_group(group, record_fetch, osm_fetch) if live
-                  else {"status": "not_scanned_preview",
-                        "osm_candidates_unverified": []})
+        result = (inspect_group(group, record_fetch, osm_fetch, ign_fetch)
+                  if live else {"status": "not_scanned_preview",
+                                "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
                         "lead_count": group["lead_count"],
                         "uids": group["uids"], **result})
+    address_matched = [
+        x for x in checked
+        if x.get("independent_address", {}).get("address_correlated") is True
+    ]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
         "mode": "private_osm_hints_no_publisher_access",
@@ -221,6 +237,10 @@ def audit(backlog, today, record_fetch=api_record,
         "independent_hints": sum(
             x["status"] == "single_osm_hint_requires_official_venue_and_address_proof"
             for x in checked),
+        "independent_address_matches": len(address_matched),
+        "leads_with_independent_address_hint": sum(
+            x["lead_count"] for x in address_matched),
+        "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
         "publication_ready": False, "public_writes": 0,
@@ -235,13 +255,21 @@ def main():
                         default=date.today())
     parser.add_argument("--live-probe", action="store_true")
     args = parser.parse_args()
-    # Caller must ensure output is in a PRIVATE runner workspace, never a
-    # public Actions artifact or a published repository path.
-    if args.output_private_report.resolve().is_relative_to(
-            Path(__file__).resolve().parents[1] / "docs"):
-        raise ValueError("public_docs_output_forbidden")
+    # Block BOTH private input and output paths inside the public checkout.
+    # A future workflow must explicitly use a private runner workspace and
+    # must never upload the report as a public Actions artifact.
+    repository = Path(__file__).resolve().parents[1]
+    if (args.output_private_report.resolve().is_relative_to(repository)
+            or args.backlog.resolve().is_relative_to(repository)):
+        raise ValueError("private_backlog_and_report_outside_public_repo_required")
+    if args.backlog.stat().st_size > 1_000_000:
+        raise ValueError("oversized_private_backlog")
     backlog = json.loads(args.backlog.read_text(encoding="utf-8"))
-    report = audit(backlog, args.day, live=args.live_probe)
+    if args.live_probe:
+        from ptitesondes_generic_venue_ign_corroboration import fetch_ign
+        report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign)
+    else:
+        report = audit(backlog, args.day, live=False)
     args.output_private_report.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
