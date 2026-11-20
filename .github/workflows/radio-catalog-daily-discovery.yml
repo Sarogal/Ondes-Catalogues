@@ -15,6 +15,7 @@ on:
       - "radio-catalog-lab/tools/test_radio_stream_technical_probe.py"
       - "radio-catalog-lab/tools/radio_stream_playlist_preview.py"
       - "radio-catalog-lab/tools/test_radio_stream_playlist_preview.py"
+      - "radio-catalog-lab/tools/test_radio_stream_socket_integration.py"
       - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
       - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
@@ -54,6 +55,7 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_technical_probe.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_playlist_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_socket_integration.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
 
   discovery-preview:
