@@ -68,3 +68,57 @@ Flutter activation/rollback, Android Auto tests and the owner's authorization.
 For the 27 historical admission UUIDs, continue using the private
 `radio_catalog_coverage_gate.py`, `radio_catalog_uuid_reconcile.py` and
 `radio_catalog_triage_preview.py`. Their classification is not a merge plan.
+
+## Nouvelle étape : planification bornée et équitable (20 novembre)
+
+`tools/radio_catalog_probe_batch_plan.py` réutilise **directement**
+`build_queue` au lieu de créer un autre classement, et prépare une rotation
+par jour UTC des flux MP3/AAC à contrôler. Limites strictes : au plus **40
+flux par jour**, découpés en **8 lots de 5 au maximum**, compatibles avec le
+sondeur existant. En présence de nouveautés, jusqu'à 20 % de la capacité leur
+est réservée. HLS et codecs inconnus n'empêchent pas les contrôles MP3/AAC.
+
+Sur une photographie stable de **339 flux historiques distincts, avec UUID
+indépendants**, et 10 nouveautés, la rotation synthétique parcourt les 339
+anciens en 11 jours (32 anciens + 8 découvertes par jour). Ce chiffre est une
+simulation de planification et **ne représente aucun flux déjà sondé**.
+Les contrôles multipliés, les reprises après interruption et les seconds
+passages restent à orchestrer et prouver sur l'infrastructure réelle.
+
+Le plan JSON public ne contient **aucune URL de flux** : seulement des UUID,
+SHA de flux et références de travail. Si nécessaire, l'option facultative
+`--scratch-probe-inputs` génère des entrées intermédiaires réellement
+compatibles avec le sondeur existant, uniquement dans un nouveau dossier
+éphémère explicitement situé **hors du checkout Git**. Les fichiers bruts
+doivent rester privés, ne jamais être envoyés dans les artefacts GitHub,
+et être effacés après sondage. Le CLI ne lance **aucune requête réseau**.
+
+Exemple de prévisualisation locale, depuis la racine du dépôt public,
+avec catalogue privé accessible seulement sur la machine de contrôle :
+
+```sh
+python radio-catalog-lab/tools/radio_catalog_probe_batch_plan.py \
+  --catalog /private/staged-radio-catalog.json \
+  --discovery /scratch/candidates.json \
+  --date 2026-11-20 \
+  --max-daily 40 --max-per-batch 5 \
+  --output /scratch/probe-batch-plan.json
+```
+
+Pour générer **uniquement sur une machine de confiance**, des entrées
+temporaires à fournir plus tard au sondeur, ajouter :
+
+```sh
+  --scratch-probe-inputs /tmp/go-radio-private-probe-inputs
+```
+
+La génération de ces entrées n'exécute aucun sondage. Chaque lancement du
+sondeur demandera son option réseau explicite et sera limité à 5 URL.
+**Aucun workflow automatique ne consomme encore ces lots.**
+
+**Limites multi-flux actuelles :** une seule URL par UUID est sélectionnée par
+jour pour ne pas provoquer de collision dans le registre de preuves existant.
+Le registre actuel agrège les preuves par UUID, alors que la future
+qualification devra garder les preuves par couple `UUID + empreinte de flux`
+pour ne pas perdre l'historique des variantes. Cette évolution est distincte
+et obligatoire avant de prétendre qualifier toutes les variantes.
