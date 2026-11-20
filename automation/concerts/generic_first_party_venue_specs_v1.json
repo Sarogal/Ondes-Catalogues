@@ -16,6 +16,14 @@
       "host": "lemetronum.fr",
       "base": "https://lemetronum.fr/",
       "eventPathPrefix": "/evenement/"
+    },
+    "l-astrolabe-orleans": {
+      "name": "L’Astrolabe",
+      "city": "Orléans",
+      "department": "45",
+      "host": "www.lastrolabe.org",
+      "base": "https://www.lastrolabe.org/",
+      "eventPathPrefix": "/agenda/"
     }
   }
 }
