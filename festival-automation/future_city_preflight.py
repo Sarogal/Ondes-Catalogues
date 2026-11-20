@@ -71,7 +71,7 @@ def _city_jsonld(html, row):
                     or iso_day(event.get("endDate")) != end
                     or str(event.get("eventStatus", "")).rsplit("/", 1)[-1].casefold()
                        in SENSITIVE_STATUSES):
-                return None
+                return False
             location = event.get("location")
             if not isinstance(location, dict):
                 return None
@@ -80,11 +80,14 @@ def _city_jsonld(html, row):
                 return None
             city = _name(address.get("addressLocality"))
             # Require either explicit FR or pre-registered same-city context.
-            if city is None or (_country(address) != "FR"
-                               and _normal(city) != _normal(row.get("city"))):
-                return None
+            if (city is None or
+                    (address.get("addressCountry") not in (None, "")
+                     and _country(address) != "FR") or
+                    (_country(address) != "FR"
+                     and _normal(city) != _normal(row.get("city")))):
+                return False
             facts.add(city)
-    return next(iter(facts)) if len(facts) == 1 else None
+    return next(iter(facts)) if len(facts) == 1 else (False if facts else None)
 
 
 def _city_visible(html, row):
@@ -133,6 +136,8 @@ def exact_edition_city(html, row):
     if start is None or start.year not in range(2026, 2050):
         return None
     structured = _city_jsonld(html, row)
+    if structured is False:
+        return None
     visible = _city_visible(html, row)
     if structured is not None and visible is not None and _normal(structured) != _normal(visible):
         return None
