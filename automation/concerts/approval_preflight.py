@@ -96,11 +96,29 @@ def check_append_only(previous, proposed, today):
         # separately reviewed event site. Ordinary auto approvals still require
         # the standard automated reviewer and exact publisher recheck.
         reviewer = approval.get("reviewedBy") if isinstance(approval, dict) else None
+        # An independent signer may additionally approve a concert at
+        # an ALREADY published venue, but only with the separate existing
+        # site evidence. The production publisher checks the committed
+        # organizer authority, exact artists, genre, and venue identity.
+        existing_site_proofs = [
+            proof for proof in approval.get("officialEvidence", [])
+            if isinstance(proof, dict)
+            and proof.get("proofType") == "independent-existing-venue-v1"
+        ] if isinstance(approval, dict) and isinstance(
+                approval.get("officialEvidence"), list) else []
+        independent_existing = (
+            isinstance(event, dict)
+            and len(existing_site_proofs) == 1
+            and existing_site_proofs[0].get("venueId") == event.get("venueId")
+            and existing_site_proofs[0].get("checkedAt") == today.isoformat()
+            and isinstance(existing_site_proofs[0].get("authoritySourceUrl"), str)
+        )
         allowed_reviewer = (
             reviewer == "automated-official-recheck" or
             (reviewer == "independent-official-verifier"
              and isinstance(event, dict)
-             and event.get("id") in paired_site_events)
+             and (event.get("id") in paired_site_events
+                  or independent_existing))
         )
         require(isinstance(approval, dict)
                 and approval.get("reviewDecision") == "approved"
