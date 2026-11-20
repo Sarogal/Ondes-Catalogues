@@ -40,6 +40,8 @@ on:
       - 'tests/test_ptitesondes_unnumbered_official_geo_proof.py'
       - 'scripts/ptitesondes_dynamic_oa_agenda_discovery.py'
       - 'tests/test_ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'scripts/ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_openagenda_public_agenda_index.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -97,6 +99,8 @@ on:
       - 'tests/test_ptitesondes_unnumbered_official_geo_proof.py'
       - 'scripts/ptitesondes_dynamic_oa_agenda_discovery.py'
       - 'tests/test_ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'scripts/ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_openagenda_public_agenda_index.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -183,6 +187,8 @@ jobs:
             -p 'test_ptitesondes_unnumbered_official_geo_proof.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_dynamic_oa_agenda_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_public_agenda_index.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_private_venue_batch_rollup.py' -v
           python -m unittest discover -s tests \
