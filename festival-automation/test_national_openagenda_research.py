@@ -189,6 +189,23 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         again = scan(current, DAY, fetch=lambda _: self.fail("No second fetch"))
         self.assertIs(again, report)
 
+    def test_same_day_old_query_budget_rechecks_new_pages(self):
+        current = state()
+        first = scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        self.assertEqual(first["requests_attempted"], len(fixed_query_urls(DAY)))
+        current[STATE_KEY]["requests_attempted"] = 6  # Older six-view engine.
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return payload([EVENT])
+        refreshed = scan(current, DAY, fetch=fetch)
+        self.assertIsNot(refreshed, first)
+        self.assertEqual(visited, list(fixed_query_urls(DAY)))
+        self.assertEqual(refreshed["requests_attempted"],
+                         len(fixed_query_urls(DAY)))
+        self.assertEqual(refreshed["leads_count"], 1)
+        self.assertFalse(refreshed["publication_authorized"])
+
     def test_partial_outage_never_authorizes_and_can_retry_next_slot(self):
         urls = fixed_query_urls()
         attempts = []
