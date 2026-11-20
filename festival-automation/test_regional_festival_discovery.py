@@ -19,6 +19,102 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_semantic_list_and_role_article_cards_capture_visible_music_category(self):
+        from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
+        title = "HelixFest 2027"
+        link = ("/actualites-sorties/agenda/helixfest-2027")
+        anchor = '<h3><a href="' + link + '">' + title + '</a></h3>'
+        cases = [
+            "<li><p>Musique / Concert</p>" + anchor + "</li>",
+            '<li><span>Concerts / Musique</span>' + anchor + "</li>",
+            '<div role="article"><div class="info">'
+            '<span>Musique / Concert</span></div><div>' + anchor
+            + "</div></div>",
+            '<div role="article"><div>' + anchor + "</div>"
+            "<p>Concerts / Musique</p></div>",
+            # Ordinary lists inside an already-scoped article must not
+            # erase its existing card attribution.
+            "<article><ul><li>Musique / Concert</li></ul>" + anchor
+            + "</article>",
+        ]
+        for html in cases:
+            with self.subTest(html=html):
+                found = candidate_links(html, ANGERS, DAY)
+                self.assertEqual(len(found), 1)
+                self.assertEqual(found[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
+                self.assertEqual(found[0]["title"], title)
+                self.assertEqual(found[0]["candidate_url"],
+                                 "https://www.angers.fr" + link)
+                self.assertIsNone(found[0]["archive_slug"])
+
+    def test_semantic_card_scope_does_not_accept_hidden_or_ambiguous_siblings(self):
+        title = "HelixFest 2027"
+        anchor = '<a href="/actualites-sorties/agenda/helixfest-2027">' + title + '</a>'
+        cases = [
+            "<li><span>Musique / Concert</span></li><li>" + anchor + "</li>",
+            '<div role="article"><span>Musique / Concert</span></div>'
+            '<div role="article">' + anchor + '</div>',
+            "<div><span>Musique / Concert</span>" + anchor + "</div>",
+            '<li><span hidden>Musique / Concert</span>' + anchor + '</li>',
+            '<div role="article"><span aria-hidden="true">'
+            'Musique / Concert</span>' + anchor + '</div>',
+            '<div role="article"><span style="display:none">'
+            'Musique / Concert</span>' + anchor + '</div>',
+            '<li><span>Musique / Concert</span>' + anchor
+            + '<a href="/autre">Autre</a></li>',
+            '<div role="article"><span>Musique / Concert</span>' + anchor
+            + '<a href="/autre">Autre</a></div>',
+            '<li><span>Musique / Concert</span>'
+            '<li>' + anchor + '</li></li>',
+            '<div role="article"><span>Musique / Concert</span>'
+            '<div role="article">' + anchor + '</div></div>',
+            '<li><span>Musique / Concert</span>'
+            '<a href="https://evil.example/helixfest-2027">' + title
+            + '</a></li>',
+            '<li><span>Culture</span>' + anchor + '</li>',
+            '<li><span>Musique / Concert</span>'
+            '<a href="/actualites-sorties/agenda/helixfest">HelixFest</a></li>',
+            '<li><span>Musique / Concert</span>'
+            '<a href="/actualites-sorties/agenda/flower-2027">'
+            'Festival des Fleurs 2027</a></li>',
+        ]
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual(candidate_links(html, ANGERS, DAY), [])
+
+    def test_semantic_discovery_remains_private_and_never_authorizes_publisher(self):
+        from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources
+        source = '<li><span>Concerts / Musique</span><a href="' \
+                 '/actualites-sorties/agenda/festibarockin-2027">' \
+                 "Festibarock'in 2027</a></li>"
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        watched = []
+        scan = scan_regional_indexes(
+            report(), state, [B], DAY,
+            fetch=lambda url: watched.append(url) or source, limit=1)
+        self.assertEqual(watched, [ANGERS])
+        self.assertEqual(len(scan), 1)
+        self.assertEqual(scan[0]["discovery_signal"],
+                         MUSIC_CATEGORY_PENDING_SIGNAL)
+        self.assertIs(scan[0]["publication_authorized"], False)
+        self.assertIs(scan[0]["date_verified"], False)
+        tomorrow = "2026-11-06"
+        review = build_queue(
+            state, {"schema": "grossesondes.source-watch-report.v1",
+                    "date": tomorrow, "source_reference_leads_review_only": []},
+            [], tomorrow)
+        self.assertEqual(review["candidate_dossiers_count"], 1)
+        self.assertEqual(review["publications"], 0)
+        self.assertIs(review["publication_authorized"], False)
+        eligible = _eligible_sources(state, review, tomorrow, due_only=False)
+        self.assertEqual(len(eligible), 1)
+        self.assertEqual(eligible[0]["index_url"], ANGERS)
+        self.assertIs(review["dossiers"][0]["publication_authorized"], False)
+
     def test_compound_festival_brand_music_category_is_discovery_only(self):
         from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
         # The compound festival token nominates no event without an exact
