@@ -18,6 +18,10 @@ from ptitesondes_dila_municipal_domains import (
 from ptitesondes_openagenda_v2_direct_evidence import (
     _source_parts, read_direct_agenda_v2, read_direct_v2,
 )
+from ptitesondes_candidate_promotion import api_record
+from ptitesondes_ods_oa_source_binding import (
+    ods_source_parts, ods_immutable_source_match,
+)
 
 MAX_LEADS = 4000
 MAX_AGENDAS = 60
@@ -69,7 +73,8 @@ class MunicipalOfficialPageReader:
                  agenda_reader=read_direct_agenda_v2,
                  event_reader=read_direct_v2,
                  directory_reader=fetch_dila,
-                 html_reader=read_official_html):
+                 html_reader=read_official_html,
+                 ods_reader=api_record):
         if (not isinstance(leads, list) or len(leads) > MAX_LEADS
                 or not isinstance(agenda_uids, list)
                 or len(agenda_uids) > MAX_AGENDAS
@@ -77,12 +82,14 @@ class MunicipalOfficialPageReader:
                 or len(set(agenda_uids)) != len(agenda_uids)
                 or not isinstance(public_read_key, str) or not public_read_key
                 or not all(callable(v) for v in (
-                    agenda_reader, event_reader, directory_reader, html_reader))):
+                    agenda_reader, event_reader, directory_reader,
+                    html_reader, ods_reader))):
             raise ValueError("invalid_private_reader_configuration")
         self.key = public_read_key
         self.agenda_uids = tuple(agenda_uids)
         self.agenda_reader = agenda_reader
         self.event_reader = event_reader
+        self.ods_reader = ods_reader
         self.directory_reader = directory_reader
         self.html_reader = html_reader
         self.directory_cache = {}
@@ -90,17 +97,28 @@ class MunicipalOfficialPageReader:
         self.agenda_map = None
         self.source_index = defaultdict(set)
         for row in leads:
-            if not isinstance(row, dict) or row.get("collector") != "openagenda-v2":
+            if not isinstance(row, dict):
                 continue
-            parts = _source_parts(row.get("source_url"))
-            if (parts is None
-                    or not isinstance(row.get("external_id"), str)
-                    or row["external_id"] != parts[1]
-                    or not re.fullmatch(r"[0-9]{1,12}", row["external_id"])):
+            source_url = row.get("source_url")
+            kind = row.get("collector")
+            uid = row.get("external_id")
+            if (not isinstance(uid, str)
+                    or not re.fullmatch(r"[0-9]{1,12}", uid)):
+                continue
+            if kind == "openagenda-v2":
+                parts = _source_parts(source_url)
+                slug = parts[0] if parts is not None and parts[1] == uid else None
+            elif kind == "opendatasoft-index":
+                # ODS canonical URLs usually contain human readable event
+                # slugs, not immutable UIDs; binding to UID happens ONLY
+                # after a separate exact-UID ODS record lookup.
+                slug = ods_source_parts(source_url)
+            else:
                 continue
             city, venue = norm(row.get("city")), norm(row.get("venue"))
-            if city and venue:
-                self.source_index[(city, venue)].add((parts[0], parts[1]))
+            if city and venue and slug is not None:
+                self.source_index[(city, venue)].add(
+                    (slug, uid, kind, source_url))
 
     def _agendas(self):
         if self.agenda_map is None:
@@ -147,7 +165,8 @@ class MunicipalOfficialPageReader:
         ids = group.get("uids")
         if not isinstance(ids, list) or not ids:
             return None, None
-        options = [(slug, uid) for slug, uid in options if uid in ids]
+        options = [(slug, uid, kind, url)
+                   for slug, uid, kind, url in options if uid in ids]
         if not options:
             return None, None
         # High-volume venues have many independent dated occurrences.
@@ -160,10 +179,18 @@ class MunicipalOfficialPageReader:
             return None, None
         mapping = self._agendas()
         found = set()
-        for slug, uid in options:
+        for slug, uid, kind, source_url in options:
             agenda_uid = mapping.get(slug)
             if agenda_uid is None:
                 return None, None
+            if kind == "opendatasoft-index":
+                try:
+                    ods = self.ods_reader(uid)
+                    if not ods_immutable_source_match(
+                            group, uid, source_url, ods):
+                        return None, None
+                except (ValueError, OSError, TypeError, KeyError, TimeoutError):
+                    return None, None
             try:
                 record = self.event_reader(agenda_uid, uid, self.key)
             except (ValueError, OSError, TypeError, KeyError, TimeoutError):
