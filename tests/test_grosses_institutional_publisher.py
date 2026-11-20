@@ -41,8 +41,8 @@ class InstitutionalPublisherTests(unittest.TestCase):
             candidate_links, MUSIC_CATEGORY_PENDING_SIGNAL)
         title = "Festival des Rivages 2027"
         detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
-        index = ('<main><p>Musique / Concert</p>'
-                 '<a href="' + detail + '">' + title + '</a></main>')
+        index = ('<main><div>Musique / Concert '
+                 '<a href="' + detail + '">' + title + '</a></div></main>')
         candidates = candidate_links(index, INDEX, TODAY)
         self.assertEqual(len(candidates), 1)
         self.assertEqual(candidates[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
