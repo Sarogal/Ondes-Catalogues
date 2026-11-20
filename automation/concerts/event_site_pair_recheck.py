@@ -219,9 +219,7 @@ def _official_event(lead, html, url, today):
     names, unnamed = bill
     require(_name(lead.get("leadArtist")) in {_name(n) for n in names},
             "lead artist not on fresh official bill")
-    genres = raw.get("genre")
-    if isinstance(genres, str):
-        genres = [genres]
+    genres, _genre_scope = bridge.event_genres_from_own_bill(raw)
     require(contract.relevant_genres(genres),
             "explicit relevant non-electronic event genre absent")
     location = raw.get("location")
