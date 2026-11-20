@@ -91,6 +91,20 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         self.assertFalse(out["publisher_connected"])
         self.assertEqual(out["public_writes"], 0)
 
+    def test_expired_exact_session_goes_to_archive_not_private_admission(self):
+        out = route(today=date(2026, 11, 22))
+        self.assertEqual(out["stage"], "session_already_expired")
+        self.assertEqual(out["next_private_review_action"],
+                         "archive_expired_session_no_publish")
+        self.assert_safe(out)
+
+    def test_far_future_exact_session_is_revisited_later(self):
+        out = route(today=date(2026, 1, 1))
+        self.assertEqual(out["stage"], "session_outside_discovery_horizon")
+        self.assertEqual(out["next_private_review_action"],
+                         "revisit_when_date_enters_window")
+        self.assert_safe(out)
+
     def test_missing_context_requests_snapshot_before_geo(self):
         out = route(context=None)
         self.assertEqual(out["stage"], "historical_snapshot_unchecked")
