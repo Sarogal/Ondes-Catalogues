@@ -223,6 +223,7 @@ class RegionalEventAnchors(Anchors):
         self.accessible_event_label = None
         self.article_stack = []
         self.article_music_categories = {}
+        self.ambiguous_card_anchors = set()
         self.div_depth = 0
 
     def handle_starttag(self, tag, attrs):
@@ -289,10 +290,14 @@ class RegionalEventAnchors(Anchors):
         )
         if closing_card:
             frame = self.article_stack.pop()
-            # A category cannot leak between sibling cards, nested cards
-            # or different events. No invisible or ambiguous attribution.
-            if (not frame["nested"] and not self.hidden and not self.concealed
-                    and len(self.anchors) == frame["start"] + 1):
+            # Prefix context may nominate an anchor BEFORE the card closes.
+            # Mark ALL links in nested or multi-anchor cards as ambiguous;
+            # otherwise the first link could borrow the category and pass.
+            one_link = len(self.anchors) == frame["start"] + 1
+            if frame["nested"] or not one_link:
+                self.ambiguous_card_anchors.update(
+                    range(frame["start"], len(self.anchors)))
+            elif not self.hidden and not self.concealed:
                 visible = normalized(" ".join(frame["text"]))
                 if MUSIC_EVENT_CATEGORY.search(visible):
                     self.article_music_categories[frame["start"]] = (
@@ -412,7 +417,8 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                      and len(primary_name_hints) <= 60
                      else frozenset())
     for anchor_number, (href, label, prefix) in enumerate(parser.anchors[:650]):
-        if not isinstance(href, str) or not isinstance(label, str):
+        if (anchor_number in parser.ambiguous_card_anchors
+                or not isinstance(href, str) or not isinstance(label, str)):
             continue
         event_title = municipal_event_title(label)
         title = event_title if event_title is not None else " ".join(label.split())[:160]
