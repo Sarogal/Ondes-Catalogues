@@ -60,9 +60,12 @@ def packet(lead=None, admin=None, venue=None, catalogue=None):
     }
 
 
-def simulate(rows=None, public=None, expected=None, today=DAY):
+DEFAULT = object()
+
+
+def simulate(rows=DEFAULT, public=None, expected=None, today=DAY):
     p = deepcopy(CATALOGUE if public is None else public)
-    ins = [packet(catalogue=p)] if rows is None else deepcopy(rows)
+    ins = [packet(catalogue=p)] if rows is DEFAULT else deepcopy(rows)
     return simulate_nonmusical_catalogue_shape(
         ins, p, today,
         expected_snapshot_sha256=(
@@ -162,7 +165,7 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
             id="other-aggregator-duplicate",
             source_url="https://another-official.example/event/001"))
         out = simulate([packet(catalogue=published)], public=published)
-        self.assertEqual(out["blockers"]["historical_exact_duplicate"], 1)
+        self.assertEqual(out["blockers"]["historical_duplicate"], 1)
         self.assertEqual(out["hypothetical_structural_matches_only"], 0)
         self.assert_not_a_publisher(out)
 
@@ -178,18 +181,19 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
         result = simulate([packet(catalogue=published)], public=published)
         self.assertEqual(result["hypothetical_structural_matches_only"], 0)
         self.assertEqual(result["blockers"][
-            "historical_ambiguous_cross_source_collision"], 1)
+            "historical_collision_ambiguous"], 1)
         self.assert_not_a_publisher(result)
 
-    def test_different_date_from_same_source_is_not_false_duplicate(self):
-        a, b = deepcopy(LEADS[0]), deepcopy(LEADS[1])
-        a["date_start"] = "2026-11-21"
-        b["date_start"] = "2026-11-21"
-        first = packet(lead=a)
-        second = packet(lead=b)
-        out = simulate([first, second])
-        self.assertEqual(out["hypothetical_structural_matches_only"], 2)
-        self.assert_not_a_publisher(out)
+    def test_unrelated_day_from_same_source_is_not_duplicate_by_itself(self):
+        item = packet()
+        event, _ = _prototype(
+            item["lead"], item["page"], item["trusted_index"],
+            item["child_prefix"], item["independent_context"],
+            item["admin_pin"], DAY)
+        older = dict(event, id="other-day", date_start="2026-12-21",
+                     date_end="2026-12-21", time=event["time"])
+        self.assertIsNone(_collision(event, [older]))
+        self.assert_not_a_publisher(simulate())
 
     def test_catalogue_hash_mismatch_refuses_all_proposed_changes(self):
         out = simulate(expected="0" * 64)
