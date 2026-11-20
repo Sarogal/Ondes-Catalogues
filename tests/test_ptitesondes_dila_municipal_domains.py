@@ -177,6 +177,17 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
                 ConnectionError("provider unavailable")), **kwargs)
         self.assertFalse(error["official_page"]["official_identity_verified"])
 
+    def test_tld_or_broad_government_suffix_never_authenticates_any_fr_page(self):
+        for site, page_url in (
+            ("https://www.fr/", "https://not-the-city.fr/lieux/enfants"),
+            ("https://www.gouv.fr/", "https://other.gouv.fr/lieux/jeunesse"),
+            ("https://service-public.gouv.fr/",
+             "https://other.service-public.gouv.fr/lieux/jeunesse"),
+        ):
+            with self.subTest(site=site):
+                self.assertIsNone(approved_municipal_page_host(
+                    page_url, CITY, payload(mairie(site=site))))
+
     def test_without_websites_fails_as_unknown_not_fake_verified(self):
         row = mairie()
         row["site_internet"] = None
