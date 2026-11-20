@@ -157,15 +157,21 @@ def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
         if mpeg_ok or aac_ok:
             return ("audio_sample_ok", "mpeg_or_aac_frame")
     if body.startswith(b"OggS"):
-        return ("audio_sample_ok", "ogg")
+        # Ogg can contain video; only well-known audio codec identifiers
+        # count as audio evidence in this bounded sample.
+        if any(marker in body[:MAX_BYTES] for marker in (
+            b"OpusHead", b"\x01vorbis", b"Speex   ", b"fLaC"
+        )):
+            return ("audio_sample_ok", "ogg_audio_codec")
+        return ("container_pending", "ogg_codec_unconfirmed")
     if body.startswith(b"fLaC"):
         return ("audio_sample_ok", "flac")
     if len(body) >= 12 and body.startswith(b"RIFF") and body[8:12] == b"WAVE":
         return ("audio_sample_ok", "wav")
     if body.startswith(b"\x1a\x45\xdf\xa3"):
-        return ("audio_sample_ok", "webm")
+        return ("container_pending", "webm_codec_unconfirmed")
     if len(body) >= 12 and body[4:8] == b"ftyp":
-        return ("audio_sample_ok", "mp4_container")
+        return ("container_pending", "mp4_codec_unconfirmed")
     if mime.startswith(("audio/", "video/")):
         return ("audio_mime_only", "unrecognized_audio_payload")
     return ("not_confirmed_audio", "unknown")
