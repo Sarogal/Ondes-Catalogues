@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timedelta
 from hashlib import sha256
+from html.parser import HTMLParser
 import json
 from math import isfinite
 import os
@@ -17,6 +18,7 @@ from pathlib import Path
 import re
 import sys
 import tempfile
+from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
 from dns_pinned_https import fetch_public_html, safe_public_url
@@ -32,6 +34,8 @@ SCHEMA = "grossesondes.future-festival-geo-private.v1"
 STATE_KEY = "future_edition_geo_observations_private"
 CURSOR_KEY = "future_edition_geo_rotation_cursor"
 MAX_CHECKS = 4
+MAX_LINKS_PER_ORGANIZER = 2
+MAX_ANCHORS_PER_PAGE = 250
 
 
 def _coord(value, bound):
@@ -138,6 +142,132 @@ def exact_edition_geo(html, row):
     return facts[0]
 
 
+class _VisibleOrganizerLinks(HTMLParser):
+    """Only visible first-party menu anchors; no script, form or CSS URLs."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.links = []
+        self.active = None
+        self.hidden = 0
+
+    def handle_starttag(self, tag, attrs):
+        attr = dict(attrs)
+        if tag in ("script", "style", "noscript", "template", "svg"):
+            self.hidden += 1
+            return
+        if self.hidden:
+            return
+        if tag == "a" and len(self.links) < MAX_ANCHORS_PER_PAGE:
+            self.active = [attr.get("href"), []]
+
+    def handle_data(self, value):
+        if self.active is not None and not self.hidden:
+            self.active[1].append(value[:200])
+
+    def handle_endtag(self, tag):
+        if tag == "a" and self.active is not None:
+            self.links.append((self.active[0], " ".join(self.active[1])[:220]))
+            self.active = None
+        if tag in ("script", "style", "noscript", "template", "svg"):
+            self.hidden = max(0, self.hidden - 1)
+
+
+_LINK_CONTEXT = re.compile(
+    r"(?:acces|access|venir|getting.here|how.to.get|itineraire|directions|"
+    r"info(?:rmation)?s?.pratiques?|practical.info|venue|lieu|location|"
+    r"plan.du.site|site.map|parking|faq)",
+    re.I,
+)
+_LINK_EXCLUDE = re.compile(
+    r"(?:contact|partenair|sponsor|vip|cashless|restaurant|billet|ticket|"
+    r"boutique|shop|legal|mentions|privacy|cookie|retrospective|archives|"
+    r"photos|previous|201[0-9]|202[0-6])",
+    re.I,
+)
+
+
+def official_access_links(html, homepage):
+    """Find at most two bounded HTML pages under the same signed HTTPS host.
+
+    A site link is only a way to FIND evidence. It does not certify that the
+    event uses the old venue. The independent current-year event verifier
+    remains mandatory on the fetched detail page itself.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or safe_public_url(homepage) is None):
+        return []
+    parser = _VisibleOrganizerLinks()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError):
+        return []
+    base = urlsplit(homepage)
+    choices = set()
+    for href, label in parser.links[:MAX_ANCHORS_PER_PAGE]:
+        if not isinstance(href, str) or not 1 <= len(href) <= 900:
+            continue
+        if href.startswith(("#", "?", "javascript:", "mailto:", "tel:")):
+            continue
+        if len(label) > 220 or _LINK_EXCLUDE.search(label):
+            continue
+        try:
+            url = urljoin(homepage, href)
+            parts = urlsplit(url)
+            decoded = unquote(parts.path)
+            if (parts.scheme != "https" or parts.hostname != base.hostname
+                    or parts.netloc.lower() != base.netloc.lower()
+                    or parts.query or not decoded.startswith("/")
+                    or any(part in (".", "..") for part in decoded.split("/"))
+                    or re.search(r"%(?:2f|5c|2e|00)", parts.path, re.I)):
+                continue
+            clean = urlunsplit((parts.scheme, parts.netloc, parts.path, "", ""))
+            if safe_public_url(clean) is None or clean == homepage:
+                continue
+            context = " ".join((label, decoded.replace("-", " ").replace("_", " ")))
+            if not _LINK_CONTEXT.search(context) or _LINK_EXCLUDE.search(decoded):
+                continue
+            choices.add(clean)
+        except (ValueError, TypeError, UnicodeError):
+            continue
+    # Deterministic priority: first directions/access, then generic info.
+    def rank(url):
+        path = unquote(urlsplit(url).path).casefold()
+        priority = (
+            0 if re.search(r"(?:acces|access|venir|venez|itineraire|parking)", path)
+            else 1 if re.search(r"(?:info|pratique|venue|lieu|location)", path)
+            else 2
+        )
+        return (priority, len(path), url)
+    return sorted(choices, key=rank)[:MAX_LINKS_PER_ORGANIZER]
+
+
+def exact_geo_from_official_site(row, fetcher=fetch_public_html):
+    """Read the signed homepage and a MAXIMUM of two same-host venue pages.
+
+    Reused by the private observer and the public publisher. In production
+    each calls the fetcher independently, never trusting private HTML or URLs.
+    A contradiction between exact-edition pages vetoes the whole geography.
+    """
+    homepage = row.get("officialSite")
+    if safe_public_url(homepage) is None:
+        return None
+    home_html = fetcher(homepage)
+    facts = []
+    primary = exact_edition_geo(home_html, row)
+    if primary is not None:
+        facts.append(primary)
+    for url in official_access_links(home_html, homepage):
+        try:
+            claim = exact_edition_geo(fetcher(url), row)
+        except (OSError, ValueError, TimeoutError, UnicodeError):
+            continue
+        if claim is not None:
+            facts.append(claim)
+    return facts[0] if facts and all(x == facts[0] for x in facts[1:]) else None
+
+
 def eligible(calendar, today):
     if (not isinstance(calendar, dict) or calendar.get("schema") != 1
             or not isinstance(calendar.get("festivals"), list)):
@@ -198,8 +328,7 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
         slug = row["slug"]
         result = {"slug": slug, "status": "OFFICIAL_GEO_NOT_PROVEN"}
         try:
-            html = fetcher(row["officialSite"])
-            claim = exact_edition_geo(html, row)
+            claim = exact_geo_from_official_site(row, fetcher)
         except (OSError, ValueError, TimeoutError, UnicodeError):
             claim = None
             result["status"] = "OFFICIAL_FETCH_UNAVAILABLE"

@@ -26,7 +26,7 @@ FESTIVAL_AUTOMATION = str(Path(__file__).resolve().parents[1] / "festival-automa
 if FESTIVAL_AUTOMATION not in sys.path:
     sys.path.insert(0, FESTIVAL_AUTOMATION)
 from dns_pinned_https import fetch_public_html, safe_public_url
-from future_geo_preflight import SCHEMA as REVIEW_SCHEMA, exact_edition_geo
+from future_geo_preflight import SCHEMA as REVIEW_SCHEMA, exact_geo_from_official_site
 from grossesondes_structured_roster import iso_day
 
 PROOF_MODE = "current-edition-geo-two-day.v1"
@@ -174,7 +174,7 @@ def apply_independently_verified_geo(target, published, review, today,
 
         summary["independent_rechecks"] += 1
         try:
-            official = exact_edition_geo(fetcher(old["officialSite"]), old)
+            official = exact_geo_from_official_site(old, fetcher)
         except (OSError, ValueError, TimeoutError, UnicodeError):
             official = None
         # A same-host official page must identify the CURRENT edition and
