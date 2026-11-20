@@ -179,8 +179,13 @@ def _seen_again(index_html, source):
     parser = RegionalEventAnchors()
     parser.feed(index_html)
     expected = normalized(source["title"])
-    for href, label, _prefix in parser.anchors[:MAX_ANCHORS]:
-        if not isinstance(href, str) or not isinstance(label, str):
+    for anchor_number, (href, label, _prefix) in enumerate(
+            parser.anchors[:MAX_ANCHORS]):
+        # Reapply the original card-scope attribution, not just its label.
+        # A candidate inside a multi-link/nested card must not survive a
+        # second-day institutional index recheck.
+        if (anchor_number in parser.ambiguous_card_anchors
+                or not isinstance(href, str) or not isinstance(label, str)):
             continue
         # The discovery step strips this *exact* municipal navigation prefix.
         # Do the same here; a specific visible title never gets overridden.
