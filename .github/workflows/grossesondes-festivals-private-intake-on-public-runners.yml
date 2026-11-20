@@ -12,6 +12,7 @@ on:
       - 'scripts/grossesondes_official_html_edition.py'
       - 'scripts/grossesondes_structured_edition.py'
       - 'festival-automation/regional_festival_discovery.py'
+      - 'festival-automation/national_openagenda_research.py'
       - 'festival-automation/regional_source_diagnostics.py'
       - 'festival-automation/regional_festival_indexes.json'
       - 'festival-automation/national_discovery_queue.py'
