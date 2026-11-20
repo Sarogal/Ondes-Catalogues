@@ -92,9 +92,17 @@ jobs:
         run: |
           test -n "$GO_RADIO_PY_RELEASE_DIR"
           dart test test/radio_python_signed_wire_interop_test.dart --reporter expanded
-      - name: "Assert no deployment and no repository modification"
+      - name: "Assert no source modification and no deployment"
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git status --porcelain | wc -l)" -eq 0
+          # dart pub get creates an untracked local pubspec.lock in this
+          # standalone lab. This is not a source edit or a deployment.
+          unexpected="$(git status --porcelain --untracked-files=all | grep -vE '^\\?\\? radio-catalog-lab/dart/pubspec\\.lock
+ || true)"
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected modified/untracked repository files:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
           echo "OFFLINE_ONLY_SYNTHETIC_CROSS_RUNTIME_PASS — no publisher, no deploy"
