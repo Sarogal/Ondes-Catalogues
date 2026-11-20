@@ -184,7 +184,8 @@ def osm_hints(group, center, response):
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                   ign_fetch=None, official_page_get=None,
                   approved_official_hosts=(), dila_directory_get=None,
-                  official_geocode=False, source_record_from_reader=None):
+                  official_geocode=False, source_record_from_reader=None,
+                  shared_proof_day=None):
     # Direct OA-v2 UID data may supply a *search hint*, avoiding an ODS-only
     # dependency. This is NOT independent GPS proof or publisher admission.
     if source_record_from_reader is not None:
@@ -215,9 +216,31 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
             # Independent municipality + BAN + UID-bound event center.
             # This avoids dependence on an unreliable public OSM endpoint,
             # but NEVER grants publication or publisher venue admission.
-            return {"status": "official_address_ban_private_review",
-                    "osm_candidates_unverified": [],
-                    "official_geocode": official_status}
+            result = {"status": "official_address_ban_private_review",
+                      "osm_candidates_unverified": [],
+                      "official_geocode": official_status}
+            if shared_proof_day is not None:
+                from datetime import date
+                from ptitesondes_shared_venue_location_evidence import (
+                    mint_private_location_proof, location_from_proof,
+                )
+                # The shared proof is deliberately ephemeral and never
+                # serialized to a public artifact or used by a publisher.
+                # A fresh independent BAN check must agree as well.
+                ok = False
+                if type(shared_proof_day) is date:
+                    try:
+                        witness = mint_private_location_proof(
+                            group, directory, page_url, page_html,
+                            ign_fetch, shared_proof_day, source_center=center)
+                        ok = location_from_proof(
+                            witness, group["city"], group["venue"],
+                            shared_proof_day, source_point=center) is not None
+                    except (ValueError, TypeError, KeyError, OSError,
+                            TimeoutError, OverflowError):
+                        ok = False
+                result["shared_location_proof_private_review"] = ok
+            return result
     try:
         response = osm_fetch(center)
         evidence = osm_hints(group, center, response)
@@ -281,7 +304,7 @@ def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
           official_page_get=None, approved_official_hosts=(),
           dila_directory_get=None, official_geocode=False,
-          source_record_from_reader=None):
+          source_record_from_reader=None, shared_proof_preview=False):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
@@ -290,7 +313,8 @@ def audit(backlog, today, record_fetch=api_record,
                                 ign_fetch, official_page_get,
                                 approved_official_hosts, dila_directory_get,
                                 official_geocode,
-                                source_record_from_reader)
+                                source_record_from_reader,
+                                today if shared_proof_preview else None)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
@@ -310,6 +334,8 @@ def audit(backlog, today, record_fetch=api_record,
         if x.get("official_geocode", {}).get(
             "independent_geo_correlated") is True
     ]
+    reusable = [x for x in checked
+                if x.get("shared_location_proof_private_review") is True]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
         "mode": "private_osm_hints_no_publisher_access",
@@ -330,6 +356,9 @@ def audit(backlog, today, record_fetch=api_record,
         "independent_official_ban_address_matches": len(official_geo_matched),
         "leads_with_official_ban_geo_private_review": sum(
             x["lead_count"] for x in official_geo_matched),
+        "private_reusable_location_proofs": len(reusable),
+        "leads_with_private_reusable_proof": sum(
+            x["lead_count"] for x in reusable),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
@@ -346,6 +375,7 @@ def main():
     parser.add_argument("--live-probe", action="store_true")
     parser.add_argument("--official-municipal-pages", action="store_true")
     parser.add_argument("--official-address-geocode", action="store_true")
+    parser.add_argument("--shared-location-evidence", action="store_true")
     parser.add_argument("--private-source-config", type=Path)
     args = parser.parse_args()
     # Block BOTH private input and output paths inside the public checkout.
@@ -360,6 +390,10 @@ def main():
         raise ValueError("private_municipal_preview_requires_explicit_opt_in")
     if args.official_address_geocode and not args.official_municipal_pages:
         raise ValueError("official_ban_geocode_requires_private_municipal_source")
+    if args.shared_location_evidence and not (
+            args.live_probe and args.official_municipal_pages
+            and args.official_address_geocode):
+        raise ValueError("shared_evidence_requires_explicit_private_full_probe")
     if (args.private_source_config is not None
             and args.private_source_config.resolve().is_relative_to(repository)):
         raise ValueError("source_config_outside_public_repo_required")
@@ -392,6 +426,7 @@ def main():
             }
         report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
                        official_geocode=args.official_address_geocode,
+                       shared_proof_preview=args.shared_location_evidence,
                        **callbacks)
     else:
         report = audit(backlog, args.day, live=False)
