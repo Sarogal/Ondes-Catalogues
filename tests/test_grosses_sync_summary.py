@@ -85,6 +85,31 @@ class FestivalSyncSummaryTests(unittest.TestCase):
         self.assertIn("confirmation de GitHub Pages", render(report(True), True))
         self.assertIn("ne signifie pas qu'une nouvelle annonce a été publiée", result)
 
+    def test_independent_geo_results_are_not_publication_claims(self):
+        data=report(changed=False)
+        data["future_geo_publisher"]={
+            "private_report":"valid", "private_two_day_candidates":2,
+            "independent_rechecks":1,
+            "accepted_geo_updates":["festival-exemple-2027"],
+            "held_geo":1,
+            "publication_authorized_by_private_report":False,
+        }
+        result=render(data)
+        self.assertIn("Indices J+1 : **2**",result)
+        self.assertIn("Enrichissements géographiques du candidat : **1**",result)
+        self.assertIn("Aucune nouvelle modification du JSON public",result)
+        self.assertNotIn("déploiement Pages réussi.",result.replace(
+            "Un enrichissement n'est publié qu'après commit signé et déploiement Pages réussi.",
+            ""))
+
+        data["future_geo_publisher"]["publication_authorized_by_private_report"]=True
+        with self.assertRaises(ValueError):
+            render(data)
+        data["future_geo_publisher"]["publication_authorized_by_private_report"]=False
+        data["future_geo_publisher"]["accepted_geo_updates"].append("copie-2027")
+        with self.assertRaises(ValueError):
+            render(data)
+
     def test_malformed_reports_fail_closed(self):
         data=report()
         data["changed"]="false"
