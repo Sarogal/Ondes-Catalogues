@@ -134,7 +134,11 @@ def propose_event(row, agenda, today):
             row.get("state") != 2):
         return None, "invalid_or_nonpublic_event"
     status = row.get("status")
-    if status not in (1, {"id": 1}):
+    if isinstance(status, dict):
+        # OA/ODS variants may include a localized status label alongside id.
+        # The immutable numeric status still determines cancellation.
+        status = status.get("id")
+    if type(status) is not int or status != 1:
         return None, "cancelled_or_unconfirmed_event"
     title, desc = _french_text(row, "title"), _french_text(row, "description")
     if not title or len(title) > 300:
