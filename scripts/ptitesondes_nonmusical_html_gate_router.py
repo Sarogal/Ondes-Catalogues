@@ -8,6 +8,7 @@ rights, register a source or emit an event into a queue.
 
 The existing music/OpenAgenda publisher remains entirely unchanged.
 """
+from datetime import date
 from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
 from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
 from ptitesondes_html_first_party_session_proof import corroborate_first_party_session
@@ -83,13 +84,15 @@ def _result(stage, *, venue="not_checked", history="not_checked",
 
 
 def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
-                                  independent_context):
+                                  independent_context, today):
     """Classify *one* session using verified source + curated context.
 
     The trusted caller MUST fetch the current official child page via the
     already-reviewed index/host adapter; merely passing a candidate-provided
     URL, fake context or arbitrary HTML is not independent evidence.
     """
+    if type(today) is not date:
+        return _result("historical_snapshot_unchecked")
     try:
         corroboration = corroborate_first_party_session(
             lead, page, trusted_index, child_prefix)
@@ -144,6 +147,17 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
     if history == "ambiguous":
         return _result("historical_collision_ambiguous", **kwargs)
     if history != "clear":
+        return _result("historical_snapshot_unchecked", **kwargs)
+    # A previously reviewed registry is not an independent live catalogue.
+    # Even its historical snapshot must be recent, never a stale fallback.
+    try:
+        raw = independent_context["historical_catalogue"]["updated_at"]
+        stamp = date.fromisoformat(raw[:10])
+        snapshot_fresh = (type(raw) is str and stamp.isoformat() == raw[:10]
+                          and 0 <= (today - stamp).days <= 3)
+    except (TypeError, ValueError, KeyError, IndexError):
+        snapshot_fresh = False
+    if not snapshot_fresh:
         return _result("historical_snapshot_unchecked", **kwargs)
     if venue == "missing":
         return _result("reviewed_venue_missing", **kwargs)
