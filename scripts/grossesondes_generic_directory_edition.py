@@ -38,49 +38,58 @@ PRIVATE_STATUS = "Provenance et édition en attente de recontrôle indépendant"
 PUBLISHED_STATUS = "Provenance et édition revérifiées indépendamment"
 PRIVATE_CONFIDENCE = "Annuaire public (site lié) + preuve primaire en attente"
 PUBLISHED_CONFIDENCE = "Annuaire public (lien vérifié) + site officiel (dates)"
-GENRE = re.compile(r"\\b(?:metal|hard rock|punk|rock|hardcore|stoner|doom|"
+GENRE = re.compile(r"\b(?:metal|hard rock|punk|rock|hardcore|stoner|doom|"
                    r"sludge|grindcore|deathcore|metalcore|black metal|"
-                   r"thrash metal|heavy metal)\\b")
+                   r"thrash metal|heavy metal)\b")
 CANCELLED = re.compile(
-    r"\\b(?:edition|festival)\\s+20[2-4][0-9]\\s+"
-    r"(?:annulee?|reporte[e]?|cancelled|postponed)\\b"
+    r"\b(?:edition|festival)\s+20[2-4][0-9]\s+"
+    r"(?:annulee?|reporte[e]?|cancelled|postponed)\b"
 )
 
 
 class Heading(HTMLParser):
+    """Visible h1 text only, with concealed ancestors ignored."""
+    HIDDEN_TAGS = {"script", "style", "template", "noscript", "svg"}
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img",
+            "input", "link", "meta", "param", "source", "track", "wbr"}
+
     def __init__(self):
         super().__init__(convert_charrefs=True)
-        self.active = False
-        self.current = []
+        self.stack = []
+        self.current = None
         self.headings = []
-        self.hidden = 0
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style", "template", "noscript"):
-            self.hidden += 1
-        if tag == "h1" and not self.hidden:
-            attrs = dict(attrs)
-            if ("hidden" not in attrs and attrs.get("aria-hidden") != "true"
-                    and "display:none" not in
-                    (attrs.get("style") or "").replace(" ", "").lower()):
-                self.active, self.current = True, []
+        attributes = dict(attrs)
+        style = (attributes.get("style") or "").replace(" ", "").lower()
+        parent_hidden = bool(self.stack and self.stack[-1][1])
+        hidden = (parent_hidden or tag in self.HIDDEN_TAGS
+                  or "hidden" in attributes
+                  or attributes.get("aria-hidden") == "true"
+                  or "display:none" in style)
+        if tag not in self.VOID:
+            self.stack.append((tag, hidden))
+        if tag == "h1" and not hidden:
+            self.current = []
 
-    def handle_data(self, text):
-        if self.active and not self.hidden:
-            self.current.append(text)
+    def handle_data(self, value):
+        if (self.current is not None and
+                self.stack and not self.stack[-1][1]):
+            self.current.append(value)
 
     def handle_endtag(self, tag):
-        if tag == "h1" and self.active:
+        if tag == "h1" and self.current is not None:
             self.headings.append(normalized(" ".join(self.current)))
-            self.active, self.current = False, []
-        if tag in ("script", "style", "template", "noscript"):
-            self.hidden = max(0, self.hidden - 1)
-
+            self.current = None
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                break
 
 def directory_url(title):
     if not isinstance(title, str) or not 8 <= len(title) <= 150:
         return None
-    m = re.fullmatch(r"(.{7,130}?)\\s+(20[2-4][0-9])", title.strip())
+    m = re.fullmatch(r"(.{7,130}?)\s+(20[2-4][0-9])", title.strip())
     if m is None:
         return None
     label = "".join(normalized(m.group(1)).split())
@@ -128,7 +137,7 @@ def trusted_linked_site(directory_html, title):
         if not (role or link == hostname or
                 link == normalized(host)):
             continue
-        if not re.search(r"\\b(?:site web|site officiel)\\b", context + " " + link):
+        if not re.search(r"\b(?:site web|site officiel)\b", context + " " + link):
             continue
         canonical = "https://" + host + "/"
         if safe_public_url(canonical) is None:
@@ -155,9 +164,16 @@ def verify_primary(html, title, year, today):
 
 def private_proposal(title, site, dates, today):
     if (directory_url(title) is None or slug_for(title) is None
-            or not isinstance(site, str)
-            or not site.startswith("https://")
-            or site != "https://" + str(urlsplit(site).hostname) + "/"):
+            or not isinstance(site, str) or safe_public_url(site) is None):
+        return None
+    try:
+        parts = urlsplit(site)
+        if (parts.scheme != "https" or not parts.hostname
+                or parts.username or parts.password or parts.port
+                or parts.path != "/" or parts.query or parts.fragment
+                or site != "https://" + parts.hostname + "/"):
+            return None
+    except (TypeError, ValueError):
         return None
     try:
         start, end = map(date.fromisoformat, dates)
