@@ -25,6 +25,8 @@ on:
       - 'tests/test_ptitesondes_municipal_official_page_reader.py'
       - 'scripts/ptitesondes_municipal_domain_coverage.py'
       - 'tests/test_ptitesondes_municipal_domain_coverage.py'
+      - 'scripts/ptitesondes_municipal_venue_link_discovery.py'
+      - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -62,6 +64,8 @@ on:
       - 'tests/test_ptitesondes_municipal_official_page_reader.py'
       - 'scripts/ptitesondes_municipal_domain_coverage.py'
       - 'tests/test_ptitesondes_municipal_domain_coverage.py'
+      - 'scripts/ptitesondes_municipal_venue_link_discovery.py'
+      - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -127,6 +131,8 @@ jobs:
             -p 'test_ptitesondes_municipal_official_page_reader.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_municipal_domain_coverage.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_municipal_venue_link_discovery.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
