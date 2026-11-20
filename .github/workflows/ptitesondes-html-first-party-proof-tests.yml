@@ -16,6 +16,10 @@ on:
       - 'scripts/ptitesondes_html_independent_review_planner.py'
       - 'scripts/ptitesondes_generic_schemaorg_event_discovery.py'
       - 'scripts/ptitesondes_schemaorg_private_intake.py'
+      - 'scripts/ptitesondes_schemaorg_visible_session_recheck.py'
+      - 'scripts/ptitesondes_schemaorg_visible_recheck_cycle.py'
+      - 'tests/test_ptitesondes_schemaorg_visible_session_recheck.py'
+      - 'tests/test_ptitesondes_schemaorg_visible_workflow_contract.py'
       - 'config/ptitesondes_schemaorg_source_timezones.json'
       - 'tests/test_ptitesondes_schemaorg_private_intake.py'
       - 'tests/test_ptitesondes_schemaorg_private_workflow_contract.py'
@@ -63,6 +67,8 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_private_queue_handoff.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_html_private_queue_cycle.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_schemaorg_private_intake.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_schemaorg_visible_session_recheck.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_schemaorg_visible_workflow_contract.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_schemaorg_private_workflow_contract.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_html_independent_review_planner.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_html_independent_review_cycle.py' -v
