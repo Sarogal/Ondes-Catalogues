@@ -225,6 +225,34 @@ def _official_event(lead, html, url, today):
     }
 
 
+def corroborate_physical_site(location, fetch):
+    """Return independently verified (OSM URL, latitude, longitude, precision).
+
+    A first-party official link is a *claim*, not location authority. For a
+    named OSM way, BAN plus a distinct OSM map query must return that exact
+    way, never an arbitrary polygon, official assertion or city centroid.
+    The same method is used by the publisher-bound rechecker and the
+    private-only generic venue preflight to prevent divergent trust checks.
+    """
+    official = location.get("geoSource")
+    require(official is None or (
+        isinstance(official, str)
+        and (OSM_NODE.fullmatch(official) or OSM_WAY.fullmatch(official))),
+        "official site location reference not safe")
+    if official is not None and OSM_NODE.fullmatch(official):
+        lat, lon = _read_osm_node(official, location, fetch)
+        return official, lat, lon, "named-site-point"
+    osm_url, lat, lon, precision = independent_named_site_geo.verify(
+        location, fetch)
+    if official is not None:
+        require(
+            OSM_WAY.fullmatch(official) is not None
+            and osm_url.rstrip("/") == official.rstrip("/")
+            and precision == "named-site-area",
+            "official named OSM area differs from independently verified site")
+    return osm_url, lat, lon, precision
+
+
 def _artists(names, catalogue):
     known = {}
     aliases = set()
@@ -269,25 +297,9 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
         lead, html, url, today)
     ids, fresh = _artists(names, catalogue)
     require(lead["artistId"] in ids, "authority artist missing from official bill")
-    if location["geoSource"] is not None and OSM_NODE.fullmatch(
-            location["geoSource"]):
-        lat, lon = _read_osm_node(location["geoSource"], location, fetch)
-        precision = "named-site-point"
-    else:
-        # Named OSM way links are NOT accepted on the first-party assertion
-        # alone. Resolve the precise government address, then obtain the
-        # independently named OSM feature and compare its exact identity.
-        # This also remains the safe fallback if the official site has NO
-        # OSM URL at all. A city-centre coordinate can never qualify.
-        osm_url, lat, lon, precision = independent_named_site_geo.verify(
-            location, fetch)
-        if location["geoSource"] is not None:
-            require(
-                OSM_WAY.fullmatch(location["geoSource"]) is not None
-                and osm_url.rstrip("/") == location["geoSource"].rstrip("/")
-                and precision == "named-site-area",
-                "official named OSM area differs from independently verified site")
-        location["geoSource"] = osm_url
+    osm_url, lat, lon, precision = corroborate_physical_site(
+        location, fetch)
+    location["geoSource"] = osm_url
     location.update({
         "latitude": lat, "longitude": lon,
         "geoPrecision": precision,
