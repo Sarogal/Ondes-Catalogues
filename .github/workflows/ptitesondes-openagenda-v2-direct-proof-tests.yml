@@ -29,6 +29,8 @@ on:
       - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
       - 'scripts/ptitesondes_ods_oa_source_binding.py'
       - 'tests/test_ptitesondes_ods_oa_source_binding.py'
+      - 'scripts/ptitesondes_generic_venue_visible_address.py'
+      - 'tests/test_ptitesondes_generic_venue_visible_address.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -70,6 +72,8 @@ on:
       - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
       - 'scripts/ptitesondes_ods_oa_source_binding.py'
       - 'tests/test_ptitesondes_ods_oa_source_binding.py'
+      - 'scripts/ptitesondes_generic_venue_visible_address.py'
+      - 'tests/test_ptitesondes_generic_venue_visible_address.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -139,6 +143,8 @@ jobs:
             -p 'test_ptitesondes_municipal_venue_link_discovery.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_ods_oa_source_binding.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_visible_address.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
