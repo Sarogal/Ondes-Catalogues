@@ -86,5 +86,40 @@ class ContinuityEvidenceTests(unittest.TestCase):
         self.assertEqual(result.reason, "empty_initial_sample")
 
 
+
+    def test_probe_keeps_technical_approval_false_with_sustained_transport(self):
+        from radio_stream_technical_probe import ResponseSample, probe_url
+        observation = {
+            "state": "transport_sustained", "reason": "repeated_bytes_over_time",
+            "elapsedMs": 6400, "observedBytes": 90000, "readChunks": 12,
+            "publicationAllowed": False,
+        }
+        report = probe_url(
+            "https://radio.example.org/live",
+            lambda _: ResponseSample(
+                200, "audio/mpeg", "", b"ID3\x04\x00\x00" + b"\0" * 60,
+                continuity=observation,
+            ))
+        self.assertEqual(report["verdict"], "audio_sample_ok")
+        self.assertEqual(report["continuityEvidence"], observation)
+        self.assertNotIn("radio.example.org", str(report))
+        self.assertFalse(report["continuityEvidence"]["publicationAllowed"])
+
+    def test_discovery_report_counts_transport_but_never_qualifies(self):
+        from radio_stream_technical_probe import ResponseSample, probe_candidates
+        uid = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        discovery = {"schemaVersion": 1, "publicationAllowed": False,
+                     "candidates": [{"stationuuid": uid, "streamUrl": "https://radio.example.org",
+                                      "status": "candidate_requires_qualification"}]}
+        def request(_):
+            return ResponseSample(
+                200, "audio/mpeg", "", b"ID3\x04\x00\x00" + b"\0" * 60,
+                continuity={"state": "transport_sustained", "publicationAllowed": False})
+        report = probe_candidates(discovery, request, limit=1)
+        self.assertEqual(report["sustainedTransportEvidenceCount"], 1)
+        self.assertEqual(report["technicalVerifiedCount"], 0)
+        self.assertFalse(report["publicationAllowed"])
+        self.assertFalse(report["checks"][0]["publicationAllowed"])
+
 if __name__ == "__main__":
     unittest.main()
