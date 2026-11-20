@@ -183,3 +183,45 @@ publication n'en est déduite.
 
 **Toujours aucune exécution privée live OA + DILA + BAN sur les 149
 dossiers**, et aucune écriture de production.
+
+
+## Campagne complète de prévalidation privée — lots sans doublon
+
+Le lot de recherche précédent ne sélectionnait que 12 lieux, sans
+moyen de choisir un second lot pour la même journée. Les exécutions
+répétées auraient retravaillé les mêmes lieux.
+
+La nouvelle option `--batch-index` (zéro par défaut) permet une campagne
+**déterministe, bornée et sans doublon** pour un jour et un backlog
+identiques. `private_rotation()` refuse les indices hors plage. Le nombre
+total de lots est publié dans le rapport privé (`batch_count`), avec
+`batch_index` et `selected_venues`. Les rapports ne peuvent pas être
+utilisés comme justificatifs de publication.
+
+Pour le **snapshot privé du 20/11** (449 entrées), les contrôles de
+préadmission identifient **149 entrées sans géographie connue**, soit
+**138 séances UID + date distinctes** réparties sur **79 lieux**. Onze
+entrées sont répétées ; neuf de ces lieux figurent dans plusieurs
+collecteurs. Cela nécessite 7 lots (12 + 12 + 12 + 12 + 12 + 12 + 7)
+pour passer une fois sur chaque lieu. Ces valeurs sont des mesures de
+préfiltre, non une preuve de séance ni un bilan de vérifications réseau.
+
+Un opérateur disposant des secrets et des chemins privés peut lancer
+séquentiellement les sept lots avec **le même jour** et le même
+backlog figé, en renseignant `--batch-index 0`, puis `1`, …, `6`
+et **un chemin privé distinct pour chaque rapport**. Il ne doit
+pas uploader ces rapports comme artefacts publics GitHub Actions.
+Le préflight n'inclut aucune planification, écriture de catalogue ou
+activation de workflow de production.
+
+Pour exploiter les résultats de façon fiable, distinguer :
+- `unknown_venue_leads` : copies brutes par collecteur, pas des séances ;
+- `unknown_candidate_sessions` : identités de séance UID + date par lieu ;
+- `private_reusable_location_proofs` : lieux pouvant bénéficier d'une
+  corroboration géographique privée (uniquement après exécution réseau) ;
+- `candidate_sessions_with_private_reusable_proof` : séances distinctes
+  dont le lieu a une preuve réutilisable, **sans vérification de leur
+  date, public cible, organisateur, droits ou doublons de publication**.
+
+Ne pas additionner plusieurs rapports issus de backlogs différents,
+ni prétendre que les 138 séances peuvent toutes être publiées.
