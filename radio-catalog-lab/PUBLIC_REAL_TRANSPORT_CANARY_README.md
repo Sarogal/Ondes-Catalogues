@@ -46,3 +46,25 @@ Android Auto, pas de mise à jour Play Store.
 
 Le workflow est limité à sa branche, sans `schedule`,
 avec tests hors réseau obligatoires et aucune fusion de production.
+
+## Première exécution réelle : 20 novembre 2026
+
+La [CI publique #44808485360](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44808485360)
+est **SUCCESS** :
+- **21 tests hors réseau réussis** (6 nouveaux tests de contrôle direct
+  et 15 tests du pont Release 1).
+- **1 page Radio Browser de 100 entrées**, dont **90** candidates
+  directes d'après leur codec déclaré ou leur URL.
+- **5 flux réellement interrogés** par le transport DNS/TLS/SSRF contrôlé.
+  **4** ont produit une signature audio reconnaissable
+  (`audio_sample_ok`), **1** une indication MIME uniquement
+  (`audio_mime_only`).
+- **0 validation technique**, **0 approbation éditoriale**,
+  **0 suppression historique**, **0 publication**.
+- Artefact conservé 7 jours :
+  `go-radio-public-transport-canary-evidence` (rapports **sans URL**).
+
+**Distinction importante :** l'attribution éventuelle de ces cinq UUID
+à des stations du catalogue privé n'a pas été vérifiée dans ce workflow
+public et ne doit pas être inférée de ce rapport. Un seul résultat réseau
+positif ne confirme pas la stabilité audio dans le temps.
