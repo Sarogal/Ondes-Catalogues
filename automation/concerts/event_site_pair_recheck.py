@@ -245,8 +245,12 @@ def _official_event(lead, html, url, today):
             "official place and municipality mismatch")
     street = str(addr.get("streetAddress") or "").strip()
     region = str(addr.get("addressRegion") or "").strip()
-    require(len(street) >= 3 and len(region) >= 3,
-            "official street address or region missing")
+    # A complete French first-party street/city/postcode is mandatory;
+    # addressRegion is optional schema.org metadata, not proof of a concert.
+    # If absent, verify it independently against an exact BAN address during
+    # the separate OSM site review. Never infer it from city or postal prefix.
+    require(len(street) >= 3 and (not region or 3 <= len(region) <= 90),
+            "official street address invalid")
     # The producer may know the exact named site without linking OSM.
     # The IGN BAN + named OSM fallback is independent of that producer.
     links = location.get("sameAs") or location.get("url") or []
@@ -340,6 +344,11 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
     require(final == url, "official event URL redirected")
     raw, names, unnamed, genres, location = _official_event(
         lead, html, url, today)
+    recovered_address_point = None
+    if not location["region"]:
+        recovered_address_point, location["region"] = (
+            independent_named_site_geo.independently_attested_region(
+                location, fetch))
     ids, fresh = _artists(names, catalogue)
     if lead["source"] != "organizer_official_event_detail":
         require(lead["artistId"] in ids,
@@ -349,6 +358,11 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
     # location remain mandatory; unknown groups alone prove nothing.
     osm_url, lat, lon, precision = corroborate_physical_site(
         location, fetch)
+    if recovered_address_point is not None:
+        require(independent_named_site_geo._distance_meters(
+                recovered_address_point[0], recovered_address_point[1],
+                lat, lon) <= independent_named_site_geo.MAX_DISTANCE_METERS,
+                "independent named site too far from exact government address")
     location["geoSource"] = osm_url
     location.update({
         "latitude": lat, "longitude": lon,
