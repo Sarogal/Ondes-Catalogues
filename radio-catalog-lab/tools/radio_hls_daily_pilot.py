@@ -85,6 +85,7 @@ def hls_preview(
     segment_checks = 0
     structural_evidence = 0
     segment_states: dict[str, int] = {}
+    planning_reasons: dict[str, int] = {}
     safe_options: list[tuple[int, dict, str]] = []
     for uid, raw_url in selected:
         # Same pinned DNS and redirect checks as all other radio probes.
@@ -114,6 +115,8 @@ def hls_preview(
         check["segmentCheck"] = outcome
         state = outcome["state"]
         segment_states[state] = 1
+        reason = outcome.get("planningReason", "not_evaluated")
+        planning_reasons[reason] = 1
         if state == "segment_structural_evidence":
             structural_evidence = 1
     return {
@@ -125,6 +128,7 @@ def hls_preview(
         "segmentVerificationAttemptCount": segment_checks,
         "segmentStructuralEvidenceCount": structural_evidence,
         "segmentStates": dict(sorted(segment_states.items())),
+        "segmentPlanningReasons": dict(sorted(planning_reasons.items())),
         "technicalVerifiedCount": 0,
         "publicationAllowed": False,
         "checks": checks,
@@ -161,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
           f"segment_attempts={output['segmentVerificationAttemptCount']} "
           f"segment_structures={output['segmentStructuralEvidenceCount']} "
           f"segment_states={output['segmentStates']} "
+          f"segment_planning={output['segmentPlanningReasons']} "
           "verified=0 published=false")
     return 0
 
