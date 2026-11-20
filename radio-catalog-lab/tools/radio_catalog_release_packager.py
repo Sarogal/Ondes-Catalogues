@@ -60,6 +60,9 @@ def strict_json(raw: bytes, *, maximum: int) -> dict:
         return result
     try:
         document = json.loads(raw.decode("utf-8-sig"), object_pairs_hook=unique_pairs)
+    except BundleError:
+        # Preserve a specific duplicate-key rejection, not a generic parse error.
+        raise
     except (ValueError, UnicodeError) as error:
         raise BundleError("Invalid or noncanonical JSON input") from error
     if not isinstance(document, dict):
