@@ -238,7 +238,7 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
 
     def test_master_external_variant_and_traversal_never_requested(self):
         from radio_hls_segment_evidence import plan_single_variant
-        for reference in ("https://other.example.org/live.m3u8",
+        for reference in ("http://other.example.org/live.m3u8",
                           "//other.example.org/live.m3u8",
                           "../private.m3u8", "%2e%2e/private.m3u8",
                           "file:///etc/secrets.m3u8",
@@ -253,6 +253,29 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
                     lambda u: requested.append(u))
                 self.assertEqual(len(requested), 1)
                 self.assertEqual(output["state"], "no_safe_single_variant")
+
+
+    def test_single_https_cdn_variant_is_allowed_without_auto_certification(self):
+        from radio_hls_segment_evidence import plan_single_variant
+        uri = "https://cdn.example.org/media/quality.m3u8?token=abc%20def"
+        master = ("#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  + uri + "\n").encode("utf-8")
+        plan = plan_single_variant(master, MIME, BASE)
+        self.assertEqual(plan.url, uri)
+        requested = []
+        def fetch(u):
+            requested.append(("manifest", u))
+            return response(master if u == BASE else manifest())
+        def seg(u):
+            requested.append(("segment", u))
+            return response(valid_ts_packets(6), "video/mp2t")
+        result = verify_one_segment(BASE, fetch, seg)
+        self.assertEqual(result["state"], "segment_structural_evidence")
+        self.assertEqual(result["childManifestKind"], "live_manifest_candidate")
+        self.assertEqual(requested[1][1], uri)
+        self.assertTrue(requested[2][1].startswith("https://cdn.example.org/media/"))
+        self.assertEqual(result["publicationAllowed"], False)
+        self.assertNotIn("cdn.example.org", str(result))
 
     def test_no_nested_master_playlist(self):
         master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
