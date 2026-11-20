@@ -178,18 +178,23 @@ def official_venue_page_proof(group, candidate, ign_evidence, page_url,
     if len(parser.blocks) >= MAX_SCRIPTS:
         return {**result, "status": "too_many_structured_blocks"}
     same_name_nodes = []
+    other_structured_places = 0
     try:
         for block in parser.blocks:
             value = json.loads(block)
             for node in _nodes(value):
-                if (_types(node).intersection(VENUE_TYPES)
-                        and norm(node.get("name")) == norm(group["venue"])):
-                    same_name_nodes.append(node)
-                    if len(same_name_nodes) > 2:
-                        return {**result, "status": "ambiguous_named_place"}
+                if _types(node).intersection(VENUE_TYPES):
+                    if norm(node.get("name")) == norm(group["venue"]):
+                        same_name_nodes.append(node)
+                        if len(same_name_nodes) > 2:
+                            return {**result, "status": "ambiguous_named_place"}
+                    else:
+                        other_structured_places += 1
     except (ValueError, TypeError, RecursionError):
         return result
     if len(same_name_nodes) == 0:
+        if other_structured_places:
+            return {**result, "status": "different_structured_place_identity"}
         # Some genuine institutional venue pages contain only semantic
         # visible H1 + postal <address>, not schema.org Place. This narrow
         # fallback never overrides contradictory structured Place evidence.
