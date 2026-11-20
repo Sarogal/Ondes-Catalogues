@@ -218,3 +218,53 @@ de récupération OA v2 + DILA dans l'espace privé. Le programme CLI
 actuel continue de ne publier ni ne valider de sortie. La page exacte
 doit ensuite passer `official_venue_page_proof` sur les attributs
 Schema.org du lieu, puis les vérifications complètes de la séance.
+
+## Lecteur municipal utilisable en prévisualisation privée explicite
+
+Le nouveau `scripts/ptitesondes_municipal_official_page_reader.py` clôt
+l'écart entre des adaptateurs isolés et un **lecteur de pages réellement
+appelable** : à partir d'un backlog privé et de la liste privée des UID des
+agendas retenus, il recoupe le slug OA, l'UID événement, le nom exact du lieu,
+la commune et `location.website`, obtient la fiche municipale DILA,
+puis charge uniquement une page HTTPS relevant du domaine municipal approuvé.
+
+Le CLI `ptitesondes_generic_venue_osm_preflight.py` propose désormais
+une option **désactivée par défaut** `--official-municipal-pages` :
+```bash
+# À exécuter uniquement dans un runner isolé, sans publication ni artifact public.
+# La clé de lecture OPENAGENDA_READ_KEY est fournie en secret d'environnement.
+python scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog /espace-prive/automation-intake/ptitesondes/backlog.json \
+  --private-source-config /espace-prive/automation/sources.json \
+  --output-private-report /espace-prive/venue-proof-preview.json \
+  --day 2026-11-20 --live-probe --official-municipal-pages
+```
+
+La commande exige explicitement `--live-probe`, un `sources.json`
+privé hors checkout public, et `OPENAGENDA_READ_KEY`. Le mode par défaut
+n'effectue **aucun** appel réseau. Aucune action programmée n'a été ajoutée,
+aucun secret n'est affiché ni ajouté au dépôt.
+
+Le lecteur refuse tout agenda non enregistré dans la configuration privée,
+UID OA divergent, site Internet absent, source DILA ambiguë, URL externe
+hors domaine municipal, redirection, mauvais type MIME ou page trop volumineuse.
+Une seule commune est interrogée une fois par cycle grâce au cache privé ;
+au plus trois UID sont comparés pour un même lieu très représenté.
+Ces trois UID **ne valident pas les autres séances** : toutes les vérifications
+d'événements restent individuelles.
+
+Les rapports contenant des noms de lieux, URL ou coordonnées doivent demeurer
+**strictement privés**. Le fichier source `docs/ptitesondes/sorties.json`
+et le publisher ne sont pas utilisés par cette branche.
+
+**Limites connues** :
+- Les pages de lieux sans `schema.org/Place` explicite restent bloquées,
+  même si l'établissement est réel ; enrichir l'extraction officielle
+  sans inventer de preuves.
+- Les sites privés de lieux (hors domaine municipal DILA) et les espaces
+  publics sans numéro exigent d'autres registres institutionnels.
+- Les dossiers avec UID absent du miroir ODS sont encore dépendants du
+  correctif #503 et de la preuve OA directe.
+- Aucun lancement réel de cette commande contre le backlog privé n'est
+  revendiqué dans ce chantier : son comportement positif est couvert
+  par des tests hors réseau. **Zéro nouvelle sortie effectivement admise**.
