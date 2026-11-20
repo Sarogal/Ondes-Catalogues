@@ -76,7 +76,9 @@ def dila_query(city):
             or any(c in city for c in ('"', "\\", "\n", "\r"))
             or not norm(city)):
         raise ValueError("invalid_municipality")
-    condition = 'nom LIKE "' + city + '" AND pivot LIKE "mairie"'
+    # Exact ODSQL equality avoids matching every neighboring city with
+    # a similar name (e.g. Montpellier vs Murviel-lès-Montpellier).
+    condition = 'nom = "Mairie - ' + city + '"'
     return DILA_RECORDS + "?" + urlencode({
         "where": condition, "limit": MAX_RECORDS,
         "select": ("nom,pivot,code_insee_commune,adresse,categorie,"
