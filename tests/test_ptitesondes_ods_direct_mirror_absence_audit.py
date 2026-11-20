@@ -35,7 +35,11 @@ def agenda(uid, key):
 
 def event(agenda_uid, event_uid, key):
     return {
-        "uid": int(event_uid), "status": 1, "removed": False,
+        "uid": int(event_uid), "state": 2, "status": 1,
+        "removed": False, "attendanceMode": 1,
+        "timezone": "America/Guadeloupe",
+        "location": {"adminLevel4": "Pointe-à-Pitre",
+                     "name": "Médiathèque locale"},
         "title": {"fr": "Éveil musical en famille"},
         "timings": [{
             "begin": "2026-12-10T10:00:00-04:00",
@@ -89,6 +93,8 @@ class MirrorAbsencePrivateEvidenceTests(unittest.TestCase):
     def test_mismatch_not_claimed_as_verified(self):
         for patch in (
             {"uid": 999}, {"status": 0}, {"removed": True},
+            {"attendanceMode": 2}, {"timezone": "Asia/Tokyo"},
+            {"location": {"adminLevel4": "Paris", "name": "Centre"}},
             {"title": {"fr": "Autre spectacle"}},
             {"timings": []},
         ):
