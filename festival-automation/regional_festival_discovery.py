@@ -96,7 +96,7 @@ INDEX_MUSIC_PROOF_SIGNALS = frozenset((THEMATIC_SIGNAL, CONTEXT_SIGNAL))
 # A visible institutional music CATEGORY may nominate a named edition, but
 # it is NOT proof of rock/metal/punk; the publisher must verify the detail.
 MUSIC_CATEGORY_PENDING_SIGNAL = "INSTITUTION_MUSIC_CATEGORY_GENRE_REVIEW_ONLY"
-MUSIC_EVENT_CATEGORY = re.compile(r"\bmusique concerts?\b")
+MUSIC_EVENT_CATEGORY = re.compile(r"\b(?:musique concerts?|concerts? musique)\b")
 # Only visible, adjacent attribution creates a new PRIVATE discovery hint.
 MUSIC_GENRE = (r"(?:heavy metal|death metal|black metal|thrash metal|"
                r"metalcore|hardcore|hard rock|rock alternatif|rock|metal|punk|"
@@ -223,14 +223,28 @@ class RegionalEventAnchors(Anchors):
         self.accessible_event_label = None
         self.article_stack = []
         self.article_music_categories = {}
+        self.ambiguous_card_anchors = set()
+        self.div_depth = 0
 
     def handle_starttag(self, tag, attrs):
-        # A city event card often renders the visible music category in a
-        # sibling <p>, while its title is in an <h3><a>. The generic anchor
-        # parser intentionally does not inherit text across sibling <div>s.
-        # Keep an isolated, bounded ARTICLE-only hint; it is NOT genre proof.
-        if tag.lower() == "article" and not self.hidden and not self.concealed:
-            attributes = dict(attrs)
+        # HTML agendas may use <article>, <li> or a <div role="article">
+        # for one event card. Only a single visible hyperlink may inherit a
+        # *local* general music category. This is research, never genre proof.
+        # Ignore arbitrary <div class="card"> and generic page-wide context.
+        tag = tag.lower()
+        attributes = dict(attrs)
+        if tag == "div":
+            self.div_depth += 1
+        # A list item INSIDE an article may be an ordinary category list;
+        # keep the outer card intact rather than attributing sibling links.
+        if (tag == "li" and self.article_stack
+                and self.article_stack[-1]["tag"] == "li"):
+            self.article_stack[-1]["nested"] = True
+        semantic_card = (
+            tag == "article" or (tag == "li" and not self.article_stack)
+            or (tag == "div" and attributes.get("role") == "article")
+        )
+        if semantic_card and not self.hidden and not self.concealed:
             style = (attributes.get("style") or "").replace(" ", "").lower()
             if ("hidden" not in attributes
                     and attributes.get("aria-hidden") != "true"
@@ -239,7 +253,8 @@ class RegionalEventAnchors(Anchors):
                     self.article_stack[-1]["nested"] = True
                 self.article_stack.append({
                     "start": len(self.anchors), "text": [],
-                    "nested": False,
+                    "nested": False, "tag": tag,
+                    "div_depth": self.div_depth if tag == "div" else None,
                 })
         if tag.lower() == "a":
             self.accessible_event_label = None
@@ -267,18 +282,30 @@ class RegionalEventAnchors(Anchors):
                 if not visible or GENERIC_LINK_TEXT.fullmatch(visible):
                     self.current[1].clear()
                     self.current[1].append(self.accessible_event_label)
-        if (tag.lower() == "article" and self.article_stack
-                and not self.hidden and not self.concealed):
+        tag = tag.lower()
+        frame = self.article_stack[-1] if self.article_stack else None
+        closing_card = (
+            frame is not None and tag == frame["tag"]
+            and (tag != "div" or frame["div_depth"] == self.div_depth)
+        )
+        if closing_card:
             frame = self.article_stack.pop()
-            # Exactly ONE visible anchor in an un-nested article. A category
-            # cannot leak into other cards or borrow another event's link.
-            if not frame["nested"] and len(self.anchors) == frame["start"] + 1:
+            # Prefix context may nominate an anchor BEFORE the card closes.
+            # Mark ALL links in nested or multi-anchor cards as ambiguous;
+            # otherwise the first link could borrow the category and pass.
+            one_link = len(self.anchors) == frame["start"] + 1
+            if frame["nested"] or not one_link:
+                self.ambiguous_card_anchors.update(
+                    range(frame["start"], len(self.anchors)))
+            elif not self.hidden and not self.concealed:
                 visible = normalized(" ".join(frame["text"]))
                 if MUSIC_EVENT_CATEGORY.search(visible):
                     self.article_music_categories[frame["start"]] = (
                         "musique concerts")
         super().handle_endtag(tag)
-        if tag.lower() == "a":
+        if tag == "div":
+            self.div_depth = max(0, self.div_depth - 1)
+        if tag == "a":
             self.accessible_event_label = None
 
 
@@ -390,7 +417,8 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                      and len(primary_name_hints) <= 60
                      else frozenset())
     for anchor_number, (href, label, prefix) in enumerate(parser.anchors[:650]):
-        if not isinstance(href, str) or not isinstance(label, str):
+        if (anchor_number in parser.ambiguous_card_anchors
+                or not isinstance(href, str) or not isinstance(label, str)):
             continue
         event_title = municipal_event_title(label)
         title = event_title if event_title is not None else " ".join(label.split())[:160]
