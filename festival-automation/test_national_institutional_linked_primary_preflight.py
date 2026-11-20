@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -170,6 +171,60 @@ class LinkedNationalPreflightTests(unittest.TestCase):
         tampered = deepcopy(day2)
         tampered["national_institutional_linked_dates_private"][DETAIL]["digest"] = "0"*64
         self.assertEqual(stable_private_proposals(tampered, q2, good, DAY2), [])
+
+
+    def test_two_same_day_passes_rotate_rejected_institutional_links(self):
+        sources = [{
+            "dossier_id": "national-linked-" + str(i).zfill(8),
+            "index_url": INDEX, "index_page": INDEX,
+            "url": INDEX + "evenement/festival-rock-" + str(i),
+            "title": "Festival Rock Garrigues " + str(i) + " 2027",
+            "year": 2027,
+        } for i in range(7)]
+        checked = []
+        def unproved_site(source, today, **kwargs):
+            checked.append(source["url"])
+            return None
+        state = {"schema": "grossesondes.source-watch.v1"}
+        with patch("national_institutional_linked_primary_preflight.eligible",
+                   return_value=sources), patch(
+                       "national_institutional_linked_primary_preflight.trusted_live_link",
+                       side_effect=unproved_site):
+            first = run(state, {}, DAY1,
+                        institution_fetch=lambda _: self.fail("No index fetch"),
+                        organizer_fetch=lambda _: self.fail("No site fetch"))
+            morning = set(checked)
+            self.assertEqual(first["checked_count"], 2)
+            self.assertEqual(len(morning), 2)
+            self.assertEqual(first["two_day_observations_count"], 0)
+            self.assertTrue(all(
+                rec == {"lastChecked": DAY1} for rec in
+                state["national_institutional_linked_dates_private"].values()))
+            checked.clear()
+            evening = run(state, {}, DAY1,
+                          institution_fetch=lambda _: self.fail("No index fetch"),
+                          organizer_fetch=lambda _: self.fail("No site fetch"))
+            self.assertEqual(evening["checked_count"], 2)
+            self.assertEqual(len(set(checked)), 2)
+            self.assertTrue(morning.isdisjoint(checked))
+            self.assertFalse(evening["publication_authorized"])
+
+    def test_negative_recheck_clears_yesterdays_linked_site_proof(self):
+        state, queue = fixture(DAY1)
+        run(state, queue, DAY1, institution_fetch=institution,
+            organizer_fetch=site)
+        self.assertIn("digest", state[
+            "national_institutional_linked_dates_private"][DETAIL])
+        newer, q2 = follow(state, DAY2)
+        rejected = run(
+            newer, q2, DAY2,
+            institution_fetch=lambda u: "<main>No link today</main>",
+            organizer_fetch=lambda _: self.fail("Site must not be fetched"))
+        self.assertEqual(rejected["two_day_observations_count"], 0)
+        self.assertEqual(newer[
+            "national_institutional_linked_dates_private"][DETAIL],
+            {"lastChecked": DAY2})
+        self.assertEqual(stable_private_proposals(newer, q2, rejected, DAY2), [])
 
 
 if __name__ == "__main__":
