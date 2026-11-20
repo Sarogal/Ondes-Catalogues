@@ -116,7 +116,7 @@ def check_append_only(previous, proposed, today):
                 and site.get("reviewDecision") == "approved"
                 and site.get("reviewedBy") == "independent-official-verifier"
                 and site.get("reviewedAt") == today.isoformat(),
-                "Unexpected new venue approval or reviewer")
+                "Protected private approval metadata changed: unexpected venue reviewer")
         venue = site.get("venue")
         binding = site.get("eventBinding")
         require(isinstance(venue, dict) and isinstance(binding, dict)
