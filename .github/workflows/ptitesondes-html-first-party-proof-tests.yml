@@ -8,6 +8,8 @@ on:
       - 'scripts/ptitesondes_html_access_conditions.py'
       - 'scripts/ptitesondes_html_family_age.py'
       - 'scripts/ptitesondes_factual_reuse_preflight.py'
+      - 'scripts/ptitesondes_nonmusical_html_gate_router.py'
+      - 'tests/test_ptitesondes_nonmusical_html_gate_router.py'
       - 'tests/test_ptitesondes_factual_reuse_preflight.py'
       - 'scripts/ptitesondes_html_index_detail_funnel.py'
       - 'scripts/ptitesondes_html_registry_history_triage.py'
@@ -34,3 +36,4 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_html_*.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_factual_reuse_preflight.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_html_gate_router.py' -v
