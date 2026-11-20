@@ -24,6 +24,7 @@ on:
       - 'festival-automation/dns_pinned_https.py'
       - 'scripts/grossesondes_institutional_edition.py'
       - 'festival-automation/national_candidate_promotion.py'
+      - 'festival-automation/future_geo_preflight.py'
       - 'festival-automation/national_admission_handoff.py'
       - 'festival-automation/national_institutional_linked_primary_preflight.py'
       - 'scripts/grossesondes_institutional_linked_edition.py'
@@ -189,6 +190,9 @@ jobs:
           run_private reconcile python "$ENGINE/national_editorial_reconciliation.py" --intake "$INTAKE" --report "$REPORT"
           run_private candidate_preflight python "$ENGINE/national_candidate_promotion.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private publisher_handoff python "$ENGINE/national_admission_handoff.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          # Exact current-edition JSON-LD geo claims from SIGNED public rows only.
+          # Two-day observations stay PRIVATE. Never write a pin or patch here.
+          run_private future_geo python "$ENGINE/future_geo_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --limit 4
           # Research generic national domains beyond legacy one-event registry.
           # DNS-pinned rechecks and two-day observations, never a patch or approval.
           run_private generic_primary_domains python "$ENGINE/national_generic_primary_domain_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json
@@ -233,7 +237,8 @@ jobs:
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \
-            automation-intake/grossesondes/national-festival-yield-diagnostics.json
+            automation-intake/grossesondes/national-festival-yield-diagnostics.json \
+            automation-intake/grossesondes/future-festival-geo-review.json
           if git diff --cached --quiet; then
             echo "Aucun changement des états privés ; rien à envoyer."
           else
