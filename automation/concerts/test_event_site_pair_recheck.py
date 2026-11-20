@@ -534,6 +534,28 @@ class IndependentBANAndNamedOSMWithoutOfficialLinkTests(unittest.TestCase):
         self.assertTrue(checked["validatedByPublisher"])
         self.assertEqual(checked["publishableEvents"], 1)
 
+    def test_private_generic_venue_preflight_reuses_same_way_proof(self):
+        import dynamic_venue_evidence_preflight as preflight
+        lead, raw, cat, ban, map_data = self.setup("way")
+        raw["location"]["sameAs"] = (
+            "https://www.openstreetmap.org/way/456789")
+        page = ('<script type="application/ld+json">'
+                + json.dumps(raw, ensure_ascii=False)
+                + '</script>')
+        _, _, _, _, site = reviewer._official_event(
+            lead, page, EVENT, DAY)
+        calls = []
+        result = preflight._coordinates(
+            site, self.fetched(raw, ban, map_data, calls))
+        self.assertEqual(result[0],
+                         "https://www.openstreetmap.org/way/456789")
+        self.assertEqual(result[3], "named-site-area")
+        self.assertEqual(len(calls), 2)
+        self.assertTrue(calls[0].startswith(
+            "https://data.geopf.fr/geocodage/search/"))
+        self.assertTrue(calls[1].startswith(
+            "https://api.openstreetmap.org/api/0.6/map"))
+
     def test_official_osm_way_cannot_disagree_with_independent_location(self):
         lead, raw, cat, ban, map_data = self.setup("way")
         for forged in (
