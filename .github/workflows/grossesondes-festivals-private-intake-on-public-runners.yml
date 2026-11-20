@@ -15,6 +15,7 @@ on:
       - 'festival-automation/regional_source_diagnostics.py'
       - 'festival-automation/regional_festival_indexes.json'
       - 'festival-automation/national_discovery_queue.py'
+      - 'festival-automation/national_openagenda_research.py'
       - 'festival-automation/national_generic_primary_domain_preflight.py'
       - 'festival-automation/national_institutional_edition_preflight.py'
       - 'festival-automation/national_institutional_organizer_preflight.py'
@@ -157,6 +158,9 @@ jobs:
           run_private targeted_institutional_future python "$ENGINE/targeted_institutional_future_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 1
           run_private press_2027 python "$ENGINE/targeted_press_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           run_private first_party_2027 python "$ENGINE/targeted_first_party_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --phase "$PHASE"
+          # Public OPEN-DATA source: bounded, HTTPS pinned, only PRIVATE research.
+          # An unavailable API never becomes a publication or blocks other sources.
+          run_private openagenda_public_research python "$ENGINE/national_openagenda_research.py" --intake "$INTAKE"
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           # Newly found municipal agenda editions: strict visible dates and
@@ -215,6 +219,7 @@ jobs:
             automation-intake/grossesondes/curated-multi-source-review.json \
             automation-intake/grossesondes/curated-secondary-sources-review.json \
             automation-intake/grossesondes/national-festival-discovery-review.json \
+            automation-intake/grossesondes/national-openagenda-research-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
             automation-intake/grossesondes/national-institutional-linked-dates.json \

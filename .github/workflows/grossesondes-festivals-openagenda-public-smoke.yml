@@ -1,0 +1,55 @@
+name: Grosses Ondes — source OpenData publique, lecture seule
+
+on:
+  pull_request:
+    paths:
+      - 'festival-automation/national_openagenda_research.py'
+      - 'festival-automation/test_national_openagenda_research.py'
+      - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'festival-automation/national_openagenda_research.py'
+      - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-source-preflight:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier la provenance et les limites sans secrets ni état privé
+        run: |
+          python -m unittest discover -s festival-automation -p 'test_national_openagenda_research.py' -v
+      - name: Lire une requête fixe JSON publique sans créer de festival
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, 'festival-automation')
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          from national_openagenda_research import scan, QUERIES
+          today = datetime.now(ZoneInfo('Europe/Paris')).date().isoformat()
+          result = scan({'schema': 'grossesondes.source-watch.v1'}, today)
+          assert result['requests_attempted'] == len(QUERIES)
+          assert result['requests_failed'] < result['requests_attempted']
+          assert result['publications'] == 0
+          assert result['publication_authorized'] is False
+          print('OpenData publique:', result['status'],
+                'requêtes:', result['requests_attempted'],
+                'échecs:', result['requests_failed'],
+                'pistes privées non vérifiées:', result['leads_count'])
+          print('Aucune donnée privée, aucune approbation, aucune publication.')
+          PY
