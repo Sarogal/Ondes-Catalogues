@@ -190,11 +190,19 @@ def event_genres_from_own_bill(raw):
         if values is None:
             return [], "official_artist_in_event_detail"
         collected.extend(values)
-        if len(collected) > 20:
-            return [], "official_artist_in_event_detail"
-    # A performer may supply a subgenre; at least one label must still pass
-    # the unchanged genre gate, including the electronic-only exclusions.
-    return list(dict.fromkeys(collected)), "official_artist_in_event_detail"
+    # The publisher caps serialized GENRE labels to 20, never the number of
+    # artists in the bill. For large mixed lineups, retain recognized rock/
+    # metal/punk labels first: an eligible act at position 30 cannot disappear
+    # because 29 earlier acts had different, irrelevant genre descriptions.
+    unique = list(dict.fromkeys(collected))
+    if len(unique) > 20:
+        relevant = [label for label in unique
+                    if triage.genre_evidence({"classification": [label]})]
+        irrelevant = [label for label in unique if label not in relevant]
+        unique = (relevant + irrelevant)[:20]
+    # At least one label must still pass the unchanged independent publisher
+    # genre gate; electronic-only homonyms cannot be promoted.
+    return unique, "official_artist_in_event_detail"
 
 
 def candidate_from_event_page(
