@@ -121,6 +121,49 @@ class PrivateNationalEventCampaignTests(unittest.TestCase):
             explorer.assert_not_called()
             self.assertFalse((root / ".national-event-campaign.lock").exists())
 
+    def test_crash_after_report_write_recovers_exact_segment_without_fetch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = index()["new_agenda_candidates"][0]
+            report = segment(candidate, after=["000001"], done=False)
+            report["campaign_meta"] = {
+                "source_sha256": DIGEST, "scan_day": DAY.isoformat(),
+                "agenda_index": 0, "segment": 0, "start_cursor": None,
+            }
+            (root / "agenda-0000-segment-0000.json").write_text(
+                json.dumps(report), encoding="utf-8")
+            explorer = Mock(side_effect=AssertionError(
+                "No network reread for validated crash-recovery report"))
+            result = run_campaign(
+                plan_campaign(index(), DIGEST, DAY, root, steps=1),
+                public_key=KEY, explorer=explorer)
+            explorer.assert_not_called()
+            self.assertEqual(result["segments_examined"], 0)
+            self.assertEqual(result["segments_recovered_from_private_report"], 1)
+            state = load_checkpoint(root, DIGEST, DAY, 2)
+            self.assertEqual(state["next_agenda_index"], 0)
+            self.assertEqual(state["segment"], 1)
+            self.assertEqual(state["event_after"], ["000001"])
+
+    def test_crash_recovery_cannot_accept_other_source_or_cursor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            candidate = index()["new_agenda_candidates"][0]
+            report = segment(candidate, after=["1"], done=False)
+            report["campaign_meta"] = {
+                "source_sha256": "x" * 64,
+                "scan_day": DAY.isoformat(), "agenda_index": 0,
+                "segment": 0, "start_cursor": None,
+            }
+            (root / "agenda-0000-segment-0000.json").write_text(
+                json.dumps(report), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "existing_private_segment_requires_recovery"):
+                run_campaign(
+                    plan_campaign(index(), DIGEST, DAY, root, steps=1),
+                    public_key=KEY,
+                    explorer=lambda *a, **kw: self.fail("Unsafe network retry"))
+            self.assertFalse((root / "national-event-checkpoint.json").exists())
+
     def test_reject_mismatched_or_publishing_segment_before_file_write(self):
         for changed in (
             {"agenda_uid": 999},
