@@ -12,6 +12,7 @@ from ptitesondes_html_index_detail_funnel import (
     SCHEMA, diagnose_html_index_detail_funnel, redact_detail_funnel_report,
 )
 from test_ptitesondes_real_family_source_adapters import MPT_HTML
+from ptitesondes_nonmusical_private_queue_handoff import prepare_private_html_review_handoff
 from ptitesondes_real_family_source_adapters import parse_montpellier_mpt_detail
 
 PIN = {
@@ -105,6 +106,44 @@ class OfficialIndexToScopeTests(unittest.TestCase):
                      "publisher_connected"):
             self.assertFalse(result[item])
         self.assertEqual(result["public_writes"], 0)
+
+    def test_opt_in_private_sink_receives_only_in_memory_exact_sessions(self):
+        # This callback is absent in production and never serialized into
+        # a public runner report. A real local HTML fixture drives the parser.
+        index = MemoryWeb({PIN["exact_index_url"]: html_index(ONE)})
+        pages = MemoryWeb({ONE: MPT_TEMPLATE})
+        confidential = []
+        report = diagnose_html_index_detail_funnel(
+            PIN, "montpellier_mpt", TODAY, max_details=12,
+            index_opener=index, detail_opener=pages,
+            private_review_sink=confidential.append)
+        self.assertEqual(len(confidential), 2)
+        self.assertEqual(confidential[0]["lead"]["source_url"], ONE)
+        self.assertEqual(confidential[0]["trusted_index"], PIN)
+        self.assertEqual(confidential[0]["child_prefix"], "/evenement/")
+        self.assertEqual(report["public_writes"], 0)
+        sanitized = json.dumps(redact_detail_funnel_report(report))
+        self.assertNotIn(ONE, sanitized)
+        self.assertNotIn("Atelier snoezelen", sanitized)
+        self.assertNotIn("private_review_sink", sanitized)
+
+    def test_opt_in_funnel_to_private_queue_bridge_is_not_a_publisher(self):
+        index = MemoryWeb({PIN["exact_index_url"]: html_index(ONE)})
+        pages = MemoryWeb({ONE: MPT_TEMPLATE})
+        result = prepare_private_html_review_handoff(
+            [], PIN, "montpellier_mpt", TODAY,
+            index_opener=index, detail_opener=pages)
+        self.assertEqual(result["report"]["new_private_reviews"], 2)
+        self.assertEqual(len(result["queue"]), 2)
+        self.assertEqual({r["source_url"] for r in result["queue"]}, {ONE})
+        self.assertEqual({r["start_local"] for r in result["queue"]}, {"09:15", "10:30"})
+        self.assertEqual(result["queue"][0]["status"], "pending_independent_review")
+        self.assertFalse(result["queue"][0]["approved"])
+        self.assertFalse(result["queue"][0]["safe_to_publish"])
+        self.assertEqual(result["report"]["public_writes"], 0)
+        redacted = json.dumps(result["public_funnel_report"])
+        self.assertNotIn(ONE, redacted)
+        self.assertNotIn("Atelier snoezelen", redacted)
 
     def test_one_index_finds_multiple_distinct_children_and_sessions(self):
         second = MPT_HTML.replace("Parcours motricité", "Atelier dessin jeunesse")

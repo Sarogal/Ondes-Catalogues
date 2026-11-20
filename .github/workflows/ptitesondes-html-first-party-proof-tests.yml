@@ -10,6 +10,8 @@ on:
       - 'scripts/ptitesondes_factual_reuse_preflight.py'
       - 'scripts/ptitesondes_nonmusical_html_gate_router.py'
       - 'scripts/ptitesondes_nonmusical_catalogue_shape_dryrun.py'
+      - 'scripts/ptitesondes_nonmusical_private_queue_handoff.py'
+      - 'tests/test_ptitesondes_nonmusical_private_queue_handoff.py'
       - 'tests/test_ptitesondes_nonmusical_catalogue_shape_dryrun.py'
       - 'scripts/ptitesondes_institutional_source_policy.py'
       - 'config/ptitesondes_institutional_source_policies.json'
@@ -44,3 +46,4 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_html_gate_router.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_institutional_source_policy.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_catalogue_shape_dryrun.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_private_queue_handoff.py' -v

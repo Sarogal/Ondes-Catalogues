@@ -9,6 +9,7 @@ Only a separately maintained trusted caller may supply a source pin. This
 file never builds a pin from candidate fields or a search result.
 """
 from collections import Counter
+from copy import deepcopy
 from datetime import date, datetime, time, timezone
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -168,7 +169,8 @@ def diagnose_html_index_detail_funnel(
         independently_pinned_index, adapter_id, today,
         *, max_details=12, as_of=None, index_opener=None,
         detail_opener=None, independent_context=None,
-        geo_probe_limit=0, geo_venue_reader=None, geo_ban_reader=None):
+        geo_probe_limit=0, geo_venue_reader=None, geo_ban_reader=None,
+        private_review_sink=None):
     """Sample one approved official index and independently fetch child pages.
 
     A positive scope diagnostic only means a candidate has the *shape* of a
@@ -186,7 +188,9 @@ def diagnose_html_index_detail_funnel(
             or not 0 <= geo_probe_limit <= 3
             or (geo_venue_reader is None) != (geo_ban_reader is None)
             or (geo_venue_reader is not None and
-                (not callable(geo_venue_reader) or not callable(geo_ban_reader)))):
+                (not callable(geo_venue_reader) or not callable(geo_ban_reader)))
+            or (private_review_sink is not None and
+                not callable(private_review_sink))):
         return _empty()
     contract = READ_ONLY_ADAPTERS[adapter_id]
     if independently_pinned_index["approved_host"] != contract["host"]:
@@ -408,6 +412,21 @@ def diagnose_html_index_detail_funnel(
                 row, page, independently_pinned_index, contract["child_path"],
                 independent_context, today)
             result["router_" + route["stage"]] += 1
+            # Opt-in PRIVATE handoff only. No packet is returned or logged in
+            # the public diagnostic; the caller owns secure private storage.
+            # The queue will recompute the route and source facts rather than
+            # trusting this diagnostic result as an approval.
+            if (private_review_sink is not None
+                    and route["source_exact_session_confirmed"] is True
+                    and route["source_only_factual_draft_possible"] is True
+                    and route["can_submit_to_publisher"] is False):
+                private_review_sink({
+                    "lead": deepcopy(row),
+                    "page": deepcopy(page),
+                    "trusted_index": deepcopy(independently_pinned_index),
+                    "child_prefix": contract["child_path"],
+                    "independent_context": deepcopy(independent_context),
+                })
             triage = triage_independent_context(row, independent_context)
             venue = triage["venue_status"]
             history = triage["history_status"]
