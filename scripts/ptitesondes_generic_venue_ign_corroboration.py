@@ -191,4 +191,6 @@ def corroborate_osm_records(group, response, source_center, ign_fetch=fetch_ign)
         verified = verify_ign(candidate, ign_fetch(candidate), source_center)
     except (OSError, ValueError, TypeError, KeyError, UnicodeError):
         return {**result, "status": "ign_source_unavailable", "ign_requests": 1}
-    return {**result, **verified, "ign_requests": 1}
+    return {**result, **verified, "ign_requests": 1,
+            **({"address_candidate_private": candidate}
+               if verified["address_correlated"] is True else {})}
