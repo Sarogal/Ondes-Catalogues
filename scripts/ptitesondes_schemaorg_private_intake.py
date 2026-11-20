@@ -8,7 +8,7 @@ Even a true source URL with structured JSON-LD is only an unverified HINT.
 It cannot enter the HTML-reviewed queue or any publication patch.
 """
 import argparse
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 import os
@@ -349,7 +349,11 @@ def run_schemaorg_cycle(
     total_batches = max(1, (len(sources) + max_sources - 1) // max_sources)
     selected_batch = source_batch % total_batches
     selected = sources[selected_batch * max_sources:(selected_batch + 1) * max_sources]
-    today = now.astimezone(ZoneInfo("Europe/Paris")).date()
+    # Allow an overseas local day behind metropolitan time. Source readers
+    # use their own independently pinned timezone for exact future dates.
+    # Retain the prior UTC day rather than prematurely expiring a Guadeloupe
+    # evening session while it is already tomorrow in mainland France.
+    today = (now.astimezone(ZoneInfo("UTC")) - timedelta(days=1)).date()
     current = reconcile_schemaorg_hints(existing, [], today)["queue"]
     counts = {
         "schema": SCHEMA, "registered_sources": len(manifest["entries"]),
