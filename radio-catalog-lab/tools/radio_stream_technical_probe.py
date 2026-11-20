@@ -289,6 +289,7 @@ def probe_candidates(
         observation_day = dt.datetime.now(dt.timezone.utc).date()
     rows: list[dict] = []
     ids: set[str] = set()
+    eligible: list[tuple[str, str]] = []
     for station in items:
         if not isinstance(station, dict):
             raise ValueError("Invalid candidate entry")
@@ -307,14 +308,21 @@ def probe_candidates(
         if status == "needs_duplicate_review":
             continue
         raw_url = station.get("streamUrl")
-        if not isinstance(raw_url, str) or not raw_url:
-            continue
+        if isinstance(raw_url, str) and raw_url:
+            eligible.append((identifier, raw_url))
+    # Do not re-check the first N UUIDs forever: rotate the network probe
+    # window by UTC date. This stays bounded even when hundreds of stations
+    # are discovered and cannot reorder a user's historical radio catalog.
+    eligible.sort()
+    if eligible:
+        start = (observation_day.toordinal() * limit) % len(eligible)
+        selected = [eligible[(start + i) % len(eligible)]
+                    for i in range(min(limit, len(eligible)))]
+    else:
+        selected = []
+    for identifier, raw_url in selected:
         check = probe_url(raw_url, request)
-        # The input list is deterministic (sorted by UUID by discovery) and
-        # explicitly capped; no crawling of external URLs or playlists.
         rows.append({"stationuuid": identifier, **check, "publicationAllowed": False})
-        if len(rows) >= limit:
-            break
     return {
         "schemaVersion": 1,
         "observationDate": observation_day.isoformat(),
