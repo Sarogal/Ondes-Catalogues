@@ -256,13 +256,18 @@ class _AuthorityLinks(HTMLParser):
                   or props.get("aria-hidden") == "true"
                   or "display:none" in css or "visibility:hidden" in css)
         if tag not in self.VOID:
-            self.stack.append((in_main, hidden))
+            self.stack.append((in_main, hidden, tag))
         if tag == "a" and in_main and not hidden:
             self.links.append(props.get("href"))
 
     def handle_endtag(self, tag):
-        if tag not in self.VOID and self.stack:
-            self.stack.pop()
+        # Only a corresponding closing tag may end a trusted main/hidden
+        # ancestry. Do not let malformed nesting pop unrelated containers.
+        if tag not in self.VOID:
+            for i in range(len(self.stack) - 1, -1, -1):
+                if self.stack[i][2] == tag:
+                    del self.stack[i:]
+                    break
 
 
 def corroborate_independent_authority_link(
