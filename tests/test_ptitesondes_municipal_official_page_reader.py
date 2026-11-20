@@ -252,7 +252,9 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
             official_page_get=reader.official_page_get,
             dila_directory_get=reader.dila_directory_get,
             official_geocode=True,
-            source_record_from_reader=reader.source_record_for_group)
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_day=date(2026, 11, 20))
+        self.assertTrue(evidence["shared_location_proof_private_review"])
         self.assertEqual(evidence["status"],
                          "official_address_ban_private_review")
         self.assertTrue(evidence["official_geocode"][
@@ -266,6 +268,56 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         self.assertIsNotNone(location_from_proof(
             proof, CITY, VENUE, date(2026, 11, 20), center))
         ods.assert_not_called()
+
+    def test_shared_private_proof_report_is_not_publication_admission(self):
+        from ptitesondes_generic_venue_osm_preflight import audit
+        today = date(2026, 11, 20)
+        direct = event()
+        direct["location"].update({"latitude":44.5, "longitude":2.25})
+        reader, _, _, _, _ = self.reader(
+            events=Mock(return_value=direct))
+        report = audit(
+            [lead()], today,
+            record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            live=True, ign_fetch=lambda candidate: ban(),
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_preview=True)
+        self.assertEqual(report["private_reusable_location_proofs"], 1)
+        self.assertEqual(report["leads_with_private_reusable_proof"], 1)
+        self.assertEqual(report["verified_venue_leads"], 0)
+        self.assertFalse(report["publication_ready"])
+        self.assertFalse(report["gps_verified"])
+        self.assertEqual(report["public_writes"], 0)
+        self.assertEqual(len(report["records"]), 1)
+        self.assertTrue(report["records"][0][
+            "shared_location_proof_private_review"])
+
+    def test_second_independent_geo_read_failure_cannot_mint_shared_proof(self):
+        today = date(2026, 11, 20)
+        direct = event()
+        direct["location"].update({"latitude":44.5, "longitude":2.25})
+        reader, _, _, _, _ = self.reader(
+            events=Mock(return_value=direct))
+        group = groups_for_review([lead()], today)[0]
+        first_ok_second_error = Mock(side_effect=[
+            ban(), {"type":"FeatureCollection", "features":[]}])
+        result = inspect_group(
+            group, record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            ign_fetch=first_ok_second_error,
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_day=today)
+        self.assertEqual(first_ok_second_error.call_count, 2)
+        self.assertTrue(result["official_geocode"]["independent_geo_correlated"])
+        self.assertFalse(result["shared_location_proof_private_review"])
+        self.assertFalse(result["official_geocode"]["publication_ready"])
 
     def test_direct_oa_center_rejects_conflicting_uid_agenda_and_gps(self):
         from ptitesondes_generic_venue_osm_preflight import source_center
