@@ -174,7 +174,7 @@ def known_published_editions(catalog):
             continue
         name = published_identity(row.get("name"))
         region = row.get("region")
-        if name and region in REGIONS:
+        if name and isinstance(region, str) and region in REGIONS:
             keys.add((name, year, region))
     return keys
 
@@ -203,10 +203,10 @@ def candidate(row, today):
             or INDIVIDUAL_EVENT.match(key)):
         return None
     country = row.get("location_countrycode")
-    if country not in COUNTRIES:
+    if not isinstance(country, str) or country not in COUNTRIES:
         return None
     region = OVERSEAS.get(country) if country != "FR" else row.get("location_region")
-    if region not in REGIONS:
+    if not isinstance(region, str) or region not in REGIONS:
         return None
     # Genre can be found in a short description or keyword, but is NEVER a
     # verified genre or a reason for publisher eligibility.
@@ -261,6 +261,7 @@ def validated_leads(state, today):
                 or not isinstance(row.get("name_hint"), str)
                 or FORBIDDEN.search(row["name_hint"])
                 or not 7 <= len(row["name_hint"]) <= 150
+                or not isinstance(row.get("region_hint"), str)
                 or row.get("region_hint") not in REGIONS
                 or type(row.get("edition_year_hint")) is not int):
             continue
