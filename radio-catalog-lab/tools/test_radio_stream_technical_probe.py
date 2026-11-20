@@ -103,6 +103,23 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                 self.assertEqual(classify_sample(payload, "application/octet-stream"),
                                  ("audio_sample_ok", expected))
 
+    def test_incomplete_or_malformed_id3_does_not_count_as_audio(self):
+        for fake in (
+            b"ID3",
+            b"ID3\xff\x00\x00\x00\x00\x00\x00",
+            b"ID3\x04\x00\x00\x80\x00\x00\x00",
+        ):
+            with self.subTest(fake=fake):
+                self.assertNotEqual(
+                    classify_sample(fake, "audio/mpeg")[0], "audio_sample_ok")
+
+    def test_html_json_even_with_audio_magic_are_not_accepted(self):
+        marker = b"ID3\x04\x00\x00" + b"\x00" * 64
+        for content_type in ("text/html", "application/json", "text/xml"):
+            with self.subTest(content_type=content_type):
+                self.assertEqual(classify_sample(marker, content_type),
+                                 ("not_confirmed_audio", "non_audio_content_type"))
+
     def test_container_signatures_alone_do_not_prove_audio(self):
         for payload, expected in (
             (b"OggS\x00\x02" + b"\x00" * 64, "ogg_codec_unconfirmed"),
