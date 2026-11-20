@@ -144,8 +144,18 @@ def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
         return ("playlist_pending", "playlist")
     if body.startswith(b"ID3"):
         return ("audio_sample_ok", "mp3_id3")
-    if len(body) >= 2 and body[0] == 0xFF and body[1] & 0xE0 == 0xE0:
-        return ("audio_sample_ok", "mpeg_or_aac_frame")
+    if len(body) >= 4 and body[0] == 0xFF and body[1] & 0xE0 == 0xE0:
+        # Require plausible MPEG or AAC frame header fields, not only 11
+        # synchronization bits which can appear in arbitrary binary.
+        mpeg_version = (body[1] >> 3) & 3
+        mpeg_layer = (body[1] >> 1) & 3
+        bitrate_index = (body[2] >> 4) & 15
+        sampling_index = (body[2] >> 2) & 3
+        mpeg_ok = (mpeg_version != 1 and mpeg_layer != 0 and
+                   bitrate_index not in (0, 15) and sampling_index != 3)
+        aac_ok = (body[1] & 0xF6) == 0xF0 and sampling_index != 3
+        if mpeg_ok or aac_ok:
+            return ("audio_sample_ok", "mpeg_or_aac_frame")
     if body.startswith(b"OggS"):
         return ("audio_sample_ok", "ogg")
     if body.startswith(b"fLaC"):
@@ -200,7 +210,9 @@ class PinnedHttpTransport:
                 "Connection": "close",
             })
             response = connection.getresponse()
-            data = response.read(MAX_BYTES) if response.status in (200, 206) else b""
+            # read1() requests only one bounded socket read, rather than
+            # waiting for the full 512 bytes on a live stream.
+            data = response.read1(MAX_BYTES) if response.status in (200, 206) else b""
             return ResponseSample(
                 status=int(response.status),
                 content_type=response.getheader("Content-Type", "") or "",
