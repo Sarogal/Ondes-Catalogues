@@ -82,6 +82,11 @@ class FutureGeoTests(unittest.TestCase):
         self.assertTrue(saved["future_edition_geo_observations_private"]
                         [ROW["slug"]]["stable"])
         self.assertFalse(second["findings"][0]["publication_authorized"])
+        same_day = review(saved, catalogue(ROW), "2026-11-21", read)
+        self.assertEqual(same_day["two_day_stable"], 1)
+        self.assertEqual(saved["future_edition_geo_observations_private"][ROW["slug"]]["firstSeen"], "2026-11-20")
+        next_day = review(saved, catalogue(ROW), "2026-11-22", read)
+        self.assertEqual(next_day["two_day_stable"], 1)
 
     def test_old_edition_and_dates_cannot_prove_current(self):
         variants = [
