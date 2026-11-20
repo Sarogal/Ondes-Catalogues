@@ -199,9 +199,11 @@ class MunicipalOfficialPageReader:
                 # exists. A returned-but-contradictory ODS record blocks.
                 if "openagenda-v2" not in by_kind:
                     raise ValueError("ods_only_source_unavailable")
-            if ods is not None and not ods_immutable_source_match(
-                    group, uid, url, ods):
-                raise ValueError("ods_source_identity_mismatch")
+            else:
+                # A returned empty or malformed record is a contradiction,
+                # never to be mistaken for a transient transport outage.
+                if not ods_immutable_source_match(group, uid, url, ods):
+                    raise ValueError("ods_source_identity_mismatch")
         if "openagenda-v2" not in by_kind:
             return ods
         slug, _ = by_kind["openagenda-v2"]
