@@ -36,13 +36,18 @@ jobs:
           PYTHONDONTWRITEBYTECODE: '1'
         run: |
           python - <<'PY'
+          import json
           import sys
           sys.path.insert(0, 'festival-automation')
           from datetime import datetime
+          from pathlib import Path
           from zoneinfo import ZoneInfo
           from national_openagenda_research import scan, fixed_query_urls
           today = datetime.now(ZoneInfo('Europe/Paris')).date().isoformat()
-          result = scan({'schema': 'grossesondes.source-watch.v1'}, today)
+          catalog = json.loads(Path('docs/grossesondes/festivals.json')
+                               .read_text(encoding='utf-8'))
+          result = scan({'schema': 'grossesondes.source-watch.v1'},
+                        today, catalog=catalog)
           assert result['requests_attempted'] == len(fixed_query_urls(today))
           assert result['requests_failed'] < result['requests_attempted']
           assert result['publications'] == 0
@@ -50,6 +55,8 @@ jobs:
           print('OpenData publique:', result['status'],
                 'requêtes:', result['requests_attempted'],
                 'échecs:', result['requests_failed'],
-                'pistes privées non vérifiées:', result['leads_count'])
+                'pistes privées non vérifiées:', result['leads_count'],
+                'éditions déjà publiées écartées:',
+                result['already_published_leads_count'])
           print('Aucune donnée privée, aucune approbation, aucune publication.')
           PY
