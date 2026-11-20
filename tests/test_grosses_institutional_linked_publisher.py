@@ -126,6 +126,9 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
             ('<h1>Autre Festival 2027</h1>'
              '<p>Festival de metal</p>'),
             ('<h1>Festival des Rivages 2027</h1>'
+             '<p>Programmation bientôt.</p>'
+             '<h2>Autre Festival 2027</h2><p>Festival de metal</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
              '<p>Festival de rock, tournée itinérante de 20 concerts</p>'),
             ('<h1>Festival des Rivages 2027</h1>'
              '<p>Festival de punk annulé</p>'),
