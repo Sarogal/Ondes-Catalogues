@@ -63,20 +63,25 @@ def run(state, queue, today, institution_fetch=None, organizer_fetch=None,
         if key not in active:
             del observed[key]
     yesterday = (current - timedelta(days=1)).isoformat()
-    def priority(source):
+    # Only FIRST-day positive evidence has priority the next day. Mature
+    # proofs must not permanently starve new institutional leads.
+    def pending_second_day(source):
         rec = observed.get(source["url"])
-        if not isinstance(rec, dict):
-            return 1
-        return 0 if rec.get("lastSeen") == yesterday else 1
-    sources.sort(key=lambda x: (priority(x), x["dossier_id"], x["url"]))
-    # Rotate within each distinct priority segment to avoid starving fresh
-    # sites if there are more institutional leads than daily probe capacity.
-    pending = [x for x in sources if priority(x) == 0]
-    others = [x for x in sources if priority(x) != 0]
-    if others:
-        shift = (current.toordinal() * MAX_CHECKS) % len(others)
-        others = others[shift:] + others[:shift]
-    selected = (pending + others)[:limit]
+        return (isinstance(rec, dict) and isinstance(rec.get("digest"), str)
+                and rec.get("firstSeen") == yesterday
+                and rec.get("lastSeen") == yesterday)
+    pending = [x for x in sources if pending_second_day(x)]
+    others = [x for x in sources if not pending_second_day(x)]
+    fresh = [x for x in others if not (
+        isinstance(observed.get(x["url"]), dict)
+        and observed[x["url"]].get("lastChecked") == today)]
+    repeated = [x for x in others if x not in fresh]
+    def rotate(rows):
+        if not rows:
+            return rows
+        shift = (current.toordinal() // 2 * MAX_CHECKS) % len(rows)
+        return rows[shift:] + rows[:shift]
+    selected = (pending + rotate(fresh) + rotate(repeated))[:limit]
     read_site = fetch_public_html if organizer_fetch is None else organizer_fetch
     rows = []
     for source in selected:
@@ -96,12 +101,14 @@ def run(state, queue, today, institution_fetch=None, organizer_fetch=None,
             site = trusted_live_link(source, today, **kwargs)
             if site is None:
                 row["status"] = "TRUSTED_INDEX_DETAIL_LINK_NOT_PROVEN"
+                observed[source["url"]] = {"lastChecked": today}
                 rows.append(row)
                 continue
             html = read_site(site)
             dates = prove_dates(html, source["title"], source["year"], today)
             if dates is None:
                 row["status"] = "LINKED_SITE_EXACT_DATES_NOT_PROVEN"
+                observed[source["url"]] = {"lastChecked": today}
                 rows.append(row)
                 continue
             digest = _digest(source, site, dates)
@@ -116,11 +123,11 @@ def run(state, queue, today, institution_fetch=None, organizer_fetch=None,
                 first, continuous = current, False
             observed[source["url"]] = {
                 "digest": digest, "firstSeen": first.isoformat(),
-                "lastSeen": today,
+                "lastSeen": today, "lastChecked": today,
             }
             proposal = private_proposal(source, site, dates, today)
             if proposal is None:
-                observed.pop(source["url"], None)
+                observed[source["url"]] = {"lastChecked": today}
                 rows.append(row)
                 continue
             row.update(
@@ -132,12 +139,16 @@ def run(state, queue, today, institution_fetch=None, organizer_fetch=None,
             )
         except (OSError, ValueError, UnicodeError, TypeError, KeyError):
             row["status"] = "INSTITUTION_LINKED_SITE_UNAVAILABLE"
+        if source["url"] not in observed:
+            # Rejected link or failed HTTPS must erase any previous digest.
+            observed[source["url"]] = {"lastChecked": today}
         rows.append(row)
     # Bound stale state to prevent a removed institutional link being
     # resurrected as a future publisher authorization.
     for key, value in list(observed.items()):
         try:
-            last = date.fromisoformat(value["lastSeen"])
+            last = date.fromisoformat(
+                value.get("lastChecked", value.get("lastSeen")))
             if not 0 <= (current - last).days <= 7:
                 del observed[key]
         except (ValueError, TypeError, KeyError):
