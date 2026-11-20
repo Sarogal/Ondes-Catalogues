@@ -184,6 +184,13 @@ def approved_municipal_page_host(page_url, city, directory_response):
     sites = municipal_site_hosts(city, directory_response)
     for site in sites:
         root = site[4:] if site.startswith("www.") else site
+        # Never treat a bare top-level domain, government/public suffix,
+        # or generic infrastructure namespace as a municipal site scope.
+        # Without a public-suffix library, fail closed on these cases.
+        if (root.count(".") < 1 or root in (
+                "gouv.fr", "gov.fr", "edu.fr", "ac.fr",
+                "service-public.gouv.fr", "data.gouv.fr")):
+            continue
         if p in (site, root) or p.endswith("." + root):
             return p
     return None
