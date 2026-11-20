@@ -23,6 +23,7 @@ jobs:
       - name: Verify safety and continuity tests (offline)
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_continuity_evidence.py' -v
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_frame_chain.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_technical_probe.py' -v
       - name: Discover candidates from Radio Browser (no publication)
         shell: bash
@@ -55,7 +56,7 @@ jobs:
           assert all(x['publicationAllowed'] is False for x in data['checks'])
           verdicts = collections.Counter(x['verdict'] for x in data['checks'])
           continuity = collections.Counter(x.get('continuityEvidence', {}).get('state', 'not_run') for x in data['checks'])
-          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'approved=0')
+          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'approved=0')
           PY
       - name: Upload technical evidence only (no stream URLs or bytes)
         uses: actions/upload-artifact@v4
