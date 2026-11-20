@@ -27,6 +27,7 @@ if FESTIVAL_AUTOMATION not in sys.path:
     sys.path.insert(0, FESTIVAL_AUTOMATION)
 from dns_pinned_https import fetch_public_html, safe_public_url
 from future_geo_preflight import SCHEMA as REVIEW_SCHEMA, exact_edition_geo
+from grossesondes_structured_roster import iso_day
 
 PROOF_MODE = "current-edition-geo-two-day.v1"
 MAX_EVIDENCE_BYTES = 200_000
@@ -164,7 +165,8 @@ def apply_independently_verified_geo(target, published, review, today,
                 or old.get("futureVenueConfirmed") is True
                 or old.get("geoVerification") is not None
                 or old.get("venue") not in (None, "")
-                or date.fromisoformat(old.get("startDate", "")) <= date.fromisoformat(today)
+                or iso_day(old.get("startDate")) is None
+                or iso_day(old.get("startDate")) <= date.fromisoformat(today)
                 or safe_public_url(old.get("officialSite")) is None
                 or private_claim.get("source") != old["officialSite"]):
             summary["held_geo"] += 1
