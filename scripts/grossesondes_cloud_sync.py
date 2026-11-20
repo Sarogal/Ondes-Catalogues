@@ -6,7 +6,8 @@ Le mode preview ne modifie aucun fichier; le mode publish ne valide que le
 catalogue issu de cette preuve et de cet instantané.
 """
 import argparse
-from datetime import datetime
+from datetime import datetime, date
+from math import isfinite
 from hashlib import sha1, sha256
 import json
 import os
@@ -168,6 +169,56 @@ def safe_target(baseline, candidate, currently_published):
             "version de schéma différente")
     return currently_published["festivals"]!=candidate["festivals"]
 
+def future_map_coverage(calendar, today):
+    """Count real future editions and their geocoding gaps, never assign pins.
+
+    An absent showOnMap flag is UNKNOWN (not proof the frontend displays it).
+    A geographic coordinate is only 'present', not proof of this year's venue.
+    This report is observational and cannot enable a publication or map pin.
+    """
+    current = date.fromisoformat(today)
+    if (not isinstance(calendar, dict) or calendar.get("schema") != 1
+            or not isinstance(calendar.get("festivals"), list)):
+        raise ValueError("Invalid future map coverage catalogue")
+    upcoming = []
+    undated = 0
+    for row in calendar["festivals"]:
+        if not isinstance(row, dict):
+            raise ValueError("Invalid festival in future map coverage")
+        raw = row.get("startDate")
+        if raw is None:
+            undated += 1
+            continue
+        if not isinstance(raw, str):
+            raise ValueError("Invalid festival start date for map coverage")
+        if date.fromisoformat(raw) > current:
+            upcoming.append(row)
+    def has_coords(row):
+        lat, lon = row.get("lat"), row.get("lon")
+        return (type(lat) in (int, float) and type(lon) in (int, float)
+                and isfinite(lat) and isfinite(lon)
+                and -90 <= lat <= 90 and -180 <= lon <= 180)
+    geocoded = [row for row in upcoming if has_coords(row)]
+    return {
+        "dated_future_editions": len(upcoming),
+        "undated_catalogue_editions": undated,
+        "coordinates_present": len(geocoded),
+        "coordinates_missing": len(upcoming) - len(geocoded),
+        "explicitly_hidden": sum(row.get("showOnMap") is False
+                                 for row in upcoming),
+        "explicitly_visible_flag": sum(row.get("showOnMap") is True
+                                       for row in upcoming),
+        "visibility_flag_absent": sum(row.get("showOnMap") is None
+                                      for row in upcoming),
+        "coordinates_present_not_explicitly_hidden": sum(
+            has_coords(row) and row.get("showOnMap") is not False
+            for row in upcoming),
+        "city_missing": sum(
+            not isinstance(row.get("city"), str) or
+            not row.get("city", "").strip() for row in upcoming),
+    }
+
+
 def build_candidate(snapshot, published, patch, official_sources, today, trusted_published=False):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
@@ -218,6 +269,7 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         break
     changed=safe_target(reference,target,published["festivals.json"])
     report["candidate_total"] = len(target["festivals"])
+    report["future_map_coverage"] = future_map_coverage(target, today)
     if not changed:
         target["generatedAt"]=published["festivals.json"]["generatedAt"]
     report["changed"]=changed
