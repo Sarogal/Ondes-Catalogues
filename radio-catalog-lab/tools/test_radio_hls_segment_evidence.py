@@ -40,7 +40,7 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
 
     def test_only_same_origin_no_traversal_or_cross_domain(self):
         for path in (
-            "https://evil.example/file.ts",
+            "http://evil.example/file.ts",
             "//evil.example/file.ts",
             "/private.ts",
             "../secret.ts",
@@ -56,6 +56,37 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
         ):
             with self.subTest(path=path):
                 self.assertIsNone(plan_one_segment(manifest(b=path), MIME, BASE))
+
+
+    def test_absolute_https_cdn_segment_is_checked_with_one_request(self):
+        target = "https://audio-cdn.example.org/hls/seg-105.ts?token=ABCD%20EFGH"
+        chosen = plan_one_segment(manifest(b=target), MIME, BASE)
+        self.assertEqual(chosen.url, target)
+        requested = []
+        def segment_request(url):
+            requested.append(url)
+            return response(valid_ts_packets(5), "video/mp2t", status=206)
+        outcome = verify_one_segment(
+            BASE, lambda _: response(manifest(b=target)), segment_request)
+        self.assertEqual(outcome["state"], "segment_structural_evidence")
+        self.assertEqual(requested, [target])
+        self.assertNotIn("audio-cdn", str(outcome))
+        self.assertNotIn("ABCD", str(outcome))
+        self.assertFalse(outcome["publicationAllowed"])
+
+    def test_external_http_or_private_cdn_segment_is_never_fetched(self):
+        for target in ("http://audio-cdn.example.org/hls/audio.ts",
+                       "https://127.0.0.1/audio.ts",
+                       "https://user:password@cdn.example.org/live.ts",
+                       "https://[::1]/audio.ts"):
+            with self.subTest(target=target):
+                self.assertIsNone(plan_one_segment(manifest(b=target), MIME, BASE))
+                called = []
+                outcome = verify_one_segment(
+                    BASE, lambda _: response(manifest(b=target)),
+                    lambda u: called.append(u))
+                self.assertEqual(called, [])
+                self.assertFalse(outcome["publicationAllowed"])
 
     def test_query_token_allowed_without_url_exposure(self):
         chosen = plan_one_segment(
