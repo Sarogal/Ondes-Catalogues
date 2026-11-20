@@ -366,6 +366,7 @@ def venue_candidate(raw, source, page_url, known, day):
     if offsite:
         origin = source.get("url")
         if (not isinstance(origin, str)
+                or urllib.parse.urlsplit(origin).scheme != "https"
                 or not same_host(page_url, origin)):
             return None
         # The official agenda may contain an individually dated MusicEvent
