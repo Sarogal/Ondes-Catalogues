@@ -6,6 +6,12 @@ on:
       - feature/radio-continuity-evidence-lab-20261120
     paths:
       - ".github/workflows/radio-hls-manifest-only-pilot.yml"
+      - "radio-catalog-lab/tools/radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/radio_hls_daily_pilot.py"
+      - "radio-catalog-lab/tools/test_radio_hls_daily_pilot.py"
+      - "radio-catalog-lab/tools/radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/test_radio_stream_technical_probe.py"
   workflow_dispatch:
 
 permissions:
