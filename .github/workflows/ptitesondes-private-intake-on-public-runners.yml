@@ -84,6 +84,9 @@ jobs:
           assert "ptitesondes_schedule_catchup.py" in s
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
+          assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
+          assert "ptitesondes_html_private_queue_cycle.py" in s
+          assert "automation-intake/ptitesondes/html-review-candidates.json" in s
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
@@ -480,6 +483,41 @@ jobs:
             fi
           fi
           echo "Une collecte sorties réalisée, ${#REVIEW_SLOTS[@]} lots indépendants vérifiés ou rattrapés ; aucune écriture publique." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Préparer les séances HTML pour une file exclusivement privée (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_HTML_QUEUE == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          # Daily shifting round-robin batches. No hardcoded town filter;
+          # only trusted source/adapter pairs can be executed.
+          BATCH="$(python -c 'from datetime import datetime, timezone; n=datetime.now(timezone.utc); slot=0 if n.hour<9 else 1 if n.hour<12 else 2 if n.hour<17 else 3; print(n.toordinal()*4+slot)')"
+          if ! python public/scripts/ptitesondes_html_private_queue_cycle.py \
+              --state-checkout state --mode "$MODE" --batch "$BATCH" \
+              > "$LOG/html-private-queue-summary.json" 2>&1; then
+            echo "::warning::File HTML privée non préparée ; état historique conservé, aucune publication."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/html-review-candidates.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): conserver les séances HTML à revoir en privé' \
+                > "$LOG/git-html-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/git-html-push.log" 2>&1; then
+                echo "::error::Stockage privé HTML indisponible ; aucune publication."
+                exit 1
+              fi
+            fi
+          fi
+          echo "Séances HTML triées en mémoire, sauvegarde autorisée seulement dans le privé ; aucune publication." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
         if: ${{ env.CYCLE != 'outings' }}

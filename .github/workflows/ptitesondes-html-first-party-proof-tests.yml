@@ -12,6 +12,10 @@ on:
       - 'scripts/ptitesondes_nonmusical_catalogue_shape_dryrun.py'
       - 'scripts/ptitesondes_nonmusical_private_queue_handoff.py'
       - 'tests/test_ptitesondes_nonmusical_private_queue_handoff.py'
+      - 'scripts/ptitesondes_html_private_queue_cycle.py'
+      - 'tests/test_ptitesondes_html_private_queue_cycle.py'
+      - 'tests/test_ptitesondes_html_queue_workflow_contract.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - 'tests/test_ptitesondes_nonmusical_catalogue_shape_dryrun.py'
       - 'scripts/ptitesondes_institutional_source_policy.py'
       - 'config/ptitesondes_institutional_source_policies.json'
@@ -47,3 +51,5 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_institutional_source_policy.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_catalogue_shape_dryrun.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_private_queue_handoff.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_html_private_queue_cycle.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_html_queue_workflow_contract.py' -v
