@@ -60,14 +60,17 @@ def extract_official_address(group, html):
     if len(parser.blocks) >= 20:
         return None
     matches = []
+    other_place_nodes = 0
     try:
         for block in parser.blocks:
             for node in _nodes(json.loads(block)):
-                if (_types(node).intersection(VENUE_TYPES)
-                        and norm(node.get("name")) == norm(group.get("venue"))):
-                    matches.append(node)
-                    if len(matches) > 1:
-                        return None
+                if _types(node).intersection(VENUE_TYPES):
+                    if norm(node.get("name")) == norm(group.get("venue")):
+                        matches.append(node)
+                        if len(matches) > 1:
+                            return None
+                    else:
+                        other_place_nodes += 1
     except (ValueError, TypeError, RecursionError):
         return None
     if len(matches) == 1:
@@ -100,9 +103,9 @@ def extract_official_address(group, html):
                 return None
             candidate["official_coordinates_hint"] = (lat, lon)
         return candidate
-    if len(matches) > 1:
+    if len(matches) > 1 or other_place_nodes:
         return None
-    # No schema.org Place for this venue: accept only one visible exact
+    # No contradictory schema.org Place: accept only one visible exact
     # heading and one semantic <address> block. Hidden/footer text excluded.
     p = VisiblePostal()
     try:
