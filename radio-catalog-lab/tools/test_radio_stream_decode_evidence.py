@@ -93,5 +93,33 @@ class DecoderEvidenceTests(unittest.TestCase):
         self.assertFalse(any(isinstance(x, bytes) for x in out.values()))
 
 
+
+    def test_hls_mpeg_ts_prefix_selects_ffmpeg_demuxer_without_audio_claim(self):
+        packet = bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)
+        data = packet * 5
+        self.assertEqual(_detect_demuxer(data), "mpegts")
+        null = bytes((0x47, 0x1F, 0xFF, 0x10)) + bytes(184)
+        self.assertIsNone(_detect_demuxer(null * 5))
+        corrupt = bytes((0x00, 0x40, 0x21, 0x10)) + bytes(184)
+        self.assertIsNone(_detect_demuxer(corrupt + packet * 4))
+
+    @patch("radio_stream_decode_evidence.sys.platform", "linux")
+    @patch("radio_stream_decode_evidence.shutil.which", return_value="/usr/bin/ffmpeg")
+    @patch("radio_stream_decode_evidence.subprocess.run")
+    def test_hls_mpegts_pcm_is_only_bounded_nonpublishing_evidence(self, run, which):
+        packet = bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)
+        data = packet * 6
+        run.return_value = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=bytes(4096))
+        decoded = decode_audio_prefix(data)
+        self.assertEqual(decoded["state"], "decoded_pcm")
+        self.assertEqual(decoded["demuxer"], "mpegts")
+        self.assertFalse(decoded["publicationAllowed"])
+        args = run.call_args.args[0]
+        self.assertEqual(args[args.index("-f") + 1], "mpegts")
+        self.assertEqual(args[args.index("-protocol_whitelist") + 1], "pipe")
+        self.assertEqual(args[args.index("-i") + 1], "pipe:0")
+        self.assertEqual(args[-1], "pipe:1")
+
 if __name__ == "__main__":
     unittest.main()
