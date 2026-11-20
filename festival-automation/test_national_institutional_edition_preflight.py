@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 import unittest
+from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from national_discovery_queue import build_queue
@@ -213,6 +214,76 @@ class InstitutionalPreflightTests(unittest.TestCase):
         self.assertEqual(visited, [])
         self.assertEqual(result["checked_count"], 0)
         self.assertFalse(result["publication_authorized"])
+
+
+    def test_twice_daily_negative_leads_rotate_without_unsafe_proof(self):
+        sources = [
+            {"dossier_id": "national-test-" + str(i).zfill(9),
+             "index_url": INDEX, "index_page": INDEX,
+             "url": INDEX + "evenement/metal-garrigues-" + str(i),
+             "title": "Festival Metal Garrigues " + str(i) + " 2027",
+             "year": 2027} for i in range(7)]
+        index_html = "<main>" + "".join(
+            '<a href="' + x["url"] + '">' + x["title"] + "</a>"
+            for x in sources) + "</main>"
+        checked = []
+        def no_dates(url):
+            if url == INDEX:
+                return index_html
+            checked.append(url)
+            return "<main><h1>Programmation à venir</h1></main>"
+        state = {"schema": "grossesondes.source-watch.v1"}
+        with patch("national_institutional_edition_preflight._eligible_sources",
+                   return_value=sources):
+            first = run(state, {}, DAY1, fetch=no_dates)
+            first_urls = set(checked)
+            self.assertEqual(first["checked_count"], 2)
+            self.assertEqual(len(first_urls), 2)
+            self.assertEqual(first["two_day_observations_count"], 0)
+            self.assertTrue(all(
+                x == {"lastChecked": DAY1}
+                for x in state["national_institutional_dates_private"].values()))
+            checked.clear()
+            second = run(state, {}, DAY1, fetch=no_dates)
+            self.assertEqual(second["checked_count"], 2)
+            self.assertEqual(len(set(checked)), 2)
+            self.assertTrue(first_urls.isdisjoint(checked))
+            self.assertFalse(second["publication_authorized"])
+
+    def test_yesterdays_positive_proofs_are_rechecked_before_new_sources(self):
+        sources = [
+            {"dossier_id": "national-test-" + str(i).zfill(9),
+             "index_url": INDEX, "index_page": INDEX,
+             "url": INDEX + "evenement/metal-garrigues-" + str(i),
+             "title": "Festival Metal Garrigues " + str(i) + " 2027",
+             "year": 2027} for i in range(7)]
+        index_html = "<main>" + "".join(
+            '<a href="' + x["url"] + '">' + x["title"] + "</a>"
+            for x in sources) + "</main>"
+        titles = {x["url"]: x["title"] for x in sources}
+        def with_dates(url):
+            if url == INDEX:
+                return index_html
+            return ("<main><h1>" + titles[url] + "</h1>"
+                    "<p>Les 4 et 5 juin 2027 au festival de Montpellier.</p></main>")
+        state = {"schema": "grossesondes.source-watch.v1"}
+        with patch("national_institutional_edition_preflight._eligible_sources",
+                   return_value=sources):
+            first = run(state, {}, DAY1, fetch=with_dates)
+            self.assertEqual(first["checked_count"], 2)
+            self.assertEqual(first["two_day_observations_count"], 0)
+            positives = {url for url, rec in
+                         state["national_institutional_dates_private"].items()
+                         if "digest" in rec}
+            self.assertEqual(len(positives), 2)
+            next_day = run(state, {}, DAY2, fetch=with_dates)
+            self.assertEqual(next_day["two_day_observations_count"], 2)
+            self.assertEqual(len(next_day["rows"]), 2)
+            self.assertEqual({
+                url for url, rec in state[
+                    "national_institutional_dates_private"].items()
+                if rec.get("lastSeen") == DAY2}, positives)
+            self.assertFalse(next_day["publication_authorized"])
 
 
 if __name__ == "__main__":
