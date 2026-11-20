@@ -23,6 +23,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from radio_stream_playlist_preview import playlist_hint
+
 MAX_BYTES = 512
 MAX_REDIRECTS = 3
 CONNECT_TIMEOUT = 7.0
@@ -177,6 +179,36 @@ def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
     return ("not_confirmed_audio", "unknown")
 
 
+class IcyCompatibleHTTPResponse(http.client.HTTPResponse):
+    """Accept legacy Icecast 'ICY 200 OK' while keeping HTTP status checks."""
+
+    def _read_status(self):
+        line = str(self.fp.readline(http.client._MAXLINE + 1), "iso-8859-1")
+        if len(line) > http.client._MAXLINE:
+            raise http.client.LineTooLong("status line")
+        if not line:
+            raise http.client.RemoteDisconnected("Peer closed before status")
+        parts = line.split(None, 2)
+        if len(parts) < 2:
+            self._close_conn()
+            raise http.client.BadStatusLine(line)
+        version, raw_status = parts[:2]
+        reason = parts[2] if len(parts) > 2 else ""
+        if version == "ICY":
+            version = "HTTP/1.0"
+        elif not version.startswith("HTTP/"):
+            self._close_conn()
+            raise http.client.BadStatusLine(line)
+        try:
+            status = int(raw_status)
+            if not 100 <= status <= 999:
+                raise ValueError("invalid_status")
+        except ValueError as error:
+            self._close_conn()
+            raise http.client.BadStatusLine(line) from error
+        return version, status, reason
+
+
 class PinnedHttpTransport:
     """No proxy, no implicit redirects, DNS check before *each* pinned hop.
 
@@ -199,6 +231,7 @@ class PinnedHttpTransport:
                 host, port, timeout=self.timeout, context=ssl.create_default_context())
         else:
             connection = http.client.HTTPConnection(host, port, timeout=self.timeout)
+        connection.response_class = IcyCompatibleHTTPResponse
         # http.client.HTTP(S)Connection.connect() calls this factory to open
         # the socket. Original host is retained in HTTP Host / HTTPS SNI.
         def connect_checked(address, timeout=None, source_address=None):
@@ -234,6 +267,7 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
     fingerprint = hashlib.sha256(raw_url.encode("utf-8")).hexdigest() if (
         isinstance(raw_url, str)) else ""
     redirects = 0
+    playlist_follows = 0
     visited: set[str] = set()
     current = raw_url
     try:
@@ -261,6 +295,23 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                 verdict, reason = "needs_review", "http_not_successful"
                 break
             verdict, reason = classify_sample(sample.body[:MAX_BYTES], sample.content_type)
+            if verdict == "playlist_pending":
+                hint = playlist_hint(
+                    sample.body[:MAX_BYTES], sample.content_type, current)
+                if hint.kind == "playlist_single_target" and hint.target is not None:
+                    if playlist_follows >= 1 or redirects >= MAX_REDIRECTS:
+                        verdict, reason = "playlist_pending", "playlist_chain_limit"
+                    else:
+                        target = validate_endpoint(hint.target)
+                        if original.scheme == "https" and target.scheme == "http":
+                            verdict, reason = "needs_review", "tls_downgrade"
+                        else:
+                            playlist_follows += 1
+                            redirects += 1
+                            current = hint.target
+                            continue
+                else:
+                    verdict, reason = "playlist_pending", hint.kind
             return {
                 "verdict": verdict, "reason": reason, "formatHint": reason,
                 "redirectCount": redirects, "sampleBytes": min(MAX_BYTES, len(sample.body)),
