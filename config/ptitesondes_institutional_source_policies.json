@@ -14,7 +14,8 @@
       "reuse_reviewed_on": null,
       "reuse_expires_on": null,
       "no_third_party_description_or_images": true,
-      "access_terms_require_per_session_review": true
+      "access_terms_require_per_session_review": true,
+      "authority_expected_path_prefix": "/maisons/"
     }
   ]
 }
