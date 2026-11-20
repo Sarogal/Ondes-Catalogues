@@ -203,10 +203,26 @@ class OrganizerWithoutAnyKnownBandTests(unittest.TestCase):
                 reviewer.verify(lead, catalogue, DAY,
                                 fetch=fetch(altered, osm, []))
 
-        # No performer-level genre may override a contradictory explicit
-        # unrelated event-level genre, and no artist biography is consulted.
+        # A non-metal general event category cannot veto an explicitly
+        # genre-labelled metal band on the exact first-party bill.
         altered = copy.deepcopy(raw)
         altered["genre"] = ["Jazz"]
+        mixed_event, _ = reviewer.verify(
+            lead, catalogue, DAY, fetch=fetch(altered, osm, []))
+        self.assertIn("Black Metal", mixed_event["event"]["genres"])
+
+        # Even when the *headliner* is Jazz and a metal opener appears last,
+        # the complete mixed concert qualifies. All performers remain named.
+        for band in altered["performer"]:
+            band["genre"] = "Jazz"
+        altered["performer"][-1]["genre"] = "Hard Rock"
+        mixed_event, _ = reviewer.verify(
+            lead, catalogue, DAY, fetch=fetch(altered, osm, []))
+        self.assertIn("Hard Rock", mixed_event["event"]["genres"])
+        self.assertEqual(len(mixed_event["event"]["artistIds"]), 3)
+
+        # A jazz-only bill with a jazz event tag has no qualifying group.
+        altered["performer"][-1]["genre"] = "Jazz"
         with self.assertRaises(ValueError):
             reviewer.verify(lead, catalogue, DAY,
                             fetch=fetch(altered, osm, []))
