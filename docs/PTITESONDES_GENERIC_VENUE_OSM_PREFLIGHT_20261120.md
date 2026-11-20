@@ -66,3 +66,47 @@ preuve officielle de lieu indisponible) demeurent des blocages.
 Cette PR prépare une recherche générique mais ne prétend pas atteindre
 l'autonomie totale. Pas de fusion, de nouveau workflow activé ou de
 modification de la production.
+
+## Extension : corroboration IGN/BAN sans liste de villes
+
+`scripts/ptitesondes_generic_venue_ign_corroboration.py` reprend le niveau
+de rigueur du contrôleur IGN/BAN déjà présent pour quatre bâtiments homologués
+(`ptitesondes_independent_ign_venue_recheck.py`), mais le **généralise**
+aux lieux nouvellement découverts : pas de noms, communes ou adresses épinglés.
+
+Après un résultat OSM au nom exact et sans ambiguïté, une requête IGN/BAN
+unique est possible **seulement si le POI fournit explicitement numéro,
+rue et code postal**. La réponse doit être un numéro de rue exact,
+dans la même ville avec le même code postal, score ≥ 0,95 et coordonnées
+à 65 mètres maximum du point nommé OSM **et** du centre source. Une rue
+sans numéro, un centroïde de commune, une adresse ambigüe, une divergence
+de points ou une erreur réseau ne déclenchent aucune admission.
+
+Le rapport privé distingue :
+- `independent_address_matches` : **nombre de lieux avec une adresse
+  corroborée**, sans homologation officielle ;
+- `leads_with_independent_address_hint` : nombre de pistes
+  potentiellement concernées (ce ne sont **pas** des événements débloqués) ;
+- `verified_venue_leads` : **toujours zéro** tant que le mécanisme
+  d'attestation officielle du lieu n'est pas construit ;
+- `publication_ready=false`, `public_writes=0` sans exception.
+
+Le mode par défaut ne fait **aucun accès réseau**. Le flag explicite
+`--live-probe` lance ODS, Overpass puis IGN/BAN, sans aucune écriture
+publique. Le chemin du backlog **et** du rapport doivent se trouver hors
+du checkout public. Aucun workflow de production n'invoque ce flag.
+
+## Limites opérationnelles restantes
+
+- La proximité du point OSM avec le centre OpenAgenda/ODS ne prouve pas
+  l'identité ou la disponibilité du lieu, seulement une cohérence
+  géographique partielle.
+- Un lieu sans adresse postale (parc, place, espace temporaire) exige
+  une voie distincte de preuve de l'emprise publique et du nom, jamais
+  l'invention d'une adresse numérotée.
+- Une donnée OSM/BAN ne peut pas remplacer la preuve de l'établissement
+  par son site officiel, ni la confirmation de chaque séance et de son public.
+- Les UID absents du miroir ODS restent à traiter par la PR #503 et un
+  pont de lecture OpenAgenda v2, **sans** assimiler une preuve directe
+  de l'organisateur à une source indépendante.
+- Le publisher reste volontairement déconnecté de cette PR.
