@@ -14,6 +14,8 @@ on:
       - 'tests/test_ptitesondes_nonmusical_private_queue_handoff.py'
       - 'scripts/ptitesondes_html_private_queue_cycle.py'
       - 'scripts/ptitesondes_html_independent_review_planner.py'
+      - 'scripts/ptitesondes_generic_schemaorg_event_discovery.py'
+      - 'tests/test_ptitesondes_html_generic_schemaorg_event_discovery.py'
       - 'tests/test_ptitesondes_html_independent_review_planner.py'
       - 'scripts/ptitesondes_html_independent_review_cycle.py'
       - 'tests/test_ptitesondes_html_independent_review_cycle.py'
