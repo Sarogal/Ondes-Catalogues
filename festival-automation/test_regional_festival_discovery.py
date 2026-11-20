@@ -26,6 +26,7 @@ class RegionalTests(unittest.TestCase):
             private_openagenda_name_hints, CROSS_SOURCE_SIGNAL)
         from national_discovery_queue import build_queue
         from national_detail_qualification import _eligible_sources
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
         from grossesondes_institutional_edition import (
             independently_fetch, private_proposal)
         source = ANGERS
