@@ -22,12 +22,15 @@ from urllib.parse import urlsplit
 from proof import norm
 from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
 from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
+from ptitesondes_html_index_detail_funnel import (
+    diagnose_html_index_detail_funnel, redact_detail_funnel_report,
+)
 from ptitesondes_nonmusical_html_gate_router import (
     ACTIONS, STAGES, route_nonmusical_html_session,
 )
 
 SCHEMA = "ptitesondes.html_private_review_queue.v1"
-MAX_BATCH = 30
+MAX_BATCH = 300  # up to 30 HTML pages with multiple exact sessions each
 MAX_QUEUE = 4000
 PACKET_KEYS = frozenset((
     "lead", "page", "trusted_index", "child_prefix", "independent_context",
@@ -272,3 +275,28 @@ def reconcile_private_html_review_queue(existing, packets, today):
     report["possible_cross_source_same_session"] = sum(
         len(urls) for urls in groups.values() if len(urls) > 1)
     return {"queue": rows, "report": report}
+
+
+def prepare_private_html_review_handoff(existing, independently_pinned_index,
+                                        adapter_id, today, **funnel_options):
+    """Opt-in end-to-end IN-MEMORY bridge, never a private or public write.
+
+    Caller must provide the separate, trusted institutional pin, and an
+    independently maintained venue/history context. Source HTTP is fetched by
+    the pre-existing strict HTML funnel; its private packets never appear in
+    its public report. Only an authorized private worker may persist the
+    returned queue after additional review of security and retention.
+    """
+    if "private_review_sink" in funnel_options:
+        raise ValueError("private_html_sink_is_internal_only")
+    packets = []
+    diagnostic = diagnose_html_index_detail_funnel(
+        independently_pinned_index, adapter_id, today,
+        private_review_sink=packets.append, **funnel_options)
+    reconciled = reconcile_private_html_review_queue(
+        existing, packets, today)
+    return {
+        "queue": reconciled["queue"],  # private, DO NOT LOG
+        "report": reconciled["report"],  # fixed numeric counts only
+        "public_funnel_report": redact_detail_funnel_report(diagnostic),
+    }
