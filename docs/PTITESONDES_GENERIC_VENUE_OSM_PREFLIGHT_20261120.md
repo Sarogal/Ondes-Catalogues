@@ -110,3 +110,35 @@ du checkout public. Aucun workflow de production n'invoque ce flag.
   pont de lecture OpenAgenda v2, **sans** assimiler une preuve directe
   de l'organisateur à une source indépendante.
 - Le publisher reste volontairement déconnecté de cette PR.
+
+## Extension : preuve générique de l'identité officielle de l'établissement
+
+`ptitesondes_generic_venue_official_proof.py` ajoute une vérification
+**purement hors réseau** des données structurées `schema.org/Place`
+(et sous-types explicitement documentés) sur la page officielle d'un lieu.
+
+Conditions cumulatives :
+1. La preuve OSM + adresse IGN/BAN a réussi.
+2. L'URL de la page officielle est fournie **indépendamment du collecteur
+   et des attributs OSM** et appartient à un hôte approuvé par un registre
+   distinct. L'outil refuse les domaines OpenAgenda/ODS/OSM/IGN comme preuve
+   d'identité institutionnelle.
+3. Une seule entité `Place` porte le nom exact, la commune, la rue,
+   le numéro et le code postal corroborés ; toute contradiction des coordonnées
+   éventuelles bloque la qualification géographique.
+4. Si l'URL officielle n'existe pas, si le domaine n'a pas été approuvé
+   indépendamment, ou si la page ne contient pas de `Place` exploitable,
+   le dossier reste en attente, sans inventer l'identité.
+
+Cette couche est intégrée au moteur en **injection de preuves uniquement** :
+`official_page_get` et `approved_official_hosts` doivent être fournis par
+un futur connecteur institutionnel authentifié ; ils ne sont **pas**
+alimentés par le backlog privé ou par un champ `website` de la carte OSM.
+Ainsi **aucun site externe arbitraire n'est automatiquement homologué**.
+
+Même dans le cas positif, le rapport `location_evidence_complete_for_private_review`
+n'est **pas** une permission de publier : `verified_venue_leads=0`,
+`publication_ready=false`, `public_writes=0`. Il manque encore le
+raccordement authentifié des sources officielles, l'admission de chaque séance
+et le publisher, explicitement hors périmètre de cette PR. Le test d'intégration
+couvre l'ensemble ODS → OSM → IGN/BAN → HTML officiel, sans connexion réseau.
