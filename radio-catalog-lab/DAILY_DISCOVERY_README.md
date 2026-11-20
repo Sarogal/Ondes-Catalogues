@@ -6,6 +6,16 @@
 
 Le fichier `tools/radio_daily_discovery.py` lance des recherches **mondiales** sur Radio Browser, par tags et noms (metal, heavy metal, hard rock, punk, stoner, grunge, rock, etc.). Il ne contient aucun identifiant de station autorisé ou nombre maximum de radios. Les critères de recherche sont ajustables. Une page des résultats récents est interrogée systématiquement, tandis que les pages plus anciennes tournent suivant le jour de la semaine. Les recherches sont bornées pour ménager le fournisseur.
 
+### Familles et sous-genres réellement recherchés
+
+Depuis le 20 novembre, la veille comporte **147 requêtes possibles par tags** et **28 par noms**. Les 12 tags de base sont recherchés chaque jour : metal, heavy metal, hard rock, rock, punk, punk rock, black metal, death metal, thrash metal, trash metal, nu metal et pagan metal ; leurs principales recherches par noms sont également répétées quotidiennement.
+
+Les autres requêtes tournent sur plusieurs jours, dans une enveloppe de **40 recherches de genres/noms par exécution** (plusieurs pages possibles par recherche). Les tests vérifient que toutes les expressions par défaut sont explorées dans une fenêtre d'au plus **10 jours**. Cette limite est uniquement un budget de charge API, pas un plafond de radios admises.
+
+La taxonomie inclut notamment folk/pagan/viking/celtic, symphonic, power, speed, progressive, glam, gothic, industrial, nu/nü/nu-metal, thrash/trash, melodic/brutal/technical death, atmospheric/depressive/blackgaze, doom/funeral/stoner/sludge, grindcore/deathcore/metalcore, mathcore/djent, hardcore/crust/d-beat, punk et variantes, grunge et sous-genres hard rock. La reconnaissance normalise les accents et les variantes de ponctuation pour qualifier des candidats, mais la recherche auprès de l'API garde plusieurs graphies utiles.
+
+**Extension évolutive :** les tags supplémentaires pertinents rencontrés dans les métadonnées des stations deviennent des suggestions dans `suggestedGenreTags`. Au cycle quotidien suivant, le moteur peut réintégrer les tags du rapport précédent parmi les requêtes tournantes, sans modification de l'APK. Cela n'autorise ni la fusion, ni l'admission d'une nouvelle station.
+
 Un identifiant inconnu devient un **candidat** même s'il n'existe pas dans la liste d'admission historique de l'application. Les données Radio Browser (genre, `lastcheckok`, stream, image, pays) ne sont que des indices. Un même nom ou un même flux peut représenter deux stations distinctes : on signale les collisions, **sans fusionner des radios automatiquement**. Le scan n'ouvre jamais les flux.
 
 L'option `--known-uuids-file` peut recevoir un inventaire **dynamique** pour calculer les UUID non reconnus ; sans inventaire, la totalité des résultats est simplement un ensemble de candidats non comparés et **pas un décompte de nouvelles radios**.
@@ -26,7 +36,7 @@ L'historique est stocké uniquement dans les artefacts GitHub Actions de préval
 
 Workflow : `.github/workflows/radio-catalog-daily-discovery.yml`.
 
-- Sur la branche de laboratoire, chaque push sur les fichiers ciblés effectue les tests unitaires et un essai réseau restreint (métal/punk, 4 requêtes). Les candidats et le registre restent des artefacts.
+- Sur la branche de laboratoire, chaque push sur les fichiers ciblés effectue les tests unitaires et un essai réseau restreint (12 requêtes : metal, punk, hard rock, black, thrash/trash, pagan, nu et leurs noms). Les candidats et le registre restent des artefacts.
 - `workflow_dispatch` permet une prévisualisation élargie explicitement lancée.
 - `schedule: 17 4 * * *` représente une recherche quotidienne vers **04 h 17 UTC**. **Le cron ne se déclenche qu'à partir de la branche par défaut de GitHub** : il n'est pas actif dans cette PR brouillon.
 - Les permissions sont limitées à `contents: read` et `actions: read` ; le workflow ne pousse aucun commit, ne publie aucun JSON signé et ne déploie aucune application ou site.
