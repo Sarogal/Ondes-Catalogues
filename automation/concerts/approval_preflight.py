@@ -227,6 +227,10 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             "changedFields": differing,
             "publisherReason": reasons[0][:160].replace("\n", " ").replace("\r", " ") if reasons else None,
         })
+    # Prioritize the real publisher's EVENT rejections, so the existing
+    # safe-subset mechanism can drop the paired site together with the event.
+    if rejected:
+        raise PublisherRejections(rejected)
     if new_sites:
         out_venues = candidate.get("venues") if isinstance(candidate, dict) else None
         require(isinstance(out_venues, list), "Publisher site output missing")
@@ -245,8 +249,6 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
                     == row["venue"]["id"]
                     for row in new_sites),
                 "Publisher emitted a site without its signed concert")
-    if rejected:
-        raise PublisherRejections(rejected)
     # A numerically unchanged result is not necessarily append-only:
     # deletion of a published event plus insertion of an unrelated one can
     # balance the count. Check exact IDs *after* collecting held diagnostics.
