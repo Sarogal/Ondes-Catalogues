@@ -227,5 +227,31 @@ class HlsDailyPilotTests(unittest.TestCase):
         self.assertFalse(result["publicationAllowed"])
         self.assertNotIn("radio.example.org", str(result))
 
+
+    def test_explicit_pcm_preview_still_reports_zero_technical_approval(self):
+        from unittest.mock import patch
+        ts = (bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)) * 6
+        decoder = {"state": "decoded_pcm", "demuxer": "mpegts",
+                   "pcmBytes": 4096, "inputBytes": len(ts),
+                   "publicationAllowed": False}
+        with patch("radio_hls_segment_evidence.decode_audio_prefix",
+                   return_value=decoder) as fn:
+            result = hls_preview(
+                report([row()]), lambda _: sample(),
+                day=dt.date(2026, 11, 20), check_one_segment=True,
+                experimental_decode_segment=True,
+                segment_request=lambda _: ResponseSample(206, "video/mp2t", "", ts))
+        fn.assert_called_once_with(ts)
+        self.assertEqual(result["decodedPcmSegmentCount"], 1)
+        self.assertEqual(result["segmentStructuralEvidenceCount"], 1)
+        self.assertEqual(result["technicalVerifiedCount"], 0)
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_decoder_flag_without_segment_flag_is_rejected(self):
+        with self.assertRaises(ValueError):
+            hls_preview(report([row()]), lambda _: sample(),
+                        day=dt.date(2026, 11, 20),
+                        experimental_decode_segment=True)
+
 if __name__ == "__main__":
     unittest.main()
