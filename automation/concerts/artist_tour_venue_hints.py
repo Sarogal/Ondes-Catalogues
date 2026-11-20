@@ -8,6 +8,8 @@ des annotations de revue au candidat et ne constituent PAS une approbation.
 from __future__ import annotations
 
 import json
+import re
+import unicodedata
 from pathlib import Path
 
 import discover
@@ -59,9 +61,38 @@ def validate_hints(document, catalogue):
     return mapped
 
 
+def _article_neutral(value):
+    """Only drop one French leading article or 'Salle', never interior words.
+
+    Name similarity remains ONLY an identity lead for a published venue in
+    the SAME municipality; it grants no independent geography or event proof.
+    """
+    normalized = unicodedata.normalize(
+        "NFKD", str(value or "").casefold().replace("’", "'"))
+    tokens = re.findall(r"[a-z0-9]+",
+                        normalized.encode("ascii", "ignore").decode("ascii"))
+    if tokens and tokens[0] in {"l", "le", "la", "les", "salle"}:
+        tokens = tokens[1:]
+    return tuple(tokens) if len("".join(tokens)) >= 4 else ()
+
+
+def _public_name_index(catalogue):
+    """Do not choose among homonyms or cross municipal borders."""
+    matches = {}
+    for venue in catalogue.get("venues", []):
+        if not isinstance(venue, dict) or not venue.get("id"):
+            continue
+        city = livenation_tour_adapter.normalized_city(venue.get("city"))
+        name = _article_neutral(venue.get("name"))
+        if city and name:
+            matches.setdefault((city, name), []).append(venue)
+    return matches
+
+
 def annotate(candidates, catalogue, document):
     """Préserve l'ID et le libellé issu de la source pour l'audit Git."""
     hints = validate_hints(document, catalogue)
+    name_index = _public_name_index(catalogue)
     output, hits = [], []
     for candidate in candidates:
         row = dict(candidate)
@@ -92,6 +123,37 @@ def annotate(candidates, catalogue, document):
             row["publicationAllowed"] = False
             row["reviewRequired"] = True
             hits.append(row["candidateId"])
+        elif (row.get("newVenueToReview") is True
+              and row.get("venueIdIfKnown") is None):
+            city = livenation_tour_adapter.normalized_city(row.get("city"))
+            name = _article_neutral(row.get("venue"))
+            options = name_index.get((city, name), []) if name else []
+            # Only leading-article spelling differences. Exact names are
+            # already handled in the discovery adapter itself. A homonym
+            # anywhere in the same municipality remains untrusted.
+            if (len(options) == 1
+                    and discover.norm(row.get("venue")) !=
+                        discover.norm(options[0]["name"])):
+                canonical = options[0]
+                row["venueIdIfKnown"] = canonical["id"]
+                row["newVenueToReview"] = False
+                row["venueReconciliation"] = {
+                    "sourceVenue": row.get("venue"),
+                    "sourceCity": row.get("city"),
+                    "canonicalVenueId": canonical["id"],
+                    "canonicalCity": canonical["city"],
+                    "roomWithinVenue": False,
+                    "cityCorrectionRequired": False,
+                    "status": "catalogue_identity_review_only",
+                    "evidenceLevel": "name-article-and-same-municipality",
+                }
+                # Important: No trust, no original field rewrite, no
+                # publication or geolocation, and no per-artist special case.
+                row["venueAddressToVerify"] = True
+                row["coordinatesToVerify"] = True
+                row["publicationAllowed"] = False
+                row["reviewRequired"] = True
+                hits.append(row["candidateId"])
         output.append(row)
     return output, hits
 
