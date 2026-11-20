@@ -24,6 +24,7 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_continuity_evidence.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_frame_chain.py' -v
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_decode_evidence.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_technical_probe.py' -v
       - name: Discover candidates from Radio Browser (no publication)
         shell: bash
@@ -42,7 +43,7 @@ jobs:
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
             --discovery "$RUNNER_TEMP/go-radio-continuity/candidates.json" \
             --output "$RUNNER_TEMP/go-radio-continuity/technical-probes.json" \
-            --limit 5 --allow-network --extended-continuity
+            --limit 5 --allow-network --extended-continuity --experimental-decode
       - name: Build one-day non-publishing evidence ledger from live probes
         shell: bash
         run: |
@@ -68,7 +69,7 @@ jobs:
           assert ledger['technicallyQualifiedCount'] == 0
           assert len(ledger['records']) == data['checkedCount']
           assert all(x['technicalQualified'] is False and x['publicationAllowed'] is False for x in ledger['records'])
-          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'approved=0')
+          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'approved=0')
           PY
       - name: Upload technical evidence only (no stream URLs or bytes)
         uses: actions/upload-artifact@v4
