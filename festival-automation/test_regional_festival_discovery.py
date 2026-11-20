@@ -19,6 +19,50 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_genreless_named_festival_in_visible_music_category_is_private_lead(self):
+        from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources
+        title = "Festival des Rivages 2027"
+        detail = "https://www.angers.fr/actualites-sorties/agenda/festival-des-rivages-2027"
+        html = ('<article><p>Musique / Concert</p><a href="' + detail +
+                '">' + title + '</a></article>')
+        result = candidate_links(html, ANGERS, DAY)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
+        self.assertEqual(result[0]["candidate_url"], detail)
+        self.assertEqual(candidate_links(
+            '<article><a href="' + detail + '">' + title + '</a></article>',
+            ANGERS, DAY), [])
+        for disallowed in ("Festival des plantes 2027",
+                           "Festival des Rivages", "Festival des Rivages 2032"):
+            with self.subTest(name=disallowed):
+                self.assertEqual(candidate_links(
+                    html.replace(title, disallowed), ANGERS, DAY), [])
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        report = {"schema": "grossesondes.source-watch-report.v1",
+                  "date": DAY, "source_reference_leads_review_only": []}
+        seen = []
+        rows = scan_regional_indexes(
+            report, state, [B], DAY,
+            fetch=lambda url: seen.append(url) or html, limit=1)
+        self.assertEqual(seen, [ANGERS])
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0]["publication_authorized"])
+        self.assertFalse(rows[0]["date_verified"])
+        next_day = "2026-11-06"
+        queue = build_queue(state, {
+            "schema": "grossesondes.source-watch-report.v1",
+            "date": next_day, "source_reference_leads_review_only": []
+        }, [], next_day)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        sources = _eligible_sources(state, queue, next_day, due_only=False)
+        self.assertEqual(len(sources), 1)
+        self.assertEqual(sources[0]["url"], detail)
+        self.assertEqual(queue["publications"], 0)
+
     def test_openagenda_name_plus_year_and_region_can_nominate_only_a_live_institutional_link(self):
         """A research clue can find a genre-less title, NEVER authorize publication."""
         from national_openagenda_research import scan as scan_openagenda
