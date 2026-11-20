@@ -21,7 +21,8 @@ from ptitesondes_openagenda_v2_direct_evidence import (
 )
 from ptitesondes_candidate_promotion import api_record
 from ptitesondes_ods_oa_source_binding import (
-    ods_source_parts, ods_immutable_source_match,
+    ods_source_parts, ods_immutable_source_match, ods_origin_agenda_uid,
+    independently_confirm_ods_agenda,
 )
 
 MAX_LEADS = 4000
@@ -96,6 +97,7 @@ class MunicipalOfficialPageReader:
         self.directory_cache = {}
         self.page_cache = {}
         self.agenda_map = None
+        self.dynamic_agenda_slug_map = {}
         self.source_index = defaultdict(set)
         for row in leads:
             if not isinstance(row, dict):
@@ -182,8 +184,6 @@ class MunicipalOfficialPageReader:
         found = set()
         for slug, uid, kind, source_url in options:
             agenda_uid = mapping.get(slug)
-            if agenda_uid is None:
-                return None, None
             if kind == "opendatasoft-index":
                 try:
                     ods = self.ods_reader(uid)
@@ -192,6 +192,34 @@ class MunicipalOfficialPageReader:
                         return None, None
                 except (ValueError, OSError, TypeError, KeyError, TimeoutError):
                     return None, None
+                declared = ods_origin_agenda_uid(ods)
+                if agenda_uid is not None:
+                    # Curated agenda identity wins; ODS cannot contradict it.
+                    if declared is not None and declared != agenda_uid:
+                        return None, None
+                else:
+                    # Dynamic source discovery is allowed for place RESEARCH
+                    # only, after double checking immutable agenda UID+slug
+                    # against OpenAgenda's own API. This is NOT a venue
+                    # owner/license attestation or publication permission.
+                    if (declared is None
+                            or declared in mapping.values()
+                            or (slug in self.dynamic_agenda_slug_map
+                                and self.dynamic_agenda_slug_map[slug]
+                                != declared)
+                            or any(s != slug and val == declared for s, val
+                                   in self.dynamic_agenda_slug_map.items())):
+                        return None, None
+                    confirmed = self.dynamic_agenda_slug_map.get(slug)
+                    if confirmed is None:
+                        confirmed = independently_confirm_ods_agenda(
+                            ods, slug, self.agenda_reader, self.key)
+                        if confirmed is None:
+                            return None, None
+                        self.dynamic_agenda_slug_map[slug] = confirmed
+                    agenda_uid = confirmed
+            if agenda_uid is None:
+                return None, None
             try:
                 record = self.event_reader(agenda_uid, uid, self.key)
             except (ValueError, OSError, TypeError, KeyError, TimeoutError):
