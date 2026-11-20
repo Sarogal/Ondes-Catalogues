@@ -392,8 +392,34 @@ SITE_RECHECK_SOURCES = frozenset({
 })
 
 
+def scheduled_review_cohort(eligible, today, scan_slot, limit):
+    """Bounded, non-overlapping cohorts across the three daily runs.
+
+    At most 3 * limit distinct candidates are rechecked on a given day.
+    When a day's queue fits, ALL eligible concerts get one review that day.
+    For larger queues, the next day starts after yesterday's window, so no
+    fixed suffix is starved. This is scheduling ONLY, never source approval.
+    """
+    if (not isinstance(today, dt.date) or type(scan_slot) is not int
+            or scan_slot not in (0, 1, 2) or type(limit) is not int
+            or not 1 <= limit <= 40):
+        raise ValueError("Invalid bounded recheck cohort arguments")
+    n = len(eligible)
+    if n <= limit:
+        # Small queues are cheap, and single-item source contract tests must
+        # still execute in their original slot.
+        return list(eligible)
+    window = min(n, 3 * limit)
+    # Anchored daily rotation: the previous window is not rescanned before
+    # the next one when n exceeds daily capacity.
+    anchor = dt.date(2026, 11, 20)
+    offset = ((today - anchor).days * window) % n
+    start, end = scan_slot * window // 3, (scan_slot + 1) * window // 3
+    return [eligible[(offset + i) % n] for i in range(start, end)]
+
+
 def process(registry, catalogue, approvals, today, fetch=download_official,
-            limit=10, site_fetch=None, scan_slot=0):
+            limit=16, site_fetch=None, scan_slot=0):
     if type(scan_slot) is not int or scan_slot not in (0, 1, 2):
         raise ValueError("Invalid official recheck scan slot")
     if approvals.get("schema") != "grossesondes.concert.approvals.v1":
@@ -456,13 +482,15 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                 and not isinstance(candidate.get("eventDetailUrl"), str))
     awaiting_individual_detail = sum(lacks_individual_page(i) for i in future)
     eligible = [i for i in future if not lacks_individual_page(i)]
-    eligible.sort(key=lambda x: x["candidate"].get("candidateId", ""))
-    # The three daily GitHub slots MUST inspect three distinct cohorts. The
-    # previous date-only offset rechecked the SAME ten leads every time.
-    # slot=0 deliberately preserves the old deterministic test selection.
-    offset = ((today.toordinal() + scan_slot) * limit) % len(eligible) if eligible else 0
-    chosen = [eligible[(offset + i) % len(eligible)]
-              for i in range(min(limit, len(eligible)))]
+    # Prioritize explicit genre evidence and the nearest shows, but never
+    # discard unknown-genre / unspecialized venues: all remain in the daily
+    # rotating cohort. No venue, artist or concert is hardcoded here.
+    eligible.sort(key=lambda row: (
+        0 if row["candidate"].get("reviewBucket") == "genre_tag_review" else 1,
+        str(row["candidate"].get("date") or "9999-12-31"),
+        str(row["candidate"].get("candidateId") or ""),
+    ))
+    chosen = scheduled_review_cohort(eligible, today, scan_slot, limit)
     results, cache, new, sites = [], {}, [], []
     for row in chosen:
         c = row["candidate"]
@@ -515,6 +543,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
             results.append({"candidateId": c.get("candidateId"), "status": "held",
                             "reason": str(ex)[:180]})
     return out, {"evaluated": len(chosen), "totalEligible": len(eligible),
+                 "dailyReviewCapacity": min(len(eligible), 3 * limit),
+                 "dailyReviewLimitPerSlot": limit,
                  "scanSlot": scan_slot,
                  "awaitingIndividualOfficialEventDetail": awaiting_individual_detail,
                  "decidedSkipped": skipped_decided,
