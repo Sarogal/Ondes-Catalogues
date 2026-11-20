@@ -143,6 +143,7 @@ def build(registry, sources, catalogue, approvals, today, *,
                 if isinstance(a, dict) and a.get("reviewDecision") == "approved"
                 and isinstance(a.get("event"), dict)}
     eligible = []
+    awaiting_individual_detail = 0
     for record in registry["items"].values():
         if not isinstance(record, dict):
             continue
@@ -165,6 +166,11 @@ def build(registry, sources, catalogue, approvals, today, *,
         except (ValueError, TypeError):
             continue
         if when < today or (c.get("sourceUrl"), c.get("date")) in approved | published:
+            continue
+        if c.get("individualOfficialDetailMissing") is True:
+            # Do not waste official-event network budget on a generic index:
+            # a single first-party event detail is still necessary for proof.
+            awaiting_individual_detail += 1
             continue
         eligible.append(c)
 
@@ -275,6 +281,7 @@ def build(registry, sources, catalogue, approvals, today, *,
     return {
         "schema": SCHEMA, "asOf": today.isoformat(),
         "eligible": len(eligible), "attempted": len(selected),
+        "awaitingIndividualOfficialDetail": awaiting_individual_detail,
         "scanSlot": scan_slot,
         "officialEventEvidenceVerified": sum(
             r.get("individualOfficialEventVerified") is True for r in results),
