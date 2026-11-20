@@ -50,8 +50,23 @@ def check_append_only(previous, proposed, today):
             "Missing approval list")
     require(len(new) >= len(old) and new[:len(old)] == old,
             "Existing private approvals were modified or removed")
+    # Event-scoped locations are paired additions in the SAME private
+    # transaction as their individually approved concerts. Unlike historical
+    # permanent venue approvals, they cannot be appended independently.
+    prior_sites = previous.get("venueApprovals")
+    next_sites = proposed.get("venueApprovals")
+    if prior_sites is not None:
+        require(isinstance(prior_sites, list) and isinstance(next_sites, list),
+                "Private venue approval list invalid")
+        require(len(next_sites) >= len(prior_sites)
+                and next_sites[:len(prior_sites)] == prior_sites,
+                "Existing venue approvals changed or removed")
+        added_sites = next_sites[len(prior_sites):]
+    else:
+        require(next_sites is None, "Missing historical venue ledger")
+        added_sites = []
     for key in previous:
-        if key != "approvals":
+        if key not in ("approvals", "venueApprovals"):
             require(proposed[key] == previous[key],
                     "Protected private approval metadata changed")
     appended = new[len(old):]
@@ -87,12 +102,47 @@ def check_append_only(previous, proposed, today):
                 and pair not in pairs,
                 "Duplicate official URL and event date")
         pairs.add(pair)
+    new_by_id = {a["event"]["id"]: a["event"] for a in appended}
+    old_site_ids = {
+        a.get("venue", {}).get("id") for a in prior_sites or []
+        if isinstance(a, dict) and isinstance(a.get("venue"), dict)
+    }
+    new_site_ids = set()
+    require(len(added_sites) <= 6,
+            "More than six new event sites in a single private transaction")
+    for site in added_sites:
+        require(isinstance(site, dict)
+                and site.get("venueKind") == "independent-event-site-v1"
+                and site.get("reviewDecision") == "approved"
+                and site.get("reviewedBy") == "independent-official-verifier"
+                and site.get("reviewedAt") == today.isoformat(),
+                "Unexpected new venue approval or reviewer")
+        venue = site.get("venue")
+        binding = site.get("eventBinding")
+        require(isinstance(venue, dict) and isinstance(binding, dict)
+                and isinstance(venue.get("id"), str)
+                and venue["id"] not in old_site_ids
+                and venue["id"] not in new_site_ids,
+                "Duplicate or unlinked event site ID")
+        new_site_ids.add(venue["id"])
+        linked = new_by_id.get(binding.get("eventId"))
+        require(linked is not None
+                and linked.get("venueId") == venue["id"]
+                and linked.get("date") == binding.get("eventDate")
+                and linked.get("officialUrl") == binding.get("eventOfficialUrl"),
+                "Event site must be paired with a NEW approved concert")
     return appended
+
+
+def _new_event_site_approvals(previous, proposed):
+    old = previous.get("venueApprovals") or []
+    return proposed.get("venueApprovals", [])[len(old):]
 
 
 def validate_proposal(previous, proposed, reference, current, today, publisher):
     """Use the real publisher to prove that EVERY new approval can be emitted."""
     appended = check_append_only(previous, proposed, today)
+    new_sites = _new_event_site_approvals(previous, proposed)
     if not appended:
         return {"newApprovals": 0, "publishableEvents": 0,
                 "validatedByPublisher": False}
@@ -133,6 +183,19 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             actual = baseline_by_id[event_id]
             require(all(actual.get(key) == value for key, value in proof.items()),
                     "Previously signed approval mutated by publisher")
+    # Compute the exact baseline of previously signed permanent venues;
+    # a newly appended event site must be the ONLY extra geographic addition.
+    # This is limited to site-bearing batches; ordinary approvals remain
+    # backwards compatible and do not incur a second publisher call.
+    baseline_venues = None
+    if new_sites:
+        before_sites, _ = publisher(reference, current, previous, today)
+        old_venues = before_sites.get("venues") if isinstance(before_sites, dict) else None
+        require(isinstance(old_venues, list), "Publisher venue baseline unavailable")
+        baseline_venues = {v.get("id"): v for v in old_venues
+                           if isinstance(v, dict)}
+        require(len(baseline_venues) == len(old_venues),
+                "Publisher baseline contained duplicate venue IDs")
     candidate, stats = publisher(reference, current, proposed, today)
     published = {e["id"]: e for e in candidate["events"]}
     rejected = []
@@ -164,6 +227,24 @@ def validate_proposal(previous, proposed, reference, current, today, publisher):
             "changedFields": differing,
             "publisherReason": reasons[0][:160].replace("\n", " ").replace("\r", " ") if reasons else None,
         })
+    if new_sites:
+        out_venues = candidate.get("venues") if isinstance(candidate, dict) else None
+        require(isinstance(out_venues, list), "Publisher site output missing")
+        venue_map = {v.get("id"): v for v in out_venues
+                     if isinstance(v, dict)}
+        require(len(venue_map) == len(out_venues),
+                "Publisher returned duplicate site IDs")
+        expected_sites = {row["venue"]["id"]: row["venue"] for row in new_sites}
+        # Unexpected new pins, removed or changed historical venues all fail.
+        require(set(venue_map) == set(baseline_venues) | set(expected_sites)
+                and all(venue_map[k] == v for k, v in baseline_venues.items())
+                and all(venue_map[k] == v for k, v in expected_sites.items()),
+                "Publisher site changes did not match exact signed pair")
+        require(all(row["eventBinding"]["eventId"] in published
+                    and published[row["eventBinding"]["eventId"]].get("venueId")
+                    == row["venue"]["id"]
+                    for row in new_sites),
+                "Publisher emitted a site without its signed concert")
     if rejected:
         raise PublisherRejections(rejected)
     # A numerically unchanged result is not necessarily append-only:
@@ -213,6 +294,15 @@ def select_exact_publishable_subset(previous, proposed, reference,
         safe["approvals"] = (
             copy.deepcopy(previous["approvals"]) + copy.deepcopy(accepted)
         )
+        # A rejected concert must never carry its new map pin into the
+        # selectively approved subset, even if another concert is accepted.
+        accepted_ids = {r["event"]["id"] for r in accepted}
+        if "venueApprovals" in proposed:
+            safe["venueApprovals"] = (
+                copy.deepcopy(previous["venueApprovals"]) +
+                [copy.deepcopy(v) for v in _new_event_site_approvals(previous, proposed)
+                 if v["eventBinding"]["eventId"] in accepted_ids]
+            )
         stats = validate_proposal(
             previous, safe, reference, current, today, publisher)
         require(stats["validatedByPublisher"] is True
