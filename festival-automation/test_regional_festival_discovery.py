@@ -25,8 +25,8 @@ class RegionalTests(unittest.TestCase):
         from national_detail_qualification import _eligible_sources
         title = "Festival des Rivages 2027"
         detail = "https://www.angers.fr/actualites-sorties/agenda/festival-des-rivages-2027"
-        html = ('<article><p>Musique / Concert</p><a href="' + detail +
-                '">' + title + '</a></article>')
+        html = ('<article><div>Musique / Concert <a href="' + detail +
+                '">' + title + '</a></div></article>')
         result = candidate_links(html, ANGERS, DAY)
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
@@ -137,7 +137,7 @@ class RegionalTests(unittest.TestCase):
         self.assertIsNone(independently_fetch(
             proposal, "2026-11-06",
             fetch=lambda u: checked.append(u) or body))
-        self.assertEqual(checked, [source])
+        self.assertEqual(checked, [source, detail])  # #488 safely re-fetches same-host detail.
         self.assertEqual(national["publications"], 0)
 
     def test_openagenda_crossmatch_cannot_override_source_year_or_region(self):
