@@ -481,10 +481,29 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
         return (candidate.get("source") in SITE_RECHECK_SOURCES
                 and not isinstance(candidate.get("eventDetailUrl"), str))
     awaiting_individual_detail = sum(lacks_individual_page(i) for i in future)
-    eligible = [i for i in future if not lacks_individual_page(i)]
+    detail_ready = [i for i in future if not lacks_individual_page(i)]
+    # A first-party listing is a discovery hint, NOT a reviewed publisher
+    # authority. Previously these guaranteed-to-fail generic candidates
+    # consumed most of the three daily network review slots before the real
+    # source-wide verifier could ever be used. Keep every candidate in the
+    # PRIVATE registry and the independent new-venue evidence workflow; only
+    # defer its OFFICIAL APPROVAL review until source authority is qualified.
+    # No candidate is rejected, silently dropped or given publisher trust.
+    import generic_music_event
+    generic_sources = {"agenda_officiel_structuré",
+                       "agenda_officiel_visible_bill"}
+    def needs_source_admission(row):
+        candidate = row["candidate"]
+        return (candidate.get("source") in generic_sources
+                and generic_music_event.trusted_spec(candidate) is None)
+    awaiting_source_admission = sum(
+        needs_source_admission(i) for i in detail_ready)
+    eligible = [i for i in detail_ready if not needs_source_admission(i)]
     # Prioritize explicit genre evidence and the nearest shows, but never
-    # discard unknown-genre / unspecialized venues: all remain in the daily
-    # rotating cohort. No venue, artist or concert is hardcoded here.
+    # discard unknown-genre / unspecialized venues that HAVE a verified
+    # source: all remain in the daily rotating cohort. The withheld sources
+    # automatically re-enter this queue once their independent generic
+    # verifier has been reviewed. No concert, artist or venue ID is hardcoded.
     eligible.sort(key=lambda row: (
         0 if row["candidate"].get("reviewBucket") == "genre_tag_review" else 1,
         str(row["candidate"].get("date") or "9999-12-31"),
@@ -547,6 +566,7 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                  "dailyReviewLimitPerSlot": limit,
                  "scanSlot": scan_slot,
                  "awaitingIndividualOfficialEventDetail": awaiting_individual_detail,
+                 "awaitingIndependentSourceAdmission": awaiting_source_admission,
                  "decidedSkipped": skipped_decided,
                  "alreadyApprovedSkipped": already_approved_skipped,
                  "expiredSkipped": expired_skipped,
