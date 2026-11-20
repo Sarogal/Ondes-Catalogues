@@ -18,7 +18,13 @@ from urllib.parse import urlsplit
 
 SOURCES = Path(__file__).resolve().parents[1] / "automation/concerts/artist-tour-sources.json"
 PROFILE = "independent-event-site-v1"
-KINDS = frozenset({"public-square", "street", "park", "temporary-stage", "outdoor-site"})
+# An official concert may use ANY physical place: a roof, quarry, street,
+# park, warehouse, parking area or a future category not yet imagined.
+# A type label is advisory, never an authority/allowlist for the location.
+NONPHYSICAL_KINDS = frozenset({
+    "unknown", "unspecified", "tba", "virtual", "online", "livestream",
+    "city-centre", "city-center", "country", "city", "unlocated",
+})
 VENUE_FIELDS = frozenset({
     "id", "name", "address", "postalCode", "city", "department", "region",
     "latitude", "longitude", "geoPrecision", "geoSource",
@@ -74,6 +80,13 @@ def relevant_genres(labels):
 def demand(condition, msg):
     if not condition:
         raise ValueError("Concert event-site: " + msg)
+
+
+def physical_site_kind(value):
+    """A physical place type is unbounded in vocabulary, never in format."""
+    return (isinstance(value, str)
+            and re.fullmatch(r"[a-z][a-z0-9-]{2,47}", value) is not None
+            and value not in NONPHYSICAL_KINDS)
 
 
 def official_url(value):
@@ -136,7 +149,7 @@ def validate(row, today, event_approvals, *, sources=None):
     demand(row.get("reviewDecision") == "approved"
            and row.get("reviewedBy") == "independent-official-verifier"
            and row.get("venueKind") == PROFILE
-           and row.get("locationKind") in KINDS,
+           and physical_site_kind(row.get("locationKind")),
            "location not independently reviewed")
     reviewed = row.get("reviewedAt")
     try:
