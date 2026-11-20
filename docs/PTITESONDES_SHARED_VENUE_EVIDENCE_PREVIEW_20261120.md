@@ -147,3 +147,39 @@ la date reste dans sa fenêtre de 184 jours, l'UID et le domaine de source
 doivent rester valides. Il ne s'agit **ni d'une séance vérifiée, ni d'un
 événement publiable**. Les tests confirment que les preuves fictives,
 expirées ou attachées à un autre lieu échouent.
+
+
+## Complément : réconciliation de deux collecteurs pour un même événement
+
+Le backlog privé du 20/11 contient **31 groupes exacts UID+commune+lieu
+présents sur plusieurs collecteurs**, soit **62 entrées de collecte** au
+total. Cette statistique est une mesure de répétition, **pas** 62
+événements bloqués ou 62 événements prêts à publier.
+
+Pour la **recherche géographique privée**, `source_record_for_group()`
+accepte deux sources pour un UID uniquement si elles correspondent
+à **un lien OA v2 et un lien ODS au même slug d'agenda**. Il confirme
+l'identité dans les données publiques directes et le miroir (UID, URL,
+commune, lieu, statut, latitude/longitude à 65 m maximum). Plusieurs
+URLs du même type, deux slugs, un état ou une adresse contradictoires
+sont toujours refusés. Les pages de lieu examinent au maximum trois
+UID **distincts**, et non trois occurrences du même UID dans plusieurs
+collecteurs.
+
+Si ODS est temporairement indisponible (exception réseau), la fiche
+**OpenAgenda v2 au même UID** peut servir de simple point de départ
+uniquement si son agenda UID/slug a été lié indépendamment dans la
+configuration privée. Un enregistrement ODS effectivement retourné,
+mais incorrect, vide ou contradictoire, ne bénéficie d'aucun
+contournement. Cela ne prouve pas un GPS ni un événement.
+
+Les nouveaux compteurs `unknown_candidate_sessions` et
+`duplicate_collector_or_repeated_leads` distinguent les entrées
+du backlog des **séances UID + date**. Le compteur
+`candidate_sessions_with_private_reusable_proof` est un maximum
+de séances susceptibles de progresser sur le verrou géographique
+dans la prévisualisation. Aucune vérification de séance ou de
+publication n'en est déduite.
+
+**Toujours aucune exécution privée live OA + DILA + BAN sur les 149
+dossiers**, et aucune écriture de production.
