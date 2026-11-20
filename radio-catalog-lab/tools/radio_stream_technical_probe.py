@@ -410,6 +410,11 @@ def probe_candidates(
         "sustainedTransportEvidenceCount": sum(
             x.get("continuityEvidence", {}).get("state") == "transport_sustained"
             for x in rows),
+        "frameChainEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            and x.get("continuityEvidence", {}).get("frameEvidence", {}).get("state")
+            == "frame_chain"
+            for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }
@@ -442,6 +447,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"STREAM_PROBE_PREVIEW_ONLY samples={report['checkedCount']} "
           f"audio_evidence={report['audioEvidenceCount']} "
           f"sustained_transport={report['sustainedTransportEvidenceCount']} "
+          f"frame_chain={report['frameChainEvidenceCount']} "
           "technical_verified=0 published=false")
     return 0
 
