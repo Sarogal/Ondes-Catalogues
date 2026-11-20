@@ -157,6 +157,56 @@ class MunicipalOfficialPageReader:
             self.directory_cache[key] = self.directory_reader(city)
         return self.directory_cache[key]
 
+    def source_record_for_group(self, group, uid):
+        """Return a UID-bound, *untrusted* search center from OA or ODS.
+
+        This method does NOT prove GPS or authorize any publication.
+        In particular, a direct OA lead is not forced through the ODS mirror.
+        Ambiguous slugs, conflicting collector entries, unpublished events,
+        and missing/invalid coordinates fail closed.
+        """
+        import math
+        if (not isinstance(group, dict)
+                or not isinstance(uid, str)
+                or not re.fullmatch(r"[0-9]{1,12}", uid)
+                or not isinstance(group.get("uids"), list)
+                or uid not in group["uids"]):
+            raise ValueError("source_group_or_uid_invalid")
+        city, venue = norm(group.get("city")), norm(group.get("venue"))
+        if not city or not venue:
+            raise ValueError("source_group_identity_invalid")
+        options = {(slug, kind, source_url)
+                   for slug, row_uid, kind, source_url
+                   in self.source_index.get((city, venue), set())
+                   if row_uid == uid}
+        if len(options) != 1:
+            raise ValueError("source_uid_origin_ambiguous_or_missing")
+        slug, kind, source_url = next(iter(options))
+        if kind == "opendatasoft-index":
+            row = self.ods_reader(uid)
+            if not ods_immutable_source_match(group, uid, source_url, row):
+                raise ValueError("ods_source_identity_mismatch")
+            return row
+        if kind != "openagenda-v2":
+            raise ValueError("unrecognized_source_collector")
+        agenda_uid = self._agendas().get(slug)
+        if agenda_uid is None:
+            raise ValueError("oa_agenda_not_independently_bound")
+        record = self.event_reader(agenda_uid, uid, self.key)
+        if not oa_location_identity_matches(group, record):
+            raise ValueError("oa_source_identity_mismatch")
+        location = record["location"]
+        lat, lon = location.get("latitude"), location.get("longitude")
+        if (type(lat) not in (float, int) or type(lon) not in (float, int)
+                or not math.isfinite(lat) or not math.isfinite(lon)
+                or not -90 <= lat <= 90 or not -180 <= lon <= 180):
+            raise ValueError("oa_source_coordinates_invalid")
+        # Return the legacy shape expected by source_center(); the point is
+        # still ONLY a search hint. Independent municipal + BAN checks remain.
+        return {"uid": uid, "location_city": group["city"],
+                "location_name": group["venue"],
+                "location_coordinates": {"lat": lat, "lon": lon}}
+
     def official_page_get(self, group):
         """Return a DILA-approved website page and its HTML, or (None,None)."""
         if not isinstance(group, dict):
