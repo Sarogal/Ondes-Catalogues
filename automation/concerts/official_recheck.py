@@ -411,8 +411,10 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
     candidates = [i for i in items if
                   i.get("stableObservations", 0) >= 2 and
                   isinstance(i.get("candidate", {}).get("source"), str) and
-                  ((i.get("candidate", {}).get("source") in VERIFIER_SPECS
-                    and i.get("candidate", {}).get("reviewBucket") == "genre_tag_review")
+                  i.get("candidate", {}).get("source") in VERIFIER_SPECS and
+                  (i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"
+                   or (i.get("candidate", {}).get("source") == "agenda_officiel_structuré"
+                       and i.get("candidate", {}).get("reviewBucket") == "genre_unknown")
                    or (i.get("candidate", {}).get("source")
                        in {"artist_official_tour", "promoter_official_tour"}
                        and i.get("candidate", {}).get("newVenueToReview") is True
@@ -454,10 +456,9 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                     raise ValueError("Salle générique non agréée : pas de réseau")
             site = None
             if c["source"] in {"artist_official_tour", "promoter_official_tour"}:
-                # Candidate authority is checked against the committed artist/
-                # promoter registry BEFORE the first network request. A new
-                # physical site requires TWO independently fetched proofs.
                 import event_site_pair_recheck as site_review
+                # The untrusted candidate cannot introduce a source authority.
+                # Both event and OSM point are independently downloaded.
                 def do_fetch(url, cap):
                     if site_fetch is not None:
                         return site_fetch(url, cap)
@@ -477,8 +478,6 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
             # Add to the working catalogue so same-run collisions cannot pass.
             e = approval["event"]
             if site is not None:
-                # Pair is append-only. The real approval_preflight and cloud
-                # publisher must accept BOTH or persist NEITHER.
                 out["venueApprovals"].append(site)
                 catalogue["venues"].append(site["venue"])
                 sites.append(site["venue"]["id"])
