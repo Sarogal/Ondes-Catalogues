@@ -78,3 +78,43 @@ def ods_immutable_source_match(group, uid, source_url, record):
         return False
     return (math.isfinite(lat) and math.isfinite(lon)
             and -90 <= lat <= 90 and -180 <= lon <= 180)
+
+
+def ods_origin_agenda_uid(record):
+    """Read an immutable ODS agenda UID; never infer it from its title."""
+    if not isinstance(record, dict):
+        return None
+    raw = record.get("originagenda_uid")
+    if type(raw) is int:
+        value = raw
+    elif (type(raw) is str
+          and re.fullmatch(r"[1-9][0-9]{0,11}", raw) is not None):
+        value = int(raw)
+    else:
+        return None
+    return value if 0 < value < 10**12 else None
+
+
+def independently_confirm_ods_agenda(record, slug, reader, public_read_key):
+    """Corroborate ODS agenda UID+slug with one direct OpenAgenda API read.
+
+    This permits venue DISCOVERY beyond a frozen curated list, but does not
+    establish organizer ownership, rights, event trust or permission to
+    publish. Returns None on ANY unknown or conflicting metadata.
+    """
+    uid = ods_origin_agenda_uid(record)
+    if (uid is None or not isinstance(slug, str)
+            or SLUG.fullmatch(slug) is None
+            or not callable(reader)
+            or not isinstance(public_read_key, str)
+            or not public_read_key):
+        return None
+    try:
+        doc = reader(uid, public_read_key)
+    except (ValueError, OSError, TypeError, KeyError, TimeoutError):
+        return None
+    if (not isinstance(doc, dict)
+            or str(doc.get("uid")) != str(uid)
+            or doc.get("slug") != slug):
+        return None
+    return uid
