@@ -53,6 +53,8 @@ def named_venue_html(group, html, object_center):
                 else:
                     other_places += 1
         if len(same) == 1:
+            if other_places:
+                return False
             node = same[0]
             adr = node.get("address")
             if adr is not None:
