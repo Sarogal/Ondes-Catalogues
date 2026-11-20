@@ -36,6 +36,70 @@ class NationalDiscoveryTests(unittest.TestCase):
             "historical_name_slug": None, "publication_authorized": public,
         }
 
+    def test_public_openagenda_research_creates_only_an_untrusted_dossier(self):
+        from national_openagenda_research import scan as openagenda_scan
+        from national_generic_primary_domain_preflight import _eligible as primary_eligible
+        today = TODAY
+        event = {
+            "title_fr": "Festival Metal des Vignes 2027",
+            "canonicalurl": "https://openagenda.com/agenda-metal/events/festival-des-vignes-2027",
+            "description_fr": "Un festival de metal.",
+            "keywords_fr": ["metal"], "location_countrycode": "FR",
+            "location_region": "Occitanie",
+            "firstdate_begin": "2027-05-07T19:00:00+02:00",
+            "lastdate_begin": "2027-05-08T23:00:00+02:00",
+        }
+        s = self.state()
+        openagenda_scan(s, today, fetch=lambda _:
+                        {"total_count": 1, "results": [event]})
+        queue = build_queue(s, self.report(), [], today)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        self.assertEqual(queue["publications"], 0)
+        row = queue["dossiers"][0]
+        self.assertFalse(row["festival_verified"])
+        self.assertFalse(row["edition_dates_verified"])
+        self.assertFalse(row["safe_to_publish"])
+        self.assertFalse(row["publication_authorized"])
+        self.assertEqual(row["date_hints"], [])
+        self.assertEqual(row["sources"][0]["kind"],
+                         "OPENAGENDA_PUBLIC_RESEARCH_ONLY")
+        self.assertEqual(row["sources"][0]["discovered_via"],
+                         "https://public.opendatasoft.com/api/explore/v2.1/"
+                         "catalog/datasets/evenements-publics-openagenda/records")
+        pub = {"schema": 1, "festivals": []}
+        self.assertEqual(primary_eligible(queue, pub, today), [])
+
+    def test_poisoned_openagenda_lead_never_enters_national_queue(self):
+        from national_openagenda_research import scan as openagenda_scan
+        from copy import deepcopy
+        event = {
+            "title_fr": "Festival Rock des Vignes 2027",
+            "canonicalurl": "https://openagenda.com/agenda-rock/events/festival-vignes-2027",
+            "description_fr": "Festival de rock.",
+            "keywords_fr": ["rock"], "location_countrycode": "FR",
+            "location_region": "Occitanie",
+            "firstdate_begin": "2027-05-07T19:00:00+02:00",
+            "lastdate_begin": "2027-05-08T23:00:00+02:00",
+        }
+        s = self.state()
+        openagenda_scan(s, TODAY, fetch=lambda _:
+                        {"total_count": 1, "results": [event]})
+        initial = deepcopy(s)
+        for field, value in (
+            ("publication_authorized", True),
+            ("edition_dates_verified", True),
+            ("official_site_verified", True),
+            ("source_url", "https://evil.example/private"),
+            ("id", "oa-forged"),
+        ):
+            with self.subTest(field=field):
+                poisoned = deepcopy(initial)
+                poisoned["national_openagenda_research_private"][
+                    "leads"][0][field] = value
+                q = build_queue(poisoned, self.report(), [], TODAY)
+                self.assertEqual(q["candidate_dossiers_count"], 0)
+                self.assertEqual(q["publications"], 0)
+
     def test_visible_article_clue_stays_separate_from_visitable_dossiers(self):
         from regional_visible_article_clues import (
             visible_article_clues, update_private_articles)
