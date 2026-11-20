@@ -48,6 +48,8 @@ on:
       - 'tests/test_ptitesondes_openagenda_national_event_research.py'
       - 'scripts/ptitesondes_private_national_event_campaign.py'
       - 'tests/test_ptitesondes_private_national_event_campaign.py'
+      - 'scripts/ptitesondes_private_national_qualification_handoff.py'
+      - 'tests/test_ptitesondes_private_national_qualification_handoff.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -113,6 +115,8 @@ on:
       - 'tests/test_ptitesondes_openagenda_national_event_research.py'
       - 'scripts/ptitesondes_private_national_event_campaign.py'
       - 'tests/test_ptitesondes_private_national_event_campaign.py'
+      - 'scripts/ptitesondes_private_national_qualification_handoff.py'
+      - 'tests/test_ptitesondes_private_national_qualification_handoff.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -207,6 +211,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_national_event_research.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_private_national_event_campaign.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_national_qualification_handoff.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_private_venue_batch_rollup.py' -v
           python -m unittest discover -s tests \
