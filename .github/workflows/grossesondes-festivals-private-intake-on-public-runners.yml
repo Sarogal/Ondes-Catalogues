@@ -160,7 +160,7 @@ jobs:
           run_private first_party_2027 python "$ENGINE/targeted_first_party_edition_watch.py" --intake "$INTAKE" --report "$REPORT" --limit 2 --phase "$PHASE"
           # Public OPEN-DATA source: bounded, HTTPS pinned, only PRIVATE research.
           # An unavailable API never becomes a publication or blocks other sources.
-          run_private openagenda_public_research python "$ENGINE/national_openagenda_research.py" --intake "$INTAKE"
+          run_private openagenda_public_research python "$ENGINE/national_openagenda_research.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           # Newly found municipal agenda editions: strict visible dates and

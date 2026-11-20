@@ -40,6 +40,8 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("pull_request_target:", workflow)
         self.assertIn("national_openagenda_research.py", workflow)
         self.assertIn("national-openagenda-research-review.json", workflow)
+        self.assertIn("--catalog application/docs/grossesondes/festivals.json",
+                      workflow)
         self.assertLess(workflow.index("run_private openagenda_public_research"),
                         workflow.index("run_private queue"))
         self.assertIn("intake/automation-intake/grossesondes", workflow)
@@ -110,6 +112,115 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertIsNone(candidate(mismatched, DAY))
         both_2028 = dict(mismatched, lastdate_begin="2028-05-24T20:00:00+02:00")
         self.assertEqual(candidate(both_2028, DAY)["edition_year_hint"], 2028)
+
+    def test_single_concert_advertised_inside_a_festival_is_not_festival(self):
+        """Generic exclusion, not a rule tailored to a named event."""
+        cases = [
+            "Concert gratuit de Léopard Café (Festival Culture Bar-Bars)",
+            "Spectacle rock au Festival des Rives 2027",
+            "Atelier metal pendant le Festival des Plaines 2027",
+            "Soirée punk au Festival des Rives 2027",
+        ]
+        for label in cases:
+            with self.subTest(label=label):
+                event = dict(EVENT, title_fr=label,
+                             description_fr="Festival punk rock")
+                self.assertIsNone(candidate(event, DAY))
+        # A genuine festival must not be rejected merely for hosting gigs.
+        self.assertIsNotNone(candidate(
+            dict(EVENT, title_fr="Festival Rock des Plaines 2027",
+                 description_fr="Concerts et ateliers rock"), DAY))
+
+    def test_known_edition_exact_name_year_region_is_not_queued_again(self):
+        from national_openagenda_research import known_published_editions
+        row = dict(EVENT, title_fr="KREIZ Y FEST #5",
+                   canonicalurl="https://openagenda.com/shotgun/events/kreiz-y-fest-5",
+                   description_fr="Festival metal et rock",
+                   location_region="Bretagne")
+        catalog = {"schema": 1, "festivals": [{
+            "name": "Kreiz Y Fest", "startDate": "2027-07-09",
+            "region": "Bretagne",
+        }]}
+        self.assertIn(("kreiz y fest", 2027, "Bretagne"),
+                      known_published_editions(catalog))
+        current = state()
+        removed = scan(current, DAY, fetch=lambda _: payload([row]),
+                       catalog=catalog)
+        self.assertEqual(removed["leads_count"], 0)
+        self.assertEqual(removed["already_published_leads_count"], 1)
+        self.assertFalse(removed["publication_authorized"])
+        self.assertEqual(validated_leads(current, DAY), [])
+        # New trusted catalog digest triggers a fresh same-day review.
+        not_published = {"schema": 1, "festivals": [{
+            "name": "Kreiz Y Fest", "startDate": "2028-07-09",
+            "region": "Bretagne",
+        }]}
+        seen = []
+        available = scan(current, DAY, fetch=lambda u: (
+            seen.append(u), payload([row]))[1], catalog=not_published)
+        self.assertEqual(len(seen), len(fixed_query_urls(DAY)))
+        self.assertEqual(available["leads_count"], 1)
+        self.assertEqual(available["already_published_leads_count"], 0)
+        # Different geographical festival also stays a research lead.
+        wrong_region = {"schema": 1, "festivals": [{
+            "name": "Kreiz Y Fest", "startDate": "2027-07-09",
+            "region": "Occitanie",
+        }]}
+        other = scan(state(), DAY, fetch=lambda _: payload([row]),
+                     catalog=wrong_region)
+        self.assertEqual(other["leads_count"], 1)
+        self.assertEqual(other["publications"], 0)
+
+    def test_malformed_geography_is_rejected_per_record_not_entire_page(self):
+        variants = [
+            dict(EVENT, location_countrycode=[]),
+            dict(EVENT, location_countrycode={"not": "fr"}),
+            dict(EVENT, location_region=[]),
+            dict(EVENT, location_region={"not": "Occitanie"}),
+        ]
+        for item in variants:
+            with self.subTest(item=item):
+                self.assertIsNone(candidate(item, DAY))
+                report = scan(state(), DAY, fetch=lambda _: payload(
+                    [item, EVENT]))
+                self.assertEqual(report["requests_failed"], 0)
+                self.assertEqual(report["leads_count"], 1)
+                self.assertEqual(report["publications"], 0)
+        malformed_catalog_row = {"schema": 1, "festivals": [{
+            "name": "Festival Metal des Garrigues",
+            "startDate": "2027-04-23", "region": [],
+        }]}
+        report = scan(state(), DAY, fetch=lambda _: payload([EVENT]),
+                      catalog=malformed_catalog_row)
+        self.assertEqual(report["requests_failed"], 0)
+        self.assertEqual(report["leads_count"], 1)
+        tampered = state()
+        result = scan(tampered, DAY, fetch=lambda _: payload([EVENT]))
+        result["leads"][0]["region_hint"] = []
+        self.assertEqual(validated_leads(tampered, DAY), [])
+
+    def test_private_cache_invalidates_legacy_ruleset_and_forged_metadata(self):
+        current = state()
+        report = scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        stale = deepcopy(current)
+        stale[STATE_KEY].pop("research_ruleset")
+        self.assertEqual(validated_leads(stale, DAY), [])
+        calls = []
+        refreshed = scan(stale, DAY, fetch=lambda u: (
+            calls.append(u), payload([EVENT]))[1])
+        self.assertIsNot(refreshed, report)
+        self.assertEqual(len(calls), len(fixed_query_urls(DAY)))
+        self.assertEqual(refreshed["leads_count"], 1)
+        for broken in (
+            {"schema": 2, "festivals": []},
+            {"schema": 1, "festivals": "unsafe"},
+            {"schema": 1, "festivals": [None] * 5001},
+        ):
+            with self.subTest(broken=str(broken)[:50]):
+                with self.assertRaises(ValueError):
+                    scan(state(), DAY, fetch=lambda _: self.fail(
+                        "Invalid trusted catalog cannot initiate requests"),
+                        catalog=broken)
 
     def test_overseas_eligible_as_research_not_geographic_proof(self):
         for country, region in [
