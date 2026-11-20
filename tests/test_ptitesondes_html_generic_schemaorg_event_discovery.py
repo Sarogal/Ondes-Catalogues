@@ -146,7 +146,7 @@ class SchemaOrgGenericPrivateDiscoveryTest(unittest.TestCase):
         self.assertEqual(out["counts"]["non_future"], 1)
 
     def test_missing_city_venue_and_malicious_html_are_held(self):
-        for place in ("", "<script>x</script>"):
+        for place in ("", "<b>Paris</b>"):
             with self.subTest(place=place):
                 out = parse_schemaorg_private_event_hints(
                     page(event(city=place)), pin(), self.today)
