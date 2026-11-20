@@ -418,11 +418,13 @@ jobs:
           if ! python public/automation/concerts/intake_metrics.py \
               --discovery "$RUNNER_TEMP/concerts-discovery/candidates.json" \
               --tours "$RUNNER_TEMP/concerts-tours/candidates.json" \
+              --organizers "$RUNNER_TEMP/concerts-organizers/candidates.json" \
               --registry confidential/automation/concerts/intake/registry.json \
               --official "$RUNNER_TEMP/concerts-official-review.json" \
               --watch "$RUNNER_TEMP/concerts-published-watch.json" \
               --venue-archive "$RUNNER_TEMP/concerts-discovery/archive-summary.json" \
               --tour-archive "$RUNNER_TEMP/concerts-tours/archive-summary.json" \
+              --organizer-archive "$RUNNER_TEMP/concerts-organizers/archive-summary.json" \
               --out confidential/automation/concerts/intake/daily-metrics.json \
               > "$RUNNER_TEMP/concerts-private-logs/intake-metrics.log" 2>&1; then
             # Metrics cannot destroy the already-collected private leads.
