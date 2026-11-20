@@ -138,9 +138,13 @@ def propose_event(row, agenda, today):
         # OA/ODS variants may include a localized status label alongside id.
         # The immutable numeric status still determines cancellation.
         status = status.get("id")
-    if type(status) is not int or status != 1:
+    # OpenAgenda status 2 means *rescheduled*, not cancelled. Keep it
+    # as a research lead, but require independent verification of new times.
+    if type(status) is not int or status not in (1, 2):
         return None, "cancelled_or_unconfirmed_event"
-    title, desc = _french_text(row, "title"), _french_text(row, "description")
+    title = _french_text(row, "title")
+    desc = (_french_text(row, "description") + " " +
+            _french_text(row, "longDescription")).strip()
     if not title or len(title) > 300:
         return None, "no_french_title"
     combined = norm(title + " " + desc)
@@ -189,7 +193,8 @@ def propose_event(row, agenda, today):
               "french_territory_claim_present": country_hint,
               "explicit_source_session_days": dates,
               "session_research_status": session_reason,
-              "requires_new_venue_search": bool(city and venue),
+              "requires_reprogramming_verification": status == 2,
+              "requires_new_venue_search": bool(city or venue),
               "decision": "candidate_for_independent_qualification"}
     return result, "editorial_candidate"
 
