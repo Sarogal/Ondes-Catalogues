@@ -1,0 +1,70 @@
+name: Grosses Ondes — Radio Browser daily discovery preview
+
+on:
+  push:
+    branches:
+      - feature/radio-daily-discovery-lab-20261120
+    paths:
+      - "radio-catalog-lab/tools/radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
+      - ".github/workflows/radio-catalog-daily-discovery.yml"
+  workflow_dispatch:
+  # Only GitHub's default branch executes scheduled workflows. This schedule
+  # is dormant on this isolated review branch until explicitly approved.
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-radio-daily-discovery-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  discovery-tests:
+    name: Contract tests (offline, no catalogue writes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate candidate engine without network
+        run: python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily_discovery.py" -v
+
+  discovery-preview:
+    name: Limited global radio scan — candidates only
+    needs: discovery-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Scan Radio Browser without UUID allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-radio-discovery"
+          # On branch pushes, only a tiny real-network sample is used.
+          # Scheduled/manual runs explore many music tags and rotated pages.
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --tags "metal,punk" --names "metal,punk" \
+              --page-size 50 --max-pages 1 --crawl-delay 0.3 \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          else
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --page-size 100 --max-pages 3 --crawl-delay 0.3 \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          fi
+      - name: Upload review-only candidate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-discovery-${{ github.run_id }}
+          path: ${{ runner.temp }}/go-radio-discovery/candidates.json
+          if-no-files-found: error
+          retention-days: 14
