@@ -85,6 +85,7 @@ def hls_preview(
     segment_checks = 0
     structural_evidence = 0
     segment_states: dict[str, int] = {}
+    safe_options: list[tuple[int, dict, str]] = []
     for uid, raw_url in selected:
         # Same pinned DNS and redirect checks as all other radio probes.
         report = probe_url(raw_url, request)
@@ -99,19 +100,22 @@ def hls_preview(
             "hlsKind": kind,
             "publicationAllowed": False,
         }
-        if (check_one_segment and segment_checks == 0 and
-                kind in {"live_manifest_candidate", "master_single_variant_pending"}):
-            # Only one of ALL discovered candidates is sampled. Re-read and
-            # validate the manifest; never reuse untrusted segment URLs from
-            # summaries, never follow segment redirects or master variants.
-            segment_checks += 1
-            outcome = verify_one_segment(raw_url, request, segment_request)
-            check["segmentCheck"] = outcome
-            state = outcome["state"]
-            segment_states[state] = segment_states.get(state, 0) + 1
-            if state == "segment_structural_evidence":
-                structural_evidence += 1
+        if kind in {"live_manifest_candidate", "master_single_variant_pending"}:
+            # URLs remain ephemeral local inputs, never returned or uploaded.
+            priority = 0 if kind == "live_manifest_candidate" else 1
+            safe_options.append((priority, check, raw_url))
         checks.append(check)
+    if check_one_segment and safe_options:
+        # Prefer a media playlist already containing segment references; only
+        # descend a master when there is no simpler live-media candidate.
+        _, check, raw_url = sorted(safe_options, key=lambda pair: pair[0])[0]
+        segment_checks = 1
+        outcome = verify_one_segment(raw_url, request, segment_request)
+        check["segmentCheck"] = outcome
+        state = outcome["state"]
+        segment_states[state] = 1
+        if state == "segment_structural_evidence":
+            structural_evidence = 1
     return {
         "schemaVersion": 1,
         "observationDate": day.isoformat(),
