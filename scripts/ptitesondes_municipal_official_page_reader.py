@@ -191,8 +191,16 @@ class MunicipalOfficialPageReader:
         ods = None
         if "opendatasoft-index" in by_kind:
             _, url = by_kind["opendatasoft-index"]
-            ods = self.ods_reader(uid)
-            if not ods_immutable_source_match(group, uid, url, ods):
+            try:
+                ods = self.ods_reader(uid)
+            except (OSError, TimeoutError):
+                # Only a transport outage may be bypassed for PLACE
+                # RESEARCH when a separately UID-bound direct OA lead
+                # exists. A returned-but-contradictory ODS record blocks.
+                if "openagenda-v2" not in by_kind:
+                    raise ValueError("ods_only_source_unavailable")
+            if ods is not None and not ods_immutable_source_match(
+                    group, uid, url, ods):
                 raise ValueError("ods_source_identity_mismatch")
         if "openagenda-v2" not in by_kind:
             return ods
@@ -262,10 +270,20 @@ class MunicipalOfficialPageReader:
             if kind == "opendatasoft-index":
                 try:
                     ods = self.ods_reader(uid)
-                    if not ods_immutable_source_match(
-                            group, uid, source_url, ods):
-                        return None, None
-                except (ValueError, OSError, TypeError, KeyError, TimeoutError):
+                except (OSError, TimeoutError):
+                    # An unavailable ODS mirror must not veto venue
+                    # discovery already supported by a UID-bound direct OA
+                    # lead for the SAME slug, with curated agenda identity.
+                    dual_direct = any(
+                        s == slug and u == uid and k == "openagenda-v2"
+                        for s, u, k, _ in options)
+                    if dual_direct and agenda_uid is not None:
+                        continue
+                    return None, None
+                except (ValueError, TypeError, KeyError):
+                    return None, None
+                if not ods_immutable_source_match(
+                        group, uid, source_url, ods):
                     return None, None
                 declared = ods_origin_agenda_uid(ods)
                 if agenda_uid is not None:
