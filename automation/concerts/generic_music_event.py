@@ -97,11 +97,18 @@ def verify(candidate, html_text, catalogue, today):
     if (not isinstance(today, dt.date)
             or not isinstance(candidate, dict)
             or candidate.get("source") != "agenda_officiel_structuré"
-            or candidate.get("reviewBucket") != "genre_tag_review"
+            or candidate.get("reviewBucket") not in {
+                "genre_tag_review", "genre_unknown"}
             or candidate.get("possibleExistingConcert") is True
             or candidate.get("publicationAllowed") is not False
             or candidate.get("reviewRequired") is not True):
         raise ValueError("Piste structurée non agréée")
+    # Only the fresh event-level structured genre may requalify an
+    # unconfirmed discovery. A registry bucket is never proof on its own.
+    newly_qualified = candidate["reviewBucket"] == "genre_unknown"
+    if newly_qualified and triage.genre_evidence({
+            "classification": candidate.get("classification")}):
+        raise ValueError("Genre déjà établi : catégorie de revue incohérente")
     match = trusted_spec(candidate)
     if match is None:
         raise ValueError("Salle/domaine non agréés pour la voie structurée")
@@ -134,9 +141,13 @@ def verify(candidate, html_text, catalogue, today):
         norm=discover.norm, allow_generic_event=True)
     if fresh is None:
         raise ValueError("Détail de concert officiel non corroboré")
+    # Genre is the ONLY permitted change. Date, names, site, city,
+    # department, URL and optional unnamed guest must still match exactly.
     for field in ("date", "name", "leadArtist", "venue", "city",
                   "department", "classification", "sourceUrl",
                   "unannouncedSupportLabel"):
+        if newly_qualified and field == "classification":
+            continue
         if fresh.get(field) != candidate.get(field):
             raise ValueError("Identité du concert changée lors de la revue: " + field)
 
