@@ -158,12 +158,27 @@ def run(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
         if url not in allowed:
             del observed[url]
     yesterday = (today_date - timedelta(days=1)).isoformat()
-    eligible.sort(key=lambda src: (
-        0 if isinstance(observed.get(src["url"]), dict)
-             and observed[src["url"]].get("lastSeen") == yesterday else 1,
-        src["dossier_id"], src["url"]))
+    # Recheck yesterday's positive proofs before new candidates; a rejected
+    # candidate only consumes its slot once per day where others are available.
+    def pending_second_day(source):
+        rec = observed.get(source["url"])
+        return (isinstance(rec, dict) and isinstance(rec.get("digest"), str)
+                and rec.get("lastSeen") == yesterday
+                and isinstance(rec.get("firstSeen"), str))
+    pending = [src for src in eligible if pending_second_day(src)]
+    remaining = [src for src in eligible if not pending_second_day(src)]
+    fresh = [src for src in remaining if not (
+        isinstance(observed.get(src["url"]), dict)
+        and observed[src["url"]].get("lastChecked") == today)]
+    repeated = [src for src in remaining if src not in fresh]
+    def rotate(rows):
+        if not rows:
+            return rows
+        offset = (today_date.toordinal() // 2 * MAX_CHECKS) % len(rows)
+        return rows[offset:] + rows[:offset]
+    selected = (pending + rotate(fresh) + rotate(repeated))[:limit]
     output = []
-    for source in eligible[:limit]:
+    for source in selected:
         url = source["url"]
         # Stale positives cannot survive a failed live index or detail fetch.
         old = observed.pop(url, None)
@@ -209,7 +224,7 @@ def run(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
                             and (old.get("lastSeen") in (today, yesterday))
                             and isinstance(old.get("firstSeen"), str)
                         ) else today,
-                        "lastSeen": today,
+                        "lastSeen": today, "lastChecked": today,
                     }
                     result["status"] = (
                         "TWO_DAY_INSTITUTIONAL_DATE_RECHECKED_PRIVATE"
@@ -218,6 +233,9 @@ def run(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
                     result["two_day_observation"] = continuous
         except (OSError, ValueError, TypeError, UnicodeError):
             result["status"] = "INSTITUTIONAL_SOURCE_UNAVAILABLE"
+        if url not in observed:
+            # Negative attempts cannot carry yesterday's publication evidence.
+            observed[url] = {"lastChecked": today}
         output.append(result)
     return {
         "schema": SCHEMA, "as_of": today,
