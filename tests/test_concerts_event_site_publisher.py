@@ -146,7 +146,9 @@ class EventSitePublisherContractTests(unittest.TestCase):
             ("wrong-geo-country", lambda r: r["officialEvidence"][1].update(country="BE")),
             ("location-name-substituted", lambda r: r["venue"].update(name="Tour Mystère")),
             ("unlisted-extra-field", lambda r: r["venue"].update(publicationAllowed=True)),
-            ("bad-location-category", lambda r: r.update(locationKind="superstar")),
+            ("nonphysical-location-category", lambda r: r.update(locationKind="virtual")),
+            ("unknown-location-category", lambda r: r.update(locationKind="unknown")),
+            ("garbled-location-category", lambda r: r.update(locationKind="<html>")),
             ("venue-approval-prop", lambda r: r.update(publicationAllowed=True)),
         )
         for name, mutate in cases:
@@ -155,6 +157,27 @@ class EventSitePublisherContractTests(unittest.TestCase):
                 mutate(r)
                 with self.assertRaises(ValueError):
                     sync.validate_venue_approval(r, TODAY, events)
+
+    def test_any_future_physical_location_category_is_reviewable(self):
+        row, events = fixtures()
+        for kind in ("public-square", "street", "park", "temporary-stage",
+                     "outdoor-site", "quarry", "rooftop", "car-park",
+                     "warehouse", "bridge", "forest-clearing", "riverbank",
+                     "field", "beach", "courtyard", "repurposed-factory"):
+            with self.subTest(locationKind=kind):
+                amended = copy.deepcopy(row)
+                amended["locationKind"] = kind
+                self.assertEqual(
+                    sync.validate_venue_approval(amended, TODAY, events),
+                    amended["venue"])
+                self.assertIs(
+                    site.physical_site_kind(kind), True)
+        # An unspecified or virtual location still cannot masquerade
+        # as an independently located public concert.
+        for kind in ("", "unknown", "tba", "online", "livestream",
+                     "city-centre", "city-center", "unlocated", "bad/type"):
+            with self.subTest(rejectedKind=kind):
+                self.assertFalse(site.physical_site_kind(kind))
 
     def test_source_registry_is_specific_and_no_placeholder_metallica_event_is_authorized(self):
         row, events = fixtures()
