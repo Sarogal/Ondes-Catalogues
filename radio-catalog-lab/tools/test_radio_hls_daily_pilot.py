@@ -197,5 +197,35 @@ class HlsDailyPilotTests(unittest.TestCase):
         self.assertEqual(called, [])
         self.assertFalse(result["publicationAllowed"])
 
+
+    def test_live_media_preferred_over_single_master_no_extra_segment(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        manifests, segments = [], []
+        def request(url):
+            manifests.append(url)
+            return ResponseSample(
+                200, "application/vnd.apple.mpegurl", "",
+                master if url.endswith("/master.m3u8") else sample().body)
+        def segment(url):
+            segments.append(url)
+            ts = (bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)) * 5
+            return ResponseSample(206, "video/mp2t", "", ts)
+        selected = report([
+            row(A, "https://radio.example.org/master.m3u8"),
+            row(B, "https://radio.example.org/live.m3u8"),
+        ])
+        result = hls_preview(selected, request, day=dt.date(2026, 11, 20),
+                             check_one_segment=True, segment_request=segment)
+        self.assertEqual(result["liveManifestCandidateCount"], 1)
+        self.assertEqual(result["segmentVerificationAttemptCount"], 1)
+        self.assertEqual(result["segmentStructuralEvidenceCount"], 1)
+        self.assertEqual(len(segments), 1)
+        self.assertEqual(manifests.count("https://radio.example.org/master.m3u8"), 1)
+        self.assertEqual(manifests.count("https://radio.example.org/live.m3u8"), 2)
+        self.assertEqual(result["technicalVerifiedCount"], 0)
+        self.assertFalse(result["publicationAllowed"])
+        self.assertNotIn("radio.example.org", str(result))
+
 if __name__ == "__main__":
     unittest.main()
