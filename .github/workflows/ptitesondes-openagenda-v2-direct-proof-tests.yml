@@ -15,6 +15,8 @@ on:
       - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
       - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
+      - 'scripts/ptitesondes_generic_venue_ign_corroboration.py'
+      - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
@@ -41,6 +43,8 @@ on:
       - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
       - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
+      - 'scripts/ptitesondes_generic_venue_ign_corroboration.py'
+      - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
@@ -95,6 +99,8 @@ jobs:
             -p 'test_ptitesondes_ods_direct_mirror_workflow_contract.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_generic_venue_osm_preflight.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_ign_corroboration.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
