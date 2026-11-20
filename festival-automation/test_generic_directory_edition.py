@@ -51,7 +51,7 @@ class GenericDirectoryProofTests(TestCase):
                           'festival-info.fr</a>'),
             ENTRY.replace('www.festibarockin.fr</a>',
                           'www.festibarockin.fr</a>'
-                          '<a href="https://evil.example/">Site web</a>'),
+                          '<a href="https://www.autrefestival.fr/">Site web</a>'),
         ):
             with self.subTest(html=html[:90]):
                 self.assertIsNone(trusted_linked_site(html, TITLE))
