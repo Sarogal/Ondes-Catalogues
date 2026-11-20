@@ -354,3 +354,30 @@ puis vérifier date, heure, public familial, droit de reprise et doublons.
 distingue le champ facultatif `location.website` (auto-déclaré)
 de la preuve d'identité et de provenance du lieu :
 https://developers.openagenda.com/lieux/structure/.
+
+## Découverte municipale en un seul lien nommé
+
+`scripts/ptitesondes_municipal_venue_link_discovery.py` traite un
+cas fréquent : `location.website` d'OpenAgenda pointe vers la **page
+d'accueil du site municipal**, alors que la fiche du lieu se trouve
+une page plus loin. Après vérification du domaine par DILA, le lecteur
+`MunicipalOfficialPageReader` peut proposer une **seule navigation
+interne** à partir d'un accueil municipal, et uniquement si le HTML
+contient **un unique lien visible dont le texte normalisé correspond
+exactement au nom du lieu**.
+
+Le traitement refuse les liens cachés, les scripts, les redirections,
+les sites externes ou ressemblants, les URL à paramètres, les liens
+ambigus vers plusieurs destinations, les ancres partielles et la
+navigation de niveau supérieur. La seconde page ne constitue
+qu'une **preuve candidate**, soumise aux contrôles indépendants
+du lieu, de l'adresse IGN/BAN et des séances.
+
+Aucune recherche Internet libre, aucun crawling d'un annuaire de
+pages municipales entier, aucune adaptation d'une liste de communes
+ou de spectacles. Sans correspondance unique, le lecteur conserve
+la page initiale et laisse le dossier non homologué.
+
+**Aucune vérification réelle des pages des 60 lieux** n'est revendiquée
+à ce stade ; les cas de navigation valides ont des tests hors réseau,
+et l'option réseau demeure inactive dans les workflows du projet.
