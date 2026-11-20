@@ -222,6 +222,93 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         self.assertEqual(events.call_count, 3)
         self.assertEqual(page.call_count, 1)
 
+    def test_direct_oa_uid_center_does_not_require_ods_mirror(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        from ptitesondes_shared_venue_location_evidence import (
+            mint_private_location_proof, location_from_proof,
+        )
+        direct = event()
+        direct["location"].update({"latitude": 44.5, "longitude": 2.25})
+        ods = Mock(side_effect=AssertionError("ODS mirror must not be read"))
+        reader = MunicipalOfficialPageReader(
+            [lead()], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={
+                "uid": AGENDA, "slug": "agenda-demo"}),
+            event_reader=Mock(return_value=direct),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods,
+        )
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        center, why = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertEqual(center, (44.5, 2.25))
+        self.assertIsNone(why)
+        evidence = inspect_group(
+            group,
+            record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            ign_fetch=lambda candidate: ban(),
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group)
+        self.assertEqual(evidence["status"],
+                         "official_address_ban_private_review")
+        self.assertTrue(evidence["official_geocode"][
+            "independent_geo_correlated"])
+        self.assertFalse(evidence["official_geocode"]["publication_ready"])
+        self.assertEqual(evidence["official_geocode"]["public_writes"], 0)
+        proof = mint_private_location_proof(
+            group, dila(), WEBSITE, html(), lambda candidate: ban(),
+            date(2026, 11, 20), source_center=center)
+        self.assertIsNotNone(proof)
+        self.assertIsNotNone(location_from_proof(
+            proof, CITY, VENUE, date(2026, 11, 20), center))
+        ods.assert_not_called()
+
+    def test_direct_oa_center_rejects_conflicting_uid_agenda_and_gps(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        valid = event()
+        valid["location"].update({"latitude":44.5, "longitude":2.25})
+        badcases = [
+            ({"uid":722}, "agenda-demo"),
+            ({"state":1}, "agenda-demo"),
+            ({"location":{**valid["location"], "adminLevel4":"other town"}}, "agenda-demo"),
+            ({"location":{**valid["location"], "latitude": float("nan")}}, "agenda-demo"),
+            ({"location":{**valid["location"], "longitude": 200}}, "agenda-demo"),
+            ({}, "different-slug"),
+        ]
+        for change, slug in badcases:
+            with self.subTest(change=change, slug=slug):
+                bad = {**valid, **change}
+                reader = MunicipalOfficialPageReader(
+                    [lead()], [AGENDA], "private-test-key",
+                    agenda_reader=Mock(return_value={"uid":AGENDA, "slug":slug}),
+                    event_reader=Mock(return_value=bad),
+                    directory_reader=Mock(side_effect=AssertionError("no DILA read")),
+                    html_reader=Mock(side_effect=AssertionError("no HTML read")),
+                    ods_reader=Mock(side_effect=AssertionError("no ODS read")),
+                )
+                center, why = source_center(
+                    group, lambda uid: reader.source_record_for_group(group, uid))
+                self.assertIsNone(center)
+                self.assertIsNotNone(why)
+
+    def test_direct_oa_center_rejects_ambiguous_source_binding(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        entries = [lead(), lead(slug="other-agenda")]
+        group = groups_for_review(entries, date(2026, 11, 20))[0]
+        reader, _, agenda, events, page = self.reader(leads=entries)
+        center, why = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertIsNone(center)
+        self.assertIsNotNone(why)
+        agenda.assert_not_called()
+        events.assert_not_called()
+        page.assert_not_called()
+
     def test_html_reader_validates_redirects_and_content_type(self):
         class Response:
             def __init__(self, target=WEBSITE, kind="text/html", data=b"hello"):
