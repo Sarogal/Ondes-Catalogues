@@ -27,6 +27,7 @@ import triage
 
 SOURCE_FILE = Path(__file__).with_name("artist-tour-sources.json")
 OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]{0,18})/?")
+OSM_WAY = re.compile(r"https://www[.]openstreetmap[.]org/way/([1-9][0-9]{0,18})/?")
 HTTPS = re.compile(r"^https://")
 SOURCES = frozenset({
     "artist_official_tour", "promoter_official_tour",
@@ -211,15 +212,45 @@ def _official_event(lead, html, url, today):
             "invalid official site links")
     require(not any("openstreetmap.org" in link
                     and OSM_NODE.fullmatch(link) is None
+                    and OSM_WAY.fullmatch(link) is None
                     for link in links),
             "invalid official OSM site identity")
-    osm_links = [link for link in links if OSM_NODE.fullmatch(link)]
+    osm_links = [link for link in links
+                 if OSM_NODE.fullmatch(link) or OSM_WAY.fullmatch(link)]
     require(len(osm_links) <= 1, "ambiguous official OSM site identity")
     return raw, names, unnamed, genres, {
         "name": venue, "city": city, "address": street,
         "postalCode": postal, "department": _department(postal, addr),
         "region": region, "geoSource": osm_links[0] if osm_links else None,
     }
+
+
+def corroborate_physical_site(location, fetch):
+    """Return independently verified (OSM URL, latitude, longitude, precision).
+
+    A first-party official link is a *claim*, not location authority. For a
+    named OSM way, BAN plus a distinct OSM map query must return that exact
+    way, never an arbitrary polygon, official assertion or city centroid.
+    The same method is used by the publisher-bound rechecker and the
+    private-only generic venue preflight to prevent divergent trust checks.
+    """
+    official = location.get("geoSource")
+    require(official is None or (
+        isinstance(official, str)
+        and (OSM_NODE.fullmatch(official) or OSM_WAY.fullmatch(official))),
+        "official site location reference not safe")
+    if official is not None and OSM_NODE.fullmatch(official):
+        lat, lon = _read_osm_node(official, location, fetch)
+        return official, lat, lon, "named-site-point"
+    osm_url, lat, lon, precision = independent_named_site_geo.verify(
+        location, fetch)
+    if official is not None:
+        require(
+            OSM_WAY.fullmatch(official) is not None
+            and osm_url.rstrip("/") == official.rstrip("/")
+            and precision == "named-site-area",
+            "official named OSM area differs from independently verified site")
+    return osm_url, lat, lon, precision
 
 
 def _artists(names, catalogue):
@@ -266,15 +297,9 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
         lead, html, url, today)
     ids, fresh = _artists(names, catalogue)
     require(lead["artistId"] in ids, "authority artist missing from official bill")
-    if location["geoSource"] is not None:
-        lat, lon = _read_osm_node(location["geoSource"], location, fetch)
-        precision = "named-site-point"
-    else:
-        # The official address locates the search only: never publish a BAN
-        # coordinate or a street midpoint as the actual concert site.
-        osm_url, lat, lon, precision = independent_named_site_geo.verify(
-            location, fetch)
-        location["geoSource"] = osm_url
+    osm_url, lat, lon, precision = corroborate_physical_site(
+        location, fetch)
+    location["geoSource"] = osm_url
     location.update({
         "latitude": lat, "longitude": lon,
         "geoPrecision": precision,
