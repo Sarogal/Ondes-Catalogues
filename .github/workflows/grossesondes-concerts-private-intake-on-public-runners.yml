@@ -24,6 +24,8 @@ on:
       - 'automation/concerts/*_adapter.py'
       - 'automation/concerts/*_recheck.py'
       - 'automation/concerts/registry_funnel.py'
+      - 'automation/concerts/artist_genre_knowledge.py'
+      - 'automation/concerts/artist_genre_preflight.py'
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/verifier_contract.py'
@@ -191,6 +193,23 @@ jobs:
             echo "::warning::Prévalidation structurée indisponible : les approbations existantes restent inchangées."
           else
             echo "Revérification structurée générique enregistrée en privé, sans approbation."
+          fi
+
+      - name: Vérifier les genres individuels sur les sources officielles d'artistes (privé seul)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Source manifest committed on main, independent fresh HTTPS fetch,
+          # robots checks. Never log performer identities or page contents.
+          if ! python public/automation/concerts/artist_genre_preflight.py \
+              --sources public/automation/concerts/artist-tour-sources.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --out confidential/automation/concerts/intake/artist-genre-evidence.json \
+              > "$RUNNER_TEMP/concerts-private-logs/artist-genre-preflight.log" 2>&1; then
+            echo "::warning::Sources artistes indisponibles : aucune connaissance individuelle nouvelle."
+          else
+            echo "Genres officiels des artistes relus indépendamment, preuve privée sans approbation."
           fi
 
       - name: Valider les approbations avec données privées avant activation éventuelle
@@ -364,10 +383,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          artist_genre_args=()
+          if [ -s confidential/automation/concerts/intake/artist-genre-evidence.json ]; then
+            artist_genre_args=(--artist-evidence confidential/automation/concerts/intake/artist-genre-evidence.json)
+          fi
           if ! python public/automation/concerts/registry_funnel.py \
               --registry confidential/automation/concerts/intake/registry.json \
               --approvals confidential/automation/concerts/approved.json \
               --catalogue public/docs/grossesondes/concerts.json \
+              "${artist_genre_args[@]}" \
               --output confidential/automation/concerts/intake/registry-funnel.json \
               > "$RUNNER_TEMP/concerts-private-logs/registry-funnel.log" 2>&1; then
             # Never publish the private diagnostic or interrupt the safe archive.
@@ -416,6 +440,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/structured-first-party-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/structured-first-party-preflight.json
+          fi
+          if [ -f automation/concerts/intake/artist-genre-evidence.json ]; then
+            git add --sparse -- automation/concerts/intake/artist-genre-evidence.json
           fi
           if [ -f automation/concerts/intake/venue-admission-audit.json ]; then
             git add --sparse -- automation/concerts/intake/venue-admission-audit.json
