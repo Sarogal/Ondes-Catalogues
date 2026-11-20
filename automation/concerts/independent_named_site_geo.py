@@ -61,7 +61,7 @@ def _geo(valid):
             and -180 <= valid[0] <= 180 and -56 <= valid[1] <= 52)
 
 
-def _ban_result(site, fetch):
+def _ban_result(site, fetch, *, include_region=False):
     postcode = site["postalCode"]
     city = site["city"]
     house, street = _street_parts(site["address"])
@@ -105,9 +105,37 @@ def _ban_result(site, fetch):
         else:
             if props["type"] != "street":
                 continue
-        eligible.append((coords[1], coords[0]))
+        eligible.append(((coords[1], coords[0]), props.get("context")))
     require(len(eligible) == 1, "one exact government street address required")
-    return eligible[0]
+    center, context = eligible[0]
+    if not include_region:
+        return center
+    # Government BAN context: "<department>, <department name>, <region>"
+    # (in some overseas departments the region is also the department).
+    # Unlike the untrusted event page this is an independent, exact-address
+    # and high-score government response. Never guess the region from city.
+    require(isinstance(context, str) and len(context) <= 180,
+            "independent government region unavailable")
+    parts = [x.strip() for x in context.split(",")]
+    dept = str(site.get("department") or "").upper()
+    require(len(parts) in (2, 3) and parts[0].upper() == dept
+            and (len(parts) == 3 or dept.startswith(("97", "98"))),
+            "independent government department mismatch")
+    region = parts[-1]
+    require(3 <= len(region) <= 90
+            and all(ch.isalpha() or ch in " -'" for ch in region),
+            "independent government region invalid")
+    return center, region
+
+
+def independently_attested_region(site, fetch):
+    """A missing OPTIONAL first-party region can be sourced from exact BAN.
+
+    Return the validated region and exact-address point for optional
+    cross-checking of the separately named OSM feature; no city centroid,
+    approximate match or postcode-only inference is accepted.
+    """
+    return _ban_result(site, fetch, include_region=True)
 
 
 def _node_tags(obj):
