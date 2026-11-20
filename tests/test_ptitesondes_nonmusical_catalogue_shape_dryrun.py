@@ -115,6 +115,44 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
         self.assertEqual(before, CATALOGUE)
         self.assert_not_a_publisher(out)
 
+    def test_all_fourteen_explicit_nonmusical_categories_are_structural_only(self):
+        from merge_policy import valid
+        from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
+        self.assertEqual(len(FAMILY_TYPES), 14)
+        self.assertTrue(set(FAMILY_TYPES).isdisjoint(LEGACY_MUSICAL))
+        sample = packet()
+        event, err = _prototype(
+            sample["lead"], sample["page"], sample["trusted_index"],
+            sample["child_prefix"], sample["independent_context"],
+            sample["admin_pin"], DAY)
+        self.assertIsNone(err)
+        fields = set().union(*(set(x) for x in CATALOGUE["events"]))
+        original_categories = {x["category"] for x in CATALOGUE["events"]}
+        for code, (label, _) in FAMILY_TYPES.items():
+            with self.subTest(category=code):
+                projection = dict(event, category=code, category_label=label)
+                production_ok, production_reason = valid(
+                    projection, original_categories, fields, DAY)
+                self.assertFalse(production_ok)
+                self.assertEqual(production_reason, "catégorie inconnue")
+                hypothetical_ok, hypothetical_reason = valid(
+                    projection, original_categories | set(FAMILY_TYPES),
+                    fields, DAY)
+                self.assertTrue(hypothetical_ok, hypothetical_reason)
+        self.assert_not_a_publisher(simulate())
+
+    def test_restricted_source_cannot_even_enter_hypothetical_shape(self):
+        with patch(
+            "ptitesondes_nonmusical_catalogue_shape_dryrun."
+            "route_nonmusical_html_session",
+            return_value={"stage": "institutional_source_policy_restricted"},
+        ):
+            out = simulate()
+        self.assertEqual(out["hypothetical_structural_matches_only"], 0)
+        self.assertEqual(
+            out["blockers"]["institutional_source_policy_restricted"], 1)
+        self.assert_not_a_publisher(out)
+
     def test_two_distinct_source_verified_time_slots_can_be_modeled(self):
         rows = [packet(lead=x) for x in LEADS]
         out = simulate(rows)
