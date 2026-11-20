@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feature/radio-daily-discovery-lab-20261120
+      - feature/radio-continuity-evidence-lab-20261120
     paths:
       - "radio-catalog-lab/tools/radio_daily_discovery.py"
       - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
@@ -16,6 +17,8 @@ on:
       - "radio-catalog-lab/tools/radio_stream_playlist_preview.py"
       - "radio-catalog-lab/tools/test_radio_stream_playlist_preview.py"
       - "radio-catalog-lab/tools/test_radio_stream_socket_integration.py"
+      - "radio-catalog-lab/tools/radio_stream_continuity_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_stream_continuity_evidence.py"
       - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
       - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
@@ -57,6 +60,7 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_playlist_preview.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_socket_integration.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_continuity_evidence.py" -v
 
   discovery-preview:
     name: Limited global radio scan — candidates only
@@ -134,7 +138,7 @@ jobs:
           python radio-catalog-lab/tools/radio_stream_technical_probe.py \
             --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
             --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
-            --limit 2 --allow-network
+            --limit 2 --allow-network --extended-continuity
       - name: Track technical samples over separate days (never approve streams)
         if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
         shell: bash
