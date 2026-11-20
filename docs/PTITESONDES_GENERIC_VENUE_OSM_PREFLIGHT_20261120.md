@@ -193,3 +193,28 @@ Les parcs et lieux éphémères sans adresse numérotée nécessitent une branch
 géographique distincte ; la voie IGN/BAN numéro de rue ne doit pas les
 bloquer définitivement. `verified_venue_leads=0`, aucun raccordement
 publisher, aucun déploiement GitHub Pages/Infomaniak.
+
+## Contrôle des URL de lieux OpenAgenda contre les sites municipaux DILA
+
+Les fiches de lieu OpenAgenda v2 contiennent un champ facultatif
+`location.website`, indiqué dans la documentation OpenAgenda :
+https://developers.openagenda.com/en/lieux/structure/.
+
+`verified_oa_location_website()` permet de retenir ce lien en
+**candidat de lecture**, mais uniquement en présence cumulée :
+- d'un événement OA v2 public et présentiel, d'un UID attendu, d'un
+  lieu et d'une commune cohérents ;
+- d'un site HTTPS dont le domaine appartient au site municipal déclaré
+  pour **la même commune** dans l'annuaire DILA authentifié ;
+- d'aucune erreur, ambiguïté ni contradiction de domaine.
+
+La propriété `location.website` d'OpenAgenda n'est **pas** une preuve
+d'institution : elle sert seulement à trouver la page à lire. L'adresse
+municipale du domaine provient d'un registre administratif distinct.
+
+À ce stade, **aucune exécution réseau réelle de ce pont n'est activée** :
+son API est testée hors réseau et prête à être utilisée par un adaptateur
+de récupération OA v2 + DILA dans l'espace privé. Le programme CLI
+actuel continue de ne publier ni ne valider de sortie. La page exacte
+doit ensuite passer `official_venue_page_proof` sur les attributs
+Schema.org du lieu, puis les vérifications complètes de la séance.
