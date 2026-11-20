@@ -234,8 +234,12 @@ def official_access_links(html, homepage):
     # Deterministic priority: first directions/access, then generic info.
     def rank(url):
         path = unquote(urlsplit(url).path).casefold()
-        return (0 if re.search(r"(?:acces|access|venir|itineraire|parking)", path)
-                else 1, len(path), url)
+        priority = (
+            0 if re.search(r"(?:acces|access|venir|venez|itineraire|parking)", path)
+            else 1 if re.search(r"(?:info|pratique|venue|lieu|location)", path)
+            else 2
+        )
+        return (priority, len(path), url)
     return sorted(choices, key=rank)[:MAX_LINKS_PER_ORGANIZER]
 
 
