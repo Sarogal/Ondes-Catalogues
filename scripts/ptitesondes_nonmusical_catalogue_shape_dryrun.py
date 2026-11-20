@@ -55,7 +55,6 @@ HOLD_CODES = frozenset((
 SHAPE_STAGES = frozenset((
     "institutional_source_policy_pending",
     "institutional_source_policy_expired",
-    "institutional_source_policy_restricted",
     "independent_geo_rights_review_required",
 ))
 
@@ -99,7 +98,7 @@ def _same_day_interval(old, day):
     return first <= day <= last
 
 
-def _collision(proposed, public_and_staged):
+def _collision(proposed, public_and_staged, *, staged_distinct_slots=False):
     """Exact identity differs from an ambiguous series/organizer collision.
 
     A *different* confirmed time might be a legitimate second session.
@@ -130,9 +129,15 @@ def _collision(proposed, public_and_staged):
                 and CLOCK.fullmatch(old_clock)
                 and old_clock == proposed["time"]):
             return "historical_exact_duplicate"
-        # Multi-slot pages, long-running series and duplicate aggregates.
-        # Same place/title with a different clock could be a distinct slot,
-        # but this model never grants permission from similarity alone.
+        # Two distinct clock slots from this SAME verified source page can
+        # coexist within this one simulated batch: both have passed exact
+        # first-party date/time verification in their individual route.
+        # This exception NEVER applies to records already in production.
+        if (staged_distinct_slots and same_site_event and same_place_title
+                and type(old_clock) is str and CLOCK.fullmatch(old_clock)
+                and old_clock != proposed["time"]):
+            continue
+        # Historical series/long-running programme collisions stay held.
         return "historical_ambiguous_cross_source_collision"
     return None
 
@@ -302,7 +307,9 @@ def simulate_nonmusical_catalogue_shape(packets, current, today,
             if not ok:
                 counters["schema_structure_incompatible"] += 1
                 continue
-            conflict = _collision(event, [*published.values(), *staging])
+            conflict = _collision(event, published.values())
+            if conflict is None:
+                conflict = _collision(event, staging, staged_distinct_slots=True)
             if conflict:
                 counters[conflict] += 1
                 continue
