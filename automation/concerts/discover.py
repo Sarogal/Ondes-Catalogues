@@ -538,6 +538,92 @@ def scan_slot_for_hour(hour):
     return 0 if hour < 12 else 1 if hour < 18 else 2
 
 
+def linked_first_party_dated_card_urls(page_html, source_url, today):
+    """Follow dated official HTML cards even without schema.org or URL keywords.
+
+    An event card containing its own <time datetime="YYYY-MM-DD"> and a
+    visible named label is sufficient to NAVIGATE to a first-party detail.
+    It is never proof of the concert, its music genre or its location.
+    Robots, request quotas, redirect and independent publisher checks still
+    apply at their existing stages.
+    """
+    if (not isinstance(page_html, str) or len(page_html) > 3_000_000
+            or not isinstance(source_url, str)
+            or not isinstance(today, dt.date)
+            or isinstance(today, dt.datetime)):
+        return []
+
+    class DatedAnchors(html.parser.HTMLParser):
+        INVISIBLE = frozenset({"script", "style", "template", "noscript", "svg"})
+
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.hidden_depth = 0
+            self.current = None
+            self.rows = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag in self.INVISIBLE:
+                self.hidden_depth += 1
+                return
+            if self.hidden_depth:
+                return
+            attributes = dict(attrs)
+            if tag == "a" and self.current is None:
+                style = str(attributes.get("style") or "")
+                if ("hidden" in attributes
+                        or attributes.get("aria-hidden") == "true"
+                        or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                     style, re.I)):
+                    return
+                self.current = {"href": attributes.get("href"),
+                                "dates": [], "text": []}
+            elif tag == "time" and self.current is not None:
+                day = iso_day(attributes.get("datetime"))
+                if day:
+                    self.current["dates"].append(day)
+
+        def handle_data(self, data):
+            if self.current is not None and not self.hidden_depth:
+                self.current["text"].append(data)
+
+        def handle_endtag(self, tag):
+            if tag in self.INVISIBLE:
+                self.hidden_depth = max(0, self.hidden_depth - 1)
+                return
+            if self.hidden_depth:
+                return
+            if tag == "a" and self.current is not None:
+                self.rows.append(self.current)
+                self.current = None
+
+    parser = DatedAnchors()
+    try:
+        parser.feed(page_html)
+        parser.close()
+    except (ValueError, TypeError, RecursionError):
+        return []
+
+    links, seen = [], set()
+    for anchor in parser.rows:
+        href = anchor["href"]
+        dates = set(anchor["dates"])
+        label = " ".join(" ".join(anchor["text"]).split())
+        if (not isinstance(href, str) or not href.strip()
+                or len(dates) != 1 or next(iter(dates)) < today.isoformat()
+                or not 5 <= len(label) <= 500
+                or re.search(r"[^\W\d_]{3,}", label, re.UNICODE) is None
+                or re.search(r"\b(?:annul[eé]|cancelled|postponed|report[eé])\b",
+                             label, re.I)):
+            continue
+        link = urllib.parse.urljoin(source_url, href)
+        if (official_rss_jsonld_bridge.official_event_url(link, source_url)
+                and link != source_url and link not in seen):
+            seen.add(link)
+            links.append(link)
+    return links
+
+
 def linked_first_party_event_urls(page_html, source_url, today):
     """Official schema.org Event/MusicEvent links, independent of URL keywords.
 
@@ -632,6 +718,9 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             # /evenement/. La source et la cible restent first-party HTTPS.
             # Le vérificateur et le publisher demeurent indépendants.
             links = linked_first_party_event_urls(first, base, day)
+            for linked in linked_first_party_dated_card_urls(first, final, day):
+                if linked not in links:
+                    links.append(linked)
             for href in parser.links:
                 next_url = urllib.parse.urljoin(final, href).split("#")[0]
                 if same_host(next_url, base) and EVENT_URL.search(urllib.parse.urlsplit(next_url).path):
