@@ -36,6 +36,6 @@ jobs:
           assert not any(value in workflow for value in (
               "se" + "crets.", "contents:" + " write", "upload-" + "artifact",
               "deploy-" + "pages", "git" + " push"))
-          assert not any(value in source for value in ("urlopen", "requests.", "github(", "git push", "merge(", "subprocess"))
+          assert not any(value in source for value in ("urlopen", "requests.", "github(", "git" + " push", "merge(", "subprocess"))
           assert "publication_ready" in source and "public_writes" in source
           PY
