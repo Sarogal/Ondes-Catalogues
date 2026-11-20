@@ -54,6 +54,102 @@ def proposal():
 
 
 class InstitutionalLinkedPublisherTests(unittest.TestCase):
+    def test_new_festival_without_genre_on_index_requires_independent_detail_genre(self):
+        from regional_festival_discovery import candidate_links
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index = ('<main><a href="/evenement/festival-des-rivages-2027">'
+                 + title + '</a></main>')
+        official_detail = (
+            "<main><h1>Festival des Rivages 2027</h1>"
+            "<p>Festival de métal, punk et stoner.</p>"
+            '<p>Site officiel du Festival des Rivages 2027 : '
+            f'<a href="{SITE}">site officiel</a></p></main>')
+        organizer = ("<main><h1>Festival des Rivages 2027</h1>"
+                     "<p>Les 4 et 5 juin 2027, concerts de métal.</p></main>")
+        spec = {"index_url": INDEX, "index_page": INDEX,
+                "url": detail, "title": title, "year": 2027}
+        self.assertEqual(candidate_links(index, INDEX, TODAY), [])
+        visits = []
+        def read_index(url):
+            visits.append(url)
+            return {INDEX: index, detail: official_detail}[url]
+        def read_site(url):
+            visits.append(url)
+            self.assertEqual(url, SITE)
+            return organizer
+        self.assertEqual(trusted_live_link(spec, TODAY, read_index), SITE)
+        self.assertEqual(visits, [INDEX, detail])
+        p = private_proposal(spec, SITE, ("2027-06-04", "2027-06-05"), TODAY)
+        self.assertIsNotNone(p)
+        self.assertEqual(validate_private_proposal(p, TODAY), spec)
+        verified = independently_verify(
+            p, TODAY, institution_fetch=read_index,
+            organizer_fetch=read_site)
+        self.assertIsNotNone(verified)
+        self.assertEqual(visits, [INDEX, detail, INDEX, detail, SITE])
+        self.assertEqual(validate_verified_row(p, verified, TODAY), verified)
+        self.assertFalse(verified["showOnMap"])
+        self.assertIsNone(verified["lat"])
+        self.assertIsNone(verified["venue"])
+        self.assertEqual(verified["lineup"], [])
+        self.assertEqual(verified["bands"], 0)
+        cal, history, patch = fixtures()
+        patch["additions"] = [p]
+        patch["updates"] = []
+        sources = collect_registered_linked_sources(
+            patch, set(), TODAY,
+            institution_fetch=read_index, organizer_fetch=read_site)
+        self.assertTrue(sources.get("registered-linked-verified:"+p["slug"]))
+        before = {"festivals.json": cal, "festival-history.json": history}
+        staged, report = build_candidate(
+            before, before, patch, sources, TODAY, trusted_published=True)
+        self.assertIn(p["slug"], report["accepted_additions"])
+        self.assertEqual(len(staged["festivals"]), len(cal["festivals"]) + 1)
+
+    def test_genre_less_official_detail_cannot_authorize_linked_organizer_domain(self):
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index = ('<a href="/evenement/festival-des-rivages-2027">'
+                 + title + "</a>")
+        spec = {"index_url": INDEX, "index_page": INDEX,
+                "url": detail, "title": title, "year": 2027}
+        p = private_proposal(spec, SITE, ("2027-06-04", "2027-06-05"), TODAY)
+        self.assertIsNotNone(p)
+        examples = (
+            ('<h1>Festival des Rivages 2027</h1><p>Un festival '
+             'de hardcore techno et hardstyle</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
+             '<p hidden>Festival de métal.</p><p>Un festival de musique</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
+             '<script>Un festival de metal</script>'),
+            ('<h1>Autre Festival 2027</h1>'
+             '<p>Festival de metal</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
+             '<p>Programmation bientôt.</p>'
+             '<h2>Autre Festival 2027</h2><p>Festival de metal</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
+             '<p>Festival de rock, tournée itinérante de 20 concerts</p>'),
+            ('<h1>Festival des Rivages 2027</h1>'
+             '<p>Festival de punk annulé</p>'),
+        )
+        for evidence in examples:
+            with self.subTest(evidence=evidence[:80]):
+                html = (
+                    "<main>" + evidence +
+                    '<p>Site officiel du Festival des Rivages 2027 : '
+                    f'<a href="{SITE}">site officiel</a></p></main>')
+                visited = []
+                def read(url):
+                    visited.append(url)
+                    return index if url == INDEX else html
+                result = independently_verify(
+                    p, TODAY, institution_fetch=read,
+                    organizer_fetch=lambda u: self.fail(
+                        "Unqualified organizer website must not be fetched"))
+                self.assertIsNone(result)
+                self.assertEqual(visited, [INDEX, detail])
+
     def test_live_index_event_link_site_and_dates_independently_proven(self):
         self.assertEqual(linked_site(DETAIL_HTML, SPEC), SITE)
         calls = []

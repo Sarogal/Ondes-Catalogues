@@ -184,11 +184,111 @@ def validate_private_proposal(proposal, today):
     return spec
 
 
+# Only the immutable institution's own event-detail BODY may establish a
+# theme when a visible index title ("Festival des Rivages 2027") omits it.
+# Bare "hardcore" is ambiguous with electronic music and is not sufficient.
+FESTIVAL_MUSIC_CONTEXT = re.compile(
+    r"\b(?:festival|programmation|concerts?|musique|genres?|styles?)"
+    r"\s+(?:(?:de|du|des|en|a|aux)\s+)?"
+    r"(?:heavy metal|black metal|death metal|thrash metal|metalcore|"
+    r"deathcore|grindcore|post metal|post rock|hard rock|rock alternatif|"
+    r"punk rock|hardcore punk|metal|rock|punk|stoner|doom|sludge|thrash)\b"
+)
+TOURING_SHOW = re.compile(
+    r"\b(?:tournee itinerante|date[s]? de la tournee|"
+    r"concerts? de la tournee|concert tour|tour de concerts?|"
+    r"tournee de \d+ concerts?)\b"
+)
+
+
+class VisibleInstitutionHeadings(VisibleText):
+    """Capture only explicitly VISIBLE h1/h2 main-event labels.
+
+    A generic "Site officiel du Festival X" footer or a hidden annotation
+    must never authorize an unrelated index event's organizer website.
+    """
+    def __init__(self):
+        super().__init__()
+        self.headings = []
+        self.heading_starts = []
+        self.heading_tag = None
+        self.heading_words = []
+
+    def handle_starttag(self, tag, attrs):
+        super().handle_starttag(tag, attrs)
+        if tag in ("h1", "h2") and not self.hidden():
+            self.heading_tag = tag
+            self.heading_starts.append(len(self.parts))
+            self.heading_words = []
+
+    def handle_data(self, data):
+        super().handle_data(data)
+        if self.heading_tag is not None and not self.hidden():
+            self.heading_words.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == self.heading_tag:
+            if not self.hidden():
+                self.headings.append(" ".join(self.heading_words))
+            self.heading_tag = None
+            self.heading_words = []
+        super().handle_endtag(tag)
+
+
+def independent_institutional_music_genre(detail_html, edition_title, year):
+    """Fresh visible, exact-edition theme, NOT OpenData or a private genre.
+
+    Used only AFTER an approved index was fetched again and an EXACT visible
+    title+same-host link was found. Reject hidden text, generic genre words
+    disconnected from the edition, electronic 'hardcore' alone and tours.
+    This is never proof of dates, venue, ownership or publisher independence.
+    """
+    if (not isinstance(detail_html, str) or not 0 < len(detail_html) <= 650_000
+            or not isinstance(edition_title, str)
+            or type(year) is not int
+            or not edition_title.strip().endswith(" " + str(year))):
+        return False
+    parser = VisibleInstitutionHeadings()
+    try:
+        parser.feed(detail_html)
+        parser.close()
+    except (TypeError, UnicodeError, ValueError):
+        return False
+    label = normalized(edition_title)
+    if len(label) < 12:
+        return False
+    matcher = re.compile(r"(?<![a-z0-9])" + re.escape(label)
+                         + r"(?![a-z0-9])")
+    # Every candidate genre must belong to the SAME visible event heading's
+    # own section, ending before the next h1/h2. Nearby OTHER event headings
+    # can never lend a theme to an unrelated festival. Section boundaries
+    # come from the parser's part indices, NOT page-provided separator text.
+    for index, (heading, start) in enumerate(zip(
+            parser.headings, parser.heading_starts)):
+        if normalized(heading) != label:
+            continue
+        end = (parser.heading_starts[index + 1]
+               if index + 1 < len(parser.heading_starts) else len(parser.parts))
+        section = normalized(" ".join(parser.parts[start:end]))
+        for reference in list(matcher.finditer(section))[:5]:
+            nearby = section[max(0, reference.start() - 110):
+                             reference.end() + 320]
+            if (TOURING_SHOW.search(nearby)
+                    or re.search(r"\b(?:annule|annulee|reportee|reporte)\b",
+                                 nearby)):
+                return False
+            if FESTIVAL_MUSIC_CONTEXT.search(nearby):
+                return True
+    return False
+
+
 def independently_fetch(proposal, today, fetch=get_page):
     """Return HTML only if a fresh, approved live index proves the exact link.
 
-    A proposed URL is NEVER fetched until the live index establishes it as an
-    actual event link with the same title AND festival musical theme.
+    A proposed URL is NEVER fetched until the live index establishes the
+    exact visible title and same-host link. If this label omits the genre,
+    the independently fetched trusted institutional DETAIL must visibly prove
+    a rock/metal/punk festival theme before any admission can proceed.
     """
     spec = validate_private_proposal(proposal, today)
     if spec is None:
@@ -201,11 +301,17 @@ def independently_fetch(proposal, today, fetch=get_page):
         # hard-rock or related musical event. Re-run the original genre-aware
         # institutional discovery filter on the independently fetched index.
         matches = candidate_links(index_html, spec["index_url"], today)
-        if not any(x.get("candidate_url") == spec["url"]
-                   and normalized(x.get("title")) == normalized(spec["title"])
-                   for x in matches):
+        theme_on_index = any(
+            x.get("candidate_url") == spec["url"]
+            and normalized(x.get("title")) == normalized(spec["title"])
+            for x in matches)
+        # The new fallback cannot use a self-declared OpenData genre. Fetch
+        # only the EXACT detail whose anchor just appeared on the trusted index.
+        html = fetch(spec["url"])
+        if (not theme_on_index and not independent_institutional_music_genre(
+                html, spec["title"], spec["year"])):
             return None
-        return fetch(spec["url"])
+        return html
     except (OSError, ValueError, TypeError, UnicodeError):
         return None
 
