@@ -73,7 +73,7 @@ def _identity(item):
             normalized(item.get("name")))
 
 
-def build(registry, approvals, catalogue, as_of):
+def build(registry, approvals, catalogue, as_of, artist_preflight=None):
     if not isinstance(registry, dict) or registry.get("schema") != REGISTRY_SCHEMA:
         raise ValueError("Unexpected private registry schema")
     if not isinstance(registry.get("items"), dict):
@@ -311,7 +311,8 @@ def build(registry, approvals, catalogue, as_of):
             v["exactPublishedUrlDate"] for v in source_counts.values()),
         "privateApprovedEventsTotal": len(approvals["approvals"]),
         "publicEventsTotal": len(catalogue["events"]),
-        "artistGenreKnowledge": private_genre_review(registry, catalogue, as_of),
+        "artistGenreKnowledge": private_genre_review(registry, catalogue, as_of,
+                                                    artist_preflight),
         "lastSevenDaysInclusive": {
             "start": window_start.isoformat(),
             "end": as_of.isoformat(),
@@ -390,11 +391,14 @@ def main():
     parser.add_argument("--registry", required=True, type=Path)
     parser.add_argument("--approvals", required=True, type=Path)
     parser.add_argument("--catalogue", required=True, type=Path)
+    parser.add_argument("--artist-evidence", type=Path)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     read = lambda path: json.loads(path.read_text(encoding="utf-8"))
+    artist_evidence = read(args.artist_evidence) if args.artist_evidence else None
     result = build(read(args.registry), read(args.approvals),
-                   read(args.catalogue), dt.datetime.now(dt.timezone.utc).date())
+                   read(args.catalogue), dt.datetime.now(dt.timezone.utc).date(),
+                   artist_evidence)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
