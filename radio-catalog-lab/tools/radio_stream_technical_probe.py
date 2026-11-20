@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 from radio_stream_playlist_preview import playlist_hint
-from radio_hls_manifest_evidence import inspect_hls_manifest
+from radio_hls_manifest_evidence import MAX_HLS_BYTES, inspect_hls_manifest
 from radio_stream_continuity_evidence import observe_continuity
 
 MAX_BYTES = 512
@@ -257,13 +257,31 @@ class PinnedHttpTransport:
                 "Icy-MetaData": "0",
                 "Connection": "close",
             }
-            if not self.extended_continuity:
+            # Request the entire manifest response for .m3u8 paths, but never
+            # read beyond MAX_HLS_BYTES. Ordinary audio probes remain 512 B.
+            hls_path = parsed.path.lower().endswith(".m3u8")
+            if not self.extended_continuity and not hls_path:
                 headers["Range"] = "bytes=0-511"
             connection.request("GET", target, headers=headers)
             response = connection.getresponse()
-            # First read is always bounded, including manifest and redirects.
-            data = response.read1(MAX_BYTES) if response.status in (200, 206) else b""
             mime = response.getheader("Content-Type", "") or ""
+            data = b""
+            if response.status in (200, 206):
+                if hls_path and response.status == 200:
+                    chunks = []
+                    bytes_read = 0
+                    for _ in range(4):
+                        part = response.read1(MAX_HLS_BYTES - bytes_read)
+                        if not part:
+                            break
+                        chunks.append(part)
+                        bytes_read += len(part)
+                        if bytes_read >= MAX_HLS_BYTES:
+                            break
+                        # A bounded four-read effort, not an open-ended downloader.
+                    data = b"".join(chunks)
+                else:
+                    data = response.read1(MAX_BYTES)
             continuity = None
             if (self.extended_continuity and response.status == 200 and
                     classify_sample(data, mime)[0] == "audio_sample_ok"):
@@ -324,7 +342,7 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                     # Read-only manifest evidence. Never auto-fetch variants,
                     # encryption keys or segment data.
                     hls_evidence = inspect_hls_manifest(
-                        sample.body[:MAX_BYTES], sample.content_type, current)
+                        sample.body, sample.content_type, current)
                 if hint.kind == "playlist_single_target" and hint.target is not None:
                     if playlist_follows >= 1 or redirects >= MAX_REDIRECTS:
                         verdict, reason = "playlist_pending", "playlist_chain_limit"
