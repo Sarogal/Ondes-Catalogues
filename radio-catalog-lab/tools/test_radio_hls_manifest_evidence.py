@@ -85,7 +85,7 @@ class HlsManifestTests(unittest.TestCase):
         self.assertEqual(report["kind"], "manifest_too_many_lines")
         report = inspect("#EXTM3U\n" + "x" * MAX_HLS_BYTES + "\n")
         self.assertEqual(report["kind"], "manifest_oversized")
-        report = inspect("#EXTM3U\n" + "x" * (MAX_HLS_BYTES - 9))
+        report = inspect("#EXTM3U\n" + "x" * (MAX_HLS_BYTES - 8))
         self.assertEqual(report["kind"], "manifest_oversized")
 
     def test_manifest_over_old_512_byte_limit_is_scannable(self):
