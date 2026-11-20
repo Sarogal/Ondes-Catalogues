@@ -143,6 +143,17 @@ def propose_event(row, agenda, today):
     if ADULT_ONLY.search(combined):
         return None, "explicit_adults_only"
     music = category_for(title, desc)
+    # Some radio-relevant forms have no literal "concert" or "musical"
+    # in their title. Keep precise child-audience and activity cues.
+    if not music and re.search(
+            r"\b(?:enfant|jeune public|famill|bebe|tout petit)", combined):
+        if re.search(r"\b(?:comptines|chansons? pour enfants|chansons? enfantines)\b",
+                     combined):
+            music = ("eveil-musical", "Éveil musical")
+        elif re.search(
+                r"\b(?:atelier sonore|decouverte des instruments)\b",
+                combined):
+            music = ("atelier-musical", "Atelier musical")
     family = (propose_family_activity(title, desc)
               if not music else None)
     if music:
