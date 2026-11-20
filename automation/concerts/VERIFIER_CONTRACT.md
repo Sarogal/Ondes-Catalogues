@@ -117,3 +117,27 @@ special-case approval rules.
 - Successful Concerts engine and synchronizer CI on the final change, and source-wide read-only watchdog coverage.
 
 Operational boundary: CI-validated, controlled merges only. Never alter Infomaniak, write private approvals or public catalogue JSON during a venue admission audit, or change unrelated production workflows.
+
+## Genres individuels depuis une biographie officielle (recherche privée)
+
+Les pages officielles de **tournée** n'indiquent souvent aucun genre musical.
+`artist_genre_preflight.py` tente d'abord le profil structuré `MusicGroup` ou
+`Person` musicien. Si cette preuve n'existe pas, il est autorisé à suivre
+**un seul** lien explicitement intitulé `Bio`, `Biographie`, `Biography` ou
+`About`, présent sur cette même page officielle et pointant vers le **même
+hôte HTTPS**. Aucun moteur de recherche, domaine tiers, redirection, catalogue
+de noms d'artistes, URL de profil construite ou exception concert n'est autorisé.
+
+La biographie est relue indépendamment, après vérification robots. Elle doit
+nommer sans ambiguïté le même artiste dans le titre HTML et dans un premier
+paragraphe parlant directement de son propre style avec un **sous-genre
+explicite** (pas `rock`, `metal` ou `hardcore` génériques, et aucun homonyme
+électronique). Les mentions de groupes influents, menus, concerts passés,
+négations et recommandations sont exclues.
+
+Une telle preuve a le périmètre `individual_artist_not_event`, et
+`eventDateLocationAndLineupProved=false`. Elle ne certifie **jamais**
+la date, le plateau, le lieu, la sécurité géographique ou l'existence d'un
+concert. Tous ces éléments restent sous les contrôles indépendants du
+publisher. Ce module ne signe **aucune** approbation et ne change **aucun**
+genre de concert. Les détails ne sont archivés que dans GrossesOndes privé.
