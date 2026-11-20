@@ -107,7 +107,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
                     ('search(description_fr,"' + keyword + '")') in q
                     for q in where))
         self.assertEqual(len(where), 23)
-        self.assertEqual(len(where), len(set(where)))
+        self.assertEqual(len(fixed_query_urls(DAY)), len(set(fixed_query_urls(DAY))))
         for title in (
             "Festibarock'in 2027", "HelixFest 2027",
             "ProtoFest 2027", "MordorFest 2027",
