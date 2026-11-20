@@ -80,7 +80,8 @@ class DecoderEvidenceTests(unittest.TestCase):
         out = decode_audio_prefix(mp3_sample())
         self.assertEqual(out["state"], "decoder_not_supported")
 
-    def test_decoder_never_returns_raw_bytes_or_stream_urls(self):
+    @patch("radio_stream_decode_evidence.shutil.which", return_value=None)
+    def test_decoder_never_returns_raw_bytes_or_stream_urls(self, which):
         out = decode_audio_prefix(mp3_sample())
         self.assertNotIn("bytes_payload", out)
         self.assertFalse(any(isinstance(x, bytes) for x in out.values()))
