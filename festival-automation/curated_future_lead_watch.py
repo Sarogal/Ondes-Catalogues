@@ -257,6 +257,50 @@ def scan(report, state, leads, published, today, fetch=get_page, limit=MAX_CHECK
     return outcomes
 
 
+
+def scan_if_catalogues_agree(report, state, leads, pages, git, today,
+                             fetch=get_page, limit=MAX_CHECKS):
+    """Skip only this optional research stream while Pages and Git disagree.
+
+    An outdated Pages snapshot is not negative evidence and must never stop
+    unrelated institutional, generic-domain or archived festival research.
+    No observation is refreshed, revoked or treated as publishable on drift.
+    """
+    if (not isinstance(report, dict)
+            or report.get("schema") != "grossesondes.source-watch-report.v1"
+            or report.get("date") != today
+            or not isinstance(state, dict)
+            or state.get("schema") != "grossesondes.source-watch.v1"
+            or not isinstance(leads, list)
+            or not 0 <= limit <= MAX_CHECKS):
+        raise ValueError("invalid guarded festival research inputs")
+    valid = lambda data: (isinstance(data, dict) and data.get("schema") == 1
+                          and isinstance(data.get("festivals"), list))
+    if not valid(pages) or not valid(git):
+        status = "PUBLIC_CATALOGUE_UNAVAILABLE_OR_INVALID_SKIP"
+    elif pages != git:
+        status = "PUBLIC_CATALOGUE_DRIFT_SKIP"
+    else:
+        report["curated_future_leads_catalogue_status_review_only"] = "MATCHED"
+        return scan(report, state, leads, git, today, fetch=fetch, limit=limit)
+    report.update({
+        "curated_future_leads_catalogue_status_review_only": status,
+        "curated_future_leads_configured_review_only": len(leads),
+        "curated_future_leads_checked_review_only": 0,
+        "curated_future_leads_two_day_review_only": 0,
+        "curated_future_leads_review_only": [],
+        "curated_future_leads_publications": 0,
+    })
+    return []
+
+
+def _read_catalogue_or_none(url):
+    try:
+        return get_json(url)
+    except (OSError, ValueError, UnicodeError, TypeError):
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--intake", required=True, type=Path)
@@ -267,19 +311,19 @@ def main():
     config = json.loads(Path(__file__).with_name(
         "curated_future_leads.json").read_text(encoding="utf-8"))
     leads = load_leads(config)
-    pages, git = get_json(PAGES), get_json(GIT)
-    if pages != git:
-        raise ValueError("divergence du catalogue public : aucune qualification")
+    pages, git = _read_catalogue_or_none(PAGES), _read_catalogue_or_none(GIT)
     state_path = args.intake / "source-watch-state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
     report = json.loads(args.report.read_text(encoding="utf-8"))
-    result = scan(report, state, leads, git, today, limit=args.limit)
+    result = scan_if_catalogues_agree(report, state, leads, pages, git,
+                                      today, limit=args.limit)
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n",
                           encoding="utf-8")
     args.report.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print("PISTES_FESTIVALS_2027:", json.dumps({
         "configured": len(leads), "checked": len(result),
+        "catalogue_status": report["curated_future_leads_catalogue_status_review_only"],
         "two_day_private": report["curated_future_leads_two_day_review_only"],
         "results": [{k: row[k] for k in ("id", "status")} for row in result],
         "published": 0}, ensure_ascii=False))
