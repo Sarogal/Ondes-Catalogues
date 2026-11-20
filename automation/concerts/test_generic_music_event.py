@@ -117,6 +117,58 @@ class GenericStructuredNationalContractTests(unittest.TestCase):
         self.assertEqual(app["event"]["genres"], ["Death Metal"])
         publish(app, cat)
 
+    def test_mixed_bill_individual_performer_genre_overrides_jazz_event(self):
+        # The exact first-party bill can mix styles. No group is obliged to
+        # play the same music as the headliner or Event's broad category.
+        for kind in ("MusicEvent", "Event"):
+            for event_genre in (["Jazz"], []):
+                with self.subTest(kind=kind, event_genre=event_genre):
+                    lead, _, _, raw = make(
+                        names=("JAZZ HEADLINER", "METAL SUPPORT"),
+                        kind=kind, genre=event_genre)
+                    raw["performer"] = [
+                        {"@type": "MusicGroup", "name": "JAZZ HEADLINER",
+                         "genre": "Jazz"},
+                        {"@type": "MusicGroup", "name": "METAL SUPPORT",
+                         "genre": "Black Metal"},
+                    ]
+                    spec = gen.SPECS["la-rayonne"]
+                    src = {"name": spec["name"], "city": spec["city"],
+                           "department": spec["department"], "url": spec["base"]}
+                    lead = triage.triage(discover.venue_candidate(
+                        raw, src, raw["url"], set(), TODAY.isoformat()),
+                        catalogue={})
+                    self.assertEqual(lead["reviewBucket"], "genre_unknown")
+                    page = ('<script type="application/ld+json">' +
+                            json.dumps(raw, ensure_ascii=False) + '</script>')
+                    reference = json.loads((
+                        ROOT / "docs/grossesondes/concerts-reference.json"
+                    ).read_text(encoding="utf-8"))
+                    approval = official_recheck.verify(
+                        lead, page, reference, TODAY)
+                    self.assertEqual(approval["event"]["genres"],
+                                     ["Jazz", "Black Metal"])
+                    self.assertEqual(approval["event"]["artistIds"],
+                                     ["jazz-headliner", "metal-support"])
+                    validated = publish(approval, reference)
+                    self.assertEqual(len(validated[0]["artistIds"]), 2)
+                    signed = {"schema": "grossesondes.concert.approvals.v1",
+                              "approvals": [approval]}
+                    published, stats = merge(
+                        reference, reference, signed, TODAY)
+                    self.assertEqual(stats["newEvents"], 1)
+                    self.assertEqual(published["events"][-1]["genres"],
+                                     ["Jazz", "Black Metal"])
+
+                    # Removing the only eligible performer's metal genre
+                    # must not turn a jazz bill into an allowed concert.
+                    raw["performer"][-1]["genre"] = "Jazz"
+                    rejected = ('<script type="application/ld+json">' +
+                                json.dumps(raw) + '</script>')
+                    with self.assertRaises(ValueError):
+                        official_recheck.verify(
+                            lead, rejected, reference, TODAY)
+
     def test_known_headliner_new_support_and_unnamed_trailing_guest(self):
         lead, page, cat, _ = make(names=("ACT ONE", "ACT TWO", "Guest"))
         cat["artists"].append({"id": "act-one", "name": "ACT ONE", "aliases": []})
