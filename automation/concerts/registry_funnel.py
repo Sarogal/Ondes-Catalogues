@@ -21,6 +21,7 @@ OUTPUT_SCHEMA = "grossesondes.concert.private-funnel.v1"
 
 # Immutable source-wide approval contract shared with official_recheck.
 # Used ONLY to explain private blockers, never to grant publication.
+from artist_genre_knowledge import private_genre_review
 from verifier_contract import (
     AUTOMATIC_RECHECK_SOURCES,
     DISCOVERY_DETAIL_FLAG_REQUIRED_SOURCES,
@@ -310,6 +311,7 @@ def build(registry, approvals, catalogue, as_of):
             v["exactPublishedUrlDate"] for v in source_counts.values()),
         "privateApprovedEventsTotal": len(approvals["approvals"]),
         "publicEventsTotal": len(catalogue["events"]),
+        "artistGenreKnowledge": private_genre_review(registry, catalogue, as_of),
         "lastSevenDaysInclusive": {
             "start": window_start.isoformat(),
             "end": as_of.isoformat(),
