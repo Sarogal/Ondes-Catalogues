@@ -26,6 +26,15 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_frame_chain.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_decode_evidence.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_technical_probe.py' -v
+      - name: Inspect isolated decoder runtime availability
+        shell: bash
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -version | head -1
+            echo "FFMPEG_AVAILABLE=true"
+          else
+            echo "FFMPEG_AVAILABLE=false"
+          fi
       - name: Discover candidates from Radio Browser (no publication)
         shell: bash
         run: |
@@ -64,12 +73,15 @@ jobs:
           assert all(x['publicationAllowed'] is False for x in data['checks'])
           verdicts = collections.Counter(x['verdict'] for x in data['checks'])
           continuity = collections.Counter(x.get('continuityEvidence', {}).get('state', 'not_run') for x in data['checks'])
+          decoder_states = collections.Counter(
+              x.get('continuityEvidence', {}).get('decodeEvidence', {}).get('state', 'not_run')
+              for x in data['checks'])
           ledger = json.loads((p.parent / 'stream-evidence.json').read_text())
           assert ledger['publicationAllowed'] is False
           assert ledger['technicallyQualifiedCount'] == 0
           assert len(ledger['records']) == data['checkedCount']
           assert all(x['technicalQualified'] is False and x['publicationAllowed'] is False for x in ledger['records'])
-          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'approved=0')
+          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'decoder_states=', dict(decoder_states), 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'approved=0')
           PY
       - name: Upload technical evidence only (no stream URLs or bytes)
         uses: actions/upload-artifact@v4
