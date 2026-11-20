@@ -53,8 +53,11 @@ identité et coordonnées officielles) sera requis ; pas d'adresse inventée.
 1. Aucun adaptateur de runner privé n'alimente automatiquement ce contrat
    avec les résultats live DILA+site municipal+BAN : le module est
    injectable, pas encore actif.
-2. Ni `permitted()` ni `evaluate()` ni le publisher ne reçoivent cette
-   preuve par défaut. Les admissions et publications demeurent inchangées.
+2. `permitted(lead, today, evidence=preuve)` accepte maintenant une
+   preuve explicitement injectée pour **préfiltrer en lecture seule**.
+   Ses appels habituels, `evaluate()` et le publisher ne fournissent
+   toujours aucune preuve nouvelle par défaut. Les décisions de
+   production demeurent inchangées.
 3. Une preuve géographique obtenue pour le moteur Lieux n'est pas une
    preuve d'événement ; une preuve d'événement n'autorise pas
    automatiquement un lieu permanent.
@@ -133,3 +136,14 @@ Ce lot teste **le fonctionnement du contrat et l'échec fermé en cas de
 contradiction**. Il ne démontre pas encore combien des 149 dossiers privés
 atteignent la vérification complète en conditions réseau réelles. Ce
 nombre demeure inconnu jusqu'à l'exécution privée autorisée.
+
+### Contrôle de préadmission facultatif (sans publication)
+
+Le préfiltre `ptitesondes_candidate_promotion.permitted()` prend maintenant
+un paramètre `evidence=None`. En l'absence de preuve, son comportement est
+celui de la branche de référence. Avec une `VenueLocationProof` valide,
+seul le verrou d'identité et de géographie du lieu peut être franchi :
+la date reste dans sa fenêtre de 184 jours, l'UID et le domaine de source
+doivent rester valides. Il ne s'agit **ni d'une séance vérifiée, ni d'un
+événement publiable**. Les tests confirment que les preuves fictives,
+expirées ou attachées à un autre lieu échouent.
