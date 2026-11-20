@@ -374,12 +374,18 @@ def venue_candidate(raw, source, page_url, known, day):
         if official_rss_jsonld_bridge.official_named_bill(
                 raw.get("performer")) is None:
             return None
-        postal = str(address.get("postalCode") or "")
         country = address.get("addressCountry")
         if isinstance(country, dict):
             country = country.get("name") or country.get("@id")
-        if (norm(country) not in {"fr", "france", "republiquefrancaise"}
-                or not re.fullmatch(r"[0-9]{5}", postal)):
+        # Discovery must not require a postcode: a street performance or
+        # temporary site can be legitimate before its address is proven.
+        # Explicitly foreign events remain excluded.
+        if (country is not None
+                and norm(country) not in {
+                    "fr", "france", "republiquefrancaise",
+                }):
+            return None
+        if not address.get("addressLocality"):
             return None
     # Only an explicitly typed schema.org MusicGroup/Person is a named
     # performer. Many real official event pages expose a WordPress plugin's
@@ -412,11 +418,17 @@ def venue_candidate(raw, source, page_url, known, day):
     ref_url = raw.get("url") if isinstance(raw.get("url"), str) else ""
     if not ref_url.startswith("https://"):
         ref_url = page_url
+    if offsite and not official_rss_jsonld_bridge.official_event_url(
+            ref_url, source["url"]):
+        # Ticketing partners never replace the first-party event page.
+        ref_url = page_url
     # An external venue's department is NOT the source venue's department.
     postcode = str(address.get("postalCode") or "")
     department = source["department"]
     if offsite:
-        if postcode.startswith(("97", "98")):
+        if not re.fullmatch(r"[0-9]{5}", postcode):
+            department = ""  # Unknown until independent geography succeeds.
+        elif postcode.startswith(("97", "98")):
             department = postcode[:3]
         elif postcode.startswith("20"):
             department = ""  # Corsica's 2A/2B cannot be inferred from ZIP alone.
@@ -447,6 +459,9 @@ def venue_candidate(raw, source, page_url, known, day):
             "sourceVenueCity": source["city"],
             "sourceVenueDepartment": source["department"],
             "sitePostalCodeFromOfficialEvent": postcode,
+            "officialLocationIncomplete": not bool(
+                re.fullmatch(r"[0-9]{5}", postcode)
+                and address.get("addressCountry")),
             "publicationAllowed": False, "reviewRequired": True,
         })
     if bill is None:
