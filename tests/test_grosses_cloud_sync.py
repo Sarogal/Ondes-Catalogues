@@ -7,6 +7,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
 from grossesondes_cloud_sync import (safe_target, build_candidate, load_production,
                                    future_map_coverage)
 from test_grosses_stage import fixtures
+from test_grosses_future_geo_publisher import ROW, page, review
 
 class CloudSyncTests(unittest.TestCase):
     def test_future_map_coverage_tracks_coordinates_and_visibility_separately(self):
@@ -86,6 +87,30 @@ class CloudSyncTests(unittest.TestCase):
             build_candidate({"festivals.json":c,"festival-history.json":h},
                             {"festivals.json":c,"festival-history.json":different},
                             p,{},"2026-10-29")
+    def test_integrated_signed_publisher_adds_and_preserves_only_proven_geo(self):
+        c,h,p=fixtures()
+        c["festivals"][0]=dict(ROW)
+        snapshot={"festivals.json":c,"festival-history.json":h}
+        out,result=build_candidate(
+            snapshot, snapshot, p, {}, "2026-11-21",
+            trusted_published=True, geo_review=review(),
+            geo_fetcher=lambda url: page()
+        )
+        self.assertEqual(result["future_geo_publisher"]["accepted_geo_updates"],
+                         [ROW["slug"]])
+        self.assertTrue(result["changed"])
+        self.assertTrue(out["festivals"][0]["showOnMap"])
+        self.assertEqual(out["festivals"][0]["geoSource"],ROW["officialSite"])
+        self.assertEqual(c["festivals"][0]["lat"], None)
+        after, second=build_candidate(
+            snapshot, {"festivals.json":out,"festival-history.json":h},
+            p,{}, "2026-11-22", trusted_published=True,
+            geo_review=review(as_of="2026-11-22"),
+            geo_fetcher=lambda _: self.fail("Re-fetch forbidden on already pinned edition")
+        )
+        self.assertFalse(second["changed"])
+        self.assertEqual(after, out)
+
     def test_original_snapshot_hash_matches(self):
         c,h,p=fixtures()
         raws={
