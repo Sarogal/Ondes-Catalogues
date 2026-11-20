@@ -36,6 +36,10 @@ def playlist_hint(body: bytes, content_type: str, current_url: str) -> PlaylistH
             text = body.decode("latin-1")
         except UnicodeError:
             return PlaylistHint("playlist_bad_encoding")
+    if mime in {"text/html", "application/json", "application/xml", "text/xml"} or (
+        text.lstrip().lower().startswith(("<html", "<!doctype", "<?xml", "{"))
+    ):
+        return PlaylistHint("playlist_non_manifest_content")
     lines = [l.strip() for l in text.replace("\r\n", "\n").split("\n")]
     if len(lines) > MAX_PLAYLIST_LINES:
         return PlaylistHint("playlist_too_many_lines")
