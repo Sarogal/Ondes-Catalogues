@@ -136,6 +136,25 @@ class MirrorAbsencePrivateEvidenceTests(unittest.TestCase):
         self.assertEqual(len(out["private_rows"]), 2)
         self.assertEqual(len({r["audit_id"] for r in out["private_rows"]}), 2)
 
+    def test_conflicting_syndicated_uid_day_is_held_not_arbitrarily_chosen(self):
+        a = lead()
+        b = lead(slug="autre-ville")
+        out = run(leads=[a, b])
+        self.assertEqual(out["report"]["conflicting_uid_day_sources_held"], 1)
+        self.assertEqual(out["report"]["selected_leads"], 0)
+        self.assertEqual(out["private_rows"], [])
+        # Even a different title under the same URL and UID must not win by
+        # encounter order. The independent check must resolve identity.
+        c = dict(a, title="Concert de musique adulte")
+        out = run(leads=[a, c])
+        self.assertEqual(out["report"]["conflicting_uid_day_sources_held"], 1)
+        self.assertEqual(out["private_rows"], [])
+
+    def test_fake_boolean_public_write_count_does_not_pass_as_zero(self):
+        candidate = dict(run()["private_rows"][0], public_writes=False)
+        with self.assertRaises(ValueError):
+            run(existing=[candidate])
+
     def test_report_has_no_private_uid_title_city_or_token(self):
         out = run()
         shown = json.dumps(out["report"], ensure_ascii=False)
