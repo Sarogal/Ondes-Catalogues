@@ -28,7 +28,7 @@ DATE = "2027-03-13"
 def make(venue_id="la-rayonne", names=("ACT ONE", "ACT TWO"),
          kind="MusicEvent", genre=("Death Metal",)):
     spec = gen.SPECS[venue_id]
-    url = spec["base"] + "evenement/verified-show-2027/"
+    url = spec["base"] + spec["eventPathPrefix"].lstrip("/") + "verified-show-2027/"
     raw = {
         "@type": kind,
         "url": url, "name": " + ".join(names),
@@ -62,7 +62,10 @@ def publish(approval, catalogue):
 
 class GenericStructuredNationalContractTests(unittest.TestCase):
     def test_one_two_eight_twenty_and_fifty_two_new_acts_publish(self):
-        for venue in gen.SPECS:
+        # Generic structured events remain independently approved at the
+        # two previously verified source profiles. The Astrolabe is a NEW
+        # reviewed *paragraph* source and cannot bypass that format.
+        for venue in ("la-rayonne", "le-metronum"):
             for n in (1, 2, 8, 20, 52):
                 with self.subTest(venue=venue, artists=n):
                     names = tuple("ACT %03d" % i for i in range(n))

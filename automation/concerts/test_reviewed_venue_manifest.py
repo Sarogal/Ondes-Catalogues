@@ -27,7 +27,13 @@ class ReviewedVenueManifestTests(unittest.TestCase):
         self.pilot = json.loads(generic.MANIFEST.read_text(encoding="utf-8"))
 
     def test_pilot_identity_preserved_and_mapping_immutable(self):
-        self.assertEqual(set(generic.SPECS), {"la-rayonne", "le-metronum"})
+        self.assertEqual(set(generic.SPECS), {
+            "la-rayonne", "le-metronum", "l-astrolabe-orleans"
+        })
+        self.assertEqual(
+            (generic.SPECS["l-astrolabe-orleans"]["host"],
+             generic.SPECS["l-astrolabe-orleans"]["eventPathPrefix"]),
+            ("www.lastrolabe.org", "/agenda/"))
         self.assertIsInstance(generic.SPECS, MappingProxyType)
         with self.assertRaises(TypeError):
             generic.SPECS["new-venue"] = {}
@@ -49,7 +55,13 @@ class ReviewedVenueManifestTests(unittest.TestCase):
         from concerts_cloud_sync import read_reviewed_venue_specs
         read_reviewed_venue_specs.cache_clear()
         self.assertEqual(read_reviewed_venue_specs(), {})
-        self.assertEqual(set(generic.SPECS), {"la-rayonne", "le-metronum"})
+        self.assertEqual(set(generic.SPECS), {
+            "la-rayonne", "le-metronum", "l-astrolabe-orleans"
+        })
+        self.assertEqual(
+            (generic.SPECS["l-astrolabe-orleans"]["host"],
+             generic.SPECS["l-astrolabe-orleans"]["eventPathPrefix"]),
+            ("www.lastrolabe.org", "/agenda/"))
 
     def test_unreviewed_discovery_cannot_grant_host(self):
         malicious = {

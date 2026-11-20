@@ -92,7 +92,9 @@ def trusted_spec(candidate):
     if not isinstance(candidate, dict):
         return None
     for venue_id, spec in SPECS.items():
-        if (norm(candidate.get("venue")) != norm(spec["name"])
+        # Normalize straight and typographic apostrophes in a venue name only.
+        if (norm(str(candidate.get("venue") or "").replace("’", "'")) !=
+                norm(spec["name"].replace("’", "'"))
                 or norm(candidate.get("city")) != norm(spec["city"])
                 or str(candidate.get("department")) != spec["department"]):
             continue

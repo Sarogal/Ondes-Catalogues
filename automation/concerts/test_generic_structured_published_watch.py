@@ -23,7 +23,7 @@ def sample(venue_id="la-rayonne", *, kind="MusicEvent",
            performers=("ACT ONE", "ACT TWO")):
     source = gen.SPECS[venue_id]
     day = "2027-03-13"
-    url = source["base"] + "evenement/verified-metal-night/"
+    url = source["base"] + source["eventPathPrefix"].lstrip("/") + "verified-metal-night/"
     names = [x for x in performers if x != "Guest"]
     record = {
         "id": "go-c-20270313-" + gen.slug(source["city"]) + "-act-one",
@@ -56,7 +56,10 @@ def html(raw):
 
 class GenericStructuredPublishedWatchTests(unittest.TestCase):
     def test_future_concerts_of_both_approved_venues_auto_eligible(self):
-        for venue in gen.SPECS:
+        # Generic structured events remain independently approved at the
+        # two previously verified source profiles. The Astrolabe is a NEW
+        # reviewed *paragraph* source and cannot bypass that format.
+        for venue in ("la-rayonne", "le-metronum"):
             for kind in ("MusicEvent", "Event"):
                 with self.subTest(venue=venue, kind=kind):
                     record, data, artists = sample(venue, kind=kind)
