@@ -26,6 +26,12 @@ MAX_SCRIPTS = 32
 MAX_NODES = 600
 MAX_LEADS = 200
 MAX_TEXT = 180
+# Reviewed IANA timezone pin, never selected from a candidate event.
+SOURCE_TIMEZONES = TERRITORY_TIMEZONES | frozenset((
+    "America/Miquelon", "America/Marigot", "America/St_Barthelemy",
+    "Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier",
+    "Pacific/Noumea", "Pacific/Wallis",
+))
 MAX_NESTED = 8
 CLOCK = re.compile(r"\d{4}-\d{2}-\d{2}T[0-2]\d:[0-5]\d")
 HOLD_REASONS = frozenset((
@@ -79,7 +85,8 @@ def _valid_pin(pin, page):
             or not _safe_text(pin.get("approved_host"), 200)
             or not _safe_text(pin.get("exact_child_url"), 1000)
             or not _safe_text(pin.get("child_prefix"), 180)
-            or pin["timezone"] not in TERRITORY_TIMEZONES
+            or type(pin.get("timezone")) is not str
+            or pin["timezone"] not in SOURCE_TIMEZONES
             or page.get("url") != pin["exact_child_url"]):
         return False
     try:
