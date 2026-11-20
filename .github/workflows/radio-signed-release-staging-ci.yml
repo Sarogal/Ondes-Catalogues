@@ -98,8 +98,7 @@ jobs:
           set -euo pipefail
           # dart pub get creates an untracked local pubspec.lock in this
           # standalone lab. This is not a source edit or a deployment.
-          unexpected="$(git status --porcelain --untracked-files=all | grep -vE '^\\?\\? radio-catalog-lab/dart/pubspec\\.lock
- || true)"
+          unexpected="$(git status --porcelain --untracked-files=all | grep -vxF '?? radio-catalog-lab/dart/pubspec.lock' || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected modified/untracked repository files:" >&2
             echo "$unexpected" >&2
