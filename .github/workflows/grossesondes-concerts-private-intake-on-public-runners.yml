@@ -217,8 +217,14 @@ jobs:
           GROSSES_ONDES_CONCERTS_AUTOREVIEW: ${{ vars.GROSSES_ONDES_CONCERTS_AUTOREVIEW }}
         run: |
           set -euo pipefail
+          # Three daily UTC cron windows (07, 13, 20) use nonoverlapping
+          # candidate cohorts. Formerly every run on a given day rechecked
+          # exactly the same 10 registry rows.
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
           # Generate proposal only; persistent writes require publisher preflight.
           if ! python public/automation/concerts/official_recheck.py \
+              --scan-slot "$SCAN_SLOT" \
               --registry confidential/automation/concerts/intake/registry.json \
               --approvals confidential/automation/concerts/approved.json \
               --out "$RUNNER_TEMP/concerts-official-approvals-preview.json" \

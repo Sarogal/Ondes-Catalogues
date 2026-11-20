@@ -386,8 +386,16 @@ def download_official(url, robots_cache):
         return raw.decode(r.headers.get_content_charset() or "utf-8", errors="replace")
 
 
+SITE_RECHECK_SOURCES = frozenset({
+    "artist_official_tour", "promoter_official_tour",
+    "promoter_official_tour_detail",
+})
+
+
 def process(registry, catalogue, approvals, today, fetch=download_official,
-            limit=10, site_fetch=None):
+            limit=10, site_fetch=None, scan_slot=0):
+    if type(scan_slot) is not int or scan_slot not in (0, 1, 2):
+        raise ValueError("Invalid official recheck scan slot")
     if approvals.get("schema") != "grossesondes.concert.approvals.v1":
         raise ValueError("Fichier d'approbations inattendu")
     if catalogue.get("schemaVersion") != 1 or catalogue.get("mode") != "preview-public-unlisted":
@@ -437,11 +445,24 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
         except (TypeError, ValueError):
             return False
     expired_skipped = sum(is_expired(i) for i in unapproved)
-    eligible = [i for i in unapproved if not is_expired(i)]
+    future = [i for i in unapproved if not is_expired(i)]
+    # A listing without an individual event-detail URL cannot establish an
+    # exact official bill or geography. Keep it in the private registry for
+    # future discovery, but do not spend the limited network recheck budget.
+    # This is a scheduling rule only: no candidate is approved or deleted.
+    def lacks_individual_page(row):
+        candidate = row["candidate"]
+        return (candidate.get("source") in SITE_RECHECK_SOURCES
+                and not isinstance(candidate.get("eventDetailUrl"), str))
+    awaiting_individual_detail = sum(lacks_individual_page(i) for i in future)
+    eligible = [i for i in future if not lacks_individual_page(i)]
     eligible.sort(key=lambda x: x["candidate"].get("candidateId", ""))
-    # Rotation ensures every eligible candidate gets checked over successive days.
-    offset = (today.toordinal() * limit) % len(eligible) if eligible else 0
-    chosen = [eligible[(offset + i) % len(eligible)] for i in range(min(limit, len(eligible)))]
+    # The three daily GitHub slots MUST inspect three distinct cohorts. The
+    # previous date-only offset rechecked the SAME ten leads every time.
+    # slot=0 deliberately preserves the old deterministic test selection.
+    offset = ((today.toordinal() + scan_slot) * limit) % len(eligible) if eligible else 0
+    chosen = [eligible[(offset + i) % len(eligible)]
+              for i in range(min(limit, len(eligible)))]
     results, cache, new, sites = [], {}, [], []
     for row in chosen:
         c = row["candidate"]
@@ -494,6 +515,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
             results.append({"candidateId": c.get("candidateId"), "status": "held",
                             "reason": str(ex)[:180]})
     return out, {"evaluated": len(chosen), "totalEligible": len(eligible),
+                 "scanSlot": scan_slot,
+                 "awaitingIndividualOfficialEventDetail": awaiting_individual_detail,
                  "decidedSkipped": skipped_decided,
                  "alreadyApprovedSkipped": already_approved_skipped,
                  "expiredSkipped": expired_skipped,
@@ -509,6 +532,8 @@ def main():
     p.add_argument("--approvals", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--report", required=True)
+    p.add_argument("--scan-slot", type=int, choices=(0, 1, 2), default=0,
+                   help="Different independent cohorts on the 3 daily UTC slots")
     p.add_argument("--apply", action="store_true",
                    help="Write approved.json only after explicit CI feature gate")
     args = p.parse_args()
@@ -519,7 +544,7 @@ def main():
         return json.loads(Path(value).read_text(encoding="utf-8"))
     original = load(args.approvals)
     reviewed, report = process(load(args.registry), load(args.catalogue), original,
-                               discover.today_fr())
+                               discover.today_fr(), scan_slot=args.scan_slot)
     Path(args.out).write_text(json.dumps(reviewed, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.apply and report["newApprovals"]:
