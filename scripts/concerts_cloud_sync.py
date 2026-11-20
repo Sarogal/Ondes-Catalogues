@@ -3901,6 +3901,15 @@ def validate_approval(approval, venues, known_artist_ids, today):
     event_id = event.get("id", "")
     require(isinstance(event_id, str) and re.fullmatch(r"go-c-[a-z0-9-]{7,150}", event_id),
             "Identifiant d'événement invalide")
+    # This path is for a NEW event at an EXISTING venue. It never adds a
+    # location. The same strict, committed-authority publisher gate runs
+    # on EVERY replay of the private approval ledger, not just at preflight.
+    if any(isinstance(p, dict) and
+           p.get("proofType") == "independent-existing-venue-v1"
+           for p in evidence):
+        from scripts import concert_existing_venue_contract
+        concert_existing_venue_contract.validate(
+            approval, venues, known_artist_ids, today)
     # 29/01 Saint-Germain-en-Laye + 12/02 Saint-Aubin-du-Cormier.
     # Aucune autorisation fondée sur l'inconnu 'À venir' de Rage Tour.
     clef_belair = TOURNEE_DU_COEUR_CLEF_BELAIR_SIGNED_20261105

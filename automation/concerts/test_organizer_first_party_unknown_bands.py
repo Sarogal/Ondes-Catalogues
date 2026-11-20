@@ -132,6 +132,84 @@ class OrganizerWithoutAnyKnownBandTests(unittest.TestCase):
         self.assertTrue(checked["validatedByPublisher"])
         self.assertEqual(checked["publishableEvents"], 1)
 
+    def test_unknown_artists_at_existing_venue_publish_without_duplicate_pin(self):
+        lead, raw, _, osm = fixture()
+        reference = json.loads(
+            publisher.REFERENCE.read_text(encoding="utf-8"))
+        venue = next(v for v in reference["venues"]
+                     if v["id"] == "la-rayonne")
+        lead.update({
+            "venue": venue["name"], "city": venue["city"],
+            "department": venue["department"],
+            "newVenueToReview": False, "venueIdIfKnown": venue["id"],
+        })
+        raw["location"]["name"] = venue["name"]
+        raw["location"]["address"].update({
+            "streetAddress": venue["address"],
+            "postalCode": venue["postalCode"],
+            "addressLocality": venue["city"],
+            "addressRegion": venue["region"],
+        })
+        osm["elements"][0].update({
+            "lat": venue["latitude"], "lon": venue["longitude"]})
+        osm["elements"][0]["tags"].update({
+            "name": venue["name"], "addr:city": venue["city"],
+            "addr:postcode": venue["postalCode"],
+        })
+        event, site = reviewer.verify(
+            lead, reference, DAY, fetch=fetch(raw, osm, []))
+        self.assertIsNone(site)
+        self.assertEqual(event["event"]["venueId"], venue["id"])
+        self.assertEqual(len(event["newArtists"]), 3)
+        self.assertEqual(len(event["officialEvidence"]), 2)
+        self.assertEqual(event["officialEvidence"][1]["proofType"],
+                         "independent-existing-venue-v1")
+        previous = {"schema": publisher.SCHEMA,
+                    "approvals": [], "venueApprovals": []}
+        registry = {"items": {"existing-venue": {
+            "status": "pending_review", "stableObservations": 2,
+            "candidate": lead,
+        }}}
+        proposed, report = official_recheck.process(
+            registry, reference, previous, DAY,
+            site_fetch=fetch(raw, osm, []),
+            fetch=lambda *_: self.fail("Legacy source not permitted"))
+        self.assertEqual(report["newApprovals"], [event["event"]["id"]])
+        self.assertEqual(report["newSiteApprovals"], [])
+        self.assertEqual(proposed["venueApprovals"], [])
+        checked = preflight.validate_proposal(
+            previous, proposed, reference, copy.deepcopy(reference),
+            DAY, publisher.merge)
+        self.assertTrue(checked["validatedByPublisher"])
+        self.assertEqual(checked["publishableEvents"], 1)
+
+        from scripts import concert_existing_venue_contract as existing
+        proof = copy.deepcopy(event)
+        proof["officialEvidence"][1]["venueId"] = "other-known-venue"
+        with self.assertRaises(ValueError):
+            existing.validate(
+                proof, {v["id"]: v for v in reference["venues"]},
+                {a["id"]: a for a in reference["artists"]}, DAY)
+        proof = copy.deepcopy(event)
+        proof["officialEvidence"][0]["officialGenreLabels"] = ["Jazz"]
+        with self.assertRaises(ValueError):
+            existing.validate(
+                proof, {v["id"]: v for v in reference["venues"]},
+                {a["id"]: a for a in reference["artists"]}, DAY)
+
+        # The discovery lead cannot relabel a genuine existing venue to
+        # manufacture another public pin or refer to an unrelated one.
+        mismatched = copy.deepcopy(lead)
+        mismatched["venueIdIfKnown"] = "olympia-paris"
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                mismatched, reference, DAY, fetch=fetch(raw, osm, []))
+        mismatched = copy.deepcopy(lead)
+        mismatched["newVenueToReview"] = True
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                mismatched, reference, DAY, fetch=fetch(raw, osm, []))
+
     def test_missing_first_party_region_needs_exact_government_postal_attestation(self):
         lead, raw, catalogue, osm = fixture()
         raw["location"]["address"].pop("addressRegion")

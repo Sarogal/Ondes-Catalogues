@@ -453,7 +453,13 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                        in {"artist_official_tour", "promoter_official_tour",
                            "promoter_official_tour_detail",
                            "organizer_official_event_detail"}
-                       and i.get("candidate", {}).get("newVenueToReview") is True
+                       and (i.get("candidate", {}).get("newVenueToReview") is True
+                            or (i.get("candidate", {}).get("source")
+                                == "organizer_official_event_detail"
+                                and i.get("candidate", {}).get("newVenueToReview") is False
+                                and isinstance(
+                                    i.get("candidate", {}).get("venueIdIfKnown"),
+                                    str)))
                        and i.get("candidate", {}).get("reviewBucket")
                        in {"genre_tag_review", "genre_unknown"}))]
     # A private human decision is permanent: never reconsider a rejected or
@@ -535,11 +541,12 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                     return site_review.fetch_verified(url, cap, cache)
                 approval, site = site_review.verify(
                     c, catalogue, today, fetch=do_fetch)
-                if not isinstance(out.get("venueApprovals"), list):
-                    raise ValueError("Registre privé des lieux absent")
-                if any(v.get("id") == site["venue"]["id"]
-                       for v in catalogue.get("venues", [])):
-                    raise ValueError("Site géographique déjà référencé")
+                if site is not None:
+                    if not isinstance(out.get("venueApprovals"), list):
+                        raise ValueError("Registre privé des lieux absent")
+                    if any(v.get("id") == site["venue"]["id"]
+                           for v in catalogue.get("venues", [])):
+                        raise ValueError("Site géographique déjà référencé")
             else:
                 html_text = fetch(c["sourceUrl"], cache)
                 approval = verify(c, html_text, catalogue, today)

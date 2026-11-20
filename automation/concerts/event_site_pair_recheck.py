@@ -45,7 +45,11 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
     """Resolve exact official authority independently of private lead claims."""
     require(isinstance(lead, dict)
             and lead.get("source") in SOURCES
-            and lead.get("newVenueToReview") is True
+            and (lead.get("newVenueToReview") is True or (
+                 lead.get("source") == "organizer_official_event_detail"
+                 and lead.get("newVenueToReview") is False
+                 and isinstance(lead.get("venueIdIfKnown"), str)
+                 and bool(lead["venueIdIfKnown"])))
             and lead.get("reviewBucket") in {"genre_tag_review", "genre_unknown"}
             and lead.get("publicationAllowed") is False
             and lead.get("reviewRequired") is True
@@ -368,6 +372,32 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
         "id": contract.site_id(location["name"], location["city"],
                                location["geoSource"]),
     })
+    # An existing venue is a stable public identity, not a fresh map pin.
+    # Revalidate exact first-party identity and independent named geography,
+    # then use its existing ID. Do not invent a duplicate site approval.
+    known_matches = [
+        venue for venue in catalogue.get("venues", [])
+        if isinstance(venue, dict)
+        and _name(venue.get("name")) == _name(location["name"])
+        and _name(venue.get("city")) == _name(location["city"])
+        and str(venue.get("department") or "").upper()
+            == location["department"].upper()
+    ]
+    require(len(known_matches) <= 1, "ambiguous published venue identity")
+    existing = known_matches[0] if known_matches else None
+    is_existing = lead.get("newVenueToReview") is False
+    if is_existing:
+        require(lead["source"] == "organizer_official_event_detail"
+                and existing is not None
+                and existing.get("id") == lead.get("venueIdIfKnown"),
+                "existing site identity does not match published catalogue")
+        published_postal = str(existing.get("postalCode") or "")
+        require(not re.fullmatch(r"[0-9]{5}", published_postal)
+                or published_postal == location["postalCode"],
+                "existing venue postcode contradicts official event")
+        location["id"] = existing["id"]
+    else:
+        require(existing is None, "official event venue is already published")
     date = lead["date"]
     event_id = ("go-c-" + date.replace("-", "") + "-"
                 + _name(location["city"]).replace(" ", "-") + "-"
@@ -408,6 +438,32 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
          "country": "FR", "latitude": lat, "longitude": lon,
          "geoPrecision": precision}
     kind = "named-physical-site"
+    if is_existing:
+        # One exact first-party bill: neither the publisher nor an untrusted
+        # candidate may invent another band or promote a venue-wide genre.
+        event["officialEvidence"][0].update({
+            "officialArtistNames": names,
+            "officialGenreLabels": genres,
+        })
+        # The existing-venue publisher contract independently pins authority,
+        # event URL, already-published venue identity and corroborated OSM.
+        event["officialEvidence"].append({
+            "url": osm_url,
+            "proofType": "independent-existing-venue-v1",
+            "checkedAt": today_str,
+            "checkedFields": [
+                "venueId", "venueName", "city", "department",
+                "postalCode", "coordinates", "authoritySourceUrl",
+            ],
+            "venueId": existing["id"], "venueName": location["name"],
+            "city": location["city"], "department": location["department"],
+            "postalCode": location["postalCode"],
+            "latitude": lat, "longitude": lon,
+            "geoPrecision": precision,
+            "authoritySourceUrl": authority["url"],
+            "authorityArtistId": authority["artistId"],
+        })
+        return event, None
     site = {
         "reviewDecision": "approved",
         "reviewedBy": "independent-official-verifier",
