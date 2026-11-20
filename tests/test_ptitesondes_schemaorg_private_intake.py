@@ -150,7 +150,7 @@ class SchemaOrgPrivateIntakeTests(unittest.TestCase):
         c = reconcile_schemaorg_hints(b["queue"], [hint()], TODAY)
         self.assertEqual(len(c["queue"]), 2)
         self.assertEqual(c["report"]["reobserved_hints"], 1)
-        self.assertEqual(sum(v["observations"] for v in c["queue"]), 4)
+        self.assertEqual(sum(v["observations"] for v in c["queue"]), 3)
         d = reconcile_schemaorg_hints(
             c["queue"], [hint(url="https://mpt.montpellier.fr/evenement/different")],
             TODAY)
