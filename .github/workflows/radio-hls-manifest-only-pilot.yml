@@ -1,0 +1,59 @@
+name: Grosses Ondes — HLS manifest-only isolated pilot
+
+on:
+  push:
+    branches:
+      - feature/radio-continuity-evidence-lab-20261120
+    paths:
+      - ".github/workflows/radio-hls-manifest-only-pilot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hls-manifest-sample:
+    name: Discover and inspect up to five HLS manifests only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test safe manifest-only classification and selection (offline)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_manifest_evidence.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_daily_pilot.py" -v
+      - name: Discover Radio Browser metal and rock candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_daily_discovery.py --tags "metal,hard rock,rock,punk,black metal,death metal,thrash metal" --names "metal,punk,hard rock,rock" --page-size 100 --max-pages 2 --crawl-delay 0.2 --output candidate-manifest-scan.json
+      - name: Observe at most five HLS manifest URLs (no segments)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network
+      - name: Verify no publication or stream data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("hls-manifest-observations.json").read_text())
+          assert report["publicationAllowed"] is False
+          assert report["technicalVerifiedCount"] == 0
+          assert report["checkedCount"] <= 5
+          assert all(x["publicationAllowed"] is False for x in report["checks"])
+          assert all("streamUrl" not in x and "segments" not in x for x in report["checks"])
+          print("HLS_MANIFEST_AUDIT_ONLY", report["checkedCount"],
+                "kinds", report["manifestKinds"], "verified=0 published=false")
+          PY
+      - name: Upload redacted evidence only (not candidate URLs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hls-manifest-only
+          path: hls-manifest-observations.json
+          if-no-files-found: error
+          retention-days: 7
