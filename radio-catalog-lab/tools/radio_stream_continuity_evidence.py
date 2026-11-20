@@ -10,6 +10,8 @@ import time
 from dataclasses import dataclass
 from typing import Callable
 
+from radio_stream_frame_chain import MAX_FRAME_SAMPLE_BYTES, analyze_frame_chain
+
 MIN_SECONDS = 6.0
 MAX_SECONDS = 10.0
 MAX_OBSERVED_BYTES = 512 * 1024
@@ -25,9 +27,10 @@ class ContinuityEvidence:
     elapsed_ms: int
     observed_bytes: int
     read_chunks: int
+    frame_evidence: dict | None = None
 
     def as_dict(self) -> dict:
-        return {
+        report = {
             "state": self.state,
             "reason": self.reason,
             "elapsedMs": self.elapsed_ms,
@@ -35,6 +38,9 @@ class ContinuityEvidence:
             "readChunks": self.read_chunks,
             "publicationAllowed": False,
         }
+        if self.frame_evidence is not None:
+            report["frameEvidence"] = self.frame_evidence
+        return report
 
 
 def observe_continuity(
@@ -55,6 +61,7 @@ def observe_continuity(
     start = clock()
     size = len(initial_bytes)
     chunks = 1 if size else 0
+    frame_sample = bytearray(initial_bytes[:MAX_FRAME_SAMPLE_BYTES])
 
     def result(state: str, reason: str) -> ContinuityEvidence:
         return ContinuityEvidence(
@@ -63,6 +70,7 @@ def observe_continuity(
             elapsed_ms=max(0, round((clock() - start) * 1000)),
             observed_bytes=size,
             read_chunks=chunks,
+            frame_evidence=analyze_frame_chain(bytes(frame_sample)),
         )
 
     if not isinstance(initial_bytes, bytes) or not initial_bytes:
@@ -92,3 +100,5 @@ def observe_continuity(
             return result("not_confirmed", "invalid_read_size")
         size += len(chunk)
         chunks += 1
+        if len(frame_sample) < MAX_FRAME_SAMPLE_BYTES:
+            frame_sample.extend(chunk[:MAX_FRAME_SAMPLE_BYTES - len(frame_sample)])
