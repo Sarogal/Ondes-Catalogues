@@ -268,3 +268,43 @@ et le publisher ne sont pas utilisés par cette branche.
 - Aucun lancement réel de cette commande contre le backlog privé n'est
   revendiqué dans ce chantier : son comportement positif est couvert
   par des tests hors réseau. **Zéro nouvelle sortie effectivement admise**.
+
+## Mesure réelle nationale de la disponibilité des sites municipaux (20/11/2026)
+
+Sur le backlog privé `automation/ptitesondes-intake` du 20/11, **449 pistes**
+dont **149 dossiers** bloqués au préfiltre `venue_gps_unverified` :
+**79 lieux uniques répartis dans 52 communes**. Aucun nom, UID, URL ou lieu
+privé n'est publié ici.
+
+Les **52 requêtes publiques** à l'API nationale DILA, réalisées pour les
+seules communes et sans transmettre les événements, ont toutes retourné un
+document JSON exploitable. Le filtre `nom = "Mairie - <commune>"`
+a donné **42 fiches de mairie uniques** correspondantes (nom, statut et
+version officiels) ; **35 communes** disposent d'au moins une URL d'accueil
+municipale en HTTPS non ambiguë.
+
+Dans ces 35 communes se trouvent **60 lieux** représentant **116 des
+149 dossiers** : il s'agit d'un **périmètre potentiel de recherche
+institutionnelle**, aucunement d'un ensemble de lieux, GPS ou séances
+attestés. Le statut opérationnel reste `verified_venue_leads=0`,
+`publication_ready=false`, `public_writes=0`.
+
+**Défaut révélé par la source réelle et corrigé sur la PR** :
+`statut_de_diffusion` vaut `"true"` dans les réponses de l'API ;
+le texte `"Publiable"` appartient au champ `version_type`, qui doit
+être explicitement demandé. Le filtre exact sur `nom` est validé
+sur Villethierry et Montpellier : il supprime les résultats voisins
+du `LIKE` flou. Le tableau `site_internet` comprend parfois des
+liens profonds ou étiquetés ; seuls les sites d'accueil sans libellé
+peuvent établir la portée du domaine municipal.
+
+Sources officielles :
+- https://www.data.gouv.fr/dataservices/api-annuaire-de-ladministration-et-des-services-publics
+- https://api-lannuaire.service-public.gouv.fr/explore/dataset/api-lannuaire-administration/api/
+- https://developers.openagenda.com/lieux/structure/
+
+**Limite à ne pas effacer** : pour les 19 lieux dans des communes sans
+site d'accueil municipal qualifié, pour les établissements associatifs
+ou privés, les événements éphémères sur place publique et les lieux sans
+numéro de rue, il faut de nouvelles voies de preuve indépendante,
+sans jamais assimiler « absent de DILA » à « événement inexistant ».
