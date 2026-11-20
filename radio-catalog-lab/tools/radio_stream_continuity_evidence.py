@@ -15,6 +15,7 @@ MAX_SECONDS = 10.0
 MAX_OBSERVED_BYTES = 512 * 1024
 MIN_OBSERVED_BYTES = 4096
 MAX_READ_CHUNK = 8192
+MAX_READ_CHUNKS = 1024
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,8 @@ def observe_continuity(
             return result("not_confirmed", "time_budget_reached")
         if size >= MAX_OBSERVED_BYTES:
             return result("not_confirmed", "byte_budget_reached")
+        if chunks >= MAX_READ_CHUNKS:
+            return result("not_confirmed", "chunk_budget_reached")
         try:
             chunk = response.read1(min(MAX_READ_CHUNK, MAX_OBSERVED_BYTES - size))
         except (OSError, TimeoutError):
