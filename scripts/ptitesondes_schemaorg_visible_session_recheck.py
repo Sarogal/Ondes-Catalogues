@@ -27,7 +27,7 @@ from ptitesondes_family_national_scope import FAMILY_TYPES
 
 SCHEMA = "ptitesondes.schemaorg_visible_session_private_recheck.v1"
 MAX_CANDIDATES = 40
-MAX_INDEX_SOURCES = 20
+MAX_INDEX_SOURCES = 40
 
 
 def _fair_batch(hints, today, limit, offset=0):
