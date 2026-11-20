@@ -102,8 +102,10 @@ def private_genre_review(registry, catalogue, as_of, artist_preflight=None):
             if (not dt.timedelta(0) <= as_of - verified_day <= dt.timedelta(days=60)
                     or fact.get("schema") != SCHEMA
                     or fact.get("scope") != "individual_artist_not_event"
-                    or fact.get("evidenceKind") !=
-                        "first-party-artist-structured-profile"
+                    or fact.get("evidenceKind") not in {
+                        "first-party-artist-structured-profile",
+                        "first-party-artist-visible-linked-bio",
+                    }
                     or fact.get("publicationAllowed") is not False
                     or fact.get("eventDateLocationAndLineupProved") is not False
                     or not isinstance(fact.get("sourceUrl"), str)

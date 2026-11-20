@@ -16,6 +16,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import artist_genre_knowledge as knowledge
+import artist_official_bio as official_bio
 import discover
 
 SCHEMA = "grossesondes.concert.artist-genre-source-preflight.v1"
@@ -66,8 +67,25 @@ def build(sources, catalogue, today, *, fetch=discover.download,
                 counters["robots_disallowed"] += 1
                 continue
             page, actual_url = fetch(url, timeout=12, cap=900_000)
-            fact = knowledge.independently_verify_artist_profile(
-                source, catalogue, page, actual_url, today)
+            try:
+                fact = knowledge.independently_verify_artist_profile(
+                    source, catalogue, page, actual_url, today)
+                counters["structured_profile_verified"] += 1
+            except ValueError:
+                # Source-wide HTML fallback: discover ONE `Bio` link from
+                # the exact official tour page, not a guessed artist URL.
+                biography = official_bio.linked_official_biography(
+                    page, url, actual_url)
+                if biography is None:
+                    raise
+                if not robots(biography, robots_cache):
+                    counters["biography_robots_disallowed"] += 1
+                    continue
+                bio_page, actual_bio = fetch(
+                    biography, timeout=12, cap=600_000)
+                fact = official_bio.verify_official_biography(
+                    source, catalogue, bio_page, actual_bio, biography, today)
+                counters["linked_biography_verified"] += 1
         except (ValueError, TypeError, KeyError):
             counters["profile_not_independently_proven"] += 1
             continue
