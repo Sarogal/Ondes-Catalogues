@@ -82,6 +82,10 @@ ARCHIVE_SIGNAL = "HISTORICAL_NAME_YEAR_ONLY"
 THEMATIC_SIGNAL = "THEMATIC_NAME_ONLY"
 CONTEXT_SIGNAL = "MUSIC_CATEGORY_CONTEXT_ONLY"
 CROSS_SOURCE_SIGNAL = "OPENAGENDA_NAMED_INSTITUTIONAL_MATCH_REVIEW_ONLY"
+# A visible institutional music CATEGORY may nominate a named edition, but
+# it is NOT proof of rock/metal/punk; the publisher must verify the detail.
+MUSIC_CATEGORY_PENDING_SIGNAL = "INSTITUTION_MUSIC_CATEGORY_GENRE_REVIEW_ONLY"
+MUSIC_EVENT_CATEGORY = re.compile(r"\bmusique concerts?\b")
 # Only visible, adjacent attribution creates a new PRIVATE discovery hint.
 MUSIC_GENRE = (r"(?:heavy metal|death metal|black metal|thrash metal|"
                r"metalcore|hardcore|hard rock|rock alternatif|rock|metal|punk|"
@@ -297,6 +301,17 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                      and not re.match(
                          r"^(?:concert|spectacle|soiree|show|live)\b", name)))
         )
+        # Genre-less festival titles in a visible institutional music-event
+        # category are PRIVATE research leads only. A generic festival title
+        # without the exact future year and adjacent category stays excluded.
+        category_pending = bool(
+            not thematic and not contextual
+            and re.search(r"\bfestival\b", name)
+            and not NON_MUSIC_TITLE.search(name)
+            and len(years) == 1
+            and re.search(r"\b20[2-4]\d$", name)
+            and MUSIC_EVENT_CATEGORY.search(nearby)
+        )
         # An archive title must have a *new* explicit edition year, and the
         # normalized title must be exactly the historical identity + year.
         # "Motocultor Festival Junior 2027" must not match "Motocultor Festival".
@@ -324,7 +339,8 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
             cross_matched = (
                 published_identity(title), next(iter(years)),
                 APPROVED[source]) in cross_hints
-        if not thematic and not contextual and not archive_slug and not cross_matched:
+        if (not thematic and not contextual and not archive_slug
+                and not cross_matched and not category_pending):
             continue
         url = clean_url(urljoin(source, href))
         if (not url or url == source or url in seen
@@ -337,7 +353,9 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
         found.append({"candidate_url": url, "title": title,
                       "signal": (THEMATIC_SIGNAL if thematic else
                                  ARCHIVE_SIGNAL if archive_slug else
-                                 CONTEXT_SIGNAL if contextual else CROSS_SOURCE_SIGNAL),
+                                 CONTEXT_SIGNAL if contextual else
+                                 MUSIC_CATEGORY_PENDING_SIGNAL if category_pending else
+                                 CROSS_SOURCE_SIGNAL),
                       "archive_slug": archive_slug})
         if len(found) >= MAX_NEW_PER_INDEX:
             break
