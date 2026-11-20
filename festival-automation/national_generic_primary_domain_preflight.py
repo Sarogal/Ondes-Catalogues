@@ -303,9 +303,17 @@ def examine(state, queue, published, today, fetch=None):
                         continuous = (old.get("firstSeen") == yesterday
                                       or old.get("stable") is True)
                     else:
-                        # A second run on the same date must not DOWNGRADE an
-                        # already certified J+1 proof.
-                        continuous = old.get("stable") is True
+                        # Repeated same-day runs preserve a certified J+1.
+                        # Migration: pre-#551 records carried firstSeen and
+                        # lastSeen but lacked the new 'stable' field. The
+                        # exact consecutive-day pair (yesterday, today)
+                        # already proves both distinct civil observations.
+                        # Explicit stable=False always remains a veto.
+                        continuous = (
+                            old.get("stable") is True
+                            or (old.get("stable") is None
+                                and old.get("firstSeen") == yesterday)
+                        )
                     first_seen = prior_first if continuous else current
                 except (ValueError, TypeError):
                     first_seen, continuous = current, False
