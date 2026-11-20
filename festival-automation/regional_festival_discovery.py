@@ -96,6 +96,11 @@ INDEX_MUSIC_PROOF_SIGNALS = frozenset((THEMATIC_SIGNAL, CONTEXT_SIGNAL))
 # A visible institutional music CATEGORY may nominate a named edition, but
 # it is NOT proof of rock/metal/punk; the publisher must verify the detail.
 MUSIC_CATEGORY_PENDING_SIGNAL = "INSTITUTION_MUSIC_CATEGORY_GENRE_REVIEW_ONLY"
+# A year printed outside an exact link, in its own single-link institution
+# card, is at most a PRIVATE research year. Independently verify its theme
+# and complete dates on the official detail page before any publisher patch.
+CARD_YEAR_PENDING_SIGNAL = "VISIBLE_INSTITUTIONAL_CARD_YEAR_REVIEW_ONLY"
+VISIBLE_CARD_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 MUSIC_EVENT_CATEGORY = re.compile(r"\b(?:musique concerts?|concerts? musique)\b")
 # Only visible, adjacent attribution creates a new PRIVATE discovery hint.
 MUSIC_GENRE = (r"(?:heavy metal|death metal|black metal|thrash metal|"
@@ -223,6 +228,7 @@ class RegionalEventAnchors(Anchors):
         self.accessible_event_label = None
         self.article_stack = []
         self.article_music_categories = {}
+        self.card_year_anchors = set()
         self.ambiguous_card_anchors = set()
         self.div_depth = 0
 
@@ -299,9 +305,29 @@ class RegionalEventAnchors(Anchors):
                     range(frame["start"], len(self.anchors)))
             elif not self.hidden and not self.concealed:
                 visible = normalized(" ".join(frame["text"]))
+                anchor_index = frame["start"]
                 if MUSIC_EVENT_CATEGORY.search(visible):
-                    self.article_music_categories[frame["start"]] = (
+                    self.article_music_categories[anchor_index] = (
                         "musique concerts")
+                # Some institutional cards display "Festival X" as their
+                # single visible anchor and "édition 2027" or an event date
+                # in separate visible text. Reconstruct only an unverified
+                # title-year hint; no date, venue, artist or ownership proof.
+                # Contradictory years in the same card reject the hint.
+                years = set(VISIBLE_CARD_YEAR.findall(visible))
+                if len(years) == 1:
+                    href, label, prefix = self.anchors[anchor_index]
+                    event_title = municipal_event_title(label)
+                    title = (event_title if event_title is not None
+                             else " ".join(label.split())[:160])
+                    identity = normalized(title)
+                    if (8 <= len(identity) <= 125
+                            and not VISIBLE_CARD_YEAR.search(identity)
+                            and not GENERIC_LINK_TEXT.fullmatch(identity)
+                            and not NON_MUSIC_TITLE.search(identity)):
+                        self.anchors[anchor_index] = (
+                            href, title + " " + next(iter(years)), prefix)
+                        self.card_year_anchors.add(anchor_index)
         super().handle_endtag(tag)
         if tag == "div":
             self.div_depth = max(0, self.div_depth - 1)
@@ -507,7 +533,9 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
             continue
         seen.add(url)
         found.append({"candidate_url": url, "title": title,
-                      "signal": (THEMATIC_SIGNAL if thematic else
+                      "signal": (CARD_YEAR_PENDING_SIGNAL
+                                 if anchor_number in parser.card_year_anchors else
+                                 THEMATIC_SIGNAL if thematic else
                                  ARCHIVE_SIGNAL if archive_slug else
                                  CONTEXT_SIGNAL if contextual else
                                  MUSIC_CATEGORY_PENDING_SIGNAL if category_pending else
