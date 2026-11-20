@@ -29,6 +29,12 @@ from grossesondes_official_html_edition import (VisibleText, fold, explicit_rang
                                                visible_official_edition,
                                                dominant_visible_range)
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+from grossesondes_archived_html_intake import latest_patch, atomic_json
+from grossesondes_generic_directory_edition import (
+    private_proposal as directory_private_proposal,
+    trusted_linked_site, directory_url,
+)
+from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -123,7 +129,7 @@ def _eligible(queue, published, today):
             seen.add((name, url))
             result.append({
                 "dossier_id": dossier["id"], "url": url,
-                "title": name, "year": year,
+                "title": name, "year": year, "kind": source["kind"],
             })
     return sorted(result, key=lambda x: (x["title"], x["url"]))
 
@@ -357,6 +363,105 @@ def examine(state, queue, published, today, fetch=None):
     }
 
 
+
+def stable_directory_proposals(state, queue, catalog, report, today,
+                               directory_fetch=fetch_public_html):
+    """Require J+1 genuine private evidence AND a fresh independent directory.
+
+    This is NOT an approval. The public publisher must re-fetch the independent
+    directory and re-check exact official dates, genre and collisions itself.
+    """
+    if (not isinstance(report, dict) or report.get("schema") != SCHEMA
+            or report.get("as_of") != today
+            or report.get("review_only") is not True
+            or report.get("safe_to_publish") is not False
+            or report.get("publication_authorized") is not False
+            or report.get("publications") != 0
+            or not isinstance(report.get("rows"), list)
+            or len(report["rows"]) > MAX_CHECKS):
+        raise ValueError("Untrusted generic first-party report")
+    records = state.get(STATE_KEY, {})
+    if not isinstance(records, dict):
+        raise ValueError("Missing private date observations")
+    sources = _eligible(queue, catalog, today)
+    proposals = []
+    seen = set()
+    for row in report["rows"]:
+        if (not isinstance(row, dict)
+                or row.get("status") !=
+                        "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
+                or row.get("two_day_dates") is not True
+                or row.get("publication_authorized") is not False
+                or row.get("ownership_proven") is not False):
+            continue
+        dates = row.get("start_date_hint"), row.get("end_date_hint")
+        candidates = []
+        for source in sources:
+            if (source["dossier_id"] != row.get("dossier_id")
+                    or source.get("kind") != "CURATED_PRIMARY_CANDIDATE"
+                    or directory_url(source["title"]) is None
+                    or source["url"] in seen):
+                continue
+            old = records.get(source["url"])
+            if (not isinstance(old, dict)
+                    or old.get("stable") is not True
+                    or old.get("lastSeen") != today
+                    or old.get("digest") != _digest(
+                        source, *dates, row.get("date_source_mode"))):
+                continue
+            try:
+                if not date.fromisoformat(old["firstSeen"]) < date.fromisoformat(today):
+                    continue
+            except (TypeError, ValueError, KeyError):
+                continue
+            proposed = directory_private_proposal(
+                source["title"], source["url"], dates, today)
+            if proposed is not None:
+                candidates.append(proposed)
+        if len(candidates) != 1:
+            continue
+        proposal = candidates[0]
+        try:
+            # The directory URL is derived from an edition name, never from
+            # the private queue or HTML. A website link is only nomination.
+            html = directory_fetch(directory_url(proposal["name"]))
+            site = trusted_linked_site(html, proposal["name"])
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            continue
+        if site != proposal["officialSite"]:
+            continue
+        proposals.append(proposal)
+        seen.add(proposal["officialSite"])
+    return proposals
+
+
+def append_directory_proposals(folder, catalog, history, state, queue,
+                               report, today, directory_fetch=fetch_public_html):
+    if (not isinstance(history, dict) or history.get("schema") != 2
+            or not isinstance(history.get("knownFestivals"), list)):
+        raise ValueError("Unsafe festival history")
+    proposals = stable_directory_proposals(
+        state, queue, catalog, report, today, directory_fetch=directory_fetch)
+    if not proposals:
+        return 0
+    patch = latest_patch(folder, date.fromisoformat(today))
+    occupied = {row.get("slug") for row in patch["additions"]
+                if isinstance(row, dict)}
+    added = 0
+    for row in proposals:
+        if (len(patch["additions"]) >= 100 or row["slug"] in occupied
+                or conflicts_with_signed_catalogue(
+                    row, catalog["festivals"], history["knownFestivals"])):
+            continue
+        patch["additions"].append(row)
+        occupied.add(row["slug"])
+        added += 1
+    if added:
+        patch["generated_at"] = today
+        atomic_json(folder / ("patch-" + today + ".json"), patch)
+    return added
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--intake", type=Path, required=True)
@@ -368,10 +473,14 @@ def main():
         return json.loads(path.read_text(encoding="utf-8"))
     state_path = folder / "source-watch-state.json"
     state = read(state_path)
-    report = examine(
-        state,
-        read(folder / "national-festival-discovery-review.json"),
-        read(args.catalog), today)
+    queue = read(folder / "national-festival-discovery-review.json")
+    catalog = read(args.catalog)
+    report = examine(state, queue, catalog, today)
+    added = append_directory_proposals(
+        folder, catalog, read(folder / "festival-history.json")
+        if (folder / "festival-history.json").exists()
+        else read(args.catalog.parent / "festival-history.json"),
+        state, queue, report, today)
     state_path.write_text(
         json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (folder / "national-generic-primary-date-review.json").write_text(
@@ -380,7 +489,7 @@ def main():
     print("Generic national first-party date research: eligible="
           + str(report["eligible_source_count"]) + ", checked="
           + str(report["checked_count"]) + ", two-day="
-          + str(report["two_day_dates_count"]) + ", publications=0")
+          + str(report["two_day_dates_count"]) + ", directory_private_additions=" + str(added) + ", publications=0")
 
 
 if __name__ == "__main__":
