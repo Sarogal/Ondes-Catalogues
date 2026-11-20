@@ -79,6 +79,59 @@ class GenericVenueOSMTests(unittest.TestCase):
             self.assertEqual(len(sample), 12)
             self.assertEqual(len({x["key"][1] for x in sample}), 12)
 
+    def test_seven_private_batches_cover_79_venues_once_per_day(self):
+        groups = [{"key": ["test", str(i)]} for i in range(79)]
+        for today in (DAY, date(2026, 11, 21)):
+            all_keys = []
+            sizes = []
+            for batch in range(7):
+                selected = private_rotation(groups, today,
+                                            batch_index=batch)
+                sizes.append(len(selected))
+                all_keys.extend(x["key"][1] for x in selected)
+            self.assertEqual(sizes, [12, 12, 12, 12, 12, 12, 7])
+            self.assertEqual(len(all_keys), len(set(all_keys)))
+            self.assertEqual(set(all_keys),
+                             {str(i) for i in range(79)})
+            self.assertEqual(private_rotation(groups, today),
+                             private_rotation(groups, today, batch_index=0))
+            with self.assertRaises(ValueError):
+                private_rotation(groups, today, batch_index=7)
+
+    def test_batch_options_fail_closed_and_only_select_existing_venues(self):
+        for malformed in (-1, True, 1.5, "1"):
+            with self.assertRaises(ValueError):
+                private_rotation([{}], DAY, batch_index=malformed)
+        for malformed in (0, 13, True):
+            with self.assertRaises(ValueError):
+                private_rotation([{}], DAY, max_places=malformed)
+        with self.assertRaises(ValueError):
+            private_rotation([], DAY, batch_index=1)
+        self.assertEqual(private_rotation([], DAY), [])
+        self.assertEqual(len(private_rotation([{}]*5, DAY)), 5)
+
+    def test_offline_batch_preview_is_read_only_and_reports_slot_counts(self):
+        entries = [lead(str(10000+i), venue="Place "+str(i))
+                   for i in range(25)]
+        report0 = audit(entries, DAY, live=False, batch_index=0)
+        report1 = audit(entries, DAY, live=False, batch_index=1)
+        report2 = audit(entries, DAY, live=False, batch_index=2)
+        self.assertEqual([r["selected_venues"] for r in
+                          (report0, report1, report2)], [12,12,1])
+        self.assertEqual([r["batch_count"] for r in
+                          (report0, report1, report2)], [3,3,3])
+        self.assertEqual([r["batch_index"] for r in
+                          (report0, report1, report2)], [0,1,2])
+        self.assertEqual(len({(r["city"],r["venue"]) for report in
+                              (report0,report1,report2)
+                              for r in report["records"]}), 25)
+        for report in (report0,report1,report2):
+            self.assertEqual(report["queried_venues"], 0)
+            self.assertEqual(report["public_writes"], 0)
+            self.assertFalse(report["publication_ready"])
+        with self.assertRaises(ValueError):
+            audit(entries, DAY, live=False, batch_index=3)
+
     def test_source_center_requires_exact_uid_and_identity(self):
         center, reason = source_center(self.group, self.fetch)
         self.assertEqual(center, (45.123, 3.456))
