@@ -333,8 +333,8 @@ def confirmed_session(timings, day, uid=None):
     times = [time for time in times if time not in restricted]
     if not times:
         raise ValueError("Séance uniquement scolaire ou réservée")
-    if len(set(times)) > 4:
-        raise ValueError("Trop de séances le même jour")
+    # The number of independently dated sessions is not an admission rule.
+    # Organizer time/date checks remain required for every published slot.
     return ", ".join(sorted(set(times)))
 
 
