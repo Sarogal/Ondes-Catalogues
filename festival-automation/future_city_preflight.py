@@ -75,6 +75,10 @@ def _city_jsonld(html, row):
             location = event.get("location")
             if not isinstance(location, dict):
                 return None
+            raw_types = location.get("@type", [])
+            types = raw_types if isinstance(raw_types, list) else [raw_types]
+            if "place" not in {str(t).rsplit("/", 1)[-1].casefold() for t in types}:
+                return False
             address = location.get("address")
             if not isinstance(address, dict):
                 return None
