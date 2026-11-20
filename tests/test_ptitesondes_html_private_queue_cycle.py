@@ -41,6 +41,56 @@ def manifest(extra=()):
 class HtmlPrivateQueueCycleTests(unittest.TestCase):
     NOW = datetime(2026, 11, 20, 10, 0, tzinfo=ZoneInfo("Europe/Paris"))
 
+    def test_real_live_comparison_required_for_production_context(self):
+        # This is the trusted worker entry: no provided context, so the fixed
+        # live URL must be consulted before any HTML source is considered.
+        witnessed = {
+            "same_data_as_checked_out_repository": True,
+            "live_event_count": 549, "local_event_count": 549,
+            "public_writes": 0, "publication_ready": False,
+            "approval_granted": False,
+            # Data can be old even though it was just independently fetched.
+            "stage": "matching_data_last_updated_over_24h_ago",
+        }
+        checks = []
+        def check(now):
+            checks.append(now)
+            return witnessed
+        with patch("ptitesondes_html_private_queue_cycle._independent_context",
+                   return_value={}) as get_context:
+            result = execute_cycle(
+                [], self.NOW, manifest={"entries": []},
+                live_checker=check)
+        self.assertEqual(checks, [self.NOW])
+        get_context.assert_called_once_with()
+        self.assertTrue(result["report"]["live_catalogue_refetched_and_matching"])
+        self.assertEqual(result["queue"], [])
+        self.assertFalse(result["report"]["publisher_connected"])
+
+    def test_stale_or_conflicting_live_snapshot_never_stages_review_data(self):
+        for changed in (
+            {"same_data_as_checked_out_repository": False,
+             "live_event_count": 549, "local_event_count": 549,
+             "public_writes": 0, "publication_ready": False,
+             "approval_granted": False},
+            {"same_data_as_checked_out_repository": True,
+             "live_event_count": 548, "local_event_count": 549,
+             "public_writes": 0, "publication_ready": False,
+             "approval_granted": False},
+            {"same_data_as_checked_out_repository": True,
+             "live_event_count": 549, "local_event_count": 549,
+             "public_writes": 0, "publication_ready": True,
+             "approval_granted": False},
+        ):
+            with self.subTest(witness=changed):
+                with patch("ptitesondes_html_private_queue_cycle._independent_context") as ctx:
+                    with self.assertRaisesRegex(
+                            ValueError, "independent_live_catalogue_mismatch"):
+                        execute_cycle(
+                            [row()], self.NOW, manifest=manifest(),
+                            live_checker=lambda now: changed)
+                    ctx.assert_not_called()
+
     def test_curated_manifest_only_supported_adapter_is_used(self):
         targets = _registered_adapters(manifest([{
             "source_id": "other-town",
