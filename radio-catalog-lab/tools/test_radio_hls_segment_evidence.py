@@ -200,5 +200,85 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
         self.assertEqual(sock.call_args.args[0], ("8.8.8.8", 443))
 
 
+
+    def test_only_one_variant_can_be_followed(self):
+        from radio_hls_segment_evidence import plan_single_variant
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        plan = plan_single_variant(master, MIME, BASE)
+        self.assertEqual(plan.url, "https://radio.example.org/hls/child/live.m3u8")
+
+    def test_single_variant_to_segment_follows_only_three_safe_gets(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        fetched = []
+        def read_manifest(u):
+            fetched.append(("manifest", u))
+            return response(master if u == BASE else manifest())
+        def read_segment(u):
+            fetched.append(("segment", u))
+            return response(valid_ts_packets(5), "video/mp2t")
+        result = verify_one_segment(BASE, read_manifest, read_segment)
+        self.assertEqual(result["manifestKind"], "master_single_variant_pending")
+        self.assertEqual(result["childManifestKind"], "live_manifest_candidate")
+        self.assertEqual(result["state"], "segment_structural_evidence")
+        self.assertEqual([tag for tag, _ in fetched], ["manifest", "manifest", "segment"])
+        self.assertNotIn("child/live.m3u8", str(result))
+        self.assertFalse(result["technicalQualified"])
+
+    def test_master_with_two_variants_never_selects_arbitrarily(self):
+        data = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                b"low/live.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=192000\n"
+                b"high/live.m3u8\n")
+        requests = []
+        result = verify_one_segment(BASE, lambda u: response(data),
+                                    lambda u: requests.append(u))
+        self.assertEqual(result["state"], "no_safe_simple_segment")
+        self.assertEqual(requests, [])
+
+    def test_master_external_variant_and_traversal_never_requested(self):
+        from radio_hls_segment_evidence import plan_single_variant
+        for reference in ("https://other.example.org/live.m3u8",
+                          "//other.example.org/live.m3u8",
+                          "../private.m3u8", "%2e%2e/private.m3u8",
+                          "file:///etc/secrets.m3u8",
+                          "child.m3u8#part", "child{token}.m3u8"):
+            master = ("#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                      + reference + "\n").encode()
+            with self.subTest(reference=reference):
+                self.assertIsNone(plan_single_variant(master, MIME, BASE))
+                requested = []
+                output = verify_one_segment(BASE,
+                    lambda u: requested.append(u) or response(master),
+                    lambda u: requested.append(u))
+                self.assertEqual(len(requested), 1)
+                self.assertEqual(output["state"], "no_safe_single_variant")
+
+    def test_no_nested_master_playlist(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        reads = []
+        def fetch(u):
+            reads.append(u)
+            return response(master)
+        result = verify_one_segment(BASE, fetch, lambda u: reads.append(u))
+        self.assertEqual(result["childManifestKind"], "master_single_variant_pending")
+        self.assertEqual(result["state"], "child_not_simple_live_media")
+        self.assertEqual(len(reads), 2)
+
+    def test_child_redirect_never_follows_to_unsafe_network(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        reads = []
+        def fetch(u):
+            reads.append(u)
+            if u == BASE:
+                return response(master)
+            return response(b"", status=302, location="http://127.0.0.1/")
+        result = verify_one_segment(BASE, fetch, lambda u: reads.append(u))
+        self.assertEqual(result["state"], "child_manifest_fetch_incomplete")
+        self.assertEqual(len(reads), 2)
+        self.assertNotIn("127.0.0.1", str(result))
+
 if __name__ == "__main__":
     unittest.main()
