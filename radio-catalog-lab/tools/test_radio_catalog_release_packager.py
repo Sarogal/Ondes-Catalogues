@@ -163,6 +163,42 @@ class RadioSignedReleasePackagerTests(unittest.TestCase):
         with self.assertRaises(BundleError):
             load_verified_predecessor(previous_dir, TEST_KEY.public_key())
 
+    def test_sequence_three_uses_verified_signed_second_generation(self):
+        first = admitted()
+        v1 = new_bundle(payload(first))
+        first_dir = write_staging(self.root / "release-1", v1)
+        first_doc = load_verified_predecessor(first_dir, TEST_KEY.public_key())
+        second = admitted(uid="go-station-000002", alias="new-radio-002")
+        v2 = new_bundle(payload(first, second, sequence=2),
+                        sequence_previous=first_doc)
+        second_dir = write_staging(self.root / "release-2", v2)
+        # The default verifier must NOT treat a later catalogue as first release.
+        with self.assertRaises(BundleError):
+            verify_bundle(v2.pointer_bytes, v2.catalog_bytes, TEST_KEY.public_key())
+        verified_second = verify_bundle(
+            v2.pointer_bytes, v2.catalog_bytes, TEST_KEY.public_key(),
+            trusted_signed_history=True)
+        self.assertEqual(verified_second.sequence, 2)
+        previous = load_verified_predecessor(second_dir, TEST_KEY.public_key())
+        third = admitted(uid="go-station-000003", alias="new-radio-003")
+        v3 = new_bundle(payload(first, second, third, sequence=3),
+                        sequence_previous=previous)
+        self.assertEqual(v3.sequence, 3)
+        self.assertEqual(v3.station_count, 3)
+        verify_bundle(v3.pointer_bytes, v3.catalog_bytes,
+                      TEST_KEY.public_key(), previous=previous)
+        with self.assertRaises(BundleError):
+            new_bundle(payload(second, third, sequence=3),
+                       sequence_previous=previous)
+
+    def test_signed_history_exception_never_authorizes_unreviewed_stations(self):
+        unsafe = payload(station(), sequence=2)
+        # A cryptographically signed but unreviewed file is still rejected.
+        signed = TEST_KEY.sign(b"test-only")
+        self.assertEqual(len(signed), 64)
+        with self.assertRaisesRegex(BundleError, "editorial gate"):
+            validate_release_content(unsafe, trusted_signed_history=True)
+
     def test_ed25519_catches_tampering_with_any_pointer_field(self):
         original = new_bundle(payload(admitted()))
         for field, new in (
