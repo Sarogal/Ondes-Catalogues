@@ -31,6 +31,8 @@ on:
       - 'tests/test_ptitesondes_ods_oa_source_binding.py'
       - 'scripts/ptitesondes_generic_venue_visible_address.py'
       - 'tests/test_ptitesondes_generic_venue_visible_address.py'
+      - 'scripts/ptitesondes_generic_venue_official_geocode.py'
+      - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -74,6 +76,8 @@ on:
       - 'tests/test_ptitesondes_ods_oa_source_binding.py'
       - 'scripts/ptitesondes_generic_venue_visible_address.py'
       - 'tests/test_ptitesondes_generic_venue_visible_address.py'
+      - 'scripts/ptitesondes_generic_venue_official_geocode.py'
+      - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
@@ -145,6 +149,8 @@ jobs:
             -p 'test_ptitesondes_ods_oa_source_binding.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_generic_venue_visible_address.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_official_geocode.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
