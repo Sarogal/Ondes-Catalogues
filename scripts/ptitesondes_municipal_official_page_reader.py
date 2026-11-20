@@ -141,15 +141,18 @@ class MunicipalOfficialPageReader:
             return None, None
         city, venue = norm(group.get("city")), norm(group.get("venue"))
         options = sorted(self.source_index.get((city, venue), ()))
-        # Do not blindly pick one from conflicting or excessive sources.
-        if not options or len(options) > MAX_UIDS_PER_VENUE:
+        if not options:
             return None, None
         ids = group.get("uids")
         if not isinstance(ids, list) or not ids:
             return None, None
         options = [(slug, uid) for slug, uid in options if uid in ids]
-        if not options or len(options) > MAX_UIDS_PER_VENUE:
+        if not options:
             return None, None
+        # High-volume venues have many independent dated occurrences.
+        # Sample a bounded 3 UID identities, without pretending to have
+        # checked every event. Per-session publication checks are separate.
+        options = options[:MAX_UIDS_PER_VENUE]
         try:
             directory = self.dila_directory_get(group["city"])
         except (ValueError, OSError, KeyError, TypeError, TimeoutError):
