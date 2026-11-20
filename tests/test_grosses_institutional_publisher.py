@@ -118,6 +118,11 @@ class InstitutionalPublisherTests(unittest.TestCase):
             "<p>Festival de hardcore techno les 4 et 5 juin 2027.</p></main>",
             '<main><h1>Festival des Rivages 2027</h1>'
             '<p hidden>Un festival de metal.</p><p>4 et 5 juin 2027.</p></main>',
+            '<main><h1>Autre Festival 2027</h1><p>Festival de metal.</p>'
+            '<p>Site officiel du Festival des Rivages 2027.</p></main>',
+            '<main><h1 hidden>Festival des Rivages 2027</h1>'
+            '<h1>Autre Festival 2027</h1><p>Festival de metal</p>'
+            '<p>Site officiel du Festival des Rivages 2027</p></main>',
             '<main><h1>Autre Festival 2027</h1><p>Festival de metal'
             ' les 4 et 5 juin 2027.</p></main>',
             '<main><h1>Festival des Rivages 2027</h1>'
