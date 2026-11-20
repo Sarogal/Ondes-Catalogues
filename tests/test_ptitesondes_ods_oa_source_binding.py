@@ -249,7 +249,9 @@ class ODSOAVenueBindingTests(unittest.TestCase):
             event_reader=lambda *args: event(), directory_reader=lambda city:dila(),
             html_reader=lambda url:"never", ods_reader=oda)
         self.assertEqual(reader.official_page_get(group()), (None, None))
-        oda.assert_not_called()
+        # ODS is now consulted to discover an unlisted agenda UID.
+        # Its immutable source read is allowed; the official page is not.
+        oda.assert_called_once_with(UID)
 
     def test_ods_network_failure_blocks_official_page(self):
         reader = MunicipalOfficialPageReader(
