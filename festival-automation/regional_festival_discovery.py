@@ -98,7 +98,7 @@ FESTIVAL_MUSIC_CONTEXT = re.compile(
 NON_MUSIC_TITLE = re.compile(
     r"\b(?:cinema|film|films|bd|bande dessinee|livre|livres|"
     r"litterature|gastronomie|theatre|photo|photographie|sport|"
-    r"moto|science|sciences|jeux video)\b")
+    r"moto|science|sciences|jeux video|plantes?|fleurs?|jardins?)\b")
 GENERIC_LINK_TEXT = re.compile(
     r"^(?:en savoir plus|voir plus|decouvrir|details|billetterie|"
     r"programme|programmation|site officiel|lire la suite|"
