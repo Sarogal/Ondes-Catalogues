@@ -386,7 +386,8 @@ def download_official(url, robots_cache):
         return raw.decode(r.headers.get_content_charset() or "utf-8", errors="replace")
 
 
-def process(registry, catalogue, approvals, today, fetch=download_official, limit=10):
+def process(registry, catalogue, approvals, today, fetch=download_official,
+            limit=10, site_fetch=None):
     if approvals.get("schema") != "grossesondes.concert.approvals.v1":
         raise ValueError("Fichier d'approbations inattendu")
     if catalogue.get("schemaVersion") != 1 or catalogue.get("mode") != "preview-public-unlisted":
@@ -413,7 +414,12 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                   i.get("candidate", {}).get("source") in VERIFIER_SPECS and
                   (i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"
                    or (i.get("candidate", {}).get("source") == "agenda_officiel_structuré"
-                       and i.get("candidate", {}).get("reviewBucket") == "genre_unknown"))]
+                       and i.get("candidate", {}).get("reviewBucket") == "genre_unknown")
+                   or (i.get("candidate", {}).get("source")
+                       in {"artist_official_tour", "promoter_official_tour"}
+                       and i.get("candidate", {}).get("newVenueToReview") is True
+                       and i.get("candidate", {}).get("reviewBucket")
+                       in {"genre_tag_review", "genre_unknown"}))]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
     reviewable = [i for i in candidates if i.get("status", "pending_review") == "pending_review"]
@@ -435,7 +441,7 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
     # Rotation ensures every eligible candidate gets checked over successive days.
     offset = (today.toordinal() * limit) % len(eligible) if eligible else 0
     chosen = [eligible[(offset + i) % len(eligible)] for i in range(min(limit, len(eligible)))]
-    results, cache, new = [], {}, []
+    results, cache, new, sites = [], {}, [], []
     for row in chosen:
         c = row["candidate"]
         try:
@@ -448,12 +454,33 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                 import generic_music_event
                 if generic_music_event.trusted_spec(c) is None:
                     raise ValueError("Salle générique non agréée : pas de réseau")
-            html_text = fetch(c["sourceUrl"], cache)
-            approval = verify(c, html_text, catalogue, today)
+            site = None
+            if c["source"] in {"artist_official_tour", "promoter_official_tour"}:
+                import event_site_pair_recheck as site_review
+                # The untrusted candidate cannot introduce a source authority.
+                # Both event and OSM point are independently downloaded.
+                def do_fetch(url, cap):
+                    if site_fetch is not None:
+                        return site_fetch(url, cap)
+                    return site_review.fetch_verified(url, cap, cache)
+                approval, site = site_review.verify(
+                    c, catalogue, today, fetch=do_fetch)
+                if not isinstance(out.get("venueApprovals"), list):
+                    raise ValueError("Registre privé des lieux absent")
+                if any(v.get("id") == site["venue"]["id"]
+                       for v in catalogue.get("venues", [])):
+                    raise ValueError("Site géographique déjà référencé")
+            else:
+                html_text = fetch(c["sourceUrl"], cache)
+                approval = verify(c, html_text, catalogue, today)
             if approval["event"]["id"] in known:
                 raise ValueError("Déjà approuvé")
             # Add to the working catalogue so same-run collisions cannot pass.
             e = approval["event"]
+            if site is not None:
+                out["venueApprovals"].append(site)
+                catalogue["venues"].append(site["venue"])
+                sites.append(site["venue"]["id"])
             for a in approval["newArtists"]:
                 catalogue["artists"].append(a)
             catalogue["events"].append(e)
@@ -468,7 +495,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                  "decidedSkipped": skipped_decided,
                  "alreadyApprovedSkipped": already_approved_skipped,
                  "expiredSkipped": expired_skipped,
-                 "newApprovals": new, "held": [r for r in results if r["status"] == "held"],
+                 "newApprovals": new, "newSiteApprovals": sites,
+                 "held": [r for r in results if r["status"] == "held"],
                  "results": results}
 
 
