@@ -84,13 +84,29 @@ def check_append_only(previous, proposed, today):
         and all(isinstance(a["event"].get(key), str) and a["event"][key]
                 for key in ("officialUrl", "date"))
     }
+    paired_site_events = {
+        site.get("eventBinding", {}).get("eventId")
+        for site in added_sites
+        if isinstance(site, dict)
+        and isinstance(site.get("eventBinding"), dict)
+    }
     for approval in appended:
+        event = approval.get("event") if isinstance(approval, dict) else None
+        # The independent event signer is ONLY admissible for a newly paired,
+        # separately reviewed event site. Ordinary auto approvals still require
+        # the standard automated reviewer and exact publisher recheck.
+        reviewer = approval.get("reviewedBy") if isinstance(approval, dict) else None
+        allowed_reviewer = (
+            reviewer == "automated-official-recheck" or
+            (reviewer == "independent-official-verifier"
+             and isinstance(event, dict)
+             and event.get("id") in paired_site_events)
+        )
         require(isinstance(approval, dict)
                 and approval.get("reviewDecision") == "approved"
-                and approval.get("reviewedBy") == "automated-official-recheck"
+                and allowed_reviewer
                 and approval.get("reviewedAt") == today.isoformat(),
-                "Unexpected automated reviewer or stale official review")
-        event = approval.get("event")
+                "Unexpected official reviewer or stale official review")
         require(isinstance(event, dict), "Missing approved event")
         event_id = event.get("id")
         require(isinstance(event_id, str) and event_id
