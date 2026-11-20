@@ -86,6 +86,8 @@ jobs:
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
           assert "ptitesondes_html_private_queue_cycle.py" in s
+          assert "ptitesondes_html_independent_review_cycle.py" in s
+          assert "html-independent-worklist.json" in s
           assert "automation-intake/ptitesondes/html-review-candidates.json" in s
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
@@ -501,8 +503,17 @@ jobs:
             echo "::warning::File HTML privée non préparée ; état historique conservé, aucune publication."
             exit 0
           fi
+          # A separate independent-evidence worklist is PRIVATE and NOT a
+          # verification result. It does not publish or grant approvals.
+          if ! python public/scripts/ptitesondes_html_independent_review_cycle.py \
+              --state-checkout state --mode "$MODE" \
+              > "$LOG/html-independent-worklist-summary.json" 2>&1; then
+            echo "::warning::Planification de preuves indisponible ; aucune admission HTML."
+            exit 0
+          fi
           if [[ "$RUN_MODE" == 'write' ]]; then
             git -C state add -- automation-intake/ptitesondes/html-review-candidates.json
+            git -C state add -- automation-intake/ptitesondes/html-independent-worklist.json
             if ! git -C state diff --cached --quiet; then
               git -C state config user.name 'github-actions[bot]'
               git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
