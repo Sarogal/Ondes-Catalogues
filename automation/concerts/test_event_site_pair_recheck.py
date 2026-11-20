@@ -505,6 +505,54 @@ class IndependentBANAndNamedOSMWithoutOfficialLinkTests(unittest.TestCase):
         self.assertEqual(site["locationKind"], "named-physical-site")
         self.assertEqual(site["eventBinding"]["eventId"], app["event"]["id"])
 
+    def test_official_named_osm_way_must_match_independent_ban_and_osm(self):
+        lead, raw, cat, ban, map_data = self.setup("way")
+        official_way = "https://www.openstreetmap.org/way/456789"
+        raw["location"]["sameAs"] = official_way
+        calls = []
+        fetch = self.fetched(raw, ban, map_data, calls)
+        app, site = reviewer.verify(lead, cat, DAY, fetch=fetch)
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(site["venue"]["geoSource"], official_way)
+        self.assertEqual(site["venue"]["geoPrecision"], "named-site-area")
+        self.assertEqual(site["venue"]["id"], (
+            __import__("scripts.concert_event_site_contract", fromlist=["site_id"])
+            .site_id(site["venue"]["name"], site["venue"]["city"],
+                     official_way)))
+        approvals = {"schema": publisher.SCHEMA,
+                     "approvals": [], "venueApprovals": []}
+        proposed, report = official_recheck.process(
+            {"items": {"synthetic": {
+                "candidate": lead, "stableObservations": 2,
+                "status": "pending_review"}}},
+            cat, approvals, DAY, site_fetch=fetch)
+        self.assertEqual(len(report["newSiteApprovals"]), 1)
+        reference = json.loads(publisher.REFERENCE.read_text(encoding="utf-8"))
+        checked = gate.validate_proposal(
+            approvals, proposed, reference, copy.deepcopy(reference),
+            DAY, publisher.merge)
+        self.assertTrue(checked["validatedByPublisher"])
+        self.assertEqual(checked["publishableEvents"], 1)
+
+    def test_official_osm_way_cannot_disagree_with_independent_location(self):
+        lead, raw, cat, ban, map_data = self.setup("way")
+        for forged in (
+            "https://www.openstreetmap.org/way/999999",
+            "https://www.openstreetmap.org/relation/456789",
+            "https://www.openstreetmap.org/way/456789?utm_source=ad",
+        ):
+            with self.subTest(forged=forged):
+                raw["location"]["sameAs"] = forged
+                calls = []
+                with self.assertRaises(ValueError):
+                    reviewer.verify(
+                        lead, cat, DAY,
+                        fetch=self.fetched(raw, ban, map_data, calls))
+                if "/way/999999" in forged:
+                    self.assertEqual(len(calls), 3)
+                else:
+                    self.assertEqual(len(calls), 1)
+
     def test_bad_government_address_cannot_send_a_guess_to_osm(self):
         lead, raw, cat, ban, map_data = self.setup()
         import copy as cp
