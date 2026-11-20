@@ -28,4 +28,4 @@ Un résultat continuityEvidence.state=transport_sustained prouve seulement que d
 ## Utilisation
 Tests : python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_continuity_evidence.py' -v
 Sondage réseau : python radio-catalog-lab/tools/radio_stream_technical_probe.py --discovery candidates.json --output technical-probes.json --limit 2 --allow-network --extended-continuity
-Le workflow sur branche de laboratoire exécute les tests à chaque push. Les sondages étendus ne sont proposés que pour workflow_dispatch avec run_stream_probes=true. Le cron est dormant tant que le workflow n'est pas sur la branche par défaut.
+Le workflow sur branche de laboratoire exécute les tests à chaque push. Les sondages étendus sont facultatifs en déclenchement manuel (run_stream_probes=true, deux échantillons), et prévus par la programmation quotidienne (cinq échantillons). Le cron reste dormant tant que le workflow n'est pas sur la branche par défaut. Le registre sépare désormais audioEvidenceDates et sustainedTransportDates, sans certification ni publication; la reprise effective du registre entre exécutions doit encore être validée en conditions réelles.
