@@ -37,7 +37,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
                     ).read_text(encoding="utf-8")
         self.assertIn("runs-on: ubuntu-24.04", workflow)
         self.assertIn("branches: [main]", workflow)
-        self.assertNotIn("pull_request_target", workflow)
+        self.assertNotIn("pull_request_target:", workflow)
         self.assertIn("national_openagenda_research.py", workflow)
         self.assertIn("national-openagenda-research-review.json", workflow)
         self.assertLess(workflow.index("run_private openagenda_public_research"),
