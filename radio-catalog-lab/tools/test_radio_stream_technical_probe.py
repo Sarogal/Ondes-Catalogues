@@ -206,6 +206,59 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         self.assertEqual(result["technicalVerifiedCount"], 0)
         self.assertFalse(result["publicationAllowed"])
 
+    def test_pinned_hls_transport_reads_more_than_512_bytes_without_range(self):
+        notes = b"# long but harmless HLS metadata\n" * 22
+        manifest = (b"#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + notes +
+                    b"#EXTINF:5,\na.ts\n#EXTINF:5,\nb.ts\n")
+        self.assertGreater(len(manifest), 512)
+        connections = []
+        class FakeResponse:
+            status = 200
+            def __init__(self):
+                self.position = 0
+            def getheader(self, name, default=""):
+                return ("application/vnd.apple.mpegurl"
+                        if name == "Content-Type" else default)
+            def read1(self, limit):
+                if self.position >= len(manifest):
+                    return b""
+                next_pos = min(self.position + 320, len(manifest),
+                               self.position + limit)
+                value = manifest[self.position:next_pos]
+                self.position = next_pos
+                return value
+        class FakeConnection:
+            def __init__(self, host, port, timeout=None, context=None):
+                self.host, self.port = host, port
+                self.headers = {}
+                connections.append(self)
+            def request(self, method, target, headers):
+                self.headers = headers
+                self._create_connection((self.host, self.port))
+            def getresponse(self):
+                return FakeResponse()
+            def close(self):
+                pass
+        resolver = lambda host, port, **kw: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "",
+             ("8.8.8.8", port))]
+        with patch("radio_stream_technical_probe.http.client.HTTPConnection",
+                   FakeConnection), patch(
+                       "radio_stream_technical_probe.socket.create_connection",
+                       return_value=object()) as open_socket:
+            response = PinnedHttpTransport(resolver=resolver).request(
+                "http://radio.example.org/live.m3u8")
+        self.assertGreater(len(response.body), 512)
+        self.assertLess(len(response.body), 4096)
+        self.assertEqual(response.body, manifest)
+        self.assertNotIn("Range", connections[0].headers)
+        self.assertEqual(open_socket.call_args.args[0], ("8.8.8.8", 80))
+        report = probe_url("http://radio.example.org/live.m3u8",
+                           lambda _: response)
+        self.assertEqual(report["hlsEvidence"]["kind"], "live_manifest_candidate")
+        self.assertEqual(report["verdict"], "playlist_pending")
+        self.assertNotIn("a.ts", json.dumps(report))
+
     def test_hls_manifest_requires_followup_technical_implementation(self):
         result = probe_url("https://radio.example.org/live.m3u8",
                            lambda _: sample(mime="application/vnd.apple.mpegurl",
