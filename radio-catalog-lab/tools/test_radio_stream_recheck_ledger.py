@@ -41,6 +41,14 @@ def framed_row(uid=A, sha=SHA1):
     return value
 
 
+def decoded_row(uid=A, sha=SHA1):
+    check = framed_row(uid, sha)
+    check['continuityEvidence']['decodeEvidence'] = {
+        'state': 'decoded_pcm', 'demuxer': 'mp3', 'pcmBytes': 4096,
+        'inputBytes': 32768, 'publicationAllowed': False,
+    }
+    return check
+
 class StreamRecheckTests(unittest.TestCase):
     def test_first_positive_sample_is_not_qualified(self):
         report = next_evidence_report(probe(checks=[row()]))
@@ -223,6 +231,57 @@ class StreamRecheckTests(unittest.TestCase):
         first = next_evidence_report(probe(checks=[framed_row()]))
         bad = copy.deepcopy(first)
         bad['records'][0]['frameChainDates'] = ['2026-11-19']
+        with self.assertRaises(ValueError):
+            next_evidence_report(probe('2026-11-21', []), bad)
+
+    def test_real_pcm_success_two_dates_is_not_automatic_admission(self):
+        first = next_evidence_report(probe(checks=[decoded_row()]))
+        second = next_evidence_report(probe('2026-11-21', [decoded_row()]), first)
+        self.assertEqual(second['repeatDecodedPcmCount'], 1)
+        self.assertEqual(second['records'][0]['decodedPcmDates'], ['2026-11-20','2026-11-21'])
+        self.assertFalse(second['records'][0]['technicalQualified'])
+        self.assertFalse(second['publicationAllowed'])
+
+    def test_legacy_frames_cannot_be_reinterpreted_as_pcm(self):
+        first = next_evidence_report(probe(checks=[framed_row()]))
+        second = next_evidence_report(probe('2026-11-21', [decoded_row()]), first)
+        self.assertEqual(second['repeatFrameChainCount'], 1)
+        self.assertEqual(second['repeatDecodedPcmCount'], 0)
+
+    def test_pcm_proof_rejects_fake_bytes_and_publication(self):
+        for key, value in (('pcmBytes', 10), ('inputBytes', 999999),
+                           ('publicationAllowed', True), ('state','impossible')):
+            bad = decoded_row()
+            bad['continuityEvidence']['decodeEvidence'][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                next_evidence_report(probe(checks=[bad]))
+
+    def test_pcm_proof_requires_transport_and_audio_verdict(self):
+        false_audio = decoded_row()
+        false_audio['verdict'] = 'audio_mime_only'
+        bad_continuity = decoded_row()
+        bad_continuity['continuityEvidence']['state'] = 'not_confirmed'
+        for item in (false_audio, bad_continuity):
+            with self.assertRaises(ValueError):
+                next_evidence_report(probe(checks=[item]))
+
+    def test_changed_stream_resets_decoded_pcm_history(self):
+        first = next_evidence_report(probe(checks=[decoded_row()]))
+        second = next_evidence_report(probe('2026-11-21', [decoded_row(sha=SHA2)]), first)
+        self.assertEqual(second['records'][0]['decodedPcmDates'], ['2026-11-21'])
+        self.assertFalse(second['records'][0]['repeatDecodedPcm'])
+
+    def test_missing_new_decode_preserves_old_history_without_current_claim(self):
+        first = next_evidence_report(probe(checks=[decoded_row()]))
+        second = next_evidence_report(probe('2026-11-21', [decoded_row()]), first)
+        third = next_evidence_report(probe('2026-11-22', [framed_row()]), second)
+        self.assertEqual(len(third['records'][0]['decodedPcmDates']), 2)
+        self.assertFalse(third['records'][0]['repeatDecodedPcm'])
+
+    def test_prior_pcm_days_cannot_precede_sustained_evidence(self):
+        first = next_evidence_report(probe(checks=[decoded_row()]))
+        bad = copy.deepcopy(first)
+        bad['records'][0]['decodedPcmDates'] = ['2026-11-19']
         with self.assertRaises(ValueError):
             next_evidence_report(probe('2026-11-21', []), bad)
 
