@@ -132,6 +132,20 @@ class NationalOAEventResearchTests(unittest.TestCase):
                 self.assertIsNone(x)
                 self.assertNotEqual(status, "editorial_candidate")
 
+    def test_numeric_published_status_may_have_localized_label(self):
+        doc = event()
+        doc["status"] = {"id": 1, "label": {"fr": "Programmé"}}
+        outcome, reason = propose_event(doc, AGENDA, DAY)
+        self.assertEqual(reason, "editorial_candidate")
+        self.assertEqual(outcome["editorial_category_proposal"], "concert")
+        for forbidden in ({"id": 4, "label": {"fr": "Annulé"}},
+                          {"id": "1"}, True):
+            with self.subTest(status=forbidden):
+                doc["status"] = forbidden
+                self.assertEqual(
+                    propose_event(doc, AGENDA, DAY)[1],
+                    "cancelled_or_unconfirmed_event")
+
     def test_no_schedule_does_not_invent_any_event_time(self):
         bad = event(times=0)
         proposed, _ = propose_event(bad, AGENDA, DAY)
