@@ -143,7 +143,7 @@ def next_evidence_report(
             raise ValueError("Invalid previous evidence report")
         if previous.get("streamHistoryMode") == "per_stream" and not retain_stream_variants:
             raise ValueError("Refusing to downgrade multi-stream evidence history")
-        if previous.get("streamHistoryMode") not in (None, "per_stream"):
+        if previous.get("streamHistoryMode") not in (None, "legacy_uuid", "per_stream"):
             raise ValueError("Unknown historical evidence mode")
         if len(previous["records"]) > 25000:
             raise ValueError("Excessive technical stream history")
