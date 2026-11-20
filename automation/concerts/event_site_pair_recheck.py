@@ -156,6 +156,14 @@ def _official_event(lead, html, url, today):
     # Never assemble a show by borrowing fields from a second Event.
     nodes = [n for n in discover.read_ld(html) if isinstance(n, dict)
              and bridge._event_types(n.get("@type")) & {"MusicEvent", "Event"}]
+    if not nodes:
+        # Standard schema.org HTML microdata is a first-party evidence
+        # format, NOT a discovery/source allowlist. The same exact individual
+        # event, artist, genre, address and independent OSM/publisher rules
+        # apply. Do not fall back if any JSON-LD Event was present but bad:
+        # a broken or contradictory structured claim must remain held.
+        import event_site_microdata
+        nodes = event_site_microdata.read_microdata_events(html)
     require(bool(nodes),
             "one unambiguous individual official Event/MusicEvent required")
     if len(nodes) == 1:
