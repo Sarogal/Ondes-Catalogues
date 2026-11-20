@@ -232,7 +232,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
             OSError("offline")))
         self.assertEqual(result["status"], "UNAVAILABLE")
         self.assertEqual(result["leads_count"], 0)
-        self.assertEqual(result["requests_failed"], len(QUERIES))
+        self.assertEqual(result["requests_failed"], len(fixed_query_urls(DAY)))
         self.assertEqual(validated_leads(s, DAY), [])
 
     def test_bogus_favorable_state_never_forges_a_publisher_lead(self):
