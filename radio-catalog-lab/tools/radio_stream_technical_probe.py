@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 from radio_stream_playlist_preview import playlist_hint
+from radio_hls_manifest_evidence import inspect_hls_manifest
 from radio_stream_continuity_evidence import observe_continuity
 
 MAX_BYTES = 512
@@ -315,9 +316,15 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                 verdict, reason = "needs_review", "http_not_successful"
                 break
             verdict, reason = classify_sample(sample.body[:MAX_BYTES], sample.content_type)
+            hls_evidence = None
             if verdict == "playlist_pending":
                 hint = playlist_hint(
                     sample.body[:MAX_BYTES], sample.content_type, current)
+                if hint.kind == "hls_manifest_pending":
+                    # Read-only manifest evidence. Never auto-fetch variants,
+                    # encryption keys or segment data.
+                    hls_evidence = inspect_hls_manifest(
+                        sample.body[:MAX_BYTES], sample.content_type, current)
                 if hint.kind == "playlist_single_target" and hint.target is not None:
                     if playlist_follows >= 1 or redirects >= MAX_REDIRECTS:
                         verdict, reason = "playlist_pending", "playlist_chain_limit"
@@ -339,6 +346,8 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
             }
             if sample.continuity is not None:
                 report["continuityEvidence"] = sample.continuity
+            if hls_evidence is not None:
+                report["hlsEvidence"] = hls_evidence
             return report
     except UnsafeEndpoint as error:
         verdict, reason = "blocked_unsafe", str(error)
@@ -422,6 +431,9 @@ def probe_candidates(
             and x.get("continuityEvidence", {}).get("decodeEvidence", {}).get("state")
             == "decoded_pcm"
             for x in rows),
+        "hlsLiveManifestCandidateCount": sum(
+            x.get("hlsEvidence", {}).get("kind") == "live_manifest_candidate"
+            for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }
@@ -463,6 +475,7 @@ def main(argv: list[str] | None = None) -> int:
           f"sustained_transport={report['sustainedTransportEvidenceCount']} "
           f"frame_chain={report['frameChainEvidenceCount']} "
           f"decoded_pcm={report['decodedPcmEvidenceCount']} "
+          f"hls_live_manifest_candidates={report['hlsLiveManifestCandidateCount']} "
           "technical_verified=0 published=false")
     return 0
 
