@@ -75,7 +75,8 @@ class SharedVenueLocationTests(unittest.TestCase):
             del proof.city
         self.assertIsNotNone(location_from_proof(proof, GROUP["city"],
                                                  GROUP["venue"], DAY+timedelta(days=15)))
-        self.assertEqual(registry_location(GROUP, proof, DAY)["lat"], POINT)
+        self.assertEqual((registry_location(GROUP, proof, DAY)["lat"],
+                          registry_location(GROUP, proof, DAY)["lng"]), POINT)
         ok, _ = verified_location({**GROUP, "lat":POINT[0], "lng":POINT[1]},
                                   proof, DAY)
         self.assertTrue(ok)
@@ -114,7 +115,8 @@ class SharedVenueLocationTests(unittest.TestCase):
         self.assertIsNone(mint(html=html(num="13")))
         self.assertIsNone(mint(ign_fetch=lambda _:ban(score=0.91)))
         self.assertIsNone(mint(ign_fetch=lambda _:ban(number="13")))
-        self.assertIsNone(mint(ign_fetch=lambda _:ban(lat=44.7)))
+        self.assertIsNone(mint(ign_fetch=lambda _:ban(lat=44.7),
+                               source_center=POINT))
         self.assertIsNone(mint(source_center=(44.7,2.25)))
         self.assertIsNotNone(mint(source_center=POINT))
 
