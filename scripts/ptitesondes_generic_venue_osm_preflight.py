@@ -182,7 +182,7 @@ def osm_hints(group, center, response):
 
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                   ign_fetch=None, official_page_get=None,
-                  approved_official_hosts=()):
+                  approved_official_hosts=(), dila_directory_get=None):
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
@@ -217,22 +217,40 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                 page_url, html = official_page_get(group)
             except (OSError, ValueError, TypeError, KeyError, UnicodeError):
                 page_url, html = None, None
+            if dila_directory_get is not None:
+                # DILA is independent of OSM/OpenAgenda's self-asserted
+                # "website" fields. Fail closed if the official directory
+                # is unavailable; never fall back to a caller host list.
+                from ptitesondes_dila_municipal_domains import (
+                    approved_municipal_page_host,
+                )
+                try:
+                    directory = dila_directory_get(group["city"])
+                    trusted = approved_municipal_page_host(
+                        page_url, group["city"], directory)
+                except (OSError, ValueError, TypeError, KeyError,
+                        UnicodeError):
+                    trusted = None
+                hosts = frozenset((trusted,)) if trusted else frozenset()
+            else:
+                hosts = approved_official_hosts
             result["official_page"] = official_venue_page_proof(
                 group, independent["address_candidate_private"],
-                independent, page_url, html, approved_official_hosts)
+                independent, page_url, html, hosts)
     return result
 
 
 def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
-          official_page_get=None, approved_official_hosts=()):
+          official_page_get=None, approved_official_hosts=(),
+          dila_directory_get=None):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
     for group in chosen:
         result = (inspect_group(group, record_fetch, osm_fetch,
                                 ign_fetch, official_page_get,
-                                approved_official_hosts)
+                                approved_official_hosts, dila_directory_get)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
