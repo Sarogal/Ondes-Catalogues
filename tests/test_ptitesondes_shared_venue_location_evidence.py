@@ -69,6 +69,10 @@ class SharedVenueLocationTests(unittest.TestCase):
         place = location_from_proof(proof, "Ville-des-Bois", "Maison des enfants",
                                     DAY, POINT)
         self.assertEqual((place["lat"],place["lng"]), POINT)
+        with self.assertRaises(AttributeError):
+            proof.lat = 1.0
+        with self.assertRaises(AttributeError):
+            del proof.city
         self.assertIsNotNone(location_from_proof(proof, GROUP["city"],
                                                  GROUP["venue"], DAY+timedelta(days=15)))
         self.assertEqual(registry_location(GROUP, proof, DAY)["lat"], POINT)
