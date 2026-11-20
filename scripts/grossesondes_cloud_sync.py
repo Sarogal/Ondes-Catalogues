@@ -24,6 +24,9 @@ from grossesondes_stage import official_text, stage, PROOF_MODE
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
 )
+from grossesondes_future_city_publisher import (
+    apply_independently_verified_city, private_city_report,
+)
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
@@ -223,7 +226,8 @@ def future_map_coverage(calendar, today):
 
 
 def build_candidate(snapshot, published, patch, official_sources, today, trusted_published=False,
-                    geo_review=None, geo_fetcher=None):
+                    geo_review=None, geo_fetcher=None, city_review=None,
+                    city_fetcher=None, city_admin_reader=None):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -287,6 +291,24 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
             "publication_authorized_by_private_report": False,
         }
     report["future_geo_publisher"] = geo_report
+    if trusted_published:
+        extra = {}
+        if city_fetcher is not None:
+            extra["fetcher"] = city_fetcher
+        if city_admin_reader is not None:
+            extra["admin_reader"] = city_admin_reader
+        target, city_report = apply_independently_verified_city(
+            target, published["festivals.json"], city_review, today, **extra)
+    else:
+        city_report = {
+            "private_report": "signed_head_not_verified",
+            "private_two_day_candidates": 0,
+            "independent_rechecks": 0,
+            "accepted_city_updates": [],
+            "held_city": 0,
+            "publication_authorized_by_private_report": False,
+        }
+    report["future_city_publisher"] = city_report
     changed=safe_target(reference,target,published["festivals.json"])
     report["candidate_total"] = len(target["festivals"])
     report["future_map_coverage"] = future_map_coverage(target, today)
@@ -671,9 +693,11 @@ def main():
     sources.update(collect_registered_linked_sources(
         patch, signed_published_slugs, today.isoformat()))
     geo_review = private_geo_report(token)
+    city_review = private_city_report(token)
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
-        trusted_published=True, geo_review=geo_review)
+        trusted_published=True, geo_review=geo_review,
+        city_review=city_review)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7
