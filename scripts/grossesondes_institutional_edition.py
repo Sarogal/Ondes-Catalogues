@@ -28,7 +28,9 @@ from national_detail_qualification import _seen_again
 from national_discovery_queue import _safe_origin_link
 from official_watch import get_page, permitted_url
 from regional_agenda_pagination import canonical_page_url
-from regional_festival_discovery import APPROVED, candidate_links
+from regional_festival_discovery import (
+    APPROVED, candidate_links, MUSIC_CATEGORY_PENDING_SIGNAL,
+)
 from source_qualification import normalized
 
 PROOF_MODE = "institutional-visible-edition.v1"
@@ -304,6 +306,7 @@ def independently_fetch(proposal, today, fetch=get_page):
         theme_on_index = any(
             x.get("candidate_url") == spec["url"]
             and normalized(x.get("title")) == normalized(spec["title"])
+            and x.get("signal") != MUSIC_CATEGORY_PENDING_SIGNAL
             for x in matches)
         # The new fallback cannot use a self-declared OpenData genre. Fetch
         # only the EXACT detail whose anchor just appeared on the trusted index.
