@@ -1,0 +1,100 @@
+name: "Grosses Ondes — signed radio release bundle (offline staging only)"
+
+on:
+  push:
+    branches:
+      - feature/radio-signed-release-bundle-preview-20261120
+    paths:
+      - ".github/workflows/radio-signed-release-staging-ci.yml"
+      - "radio-catalog-lab/tools/radio_catalog_release_packager.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_release_packager.py"
+      - "radio-catalog-lab/tools/radio_catalog_guard.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_guard.py"
+      - "radio-catalog-lab/schemas/**"
+      - "radio-catalog-lab/dart/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-radio-signed-bundle-preview
+  cancel-in-progress: true
+
+jobs:
+  offline-signing-cross-runtime:
+    name: "Python Ed25519 packaging + real Dart signature validation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: "Install pinned offline validation libraries (never production keys)"
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "cryptography==44.0.3" "jsonschema==4.23.0"
+      - name: "Test synthetic signed bundle, historical coverage and no unsafe writes"
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_radio_catalog_guard.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_radio_catalog_release_packager.py" -v
+      - name: "Produce ephemeral synthetic signed current.json for Dart"
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import os
+          from pathlib import Path
+          import sys
+
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          sys.path.insert(0, "radio-catalog-lab/tools")
+          from test_radio_catalog_guard import catalog, station
+          from radio_catalog_release_packager import create_bundle, wire_bytes, write_staging
+
+          key = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))
+          payload = wire_bytes(catalog(station(approved=True, verified=True)))
+          bundle = create_bundle(
+              payload, key, key_id="synthetic-ci-key",
+              published_at="2026-11-20T17:55:00Z",
+          )
+          target = Path(os.environ["RUNNER_TEMP"]) / "go-radio-python-synthetic-bundle"
+          directory = write_staging(target, bundle)
+          public = key.public_key().public_bytes(
+              encoding=serialization.Encoding.Raw,
+              format=serialization.PublicFormat.Raw,
+          )
+          (directory / "synthetic-test-public-key.b64").write_bytes(
+              base64.b64encode(public) + b"\n"
+          )
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as env:
+              env.write("GO_RADIO_PY_RELEASE_DIR=" + str(directory) + "\n")
+          print("SYNTHETIC_RADIO_RELEASE_STAGED",
+                "sequence", bundle.sequence, "stations", bundle.station_count,
+                "published=false")
+          PY
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: "Resolve isolated Dart verifier dependencies"
+        working-directory: radio-catalog-lab/dart
+        run: dart pub get
+      - name: "Analyze real Dart verifier and cross-language contract test"
+        working-directory: radio-catalog-lab/dart
+        run: dart analyze --fatal-infos
+      - name: "Verify actual Python signed bytes using Dart Ed25519 verifier"
+        working-directory: radio-catalog-lab/dart
+        run: |
+          test -n "$GO_RADIO_PY_RELEASE_DIR"
+          dart test test/radio_python_signed_wire_interop_test.dart --reporter expanded
+      - name: "Assert no deployment and no repository modification"
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git status --porcelain | wc -l)" -eq 0
+          echo "OFFLINE_ONLY_SYNTHETIC_CROSS_RUNTIME_PASS — no publisher, no deploy"
