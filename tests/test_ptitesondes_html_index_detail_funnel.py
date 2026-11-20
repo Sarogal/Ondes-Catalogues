@@ -604,7 +604,7 @@ class NonMusicalAdmissionGateCountsTests(unittest.TestCase):
         report["source_url"] = ONE
         public = redact_detail_funnel_report(report)
         self.assertEqual(public["router_historical_snapshot_unchecked"], 0)
-        self.assertNotIn("candidate", json.dumps(public))
+        self.assertNotIn("candidate", public)
         self.assertNotIn(ONE, json.dumps(public))
         self.assertEqual(public["public_writes"], 0)
 
