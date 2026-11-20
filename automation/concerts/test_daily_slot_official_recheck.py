@@ -104,7 +104,7 @@ class MultiSlotRecheckTests(unittest.TestCase):
             self.assertEqual(selected, entries)
 
     def test_capacity_and_slot_cannot_be_unbounded(self):
-        for bad in (-1, 0, 25, True, "16"):
+        for bad in (-1, 0, 41, True, "16"):
             with self.subTest(limit=bad), self.assertRaises(ValueError):
                 official_recheck.scheduled_review_cohort([], TODAY, 1, bad)
 
