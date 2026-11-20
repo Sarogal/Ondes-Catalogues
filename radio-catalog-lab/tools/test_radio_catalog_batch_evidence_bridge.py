@@ -221,6 +221,70 @@ class RealProbeToStreamHistoryTests(unittest.TestCase):
         self.assertEqual(report["streamEvidence"]["records"], [])
         self.assertFalse(report["publicationAllowed"])
 
+    def test_cli_writes_independent_ledger_for_next_day(self):
+        import sys
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from radio_catalog_batch_evidence_bridge import main
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan, reports = self.make(daily=2)
+            (root / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+            for i, report in enumerate(reports):
+                (root / f"batch{i}.json").write_text(json.dumps(report), encoding="utf-8")
+            arguments = [
+                "radio_catalog_batch_evidence_bridge.py",
+                "--plan", str(root / "plan.json"),
+                "--batch-report", str(root / "batch0.json"),
+                "--batch-report", str(root / "batch1.json"),
+                "--output", str(root / "result.json"),
+                "--ledger-output", str(root / "ledger.json"),
+            ]
+            with patch.object(sys, "argv", arguments):
+                main()
+            result = json.loads((root / "result.json").read_text(encoding="utf-8"))
+            ledger = json.loads((root / "ledger.json").read_text(encoding="utf-8"))
+            self.assertEqual(result["streamEvidence"], ledger)
+            self.assertEqual(ledger["streamHistoryMode"], "per_stream")
+            self.assertNotIn("https://", (root / "ledger.json").read_text(encoding="utf-8"))
+            plan2, reports2 = self.make(date="2026-11-21", daily=2)
+            updated = consume_batches(plan2, reports2, ledger)
+            self.assertEqual(updated["streamEvidence"]["observationDate"], "2026-11-21")
+
+    def test_cli_refuses_to_overwrite_previous_ledger_or_shared_output(self):
+        import sys
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import patch
+        from radio_catalog_batch_evidence_bridge import main
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan, reports = self.make(daily=2)
+            (root / "plan.json").write_text(json.dumps(plan), encoding="utf-8")
+            for i, report in enumerate(reports):
+                (root / f"batch{i}.json").write_text(json.dumps(report), encoding="utf-8")
+            arguments = [
+                "radio_catalog_batch_evidence_bridge.py",
+                "--plan", str(root / "plan.json"),
+                "--batch-report", str(root / "batch0.json"),
+                "--batch-report", str(root / "batch1.json"),
+                "--output", str(root / "result.json"),
+                "--ledger-output", str(root / "ledger.json"),
+            ]
+            (root / "ledger.json").write_text('{"previous":true}', encoding="utf-8")
+            with patch.object(sys, "argv", arguments), self.assertRaises(SystemExit):
+                main()
+            self.assertFalse((root / "result.json").exists())
+            self.assertEqual((root / "ledger.json").read_text(encoding="utf-8"),
+                             '{"previous":true}')
+            (root / "ledger.json").unlink()
+            arguments[-1] = str(root / "result.json")
+            with patch.object(sys, "argv", arguments), self.assertRaises(SystemExit):
+                main()
+            self.assertFalse((root / "result.json").exists())
+
+
 
 if __name__ == "__main__":
     unittest.main()
