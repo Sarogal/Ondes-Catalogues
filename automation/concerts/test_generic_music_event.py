@@ -28,7 +28,7 @@ DATE = "2027-03-13"
 def make(venue_id="la-rayonne", names=("ACT ONE", "ACT TWO"),
          kind="MusicEvent", genre=("Death Metal",)):
     spec = gen.SPECS[venue_id]
-    url = spec["base"] + "evenement/verified-show-2027/"
+    url = spec["base"] + spec["eventPathPrefix"].lstrip("/") + "verified-show-2027/"
     raw = {
         "@type": kind,
         "url": url, "name": " + ".join(names),
