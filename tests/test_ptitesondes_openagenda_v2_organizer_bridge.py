@@ -151,6 +151,39 @@ class OrganizerEvidenceContract(unittest.TestCase):
         self.assertEqual(r["confirmed_local_start_times_count"], 2)
         self.assertFalse(r["approval_granted"])
 
+    def test_twenty_one_distinct_daily_sessions_are_not_rejected(self):
+        # The direct OpenAgenda validator already accepts up to MAX_TIMINGS.
+        # No additional 20-session ceiling may reject an independently
+        # corroborated public performance.
+        ev = deepcopy(EVENT)
+        ev["timings"] = []
+        official_lines = []
+        for i in range(21):
+            minute = 9 * 60 + 30 * i
+            start = f"{minute // 60:02d}:{minute % 60:02d}"
+            end_minute = minute + 20
+            end = f"{end_minute // 60:02d}:{end_minute % 60:02d}"
+            ev["timings"].append({
+                "begin": f"2026-12-05T{start}:00+0100",
+                "end": f"2026-12-05T{end}:00+0100",
+            })
+            official_lines.append(
+                f"<li>5 décembre 2026 à {start} : séance enfants</li>"
+            )
+        html = ("<html><body><h1>Lecture pour enfants</h1>"
+                "<p>Bibliothèque fictive, Villeurbanne. "
+                "Pour les enfants et familles.</p><ul>"
+                + "".join(official_lines) + "</ul></body></html>")
+        corroborated = check(event=ev, html=html)
+        self.assertTrue(corroborated["official_session_evidence_consistent"],
+                        corroborated.get("reason"))
+        self.assertEqual(corroborated["confirmed_local_start_times_count"], 21)
+        self.assertFalse(corroborated["approval_granted"])
+        self.assertEqual(corroborated["public_writes"], 0)
+        omitted = html.replace(official_lines[12], "")
+        self.assertFalse(check(event=ev, html=omitted)[
+            "official_session_evidence_consistent"])
+
     def test_age_range_not_automatically_claimed_from_oa(self):
         # '6 à 8 ans' is not converted to an exact official age attestation.
         event = deepcopy(EVENT)
