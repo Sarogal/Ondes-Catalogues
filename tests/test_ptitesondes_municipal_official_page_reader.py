@@ -38,7 +38,7 @@ def event(uid=OA_UID, website=WEBSITE):
 def dila():
     return {"total_count": 1, "results": [{
         "nom": "Mairie - " + CITY, "categorie": "SL",
-        "statut_de_diffusion": "Publiable",
+        "statut_de_diffusion": "true", "version_type": "Publiable",
         "copyright": DILA_COPYRIGHT,
         "url_service_public": "https://lannuaire.service-public.gouv.fr/occitanie/aveyron/uuid",
         "code_insee_commune": "12345",
