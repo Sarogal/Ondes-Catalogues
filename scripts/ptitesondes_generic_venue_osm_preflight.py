@@ -45,6 +45,9 @@ def groups_for_review(backlog, today):
     return [
         {"city": items[0]["city"], "venue": items[0]["venue"],
          "key": list(key), "lead_count": len(items),
+         "unique_candidate_sessions": len({
+             (item["external_id"], item["date_start"]) for item in items
+         }),
          "uids": sorted({item["external_id"] for item in items})}
         for key, items in sorted(groups.items(),
                                  key=lambda p: (-len(p[1]), p[0]))
@@ -319,6 +322,8 @@ def audit(backlog, today, record_fetch=api_record,
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
                         "lead_count": group["lead_count"],
+                        "unique_candidate_sessions":
+                            group["unique_candidate_sessions"],
                         "uids": group["uids"], **result})
     address_matched = [
         x for x in checked
@@ -341,6 +346,12 @@ def audit(backlog, today, record_fetch=api_record,
         "mode": "private_osm_hints_no_publisher_access",
         "total_backlog": len(backlog),
         "unknown_venue_leads": sum(x["lead_count"] for x in groups),
+        # Unique UID+date within a venue; aliases in two collectors never
+        # inflate the number of sessions that could progress.
+        "unknown_candidate_sessions": sum(
+            x["unique_candidate_sessions"] for x in groups),
+        "duplicate_collector_or_repeated_leads": sum(
+            x["lead_count"] - x["unique_candidate_sessions"] for x in groups),
         "unknown_unique_venues": len(groups),
         "selected_venues": len(checked),
         "queried_venues": len(checked) if live else 0,
@@ -359,6 +370,8 @@ def audit(backlog, today, record_fetch=api_record,
         "private_reusable_location_proofs": len(reusable),
         "leads_with_private_reusable_proof": sum(
             x["lead_count"] for x in reusable),
+        "candidate_sessions_with_private_reusable_proof": sum(
+            x["unique_candidate_sessions"] for x in reusable),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
