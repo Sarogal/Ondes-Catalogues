@@ -33,6 +33,9 @@ from ptitesondes_html_independent_venue_geo import (
 from ptitesondes_html_access_conditions import triage_html_access_conditions
 from ptitesondes_html_family_age import triage_html_family_age
 from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
+from ptitesondes_nonmusical_html_gate_router import (
+    route_nonmusical_html_session, STAGES as HTML_ADMISSION_STAGES,
+)
 
 SCHEMA = "ptitesondes.html_index_detail_funnel_readonly.v1"
 MAX_DETAILS = 30
@@ -130,6 +133,7 @@ def _empty(stage="invalid_trusted_pilot_configuration"):
         "approval_granted": False,
         "public_writes": 0,
         "candidate_details_redacted": True,
+        **{"router_" + stage: 0 for stage in sorted(HTML_ADMISSION_STAGES)},
     }
 
 
@@ -398,6 +402,12 @@ def diagnose_html_index_detail_funnel(
                     result["access_first_party_registration_conflicting"] += 1
                 if access["first_party_source_access_review_pending"]:
                     result["access_first_party_source_review_required"] += 1
+            # Generic source-to-private-review routing with fixed, anonymous
+            # blockers. It never emits candidate contents or publisher input.
+            route = route_nonmusical_html_session(
+                row, page, independently_pinned_index, contract["child_path"],
+                independent_context, today)
+            result["router_" + route["stage"]] += 1
             triage = triage_independent_context(row, independent_context)
             venue = triage["venue_status"]
             history = triage["history_status"]

@@ -561,6 +561,54 @@ class FactualReviewHandoffCountsTests(unittest.TestCase):
         self.assertEqual(report["public_writes"], 0)
 
 
+class NonMusicalAdmissionGateCountsTests(unittest.TestCase):
+    def test_official_html_sessions_report_missing_curated_snapshot_without_publishing(self):
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        self.assertEqual(report["router_historical_snapshot_unchecked"], 2)
+        self.assertEqual(report["router_independent_geo_rights_review_required"], 0)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["router_historical_snapshot_unchecked"], 2)
+        self.assertFalse(public["publisher_connected"])
+        self.assertFalse(public["publication_ready"])
+        self.assertEqual(public["public_writes"], 0)
+        self.assertNotIn("Albert Camus", json.dumps(public))
+
+    def test_curated_independent_venue_and_current_history_reach_only_private_review(self):
+        venue = {
+            "city": "Montpellier",
+            "aliases": ["Maison pour tous Albert Camus"],
+            "lat": 43.60, "lng": 3.85,
+            "official": "https://mpt.montpellier.fr/maisons/albert-camus",
+            "geo_source": "https://www.openstreetmap.org/way/12345",
+        }
+        context = {
+            "legacy_venues": [venue], "public_places": [],
+            "historical_catalogue": {
+                "updated_at": "2026-11-19T09:00:00+01:00",
+                "events": [],
+            },
+        }
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE},
+                             independent_context=context)
+        self.assertEqual(report["router_independent_geo_rights_review_required"], 2)
+        self.assertEqual(report["factual_private_draft_for_rights_review"], 2)
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["router_independent_geo_rights_review_required"], 2)
+        self.assertFalse(public["approval_granted"])
+        self.assertFalse(public["publication_ready"])
+
+    def test_router_counts_cannot_be_expanded_with_private_candidate_fields(self):
+        report, _, _ = probe(details={ONE: MPT_TEMPLATE})
+        report["router_historical_snapshot_unchecked"] = True
+        report["candidate"] = {"city": "Montpellier"}
+        report["source_url"] = ONE
+        public = redact_detail_funnel_report(report)
+        self.assertEqual(public["router_historical_snapshot_unchecked"], 0)
+        self.assertNotIn("candidate", public)
+        self.assertNotIn(ONE, json.dumps(public))
+        self.assertEqual(public["public_writes"], 0)
+
+
 class RepresentativeSamplingAndDedupTests(unittest.TestCase):
     def test_sampling_prefers_supported_topics_but_never_claims_event_proof(self):
         relevant = "https://mpt.montpellier.fr/evenement/zzz-atelier-motricite"
