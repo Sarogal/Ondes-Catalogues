@@ -207,3 +207,32 @@ def redacted_directory_status(city, directory_response, page_url):
         "publication_ready": False,
         "public_writes": 0,
     }
+
+
+def verified_oa_location_website(group, event, directory_response):
+    """Use a DIRECT OA v2 location website only as a candidate page URL.
+
+    OpenAgenda location.website is self-declared. It cannot serve as a
+    source-ownership proof unless a *separate* DILA mairie record confirms
+    the exact municipality domain. An official page must still contain
+    the venue's exact identity/address before publication can be discussed.
+    """
+    if not isinstance(group, dict) or not isinstance(event, dict):
+        return None
+    uids = group.get("uids")
+    loc = event.get("location")
+    if (not isinstance(uids, list) or not uids
+            or not isinstance(loc, dict)
+            or str(event.get("uid")) not in uids
+            or type(event.get("state")) is not int or event["state"] != 2
+            or type(event.get("status")) is not int or event["status"] != 1
+            or event.get("removed") is True
+            or event.get("attendanceMode") not in (1, 3)
+            or loc.get("countryCode") not in ("FR", "GP", "MQ", "GF", "RE", "YT")
+            or norm(loc.get("name")) != norm(group.get("venue"))
+            or norm(loc.get("adminLevel4")) != norm(group.get("city"))):
+        return None
+    link = loc.get("website")
+    host = approved_municipal_page_host(link, group.get("city"),
+                                        directory_response)
+    return link if host is not None else None
