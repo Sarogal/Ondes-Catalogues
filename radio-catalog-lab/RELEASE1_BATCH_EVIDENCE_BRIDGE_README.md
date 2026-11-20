@@ -48,16 +48,16 @@ python radio-catalog-lab/tools/radio_catalog_batch_evidence_bridge.py \
   --batch-report /scratch/probe-batch-01-results.json \
   --batch-report /scratch/probe-batch-02-results.json \
   --previous /scratch/last-stream-ledger.json \
-  --output /scratch/release1-stream-ledger-day2.json
+  --output /scratch/release1-run-summary-day2.json \
+  --ledger-output /scratch/release1-stream-ledger-day2.json
 ```
 
 Omettre `--previous` pour le premier jour. L'argument `--batch-report`
-peut être répété jusqu'à huit fois, dans l'ordre des lots. Une fois validée,
-la sortie `streamEvidence` devient la section à transmettre comme archive
-précédente à la commande suivante. Le rapport de synthèse n'est **pas**
-directement compatible avec le paramètre `--previous`, qui attend
-uniquement l'objet imbriqué `streamEvidence`. Un export explicite doit
-donc être prévu lors du raccordement automatisé.
+peut être répété jusqu'à huit fois, dans l'ordre des lots. Le fichier indiqué par `--ledger-output` contient **seulement**
+le registre `streamEvidence`, directement réutilisable le lendemain avec
+`--previous`. `--output` conserve le résumé et le registre ensemble
+pour audit. Les deux sorties sont obligatoirement distinctes et ne sont
+jamais écrasées ; l'option `--ledger-output` reste facultative.
 
 ## Ce qui reste interdit/non acquis
 
