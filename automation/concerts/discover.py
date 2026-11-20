@@ -2539,6 +2539,11 @@ def main():
                    "icsCancellationNotices": sum(x.get("source") == "ics_cancellation_notice" for x in candidates),
                    "rssUndatedAnnouncements": sum(x.get("source") == "actualite_rss_non_datee" for x in candidates),
                    "structuredEventLeads": sum(x.get("source") == "agenda_officiel_structuré" for x in candidates),
+                   "officialOffsiteVenueLeads": sum(
+                       x.get("source") == "agenda_officiel_lieu_a_verifier"
+                       for x in classified),
+                   "newVenueDiscoveryLeads": sum(
+                       x.get("newVenueToReview") is True for x in classified),
                    "possibleExistingConcerts": sum(x.get("possibleExistingConcert", False) for x in classified),
                    "requiresHumanOrIndependentVerification": len(candidates),
                    "officiallyConfirmedNewMetalConcerts": 0},
@@ -2575,6 +2580,10 @@ def main():
         "Alertes annulation ICS : " + str(review["counts"]["icsCancellationNotices"]) + ".",
         "Annonces RSS SANS date de concert : " + str(review["counts"]["rssUndatedAnnouncements"]) + ".",
         "Événements structurés à vérifier : " + str(review["counts"]["structuredEventLeads"]) + ".",
+        "Nouveaux lieux possibles, en quarantaine privée : "
+        + str(review["counts"]["newVenueDiscoveryLeads"]) + ".",
+        "Concerts officiellement annoncés dans un lieu distinct de la source : "
+        + str(review["counts"]["officialOffsiteVenueLeads"]) + ".",
         "Classement des pistes (aucune confirmation automatique) :",
         *["  - " + bucket + " : " + str(total) for bucket, total in sorted(triage_counts.items())],
         "À examiner en priorité : " + str(len(shortlist)) + " (annulations, doublons, genre ou festival).",
