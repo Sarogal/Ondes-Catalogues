@@ -215,6 +215,37 @@ def published_patch_duplicate(proposal, published_calendar):
                 for key in _PUBLISHED_IDENTITY_FIELDS if key not in geo_keys)
     ):
         return "ALREADY_PUBLISHED"
+    # The signed publisher may also add a verified MUNICIPALITY CENTRE.
+    # Never confuse that coarse marker with this edition's precise venue.
+    if (
+        isinstance(record, dict)
+        and set(record) == {
+            "proofMode", "firstObserved", "verifiedAt",
+            "officialSite", "markerMeaning"}
+        and record.get("proofMode") == "current-edition-commune-two-day.v1"
+        and record.get("markerMeaning") == "centre_indicatif_de_commune"
+        and record.get("officialSite") == signed.get("officialSite")
+        and isinstance(record.get("firstObserved"), str)
+        and isinstance(record.get("verifiedAt"), str)
+        and record["firstObserved"] < record["verifiedAt"]
+        and proposal.get("showOnMap") is not True
+        and proposal.get("lat") is None and proposal.get("lon") is None
+        and proposal.get("venue") == signed.get("venue")
+        and signed.get("showOnMap") is True
+        and signed.get("futureVenueConfirmed") is not True
+        and signed.get("geoPrecision") == "commune"
+        and signed.get("geoCity") == signed.get("city")
+        and signed.get("geoSource", "").startswith(
+            "https://geo.api.gouv.fr/communes?")
+        and isinstance(signed.get("geoInsee"), str)
+        and re.fullmatch(r"[0-9AB]{5}", signed["geoInsee"])
+        and (proposal.get("city") is None
+             or norm(proposal["city"]) == norm(signed["city"]))
+        and all(proposal.get(key) == signed.get(key)
+                for key in _PUBLISHED_IDENTITY_FIELDS
+                if key not in {"city", "lat", "lon", "showOnMap"})
+    ):
+        return "ALREADY_PUBLISHED"
     return "PUBLISHED_COLLISION"
 
 

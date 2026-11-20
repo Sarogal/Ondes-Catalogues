@@ -25,6 +25,7 @@ on:
       - 'scripts/grossesondes_institutional_edition.py'
       - 'festival-automation/national_candidate_promotion.py'
       - 'festival-automation/future_geo_preflight.py'
+      - 'festival-automation/future_city_preflight.py'
       - 'festival-automation/national_admission_handoff.py'
       - 'festival-automation/national_institutional_linked_primary_preflight.py'
       - 'scripts/grossesondes_institutional_linked_edition.py'
@@ -193,6 +194,9 @@ jobs:
           # Exact current-edition JSON-LD geo claims from SIGNED public rows only.
           # Two-day observations stay PRIVATE. Never write a pin or patch here.
           run_private future_geo python "$ENGINE/future_geo_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --limit 4
+          # Separately observe year-specific named communes; NO geocoder or
+          # public coordinates here, only private two-day provenance.
+          run_private future_city python "$ENGINE/future_city_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --limit 4
           # Research generic national domains beyond legacy one-event registry.
           # DNS-pinned rechecks and two-day observations, never a patch or approval.
           run_private generic_primary_domains python "$ENGINE/national_generic_primary_domain_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json
@@ -238,7 +242,8 @@ jobs:
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \
             automation-intake/grossesondes/national-festival-yield-diagnostics.json \
-            automation-intake/grossesondes/future-festival-geo-review.json
+            automation-intake/grossesondes/future-festival-geo-review.json \
+            automation-intake/grossesondes/future-festival-city-review.json
           if git diff --cached --quiet; then
             echo "Aucun changement des états privés ; rien à envoyer."
           else
