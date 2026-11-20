@@ -9,6 +9,7 @@ import json
 import re
 from collections import defaultdict
 from urllib.request import Request, build_opener, HTTPRedirectHandler
+from urllib.parse import urlsplit
 
 from proof import norm
 from ptitesondes_dila_municipal_domains import (
@@ -180,4 +181,22 @@ class MunicipalOfficialPageReader:
             except (ValueError, OSError, TypeError, KeyError,
                     TimeoutError, UnicodeError):
                 return None, None
-        return url, self.page_cache[url]
+        html = self.page_cache[url]
+        # A municipality homepage sometimes mentions a venue but lacks its
+        # exact address. Only a single visible, same-site, exact-name link
+        # may lead to ONE extra municipal venue page (never free crawling).
+        if urlsplit(url).path in ("", "/"):
+            from ptitesondes_municipal_venue_link_discovery import (
+                exact_named_venue_page,
+            )
+            target = exact_named_venue_page(
+                group["venue"], url, html, group["city"], directory)
+            if target is not None:
+                if target not in self.page_cache:
+                    try:
+                        self.page_cache[target] = self.html_reader(target)
+                    except (ValueError, OSError, TypeError, KeyError,
+                            TimeoutError, UnicodeError):
+                        return None, None
+                return target, self.page_cache[target]
+        return url, html
