@@ -26,6 +26,14 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_frame_chain.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_decode_evidence.py' -v
           python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_technical_probe.py' -v
+      - name: Install FFmpeg only on this ephemeral Ubuntu decoder pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
+          fi
       - name: Inspect isolated decoder runtime availability
         shell: bash
         run: |
