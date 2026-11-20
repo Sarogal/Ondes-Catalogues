@@ -234,8 +234,13 @@ class RegionalEventAnchors(Anchors):
         attributes = dict(attrs)
         if tag == "div":
             self.div_depth += 1
+        # A list item INSIDE an article may be an ordinary category list;
+        # keep the outer card intact rather than attributing sibling links.
+        if (tag == "li" and self.article_stack
+                and self.article_stack[-1]["tag"] == "li"):
+            self.article_stack[-1]["nested"] = True
         semantic_card = (
-            tag == "article" or tag == "li"
+            tag == "article" or (tag == "li" and not self.article_stack)
             or (tag == "div" and attributes.get("role") == "article")
         )
         if semantic_card and not self.hidden and not self.concealed:
