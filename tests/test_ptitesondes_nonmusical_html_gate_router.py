@@ -210,14 +210,14 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         self.assertEqual(out["stage"], "access_terms_conflicting")
         self.assert_safe(out)
 
-    def test_oversized_fragment_is_not_misreported_as_missing_tariff(self):
+    def test_oversized_fragment_is_reported_as_source_scan_limit(self):
         page = dict(PAGE)
         page["html"] = page["html"].replace(
             "<p>Sur inscription | Gratuit</p>",
             "<p>" + ("texte " * 900) + "</p><p>Gratuit</p>",
         )
         out = route(page=page)
-        self.assertEqual(out["stage"], "access_terms_unreadable")
+        self.assertEqual(out["stage"], "source_visible_terms_over_limit")
         self.assert_safe(out)
 
     def test_musical_and_unknown_categories_never_use_nonmusical_route(self):
