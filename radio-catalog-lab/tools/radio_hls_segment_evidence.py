@@ -69,7 +69,7 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
 
 def plan_single_variant(master: bytes, content_type: str,
                         source_url: str) -> SegmentPlan | None:
-    """Only ONE master rendition may be followed, with the same-origin guard."""
+    """Follow ONE rendition, either same-origin or absolute HTTPS CDN."""
     hint = inspect_hls_manifest(master, content_type, source_url)
     if hint["kind"] != "master_single_variant_pending":
         return None
@@ -78,25 +78,36 @@ def plan_single_variant(master: bytes, content_type: str,
     if len(references) != 1:
         return None
     value = references[0]
-    if (len(value) > 200 or any(ord(c) < 33 or ord(c) > 126 for c in value)
-        or "\\" in value or "#" in value or "@" in value or "{" in value
-        or "}" in value or value.startswith(("//", "/", "?"))
-        or "://" in value):
+    # The one explicitly declared variant can live on an HTTPS CDN.
+    # Network access still goes through pinned public-DNS and normal TLS.
+    if (len(value) > 512 or any(ord(c) < 33 or ord(c) > 126 for c in value)
+        or "\\" in value or "#" in value or "@" in value
+        or "{" in value or "}" in value
+        or value.startswith(("//", "/", "?"))):
         return None
     ref = urllib.parse.urlsplit(value)
-    if ref.scheme or ref.netloc or ref.fragment:
+    if ref.fragment or ref.username is not None or ref.password is not None:
+        return None
+    absolute = bool(ref.scheme or ref.netloc)
+    if absolute and ref.scheme != "https":
+        return None
+    if not absolute and (ref.scheme or ref.netloc):
         return None
     unquoted = urllib.parse.unquote(urllib.parse.unquote(ref.path))
     if (not unquoted.lower().endswith(".m3u8") or
             any(part in (".", "..") for part in unquoted.split("/")) or
-            not re.fullmatch(r"[A-Za-z0-9_./%+~-]+", ref.path) or
+            not re.fullmatch(r"/?[A-Za-z0-9_./%+~-]+", ref.path) or
             (ref.query and not re.fullmatch(
                 r"[A-Za-z0-9_=&%+./~-]{1,128}", ref.query))):
         return None
     original = validate_endpoint(source_url)
     target = urllib.parse.urljoin(source_url, value)
     parsed = validate_endpoint(target)
-    if (parsed.scheme != original.scheme or parsed.hostname != original.hostname or
+    if original.scheme == "https" and parsed.scheme != "https":
+        return None
+    if not absolute and (
+            parsed.scheme != original.scheme or
+            parsed.hostname != original.hostname or
             (parsed.port or (443 if parsed.scheme == "https" else 80))
             != (original.port or (443 if original.scheme == "https" else 80))):
         return None
