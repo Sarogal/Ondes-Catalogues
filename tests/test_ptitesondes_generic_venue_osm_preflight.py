@@ -176,6 +176,49 @@ class GenericVenueOSMTests(unittest.TestCase):
         self.assertEqual(report["public_writes"], 0)
         self.assertFalse(report["publication_ready"])
 
+    def test_full_private_place_evidence_never_enables_publisher(self):
+        import json
+        from ptitesondes_generic_venue_ign_corroboration import address_candidate
+        osm = element()
+        osm["tags"].update({
+            "addr:housenumber": "12", "addr:street": "Rue des Lilas",
+            "addr:postcode": "12345",
+        })
+        c = address_candidate(self.group, osm)
+        ban = {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [3.456, 45.123]},
+            "properties": {
+                "type": "housenumber", "score": 0.98, "city": c["city"],
+                "postcode": c["postcode"], "housenumber": c["housenumber"],
+                "label": c["address_query"],
+            },
+        }]}
+        venue = {"@type": "Place", "name": "Médiathèque des Étoiles",
+                 "address": {"@type": "PostalAddress",
+                             "streetAddress": "12 Rue des Lilas",
+                             "postalCode": "12345",
+                             "addressLocality": "Ville-test"}}
+        html = ("<html><script type='application/ld+json'>"
+                + json.dumps(venue) + "</script></html>")
+        args = (self.leads, DAY, self.fetch)
+        kwargs = dict(
+            osm_fetch=lambda xy: {"elements": [osm]}, live=True,
+            ign_fetch=lambda candidate: ban,
+            official_page_get=lambda group: (
+                "https://ville-test.fr/lieux/mediatheque", html),
+        )
+        untrusted = audit(*args, **kwargs)
+        self.assertEqual(untrusted["official_identity_address_matches"], 0)
+        approved = audit(*args, **kwargs,
+                         approved_official_hosts=frozenset({"ville-test.fr"}))
+        self.assertEqual(approved["official_identity_address_matches"], 1)
+        self.assertEqual(approved["leads_with_private_official_place_evidence"], 2)
+        self.assertEqual(approved["verified_venue_leads"], 0)
+        self.assertFalse(approved["official_venue_verified"])
+        self.assertFalse(approved["publication_ready"])
+        self.assertEqual(approved["public_writes"], 0)
+
     def test_invalid_center_refused_before_provider(self):
         with self.assertRaises(ValueError):
             overpass_query(float("nan"), 3.4)
