@@ -10,8 +10,8 @@ from __future__ import annotations
 import re
 from urllib.parse import urlsplit
 
-MAX_HLS_BYTES = 512
-MAX_HLS_LINES = 32
+MAX_HLS_BYTES = 4096
+MAX_HLS_LINES = 128
 MAX_HLS_SEGMENTS = 12
 MAX_HLS_VARIANTS = 8
 
@@ -24,7 +24,7 @@ def inspect_hls_manifest(data: bytes, content_type: str, url: str) -> dict:
         "liveCandidate": False,
         "publicationAllowed": False,
     }
-    if not isinstance(data, bytes) or len(data) > MAX_HLS_BYTES:
+    if not isinstance(data, bytes) or len(data) >= MAX_HLS_BYTES:
         output["kind"] = "manifest_oversized"
         return output
     if not isinstance(content_type, str) or len(content_type) > 250:
