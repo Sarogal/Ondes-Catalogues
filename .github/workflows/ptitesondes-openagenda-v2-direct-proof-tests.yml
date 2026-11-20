@@ -19,6 +19,8 @@ on:
       - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
       - 'scripts/ptitesondes_generic_venue_official_proof.py'
       - 'tests/test_ptitesondes_generic_venue_official_proof.py'
+      - 'scripts/ptitesondes_dila_municipal_domains.py'
+      - 'tests/test_ptitesondes_dila_municipal_domains.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
@@ -49,6 +51,8 @@ on:
       - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
       - 'scripts/ptitesondes_generic_venue_official_proof.py'
       - 'tests/test_ptitesondes_generic_venue_official_proof.py'
+      - 'scripts/ptitesondes_dila_municipal_domains.py'
+      - 'tests/test_ptitesondes_dila_municipal_domains.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
@@ -107,6 +111,8 @@ jobs:
             -p 'test_ptitesondes_generic_venue_ign_corroboration.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_generic_venue_official_proof.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_dila_municipal_domains.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
