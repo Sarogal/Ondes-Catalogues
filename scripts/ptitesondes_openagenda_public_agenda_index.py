@@ -122,6 +122,9 @@ def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
     configured_set = set(configured)
     current = start_cursor
     visited = set()
+    cursors_seen = set()
+    if start_cursor is not None:
+        cursors_seen.add(tuple(start_cursor))
     counts = Counter()
     candidates = []
     exhausted = False
@@ -153,10 +156,9 @@ def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
             exhausted = True
             current = None
             break
-        if tuple(after) in visited:
-            # Defensive type distinction: an API cursor must not be an
-            # untrusted event or agenda identity. Compare cursor pairs.
+        if tuple(after) in cursors_seen:
             raise ValueError("invalid_oa_index_cursor_reuse")
+        cursors_seen.add(tuple(after))
         current = after
     return {
         "schema": SCHEMA,
@@ -189,6 +191,8 @@ def _private_input(path, max_bytes):
 
 def load_state(path):
     _private_parent(path)
+    if path.is_symlink():
+        raise ValueError("private_state_symlink_forbidden")
     if not path.exists():
         return {"schema": STATE_SCHEMA, "after": None, "completed_passes": 0}
     _private_input(path, 1000)
