@@ -243,6 +243,57 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         with self.assertRaises(UnsafeEndpoint):
             transport.request("http://radio.example.org/live")
 
+    def test_https_connection_is_pinned_to_checked_public_ip(self):
+        connections = []
+        class FakeResponse:
+            status = 200
+            def getheader(self, name, default=""):
+                return "audio/mpeg" if name == "Content-Type" else default
+            def read1(self, count):
+                self.asserted_read_size = count
+                return b"ID3\x04\x00\x00"
+        class FakeConnection:
+            def __init__(self, host, port, timeout=None, context=None):
+                self.host, self.port = host, port
+                self.requested = []
+                connections.append(self)
+            def request(self, method, target, headers):
+                self.requested.append((method, target, headers))
+                self._create_connection((self.host, self.port))
+            def getresponse(self):
+                return FakeResponse()
+            def close(self):
+                pass
+
+        def resolver(host, port, **kwargs):
+            self.assertEqual(host, "radio.example.org")
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                     ("8.8.8.8", port))]
+
+        with patch("radio_stream_technical_probe.http.client.HTTPSConnection",
+                   FakeConnection), patch(
+                       "radio_stream_technical_probe.socket.create_connection",
+                       return_value=object()) as open_socket:
+            result = PinnedHttpTransport(resolver=resolver).request(
+                "https://radio.example.org/stream")
+        self.assertEqual(result.status, 200)
+        self.assertTrue(result.body.startswith(b"ID3"))
+        self.assertEqual(len(connections), 1)
+        self.assertEqual(connections[0].host, "radio.example.org")
+        self.assertEqual(connections[0].requested[0][1], "/stream")
+        self.assertEqual(open_socket.call_args.args[0], ("8.8.8.8", 443))
+
+    def test_random_sync_bits_with_invalid_mpeg_header_are_not_audio_proof(self):
+        for suspicious in (
+            b"\xff\xfb\x00\x00",  # bitrate zero: no reliable MPEG frame
+            b"\xff\xe9\xff\x00",  # reserved MPEG version + bad bitrate
+            b"\xff\xfb\xff\x00",  # reserved rate and bitrate
+        ):
+            with self.subTest(header=suspicious):
+                self.assertNotEqual(
+                    classify_sample(suspicious + b"\x00"*40, "application/octet-stream")[0],
+                    "audio_sample_ok")
+
     def test_result_never_contains_user_supplied_url_or_secret(self):
         raw = "https://radio.example.org/live?token=some-public-source-secret"
         out = probe_url(raw, lambda _: sample())
