@@ -60,6 +60,36 @@ def sustained_transport_evidence(item: dict) -> bool:
     return True
 
 
+def frame_chain_evidence(item: dict) -> bool:
+    """Conservative, format-limited frame evidence; never an admission stamp."""
+    evidence = item.get("continuityEvidence")
+    if evidence is None:
+        return False
+    if not isinstance(evidence, dict):
+        raise ValueError("Invalid continuity evidence")
+    frames = evidence.get("frameEvidence")
+    if frames is None:
+        return False
+    if (not isinstance(frames, dict) or
+        frames.get("state") not in {"frame_chain", "not_confirmed"} or
+        frames.get("publicationAllowed") is not False):
+        raise ValueError("Invalid frame evidence")
+    if frames["state"] != "frame_chain":
+        return False
+    count = frames.get("frameCount")
+    sample = frames.get("sampleBytes")
+    codec = frames.get("codec")
+    if (codec not in {"mpeg_audio", "aac_adts"} or
+        not isinstance(count, int) or isinstance(count, bool) or count < 3 or
+        count > 100 or not isinstance(sample, int) or isinstance(sample, bool) or
+        sample < 24 or sample > 65536 or
+        not isinstance(evidence.get("observedBytes"), int) or
+        evidence["observedBytes"] < sample or
+        item.get("verdict") != "audio_sample_ok"):
+        raise ValueError("Inconsistent frame chain evidence")
+    return evidence.get("state") == "transport_sustained"
+
+
 def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
     if (not isinstance(probe, dict) or probe.get("schemaVersion") != 1 or
         probe.get("publicationAllowed") is not False or
@@ -95,6 +125,16 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
             if (sustained_dates != sorted(set(sustained_dates)) or
                 not set(sustained_dates).issubset(dates)):
                 raise ValueError("Invalid sustained transport evidence days")
+            frame_dates = row.get("frameChainDates", [])
+            if not isinstance(frame_dates, list) or len(frame_dates) > 30:
+                raise ValueError("Invalid frame chain observation dates")
+            frame_dates = [parse_day(value) for value in frame_dates]
+            if (frame_dates != sorted(set(frame_dates)) or
+                not set(frame_dates).issubset(sustained_dates)):
+                raise ValueError("Inconsistent frame chain days")
+            last_frame_state = row.get("lastFrameState", "not_run")
+            if last_frame_state not in {"not_run", "not_confirmed", "frame_chain"}:
+                raise ValueError("Invalid frame observation state")
             continuity_state = row.get("lastContinuityState", "not_run")
             if continuity_state not in {"not_run", "not_confirmed", "transport_sustained"}:
                 raise ValueError("Invalid previous continuity state")
@@ -106,9 +146,11 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
                 "streamSha256": sha,
                 "audioEvidenceDates": dates,
                 "sustainedTransportDates": sustained_dates,
+                "frameChainDates": frame_dates,
                 "lastObservedDate": last,
                 "lastVerdict": str(row.get("lastVerdict") or ""),
                 "lastContinuityState": continuity_state,
+                "lastFrameState": last_frame_state,
             }
     seen = set()
     for item in checks:
@@ -125,13 +167,15 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         ):
             raise ValueError("Unknown verdict or stream fingerprint")
         sustained = sustained_transport_evidence(item)
+        frames = frame_chain_evidence(item)
         old = records.get(uid)
         if old is None or old["streamSha256"] != sha:
             old = {
                 "stationuuid": uid, "streamSha256": sha,
                 "audioEvidenceDates": [], "sustainedTransportDates": [],
+                "frameChainDates": [],
                 "lastObservedDate": day, "lastVerdict": verdict,
-                "lastContinuityState": "not_run",
+                "lastContinuityState": "not_run", "lastFrameState": "not_run",
             }
             records[uid] = old
         old["lastVerdict"] = verdict
@@ -139,16 +183,24 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         old["lastContinuityState"] = (
             "transport_sustained" if sustained else
             "not_confirmed" if item.get("continuityEvidence") is not None else "not_run")
+        frame_observation = item.get("continuityEvidence") or {}
+        old["lastFrameState"] = (
+            "frame_chain" if frames else
+            "not_confirmed" if frame_observation.get("frameEvidence") is not None else "not_run")
         if verdict == "audio_sample_ok" and day not in old["audioEvidenceDates"]:
             old["audioEvidenceDates"] = sorted(
                 (old["audioEvidenceDates"] + [day])[-30:])
         if sustained and day not in old["sustainedTransportDates"]:
             old["sustainedTransportDates"] = sorted(
                 (old["sustainedTransportDates"] + [day])[-30:])
-        # Retire only old *evidence dates* beyond the 30-sample window, never a station.
+        if frames and day not in old["frameChainDates"]:
+            old["frameChainDates"] = sorted((old["frameChainDates"] + [day])[-30:])
+        # Retire only expired evidence samples, never a radio or its identifiers.
         old["sustainedTransportDates"] = [
-            d for d in old["sustainedTransportDates"]
-            if d in old["audioEvidenceDates"]
+            d for d in old["sustainedTransportDates"] if d in old["audioEvidenceDates"]
+        ]
+        old["frameChainDates"] = [
+            d for d in old["frameChainDates"] if d in old["sustainedTransportDates"]
         ]
     output_rows = []
     for uid, row in sorted(records.items()):
@@ -166,6 +218,11 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
                 and row["lastObservedDate"] == day
                 and row["lastContinuityState"] == "transport_sustained"
             ),
+            "repeatFrameChain": (
+                len(row["frameChainDates"]) >= 2
+                and row["lastObservedDate"] == day
+                and row["lastFrameState"] == "frame_chain"
+            ),
             "technicalQualified": False,
             "publicationAllowed": False,
         })
@@ -176,6 +233,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
             x["repeatAudioSample"] for x in output_rows),
         "repeatSustainedTransportCount": sum(
             x["repeatSustainedTransport"] for x in output_rows),
+        "repeatFrameChainCount": sum(x["repeatFrameChain"] for x in output_rows),
         "notObservedTodayCount": sum(
             x["lastObservedDate"] != day for x in output_rows),
         "records": output_rows,
@@ -198,6 +256,7 @@ def main(argv: list[str] | None = None) -> int:
     print("RADIO_STREAM_EVIDENCE_PREVIEW_ONLY "
           f"repeat_sample_candidates={report['repeatAudioCandidateCount']} "
           f"repeat_sustained={report['repeatSustainedTransportCount']} "
+          f"repeat_frames={report['repeatFrameChainCount']} "
           f"retained_unseen={report['notObservedTodayCount']} "
           "qualified=0 published=false")
     return 0
