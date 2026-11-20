@@ -120,6 +120,80 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertIsNone(exact_city_from_official_site(
             ROW, lambda url: home if url == SITE else wrong))
 
+    def test_official_current_year_article_discovered_through_news_index(self):
+        home = ('<a href="/2027">Programme 2027</a>'
+                '<a href="/actualites">Actualités</a>')
+        listing = ('<a href="/nouvelle-edition-2027">'
+                   'Nouvelle édition 2027</a>'
+                   '<a href="https://evil.example/edition-2027">'
+                   'Nouvelle édition 2027 externe</a>'
+                   '<a href="/2026/edition">Édition 2026</a>')
+        pages = {
+            SITE: home,
+            SITE + "2027": "<h1>Programmation 2027</h1>",
+            SITE + "actualites": listing,
+            SITE + "nouvelle-edition-2027": MESSAGE,
+        }
+        visits = []
+        def fetch(url):
+            visits.append(url)
+            return pages[url]
+        clue = exact_city_from_official_site(ROW, fetch)
+        self.assertEqual(clue["city"], "Colonne")
+        self.assertEqual(visits, [
+            SITE, SITE + "2027", SITE + "actualites",
+            SITE + "nouvelle-edition-2027",
+        ])
+        self.assertNotIn("evil.example", str(visits))
+
+    def test_nested_articles_must_be_edition_specific_and_bounded(self):
+        homepage = ('<a href="/actualites">Actualités</a>'
+                    '<a href="/news">News</a>')
+        listing = ('<a href="/news/saison-2026">Édition 2026</a>'
+                   '<a href="/news/edition-2027">Édition 2027</a>'
+                   '<a href="/news/reprise-2027">Reprise 2027</a>'
+                   '<a href="/news/autre-2027">Autre 2027</a>'
+                   '<a href="/%2e%2e/news/2027">Chemin trompeur 2027</a>'
+                   '<a href="http://127.0.0.1/news/2027">IP locale 2027</a>'
+                   '<a href="/news/2027?url=internal">Query 2027</a>')
+        visits = []
+        def fetch(url):
+            visits.append(url)
+            if url == SITE:
+                return homepage
+            if url in (SITE + "news", SITE + "actualites"):
+                return listing
+            return "<h1>Ancienne annonce 2026</h1>"
+        result = exact_city_from_official_site(ROW, fetch)
+        self.assertIsNone(result)
+        self.assertLessEqual(len(visits), 5)
+        self.assertEqual(len(visits), len(set(visits)))
+        self.assertNotIn("127.0.0.1", str(visits))
+        self.assertNotIn("saison-2026", str(visits))
+        self.assertNotIn("url=internal", str(visits))
+
+    def test_nested_official_article_from_2026_cannot_prove_2027(self):
+        home = '<a href="/actualites">Actualités</a>'
+        listing = ('<a href="/reprise-2026">Festival 2026</a>'
+                   '<a href="/reprise-2027">Festival 2027</a>')
+        source = {
+            SITE: home,
+            SITE + "actualites": listing,
+            SITE + "reprise-2027": OLD_MESSAGE,
+        }
+        self.assertIsNone(exact_city_from_official_site(
+            ROW, lambda url: source[url]))
+
+    def test_conflict_between_homepage_and_nested_news_vetoes_town(self):
+        home = MESSAGE + '<a href="/actualites">Actualités</a>'
+        index = '<a href="/nouvelle-edition-2027">Nouvelle édition 2027</a>'
+        source = {
+            SITE: home, SITE + "actualites": index,
+            SITE + "nouvelle-edition-2027": MESSAGE.replace("Colonne", "Bordeaux"),
+        }
+        self.assertIsNone(exact_city_from_official_site(
+            ROW, lambda url: source[url]))
+
     def test_day_one_and_day_two_are_separate_calendar_dates(self):
         state = {"schema": "grossesondes.source-watch.v1"}
         one = review(state, catalogue(), "2026-11-20",
