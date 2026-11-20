@@ -158,14 +158,16 @@ class MunicipalOfficialPageReader:
         return self.directory_cache[key]
 
     def source_record_for_group(self, group, uid):
-        """Return a UID-bound, *untrusted* search center from OA or ODS.
+        """UID-bound untrusted search center; OA and ODS may corroborate it.
 
-        This method does NOT prove GPS or authorize any publication.
-        In particular, a direct OA lead is not forced through the ODS mirror.
-        Ambiguous slugs, conflicting collector entries, unpublished events,
-        and missing/invalid coordinates fail closed.
+        A duplicate same-UID origin is NOT inherently ambiguous: accept
+        exactly one OA v2 and one ODS URL for the SAME agenda slug only
+        when both first-party records, status, location and points agree.
+        Different slugs, extra URLs or divergent coordinates fail closed.
+        Never promotes a venue or event to publication.
         """
         import math
+        from proof import meters
         if (not isinstance(group, dict)
                 or not isinstance(uid, str)
                 or not re.fullmatch(r"[0-9]{1,12}", uid)
@@ -179,16 +181,22 @@ class MunicipalOfficialPageReader:
                    for slug, row_uid, kind, source_url
                    in self.source_index.get((city, venue), set())
                    if row_uid == uid}
-        if len(options) != 1:
+        if not 1 <= len(options) <= 2 or len({s for s, _, _ in options}) != 1:
             raise ValueError("source_uid_origin_ambiguous_or_missing")
-        slug, kind, source_url = next(iter(options))
-        if kind == "opendatasoft-index":
-            row = self.ods_reader(uid)
-            if not ods_immutable_source_match(group, uid, source_url, row):
+        by_kind = {}
+        for slug, kind, url in options:
+            if kind not in ("opendatasoft-index", "openagenda-v2") or kind in by_kind:
+                raise ValueError("source_uid_origin_ambiguous_or_missing")
+            by_kind[kind] = (slug, url)
+        ods = None
+        if "opendatasoft-index" in by_kind:
+            _, url = by_kind["opendatasoft-index"]
+            ods = self.ods_reader(uid)
+            if not ods_immutable_source_match(group, uid, url, ods):
                 raise ValueError("ods_source_identity_mismatch")
-            return row
-        if kind != "openagenda-v2":
-            raise ValueError("unrecognized_source_collector")
+        if "openagenda-v2" not in by_kind:
+            return ods
+        slug, _ = by_kind["openagenda-v2"]
         agenda_uid = self._agendas().get(slug)
         if agenda_uid is None:
             raise ValueError("oa_agenda_not_independently_bound")
@@ -201,8 +209,21 @@ class MunicipalOfficialPageReader:
                 or not math.isfinite(lat) or not math.isfinite(lon)
                 or not -90 <= lat <= 90 or not -180 <= lon <= 180):
             raise ValueError("oa_source_coordinates_invalid")
-        # Return the legacy shape expected by source_center(); the point is
-        # still ONLY a search hint. Independent municipal + BAN checks remain.
+        if ods is not None:
+            # The mirror is not a second independent GPS verifier, but
+            # conflicting copies of the SAME UID may not be silently picked.
+            declared = ods_origin_agenda_uid(ods)
+            if declared is not None and declared != agenda_uid:
+                raise ValueError("ods_oa_agenda_uid_conflict")
+            point = ods["location_coordinates"]
+            try:
+                olat, olon = float(point["lat"]), float(point["lon"])
+            except (ValueError, TypeError, KeyError, OverflowError):
+                raise ValueError("ods_source_coordinates_invalid")
+            if meters((lat, lon), (olat, olon)) > 65:
+                raise ValueError("ods_oa_same_uid_coordinates_conflict")
+        # Legacy ODS-shaped record for source_center(). ONLY a hint for
+        # independent DILA/municipal/IGN checks; no publisher access.
         return {"uid": uid, "location_city": group["city"],
                 "location_name": group["venue"],
                 "location_coordinates": {"lat": lat, "lon": lon}}
@@ -225,7 +246,11 @@ class MunicipalOfficialPageReader:
         # High-volume venues have many independent dated occurrences.
         # Sample a bounded 3 UID identities, without pretending to have
         # checked every event. Per-session publication checks are separate.
-        options = options[:MAX_UIDS_PER_VENUE]
+        # Sample up to three DISTINCT UIDs rather than three collector
+        # records: OA+ODS mirrors of one event count as one identity.
+        sample_uids = set(sorted({uid for _, uid, _, _ in options})
+                          [:MAX_UIDS_PER_VENUE])
+        options = [item for item in options if item[1] in sample_uids]
         try:
             directory = self.dila_directory_get(group["city"])
         except (ValueError, OSError, KeyError, TypeError, TimeoutError):
