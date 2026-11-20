@@ -202,8 +202,9 @@ class VisibleBillPublisherEndToEndTests(unittest.TestCase):
             reg, cat, empty, TODAY,
             fetch=lambda *_: self.fail("Foreign host must not be fetched"))
         self.assertEqual(report["newApprovals"], [])
-        self.assertEqual(report["evaluated"], 1)
-        self.assertEqual(len(report["held"]), 1)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["awaitingIndependentSourceAdmission"], 1)
+        self.assertEqual(report["held"], [])
         self.assertEqual(out["approvals"], [])
 
     def test_post_publication_watch_same_bill_and_disagreements(self):

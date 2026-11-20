@@ -228,7 +228,9 @@ class GenericStructuredNationalContractTests(unittest.TestCase):
         bad, report = official_recheck.process(
             reg, cat, empty, TODAY, fetch=no_network)
         self.assertEqual(report["newApprovals"], [])
-        self.assertEqual(len(report["held"]), 1)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["awaitingIndependentSourceAdmission"], 1)
+        self.assertEqual(report["held"], [])
         self.assertEqual(bad["approvals"], [])
 
 

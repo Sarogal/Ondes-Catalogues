@@ -69,7 +69,9 @@ class FreshOfficialGenreRequalificationTests(unittest.TestCase):
         _, report = official_recheck.process(
             registry, cat, before, DAY, fetch=forbidden)
         self.assertEqual(report["newApprovals"], [])
-        self.assertEqual(len(report["held"]), 1)
+        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["awaitingIndependentSourceAdmission"], 1)
+        self.assertEqual(report["held"], [])
 
     def test_fresh_metal_on_menu_or_biography_is_not_proof(self):
         lead, _, cat, raw = unconfirmed()
