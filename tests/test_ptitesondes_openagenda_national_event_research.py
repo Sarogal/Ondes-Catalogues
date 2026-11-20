@@ -94,6 +94,8 @@ class NationalOAEventResearchTests(unittest.TestCase):
             ("Spectacle de marionnettes pour enfants", "spectacle-jeunesse"),
             ("Théâtre jeune public", "spectacle-jeunesse"),
             ("Éveil musical pour bébés", "eveil-musical"),
+            ("Comptines pour les tout-petits", "eveil-musical"),
+            ("Atelier sonore pour enfants", "atelier-musical"),
         ):
             with self.subTest(title=title):
                 x, status = propose_event(event(title=title, desc="Pour enfants"), AGENDA, DAY)
