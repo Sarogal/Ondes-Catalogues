@@ -158,5 +158,44 @@ class HlsDailyPilotTests(unittest.TestCase):
                          "segment_http_unconfirmed")
         self.assertNotIn("127.0.0.1", str(output))
 
+
+    def test_one_safe_master_variant_does_not_enable_auto_approval(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"child/live.m3u8\n")
+        seen = []
+        def fetch(u):
+            seen.append(("manifest", u))
+            return ResponseSample(200, "application/vnd.apple.mpegurl", "",
+                                  master if u.endswith("metal.m3u8") else sample().body)
+        def segment(u):
+            seen.append(("segment", u))
+            ts = (bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)) * 6
+            return ResponseSample(206, "video/mp2t", "", ts)
+        result = hls_preview(report([row()]), fetch, day=dt.date(2026, 11, 20),
+                             check_one_segment=True, segment_request=segment)
+        self.assertEqual(result["liveManifestCandidateCount"], 0)
+        self.assertEqual(result["segmentVerificationAttemptCount"], 1)
+        self.assertEqual(result["segmentStructuralEvidenceCount"], 1)
+        self.assertEqual(result["segmentStates"], {"segment_structural_evidence": 1})
+        self.assertEqual([k for k, _ in seen],
+                         ["manifest", "manifest", "manifest", "segment"])
+        self.assertEqual(result["technicalVerifiedCount"], 0)
+        self.assertFalse(result["publicationAllowed"])
+        self.assertNotIn("radio.example.org", str(result))
+
+    def test_multiple_variant_master_does_not_attempt_any_segment(self):
+        master = (b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=96000\n"
+                  b"low/live.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=192000\n"
+                  b"hi/live.m3u8\n")
+        called = []
+        result = hls_preview(
+            report([row()]),
+            lambda _: ResponseSample(200, "application/vnd.apple.mpegurl", "", master),
+            day=dt.date(2026, 11, 20), check_one_segment=True,
+            segment_request=lambda u: called.append(u))
+        self.assertEqual(result["segmentVerificationAttemptCount"], 0)
+        self.assertEqual(called, [])
+        self.assertFalse(result["publicationAllowed"])
+
 if __name__ == "__main__":
     unittest.main()
