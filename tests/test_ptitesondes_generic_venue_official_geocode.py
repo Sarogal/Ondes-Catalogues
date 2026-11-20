@@ -143,6 +143,17 @@ class OfficialFirstGeocodeTests(unittest.TestCase):
         self.assertFalse(self.proof(query=lambda c: shifted)[
             "independent_geo_correlated"])
 
+    def test_different_schema_place_blocks_visible_fallback(self):
+        opposite = ('<script type="application/ld+json">'
+                    '{"@type":"Place","name":"Autre bâtiment",'
+                    '"address":{"streetAddress":"13 Rue des Chênes",'
+                    '"postalCode":"12345","addressLocality":"Ville-des-Bois"}}'
+                    '</script>')
+        self.assertIsNone(extract_official_address(
+            GROUP, visible_html() + opposite))
+        self.assertFalse(self.proof(
+            html=visible_html() + opposite)["independent_geo_correlated"])
+
     def test_official_schema_geo_conflict_blocks_even_if_ban_matches(self):
         self.assertFalse(self.proof(
             html=jsonld_html(geo=(44.55, 2.25)))["independent_geo_correlated"])
