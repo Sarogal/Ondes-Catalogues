@@ -54,7 +54,8 @@ class RegionalTests(unittest.TestCase):
             "<li><span>Musique / Concert</span></li><li>" + anchor + "</li>",
             '<div role="article"><span>Musique / Concert</span></div>'
             '<div role="article">' + anchor + '</div>',
-            "<div><span>Musique / Concert</span>" + anchor + "</div>",
+            "<div><span>Musique / Concert</span></div><div>"
+            + anchor + "</div>",
             '<li><span hidden>Musique / Concert</span>' + anchor + '</li>',
             '<div role="article"><span aria-hidden="true">'
             'Musique / Concert</span>' + anchor + '</div>',
@@ -64,6 +65,8 @@ class RegionalTests(unittest.TestCase):
             + '<a href="/autre">Autre</a></li>',
             '<div role="article"><span>Musique / Concert</span>' + anchor
             + '<a href="/autre">Autre</a></div>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<a href="/autre">Autre</a></article>',
             '<li><span>Musique / Concert</span>'
             '<li>' + anchor + '</li></li>',
             '<div role="article"><span>Musique / Concert</span>'
