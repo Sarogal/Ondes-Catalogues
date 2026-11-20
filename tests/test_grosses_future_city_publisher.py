@@ -106,6 +106,34 @@ class CityPublisherTests(unittest.TestCase):
         self.assertEqual(published_patch_duplicate(ROW, updated), "ALREADY_PUBLISHED")
         self.assertEqual(catalog()["festivals"][0]["lat"], None)
 
+    def test_signed_publisher_rechecks_current_year_nested_news_independently(self):
+        home = ('<a href="/2027">Programmation 2027</a>'
+                '<a href="/actualites">Actualités</a>')
+        listing = '<a href="/nouvelle-edition-2027">Nouvelle édition 2027</a>'
+        pages = {
+            SITE: home,
+            SITE + "2027": "<p>Programmation bientôt annoncée</p>",
+            SITE + "actualites": listing,
+            SITE + "nouvelle-edition-2027": MESSAGE,
+        }
+        official_calls, national_calls = [], []
+        def fetch(url):
+            official_calls.append(url)
+            return pages[url]
+        def national(url):
+            national_calls.append(url)
+            return api()
+        out, summary = apply_independently_verified_city(
+            catalog(), catalog(), review(), "2026-11-21",
+            fetcher=fetch, admin_reader=national)
+        self.assertEqual(official_calls, [
+            SITE, SITE + "2027", SITE + "actualites",
+            SITE + "nouvelle-edition-2027"])
+        self.assertEqual(len(national_calls), 1)
+        self.assertEqual(summary["accepted_city_updates"], [ROW["slug"]])
+        self.assertEqual(out["festivals"][0]["geoPrecision"], "commune")
+        self.assertFalse(out["festivals"][0]["futureVenueConfirmed"])
+
     def test_old_unverified_venue_text_is_not_silently_replaced(self):
         old = {**ROW, "city": "Colonne", "venue": "Lieu 2026 à confirmer",
                "showOnMap": None}
