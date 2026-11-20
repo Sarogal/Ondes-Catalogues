@@ -181,6 +181,59 @@ class VisibleHtmlEvidenceTests(unittest.TestCase):
 
 
 
+
+    def test_complete_html_time_attribute_iso_and_numeric_dates(self):
+        variants = (
+            '<time datetime="2027-09-18">Samedi, 19 h</time>',
+            '<p>2027-09-18 à 19:00</p>',
+            '<strong>18/09/2027</strong>',
+            '<time datetime="2027-09-18T20:00:00+02:00">Samedi</time>',
+        )
+        for replacement in variants:
+            with self.subTest(replacement=replacement):
+                body = PAGE.replace(
+                    '<strong>samedi 18 septembre 2027</strong>',
+                    replacement)
+                evidence = check(body)
+                self.assertEqual(
+                    evidence["status"], "html_explicit_event_genre_correlated")
+                self.assertEqual(evidence["genres"], ["Metal Indus"])
+                self.assertIs(evidence["publicationAllowed"], False)
+                self.assertEqual(evidence["approvalsProposed"], 0)
+
+    def test_conflicting_machine_and_visible_date_are_not_evidence(self):
+        body = PAGE.replace(
+            '<strong>samedi 18 septembre 2027</strong>',
+            '<time datetime="2027-09-19">18 septembre 2027</time>')
+        result = check(body)
+        self.assertEqual(result["status"], "html_event_date_not_correlated")
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_early_ticket_sale_date_is_not_concert_date(self):
+        body = PAGE.replace(
+            '<strong>samedi 18 septembre 2027</strong>',
+            '<p>Ouverture billetterie : 2027-01-07</p>'
+            '<time datetime="2027-09-18">Samedi</time>')
+        self.assertEqual(check(body)["status"],
+                         "html_event_date_not_correlated")
+
+    def test_partial_yearless_date_does_not_count_as_show_date(self):
+        body = PAGE.replace(
+            '<strong>samedi 18 septembre 2027</strong>',
+            '<time>samedi 18 septembre</time>')
+        self.assertEqual(check(body)["status"],
+                         "html_event_date_not_correlated")
+
+    def test_navigation_datetime_is_not_event_evidence(self):
+        body = PAGE.replace(
+            '<strong>samedi 18 septembre 2027</strong>',
+            '<time>samedi</time>').replace(
+            '<header><nav>', '<header><nav><time datetime="2027-09-18">samedi</time>')
+        self.assertEqual(check(body)["status"],
+                         "html_event_date_not_correlated")
+
+
+
 class PrivatePreflightHtmlIntegrationTests(unittest.TestCase):
     def test_structure_missing_but_visible_html_evidence_is_quarantined(self):
         row = copy.deepcopy(CANDIDATE)
