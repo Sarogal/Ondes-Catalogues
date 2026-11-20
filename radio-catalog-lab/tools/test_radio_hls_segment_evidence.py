@@ -280,5 +280,61 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
         self.assertEqual(len(reads), 2)
         self.assertNotIn("127.0.0.1", str(result))
 
+
+    def test_root_https_redirect_to_public_cdn_with_pinned_fetch(self):
+        fetched = []
+        final = "https://cdn.example.org/hls/stream.m3u8"
+        def fetch(url):
+            fetched.append(url)
+            if url == BASE:
+                return response(b"", status=302, location=final)
+            return response(manifest())
+        def segment(url):
+            fetched.append(url)
+            return response(valid_ts_packets(5), "video/mp2t")
+        result = verify_one_segment(BASE, fetch, segment)
+        self.assertEqual(result["state"], "segment_structural_evidence")
+        self.assertEqual(fetched, [
+            BASE, final, "https://cdn.example.org/hls/audio-102.ts"])
+        self.assertNotIn("cdn.example", str(result))
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_no_https_to_http_redirect_and_no_unsafe_private_target(self):
+        for dest in ("http://cdn.example.org/stream.m3u8",
+                     "https://127.0.0.1/secret.m3u8",
+                     "http://169.254.169.254/latest.m3u8"):
+            seen = []
+            def fetch(url):
+                seen.append(url)
+                return response(b"", status=302, location=dest)
+            output = verify_one_segment(BASE, fetch, lambda url: seen.append(url))
+            self.assertIn(output["state"],
+                          {"manifest_fetch_incomplete",
+                           "unsafe_or_failed_segment_request"})
+            self.assertEqual(seen, [BASE])
+            self.assertFalse(output["publicationAllowed"])
+
+    def test_manifest_redirect_cycle_and_three_hops_fail_closed(self):
+        seen = []
+        def cycle(url):
+            seen.append(url)
+            return response(b"", status=301,
+                            location=("https://radio.example.org/loop.m3u8"
+                                      if url == BASE else BASE))
+        output = verify_one_segment(BASE, cycle, lambda url: seen.append(url))
+        self.assertEqual(output["state"], "manifest_fetch_incomplete")
+        self.assertEqual(len(seen), 2)
+        self.assertFalse(output["publicationAllowed"])
+
+        n = 0
+        def chain(url):
+            nonlocal n
+            n += 1
+            return response(b"", status=302,
+                            location=f"https://radio.example.org/redir{n}.m3u8")
+        output = verify_one_segment(BASE, chain, lambda url: None)
+        self.assertEqual(output["state"], "manifest_fetch_incomplete")
+        self.assertEqual(n, 3)
+
 if __name__ == "__main__":
     unittest.main()
