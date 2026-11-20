@@ -171,6 +171,34 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertEqual(other["leads_count"], 1)
         self.assertEqual(other["publications"], 0)
 
+    def test_malformed_geography_is_rejected_per_record_not_entire_page(self):
+        variants = [
+            dict(EVENT, location_countrycode=[]),
+            dict(EVENT, location_countrycode={"not": "fr"}),
+            dict(EVENT, location_region=[]),
+            dict(EVENT, location_region={"not": "Occitanie"}),
+        ]
+        for item in variants:
+            with self.subTest(item=item):
+                self.assertIsNone(candidate(item, DAY))
+                report = scan(state(), DAY, fetch=lambda _: payload(
+                    [item, EVENT]))
+                self.assertEqual(report["requests_failed"], 0)
+                self.assertEqual(report["leads_count"], 1)
+                self.assertEqual(report["publications"], 0)
+        malformed_catalog_row = {"schema": 1, "festivals": [{
+            "name": "Festival Metal des Garrigues",
+            "startDate": "2027-04-23", "region": [],
+        }]}
+        report = scan(state(), DAY, fetch=lambda _: payload([EVENT]),
+                      catalog=malformed_catalog_row)
+        self.assertEqual(report["requests_failed"], 0)
+        self.assertEqual(report["leads_count"], 1)
+        tampered = state()
+        result = scan(tampered, DAY, fetch=lambda _: payload([EVENT]))
+        result["leads"][0]["region_hint"] = []
+        self.assertEqual(validated_leads(tampered, DAY), [])
+
     def test_private_cache_invalidates_legacy_ruleset_and_forged_metadata(self):
         current = state()
         report = scan(current, DAY, fetch=lambda _: payload([EVENT]))
