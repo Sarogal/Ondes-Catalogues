@@ -44,7 +44,7 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
     # still uses the pinned-public-DNS transport, TLS and a strict Range cap.
     if (len(value) > 512 or any(ord(ch) < 33 or ord(ch) > 126 for ch in value)
         or "\\" in value or "#" in value or "@" in value
-        or "{" in value or "}" in value or value.startswith(("//", "?"))):
+        or "{" in value or "}" in value or value.startswith(("//", "/", "?"))):
         return None
     try:
         ref = urllib.parse.urlsplit(value)
