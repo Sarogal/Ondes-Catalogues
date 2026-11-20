@@ -142,6 +142,34 @@ def inspect_segment_bytes(sample: bytes) -> dict:
     return result
 
 
+MANIFEST_REDIRECT_CODES = frozenset({301, 302, 303, 307, 308})
+MAX_MANIFEST_REDIRECTS = 2
+
+
+def read_safe_manifest(
+    url: str, request: Callable[[str], ResponseSample],
+) -> tuple[ResponseSample, str] | None:
+    """At most 2 explicitly checked redirects; return final URL internally only."""
+    seen = set()
+    for redirect in range(MAX_MANIFEST_REDIRECTS + 1):
+        parsed = validate_endpoint(url)
+        if url in seen:
+            return None
+        seen.add(url)
+        sample = request(url)
+        if sample.status in MANIFEST_REDIRECT_CODES:
+            if redirect >= MAX_MANIFEST_REDIRECTS or not sample.location:
+                return None
+            target = urllib.parse.urljoin(url, sample.location)
+            updated = validate_endpoint(target)
+            if parsed.scheme == "https" and updated.scheme == "http":
+                return None
+            url = target
+            continue
+        return sample, url
+    return None
+
+
 def verify_one_segment(
     manifest_url: str,
     request_manifest: Callable[[str], ResponseSample],
@@ -153,28 +181,31 @@ def verify_one_segment(
               "publicationAllowed": False, "technicalQualified": False}
     try:
         validate_endpoint(manifest_url)
-        manifest_response = request_manifest(manifest_url)
-        if manifest_response.status != 200:
+        root = read_safe_manifest(manifest_url, request_manifest)
+        if root is None or root[0].status != 200:
             output["state"] = "manifest_fetch_incomplete"
             return output
+        manifest_response, effective_url = root
         content_type = manifest_response.content_type
         manifest_data = manifest_response.body
-        manifest_verdict = inspect_hls_manifest(manifest_data, content_type, manifest_url)
+        manifest_verdict = inspect_hls_manifest(manifest_data, content_type, effective_url)
         output["manifestKind"] = manifest_verdict["kind"]
-        plan = plan_one_segment(manifest_data, content_type, manifest_url)
+        plan = plan_one_segment(manifest_data, content_type, effective_url)
         if plan is None and manifest_verdict["kind"] == "master_single_variant_pending":
             # One child media playlist maximum. Never auto-pick a quality.
-            child_plan = plan_single_variant(manifest_data, content_type, manifest_url)
+            child_plan = plan_single_variant(manifest_data, content_type, effective_url)
             if child_plan is None:
                 output["state"] = "no_safe_single_variant"
                 return output
-            child = request_manifest(child_plan.url)
-            if child.status != 200:
+            child = read_safe_manifest(child_plan.url, request_manifest)
+            if child is None or child[0].status != 200:
                 output["state"] = "child_manifest_fetch_incomplete"
                 return output
+            child_response, child_url = child
             output["childManifestKind"] = inspect_hls_manifest(
-                child.body, child.content_type, child_plan.url)["kind"]
-            plan = plan_one_segment(child.body, child.content_type, child_plan.url)
+                child_response.body, child_response.content_type, child_url)["kind"]
+            plan = plan_one_segment(
+                child_response.body, child_response.content_type, child_url)
             if plan is None:
                 output["state"] = "child_not_simple_live_media"
                 return output
