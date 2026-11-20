@@ -1,0 +1,49 @@
+name: Grosses Ondes — source OpenData publique, lecture seule
+
+on:
+  pull_request:
+    paths:
+      - 'festival-automation/national_openagenda_research.py'
+      - 'festival-automation/test_national_openagenda_research.py'
+      - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'festival-automation/national_openagenda_research.py'
+      - '.github/workflows/grossesondes-festivals-openagenda-public-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  public-source-preflight:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier la provenance et les limites sans secrets ni état privé
+        run: |
+          python -m unittest discover -s festival-automation -p 'test_national_openagenda_research.py' -v
+      - name: Lire une requête fixe JSON publique sans créer de festival
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, 'festival-automation')
+          from national_openagenda_research import fixed_query_urls, fetch_json, PER_PAGE
+          payload = fetch_json(fixed_query_urls()[0])
+          assert isinstance(payload, dict)
+          assert type(payload.get('total_count')) is int
+          assert isinstance(payload.get('results'), list)
+          assert len(payload['results']) <= PER_PAGE
+          print('OpenData publique accessible; records returned:', len(payload['results']))
+          print('Aucune donnée privée, aucune approbation, aucune publication.')
+          PY
