@@ -19,6 +19,7 @@ from typing import Callable
 from radio_stream_technical_probe import (
     MAX_INPUT_SIZE, PinnedHttpTransport, ResponseSample, probe_url,
 )
+from radio_hls_segment_evidence import verify_one_segment, safe_segment_transport
 
 MAX_HLS_CANDIDATES = 5
 
@@ -73,30 +74,49 @@ def select_hls_candidates(
 def hls_preview(
     discovery: dict, request: Callable[[str], ResponseSample],
     *, day: dt.date, limit: int = MAX_HLS_CANDIDATES,
+    check_one_segment: bool = False,
+    segment_request: Callable[[str], ResponseSample] | None = None,
 ) -> dict:
+    if check_one_segment and segment_request is None:
+        raise ValueError("Explicit segment sampler required")
     selected = select_hls_candidates(discovery, day=day, limit=limit)
     checks = []
     kinds: dict[str, int] = {}
+    segment_checks = 0
+    structural_evidence = 0
     for uid, raw_url in selected:
         # Same pinned DNS and redirect checks as all other radio probes.
         report = probe_url(raw_url, request)
         hls = report.get("hlsEvidence") or {}
         kind = hls.get("kind", "no_manifest_observed")
         kinds[kind] = kinds.get(kind, 0) + 1
-        checks.append({
+        check = {
             "stationuuid": uid,
             "verdict": report["verdict"],
             "reason": report["reason"],
             "streamSha256": report["streamSha256"],
             "hlsKind": kind,
             "publicationAllowed": False,
-        })
+        }
+        if (check_one_segment and segment_checks == 0 and
+                kind == "live_manifest_candidate"):
+            # Only one of ALL discovered candidates is sampled. Re-read and
+            # validate the manifest; never reuse untrusted segment URLs from
+            # summaries, never follow segment redirects or master variants.
+            segment_checks += 1
+            outcome = verify_one_segment(raw_url, request, segment_request)
+            check["segmentCheck"] = outcome
+            if outcome["state"] == "segment_structural_evidence":
+                structural_evidence += 1
+        checks.append(check)
     return {
         "schemaVersion": 1,
         "observationDate": day.isoformat(),
         "checkedCount": len(checks),
         "liveManifestCandidateCount": kinds.get("live_manifest_candidate", 0),
         "manifestKinds": dict(sorted(kinds.items())),
+        "segmentVerificationAttemptCount": segment_checks,
+        "segmentStructuralEvidenceCount": structural_evidence,
         "technicalVerifiedCount": 0,
         "publicationAllowed": False,
         "checks": checks,
@@ -109,20 +129,30 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--allow-network", action="store_true")
+    parser.add_argument("--check-one-segment", action="store_true",
+                        help="Experimental: at most one same-origin 16KiB HLS segment; NO admission")
     args = parser.parse_args(argv)
     if not args.allow_network:
         parser.error("HLS network preview requires --allow-network")
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
         parser.error("HLS discovery input too large")
     data = json.loads(args.discovery.read_text(encoding="utf-8"))
-    output = hls_preview(data, PinnedHttpTransport().request,
-                         day=dt.datetime.now(dt.timezone.utc).date(), limit=args.limit)
+    output = hls_preview(
+        data, PinnedHttpTransport().request,
+        day=dt.datetime.now(dt.timezone.utc).date(), limit=args.limit,
+        check_one_segment=args.check_one_segment,
+        segment_request=(safe_segment_transport().request
+                         if args.check_one_segment else None),
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print(f"HLS_MANIFEST_PREVIEW_ONLY sampled={output['checkedCount']} "
           f"possible_live_manifests={output['liveManifestCandidateCount']} "
-          f"types={output['manifestKinds']} verified=0 published=false")
+          f"types={output['manifestKinds']} "
+          f"segment_attempts={output['segmentVerificationAttemptCount']} "
+          f"segment_structures={output['segmentStructuralEvidenceCount']} "
+          "verified=0 published=false")
     return 0
 
 
