@@ -151,11 +151,11 @@ class VerifiedSourceContractTests(unittest.TestCase):
         # downstream verifier would otherwise approve anything.
         pinned = {"agenda_officiel_structuré", "agenda_officiel_visible_bill"}
         permitted = len(sources) - len(pinned)
-        self.assertEqual(report["evaluated"], len(sources))
+        self.assertEqual(report["evaluated"], permitted)
+        self.assertEqual(report["awaitingIndependentSourceAdmission"],
+                         len(pinned))
         self.assertEqual(len(report["newApprovals"]), permitted)
-        self.assertTrue(all(any(
-            row["candidateId"] == "synthetic-" + str(sources.index(src))
-            for row in report["held"]) for src in pinned))
+        self.assertEqual(report["held"], [])
         self.assertNotIn("synthetic-" + str(len(sources)), report["newApprovals"])
 
     def test_private_funnel_and_rechecker_classify_same_eligible_sources(self):
