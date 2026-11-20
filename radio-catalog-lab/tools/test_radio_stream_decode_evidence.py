@@ -22,6 +22,12 @@ class DecoderEvidenceTests(unittest.TestCase):
             self.assertFalse(out["publicationAllowed"])
             runner.assert_not_called()
 
+    def test_stream_misaligned_first_frame_still_has_demuxer(self):
+        from radio_stream_frame_chain import mpeg_header
+        header = b"\\xff\\xfb\\x90\\x64"
+        frame = header + b"\\0" * (mpeg_header(header, 0)[0] - 4)
+        self.assertEqual(_detect_demuxer(b"xyz" + frame * 3), "mp3")
+
     def test_codec_hint_is_conservative(self):
         self.assertEqual(_detect_demuxer(mp3_sample()), "mp3")
         self.assertEqual(_detect_demuxer(b"fLaC" + b"\0" * 1000), "flac")
