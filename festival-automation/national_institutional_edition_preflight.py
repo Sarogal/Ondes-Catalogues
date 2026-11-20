@@ -164,7 +164,7 @@ def run(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
         rec = observed.get(source["url"])
         return (isinstance(rec, dict) and isinstance(rec.get("digest"), str)
                 and rec.get("lastSeen") == yesterday
-                and isinstance(rec.get("firstSeen"), str))
+                and rec.get("firstSeen") == yesterday)
     pending = [src for src in eligible if pending_second_day(src)]
     remaining = [src for src in eligible if not pending_second_day(src)]
     fresh = [src for src in remaining if not (
