@@ -14,7 +14,7 @@ import re
 
 from grossesondes_institutional_edition import (
     PRIVATE_KEYS, ROW_KEYS, trusted_source, slug_for,
-    conflicts_with_signed_catalogue,
+    conflicts_with_signed_catalogue, independent_institutional_music_genre,
 )
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from grossesondes_institutional_edition import institutional_date
@@ -70,11 +70,16 @@ def trusted_live_link(spec, today, institution_fetch=get_page):
         if not _seen_again(index_html, approved):
             return None
         candidates = candidate_links(index_html, approved["index_url"], today)
-        if not any(c.get("candidate_url") == approved["url"]
-                   and normalized(c.get("title")) == normalized(approved["title"])
-                   for c in candidates):
-            return None
+        theme_on_index = any(
+            c.get("candidate_url") == approved["url"]
+            and normalized(c.get("title")) == normalized(approved["title"])
+            for c in candidates)
+        # The same-host institutional DETAIL may supply a missing musical
+        # genre, but the OpenData/PRIVATE label never counts as proof.
         detail_html = institution_fetch(approved["url"])
+        if (not theme_on_index and not independent_institutional_music_genre(
+                detail_html, approved["title"], approved["year"])):
+            return None
         site = linked_site(detail_html, approved)
         if site is None:
             return None
