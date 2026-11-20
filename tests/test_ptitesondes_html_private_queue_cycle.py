@@ -105,8 +105,70 @@ class HtmlPrivateQueueCycleTests(unittest.TestCase):
         self.assertEqual(fail["report"]["sources_unavailable"], 1)
         self.assertNotIn("private.test", json.dumps(fail["report"]))
 
+    def test_rotation_covers_sources_beyond_eight_batches(self):
+        from ptitesondes_html_private_queue_cycle import READ_ONLY_ADAPTERS
+        sources = []
+        extra = {}
+        # 24 distinct institutional adapters force 12 batches at size 2.
+        for n in range(24):
+            host = f"official{n}.example.org"
+            name = f"adapter_{n}"
+            extra[name] = {
+                "host": host, "child_path": "/evenement/",
+                "timezone": "Europe/Paris",
+            }
+            sources.append({
+                "source_id": f"synthetic-{n}", "approved_host": host,
+                "index_url": f"https://{host}/programme",
+                "child_prefix": "/evenement/",
+            })
+        names = []
+        def runner(existing, pin, adapter, day, **opts):
+            names.append(adapter)
+            return {
+                "queue": existing,
+                "report": {
+                    "publication_ready": False, "public_writes": 0,
+                    "publisher_connected": False,
+                    "new_private_reviews": 0, "rechecked_private_reviews": 0,
+                },
+                "public_funnel_report": {
+                    "publication_ready": False, "public_writes": 0,
+                    "child_pages_read": 1,
+                },
+            }
+        with patch.dict(READ_ONLY_ADAPTERS, extra):
+            for batch in range(12):
+                res = execute_cycle(
+                    [], self.NOW, batch=batch, max_sources=2,
+                    manifest={"entries": sources}, context={}, runner=runner)
+                self.assertEqual(res["report"]["source_batches_total"], 12)
+                self.assertEqual(res["report"]["sources_selected"], 2)
+            self.assertEqual(len(set(names)), 24)
+            self.assertEqual(len(names), 24)
+
+    def test_unavailable_index_is_not_counted_as_a_sample(self):
+        def empty(existing, pin, adapter, day, **opts):
+            return {
+                "queue": existing,
+                "report": {
+                    "publication_ready": False, "public_writes": 0,
+                    "publisher_connected": False,
+                    "new_private_reviews": 0, "rechecked_private_reviews": 0,
+                },
+                "public_funnel_report": {
+                    "publication_ready": False, "public_writes": 0,
+                    "child_pages_read": 0,
+                },
+            }
+        result = execute_cycle(
+            [row()], self.NOW, manifest=manifest(), context={}, runner=empty)
+        self.assertEqual(result["report"]["sources_sampled"], 0)
+        self.assertEqual(result["report"]["sources_unavailable"], 1)
+        self.assertEqual(result["queue"], [row()])
+
     def test_empty_batch_and_invalid_options_fail_closed(self):
-        r = execute_cycle([], self.NOW, batch=4, manifest=manifest(), context={})
+        r = execute_cycle([], self.NOW, batch=4, manifest={"entries": []}, context={})
         self.assertEqual(r["queue"], [])
         self.assertEqual(r["report"]["sources_selected"], 0)
         for invalid in (-1, "1", True):
