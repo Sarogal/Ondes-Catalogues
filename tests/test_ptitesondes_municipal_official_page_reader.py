@@ -136,6 +136,36 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         # No third-level navigation or publication.
         self.assertFalse(hasattr(reader, "publisher"))
 
+    def test_missing_openagenda_venue_website_uses_dila_site_only(self):
+        home = "https://www.ville-les-bois.fr/"
+        target = home + "lieux/maison-enfants"
+        directory = ("<html><main><a href='/lieux/maison-enfants'>"
+                     "Maison des enfants</a></main></html>")
+        page = Mock(side_effect=lambda url: directory if url == home else html())
+        source = Mock(return_value=event(website=None))
+        reader, _, _, _, _ = self.reader(events=source, page=page)
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (target, html()))
+        self.assertEqual(page.call_count, 2)
+
+    def test_missing_openagenda_website_without_exact_venue_link_stays_blocked(self):
+        home = "https://www.ville-les-bois.fr/"
+        page = Mock(return_value=(
+            "<html><a href='/agenda/'>Agenda familles</a></html>"))
+        reader, _, _, _, _ = self.reader(
+            events=Mock(return_value=event(website="")), page=page)
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (None, None))
+        page.assert_called_once_with(home)
+
+    def test_self_declared_conflicting_website_never_falls_back_to_dila(self):
+        page = Mock(return_value=html())
+        reader, _, _, _, _ = self.reader(events=Mock(return_value=event(
+            website="https://fake-municipality.example/lieu")), page=page)
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (None, None))
+        page.assert_not_called()
+
     def test_ambiguous_homepage_links_never_crawl(self):
         homepage = "https://www.ville-les-bois.fr/"
         html_home = ("<html><main>"
