@@ -25,13 +25,20 @@ from pathlib import Path
 DEFAULT_TAGS = (
     "metal", "heavy metal", "hard rock", "thrash metal", "death metal",
     "black metal", "doom metal", "power metal", "progressive metal",
-    "metalcore", "punk", "punk rock", "hardcore", "stoner rock", "rock",
+    "metalcore", "deathcore", "grindcore", "sludge", "post metal",
+    "punk", "punk rock", "post punk", "hardcore", "stoner rock", "rock",
     "alternative rock", "progressive rock", "grunge", "garage rock",
 )
-DEFAULT_NAMES = ("metal", "punk", "hard rock", "hardcore", "stoner", "rock")
+DEFAULT_NAMES = (
+    "metal", "punk", "hard rock", "hardcore", "stoner",
+    "deathcore", "grindcore", "rock",
+)
 STRONG_GENRES = (
-    "metal", "thrash", "doom", "stoner", "punk", "hardcore",
-    "grunge", "hard rock", "rock", "post rock",
+    "metal", "heavy metal", "death metal", "black metal", "thrash metal",
+    "doom metal", "symphonic metal", "folk metal", "industrial metal",
+    "progressive metal", "power metal", "metalcore", "deathcore",
+    "grindcore", "sludge", "post metal", "stoner", "punk", "punkrock",
+    "post punk", "hardcore", "grunge", "hard rock", "rock", "post rock",
 )
 MAX_JSON_BYTES = 3_000_000
 USER_AGENT = "GrossesOndesDailyDiscovery/0.1 (https://grosses-ondes.fr/)"
