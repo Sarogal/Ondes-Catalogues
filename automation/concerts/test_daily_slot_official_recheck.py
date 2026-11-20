@@ -28,9 +28,10 @@ def indexed_row(i):
             "candidateId": f"synthetic-site-{i:03d}",
             "source": "agenda_officiel_structuré",
             "reviewBucket": "genre_unknown",
-            "sourceUrl": f"https://unverified.example/concert/{i:03d}",
-            "date": "2027-05-17", "venue": "Unknown public venue",
-            "city": "Paris", "publicationAllowed": False,
+            "sourceUrl": f"https://larayonne.org/evenement/synthetic-show-{i:03d}/",
+            "date": "2027-05-17", "venue": "La Rayonne",
+            "city": "Villeurbanne", "department": "69",
+            "publicationAllowed": False,
             "reviewRequired": True,
         },
     }
@@ -38,10 +39,10 @@ def indexed_row(i):
 
 class MultiSlotRecheckTests(unittest.TestCase):
     def process(self, entries, slot, **kw):
+        fake_fetch = kw.pop("fetch", lambda *_: "<html>No official proof</html>")
         return official_recheck.process(
             {"items": entries}, CATALOGUE, APPROVALS, TODAY,
-            fetch=lambda *_: self.fail("Network must not be reached"),
-            scan_slot=slot, **kw)
+            fetch=fake_fetch, scan_slot=slot, **kw)
 
     def test_three_daily_cycles_recheck_distinct_stable_cohorts(self):
         registry = {f"case-{i:03d}": indexed_row(i) for i in range(36)}
@@ -63,6 +64,66 @@ class MultiSlotRecheckTests(unittest.TestCase):
         self.assertEqual(
             selections[1], {x["candidateId"] for x in repeat["results"]})
         self.assertEqual(registry, before)
+
+    def test_unreviewed_sources_are_preserved_but_never_exhaust_review_slots(self):
+        # A source listing from an unknown/unreviewed venue is NOT publisher
+        # authority. Hundreds of these must not starve already-reviewed
+        # sources. There is no venue-specific admission exception here.
+        entries = {f"unreviewed-{i:03d}": {
+            "status": "pending_review", "stableObservations": 2,
+            "candidate": {
+                "candidateId": f"unreviewed-{i:03d}",
+                "source": "agenda_officiel_structuré",
+                "reviewBucket": "genre_unknown",
+                "sourceUrl": f"https://unknown.example/event/{i:03d}/",
+                "date": "2027-05-17", "venue": "A newly discovered venue",
+                "city": "Paris", "department": "75",
+                "publicationAllowed": False, "reviewRequired": True,
+            },
+        } for i in range(100)}
+        entries.update({f"trusted-{i:03d}": indexed_row(i)
+                        for i in range(17)})
+        before = copy.deepcopy(entries)
+        attempted = []
+        def fetch(url, *_):
+            attempted.append(url)
+            self.assertTrue(url.startswith("https://larayonne.org/evenement/"))
+            return "<html>Missing independent official Event proof</html>"
+        daily = []
+        for slot in (0, 1, 2):
+            _, report = self.process(entries, slot, fetch=fetch)
+            self.assertEqual(report["awaitingIndependentSourceAdmission"], 100)
+            self.assertEqual(report["totalEligible"], 17)
+            self.assertEqual(report["newApprovals"], [])
+            self.assertEqual(report["newSiteApprovals"], [])
+            daily.extend(x["candidateId"] for x in report["results"])
+        self.assertEqual(len(set(daily)), 17)
+        self.assertEqual(set(daily), {
+            f"synthetic-site-{i:03d}" for i in range(17)})
+        self.assertEqual(len(attempted), 17)
+        self.assertEqual(entries, before)
+
+    def test_all_unreviewed_sources_deferred_without_network(self):
+        entries = {f"unreviewed-{i}": {
+            "status": "pending_review", "stableObservations": 2,
+            "candidate": {
+                "candidateId": f"unreviewed-{i}",
+                "source": "agenda_officiel_structuré",
+                "reviewBucket": "genre_tag_review",
+                "date": "2027-05-17",
+                "sourceUrl": f"https://unknown.example/band-{i}/",
+                "venue": "Unknown", "city": "Paris", "department": "75",
+                "publicationAllowed": False, "reviewRequired": True,
+            },
+        } for i in range(12)}
+        for slot in (0, 1, 2):
+            result, report = self.process(entries, slot,
+                fetch=lambda *_: self.fail("Unreviewed source fetched"))
+            self.assertEqual(result, APPROVALS)
+            self.assertEqual(report["totalEligible"], 0)
+            self.assertEqual(report["evaluated"], 0)
+            self.assertEqual(report["awaitingIndependentSourceAdmission"], 12)
+        self.assertEqual(len(entries), 12)
 
     def test_43_eligible_get_one_distinct_daily_recheck(self):
         # Actual 20 November queue had 43 potentially inspectable rows. An
