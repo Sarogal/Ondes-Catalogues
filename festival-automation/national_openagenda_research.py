@@ -30,6 +30,7 @@ SELECT = ("uid,canonicalurl,title_fr,description_fr,keywords_fr,"
           "firstdate_begin,lastdate_begin,updatedat,location_region,"
           "location_countrycode,status")
 QUERIES = (
+    'search(title_fr,"festival")',
     'search(title_fr,"metal")',
     'search(title_fr,"rock")',
     'search(title_fr,"punk")',
@@ -54,17 +55,27 @@ COUNTRIES = frozenset({"FR", *OVERSEAS})
 REGIONS = frozenset(APPROVED.values())
 
 
-def fixed_query_urls():
-    """All destinations originate exclusively from frozen code constants."""
+def fixed_query_urls(today=None):
+    """Code-reviewed queries with a validated, calendar-bounded date window.
+
+    The only dynamic value is the Europe/Paris calendar date. No event, user
+    or private state can supply a query term, URL, host, or date literal.
+    """
+    current = (date.fromisoformat(today) if today is not None
+               else datetime.now(ZoneInfo("Europe/Paris")).date())
+    last_year = current.year + 3
     return tuple(SOURCE + "?" + urlencode({
-        "select": SELECT, "where": query,
+        "select": SELECT,
+        "where": ("(" + query + ") AND lastdate_begin >= date'"
+                  + current.isoformat() + "' AND firstdate_begin < date'"
+                  + str(last_year) + "-01-01'"),
         "order_by": "updatedat desc", "limit": PER_PAGE,
     }) for query in QUERIES)
 
 
-def fetch_json(url):
+def fetch_json(url, today=None):
     """DNS-pinned public-IP HTTPS, certificate/SNI and no redirects/proxies."""
-    if url not in fixed_query_urls():
+    if url not in fixed_query_urls(today):
         raise ValueError("Unapproved OpenData request")
     parts = urlsplit(url)
     if parts.hostname != HOST or parts.path != ENDPOINT:
@@ -128,13 +139,16 @@ def candidate(row, today):
     key = normalized(title)
     years = {int(x) for x in YEAR.findall(key)}
     current = date.fromisoformat(today)
-    if (years and len(years) != 1) or not years:
-        return None
-    year = next(iter(years))
-    if not current.year <= year <= current.year + 2 or not FEST.search(key):
+    if len(years) > 1:
         return None
     first, last = _iso_date(row.get("firstdate_begin")), _iso_date(row.get("lastdate_begin"))
-    if first is None or last is None or last < current or first.year != year or last < first:
+    if first is None or last is None or last < current or last < first:
+        return None
+    # Without a printed year, the provider's calendar year is an UNVERIFIED
+    # RESEARCH HINT only. No published edition date is derived from it.
+    year = next(iter(years)) if years else first.year
+    if (not current.year <= year <= current.year + 2
+            or first.year != year or not FEST.search(key)):
         return None
     country = row.get("location_countrycode")
     if country not in COUNTRIES:
@@ -159,6 +173,8 @@ def candidate(row, today):
     return {
         "id": "oa-" + digest, "name_hint": title,
         "edition_year_hint": year, "region_hint": region,
+        "year_source_review_only": ("TITLE" if years
+                                    else "UNVERIFIED_PROVIDER_START_DATE"),
         "source_url": url, "observed_at": today,
         "kind": "OPENAGENDA_PUBLIC_RESEARCH_ONLY",
         "review_only": True, "safe_to_publish": False,
@@ -197,9 +213,13 @@ def validated_leads(state, today):
             continue
         title, year = row["name_hint"], row["edition_year_hint"]
         years = {int(x) for x in YEAR.findall(normalized(title))}
+        source_kind = row.get("year_source_review_only")
+        if not ((years == {year} and source_kind == "TITLE")
+                or (not years and source_kind == "UNVERIFIED_PROVIDER_START_DATE")):
+            continue
         expected = sha256((row["source_url"] + "\n" + normalized(title) + "\n"
                            + str(year)).encode("utf-8")).hexdigest()[:20]
-        if (years != {year} or row.get("id") != "oa-" + expected):
+        if row.get("id") != "oa-" + expected:
             continue
         valid.append(row)
     return valid
@@ -218,10 +238,10 @@ def scan(state, today, fetch=None):
             and isinstance(previous.get("leads"), list)
             and len(previous["leads"]) <= MAX_LEADS):
         return previous
-    read = fetch_json if fetch is None else fetch
+    read = (lambda url: fetch_json(url, today)) if fetch is None else fetch
     found = {}
     requests, failures = 0, 0
-    for url in fixed_query_urls():
+    for url in fixed_query_urls(today):
         requests += 1
         try:
             response = read(url)
