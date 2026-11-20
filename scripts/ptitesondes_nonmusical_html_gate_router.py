@@ -19,6 +19,7 @@ from ptitesondes_html_registry_history_triage import triage_independent_context
 SCHEMA = "ptitesondes.nonmusical_html_gate_router_readonly.v1"
 STAGES = frozenset({
     "session_source_unverified", "nonmusical_scope_unrecognized",
+    "source_visible_terms_over_limit",
     "family_audience_unconfirmed", "access_terms_unreadable",
     "access_terms_conflicting", "source_facts_not_structured",
     "historical_duplicate", "historical_collision_ambiguous",
@@ -29,6 +30,7 @@ STAGES = frozenset({
 ACTIONS = {
     "session_source_unverified": "recheck_exact_pinned_session",
     "nonmusical_scope_unrecognized": "review_family_taxonomy",
+    "source_visible_terms_over_limit": "recheck_bounded_visible_source_terms",
     "family_audience_unconfirmed": "check_official_audience",
     "access_terms_unreadable": "recheck_official_access",
     "access_terms_conflicting": "resolve_official_access_conflict",
@@ -109,6 +111,8 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
 
     # Source text may confirm an audience but never the right to publish.
     audience = triage_html_family_age(lead, page, trusted_index, child_prefix)
+    if audience.get("reason") == "visible_family_terms_limit_exceeded":
+        return _result("source_visible_terms_over_limit", child_session=exact)
     if (audience.get("reason") != "visible_first_party_family_age_terms_only"
             or not audience.get("explicit_first_party_family_audience")
             or audience.get("family_or_age_review_pending") is not False):
