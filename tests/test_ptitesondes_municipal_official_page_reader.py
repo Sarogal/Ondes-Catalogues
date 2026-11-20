@@ -150,12 +150,17 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
             self.assertEqual(reader.official_page_get(group), (None, None))
             page.assert_not_called()
 
-    def test_oversized_or_unconfigured_source_groups_not_scanned(self):
+    def test_many_occurrences_sampled_without_blocking_venue(self):
+        # Four dates/events in the same place must not automatically
+        # exclude this municipality. Only three UID identities are sampled;
+        # none of their sessions receives publication approval.
         lead_rows = [lead(str(uid)) for uid in range(721, 725)]
-        reader, _, _, _, page = self.reader(leads=lead_rows)
+        events = Mock(side_effect=lambda agenda, uid, key: event(uid))
+        reader, _, _, _, page = self.reader(leads=lead_rows, events=events)
         group = groups_for_review(lead_rows, date(2026, 11, 20))[0]
-        self.assertEqual(reader.official_page_get(group), (None, None))
-        page.assert_not_called()
+        self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
+        self.assertEqual(events.call_count, 3)
+        self.assertEqual(page.call_count, 1)
 
     def test_html_reader_validates_redirects_and_content_type(self):
         class Response:
