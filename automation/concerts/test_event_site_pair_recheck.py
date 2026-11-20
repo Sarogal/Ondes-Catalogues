@@ -224,5 +224,117 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
             reviewer.verify(lead, cat, DAY, fetch=fake_fetch(raw, osm, []))
 
 
+class ReviewedPromoterIndividualDetailTests(unittest.TestCase):
+    """Reproduce the real private registry *shape* with entirely fictitious data."""
+
+    def promoter(self):
+        lead, raw, cat, osm = fixture()
+        detail = (
+            "https://www.livenation.fr/event/"
+            "skip-the-use-synthetic-metal-show-tickets-2027")
+        source = "https://www.livenation.fr/skip-the-use-tickets-adp498333"
+        lead.update({
+            "source": "promoter_official_tour_detail",
+            "sourceUrl": detail,
+            "sourcePage": source,
+            "eventDetailUrl": detail,
+            "sourceRole": "promoter_official",
+            "artistId": "skip-the-use",
+            "leadArtist": "Skip The Use",
+            "name": "Skip The Use + NEW METAL SUPPORT",
+        })
+        raw["url"] = detail
+        raw["name"] = lead["name"]
+        raw["performer"][0]["name"] = "Skip The Use"
+        cat["artists"] = [{
+            "id": "skip-the-use", "name": "Skip The Use", "aliases": [],
+        }]
+        return lead, raw, cat, osm, detail, source
+
+    @staticmethod
+    def fetch(raw, osm, detail):
+        def fetch(url, max_bytes):
+            if url == detail:
+                return ('<script type="application/ld+json">'
+                        + json.dumps(raw, ensure_ascii=False)
+                        + '</script>', url)
+            if url == API:
+                return json.dumps(osm), url
+            raise AssertionError("Unreviewed URL attempted: " + str(url))
+        return fetch
+
+    def test_real_registry_detail_shape_produces_paired_approvals(self):
+        lead, raw, cat, osm, detail, source = self.promoter()
+        event, site = reviewer.verify(
+            lead, cat, DAY, fetch=self.fetch(raw, osm, detail))
+        self.assertEqual(event["event"]["officialUrl"], detail)
+        self.assertEqual(event["event"]["artistIds"][0], "skip-the-use")
+        self.assertEqual(site["eventBinding"]["authoritySourceUrl"], source)
+        self.assertEqual(site["eventBinding"]["authorityArtistId"], "skip-the-use")
+        self.assertEqual(site["eventBinding"]["eventId"], event["event"]["id"])
+        before = {"schema": publisher.SCHEMA,
+                  "approvals": [], "venueApprovals": []}
+        private = {"items": {"promoter-example": {
+            "candidate": lead, "stableObservations": 2,
+            "status": "pending_review",
+        }}}
+        proposal, report = official_recheck.process(
+            private, cat, before, DAY,
+            fetch=lambda *_: self.fail("legacy event fetch used"),
+            site_fetch=self.fetch(raw, osm, detail))
+        self.assertEqual(report["newApprovals"], [event["event"]["id"]])
+        self.assertEqual(report["newSiteApprovals"], [site["venue"]["id"]])
+        # The historical reference predates the public admission of
+        # skip-the-use; the real catalogue includes that artist today.
+        # Validate the new event against the REAL per-row publisher using
+        # exactly the current catalogue identity. The existing 7WEEKS test
+        # covers the full append-only atomic preflight against the baseline.
+        approved_event = proposal["approvals"][0]
+        approved_site = proposal["venueApprovals"][0]
+        venue = publisher.validate_venue_approval(
+            approved_site, DAY, proposal["approvals"])
+        concert, artists = publisher.validate_approval(
+            approved_event, {venue["id"]: venue},
+            {a["id"]: a for a in cat["artists"]}, DAY)
+        self.assertEqual(concert["officialUrl"], detail)
+        self.assertEqual(concert["venueId"], venue["id"])
+        self.assertEqual(set(artists), {"new-metal-support"})
+        self.assertEqual(artists["new-metal-support"]["name"],
+                         "NEW METAL SUPPORT")
+
+    def test_untrusted_detail_page_or_modified_tour_scope_is_held_pre_fetch(self):
+        lead, raw, cat, osm, detail, source = self.promoter()
+        mutations = (
+            {"sourcePage": "https://unverified.example/tour/"},
+            {"sourcePage": detail},
+            {"sourceUrl": source},
+            {"sourceUrl": detail + "?tracking=1"},
+            {"eventDetailUrl": "https://www.livenation.fr/other/skip-the-use/"},
+            {"eventDetailUrl": "https://evil.example/event/skip-the-use/"},
+            {"sourceRole": "artist_official"},
+            {"artistId": "someone-else"},
+            {"source": "third_party_calendar_lead"},
+        )
+        for change in mutations:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                reviewer.verify({**lead, **change}, cat, DAY,
+                    fetch=lambda *_: self.fail("Must not touch the network"))
+
+    def test_listings_with_no_individual_page_remain_unpublishable(self):
+        lead, raw, cat, osm, detail, source = self.promoter()
+        lead.pop("eventDetailUrl")
+        lead["source"] = "promoter_official_tour"
+        lead["sourceUrl"] = source
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                lead, cat, DAY,
+                fetch=lambda *_: self.fail("Listing cannot be a proof"))
+        lead["source"] = "artist_official_tour_listing"
+        with self.assertRaises(ValueError):
+            reviewer.verify(
+                lead, cat, DAY,
+                fetch=lambda *_: self.fail("Listing cannot be a proof"))
+
+
 if __name__ == "__main__":
     unittest.main()

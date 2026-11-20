@@ -27,7 +27,10 @@ import triage
 SOURCE_FILE = Path(__file__).with_name("artist-tour-sources.json")
 OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]{0,18})/?")
 HTTPS = re.compile(r"^https://")
-SOURCES = frozenset({"artist_official_tour", "promoter_official_tour"})
+SOURCES = frozenset({
+    "artist_official_tour", "promoter_official_tour",
+    "promoter_official_tour_detail",
+})
 
 
 def require(ok, reason):
@@ -48,7 +51,13 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
     sources = json.loads(Path(source_file).read_text(encoding="utf-8"))
     require(sources.get("schema") ==
             "grossesondes.concert.artist_tour_sources.v1", "unknown source registry")
-    authority = lead.get("sourceUrl")
+    # On a promoter's individual detail page, sourceUrl points at the
+    # *event*, while sourcePage points at the already-reviewed tour listing.
+    # Do not confuse that normal discovery shape with a newly trusted host.
+    individual_promoter_detail = (
+        lead["source"] == "promoter_official_tour_detail")
+    authority = (lead.get("sourcePage") if individual_promoter_detail
+                 else lead.get("sourceUrl"))
     detail = lead.get("eventDetailUrl")
     artist_id = lead.get("artistId")
     matches = [s for s in sources.get("sources", [])
@@ -75,9 +84,17 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
             and not target.query and not target.fragment
             and bool(target.path.strip("/"))
         )
+        if individual_promoter_detail:
+            prefix = matches[0].get("detailPathPrefix")
+            trusted_url = (trusted_url
+                           and isinstance(prefix, str)
+                           and prefix.startswith("/")
+                           and len(prefix) >= 8
+                           and target.path.startswith(prefix)
+                           and lead.get("sourceUrl") == detail)
     except (TypeError, ValueError):
         trusted_url = False
-    require(trusted_url, "event detail outside reviewed source")
+    require(trusted_url, "event detail outside reviewed source scope")
     return matches[0]
 
 

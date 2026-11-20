@@ -416,7 +416,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                    or (i.get("candidate", {}).get("source") == "agenda_officiel_structuré"
                        and i.get("candidate", {}).get("reviewBucket") == "genre_unknown")
                    or (i.get("candidate", {}).get("source")
-                       in {"artist_official_tour", "promoter_official_tour"}
+                       in {"artist_official_tour", "promoter_official_tour",
+                           "promoter_official_tour_detail"}
                        and i.get("candidate", {}).get("newVenueToReview") is True
                        and i.get("candidate", {}).get("reviewBucket")
                        in {"genre_tag_review", "genre_unknown"}))]
@@ -455,7 +456,8 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
                 if generic_music_event.trusted_spec(c) is None:
                     raise ValueError("Salle générique non agréée : pas de réseau")
             site = None
-            if c["source"] in {"artist_official_tour", "promoter_official_tour"}:
+            if c["source"] in {"artist_official_tour", "promoter_official_tour",
+                               "promoter_official_tour_detail"}:
                 import event_site_pair_recheck as site_review
                 # The untrusted candidate cannot introduce a source authority.
                 # Both event and OSM point are independently downloaded.
