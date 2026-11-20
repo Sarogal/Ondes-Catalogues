@@ -8,6 +8,9 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
 from grossesondes_cloud_sync import collect_registered_directory_sources
+from national_generic_primary_domain_preflight import (
+    stable_directory_proposals, _digest, SCHEMA as PRIVATE_REVIEW_SCHEMA,
+)
 from grossesondes_stage import stage
 from test_grosses_stage import fixtures
 from grossesondes_generic_directory_edition import (
@@ -197,6 +200,81 @@ class GenericDirectoryProofTests(TestCase):
             directory_fetch=lambda _: self.fail("Untrusted proposal"),
             organizer_fetch=lambda _: self.fail("Untrusted organizer"))
         self.assertEqual(sources, {})
+
+
+    def test_private_j_plus_one_handoff_wont_trust_report_or_unknown_source(self):
+        source = {
+            "dossier_id": "national-testing-dossier",
+            "title": TITLE, "year": 2027, "url": SITE,
+            "kind": "CURATED_PRIMARY_CANDIDATE",
+        }
+        state = {
+            "schema": "grossesondes.source-watch.v1",
+            "national_generic_primary_date_observations_private": {
+                SITE: {"digest": _digest(
+                    source, *DATES, "SOURCE_PAGE"),
+                    "firstSeen": "2026-11-20",
+                    "lastSeen": DAY, "lastChecked": DAY, "stable": True}
+            },
+        }
+        queue = {
+            "schema": "grossesondes.national-festival-discovery-private.v1",
+            "as_of": DAY, "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False,
+            "dossiers": [{
+                "id": source["dossier_id"],
+                "name_hint": "Festibarock'in", "edition_year_hint": 2027,
+                "publication_authorized": False, "safe_to_publish": False,
+                "sources": [{
+                    "url": SITE, "discovered_via": SITE,
+                    "kind": "CURATED_PRIMARY_CANDIDATE",
+                    "firstSeen": "2026-11-20", "lastSeen": DAY,
+                    "publication_authorized": False,
+                }],
+            }],
+        }
+        report = {
+            "schema": PRIVATE_REVIEW_SCHEMA, "as_of": DAY,
+            "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False, "publications": 0,
+            "rows": [{
+                "dossier_id": source["dossier_id"],
+                "status": "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE",
+                "two_day_dates": True, "start_date_hint": DATES[0],
+                "end_date_hint": DATES[1], "date_source_mode": "SOURCE_PAGE",
+                "publication_authorized": False, "ownership_proven": False,
+            }],
+        }
+        catalog = {"schema": 1, "festivals": []}
+        fetch = lambda url: (self.assertEqual(url, DIRECTORY) or ENTRY)
+        result = stable_directory_proposals(
+            state, queue, catalog, report, DAY, directory_fetch=fetch)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["officialSite"], SITE)
+        self.assertFalse(result[0]["showOnMap"])
+
+        negative = [
+            lambda st, qu, rp: st[
+                "national_generic_primary_date_observations_private"][SITE].update(
+                    stable=False),
+            lambda st, qu, rp: st[
+                "national_generic_primary_date_observations_private"][SITE].update(
+                    digest="0"*64),
+            lambda st, qu, rp: qu["dossiers"][0]["sources"][0].update(
+                kind="PRESS_ARTICLE_DATE_CLAIM_REVIEW"),
+            lambda st, qu, rp: rp["rows"][0].update(
+                start_date_hint="2027-06-24"),
+            lambda st, qu, rp: rp["rows"][0].update(
+                publication_authorized=True),
+        ]
+        for mutation in negative:
+            with self.subTest(mutation=mutation):
+                st, qu, rp = (deepcopy(state), deepcopy(queue),
+                              deepcopy(report))
+                mutation(st, qu, rp)
+                self.assertEqual(stable_directory_proposals(
+                    st, qu, catalog, rp, DAY,
+                    directory_fetch=fetch), [])
 
 
 if __name__ == "__main__":
