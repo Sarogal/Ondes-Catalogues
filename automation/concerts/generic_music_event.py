@@ -72,8 +72,8 @@ ALLOWED_HOSTS = frozenset(row["host"] for row in SPECS.values())
 # 'Hardcore Techno' is not a hardcore punk subgenre. A broad substring
 # matcher cannot turn an electronic-only event into a metal show.
 ELECTRONIC_GENRE = re.compile(
-    r"(?<!\\w)(?:hardcore techno|hardcore electro|hardcore electronic|"
-    r"hardtek|frenchcore|gabber)(?!\\w)"
+    r"(?<!\w)(?:hardcore techno|hardcore electro|hardcore electronic|"
+    r"hardtek|frenchcore|gabber)(?!\w)"
 )
 
 
