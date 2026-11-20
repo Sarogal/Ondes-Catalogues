@@ -384,6 +384,41 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
         self.assertGreaterEqual(ods_get.call_count, 1)
 
+    def test_dual_collector_transport_outage_uses_curated_direct_oa_only(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        mirror = {**original, "collector":"opendatasoft-index",
+                  "source_url":"https://openagenda.com/agenda-demo/events/conte-familial"}
+        oa = event()
+        oa["location"].update({"latitude":44.5, "longitude":2.25})
+        ods_reader = Mock(side_effect=OSError("mirror unavailable"))
+        reader = MunicipalOfficialPageReader(
+            [original, mirror], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={"uid":AGENDA,"slug":"agenda-demo"}),
+            event_reader=Mock(return_value=oa),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods_reader)
+        group = groups_for_review([original, mirror], date(2026,11,20))[0]
+        point, reason = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertEqual(point, (44.5,2.25))
+        self.assertIsNone(reason)
+        self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
+        self.assertGreaterEqual(ods_reader.call_count, 1)
+        # Without a separately verified direct OA record, ODS downtime is
+        # not grounds to trust an arbitrary metadata point.
+        ods_only = MunicipalOfficialPageReader(
+            [mirror], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={"uid":AGENDA,"slug":"agenda-demo"}),
+            event_reader=Mock(return_value=oa),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods_reader)
+        self.assertIsNotNone(source_center(
+            group, lambda uid: ods_only.source_record_for_group(group,uid))[1])
+        self.assertEqual(ods_only.official_page_get(group), (None,None))
+
     def test_dual_collectors_conflicts_fail_closed(self):
         from ptitesondes_generic_venue_osm_preflight import source_center
         original = lead()
