@@ -146,9 +146,15 @@ def _read_osm_node(node_url, expected, fetch):
 def _official_event(lead, html, url, today):
     require(isinstance(html, str) and len(html) <= 1_000_000,
             "official page too large")
+    # A legitimate concert can be described as schema.org/Event rather than
+    # MusicEvent. Accept either only when the SAME individual first-party
+    # event carries an explicit named bill, genre, date and precise location.
+    # Reject ANY second Event/MusicEvent node: never borrow metadata from
+    # another event, a tour listing or a recommendation carousel.
     nodes = [n for n in discover.read_ld(html) if isinstance(n, dict)
-             and "MusicEvent" in bridge._event_types(n.get("@type"))]
-    require(len(nodes) == 1, "one individual official MusicEvent required")
+             and bridge._event_types(n.get("@type")) & {"MusicEvent", "Event"}]
+    require(len(nodes) == 1,
+            "one unambiguous individual official Event/MusicEvent required")
     raw = nodes[0]
     canonical = raw.get("url")
     require(canonical is None or canonical == url,
