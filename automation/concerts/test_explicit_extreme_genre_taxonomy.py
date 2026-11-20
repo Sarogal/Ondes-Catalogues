@@ -49,6 +49,24 @@ class ExplicitExtremeGenreTaxonomyTests(unittest.TestCase):
                 self.assertIsNone(discover.GENRE.search(label))
                 self.assertIsNone(triage.genre_evidence({"classification": [label]}))
 
+    def test_hardcore_techno_is_not_hardcore_punk_evidence(self):
+        rejected = ("Hardcore Techno", "Techno Hardcore",
+                    "Electronic Hardcore", "Hardcore EDM",
+                    "Gabber Hardcore")
+        for label in rejected:
+            with self.subTest(label=label):
+                self.assertIsNone(triage.genre_evidence(
+                    {"classification": [label]}))
+                candidate = triage.triage({
+                    "name": "Unrelated electronic show",
+                    "date": "2027-06-01", "city": "Paris",
+                    "classification": [label],
+                }, catalogue=self.empty_catalogue)
+                self.assertEqual(candidate["reviewBucket"], "genre_unknown")
+        # A genuinely relevant second event-level tag still counts.
+        self.assertIsNotNone(triage.genre_evidence({
+            "classification": ["Hardcore Techno", "Death Metal"]}))
+
     def test_biography_and_venue_reputation_are_not_event_genre_proof(self):
         row = triage.triage({
             "name": "Line-up to verify",
