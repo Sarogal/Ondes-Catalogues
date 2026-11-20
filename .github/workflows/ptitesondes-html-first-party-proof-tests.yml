@@ -9,6 +9,9 @@ on:
       - 'scripts/ptitesondes_html_family_age.py'
       - 'scripts/ptitesondes_factual_reuse_preflight.py'
       - 'scripts/ptitesondes_nonmusical_html_gate_router.py'
+      - 'scripts/ptitesondes_institutional_source_policy.py'
+      - 'config/ptitesondes_institutional_source_policies.json'
+      - 'tests/test_ptitesondes_institutional_source_policy.py'
       - 'tests/test_ptitesondes_nonmusical_html_gate_router.py'
       - 'tests/test_ptitesondes_factual_reuse_preflight.py'
       - 'scripts/ptitesondes_html_index_detail_funnel.py'
@@ -37,3 +40,4 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_html_*.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_factual_reuse_preflight.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_nonmusical_html_gate_router.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_institutional_source_policy.py' -v
