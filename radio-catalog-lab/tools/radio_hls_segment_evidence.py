@@ -46,7 +46,10 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
         or "\\" in value or "#" in value or "@" in value
         or "{" in value or "}" in value or value.startswith(("//", "?"))):
         return None
-    ref = urllib.parse.urlsplit(value)
+    try:
+        ref = urllib.parse.urlsplit(value)
+    except ValueError:
+        return None
     if ref.fragment or ref.username is not None or ref.password is not None:
         return None
     absolute = bool(ref.scheme or ref.netloc)
@@ -60,7 +63,7 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
     if not re.fullmatch(r"/?[A-Za-z0-9_./%+~-]+", ref.path):
         return None
     # Token queries remain bounded and never enter reports or logs.
-    if ref.query and not re.fullmatch(r"[A-Za-z0-9_=&%+./~, :-]{1,384}".replace(" ", ""), ref.query):
+    if ref.query and not re.fullmatch(r"[A-Za-z0-9_=&%+./~,:-]{1,384}", ref.query):
         return None
     try:
         original = validate_endpoint(source_url)
@@ -231,7 +234,7 @@ def verify_one_segment(
     request_manifest: Callable[[str], ResponseSample],
     request_segment: Callable[[str], ResponseSample],
 ) -> dict:
-    """Request at most ONE same-origin segment, fail closed on redirects."""
+    """Request at most ONE relative or verified HTTPS-CDN segment, no redirects."""
     output = {"state": "not_confirmed", "segmentEvidence": None,
               "manifestKind": "unconfirmed", "childManifestKind": "not_followed",
               "planningReason": "not_evaluated",
