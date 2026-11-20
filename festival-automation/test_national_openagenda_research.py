@@ -3,7 +3,7 @@ from copy import deepcopy
 import unittest
 
 from national_openagenda_research import (
-    SCHEMA, STATE_KEY, QUERIES, SOURCE, MAX_LEADS,
+    SCHEMA, STATE_KEY, QUERIES, SOURCE, MAX_LEADS, FESTIVAL_PAGE_OFFSETS,
     candidate, fixed_query_urls, fetch_json, validated_leads, scan,
 )
 
@@ -46,8 +46,12 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
 
     def test_all_queries_are_fixed_bounded_and_no_user_url(self):
         urls = fixed_query_urls()
-        self.assertEqual(len(urls), len(QUERIES))
+        self.assertEqual(len(urls), len(QUERIES) + len(FESTIVAL_PAGE_OFFSETS) - 1)
         self.assertEqual(urls, fixed_query_urls(DAY))
+        self.assertEqual(list(FESTIVAL_PAGE_OFFSETS), list(range(0, 200, 25)))
+        self.assertTrue(all("offset=" in x for x in urls))
+        self.assertTrue(any("offset=175" in x for x in urls))
+        self.assertTrue(any("offset=0" in x for x in urls))
         self.assertEqual(len(urls), len(set(urls)))
         self.assertTrue(all(x.startswith(SOURCE + "?") for x in urls))
         self.assertTrue(all("limit=25" in x for x in urls))
@@ -142,6 +146,28 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         for item in cases:
             with self.subTest(item=item):
                 self.assertIsNone(candidate(item, DAY))
+
+    def test_bounded_pagination_reaches_late_festival_pages_without_approving(self):
+        urls = fixed_query_urls(DAY)
+        visits = []
+        first_page = urls[0]
+        late_page = next(u for u in urls if "offset=175" in u)
+        unique = dict(EVENT, title_fr="Magnezik Fest #2",
+                      canonicalurl="https://openagenda.com/shotgun/events/magnezik-festival-2")
+        def fetch(url):
+            visits.append(url)
+            return payload([unique] if url == late_page else [])
+        s = state()
+        result = scan(s, DAY, fetch=fetch)
+        self.assertEqual(result["leads_count"], 1)
+        self.assertEqual(result["publications"], 0)
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["requests_attempted"], len(urls))
+        self.assertIn(first_page, visits)
+        self.assertIn(late_page, visits)
+        self.assertEqual(len(visits), len(set(visits)))
+        self.assertEqual(result["leads"][0]["year_source_review_only"],
+                         "UNVERIFIED_PROVIDER_START_DATE")
 
     def test_scan_deduplicates_5_queries_without_publication(self):
         visited = []
