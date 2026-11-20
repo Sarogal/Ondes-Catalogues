@@ -54,15 +54,28 @@ def groups_for_review(backlog, today):
     ]
 
 
-def private_rotation(groups, today, max_places=MAX_PER_RUN):
-    if not isinstance(today, date) or type(max_places) is not int or not 1 <= max_places <= MAX_PER_RUN:
+def private_rotation(groups, today, max_places=MAX_PER_RUN, batch_index=0):
+    """Disjoint bounded private batches, deterministic for one calendar day.
+
+    Callers opt into later batches explicitly; the default (batch 0) is
+    backward compatible. Every unknown venue is selected exactly once
+    across ceil(len(groups) / max_places) batches in the same day.
+    No network or publisher action happens here.
+    """
+    if (not isinstance(today, date) or type(max_places) is not int
+            or not 1 <= max_places <= MAX_PER_RUN
+            or type(batch_index) is not int or batch_index < 0):
         raise ValueError("invalid_rotation")
     if not groups:
+        if batch_index != 0:
+            raise ValueError("batch_out_of_range")
         return []
-    # Independent of the lexical venue name; spreads the bounded workload.
-    start = (today.toordinal() * max_places) % len(groups)
-    return [groups[(start + i) % len(groups)]
-            for i in range(min(max_places, len(groups)))]
+    offset = batch_index * max_places
+    if offset >= len(groups):
+        raise ValueError("batch_out_of_range")
+    start = ((today.toordinal() * max_places) + offset) % len(groups)
+    count = min(max_places, len(groups) - offset)
+    return [groups[(start + i) % len(groups)] for i in range(count)]
 
 
 def source_center(group, record_fetch=api_record):
@@ -307,9 +320,10 @@ def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
           official_page_get=None, approved_official_hosts=(),
           dila_directory_get=None, official_geocode=False,
-          source_record_from_reader=None, shared_proof_preview=False):
+          source_record_from_reader=None, shared_proof_preview=False,
+          batch_index=0):
     groups = groups_for_review(backlog, today)
-    chosen = private_rotation(groups, today)
+    chosen = private_rotation(groups, today, batch_index=batch_index)
     checked = []
     for group in chosen:
         result = (inspect_group(group, record_fetch, osm_fetch,
@@ -353,6 +367,8 @@ def audit(backlog, today, record_fetch=api_record,
         "duplicate_collector_or_repeated_leads": sum(
             x["lead_count"] - x["unique_candidate_sessions"] for x in groups),
         "unknown_unique_venues": len(groups),
+        "batch_index": batch_index,
+        "batch_count": (len(groups) + MAX_PER_RUN - 1) // MAX_PER_RUN,
         "selected_venues": len(checked),
         "queried_venues": len(checked) if live else 0,
         "independent_hints": sum(
@@ -389,6 +405,8 @@ def main():
     parser.add_argument("--official-municipal-pages", action="store_true")
     parser.add_argument("--official-address-geocode", action="store_true")
     parser.add_argument("--shared-location-evidence", action="store_true")
+    parser.add_argument("--batch-index", type=int, default=0,
+                        help="0-based private venue batch (maximum 12 places)")
     parser.add_argument("--private-source-config", type=Path)
     args = parser.parse_args()
     # Block BOTH private input and output paths inside the public checkout.
@@ -440,9 +458,10 @@ def main():
         report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
                        official_geocode=args.official_address_geocode,
                        shared_proof_preview=args.shared_location_evidence,
-                       **callbacks)
+                       batch_index=args.batch_index, **callbacks)
     else:
-        report = audit(backlog, args.day, live=False)
+        report = audit(backlog, args.day, live=False,
+                       batch_index=args.batch_index)
     args.output_private_report.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
@@ -451,6 +470,8 @@ def main():
         "unknown_venue_leads": report["unknown_venue_leads"],
         "unknown_unique_venues": report["unknown_unique_venues"],
         "selected_venues": report["selected_venues"],
+        "batch_index": report["batch_index"],
+        "batch_count": report["batch_count"],
         "publication_ready": False, "public_writes": 0,
     }))
 
