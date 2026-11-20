@@ -19,6 +19,143 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_visible_year_outside_single_link_is_strict_private_card_hint(self):
+        from regional_festival_discovery import CARD_YEAR_PENDING_SIGNAL
+        for title in ("Festibarock'in", "MordorFest", "Festival Rock des Forges"):
+            href = "/actualites-sorties/agenda/" + (
+                "festibarockin" if title == "Festibarock'in" else
+                "mordorfest" if title == "MordorFest" else "festival-rock-forges"
+            )
+            anchor = '<h3><a href="' + href + '">' + title + '</a></h3>'
+            cards = (
+                '<article><p>Musique / Concert — Édition 2027</p>'
+                + anchor + '</article>',
+                '<li>' + anchor +
+                '<time>25 et 26 juin 2027</time><span>Concerts / Musique</span></li>',
+                '<div role="article"><p>Musique / Concert</p><div>' + anchor
+                + '</div><p>Édition 2027</p></div>',
+            )
+            for html in cards:
+                with self.subTest(title=title, html=html):
+                    hits = candidate_links(html, ANGERS, "2026-11-20")
+                    self.assertEqual(len(hits), 1)
+                    self.assertEqual(hits[0]["title"], title + " 2027")
+                    self.assertEqual(hits[0]["signal"], CARD_YEAR_PENDING_SIGNAL)
+                    self.assertEqual(hits[0]["candidate_url"],
+                                     "https://www.angers.fr" + href)
+                    self.assertIsNone(hits[0]["archive_slug"])
+                    self.assertNotIn("startDate", hits[0])
+                    self.assertNotIn("edition_dates_verified", hits[0])
+        # A same-card printed year without musical theme or festival
+        # identity is not a discovery lead.
+        self.assertEqual(candidate_links(
+            '<article><p>Musique / Concert — Édition 2027</p>'
+            '<a href="/actualites-sorties/agenda/solo">Concert solo</a>'
+            '</article>', ANGERS, "2026-11-20"), [])
+
+    def test_visible_card_year_cannot_leak_or_override_conflicts(self):
+        anchor = '<a href="/actualites-sorties/agenda/mordorfest">MordorFest</a>'
+        cases = [
+            "<p>Édition 2027</p><article><p>Musique / Concert</p>"
+            + anchor + "</article>",
+            '<article><p>Musique / Concert</p>' + anchor +
+            '</article><p>Édition 2027</p>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<span hidden>2027</span></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<span aria-hidden="true">2027</span></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<script>document.write("2027")</script></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<time datetime="2027-06-25">25 juin</time></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<p>Édition 2027 / 2028</p></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<p>Édition 2025</p></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<p>Édition 2032</p></article>',
+            '<article><p>Musique / Concert</p>' + anchor
+            + '<a href="/autre">Autre</a><p>Édition 2027</p></article>',
+            '<div role="article"><p>Musique / Concert</p>' + anchor
+            + '<div role="article">Édition 2027</div></div>',
+            '<article><p>Édition 2027</p><a href="https://evil.example/x">'
+            'MordorFest</a><span>Musique / Concert</span></article>',
+            '<article><p>Édition 2027</p><a href="/actualites-sorties/'
+            'agenda/festivites">Festivités musicales</a>'
+            '<span>Musique / Concert</span></article>',
+            '<article><p>Édition 2027</p><a href="/actualites-sorties/'
+            'agenda/festival-plantes">Festival des plantes</a>'
+            '<span>Musique / Concert</span></article>',
+            '<article><p>Édition 2027</p><a href="/actualites-sorties/'
+            'agenda/plus">En savoir plus</a>'
+            '<span>Musique / Concert</span></article>',
+        ]
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual(candidate_links(
+                    html, ANGERS, "2026-11-20"), [])
+        # A card's year must not overwrite a distinct explicit anchor year.
+        explicit = ('<article><p>Édition 2027</p>'
+                    '<span>Musique / Concert</span><a href="'
+                    '/actualites-sorties/agenda/mordorfest-2026">'
+                    'MordorFest 2026</a></article>')
+        hits = candidate_links(explicit, ANGERS, "2026-11-20")
+        self.assertTrue(all(x["title"] != "MordorFest 2027" for x in hits))
+
+    def test_card_year_routes_through_next_day_private_recheck_only(self):
+        from regional_festival_discovery import CARD_YEAR_PENDING_SIGNAL
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources, _seen_again
+        from grossesondes_institutional_edition import (
+            private_proposal, independently_fetch)
+        today, tomorrow = "2026-11-20", "2026-11-21"
+        target = "https://www.angers.fr/actualites-sorties/agenda/mordorfest"
+        card = ('<article><p>Musique / Concert</p>'
+                '<a href="' + target + '">MordorFest</a>'
+                '<time>Édition 2027</time></article>')
+        hits = candidate_links(card, ANGERS, today)
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0]["signal"], CARD_YEAR_PENDING_SIGNAL)
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        requested = []
+        saved = scan_regional_indexes(
+            {"schema": "grossesondes.source-watch-report.v1",
+             "date": today, "source_reference_leads_review_only": []},
+            state, [B], today,
+            fetch=lambda url: requested.append(url) or card, limit=1)
+        self.assertEqual(requested, [ANGERS])
+        self.assertEqual(len(saved), 1)
+        self.assertFalse(saved[0]["publication_authorized"])
+        self.assertFalse(saved[0]["date_verified"])
+        next_queue = build_queue(
+            state, {"schema": "grossesondes.source-watch-report.v1",
+                    "date": tomorrow, "source_reference_leads_review_only": []},
+            [], tomorrow)
+        self.assertEqual(next_queue["publications"], 0)
+        self.assertEqual(next_queue["candidate_dossiers_count"], 1)
+        ready = _eligible_sources(state, next_queue, tomorrow, due_only=False)
+        self.assertEqual(len(ready), 1)
+        self.assertEqual(ready[0]["title"], "MordorFest 2027")
+        self.assertTrue(_seen_again(card, ready[0]))
+        multi_link = card.replace("</article>",
+                                  '<a href="/other">Autre</a></article>')
+        self.assertFalse(_seen_again(multi_link, ready[0]))
+        self.assertFalse(_seen_again(card.replace("2027", "2028"), ready[0]))
+        proposal = private_proposal(
+            ready[0], ("2027-06-25", "2027-06-26"), tomorrow)
+        self.assertIsNotNone(proposal)
+        fetches = []
+        self.assertIsNone(independently_fetch(
+            proposal, tomorrow,
+            fetch=lambda url: fetches.append(url) or (
+                card if url == ANGERS
+                else "<h1>MordorFest 2027</h1><p>Musique / Concert</p>"
+            )))
+        self.assertEqual(fetches, [ANGERS, target])
+        self.assertFalse(next_queue["publication_authorized"])
+
     def test_semantic_list_and_role_article_cards_capture_visible_music_category(self):
         from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
         title = "HelixFest 2027"
