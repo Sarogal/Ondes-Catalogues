@@ -129,6 +129,25 @@ class ODSOAVenueBindingTests(unittest.TestCase):
         self.assertEqual(oa.call_count, 1)
         self.assertEqual(html.call_count, 1)
 
+    def test_ods_venue_without_oa_website_uses_dila_exact_link(self):
+        homepage = "https://www.ville-les-bois.fr/"
+        listing = ("<html><main><a href='/lieux/maison-enfants'>"
+                   "Maison des enfants</a></main></html>")
+        site = Mock(side_effect=lambda url: (
+            listing if url == homepage else "<html><p>Lieu vérifiable</p></html>"))
+        event_without_site = event()
+        event_without_site["location"]["website"] = None
+        reader = MunicipalOfficialPageReader(
+            [lead()], [994311], "private-test-read-only-key",
+            agenda_reader=lambda aid, key: {"uid": aid, "slug": SLUG},
+            event_reader=lambda *args: event_without_site,
+            directory_reader=lambda city: dila(),
+            html_reader=site, ods_reader=lambda uid: ods())
+        self.assertEqual(reader.official_page_get(group()), (
+            OFFICIAL, "<html><p>Lieu vérifiable</p></html>"))
+        self.assertEqual(site.call_count, 2)
+        self.assertFalse(hasattr(reader, "publisher"))
+
     def test_wrong_ods_record_blocks_oa_and_official_read(self):
         oda = Mock(return_value={**ods(), "uid": 8})
         oa = Mock(return_value=event())
