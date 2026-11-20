@@ -183,11 +183,39 @@ def published_patch_duplicate(proposal, published_calendar):
             if isinstance(item, dict) and item.get("slug") == slug]
     if not rows:
         return "NOT_PUBLISHED"
-    if len(rows) != 1 or any(
-            proposal.get(key, None) != rows[0].get(key, None)
-            for key in _PUBLISHED_IDENTITY_FIELDS):
+    if len(rows) != 1:
         return "PUBLISHED_COLLISION"
-    return "ALREADY_PUBLISHED"
+    signed = rows[0]
+    if all(proposal.get(key, None) == signed.get(key, None)
+           for key in _PUBLISHED_IDENTITY_FIELDS):
+        return "ALREADY_PUBLISHED"
+    # A later, separately verified CURRENT-EDITION venue correction must not
+    # look like a forged re-insertion of the older cumulative private addition.
+    # This exception is limited to an explicitly certified signed geo delta.
+    geo_keys = {"city", "venue", "lat", "lon", "showOnMap"}
+    record = signed.get("geoVerification")
+    if (
+        isinstance(record, dict)
+        and set(record) == {
+            "proofMode", "firstObserved", "verifiedAt", "officialSite"}
+        and record.get("proofMode") == "current-edition-geo-two-day.v1"
+        and record.get("officialSite") == signed.get("officialSite")
+        and isinstance(record.get("firstObserved"), str)
+        and isinstance(record.get("verifiedAt"), str)
+        and record["firstObserved"] < record["verifiedAt"]
+        and proposal.get("showOnMap") is False
+        and all(proposal.get(k) is None for k in
+                ("city", "venue", "lat", "lon"))
+        and signed.get("showOnMap") is True
+        and signed.get("futureVenueConfirmed") is True
+        and signed.get("geoPrecision") == "lieu"
+        and signed.get("geoCity") == signed.get("city")
+        and signed.get("geoSource") == signed.get("officialSite")
+        and all(proposal.get(key, None) == signed.get(key, None)
+                for key in _PUBLISHED_IDENTITY_FIELDS if key not in geo_keys)
+    ):
+        return "ALREADY_PUBLISHED"
+    return "PUBLISHED_COLLISION"
 
 
 def stage(calendar,history,patch,sources,today,production_calendar=None,production_history=None,
