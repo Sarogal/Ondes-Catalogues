@@ -197,10 +197,22 @@ class PrivateNationalEventCampaignTests(unittest.TestCase):
 
     def test_bad_index_size_and_step_bounds_fail(self):
         with tempfile.TemporaryDirectory() as tmp:
-            for size, steps in ((0, 2), (161, 2), (2, 9), (2, 0)):
+            for size, steps in ((161, 2), (2, 9), (2, 0)):
                 with self.subTest(size=size, steps=steps):
                     with self.assertRaises(ValueError):
                         plan_campaign(index(size), DIGEST, DAY, Path(tmp), steps=steps)
+
+    def test_valid_empty_index_is_a_successful_completed_campaign(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            plan = plan_campaign(index(0), DIGEST, DAY, Path(tmp), steps=2)
+            network = Mock(side_effect=AssertionError(
+                "Zero unknown agendas must never contact OpenAgenda"))
+            result = run_campaign(plan, public_key=KEY, explorer=network)
+            network.assert_not_called()
+            self.assertEqual(result["segments_examined"], 0)
+            self.assertEqual(result["total_agendas"], 0)
+            self.assertTrue(result["finished_index_batch"])
+            self.assertEqual(result["public_writes"], 0)
 
     def test_dry_run_does_not_create_private_state_or_fetch_events(self):
         with tempfile.TemporaryDirectory() as tmp:
