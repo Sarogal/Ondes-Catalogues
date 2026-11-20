@@ -176,9 +176,12 @@ class OrganizerWithoutAnyKnownBandTests(unittest.TestCase):
             reviewer.verify(lead, catalogue, DAY, fetch=wrong_ban)
 
         # An official no-region event without government support stays held.
+        def unavailable_ban(url, cap):
+            if url.startswith(gov_url + "?"):
+                raise ValueError("Government address verification unavailable")
+            return fetch(raw, osm, [])(url, cap)
         with self.assertRaises(ValueError):
-            reviewer.verify(lead, catalogue, DAY,
-                            fetch=fetch(raw, osm, []))
+            reviewer.verify(lead, catalogue, DAY, fetch=unavailable_ban)
 
     def test_no_source_lead_can_invent_a_reviewed_organizer(self):
         lead, event, catalogue, osm = fixture()
