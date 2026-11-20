@@ -41,6 +41,21 @@ Workflow : `.github/workflows/radio-catalog-daily-discovery.yml`.
 - `schedule: 17 4 * * *` représente une recherche quotidienne vers **04 h 17 UTC**. **Le cron ne se déclenche qu'à partir de la branche par défaut de GitHub** : il n'est pas actif dans cette PR brouillon.
 - Les permissions sont limitées à `contents: read` et `actions: read` ; le workflow ne pousse aucun commit, ne publie aucun JSON signé et ne déploie aucune application ou site.
 
+## Qualification des flux : nouveau pilote isolé
+
+La veille peut désormais être suivie d'une **preuve technique limitée à des octets audio**, mais jamais d'une publication automatique.
+
+- `tools/radio_stream_technical_probe.py` : contrôle des URL HTTP/HTTPS, blocage des IP et réponses DNS locales/privées, résolution DNS **puis connexion épinglée sur l'IP publique vérifiée** à chaque saut ; TLS vérifié avec l'hôte original ; 3 redirections au plus, refus des retours HTTPS vers HTTP ; connexion sans proxy et au plus 512 octets d'une seule lecture. Les contrôles identifient des signatures MP3/AAC, Ogg, FLAC, WAV, WebM, MP4. Un simple MIME « audio » n'est pas une preuve suffisante et les playlists HLS/M3U/PLS sont **mises en attente**, sans téléchargement des segments ni suivi aveugle de leurs URL.
+- Les échecs HTTP, DNS, ICECAST/ICY incompatibles avec le client HTTP ou format non reconnu restent en `needs_review` ou `playlist_pending` ; **ils ne suppriment jamais une radio**. Les contrôles réseau fonctionnent avec des bornes strictes ; le batch limité tourne d'une journée à l'autre sur les UUID, au lieu de toujours retester les mêmes premiers candidats.
+- `tools/radio_stream_recheck_ledger.py` : conserve les empreintes SHA-256 d'URL et les **journées distinctes** où un court échantillon audio a été observé. Une seconde journée avec la même URL marque seulement `repeatAudioSample=true`, pas une station vérifiée ou un droit de publier.
+- Les artefacts du précontrôle ne contiennent pas d'audio, ne réémettent pas les URL brutes dans les résultats du vérificateur et n'exigent aucune clé de signature.
+
+Le workflow dispose d'une entrée manuelle explicite `run_stream_probes=true` : **deux contrôles de flux maximum** lors d'un `workflow_dispatch` consenti. Les événements `push` et `schedule` **ne déclenchent pas de requêtes vers les flux** dans ce pilote. Seules les recherches publiques Radio Browser sont automatiquement exécutées sur `push` de branche. Le cron du dépôt reste inactif tant que la PR n'est pas intégrée à la branche par défaut.
+
+**Point de sécurité à franchir avant activation quotidienne de la qualification :** vérification sur des flux réels, formats ICY/HLS, stabilité/durée de lecture réelle, qualification éditoriale conforme aux règles génériques historiques, budget de requêtes et fiabilité DNS/redirect prouvés, registre de preuves persistant au-delà des 14 jours d'artefacts et publisher privé signé/rollback. Les échantillons audio ne sont pas une autorisation de diffusion ni une preuve de direct.
+
+[CI de prévalidation : exécution #44679209924](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44679209924) — **88 tests Python sans réseau** (37 découverte/registre, 11 rapprochement, 28 flux sécurisés, 12 observations entre plusieurs jours), plus essai réel sur les seuls métadonnées Radio Browser (270 UUID candidats, aucun flux audio ouvert).
+
 ## Validation avant branche principale
 
 Avant tout déclenchement quotidien réel et avant la première mise à jour Play Store, démontrer la stabilité de la recherche, la capacité à différencier les stations réellement nouvelles des 27 UUID historiques encore manquants, la qualification automatique des flux, la sécurité des identités et du cache de logos, ainsi que le mécanisme de signature/rollback. La fusion de la PR n'est **pas autorisée sans validation explicite**.
