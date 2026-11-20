@@ -110,6 +110,25 @@ class FestivalSyncSummaryTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render(data)
 
+    def test_commune_centre_summary_never_claims_precise_venue(self):
+        data=report(changed=False)
+        data["future_city_publisher"]={
+            "private_report": "valid", "private_two_day_candidates": 2,
+            "independent_rechecks": 1, "accepted_city_updates": ["new-2027"],
+            "held_city": 1, "publication_authorized_by_private_report": False,
+        }
+        result=render(data)
+        self.assertIn("centre indicatif, pas lieu exact", result)
+        self.assertIn("Centres de commune vérifiés par API officielle : **1**",result)
+        self.assertIn("ni scène, ni entrée",result)
+        data["future_city_publisher"]["publication_authorized_by_private_report"]=True
+        with self.assertRaises(ValueError):
+            render(data)
+        data["future_city_publisher"]["publication_authorized_by_private_report"]=False
+        data["future_city_publisher"]["accepted_city_updates"].append("unproven")
+        with self.assertRaises(ValueError):
+            render(data)
+
     def test_malformed_reports_fail_closed(self):
         data=report()
         data["changed"]="false"
