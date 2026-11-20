@@ -82,6 +82,10 @@ ARCHIVE_SIGNAL = "HISTORICAL_NAME_YEAR_ONLY"
 THEMATIC_SIGNAL = "THEMATIC_NAME_ONLY"
 CONTEXT_SIGNAL = "MUSIC_CATEGORY_CONTEXT_ONLY"
 CROSS_SOURCE_SIGNAL = "OPENAGENDA_NAMED_INSTITUTIONAL_MATCH_REVIEW_ONLY"
+PRIMARY_CROSS_SIGNAL = "PRIMARY_NAME_INSTITUTIONAL_MATCH_REVIEW_ONLY"
+# A reviewed institutional index proves genre ONLY through its own visible
+# thematic title/category. These research-only signals never prove music.
+INDEX_MUSIC_PROOF_SIGNALS = frozenset((THEMATIC_SIGNAL, CONTEXT_SIGNAL))
 # A visible institutional music CATEGORY may nominate a named edition, but
 # it is NOT proof of rock/metal/punk; the publisher must verify the detail.
 MUSIC_CATEGORY_PENDING_SIGNAL = "INSTITUTION_MUSIC_CATEGORY_GENRE_REVIEW_ONLY"
@@ -293,8 +297,71 @@ def private_openagenda_name_hints(state, today):
     return frozenset(hints)
 
 
+def private_prior_primary_name_hints(queue, today):
+    """Re-use existing first-party festival identities for institutional search.
+
+    No URL from this report is fetched. No date, ownership or publication
+    permission is inherited. A weak candidate still needs an independently
+    reviewed institution to publish its own exact edition and musical genre.
+    """
+    current = date.fromisoformat(today)
+    if (not isinstance(queue, dict)
+            or queue.get("schema") != "grossesondes.national-festival-discovery-private.v1"
+            or queue.get("review_only") is not True
+            or queue.get("safe_to_publish") is not False
+            or queue.get("publication_authorized") is not False
+            or queue.get("publications") != 0
+            or not isinstance(queue.get("dossiers"), list)
+            or len(queue["dossiers"]) > 200):
+        return frozenset()
+    try:
+        as_of = date.fromisoformat(queue["as_of"])
+        if not current - timedelta(days=1) <= as_of <= current:
+            return frozenset()
+    except (ValueError, KeyError, TypeError):
+        return frozenset()
+    result = set()
+    for row in queue["dossiers"]:
+        if (not isinstance(row, dict)
+                or row.get("safe_to_publish") is not False
+                or row.get("publication_authorized") is not False
+                or not isinstance(row.get("sources"), list)
+                or len(row["sources"]) > 12):
+            continue
+        year, region = row.get("edition_year_hint"), row.get("region_hint")
+        name, ident = row.get("name_hint"), row.get("normalized_name")
+        if (type(year) is not int or not current.year <= year <= current.year+2
+                or region not in APPROVED.values()
+                or not isinstance(name, str) or not 7 <= len(name) <= 150
+                or not isinstance(ident, str) or not 7 <= len(ident) <= 140):
+            continue
+        folded = normalized(name)
+        years = {int(y) for y in re.findall(r"(?<!\d)20[2-4]\d(?!\d)", folded)}
+        if years and years != {year}:
+            continue
+        base = " ".join(re.sub(r"\b20[2-4]\d\b", " ", folded).split())
+        if base != ident:
+            continue
+        # Only a primary-domain or historically reviewed source can introduce
+        # this additional search term. Region/year/name must be an exact match.
+        if not any(
+                isinstance(src, dict)
+                and src.get("kind") in (
+                    "CURATED_PRIMARY_CANDIDATE", "HISTORICAL_HOMEPAGE_YEAR_HINT")
+                and src.get("publication_authorized") is False
+                and isinstance(src.get("url"), str)
+                and src["url"].startswith("https://")
+                and src.get("discovered_via") == src["url"]
+                for src in row["sources"]):
+            continue
+        result.add((ident, year, region))
+        if len(result) >= 60:
+            break
+    return frozenset(result)
+
+
 def candidate_links(html, source, today, historical_hints=None, diagnostics=None,
-                    openagenda_name_hints=None):
+                    openagenda_name_hints=None, primary_name_hints=None):
     if not isinstance(html, str) or len(html) > 650_000:
         raise ValueError("HTML agenda inexploitable")
     if source not in APPROVED:
