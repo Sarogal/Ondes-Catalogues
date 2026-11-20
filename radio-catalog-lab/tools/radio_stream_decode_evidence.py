@@ -29,6 +29,15 @@ def _detect_demuxer(data: bytes) -> str | None:
     frame = analyze_frame_chain(data)
     if frame["state"] == "frame_chain":
         return "mp3" if frame["codec"] == "mpeg_audio" else "aac"
+    # MPEG-TS from a bounded HLS segment. Container structure alone is
+    # insufficient: FFmpeg must actually produce audio PCM to count.
+    if len(data) >= 188 * 4 and all(
+        data[i] == 0x47 and data[i + 1] & 0x80 == 0
+        and (data[i + 3] & 0x30) != 0
+        and (((data[i + 1] & 0x1F) << 8) | data[i + 2]) != 0x1FFF
+        for i in range(0, 188 * 4, 188)
+    ):
+        return "mpegts"
     if data.startswith(b"OggS") and any(
         x in data[:512] for x in (b"OpusHead", b"\x01vorbis", b"Speex   ", b"fLaC")
     ):
