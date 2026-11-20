@@ -456,6 +456,28 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
                     group, lambda uid: reader.source_record_for_group(
                         group, uid))[1])
 
+    def test_returned_empty_ods_record_is_not_a_network_outage(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        mirror = {**original, "collector":"opendatasoft-index",
+                  "source_url":"https://openagenda.com/agenda-demo/events/conte-familial"}
+        group = groups_for_review([original, mirror], date(2026,11,20))[0]
+        oa = event()
+        oa["location"].update({"latitude":44.5,"longitude":2.25})
+        for invalid in (None, {}, {"uid":721}):
+            with self.subTest(record=invalid):
+                reader = MunicipalOfficialPageReader(
+                    [original, mirror], [AGENDA], "private-test-key",
+                    agenda_reader=Mock(return_value={
+                        "uid":AGENDA,"slug":"agenda-demo"}),
+                    event_reader=Mock(return_value=oa),
+                    directory_reader=Mock(side_effect=AssertionError("no DILA")),
+                    html_reader=Mock(side_effect=AssertionError("no HTML")),
+                    ods_reader=Mock(return_value=invalid))
+                self.assertIsNotNone(source_center(
+                    group, lambda uid:reader.source_record_for_group(
+                        group,uid))[1])
+
     def test_mirror_sources_are_sampled_as_distinct_uids(self):
         originals = [lead(str(uid)) for uid in range(721, 725)]
         mixed = originals + [{
