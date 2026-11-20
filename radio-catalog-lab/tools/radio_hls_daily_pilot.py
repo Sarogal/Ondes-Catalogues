@@ -84,6 +84,7 @@ def hls_preview(
     kinds: dict[str, int] = {}
     segment_checks = 0
     structural_evidence = 0
+    segment_states: dict[str, int] = {}
     for uid, raw_url in selected:
         # Same pinned DNS and redirect checks as all other radio probes.
         report = probe_url(raw_url, request)
@@ -99,14 +100,16 @@ def hls_preview(
             "publicationAllowed": False,
         }
         if (check_one_segment and segment_checks == 0 and
-                kind == "live_manifest_candidate"):
+                kind in {"live_manifest_candidate", "master_single_variant_pending"}):
             # Only one of ALL discovered candidates is sampled. Re-read and
             # validate the manifest; never reuse untrusted segment URLs from
             # summaries, never follow segment redirects or master variants.
             segment_checks += 1
             outcome = verify_one_segment(raw_url, request, segment_request)
             check["segmentCheck"] = outcome
-            if outcome["state"] == "segment_structural_evidence":
+            state = outcome["state"]
+            segment_states[state] = segment_states.get(state, 0) + 1
+            if state == "segment_structural_evidence":
                 structural_evidence += 1
         checks.append(check)
     return {
@@ -117,6 +120,7 @@ def hls_preview(
         "manifestKinds": dict(sorted(kinds.items())),
         "segmentVerificationAttemptCount": segment_checks,
         "segmentStructuralEvidenceCount": structural_evidence,
+        "segmentStates": dict(sorted(segment_states.items())),
         "technicalVerifiedCount": 0,
         "publicationAllowed": False,
         "checks": checks,
@@ -152,6 +156,7 @@ def main(argv: list[str] | None = None) -> int:
           f"types={output['manifestKinds']} "
           f"segment_attempts={output['segmentVerificationAttemptCount']} "
           f"segment_structures={output['segmentStructuralEvidenceCount']} "
+          f"segment_states={output['segmentStates']} "
           "verified=0 published=false")
     return 0
 
