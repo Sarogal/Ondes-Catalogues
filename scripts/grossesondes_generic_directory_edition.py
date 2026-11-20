@@ -134,8 +134,10 @@ def trusted_linked_site(directory_html, title):
         hostname = normalized(host.removeprefix("www."))
         role = ("site web" in context or "site officiel" in context
                 or link in ("site web", "site officiel"))
-        if not (role or link == hostname or
-                link == normalized(host)):
+        # A labelled link to a different host is a conflict even when a
+        # preceding list item labels it "site web".
+        if not (role and
+                link in (hostname, normalized(host), "site web", "site officiel")):
             continue
         if not re.search(r"\b(?:site web|site officiel)\b", context + " " + link):
             continue
