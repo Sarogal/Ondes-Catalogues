@@ -7,7 +7,8 @@ from pathlib import Path
 
 from radio_daily_discovery import (
     candidate, discover, genre_evidence, is_public_stream, known_uuids,
-    normalize, page_offsets, fetch_page,
+    normalize, page_offsets, fetch_page, plan_daily_queries,
+    previous_genre_hints, suggest_related_tags, DEFAULT_TAGS, DEFAULT_NAMES,
 )
 
 ID_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -175,6 +176,97 @@ class DailyDiscoveryTests(unittest.TestCase):
                 self.assertTrue(genre_evidence("Underground FM", label))
                 row = candidate(station(name="Underground FM", tags=label), set())
                 self.assertIsNotNone(row)
+
+    def test_pagan_nu_thrash_trash_black_viking_variants_are_qualifying(self):
+        styles = (
+            "black metal", "thrash metal", "trash metal", "pagan metal",
+            "nu metal", "nü metal", "nu-metal", "viking metal",
+            "symphonic black metal", "folk metal", "technical death metal",
+            "progressive metal", "metalcore", "grindcore", "hard rock",
+            "power metal", "gothic metal", "blackgaze", "djent",
+            "crust punk", "post-hardcore", "stoner doom",
+            "new wave of british heavy metal",
+        )
+        for style in styles:
+            with self.subTest(genre=style):
+                self.assertTrue(genre_evidence("Some Station", style), style)
+                self.assertIsNotNone(candidate(station(tags=style), set()))
+
+    def test_daily_core_genres_including_pagan_and_trash_always_scanned(self):
+        for delta in range(10):
+            tags, names = plan_daily_queries(
+                self.day + dt.timedelta(days=delta), DEFAULT_TAGS, DEFAULT_NAMES)
+            for term in ("metal", "punk", "rock", "hard rock", "black metal",
+                         "thrash metal", "trash metal", "nu metal", "pagan metal"):
+                with self.subTest(day=delta, term=term):
+                    self.assertIn(term, tags)
+            self.assertIn("metal", names)
+            self.assertIn("punk", names)
+            self.assertLessEqual(len(tags) + len(names), 40)
+
+    def test_rotation_covers_all_default_genres_within_ten_days(self):
+        seen_tags, seen_names = set(), set()
+        for delta in range(10):
+            tags, names = plan_daily_queries(
+                self.day + dt.timedelta(days=delta), DEFAULT_TAGS, DEFAULT_NAMES)
+            seen_tags.update(tags)
+            seen_names.update(names)
+        self.assertEqual(seen_tags, set(DEFAULT_TAGS))
+        self.assertEqual(seen_names, set(DEFAULT_NAMES))
+
+    def test_daily_search_not_fixed_to_a_station_list_or_first_40_genres(self):
+        a = plan_daily_queries(self.day, DEFAULT_TAGS, DEFAULT_NAMES)
+        b = plan_daily_queries(
+            self.day + dt.timedelta(days=1), DEFAULT_TAGS, DEFAULT_NAMES)
+        self.assertNotEqual(a, b)
+        self.assertEqual(len(a[0]) + len(a[1]), 40)
+        self.assertNotEqual(set(a[0]), set(b[0]))
+
+    def test_dynamic_new_tag_can_enter_rotation_without_code_per_station(self):
+        tags = list(DEFAULT_TAGS) + ["symphonic pagan blackened metal"]
+        found = set()
+        for delta in range(10):
+            current_tags, _ = plan_daily_queries(
+                self.day + dt.timedelta(days=delta), tags, DEFAULT_NAMES)
+            found.update(current_tags)
+        self.assertIn("symphonic pagan blackened metal", found)
+
+    def test_emerging_radio_browser_tags_are_suggestions_not_whitelists(self):
+        report, _ = self.scan({
+            ("tag", "metal", 0): [station(
+                tags="pagan blackened melodic metal, black metal, jazz")]
+        })
+        self.assertIn(
+            "pagan blackened melodic metal", report["suggestedGenreTags"])
+        self.assertNotIn("jazz", report["suggestedGenreTags"])
+        self.assertFalse(report["publicationAllowed"])
+
+    def test_prior_suggestions_support_next_day_scan_without_unsafe_terms(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "previous.json"
+            path.write_text(json.dumps({
+                "schemaVersion": 1, "publicationAllowed": False,
+                "suggestedGenreTags": ["pagan blackened melodic metal", "jazz"],
+            }))
+            self.assertEqual(previous_genre_hints(path),
+                             ["pagan blackened melodic metal"])
+            path.write_text(json.dumps({
+                "schemaVersion": 1, "publicationAllowed": True,
+                "suggestedGenreTags": ["pagan blackened melodic metal"]
+            }))
+            with self.assertRaises(ValueError):
+                previous_genre_hints(path)
+
+    def test_safe_query_budget_fails_closed(self):
+        with self.assertRaises(ValueError):
+            plan_daily_queries(self.day, DEFAULT_TAGS, DEFAULT_NAMES,
+                               max_queries=4)
+        with self.assertRaises(ValueError):
+            plan_daily_queries(self.day, ["metal", "http://evil.test"],
+                               DEFAULT_NAMES)
+        with self.assertRaises(ValueError):
+            plan_daily_queries(self.day, DEFAULT_TAGS, DEFAULT_NAMES,
+                               max_queries=500)
 
     def test_bad_api_host_not_followed(self):
         with self.assertRaises(RuntimeError):
