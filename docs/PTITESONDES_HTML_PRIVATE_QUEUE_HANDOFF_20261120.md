@@ -11,7 +11,7 @@ vérifiées lors de la reprise.
 Le futur fichier privé proposé est
 \`automation-intake/ptitesondes/html-review-candidates.json\`, contenant
 une liste de dossiers \`ptitesondes.html_private_review_queue.v1\`.
-Ce fichier **n'est pas créé** par cette PR. Aucun runner n'y écrit encore.
+Ce fichier **n'est pas créé** par cette PR. Aucun runner n'y écrit encore. En revanche, le funnel sait maintenant transmettre ses dossiers **en mémoire** à la réconciliation par une option privée, sans publier leur contenu.
 
 ## Ce que fait le composant
 
@@ -21,7 +21,7 @@ réconciliation pure en mémoire. Pour chaque séance, elle **rejoue**
 \`prepare_private_html_factual_draft\` avec une page et des références
 institutionnelles épinglées par le *runner de confiance*.
 
-Elle ne fait confiance ni à un \`approved\` fourni par le collecteur ni à
+\`prepare_private_html_review_handoff()\` raccorde l'adaptateur HTML institutionnel et le contrat de file **en mémoire**, sans créer de fichier. Le funnel propose une option \`private_review_sink\` absente par défaut et n'émet que les séances dont les faits exacts ont déjà été corroborés. Un second passage par le routeur et le préparateur factuel protège la file contre une simple déclaration du collecteur.\n\nElle ne fait confiance ni à un \`approved\` fourni par le collecteur ni à
 un rapport de route fourni comme entrée. Elle conserve le titre factuel,
 la source exacte HTTPS, la date et l'horaire local strict, la catégorie,
 la ville, le lieu, le code de blocage et la prochaine action privée.
