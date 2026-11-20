@@ -103,5 +103,60 @@ class HlsDailyPilotTests(unittest.TestCase):
         self.assertEqual(calls, [])
 
 
+
+    def test_optin_is_impossible_without_explicit_segment_sampler(self):
+        with self.assertRaises(ValueError):
+            hls_preview(report([row()]), lambda _: sample(),
+                        day=dt.date(2026, 11, 20), check_one_segment=True)
+
+    def test_one_total_segment_on_two_live_manifests(self):
+        seen = []
+        ts = (bytes((0x47, 0x40, 0x21, 0x10)) + bytes(184)) * 6
+        def manifest_request(url):
+            seen.append(("manifest", url))
+            return sample()
+        def segment_request(url):
+            seen.append(("segment", url))
+            return ResponseSample(206, "video/mp2t", "", ts)
+        values = report([row(A), row(B, "https://radio.example.org/hls2.m3u8")])
+        output = hls_preview(values, manifest_request,
+                             day=dt.date(2026, 11, 20),
+                             check_one_segment=True,
+                             segment_request=segment_request)
+        self.assertEqual(output["checkedCount"], 2)
+        self.assertEqual(output["segmentVerificationAttemptCount"], 1)
+        self.assertEqual(output["segmentStructuralEvidenceCount"], 1)
+        self.assertEqual(sum(k == "segment" for k, _ in seen), 1)
+        self.assertEqual(output["technicalVerifiedCount"], 0)
+        self.assertFalse(output["publicationAllowed"])
+        self.assertNotIn("audio-102", str(output))
+        self.assertNotIn("hls2.m3u8", str(output))
+        self.assertEqual(sum("segmentCheck" in row for row in output["checks"]), 1)
+
+    def test_vod_without_live_candidates_never_requests_segment(self):
+        complete = ResponseSample(
+            200, "application/vnd.apple.mpegurl", "",
+            sample().body + b"#EXT-X-ENDLIST\n")
+        calls = []
+        output = hls_preview(
+            report([row()]), lambda _: complete,
+            day=dt.date(2026, 11, 20), check_one_segment=True,
+            segment_request=lambda url: calls.append(url))
+        self.assertEqual(output["segmentVerificationAttemptCount"], 0)
+        self.assertEqual(output["segmentStructuralEvidenceCount"], 0)
+        self.assertEqual(calls, [])
+
+    def test_segment_redirect_is_not_interpreted_as_evidence(self):
+        output = hls_preview(
+            report([row()]), lambda _: sample(),
+            day=dt.date(2026, 11, 20), check_one_segment=True,
+            segment_request=lambda _: ResponseSample(
+                302, "", "http://127.0.0.1/", b""))
+        self.assertEqual(output["segmentVerificationAttemptCount"], 1)
+        self.assertEqual(output["segmentStructuralEvidenceCount"], 0)
+        self.assertEqual(output["checks"][0]["segmentCheck"]["state"],
+                         "segment_http_unconfirmed")
+        self.assertNotIn("127.0.0.1", str(output))
+
 if __name__ == "__main__":
     unittest.main()
