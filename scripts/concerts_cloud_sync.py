@@ -4604,8 +4604,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
             # The HTML path must provide separately checked artist + genre
             # headings on the exact first-party page. Mere schema Organization,
             # title text, biographies and broad venue labels never satisfy it.
-            require(proof.get("visibleBillProfile") ==
-                    "heading-artist-genre-v1" and
+            # The paragraph format is reviewed once for its OFFICIAL
+            # venue/domain and reused across all of that venue's concerts.
+            # Never let a private candidate assign this proof profile to a
+            # different host or a different already-published venue.
+            allowed_visible_profile = (
+                proof.get("visibleBillProfile") ==
+                    "heading-artist-genre-v1" or
+                (proof.get("visibleBillProfile") ==
+                    "paragraph-artist-genre-v1" and
+                 venue == "l-astrolabe-orleans" and
+                 generic_spec["host"] == "www.lastrolabe.org")
+            )
+            require(allowed_visible_profile and
                     proof.get("officialGenreLabels") == event.get("genres"),
                     "Générique HTML : genre ou profil officiel non corroboré")
         names = proof.get("officialArtistNames")
