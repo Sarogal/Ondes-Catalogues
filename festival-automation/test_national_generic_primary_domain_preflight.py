@@ -541,6 +541,48 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(third["two_day_dates_count"], 1)
         self.assertFalse(third["publication_authorized"])
 
+    def test_legacy_j1_without_stable_field_survives_same_day_recheck(self):
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = page(URL_A)
+        examine(state, queue, published, DAY1, fetch=lambda _: html)
+        next_state, next_queue, _ = fixture(DAY2)
+        next_state.update(state)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        confirmed = examine(next_state, next_queue, published, DAY2,
+                            fetch=lambda _: html)
+        self.assertEqual(confirmed["two_day_dates_count"], 1)
+        # Old deployments had no stable boolean, but retained an identical
+        # digest firstSeen DAY1 and lastSeen DAY2: valid evidence of J+1.
+        observation = next_state[
+            "national_generic_primary_date_observations_private"][URL_A]
+        observation.pop("stable")
+        replay = examine(next_state, next_queue, published, DAY2,
+                         fetch=lambda _: html)
+        self.assertEqual(replay["two_day_dates_count"], 1)
+        self.assertEqual(observation["firstSeen"], DAY1)
+        self.assertTrue(next_state[
+            "national_generic_primary_date_observations_private"][URL_A]["stable"])
+
+    def test_legacy_explicit_false_and_changed_digest_do_not_promote(self):
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = page(URL_A)
+        examine(state, queue, published, DAY1, fetch=lambda _: html)
+        next_state, next_queue, _ = fixture(DAY2)
+        next_state.update(state)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        examine(next_state, next_queue, published, DAY2,
+                fetch=lambda _: html)
+        observation = next_state[
+            "national_generic_primary_date_observations_private"][URL_A]
+        observation["stable"] = False
+        replay = examine(next_state, next_queue, published, DAY2,
+                         fetch=lambda _: html)
+        self.assertEqual(replay["two_day_dates_count"], 0)
+        self.assertFalse(next_state[
+            "national_generic_primary_date_observations_private"][URL_A]["stable"])
+
     def test_no_j1_promotion_when_a_calendar_day_was_missed(self):
         state, queue, published = fixture(DAY1)
         queue["dossiers"] = queue["dossiers"][:1]
