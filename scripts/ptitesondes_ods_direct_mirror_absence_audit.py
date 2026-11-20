@@ -35,6 +35,7 @@ STATES = frozenset((
 ))
 COUNTS = (
     "input_leads", "eligible_unique_leads", "selected_leads",
+    "conflicting_uid_day_sources_held",
     "unregistered_agendas_held", "non_uid_pinned_links_held",
     "mirror_uid_present_or_nonzero_held",
     "mirror_uid_nonunique_held", "mirror_probe_unavailable_held",
@@ -74,7 +75,8 @@ def _safe_row(row):
                 "organizer_independently_verified", "rights_reviewed",
                 "venue_geo_verified", "family_audience_verified",
                 "publisher_connected", "publication_ready", "approved"))
-            or row.get("public_writes") != 0
+            or type(row.get("public_writes")) is not int
+            or row["public_writes"] != 0
             or row.get("audit_id") != _id(
                 row["agenda_uid"], row["event_uid"], row["date_start"])):
         raise ValueError("invalid_private_ods_direct_audit_record")
@@ -193,6 +195,7 @@ def audit_missing_ods_direct(
     counts = dict.fromkeys(COUNTS, 0)
     counts["input_leads"] = len(private_leads)
     grouped = {}
+    conflicts = set()
     malformed = 0
     for lead in private_leads:
         key = _source(lead)
@@ -201,8 +204,19 @@ def audit_missing_ods_direct(
             continue
         if not today <= date.fromisoformat(key[2]) <= today + timedelta(days=184):
             continue
-        # First safely dedupe by immutable source UID + exact day.
-        grouped.setdefault((key[1], key[2]), (key, lead))
+        # Exact source UID + local day, but never silently prefer one
+        # conflicting syndication, title, venue or city in the private lead.
+        identity = (key[0], norm(lead["title"]),
+                    norm(lead.get("city")), norm(lead.get("venue")))
+        candidate_key = (key[1], key[2])
+        prior = grouped.get(candidate_key)
+        if prior is not None and prior[2] != identity:
+            conflicts.add(candidate_key)
+        else:
+            grouped.setdefault(candidate_key, (key, lead, identity))
+    for candidate_key in conflicts:
+        grouped.pop(candidate_key, None)
+    counts["conflicting_uid_day_sources_held"] = len(conflicts)
     counts["eligible_unique_leads"] = len(grouped)
     choices = sorted(grouped.items())
     if choices:
@@ -212,7 +226,7 @@ def audit_missing_ods_direct(
     counts["selected_leads"] = len(selected)
     checked_uid = {}
     checked_event = {}
-    for (_, _), (key, lead) in selected:
+    for (_, _), (key, lead, _) in selected:
         slug, event_uid, day = key
         if slug not in mapping:
             counts["unregistered_agendas_held"] += 1
