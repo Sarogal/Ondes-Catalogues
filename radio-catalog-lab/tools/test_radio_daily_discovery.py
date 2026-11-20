@@ -273,5 +273,64 @@ class DailyDiscoveryTests(unittest.TestCase):
             fetch_page(["attacker.example"], "tag", "metal", 0, 2)
 
 
+    def test_radio_browser_502_retries_and_recovers_without_silent_loss(self):
+        import urllib.error
+        from unittest.mock import patch
+        class GoodResponse:
+            status = 200
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self, size): return json.dumps([station()]).encode('utf-8')
+        class Opener:
+            def __init__(self): self.calls = 0
+            def open(self, request, timeout):
+                self.calls += 1
+                if self.calls < 3:
+                    raise urllib.error.HTTPError(request.full_url, 502, 'gateway', {}, None)
+                return GoodResponse()
+        opener = Opener()
+        with patch('radio_daily_discovery.urllib.request.build_opener', return_value=opener), \
+             patch('radio_daily_discovery.time.sleep') as sleep:
+            out = fetch_page(['de1.api.radio-browser.info'], 'tag', 'metal', 0, 1)
+        self.assertEqual(len(out), 1)
+        self.assertEqual(opener.calls, 3)
+        self.assertEqual(sleep.call_count, 2)
+
+    def test_radio_browser_repeated_502_fails_closed_after_three_rounds(self):
+        import urllib.error
+        from unittest.mock import patch
+        class Broken:
+            def __init__(self): self.calls = 0
+            def open(self, request, timeout):
+                self.calls += 1
+                raise urllib.error.HTTPError(request.full_url, 502, 'gateway', {}, None)
+        broken = Broken()
+        with patch('radio_daily_discovery.urllib.request.build_opener', return_value=broken), \
+             patch('radio_daily_discovery.time.sleep') as sleep:
+            with self.assertRaisesRegex(RuntimeError, 'after 3 rounds'):
+                fetch_page(['de1.api.radio-browser.info'], 'tag', 'metal', 0, 1)
+        self.assertEqual(broken.calls, 3)
+        self.assertEqual(sleep.call_count, 2)
+
+    def test_bad_mirror_fallback_without_delay(self):
+        import urllib.error
+        from unittest.mock import patch
+        class GoodResponse:
+            status = 200
+            def __enter__(self): return self
+            def __exit__(self, *args): return False
+            def read(self, size): return b'[]'
+        class Mixed:
+            def open(self, request, timeout):
+                if 'bad1.' in request.full_url:
+                    raise urllib.error.HTTPError(request.full_url, 502, 'gateway', {}, None)
+                return GoodResponse()
+        with patch('radio_daily_discovery.urllib.request.build_opener', return_value=Mixed()), \
+             patch('radio_daily_discovery.time.sleep') as sleep:
+            out = fetch_page(['bad1.api.radio-browser.info', 'good2.api.radio-browser.info'],
+                             'tag', 'metal', 0, 1)
+        self.assertEqual(out, [])
+        sleep.assert_not_called()
+
 if __name__ == "__main__":
     unittest.main()

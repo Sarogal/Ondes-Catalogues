@@ -347,28 +347,34 @@ def fetch_page(hosts: list[str], field: str, term: str,
         "limit": str(limit), "offset": str(offset),
     })
     last_error: Exception | None = None
-    for host in hosts:
-        if not (host.endswith(API_HOST_SUFFIX) and host != "all.api.radio-browser.info"):
-            continue
-        url = f"https://{host}/json/stations/search?{query}"
-        req = urllib.request.Request(url, headers={
-            "User-Agent": USER_AGENT, "Accept": "application/json",
-        })
-        try:
-            with opener.open(req, timeout=18) as response:
-                if response.status != 200:
-                    raise RuntimeError(f"Radio Browser HTTP {response.status}")
-                payload = response.read(MAX_JSON_BYTES + 1)
-                if len(payload) > MAX_JSON_BYTES:
-                    raise RuntimeError("Radio Browser response too large")
-            decoded = json.loads(payload)
-            if not isinstance(decoded, list) or any(not isinstance(r, dict) for r in decoded):
-                raise ValueError("Invalid Radio Browser response shape")
-            return decoded
-        except (OSError, ValueError, RuntimeError, urllib.error.HTTPError) as error:
-            last_error = error
-    raise RuntimeError(f"Radio Browser query failed: {field}={term}; {last_error}")
-
+    # A public mirror can fail transiently (502/503/429). Retry every
+    # validated mirror a bounded number of times; never turn a failed query
+    # into an empty/partial "successful" daily catalogue.
+    max_rounds = 3
+    for round_index in range(max_rounds):
+        for host in hosts:
+            if not (host.endswith(API_HOST_SUFFIX) and host != "all.api.radio-browser.info"):
+                continue
+            url = f"https://{host}/json/stations/search?{query}"
+            req = urllib.request.Request(url, headers={
+                "User-Agent": USER_AGENT, "Accept": "application/json",
+            })
+            try:
+                with opener.open(req, timeout=18) as response:
+                    if response.status != 200:
+                        raise RuntimeError(f"Radio Browser HTTP {response.status}")
+                    payload = response.read(MAX_JSON_BYTES + 1)
+                    if len(payload) > MAX_JSON_BYTES:
+                        raise RuntimeError("Radio Browser response too large")
+                decoded = json.loads(payload)
+                if not isinstance(decoded, list) or any(not isinstance(r, dict) for r in decoded):
+                    raise ValueError("Invalid Radio Browser response shape")
+                return decoded
+            except (OSError, ValueError, RuntimeError, urllib.error.HTTPError) as error:
+                last_error = error
+        if round_index < max_rounds - 1:
+            time.sleep(0.5 * (2 ** round_index))
+    raise RuntimeError(f"Radio Browser query failed after {max_rounds} rounds: {field}={term}; {last_error}")
 
 def page_offsets(day: dt.date, page_size: int, max_pages: int) -> list[int]:
     """Always inspect latest, rotate deeper pages so old blind spots get seen."""

@@ -103,6 +103,23 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                 self.assertEqual(classify_sample(payload, "application/octet-stream"),
                                  ("audio_sample_ok", expected))
 
+    def test_incomplete_or_malformed_id3_does_not_count_as_audio(self):
+        for fake in (
+            b"ID3",
+            b"ID3\xff\x00\x00\x00\x00\x00\x00",
+            b"ID3\x04\x00\x00\x80\x00\x00\x00",
+        ):
+            with self.subTest(fake=fake):
+                self.assertNotEqual(
+                    classify_sample(fake, "audio/mpeg")[0], "audio_sample_ok")
+
+    def test_html_json_even_with_audio_magic_are_not_accepted(self):
+        marker = b"ID3\x04\x00\x00" + b"\x00" * 64
+        for content_type in ("text/html", "application/json", "text/xml"):
+            with self.subTest(content_type=content_type):
+                self.assertEqual(classify_sample(marker, content_type),
+                                 ("not_confirmed_audio", "non_audio_content_type"))
+
     def test_container_signatures_alone_do_not_prove_audio(self):
         for payload, expected in (
             (b"OggS\x00\x02" + b"\x00" * 64, "ogg_codec_unconfirmed"),
@@ -128,7 +145,7 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         self.assertEqual(classify_sample(b"not valid audio", "audio/mpeg"),
                          ("audio_mime_only", "unrecognized_audio_payload"))
         self.assertEqual(classify_sample(b"<html>Oops</html>", "text/html"),
-                         ("not_confirmed_audio", "unknown"))
+                         ("not_confirmed_audio", "non_audio_content_type"))
 
     def test_good_audio_is_only_a_sample_not_release_approval(self):
         calls = []
@@ -141,6 +158,106 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         self.assertEqual(result["sampleBytes"], 66)
         self.assertNotIn("radio.example.org", json.dumps(result))
         self.assertEqual(len(calls), 1)
+
+
+    def test_hls_live_manifest_evidence_does_not_open_segment_or_publish(self):
+        requested = []
+        def request(url):
+            requested.append(url)
+            return sample(mime="application/vnd.apple.mpegurl",
+                          data=(b"#EXTM3U\n#EXT-X-TARGETDURATION:5\n"
+                                b"#EXT-X-MEDIA-SEQUENCE:12\n"
+                                b"#EXTINF:5,\nsegment12.ts\n"
+                                b"#EXTINF:5,\nsegment13.ts\n"))
+        result = probe_url("https://radio.example.org/live.m3u8", request)
+        self.assertEqual(result["verdict"], "playlist_pending")
+        self.assertEqual(result["reason"], "hls_manifest_pending")
+        self.assertEqual(result["hlsEvidence"]["kind"], "live_manifest_candidate")
+        self.assertTrue(result["hlsEvidence"]["liveCandidate"])
+        self.assertFalse(result["hlsEvidence"]["publicationAllowed"])
+        self.assertNotIn("segment12", json.dumps(result))
+        self.assertEqual(requested, ["https://radio.example.org/live.m3u8"])
+
+    def test_hls_vod_and_encrypted_manifest_never_become_audio_evidence(self):
+        for source, expected in (
+            (b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+             b"#EXTINF:4,\nb.ts\n#EXT-X-ENDLIST\n", "media_finite_playlist"),
+            (b"#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\n"
+             b"#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+             b"#EXTINF:4,\nb.ts\n", "manifest_advanced_or_encrypted")
+        ):
+            with self.subTest(kind=expected):
+                report = probe_url(
+                    "https://radio.example.org/live.m3u8",
+                    lambda _: sample(mime="application/vnd.apple.mpegurl", data=source))
+                self.assertEqual(report["verdict"], "playlist_pending")
+                self.assertEqual(report["hlsEvidence"]["kind"], expected)
+                self.assertFalse(report["hlsEvidence"]["liveCandidate"])
+
+    def test_hls_candidate_count_is_distinct_from_audio_qualification(self):
+        data = (b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+                b"#EXTINF:4,\nb.ts\n")
+        result = probe_candidates(report([station()]),
+                                  lambda _: sample(mime="application/vnd.apple.mpegurl", data=data),
+                                  observation_day=dt.date(2026, 11, 20))
+        self.assertEqual(result["hlsLiveManifestCandidateCount"], 1)
+        self.assertEqual(result["audioEvidenceCount"], 0)
+        self.assertEqual(result["decodedPcmEvidenceCount"], 0)
+        self.assertEqual(result["technicalVerifiedCount"], 0)
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_pinned_hls_transport_reads_more_than_512_bytes_without_range(self):
+        notes = b"# long but harmless HLS metadata\n" * 22
+        manifest = (b"#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + notes +
+                    b"#EXTINF:5,\na.ts\n#EXTINF:5,\nb.ts\n")
+        self.assertGreater(len(manifest), 512)
+        connections = []
+        class FakeResponse:
+            status = 200
+            def __init__(self):
+                self.position = 0
+            def getheader(self, name, default=""):
+                return ("application/vnd.apple.mpegurl"
+                        if name == "Content-Type" else default)
+            def read1(self, limit):
+                if self.position >= len(manifest):
+                    return b""
+                next_pos = min(self.position + 320, len(manifest),
+                               self.position + limit)
+                value = manifest[self.position:next_pos]
+                self.position = next_pos
+                return value
+        class FakeConnection:
+            def __init__(self, host, port, timeout=None, context=None):
+                self.host, self.port = host, port
+                self.headers = {}
+                connections.append(self)
+            def request(self, method, target, headers):
+                self.headers = headers
+                self._create_connection((self.host, self.port))
+            def getresponse(self):
+                return FakeResponse()
+            def close(self):
+                pass
+        resolver = lambda host, port, **kw: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "",
+             ("8.8.8.8", port))]
+        with patch("radio_stream_technical_probe.http.client.HTTPConnection",
+                   FakeConnection), patch(
+                       "radio_stream_technical_probe.socket.create_connection",
+                       return_value=object()) as open_socket:
+            response = PinnedHttpTransport(resolver=resolver).request(
+                "http://radio.example.org/live.m3u8")
+        self.assertGreater(len(response.body), 512)
+        self.assertLess(len(response.body), 4096)
+        self.assertEqual(response.body, manifest)
+        self.assertNotIn("Range", connections[0].headers)
+        self.assertEqual(open_socket.call_args.args[0], ("8.8.8.8", 80))
+        report = probe_url("http://radio.example.org/live.m3u8",
+                           lambda _: response)
+        self.assertEqual(report["hlsEvidence"]["kind"], "live_manifest_candidate")
+        self.assertEqual(report["verdict"], "playlist_pending")
+        self.assertNotIn("a.ts", json.dumps(report))
 
     def test_hls_manifest_requires_followup_technical_implementation(self):
         result = probe_url("https://radio.example.org/live.m3u8",

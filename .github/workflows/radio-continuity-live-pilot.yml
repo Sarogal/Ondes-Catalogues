@@ -1,0 +1,103 @@
+name: Grosses Ondes — Pilot live radio continuity (isolated, read-only)
+
+on:
+  push:
+    branches:
+      - feature/radio-continuity-evidence-lab-20261120
+    paths:
+      - '.github/workflows/radio-continuity-live-pilot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bounded-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify safety and continuity tests (offline)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_continuity_evidence.py' -v
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_frame_chain.py' -v
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_decode_evidence.py' -v
+          python -m unittest discover -s radio-catalog-lab/tools -p 'test_radio_stream_technical_probe.py' -v
+      - name: Install FFmpeg only on this ephemeral Ubuntu decoder pilot
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
+          fi
+      - name: Inspect isolated decoder runtime availability
+        shell: bash
+        run: |
+          if command -v ffmpeg >/dev/null 2>&1; then
+            ffmpeg -version | head -1
+            echo "FFMPEG_AVAILABLE=true"
+          else
+            echo "FFMPEG_AVAILABLE=false"
+          fi
+      - name: Discover candidates from Radio Browser (no publication)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-radio-continuity"
+          python radio-catalog-lab/tools/radio_daily_discovery.py \
+            --tags 'metal,heavy metal,hard rock,black metal,death metal,punk,thrash metal,nu metal,folk metal' \
+            --names 'metal,punk,hard rock,death metal' \
+            --page-size 70 --max-pages 1 --crawl-delay 0.3 \
+            --output "$RUNNER_TEMP/go-radio-continuity/candidates.json"
+      - name: Check up to five streams for sustained transport (non-publishing)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_stream_technical_probe.py \
+            --discovery "$RUNNER_TEMP/go-radio-continuity/candidates.json" \
+            --output "$RUNNER_TEMP/go-radio-continuity/technical-probes.json" \
+            --limit 5 --allow-network --extended-continuity --experimental-decode
+      - name: Build one-day non-publishing evidence ledger from live probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_stream_recheck_ledger.py \
+            --probe "$RUNNER_TEMP/go-radio-continuity/technical-probes.json" \
+            --output "$RUNNER_TEMP/go-radio-continuity/stream-evidence.json"
+      - name: Print only aggregate non-certifying findings
+        shell: bash
+        run: |
+          python - <<'PY'
+          import collections, json, os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP']) / 'go-radio-continuity' / 'technical-probes.json'
+          data = json.loads(p.read_text())
+          assert data['publicationAllowed'] is False
+          assert data['technicalVerifiedCount'] == 0
+          assert all(x['publicationAllowed'] is False for x in data['checks'])
+          verdicts = collections.Counter(x['verdict'] for x in data['checks'])
+          continuity = collections.Counter(x.get('continuityEvidence', {}).get('state', 'not_run') for x in data['checks'])
+          decoder_states = collections.Counter(
+              x.get('continuityEvidence', {}).get('decodeEvidence', {}).get('state', 'not_run')
+              for x in data['checks'])
+          ledger = json.loads((p.parent / 'stream-evidence.json').read_text())
+          assert ledger['publicationAllowed'] is False
+          assert ledger['technicallyQualifiedCount'] == 0
+          assert len(ledger['records']) == data['checkedCount']
+          assert sum(bool(x['decodedPcmDates']) for x in ledger['records']) == data['decodedPcmEvidenceCount']
+          assert all(x['technicalQualified'] is False and x['publicationAllowed'] is False for x in ledger['records'])
+          print('Read-only pilot: checked=', data['checkedCount'], 'verdicts=', dict(verdicts), 'continuity=', dict(continuity), 'frame_chains=', data['frameChainEvidenceCount'], 'decoded_pcm=', data['decodedPcmEvidenceCount'], 'decoder_states=', dict(decoder_states), 'stored_first_day_frames=', sum(bool(x['frameChainDates']) for x in ledger['records']), 'stored_first_day_decodes=', sum(bool(x['decodedPcmDates']) for x in ledger['records']), 'approved=0')
+          PY
+      - name: Upload technical evidence only (no stream URLs or bytes)
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-continuity-pilot-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/go-radio-continuity/technical-probes.json
+            ${{ runner.temp }}/go-radio-continuity/stream-evidence.json
+          if-no-files-found: error
+          retention-days: 7

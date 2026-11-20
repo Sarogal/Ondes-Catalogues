@@ -24,6 +24,8 @@ from pathlib import Path
 from typing import Callable
 
 from radio_stream_playlist_preview import playlist_hint
+from radio_hls_manifest_evidence import MAX_HLS_BYTES, inspect_hls_manifest
+from radio_stream_continuity_evidence import observe_continuity
 
 MAX_BYTES = 512
 MAX_REDIRECTS = 3
@@ -40,6 +42,7 @@ class ResponseSample:
     content_type: str
     location: str
     body: bytes
+    continuity: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -139,12 +142,16 @@ def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
     playlist/format-specific implementation, never blind URL following.
     """
     mime = content_type.split(";", 1)[0].strip().lower()
+    if mime in {"text/html", "application/json", "application/xml", "text/xml"}:
+        return ("not_confirmed_audio", "non_audio_content_type")
     if body.startswith((b"#EXTM3U", b"[playlist]", b"[Playlist]")) or (
         "mpegurl" in mime or "scpls" in mime or "playlist" in mime or
         mime in ("audio/x-mpegurl", "application/vnd.apple.mpegurl")
     ):
         return ("playlist_pending", "playlist")
-    if body.startswith(b"ID3"):
+    if (len(body) >= 10 and body.startswith(b"ID3") and
+            body[3] in (2, 3, 4) and body[4] != 255 and
+            all((byte & 0x80) == 0 for byte in body[6:10])):
         return ("audio_sample_ok", "mp3_id3")
     if len(body) >= 4 and body[0] == 0xFF and body[1] & 0xE0 == 0xE0:
         # Require plausible MPEG or AAC frame header fields, not only 11
@@ -215,9 +222,14 @@ class PinnedHttpTransport:
     HTTPS preserves the original host for SNI and certificate verification
     while socket.create_connection uses only the checked IP address.
     """
-    def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT):
+    def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT,
+                 extended_continuity: bool = False, experimental_decode: bool = False,
+                 segment_mode: bool = False):
         self.resolver = resolver
         self.timeout = timeout
+        self.extended_continuity = extended_continuity
+        self.experimental_decode = experimental_decode
+        self.segment_mode = segment_mode
 
     def request(self, url: str) -> ResponseSample:
         parsed = validate_endpoint(url)
@@ -241,22 +253,67 @@ class PinnedHttpTransport:
         connection._create_connection = connect_checked
         target = urllib.parse.urlunsplit(("", "", parsed.path or "/", parsed.query, ""))
         try:
-            connection.request("GET", target, headers={
+            headers = {
                 "User-Agent": USER_AGENT,
                 "Accept": "audio/*,application/octet-stream,*/*;q=0.2",
                 "Icy-MetaData": "0",
-                "Range": "bytes=0-511",
                 "Connection": "close",
-            })
+            }
+            # Request the entire manifest response for .m3u8 paths, but never
+            # read beyond MAX_HLS_BYTES. Ordinary audio probes remain 512 B.
+            hls_path = parsed.path.lower().endswith(".m3u8")
+            if self.segment_mode:
+                # One finite HLS segment sample, never a whole media download.
+                headers["Range"] = "bytes=0-16383"
+            elif not self.extended_continuity and not hls_path:
+                headers["Range"] = "bytes=0-511"
+            connection.request("GET", target, headers=headers)
             response = connection.getresponse()
-            # read1() requests only one bounded socket read, rather than
-            # waiting for the full 512 bytes on a live stream.
-            data = response.read1(MAX_BYTES) if response.status in (200, 206) else b""
+            mime = response.getheader("Content-Type", "") or ""
+            data = b""
+            if response.status in (200, 206):
+                if self.segment_mode:
+                    chunks = []
+                    bytes_read = 0
+                    for _ in range(8):
+                        part = response.read1(16384 - bytes_read)
+                        if not part:
+                            break
+                        chunks.append(part)
+                        bytes_read += len(part)
+                        if bytes_read >= 16384:
+                            break
+                    data = b"".join(chunks)
+                elif hls_path and response.status == 200:
+                    chunks = []
+                    bytes_read = 0
+                    for _ in range(4):
+                        part = response.read1(MAX_HLS_BYTES - bytes_read)
+                        if not part:
+                            break
+                        chunks.append(part)
+                        bytes_read += len(part)
+                        if bytes_read >= MAX_HLS_BYTES:
+                            break
+                        # A bounded four-read effort, not an open-ended downloader.
+                    data = b"".join(chunks)
+                else:
+                    data = response.read1(MAX_BYTES)
+            continuity = None
+            if (self.extended_continuity and not self.segment_mode
+                    and response.status == 200
+                    and classify_sample(data, mime)[0] == "audio_sample_ok"):
+                continuity = observe_continuity(
+                    response, data,
+                    content_length=response.getheader("Content-Length"),
+                    experimental_decode=self.experimental_decode,
+                ).as_dict()
             return ResponseSample(
                 status=int(response.status),
-                content_type=response.getheader("Content-Type", "") or "",
+                content_type=mime,
                 location=response.getheader("Location", "") or "",
                 body=data,
+                continuity=continuity,
             )
         finally:
             connection.close()
@@ -295,9 +352,15 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                 verdict, reason = "needs_review", "http_not_successful"
                 break
             verdict, reason = classify_sample(sample.body[:MAX_BYTES], sample.content_type)
+            hls_evidence = None
             if verdict == "playlist_pending":
                 hint = playlist_hint(
                     sample.body[:MAX_BYTES], sample.content_type, current)
+                if hint.kind == "hls_manifest_pending":
+                    # Read-only manifest evidence. Never auto-fetch variants,
+                    # encryption keys or segment data.
+                    hls_evidence = inspect_hls_manifest(
+                        sample.body, sample.content_type, current)
                 if hint.kind == "playlist_single_target" and hint.target is not None:
                     if playlist_follows >= 1 or redirects >= MAX_REDIRECTS:
                         verdict, reason = "playlist_pending", "playlist_chain_limit"
@@ -312,11 +375,16 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                             continue
                 else:
                     verdict, reason = "playlist_pending", hint.kind
-            return {
+            report = {
                 "verdict": verdict, "reason": reason, "formatHint": reason,
                 "redirectCount": redirects, "sampleBytes": min(MAX_BYTES, len(sample.body)),
                 "streamSha256": fingerprint,
             }
+            if sample.continuity is not None:
+                report["continuityEvidence"] = sample.continuity
+            if hls_evidence is not None:
+                report["hlsEvidence"] = hls_evidence
+            return report
     except UnsafeEndpoint as error:
         verdict, reason = "blocked_unsafe", str(error)
     except (OSError, ssl.SSLError, http.client.HTTPException,
@@ -386,6 +454,22 @@ def probe_candidates(
         "publicationAllowed": False,
         "checkedCount": len(rows),
         "audioEvidenceCount": sum(x["verdict"] == "audio_sample_ok" for x in rows),
+        "sustainedTransportEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            for x in rows),
+        "frameChainEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            and x.get("continuityEvidence", {}).get("frameEvidence", {}).get("state")
+            == "frame_chain"
+            for x in rows),
+        "decodedPcmEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            and x.get("continuityEvidence", {}).get("decodeEvidence", {}).get("state")
+            == "decoded_pcm"
+            for x in rows),
+        "hlsLiveManifestCandidateCount": sum(
+            x.get("hlsEvidence", {}).get("kind") == "live_manifest_candidate"
+            for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }
@@ -398,18 +482,36 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--limit", type=int, default=3)
     p.add_argument("--allow-network", action="store_true",
                    help="Required for any external stream request; use only on controlled runners.")
+    p.add_argument("--extended-continuity", action="store_true",
+                   help="Observe at most 10 s and 512 KiB per apparent audio stream; "
+                        "NOT decoder or publisher approval.")
+    p.add_argument("--experimental-decode", action="store_true",
+                   help="Linux FFmpeg PCM probe with resource limits (NOT publication approval).")
     args = p.parse_args(argv)
     if not args.allow_network:
         p.error("Network probing disabled: --allow-network is mandatory")
+    if args.experimental_decode and not args.extended_continuity:
+        p.error("Experimental decoding requires --extended-continuity")
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
         p.error("Discovery document too large")
     data = json.loads(args.discovery.read_text(encoding="utf-8"))
-    report = probe_candidates(data, PinnedHttpTransport().request, limit=args.limit)
+    report = probe_candidates(
+        data,
+        PinnedHttpTransport(
+            extended_continuity=args.extended_continuity,
+            experimental_decode=args.experimental_decode,
+        ).request,
+        limit=args.limit,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print(f"STREAM_PROBE_PREVIEW_ONLY samples={report['checkedCount']} "
           f"audio_evidence={report['audioEvidenceCount']} "
+          f"sustained_transport={report['sustainedTransportEvidenceCount']} "
+          f"frame_chain={report['frameChainEvidenceCount']} "
+          f"decoded_pcm={report['decodedPcmEvidenceCount']} "
+          f"hls_live_manifest_candidates={report['hlsLiveManifestCandidateCount']} "
           "technical_verified=0 published=false")
     return 0
 

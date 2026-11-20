@@ -1,0 +1,90 @@
+name: Grosses Ondes — HLS manifest-only isolated pilot
+
+on:
+  push:
+    branches:
+      - feature/radio-continuity-evidence-lab-20261120
+    paths:
+      - ".github/workflows/radio-hls-manifest-only-pilot.yml"
+      - "radio-catalog-lab/tools/radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/radio_stream_decode_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_stream_decode_evidence.py"
+      - "radio-catalog-lab/tools/radio_hls_segment_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_hls_segment_evidence.py"
+      - "radio-catalog-lab/tools/radio_hls_daily_pilot.py"
+      - "radio-catalog-lab/tools/test_radio_hls_daily_pilot.py"
+      - "radio-catalog-lab/tools/radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/test_radio_stream_technical_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hls-manifest-sample:
+    name: Discover and inspect up to five HLS manifests only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test safe manifest-only classification and selection (offline)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_manifest_evidence.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_daily_pilot.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_segment_evidence.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_decode_evidence.py" -v
+      - name: Install FFmpeg only on this ephemeral preview runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
+          fi
+      - name: Discover Radio Browser metal and rock candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_daily_discovery.py --tags "metal,hard rock,rock,punk,black metal,death metal,thrash metal" --names "metal,punk,hard rock,rock" --page-size 100 --max-pages 2 --crawl-delay 0.2 --output candidate-manifest-scan.json
+      - name: Observe at most five manifests and one 16KiB segment (preview only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network --check-one-segment --experimental-decode-segment
+      - name: Verify no publication or stream data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("hls-manifest-observations.json").read_text())
+          assert report["publicationAllowed"] is False
+          assert report["technicalVerifiedCount"] == 0
+          assert report["checkedCount"] <= 5
+          assert report["segmentVerificationAttemptCount"] <= 1
+          assert report["segmentStructuralEvidenceCount"] <= 1
+          assert report["decodedPcmSegmentCount"] <= report["segmentStructuralEvidenceCount"]
+          assert all((x.get("segmentCheck") or {}).get("segmentDecodeEvidence") is None
+                     or x["segmentCheck"]["segmentDecodeEvidence"]["publicationAllowed"] is False
+                     for x in report["checks"])
+          assert all(x["publicationAllowed"] is False for x in report["checks"])
+          assert all("streamUrl" not in x and "segments" not in x for x in report["checks"])
+          assert all("http:" not in str(x) and "https:" not in str(x) for x in report["checks"])
+          print("HLS_MANIFEST_AUDIT_ONLY", report["checkedCount"],
+                "kinds", report["manifestKinds"],
+                "segment_attempts", report["segmentVerificationAttemptCount"],
+                "segment_structures", report["segmentStructuralEvidenceCount"],
+                "segment_pcm", report["decodedPcmSegmentCount"],
+                "verified=0 published=false")
+          PY
+      - name: Upload redacted evidence only (not candidate URLs)
+        uses: actions/upload-artifact@v4
+        with:
+          name: hls-manifest-only
+          path: hls-manifest-observations.json
+          if-no-files-found: error
+          retention-days: 7
