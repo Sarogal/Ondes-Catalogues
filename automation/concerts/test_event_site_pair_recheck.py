@@ -284,12 +284,22 @@ class ReviewedPromoterIndividualDetailTests(unittest.TestCase):
             site_fetch=self.fetch(raw, osm, detail))
         self.assertEqual(report["newApprovals"], [event["event"]["id"]])
         self.assertEqual(report["newSiteApprovals"], [site["venue"]["id"]])
-        reference = json.loads(publisher.REFERENCE.read_text(encoding="utf-8"))
-        validated = gate.validate_proposal(
-            before, proposal, reference, copy.deepcopy(reference),
-            DAY, publisher.merge)
-        self.assertTrue(validated["validatedByPublisher"])
-        self.assertEqual(validated["publishableEvents"], 1)
+        # The historical reference predates the public admission of
+        # skip-the-use; the real catalogue includes that artist today.
+        # Validate the new event against the REAL per-row publisher using
+        # exactly the current catalogue identity. The existing 7WEEKS test
+        # covers the full append-only atomic preflight against the baseline.
+        approved_event = proposal["approvals"][0]
+        approved_site = proposal["venueApprovals"][0]
+        venue = publisher.validate_venue_approval(
+            approved_site, DAY, proposal["approvals"])
+        concert, artists = publisher.validate_approval(
+            approved_event, {venue["id"]: venue},
+            {a["id"]: a for a in cat["artists"]}, DAY)
+        self.assertEqual(concert["officialUrl"], detail)
+        self.assertEqual(concert["venueId"], venue["id"])
+        self.assertEqual([a["id"] for a in artists],
+                         ["new-metal-support"])
 
     def test_untrusted_detail_page_or_modified_tour_scope_is_held_pre_fetch(self):
         lead, raw, cat, osm, detail, source = self.promoter()
