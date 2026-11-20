@@ -1,0 +1,186 @@
+#!/usr/bin/env python3
+"""Bounded private rotation over *all* newly discovered OA agenda candidates.
+
+Consumes the private national agenda index report, explores up to 8 segments
+per invocation and persists an index/agenda/event-cursor checkpoint. This
+module cannot publish, change configured sources or schedule a GitHub Action.
+The caller must arrange private execution and source updates separately.
+"""
+import argparse
+from datetime import date
+from hashlib import sha256
+import json
+import os
+from pathlib import Path
+
+from ptitesondes_openagenda_national_event_research import (
+    ROOT, MAX_INDEX_BYTES, STATE_SCHEMA as SINGLE_STATE_UNUSED,
+    select_index_candidate, scan_agenda, valid_after,
+    _private_directory, _private_input, _write_new, _write_state,
+)
+from ptitesondes_openagenda_v2_direct_evidence import _valid_public_read_key
+
+SCHEMA = "ptitesondes.private_national_oa_event_campaign.v1"
+STATE_SCHEMA = "ptitesondes.private_national_oa_event_campaign_cursor.v1"
+MAX_STEPS = 8
+MAX_INDEX_AGENDAS = 160
+STATE_FILENAME = "national-event-checkpoint.json"
+LOCK_FILENAME = ".national-event-campaign.lock"
+
+
+def _state_path(output_dir):
+    return output_dir / STATE_FILENAME
+
+
+def load_checkpoint(output_dir, digest, day, total):
+    """Fail closed on changed source, day, pagination or invalid prior run."""
+    _private_directory(output_dir)
+    path = _state_path(output_dir)
+    if path.is_symlink():
+        raise ValueError("private_campaign_state_symlink")
+    if not path.exists():
+        return {"schema": STATE_SCHEMA, "source_sha256": digest,
+                "scan_day": day.isoformat(), "total_agendas": total,
+                "next_agenda_index": 0, "segment": 0, "event_after": None}
+    raw = _private_input(path, 3000)
+    state = json.loads(raw)
+    if (not isinstance(state, dict)
+            or set(state) != {"schema", "source_sha256", "scan_day",
+                              "total_agendas", "next_agenda_index",
+                              "segment", "event_after"}
+            or state["schema"] != STATE_SCHEMA
+            or state["source_sha256"] != digest
+            or state["scan_day"] != day.isoformat()
+            or type(state["total_agendas"]) is not int
+            or state["total_agendas"] != total
+            or type(state["next_agenda_index"]) is not int
+            or not 0 <= state["next_agenda_index"] <= total
+            or type(state["segment"]) is not int
+            or not 0 <= state["segment"] <= 10000
+            or (state["event_after"] is not None
+                and not valid_after(state["event_after"]))
+            or (state["next_agenda_index"] == total
+                and (state["event_after"] is not None
+                     or state["segment"] != 0))):
+        raise ValueError("private_campaign_cursor_or_source_mismatch")
+    return state
+
+
+def plan_campaign(index_doc, digest, day, output_dir, steps=MAX_STEPS):
+    if (type(day) is not date
+            or not isinstance(digest, str) or len(digest) != 64
+            or type(steps) is not int or not 1 <= steps <= MAX_STEPS):
+        raise ValueError("invalid_campaign_plan_arguments")
+    if (not isinstance(index_doc, dict)
+            or not isinstance(index_doc.get("new_agenda_candidates"), list)
+            or not 1 <= len(index_doc["new_agenda_candidates"]) <= MAX_INDEX_AGENDAS):
+        raise ValueError("invalid_campaign_index_size")
+    # Validate the entire private index, never just the selected first row.
+    select_index_candidate(index_doc, 0)
+    state = load_checkpoint(output_dir, digest, day,
+                            len(index_doc["new_agenda_candidates"]))
+    return {"state": state, "steps": steps,
+            "total": len(index_doc["new_agenda_candidates"]),
+            "index_doc": index_doc, "digest": digest,
+            "day": day, "output_dir": output_dir}
+
+
+def _lock(output_dir):
+    _private_directory(output_dir)
+    path = output_dir / LOCK_FILENAME
+    fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+    os.close(fd)
+    return path
+
+
+def run_campaign(plan, *, public_key, explorer=scan_agenda):
+    """One private process, bounded agenda pages, checkpoint after each report.
+
+    Crash between report write and checkpoint update fails closed on next
+    invocation due to existing named report; it never silently skips leads.
+    """
+    if not _valid_public_read_key(public_key) or not callable(explorer):
+        raise ValueError("private_oa_public_read_key_required")
+    output_dir = plan["output_dir"]
+    marker = _lock(output_dir)
+    state = dict(plan["state"])
+    count = 0
+    try:
+        while count < plan["steps"] and state["next_agenda_index"] < plan["total"]:
+            idx, segment = state["next_agenda_index"], state["segment"]
+            # Fail closed on a replaced private source/configuration.
+            agenda = select_index_candidate(plan["index_doc"], idx)
+            path = output_dir / f"agenda-{idx:04d}-segment-{segment:04d}.json"
+            if path.exists() or path.is_symlink():
+                raise ValueError("existing_private_segment_requires_recovery")
+            report = explorer(agenda, public_key, plan["day"],
+                              after=state["event_after"])
+            if (not isinstance(report, dict) or
+                    report.get("schema") !=
+                    "ptitesondes.private_oa_agenda_event_exploration.v1"
+                    or report.get("agenda_uid") != agenda["agenda_uid"]
+                    or report.get("agenda_slug") != agenda["agenda_slug"]
+                    or report.get("publication_ready") is not False
+                    or report.get("public_writes") != 0
+                    or not isinstance(report.get("event_leads"), list)
+                    or len(report["event_leads"]) > 60
+                    or type(report.get("agenda_scan_complete")) is not bool
+                    or (report.get("next_cursor") is not None
+                        and not valid_after(report["next_cursor"]))
+                    or (report["agenda_scan_complete"]
+                        != (report["next_cursor"] is None))):
+                raise ValueError("invalid_private_agenda_segment")
+            # A completed agenda can advance. A partial one retains its
+            # cursor and retries a *different segment* on the next call.
+            if report["agenda_scan_complete"]:
+                state["next_agenda_index"] += 1
+                state["segment"] = 0
+                state["event_after"] = None
+            else:
+                state["segment"] += 1
+                state["event_after"] = report["next_cursor"]
+            _write_new(path, report)
+            _write_state(_state_path(output_dir), state)
+            count += 1
+    finally:
+        marker.unlink()
+    return {
+        "schema": SCHEMA, "mode": "private_readonly_event_campaign",
+        "segments_examined": count,
+        "next_agenda_index": state["next_agenda_index"],
+        "total_agendas": plan["total"],
+        "finished_index_batch": state["next_agenda_index"] == plan["total"],
+        "publication_ready": False, "public_writes": 0,
+    }
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--private-agenda-index-report", required=True, type=Path)
+    ap.add_argument("--private-output-dir", required=True, type=Path)
+    ap.add_argument("--day", type=date.fromisoformat, required=True)
+    ap.add_argument("--max-steps", type=int, default=MAX_STEPS)
+    ap.add_argument("--execute-live", action="store_true")
+    args = ap.parse_args()
+    raw = _private_input(args.private_agenda_index_report, MAX_INDEX_BYTES)
+    digest = sha256(raw).hexdigest()
+    document = json.loads(raw)
+    plan = plan_campaign(document, digest, args.day, args.private_output_dir,
+                         steps=args.max_steps)
+    if not args.execute_live:
+        print(json.dumps({
+            "mode": "dry_run_no_network",
+            "remaining_agendas": plan["total"] -
+            plan["state"]["next_agenda_index"],
+            "next_agenda_index": plan["state"]["next_agenda_index"],
+            "public_writes": 0,
+        }))
+        return
+    result = run_campaign(
+        plan, public_key=os.environ.get("OPENAGENDA_READ_KEY", ""))
+    # No agenda UID, event UID, title, venue or source paths in stdout.
+    print(json.dumps(result))
+
+
+if __name__ == "__main__":
+    main()
