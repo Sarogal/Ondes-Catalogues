@@ -125,5 +125,54 @@ class StreamRecheckTests(unittest.TestCase):
                               if x["stationuuid"] == B)["repeatAudioSample"])
 
 
+    def test_sustained_transport_two_days_never_certifies(self):
+        first = next_evidence_report(probe(checks=[sustained_row()]))
+        second = next_evidence_report(probe("2026-11-21", [sustained_row()]), first)
+        self.assertEqual(second["repeatSustainedTransportCount"], 1)
+        self.assertTrue(second["records"][0]["repeatSustainedTransport"])
+        self.assertFalse(second["records"][0]["technicalQualified"])
+        self.assertFalse(second["publicationAllowed"])
+
+    def test_header_only_yesterday_not_backfilled_as_sustained(self):
+        first = next_evidence_report(probe(checks=[row()]))
+        second = next_evidence_report(probe("2026-11-21", [sustained_row()]), first)
+        self.assertEqual(second["repeatSustainedTransportCount"], 0)
+        self.assertEqual(second["records"][0]["sustainedTransportDates"], ["2026-11-21"])
+
+    def test_forged_extended_evidence_is_rejected(self):
+        bad_mime = sustained_row(verdict="audio_mime_only")
+        bad_duration = sustained_row()
+        bad_duration["continuityEvidence"]["elapsedMs"] = 100
+        bad_permission = sustained_row()
+        bad_permission["continuityEvidence"]["publicationAllowed"] = True
+        for check in (bad_mime, bad_duration, bad_permission):
+            with self.subTest(check=check), self.assertRaises(ValueError):
+                next_evidence_report(probe(checks=[check]))
+
+    def test_changed_stream_resets_continuity_evidence(self):
+        first = next_evidence_report(probe(checks=[sustained_row()]))
+        second = next_evidence_report(probe("2026-11-21", [sustained_row(sha=SHA2)]), first)
+        self.assertEqual(second["records"][0]["sustainedTransportDates"], ["2026-11-21"])
+        self.assertFalse(second["records"][0]["repeatSustainedTransport"])
+
+    def test_missing_continuity_today_does_not_falsely_repeat(self):
+        first = next_evidence_report(probe(checks=[sustained_row()]))
+        second = next_evidence_report(probe("2026-11-21", [sustained_row()]), first)
+        third = next_evidence_report(probe("2026-11-22", [row()]), second)
+        self.assertEqual(len(third["records"][0]["sustainedTransportDates"]), 2)
+        self.assertFalse(third["records"][0]["repeatSustainedTransport"])
+
+    def test_thirty_sample_window_retains_consistent_continuity_dates(self):
+        import datetime as dt
+        prior = None
+        for i in range(35):
+            day = (dt.date(2026, 10, 1) + dt.timedelta(days=i)).isoformat()
+            check = sustained_row() if i < 3 else row()
+            prior = next_evidence_report(probe(day, [check]), prior)
+        evidence = prior["records"][0]
+        self.assertEqual(len(evidence["audioEvidenceDates"]), 30)
+        self.assertTrue(set(evidence["sustainedTransportDates"]).issubset(
+            evidence["audioEvidenceDates"]))
+
 if __name__ == "__main__":
     unittest.main()
