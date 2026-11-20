@@ -59,6 +59,44 @@ class PrivateMetricsTests(unittest.TestCase):
         self.assertEqual(report["actuallyPublishedByThisIntake"], 0)
         self.assertNotIn("https://", str(report))
 
+    def test_organizer_counts_are_private_and_all_three_archives_count(self):
+        discovery = {"schema": "grossesondes.concert.discovery.v1",
+                     "catalogue": {"events": 378},
+                     "venueChecks": [], "partnerChecks": [], "candidates": []}
+        tours = {"schema": "grossesondes.concert.discovery.v1",
+                 "sourceChecks": [], "candidates": []}
+        organizers = {"schema": "grossesondes.concert.discovery.v1",
+                      "candidates": [{"candidateId": "secret-new-band"}],
+                      "sourceChecks": [
+                          {"organizerSourceId": "reviewed-source",
+                           "status": "read", "listingPageFetched": True,
+                           "eventDetailLinks": 12,
+                           "individualPagesRead": 6,
+                           "individualPagesHeld": 2, "candidateCount": 1,
+                           "url": "https://secret.example/agenda/"},
+                          {"organizerSourceId": "failed-source",
+                           "status": "held_source_unavailable",
+                           "individualPagesRead": True,
+                           "candidateCount": -3}]}
+        registry = {"schema": "grossesondes.concert.intake.v1", "items": {}}
+        official = {"results": [], "held": [], "newApprovals": []}
+        watch = {"needsReview": []}
+        report = m.build(discovery, tours, registry, official, watch,
+                         [{"added": 1}, {"added": 2}, {"added": 1}],
+                         "2026-11-20", organizers=organizers)
+        self.assertEqual(report["organizerDiscoveriesThisRun"], 1)
+        self.assertEqual(report["organizerSourcesFetched"], 1)
+        self.assertEqual(report["organizerSourcesHeld"], 1)
+        self.assertEqual(report["organizerDetailPagesRead"], 6)
+        self.assertEqual(report["organizerDetailPagesHeld"], 2)
+        self.assertEqual(report["newPrivateCandidates"], 4)
+        self.assertEqual(report["organizerSources"][1]["individualPagesRead"], 0)
+        self.assertNotIn("https://", str(report))
+        self.assertNotIn("secret-new-band", str(report))
+        with self.assertRaises(ValueError):
+            m.build(discovery, tours, registry, official, watch, [],
+                    "2026-11-20", organizers={"schema": "invalid"})
+
     def test_invalid_or_untrusted_counts_cannot_escape_into_metrics(self):
         a = m.describe_venue({
             "venue": "La Rayonne",
