@@ -81,6 +81,33 @@ class InstitutionalLinkedPublisherTests(unittest.TestCase):
         self.assertEqual(trusted_live_link(
             spec, TODAY, lambda u: fetch(u, qualified)), SITE)
 
+
+    def test_primary_research_signal_never_authorizes_linked_organizer_domain(self):
+        from unittest.mock import patch
+        from regional_festival_discovery import (
+            PRIMARY_CROSS_SIGNAL, CROSS_SOURCE_SIGNAL, ARCHIVE_SIGNAL)
+        title = "Festibarock'in 2027"
+        url = "https://agenda.montpellier.fr/evenement/festibarock-in-2027"
+        index = '<main><a href="' + url + '">' + title + '</a></main>'
+        official_detail = (
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>Site officiel du Festibarock'in 2027 : "
+            '<a href="' + SITE + '">site officiel</a></p></main>')
+        spec = {"index_url": INDEX, "index_page": INDEX,
+                "url": url, "title": title, "year": 2027}
+        for weak in (PRIMARY_CROSS_SIGNAL, CROSS_SOURCE_SIGNAL, ARCHIVE_SIGNAL):
+            with self.subTest(signal=weak), patch(
+                    "grossesondes_institutional_linked_edition.candidate_links",
+                    return_value=[{
+                        "candidate_url": url, "title": title, "signal": weak
+                    }]):
+                visited = []
+                def read(u):
+                    visited.append(u)
+                    return index if u == INDEX else official_detail
+                self.assertIsNone(trusted_live_link(spec, TODAY, read))
+                self.assertEqual(visited, [INDEX, url])
+
     def test_new_festival_without_genre_on_index_requires_independent_detail_genre(self):
         from regional_festival_discovery import candidate_links
         title = "Festival des Rivages 2027"
