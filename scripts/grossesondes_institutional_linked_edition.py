@@ -27,6 +27,7 @@ from source_qualification import Anchors, clean_url, classify, normalized
 from festival_website_discovery import visible_event_website_links
 from dns_pinned_https import safe_public_url, fetch_public_html
 from official_watch import get_page
+from national_live_index_recheck import live_index_for_exact_link
 from festival_event_kind import touring_concert_stop
 
 PROOF_MODE = "institutional-linked-organizer-edition.v1"
@@ -69,8 +70,8 @@ def trusted_live_link(spec, today, institution_fetch=get_page):
     if approved is None:
         return None
     try:
-        index_html = institution_fetch(approved["index_page"])
-        if not _seen_again(index_html, approved):
+        index_html = live_index_for_exact_link(approved, institution_fetch)
+        if index_html is None:
             return None
         candidates = candidate_links(index_html, approved["index_url"], today)
         theme_on_index = any(

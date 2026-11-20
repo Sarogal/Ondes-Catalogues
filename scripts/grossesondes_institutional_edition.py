@@ -25,6 +25,7 @@ from grossesondes_structured_edition import (
     ROW_KEYS, PRIVATE_KEYS, no_same_edition_jsonld_contradiction, conflicts_with_existing,
 )
 from national_detail_qualification import _seen_again
+from national_live_index_recheck import live_index_for_exact_link
 from national_discovery_queue import _safe_origin_link
 from official_watch import get_page, permitted_url
 from regional_agenda_pagination import canonical_page_url
@@ -296,8 +297,8 @@ def independently_fetch(proposal, today, fetch=get_page):
     if spec is None:
         return None
     try:
-        index_html = fetch(spec["index_page"])
-        if not _seen_again(index_html, spec):
+        index_html = live_index_for_exact_link(spec, fetch)
+        if index_html is None:
             return None
         # A generic "festival" navigation link is not proof of a metal,
         # hard-rock or related musical event. Re-run the original genre-aware
