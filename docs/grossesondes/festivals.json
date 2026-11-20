@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-20",
+  "generatedAt": "2026-11-21",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -5141,7 +5141,7 @@
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
         "source": "https://www.motocultor-festival.com/",
-        "verifiedAt": "2026-11-20",
+        "verifiedAt": "2026-11-21",
         "scope": "per_category_only",
         "categories": [
           {
@@ -6013,6 +6013,30 @@
       "showOnMap": false,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
       "lat": null
+    },
+    {
+      "lastVerified": "2026-11-21",
+      "price": null,
+      "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+      "city": null,
+      "dateRangeIsContinuous": false,
+      "lat": null,
+      "source": "https://laguerreduson.fr/",
+      "startDate": "2027-07-09",
+      "endDate": "2027-07-10",
+      "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
+      "bands": 0,
+      "venue": null,
+      "slug": "la-guerre-du-son-2027",
+      "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
+      "name": "La Guerre du Son 2027",
+      "lineup": [],
+      "showOnMap": false,
+      "officialSite": "https://laguerreduson.fr/",
+      "department": null,
+      "status": "Annoncé",
+      "lon": null,
+      "region": null
     }
   ]
 }
