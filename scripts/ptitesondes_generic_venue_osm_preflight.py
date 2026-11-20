@@ -183,16 +183,44 @@ def osm_hints(group, center, response):
 
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                   ign_fetch=None, official_page_get=None,
-                  approved_official_hosts=(), dila_directory_get=None):
+                  approved_official_hosts=(), dila_directory_get=None,
+                  official_geocode=False):
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
+    official_status = None
+    if (official_geocode and ign_fetch is not None
+            and official_page_get is not None
+            and dila_directory_get is not None):
+        from ptitesondes_generic_venue_official_geocode import (
+            confirm_official_address_ban,
+        )
+        try:
+            directory = dila_directory_get(group["city"])
+            page_url, page_html = official_page_get(group)
+            official_status = confirm_official_address_ban(
+                group, center, directory, page_url, page_html, ign_fetch)
+        except (ValueError, TypeError, KeyError, OSError,
+                TimeoutError, UnicodeError):
+            official_status = {"status": "official_geocode_provider_unavailable",
+                               "independent_geo_correlated": False,
+                               "publication_ready": False, "public_writes": 0}
+        if official_status["independent_geo_correlated"] is True:
+            # Independent municipality + BAN + UID-bound event center.
+            # This avoids dependence on an unreliable public OSM endpoint,
+            # but NEVER grants publication or publisher venue admission.
+            return {"status": "official_address_ban_private_review",
+                    "osm_candidates_unverified": [],
+                    "official_geocode": official_status}
     try:
         response = osm_fetch(center)
         evidence = osm_hints(group, center, response)
     except (ValueError, OSError, TypeError, KeyError):
-        return {"status": "independent_provider_unavailable_or_incomplete",
-                "osm_candidates_unverified": []}
+        result = {"status": "independent_provider_unavailable_or_incomplete",
+                  "osm_candidates_unverified": []}
+        if official_status is not None:
+            result["official_geocode"] = official_status
+        return result
     if len(evidence) == 1:
         status = "single_osm_hint_requires_official_venue_and_address_proof"
     elif evidence:
@@ -200,6 +228,8 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
     else:
         status = "no_exact_osm_venue_found"
     result = {"status": status, "osm_candidates_unverified": evidence}
+    if official_status is not None:
+        result["official_geocode"] = official_status
     if len(evidence) == 1 and ign_fetch is not None:
         from ptitesondes_generic_venue_ign_corroboration import (
             corroborate_osm_records,
@@ -244,14 +274,15 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
 def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
           official_page_get=None, approved_official_hosts=(),
-          dila_directory_get=None):
+          dila_directory_get=None, official_geocode=False):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
     for group in chosen:
         result = (inspect_group(group, record_fetch, osm_fetch,
                                 ign_fetch, official_page_get,
-                                approved_official_hosts, dila_directory_get)
+                                approved_official_hosts, dila_directory_get,
+                                official_geocode)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
@@ -265,6 +296,11 @@ def audit(backlog, today, record_fetch=api_record,
         x for x in checked
         if x.get("official_page", {}).get(
             "location_evidence_complete_for_private_review") is True
+    ]
+    official_geo_matched = [
+        x for x in checked
+        if x.get("official_geocode", {}).get(
+            "independent_geo_correlated") is True
     ]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
@@ -283,6 +319,9 @@ def audit(backlog, today, record_fetch=api_record,
         "official_identity_address_matches": len(official_matched),
         "leads_with_private_official_place_evidence": sum(
             x["lead_count"] for x in official_matched),
+        "independent_official_ban_address_matches": len(official_geo_matched),
+        "leads_with_official_ban_geo_private_review": sum(
+            x["lead_count"] for x in official_geo_matched),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
@@ -298,6 +337,7 @@ def main():
                         default=date.today())
     parser.add_argument("--live-probe", action="store_true")
     parser.add_argument("--official-municipal-pages", action="store_true")
+    parser.add_argument("--official-address-geocode", action="store_true")
     parser.add_argument("--private-source-config", type=Path)
     args = parser.parse_args()
     # Block BOTH private input and output paths inside the public checkout.
@@ -310,6 +350,8 @@ def main():
     if (args.official_municipal_pages and
             (not args.live_probe or args.private_source_config is None)):
         raise ValueError("private_municipal_preview_requires_explicit_opt_in")
+    if args.official_address_geocode and not args.official_municipal_pages:
+        raise ValueError("official_ban_geocode_requires_private_municipal_source")
     if (args.private_source_config is not None
             and args.private_source_config.resolve().is_relative_to(repository)):
         raise ValueError("source_config_outside_public_repo_required")
@@ -340,6 +382,7 @@ def main():
                 "dila_directory_get": reader.dila_directory_get,
             }
         report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
+                       official_geocode=args.official_address_geocode,
                        **callbacks)
     else:
         report = audit(backlog, args.day, live=False)
