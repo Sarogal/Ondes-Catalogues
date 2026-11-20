@@ -378,21 +378,77 @@ class GenericFirstPartyStructuredEventTests(unittest.TestCase):
             reviewer.verify(lead, cat, DAY,
                             fetch=fake_fetch(raw, osm, []))
 
-    def test_mixed_event_and_musicevent_pages_cannot_lend_proofs(self):
+    def test_recommended_events_do_not_block_exact_first_party_show(self):
+        # Official pages often embed a full concert AND a separate upcoming
+        # Event/MusicEvent in a programme carousel. The additional event
+        # neither vetoes the correctly bound concert nor donates any fields.
         lead, raw, cat, osm = fixture()
-        for alt in (
-            {**raw, "@type": "Event", "name": "Other festival"},
-            {**raw, "@type": "MusicEvent", "name": "Other show"},
-        ):
+        for alternative_type in ("Event", "MusicEvent"):
+            other = {**raw,
+                     "@type": alternative_type,
+                     "url": "https://7weeks.fr/concerts/unrelated-2027/",
+                     "name": "Other unrelated show",
+                     "startDate": "2027-06-12"}
             page = ('<script type="application/ld+json">'
-                    + json.dumps({"@graph": [raw, alt]}, ensure_ascii=False)
-                    + '</script>')
+                    + json.dumps({"@graph": [other, raw]},
+                                 ensure_ascii=False) + '</script>')
+            calls = []
             def fetched(url, limit):
+                calls.append(url)
                 if url == EVENT:
                     return page, EVENT
-                self.fail("No geography should be requested from mixed events")
-            with self.subTest(alt=alt["@type"]), self.assertRaises(ValueError):
-                reviewer.verify(lead, cat, DAY, fetch=fetched)
+                if url == API:
+                    return json.dumps(osm), API
+                self.fail("Unexpected URL fetched")
+            with self.subTest(type=alternative_type):
+                event, site = reviewer.verify(lead, cat, DAY, fetch=fetched)
+                self.assertEqual(event["event"]["artistIds"],
+                                 ["7weeks", "new-metal-support"])
+                self.assertEqual(site["venue"]["geoSource"], OSM)
+                self.assertEqual(calls, [EVENT, API])
+
+    def test_unrelated_structured_event_cannot_lend_missing_genre_or_artists(self):
+        lead, raw, cat, osm = fixture()
+        other = copy.deepcopy(raw)
+        other["url"] = "https://7weeks.fr/concerts/unrelated-2027/"
+        invalid_rows = (
+            [{**raw, "genre": ["Jazz"]}, other],
+            [{**raw, "performer": [{
+                "@type": "MusicGroup", "name": "OTHER BAND"}]}, other],
+            [{**raw, "startDate": "2027-05-18"}, other],
+            [{**raw, "location": {**raw["location"], "name": "Wrong park"}}, other],
+        )
+        for rows in invalid_rows:
+            with self.subTest(rows=rows[0].keys()):
+                page = '<script type="application/ld+json">' + json.dumps(
+                    {"@graph": rows}, ensure_ascii=False) + '</script>'
+                def fetched(url, limit):
+                    if url == EVENT:
+                        return page, EVENT
+                    self.fail("No OSM fetch without exact individual proof")
+                with self.assertRaises(ValueError):
+                    reviewer.verify(lead, cat, DAY, fetch=fetched)
+
+    def test_two_matching_events_or_untagged_target_remain_ambiguous(self):
+        lead, raw, cat, osm = fixture()
+        duplicate = copy.deepcopy(raw)
+        duplicate["genre"] = ["Punk"]
+        missing_canonical = copy.deepcopy(raw)
+        missing_canonical.pop("url")
+        unrelated = copy.deepcopy(raw)
+        unrelated["name"] = "Other show"
+        unrelated["url"] = "https://7weeks.fr/concerts/other-show/"
+        for rows in ([raw, duplicate], [missing_canonical, unrelated]):
+            with self.subTest(rows=len(rows)):
+                page = '<script type="application/ld+json">' + json.dumps(
+                    {"@graph": rows}, ensure_ascii=False) + '</script>'
+                def fetched(url, limit):
+                    if url == EVENT:
+                        return page, EVENT
+                    self.fail("Ambiguous official page must not fetch geo")
+                with self.assertRaisesRegex(
+                        ValueError, "one unambiguous individual"):
+                    reviewer.verify(lead, cat, DAY, fetch=fetched)
 
     def test_generic_event_bad_country_or_unnamed_artist_is_rejected(self):
         lead, raw, cat, osm = fixture()

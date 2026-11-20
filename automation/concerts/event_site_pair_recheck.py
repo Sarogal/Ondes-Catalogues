@@ -148,16 +148,43 @@ def _read_osm_node(node_url, expected, fetch):
 def _official_event(lead, html, url, today):
     require(isinstance(html, str) and len(html) <= 1_000_000,
             "official page too large")
-    # A legitimate concert can be described as schema.org/Event rather than
-    # MusicEvent. Accept either only when the SAME individual first-party
-    # event carries an explicit named bill, genre, date and precise location.
-    # Reject ANY second Event/MusicEvent node: never borrow metadata from
-    # another event, a tour listing or a recommendation carousel.
+    # A page may contain a specific concert PLUS unrelated recommendation
+    # cards or other schema.org events. The old len(nodes)==1 rule rejected
+    # the confirmed show regardless of how complete its individual proof was.
+    # On such pages admit EXACTLY ONE event whose OWN fields independently
+    # match the first-party detail URL, date, title, named lead and place.
+    # Never assemble a show by borrowing fields from a second Event.
     nodes = [n for n in discover.read_ld(html) if isinstance(n, dict)
              and bridge._event_types(n.get("@type")) & {"MusicEvent", "Event"}]
-    require(len(nodes) == 1,
+    require(bool(nodes),
             "one unambiguous individual official Event/MusicEvent required")
-    raw = nodes[0]
+    if len(nodes) == 1:
+        raw = nodes[0]
+    else:
+        matches = []
+        for node in nodes:
+            if node.get("url") != url:
+                continue  # Ambiguous multi-event pages need an exact canonical.
+            if (discover.iso_day(node.get("startDate")) != lead.get("date")
+                    or _name(node.get("name")) != _name(lead.get("name"))):
+                continue
+            bill = bridge.official_named_bill(node.get("performer"))
+            if (bill is None or _name(lead.get("leadArtist"))
+                    not in {_name(name) for name in bill[0]}):
+                continue
+            place = node.get("location")
+            if not isinstance(place, dict):
+                continue
+            address = place.get("address")
+            if (not isinstance(address, dict)
+                    or _name(place.get("name")) != _name(lead.get("venue"))
+                    or _name(address.get("addressLocality"))
+                    != _name(lead.get("city"))):
+                continue
+            matches.append(node)
+        require(len(matches) == 1,
+                "one unambiguous individual official Event/MusicEvent required")
+        raw = matches[0]
     canonical = raw.get("url")
     require(canonical is None or canonical == url,
             "official event canonical URL mismatch")
