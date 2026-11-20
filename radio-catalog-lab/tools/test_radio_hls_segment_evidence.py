@@ -418,5 +418,42 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
         self.assertFalse(out["technicalQualified"])
         self.assertFalse(out["publicationAllowed"])
 
+
+    def test_hls_segment_decoder_is_off_by_default(self):
+        payload = valid_ts_packets(6)
+        with patch("radio_hls_segment_evidence.decode_audio_prefix") as decoder:
+            result = verify_one_segment(
+                BASE, lambda _: response(manifest()),
+                lambda _: response(payload, "video/mp2t", status=206))
+        decoder.assert_not_called()
+        self.assertIsNone(result["segmentDecodeEvidence"])
+        self.assertFalse(result["publicationAllowed"])
+
+    def test_pcm_decoder_can_run_on_structurally_valid_ts_only_when_opted_in(self):
+        payload = valid_ts_packets(6)
+        proof = {"state": "decoded_pcm", "demuxer": "mpegts",
+                 "inputBytes": len(payload), "pcmBytes": 4096,
+                 "publicationAllowed": False}
+        with patch("radio_hls_segment_evidence.decode_audio_prefix",
+                   return_value=proof) as decoder:
+            result = verify_one_segment(
+                BASE, lambda _: response(manifest()),
+                lambda _: response(payload, "video/mp2t", status=206),
+                experimental_decode=True)
+        decoder.assert_called_once_with(payload)
+        self.assertEqual(result["segmentDecodeEvidence"], proof)
+        self.assertFalse(result["publicationAllowed"])
+        self.assertFalse(result["technicalQualified"])
+        self.assertNotIn("radio.example.org", str(result))
+
+    def test_no_decoder_execution_when_segment_is_not_audio_structured(self):
+        with patch("radio_hls_segment_evidence.decode_audio_prefix") as decoder:
+            result = verify_one_segment(
+                BASE, lambda _: response(manifest()),
+                lambda _: response(bytes(1500), "application/octet-stream"),
+                experimental_decode=True)
+        decoder.assert_not_called()
+        self.assertEqual(result["state"], "segment_unrecognized")
+
 if __name__ == "__main__":
     unittest.main()
