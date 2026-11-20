@@ -296,7 +296,7 @@ VENUES = [
     },
 ]
 
-def verified_location(event):
+def verified_location(event, evidence=None, on_day=None):
     """Exact static or independently approved public-places GPS; never guess."""
     static_identity = False
     for place in VENUES:
@@ -324,4 +324,16 @@ def verified_location(event):
                 d = float("inf")
             if d <= 65:
                 return True, "lieu permanent public indépendamment vérifié (écart %.0f m)" % d
+    # Evidence is never imported from a self-asserted backlog flag.
+    # Existing conflicting static registry identities always take precedence.
+    if not static_identity and evidence is not None and on_day is not None:
+        from ptitesondes_shared_venue_location_evidence import (
+            location_from_proof,
+        )
+        if isinstance(event, dict):
+            location = location_from_proof(
+                evidence, event.get("city"), event.get("venue"), on_day,
+                (event.get("lat"), event.get("lng")))
+            if location is not None:
+                return True, "preuve géographique indépendante privée"
     return False, "lieu absent du registre ou GPS différent de plus de 65 m"
