@@ -298,8 +298,9 @@ class ReviewedPromoterIndividualDetailTests(unittest.TestCase):
             {a["id"]: a for a in cat["artists"]}, DAY)
         self.assertEqual(concert["officialUrl"], detail)
         self.assertEqual(concert["venueId"], venue["id"])
-        self.assertEqual([a["id"] for a in artists],
-                         ["new-metal-support"])
+        self.assertEqual(set(artists), {"new-metal-support"})
+        self.assertEqual(artists["new-metal-support"]["name"],
+                         "NEW METAL SUPPORT")
 
     def test_untrusted_detail_page_or_modified_tour_scope_is_held_pre_fetch(self):
         lead, raw, cat, osm, detail, source = self.promoter()
