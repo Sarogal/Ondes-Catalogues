@@ -538,6 +538,46 @@ def scan_slot_for_hour(hour):
     return 0 if hour < 12 else 1 if hour < 18 else 2
 
 
+def linked_first_party_event_urls(page_html, source_url, today):
+    """Official schema.org Event/MusicEvent links, independent of URL keywords.
+
+    A real concert's first-party detail URL may be '/groupe-date-2027/'
+    rather than '/concert/...'. Never let a path naming convention censor
+    discovery. This function is ONLY candidate navigation: it cannot verify
+    or publish a show, and cannot follow third-party or tracked URLs.
+    """
+    if (not isinstance(page_html, str) or len(page_html) > 3_000_000
+            or not isinstance(source_url, str)
+            or not isinstance(today, dt.date)
+            or isinstance(today, dt.datetime)):
+        return []
+    links, seen = [], set()
+    for event in read_ld(page_html):
+        if not isinstance(event, dict):
+            continue
+        types = official_rss_jsonld_bridge._event_types(event.get("@type"))
+        if not (types & {"MusicEvent", "Event"}):
+            continue
+        day = iso_day(event.get("startDate"))
+        if not day or day < today.isoformat():
+            continue
+        if official_rss_jsonld_bridge.official_named_bill(
+                event.get("performer")) is None:
+            continue
+        status = event.get("eventStatus") or ""
+        if isinstance(status, dict):
+            status = status.get("@id") or status.get("name") or ""
+        if isinstance(status, str) and re.search(
+                r"cancel|postpon|resched|annul|report", status, re.I):
+            continue
+        url = event.get("url")
+        if (official_rss_jsonld_bridge.official_event_url(
+                url, source_url) and url not in seen):
+            seen.add(url)
+            links.append(url)
+    return links
+
+
 def select_generic_official_detail_links(links, day, scan_slot, limit=3):
     """Rotate filtered same-host event links without increasing probes.
 
@@ -587,8 +627,11 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
             parser = EventHtml()
             parser.feed(first)
             pages = [(first, final)]
-            # Navigation limitée aux pages d'événements du même site, sans scrapping massif.
-            links = []
+            # Navigation bornée vers les vraies fiches annoncées dans
+            # schema.org, même si leur URL ne contient ni /concert/ ni
+            # /evenement/. La source et la cible restent first-party HTTPS.
+            # Le vérificateur et le publisher demeurent indépendants.
+            links = linked_first_party_event_urls(first, base, day)
             for href in parser.links:
                 next_url = urllib.parse.urljoin(final, href).split("#")[0]
                 if same_host(next_url, base) and EVENT_URL.search(urllib.parse.urlsplit(next_url).path):
