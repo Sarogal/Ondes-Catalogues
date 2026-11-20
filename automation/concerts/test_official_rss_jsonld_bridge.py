@@ -238,9 +238,17 @@ class OfficialRssJsonldBridgeTests(unittest.TestCase):
         self.assertIsNone(evaluate(page=html_for(performer="Groupe Metal")))
         self.assertIsNone(evaluate(page=html_for(performer={
             "@type": "MusicGroup", "name": "Guest"})))
-        self.assertIsNone(evaluate(page=html_for(location={
+        # A first-party artist+date at a DIFFERENT site is a discovery,
+        # never a publication approval. Do not silently throw it away.
+        external = evaluate(page=html_for(location={
             "name": "Une autre salle", "address": {
-                "addressLocality": "Nîmes", "addressCountry": "FR"}})))
+                "addressLocality": "Nîmes", "addressCountry": "FR"}}))
+        self.assertIsNotNone(external)
+        self.assertEqual(external["source"], "agenda_officiel_lieu_a_verifier")
+        self.assertTrue(external["newVenueToReview"])
+        self.assertTrue(external["officialLocationIncomplete"])
+        self.assertIs(external["publicationAllowed"], False)
+        self.assertIs(external["reviewRequired"], True)
 
     def test_rotation_bounded_without_rss_head_starvation(self):
         leads = [{**LEAD, "sourceUrl":

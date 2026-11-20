@@ -32,24 +32,43 @@ SOURCES = "grossesondes.concert.sourcelist.v1"
 APPROVALS = "grossesondes.concert.approvals.v1"
 
 
-def _known_venue(candidate, source, catalogue):
-    """The exact public venue already exists; ambiguity always fails closed."""
-    matches = [
+def _matching_venues(candidate, catalogue):
+    """All EXACT catalogue site matches; zero is a discovery, not a rejection."""
+    return [
         v for v in catalogue.get("venues", [])
-        if isinstance(v, dict)
-        and triage.words(v.get("name")) == triage.words(source.get("name"))
-        and triage.words(v.get("city")) == triage.words(source.get("city"))
-        and str(v.get("department")) == str(source.get("department"))
-        and v.get("id")
+        if isinstance(v, dict) and v.get("id")
+        and triage.words(v.get("name")) == triage.words(candidate.get("venue"))
+        and triage.words(v.get("city")) == triage.words(candidate.get("city"))
+        and str(v.get("department")) == str(candidate.get("department"))
     ]
-    if len(matches) != 1:
-        return None
-    venue = matches[0]
-    if (triage.words(candidate.get("venue")) != triage.words(venue["name"])
-            or triage.words(candidate.get("city")) != triage.words(venue["city"])
-            or str(candidate.get("department")) != str(venue.get("department"))):
-        return None
-    return venue
+
+
+def _first_party_source(candidate, sources):
+    """A source can ANNOUNCE a concert at a different physical place.
+
+    The committed origin host is the research authority, not the claimed
+    venue and never a publishing trust grant. Cross-host links fail closed.
+    """
+    if candidate.get("source") != "agenda_officiel_lieu_a_verifier":
+        return structured.trusted_source(candidate, sources)
+    matches = []
+    for source in sources.get("venues", []):
+        if not isinstance(source, dict):
+            continue
+        if (triage.words(source.get("name"))
+                != triage.words(candidate.get("sourceVenueName"))
+                or triage.words(source.get("city"))
+                != triage.words(candidate.get("sourceVenueCity"))
+                or str(source.get("department"))
+                != str(candidate.get("sourceVenueDepartment"))
+                or not bridge.official_event_url(
+                    candidate.get("sourceUrl"), source.get("url"))
+                or not discover.same_host(
+                    candidate.get("sourcePage"), source.get("url"))
+                or candidate.get("venueOutsideSource") is not True):
+            continue
+        matches.append(source)
+    return matches[0] if len(matches) == 1 else None
 
 
 def _select(rows, today, scan_slot, limit):
@@ -81,9 +100,10 @@ def _coordinates(site, geo_fetch):
         lat, lon = site_review._read_osm_node(
             site["geoSource"], site, geo_fetch)
         kind = "named-osm-node"
+        osm_url = site["geoSource"]
     else:
-        _, lat, lon, kind = independent_geo.verify(site, geo_fetch)
-    return lat, lon, kind
+        osm_url, lat, lon, kind = independent_geo.verify(site, geo_fetch)
+    return osm_url, lat, lon, kind
 
 
 def _public_geo_consistent(venue, lat, lon):
@@ -128,7 +148,10 @@ def build(registry, sources, catalogue, approvals, today, *,
             continue
         c = record.get("candidate")
         if (not isinstance(c, dict)
-                or c.get("source") != "agenda_officiel_structuré"
+                or c.get("source") not in {
+                    "agenda_officiel_structuré",
+                    "agenda_officiel_lieu_a_verifier",
+                }
                 or c.get("reviewBucket") not in {"genre_unknown", "genre_tag_review"}
                 or c.get("publicationAllowed") is not False
                 or c.get("reviewRequired") is not True
@@ -155,17 +178,21 @@ def build(registry, sources, catalogue, approvals, today, *,
             "publisherTrustGranted": False,
             "publicationAllowed": False,
         }
-        source = structured.trusted_source(candidate, sources)
-        venue = _known_venue(candidate, source, catalogue) if source else None
+        source = _first_party_source(candidate, sources)
+        known = _matching_venues(candidate, catalogue)
+        venue = known[0] if len(known) == 1 else None
         if source is None:
             result["reason"] = "first_party_source_identity_unmatched"
-        elif venue is None:
-            result["reason"] = "public_venue_identity_unmatched"
+        elif len(known) > 1:
+            result["reason"] = "public_venue_identity_ambiguous"
         elif generic_music_event.trusted_spec(candidate) is not None:
             result["reason"] = "already_covered_by_reviewed_venue_verifier"
         else:
             url = candidate["sourceUrl"]
-            result["venueId"] = venue["id"]
+            if venue is not None:
+                result["venueId"] = venue["id"]
+            else:
+                result["newVenueCandidate"] = True
             try:
                 if not robots(url, robots_cache):
                     result["reason"] = "official_page_robots_disallowed"
@@ -201,14 +228,43 @@ def build(registry, sources, catalogue, approvals, today, *,
                                 reader = guarded_geo_fetch
                             else:
                                 reader = geo_fetch
-                            lat, lon, kind = _coordinates(site, reader)
-                            ok, why = _public_geo_consistent(venue, lat, lon)
-                            result["independentNamedGeoVerified"] = True
-                            result["geoPrecision"] = kind
-                            result["reason"] = why
-                            if ok:
-                                result["status"] = "independently_correlated_private_only"
-                                result["officialEventGenreProven"] = True
+                            osm_url, lat, lon, kind = _coordinates(
+                                site, reader)
+                            if (candidate.get("department")
+                                    and str(candidate["department"])
+                                    != str(site["department"])):
+                                result["reason"] = "official_department_mismatch"
+                            else:
+                                result["independentNamedGeoVerified"] = True
+                                result["geoPrecision"] = kind
+                                if venue is None:
+                                    # Private location PROPOSAL, not a signed
+                                    # venue approval. Never insert it into
+                                    # catalogue/approved.json automatically.
+                                    result["status"] = (
+                                        "new_site_independently_located_private_only")
+                                    result["reason"] = "new_site_geo_verified"
+                                    result["officialEventGenreProven"] = True
+                                    result["proposedSite"] = {
+                                        "name": site["name"],
+                                        "city": site["city"],
+                                        "department": site["department"],
+                                        "postalCode": site["postalCode"],
+                                        "address": site["address"],
+                                        "region": site["region"],
+                                        "geoSource": osm_url,
+                                        "latitude": lat, "longitude": lon,
+                                        "geoPrecision": kind,
+                                        "publicationAllowed": False,
+                                    }
+                                else:
+                                    ok, why = _public_geo_consistent(
+                                        venue, lat, lon)
+                                    result["reason"] = why
+                                    if ok:
+                                        result["status"] = (
+                                            "independently_correlated_private_only")
+                                        result["officialEventGenreProven"] = True
             except (ValueError, TypeError, KeyError):
                 result["reason"] = "official_event_or_geography_unconfirmed"
             except Exception:
@@ -226,6 +282,11 @@ def build(registry, sources, catalogue, approvals, today, *,
             r.get("independentNamedGeoVerified") is True for r in results),
         "fullyCorrelatedPrivateOnly": sum(
             r["status"] == "independently_correlated_private_only"
+            for r in results),
+        "newVenueCandidates": sum(
+            r.get("newVenueCandidate") is True for r in results),
+        "newSitesIndependentlyLocatedPrivateOnly": sum(
+            r["status"] == "new_site_independently_located_private_only"
             for r in results),
         "reasonCounts": dict(sorted(counts.items())),
         "results": results,

@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import html.parser
+import hashlib
 import json
 import os
 import re
@@ -354,12 +355,39 @@ def venue_candidate(raw, source, page_url, known, day):
     event_venue = norm(venue)
     source_city = norm(source["city"])
     event_city = norm(city)
-    if (event_venue and source_venue and
-            source_venue not in event_venue and
-            event_venue not in source_venue):
-        return None
-    if source_city and event_city and source_city != event_city:
-        return None
+    offsite = bool(
+        (event_venue and source_venue
+         and source_venue not in event_venue
+         and event_venue not in source_venue)
+        or (source_city and event_city and source_city != event_city)
+    )
+    # Official venue calendars may announce temporary stages or shows at
+    # another hall. Archive these as research leads, not publishable events.
+    if offsite:
+        origin = source.get("url")
+        if (not isinstance(origin, str)
+                or not official_rss_jsonld_bridge.official_event_url(
+                    page_url, origin)):
+            return None
+        types = official_rss_jsonld_bridge._event_types(raw.get("@type"))
+        if "MusicEvent" not in types:
+            return None
+        if official_rss_jsonld_bridge.official_named_bill(
+                raw.get("performer")) is None:
+            return None
+        country = address.get("addressCountry")
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        # Discovery must not require a postcode: a street performance or
+        # temporary site can be legitimate before its address is proven.
+        # Explicitly foreign events remain excluded.
+        if (country is not None
+                and norm(country) not in {
+                    "fr", "france", "republiquefrancaise",
+                }):
+            return None
+        if not address.get("addressLocality"):
+            return None
     # Only an explicitly typed schema.org MusicGroup/Person is a named
     # performer. Many real official event pages expose a WordPress plugin's
     # generic {"@type": "Organization", "name": "Organization"} value
@@ -391,16 +419,61 @@ def venue_candidate(raw, source, page_url, known, day):
     ref_url = raw.get("url") if isinstance(raw.get("url"), str) else ""
     if not ref_url.startswith("https://"):
         ref_url = page_url
+    if offsite and not official_rss_jsonld_bridge.official_event_url(
+            ref_url, source["url"]):
+        # Ticketing partners never replace the first-party event page.
+        ref_url = page_url
+    # An external venue's department is NOT the source venue's department.
+    postcode = str(address.get("postalCode") or "")
+    department = source["department"]
+    if offsite:
+        if not re.fullmatch(r"[0-9]{5}", postcode):
+            department = ""  # Unknown until independent geography succeeds.
+        elif postcode.startswith(("97", "98")):
+            department = postcode[:3]
+        elif postcode.startswith("20"):
+            department = ""  # Corsica's 2A/2B cannot be inferred from ZIP alone.
+        else:
+            department = postcode[:2]
     record = {
-        "candidateId": "venue:" + norm(source["name"]) + ":" + date + ":" + norm(name),
-        "source": "agenda_officiel_structuré", "sourceUrl": ref_url,
-        "sourcePage": page_url, "date": date, "name": name, "leadArtist": artist,
-        "venue": venue, "city": city, "department": source["department"],
+        "candidateId": (
+            ("external:" if offsite else "venue:") + norm(source["name"])
+            + ":" + date + ":" + norm(name)
+            + (":" + norm(venue) if offsite else "")
+        ),
+        "source": ("agenda_officiel_lieu_a_verifier"
+                   if offsite else "agenda_officiel_structuré"),
+        "sourceUrl": ref_url, "sourcePage": page_url,
+        "date": date, "name": name, "leadArtist": artist,
+        "venue": venue, "city": city, "department": department,
         "classification": event_genres,
         "structuredGenreProvenance": provenance,
         "genreToConfirm": not relevant,
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
+    if offsite:
+        # Long multi-artist bills must not abort the ENTIRE private archive
+        # because a discovered candidate ID exceeds intake_archive's cap.
+        # A cryptographic suffix preserves stable per-event identity.
+        if len(record["candidateId"]) > 220:
+            full_id = record["candidateId"]
+            record["candidateId"] = (
+                full_id[:175] + ":" +
+                hashlib.sha256(full_id.encode("utf-8")).hexdigest()[:20]
+            )
+        # The existing publisher has NO verifier for this quarantined source.
+        record.update({
+            "venueOutsideSource": True,
+            "newVenueToReview": True,
+            "sourceVenueName": source["name"],
+            "sourceVenueCity": source["city"],
+            "sourceVenueDepartment": source["department"],
+            "sitePostalCodeFromOfficialEvent": postcode,
+            "officialLocationIncomplete": not bool(
+                re.fullmatch(r"[0-9]{5}", postcode)
+                and address.get("addressCountry")),
+            "publicationAllowed": False, "reviewRequired": True,
+        })
     if bill is None:
         record["structuredPerformerProof"] = "missing_review_only"
     if unnamed_support is not None:
@@ -2476,6 +2549,11 @@ def main():
                    "icsCancellationNotices": sum(x.get("source") == "ics_cancellation_notice" for x in candidates),
                    "rssUndatedAnnouncements": sum(x.get("source") == "actualite_rss_non_datee" for x in candidates),
                    "structuredEventLeads": sum(x.get("source") == "agenda_officiel_structuré" for x in candidates),
+                   "officialOffsiteVenueLeads": sum(
+                       x.get("source") == "agenda_officiel_lieu_a_verifier"
+                       for x in classified),
+                   "newVenueDiscoveryLeads": sum(
+                       x.get("newVenueToReview") is True for x in classified),
                    "possibleExistingConcerts": sum(x.get("possibleExistingConcert", False) for x in classified),
                    "requiresHumanOrIndependentVerification": len(candidates),
                    "officiallyConfirmedNewMetalConcerts": 0},
@@ -2512,6 +2590,10 @@ def main():
         "Alertes annulation ICS : " + str(review["counts"]["icsCancellationNotices"]) + ".",
         "Annonces RSS SANS date de concert : " + str(review["counts"]["rssUndatedAnnouncements"]) + ".",
         "Événements structurés à vérifier : " + str(review["counts"]["structuredEventLeads"]) + ".",
+        "Nouveaux lieux possibles, en quarantaine privée : "
+        + str(review["counts"]["newVenueDiscoveryLeads"]) + ".",
+        "Concerts officiellement annoncés dans un lieu distinct de la source : "
+        + str(review["counts"]["officialOffsiteVenueLeads"]) + ".",
         "Classement des pistes (aucune confirmation automatique) :",
         *["  - " + bucket + " : " + str(total) for bucket, total in sorted(triage_counts.items())],
         "À examiner en priorité : " + str(len(shortlist)) + " (annulations, doublons, genre ou festival).",
