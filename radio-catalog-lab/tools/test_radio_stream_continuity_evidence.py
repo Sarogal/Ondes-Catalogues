@@ -130,5 +130,34 @@ class ContinuityEvidenceTests(unittest.TestCase):
         self.assertEqual(result.reason, "chunk_budget_reached")
         self.assertEqual(result.read_chunks, MAX_READ_CHUNKS)
 
+    def test_decoder_is_disabled_by_default_even_when_transport_is_sustained(self):
+        from unittest.mock import patch
+        clock = Clock()
+        reader = Reader(clock, [b'x' * 4096 for _ in range(18)], interval=0.5)
+        with patch('radio_stream_continuity_evidence.decode_audio_prefix') as decoder:
+            evidence = observe_continuity(reader, b'ID3' + b'\0'*509, clock=clock)
+        decoder.assert_not_called()
+        self.assertIsNone(evidence.decode_evidence)
+
+    def test_decoder_only_runs_on_opt_in_sustained_stream(self):
+        from unittest.mock import patch
+        clock = Clock()
+        reader = Reader(clock, [b'x' * 4096 for _ in range(18)], interval=0.5)
+        out = {'state': 'decoded_pcm', 'pcmBytes': 4096, 'publicationAllowed': False}
+        with patch('radio_stream_continuity_evidence.decode_audio_prefix', return_value=out) as decoder:
+            evidence = observe_continuity(reader, b'ID3' + b'\0'*509, clock=clock, experimental_decode=True)
+        decoder.assert_called_once()
+        self.assertEqual(evidence.as_dict()['decodeEvidence']['state'], 'decoded_pcm')
+        self.assertFalse(evidence.as_dict()['decodeEvidence']['publicationAllowed'])
+
+    def test_decoder_does_not_start_on_early_ended_stream(self):
+        from unittest.mock import patch
+        clock = Clock()
+        with patch('radio_stream_continuity_evidence.decode_audio_prefix') as decoder:
+            evidence = observe_continuity(Reader(clock, [b'x'*20], interval=1.0),
+                                          b'ID3' + b'\0'*509, clock=clock, experimental_decode=True)
+        decoder.assert_not_called()
+        self.assertEqual(evidence.state, 'not_confirmed')
+
 if __name__ == "__main__":
     unittest.main()
