@@ -4,6 +4,9 @@ on:
   pull_request:
     paths:
       - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_future_geo_publisher.py'
+      - 'festival-automation/future_geo_preflight.py'
+      - 'festival-automation/dns_pinned_https.py'
       - 'scripts/grossesondes_institutional_edition.py'
       - 'scripts/grossesondes_institutional_linked_edition.py'
       - 'tests/test_grosses_institutional_linked_publisher.py'
@@ -23,6 +26,9 @@ on:
     paths:
       - '.github/workflows/grossesondes-cloud-sync.yml'
       - 'scripts/grossesondes_cloud_sync.py'
+      - 'scripts/grossesondes_future_geo_publisher.py'
+      - 'festival-automation/future_geo_preflight.py'
+      - 'festival-automation/dns_pinned_https.py'
       - 'scripts/grossesondes_institutional_edition.py'
       - 'scripts/grossesondes_institutional_linked_edition.py'
       - 'tests/test_grosses_institutional_linked_publisher.py'
@@ -41,6 +47,7 @@ on:
       - 'scripts/grossesondes_structured_tickets.py'
       - 'tests/test_grosses_structured_tickets.py'
       - 'tests/test_grosses_cloud_sync.py'
+      - 'tests/test_grosses_future_geo_publisher.py'
       - 'tests/test_grosses_field_proof.py'
       - 'scripts/grossesondes_generic_roster.py'
       - 'tests/test_grosses_generic_roster.py'
