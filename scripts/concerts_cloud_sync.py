@@ -7080,7 +7080,22 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(any(re.search(r"\b(punk|hardcore|metal|doom|stoner)\b",
                               norm(genre)) for genre in event["genres"]),
                 "Brin de Zinc : genre métal/punk officiel absent")
-    elif event.get("venueId") in ("l-astrolabe-orleans", "le-106-rouen"):
+    elif (event.get("venueId") in ("l-astrolabe-orleans", "le-106-rouen")
+          # Old individually signed shows retain their complete historical
+          # two-proof contract. The Astrolabe paragraph-bill lane is a
+          # SEPARATE publisher-validated first-party source-wide contract:
+          # it never pretends to be one of those human signatures.
+          and not (
+              event.get("venueId") == "l-astrolabe-orleans"
+              and reviewer == "automated-official-recheck"
+              and generic_auto
+              and len(evidence) == 1
+              and isinstance(evidence[0], dict)
+              and evidence[0].get("sourceStructure") ==
+                  "verified-first-party-visible-bill-v1"
+              and evidence[0].get("visibleBillProfile") ==
+                  "paragraph-artist-genre-v1"
+          )):
         # Two regional venues: require a named first-party event and exact
         # field-level supporting evidence. Neither clock nor generic event
         # listing is enough to invent a musical start time.
