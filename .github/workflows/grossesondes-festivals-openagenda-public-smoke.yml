@@ -38,12 +38,18 @@ jobs:
           python - <<'PY'
           import sys
           sys.path.insert(0, 'festival-automation')
-          from national_openagenda_research import fixed_query_urls, fetch_json, PER_PAGE
-          payload = fetch_json(fixed_query_urls()[0])
-          assert isinstance(payload, dict)
-          assert type(payload.get('total_count')) is int
-          assert isinstance(payload.get('results'), list)
-          assert len(payload['results']) <= PER_PAGE
-          print('OpenData publique accessible; records returned:', len(payload['results']))
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          from national_openagenda_research import scan, QUERIES
+          today = datetime.now(ZoneInfo('Europe/Paris')).date().isoformat()
+          result = scan({'schema': 'grossesondes.source-watch.v1'}, today)
+          assert result['requests_attempted'] == len(QUERIES)
+          assert result['requests_failed'] < result['requests_attempted']
+          assert result['publications'] == 0
+          assert result['publication_authorized'] is False
+          print('OpenData publique:', result['status'],
+                'requêtes:', result['requests_attempted'],
+                'échecs:', result['requests_failed'],
+                'pistes privées non vérifiées:', result['leads_count'])
           print('Aucune donnée privée, aucune approbation, aucune publication.')
           PY
