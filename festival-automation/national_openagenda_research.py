@@ -242,6 +242,8 @@ def scan(state, today, fetch=None):
             and previous.get("review_only") is True
             and previous.get("publication_authorized") is False
             and previous.get("safe_to_publish") is False
+            and previous.get("requests_attempted") == len(fixed_query_urls(today))
+            and previous.get("requests_failed") == 0
             and isinstance(previous.get("leads"), list)
             and len(previous["leads"]) <= MAX_LEADS):
         return previous
