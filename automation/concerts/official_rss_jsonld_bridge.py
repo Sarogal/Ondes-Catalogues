@@ -144,6 +144,59 @@ def official_named_bill(value):
     return (names, unnamed) if names else None
 
 
+def event_genres_from_own_bill(raw):
+    """Read explicit genre attached to THIS Event or its named performers only.
+
+    This does not consult artist catalogs, biographies, venue-wide menus or
+    adjacent Events. Non-string, excessive or ambiguous labels fail closed.
+    The independent reviewer and publisher remain genre authorities.
+    Returns (labels, provenance_scope).
+    """
+    if not isinstance(raw, dict):
+        return [], "official_event_card"
+
+    def labels(value):
+        if isinstance(value, str):
+            value = [value]
+        if (not isinstance(value, list) or len(value) > 20
+                or any(not isinstance(x, str) or
+                       not 2 <= len(x.strip()) <= 80 for x in value)):
+            return None
+        return [x.strip() for x in value]
+
+    direct = raw.get("genre")
+    if direct is not None and direct != [] and direct != "":
+        checked = labels(direct)
+        return (checked or []), "official_event_card"
+
+    bill = official_named_bill(raw.get("performer"))
+    if bill is None:
+        return [], "official_artist_in_event_detail"
+    names = {x.casefold() for x in bill[0]}
+    performers = raw.get("performer")
+    performers = performers if isinstance(performers, list) else [performers]
+    collected = []
+    for performer in performers:
+        if not isinstance(performer, dict):
+            return [], "official_artist_in_event_detail"
+        if performer.get("name", "").strip().casefold() not in names:
+            if bill[1] and performer.get("name", "").strip().casefold() == bill[1].casefold():
+                continue  # An explicitly unnamed support is not genre proof.
+            return [], "official_artist_in_event_detail"
+        genre = performer.get("genre")
+        if genre is None:
+            continue
+        values = labels(genre)
+        if values is None:
+            return [], "official_artist_in_event_detail"
+        collected.extend(values)
+        if len(collected) > 20:
+            return [], "official_artist_in_event_detail"
+    # A performer may supply a subgenre; at least one label must still pass
+    # the unchanged genre gate, including the electronic-only exclusions.
+    return list(dict.fromkeys(collected)), "official_artist_in_event_detail"
+
+
 def candidate_from_event_page(
         lead, html, actual_url, source, known, day, *,
         read_ld, venue_candidate, norm, allow_generic_event=False):
