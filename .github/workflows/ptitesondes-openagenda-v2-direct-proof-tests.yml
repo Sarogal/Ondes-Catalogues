@@ -46,6 +46,8 @@ on:
       - 'scripts/ptitesondes_family_activity_classification.py'
       - 'scripts/ptitesondes_openagenda_national_event_research.py'
       - 'tests/test_ptitesondes_openagenda_national_event_research.py'
+      - 'scripts/ptitesondes_private_national_event_campaign.py'
+      - 'tests/test_ptitesondes_private_national_event_campaign.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -109,6 +111,8 @@ on:
       - 'scripts/ptitesondes_family_activity_classification.py'
       - 'scripts/ptitesondes_openagenda_national_event_research.py'
       - 'tests/test_ptitesondes_openagenda_national_event_research.py'
+      - 'scripts/ptitesondes_private_national_event_campaign.py'
+      - 'tests/test_ptitesondes_private_national_event_campaign.py'
       - 'scripts/ptitesondes_private_venue_batch_rollup.py'
       - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
       - 'scripts/ptitesondes_private_venue_campaign.py'
@@ -201,6 +205,8 @@ jobs:
             -p 'test_ptitesondes_proven_unknown_venue_promotion.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_national_event_research.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_national_event_campaign.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_private_venue_batch_rollup.py' -v
           python -m unittest discover -s tests \
