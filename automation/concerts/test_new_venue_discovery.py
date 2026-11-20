@@ -116,6 +116,22 @@ class UnknownLocationDiscoveryTests(unittest.TestCase):
                 self.assertIsNone(discover.venue_candidate(
                     raw, source, page_url, set(), "2026-11-20"))
 
+    def test_long_multi_artist_bill_has_bounded_stable_intake_identity(self):
+        long_bands = [f"BRUTAL GROUP {i:02d} "
+                      + "SUPPORT" * 5 for i in range(11)]
+        raw = event()
+        raw["name"] = " + ".join(long_bands)
+        raw["performer"] = [
+            {"@type": "MusicGroup", "name": name} for name in long_bands
+        ]
+        first = proposal(raw)
+        second = proposal(raw)
+        self.assertIsNotNone(first)
+        self.assertEqual(first["candidateId"], second["candidateId"])
+        self.assertLessEqual(len(first["candidateId"]), 240)
+        self.assertEqual(len(first["leadArtist"].split(" + ")), 11)
+        self.assertFalse(first["publicationAllowed"])
+
     def test_source_linked_new_site_gets_independent_proof_but_no_approval(self):
         discovered = triage.classify([proposal()], catalogue())[0][0]
         registry = {
