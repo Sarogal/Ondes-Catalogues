@@ -15,7 +15,7 @@ import tempfile
 from zoneinfo import ZoneInfo
 
 from ptitesondes_html_private_queue_cycle import (
-    _private_target, _load_queue, MAX_FILE_BYTES,
+    _private_target, _load_queue,
 )
 from ptitesondes_html_independent_review_planner import (
     plan_independent_reviews, SCHEMA as PLANNER_SCHEMA,
@@ -29,11 +29,7 @@ MAX_WORKLIST_BYTES = 500_000
 def stage_private_worklist(root, plan, now):
     """Atomic, fixed-location PRIVATE write; output is a plan, not evidence."""
     queue_target = _private_target(root)
-    worklist_path = queue_target.parents[1] / PRIVATE_WORKLIST
-    # Note: queue_target is <root>/automation-intake/ptitesondes/..,
-    # parents[1] must be <root>/automation-intake, NOT repo root. The
-    # precise target is constructed relative to validated checkout.
-    worklist_path = queue_target.parent / "html-independent-worklist.json"
+    worklist_path = queue_target.parents[2] / PRIVATE_WORKLIST
     if (worklist_path.is_symlink() or not worklist_path.parent.is_dir()
             or plan.get("schema") != PLANNER_SCHEMA
             or type(plan.get("private_tasks")) is not dict
