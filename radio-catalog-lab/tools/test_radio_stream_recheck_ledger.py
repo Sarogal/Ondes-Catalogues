@@ -19,6 +19,19 @@ def row(uid=A, verdict="audio_sample_ok", sha=SHA1):
             "publicationAllowed": False, "verdict": verdict}
 
 
+
+def sustained_row(uid=A, sha=SHA1, verdict="audio_sample_ok"):
+    value = row(uid, verdict, sha)
+    value["continuityEvidence"] = {
+        "state": "transport_sustained",
+        "elapsedMs": 6400,
+        "observedBytes": 65536,
+        "readChunks": 12,
+        "publicationAllowed": False,
+    }
+    return value
+
+
 class StreamRecheckTests(unittest.TestCase):
     def test_first_positive_sample_is_not_qualified(self):
         report = next_evidence_report(probe(checks=[row()]))
