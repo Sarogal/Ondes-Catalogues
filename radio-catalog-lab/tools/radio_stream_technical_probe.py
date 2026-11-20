@@ -222,10 +222,11 @@ class PinnedHttpTransport:
     while socket.create_connection uses only the checked IP address.
     """
     def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT,
-                 extended_continuity: bool = False):
+                 extended_continuity: bool = False, experimental_decode: bool = False):
         self.resolver = resolver
         self.timeout = timeout
         self.extended_continuity = extended_continuity
+        self.experimental_decode = experimental_decode
 
     def request(self, url: str) -> ResponseSample:
         parsed = validate_endpoint(url)
@@ -268,6 +269,7 @@ class PinnedHttpTransport:
                 continuity = observe_continuity(
                     response, data,
                     content_length=response.getheader("Content-Length"),
+                    experimental_decode=self.experimental_decode,
                 ).as_dict()
             return ResponseSample(
                 status=int(response.status),
@@ -415,6 +417,11 @@ def probe_candidates(
             and x.get("continuityEvidence", {}).get("frameEvidence", {}).get("state")
             == "frame_chain"
             for x in rows),
+        "decodedPcmEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            and x.get("continuityEvidence", {}).get("decodeEvidence", {}).get("state")
+            == "decoded_pcm"
+            for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }
@@ -430,15 +437,22 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--extended-continuity", action="store_true",
                    help="Observe at most 10 s and 512 KiB per apparent audio stream; "
                         "NOT decoder or publisher approval.")
+    p.add_argument("--experimental-decode", action="store_true",
+                   help="Linux FFmpeg PCM probe with resource limits (NOT publication approval).")
     args = p.parse_args(argv)
     if not args.allow_network:
         p.error("Network probing disabled: --allow-network is mandatory")
+    if args.experimental_decode and not args.extended_continuity:
+        p.error("Experimental decoding requires --extended-continuity")
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
         p.error("Discovery document too large")
     data = json.loads(args.discovery.read_text(encoding="utf-8"))
     report = probe_candidates(
         data,
-        PinnedHttpTransport(extended_continuity=args.extended_continuity).request,
+        PinnedHttpTransport(
+            extended_continuity=args.extended_continuity,
+            experimental_decode=args.experimental_decode,
+        ).request,
         limit=args.limit,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -448,6 +462,7 @@ def main(argv: list[str] | None = None) -> int:
           f"audio_evidence={report['audioEvidenceCount']} "
           f"sustained_transport={report['sustainedTransportEvidenceCount']} "
           f"frame_chain={report['frameChainEvidenceCount']} "
+          f"decoded_pcm={report['decodedPcmEvidenceCount']} "
           "technical_verified=0 published=false")
     return 0
 
