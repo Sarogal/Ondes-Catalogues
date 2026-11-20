@@ -22,6 +22,7 @@ from grossesondes_archived_html_intake import official_date
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 
 from national_detail_qualification import _eligible_sources, _seen_again
+from festival_event_kind import touring_concert_stop
 from official_watch import get_page
 from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_institutional_edition import (
@@ -48,6 +49,8 @@ def _exact_edition(html, source, today):
     if dates is None:
         return None
     first, last = dates
+    if touring_concert_stop(html, first, last):
+        return None
     if (not date.fromisoformat(today) <= first
             or first.year != year or last.year != year
             or not no_same_edition_jsonld_contradiction(
