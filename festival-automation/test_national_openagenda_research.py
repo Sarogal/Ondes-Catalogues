@@ -47,7 +47,9 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertIn("intake/automation-intake/grossesondes", workflow)
 
     def test_all_queries_are_fixed_bounded_and_no_user_url(self):
-        urls = fixed_query_urls()
+        # A CI run may cross midnight in Europe/Paris. Frozen fixture dates
+        # must never be compared to the dynamic wall-clock default.
+        urls = fixed_query_urls(DAY)
         self.assertEqual(len(urls), len(QUERIES) + len(FESTIVAL_PAGE_OFFSETS) - 1)
         self.assertEqual(urls, fixed_query_urls(DAY))
         self.assertEqual(list(FESTIVAL_PAGE_OFFSETS), list(range(0, 200, 25)))
@@ -73,6 +75,22 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         ):
             with self.subTest(url=invalid), self.assertRaises(ValueError):
                 fetch_json(invalid)
+
+    def test_dynamic_default_rolls_over_at_paris_midnight(self):
+        from datetime import datetime
+        from unittest.mock import patch
+        from zoneinfo import ZoneInfo
+
+        class FrozenDateTime:
+            @classmethod
+            def now(cls, timezone):
+                self.assertEqual(str(timezone), "Europe/Paris")
+                return datetime(2026, 11, 21, 0, 5, tzinfo=ZoneInfo("Europe/Paris"))
+
+        with patch("national_openagenda_research.datetime", FrozenDateTime):
+            self.assertEqual(fixed_query_urls(), fixed_query_urls("2026-11-21"))
+        self.assertNotEqual(fixed_query_urls("2026-11-20"),
+                            fixed_query_urls("2026-11-21"))
 
     def test_strong_identity_future_dates_musical_theme_private_only(self):
         row = candidate(EVENT, DAY)
@@ -387,7 +405,9 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertFalse(refreshed["publication_authorized"])
 
     def test_partial_outage_never_authorizes_and_can_retry_next_slot(self):
-        urls = fixed_query_urls()
+        # The mocked source is constructed for the same explicit test day
+        # used by scan(...), independent of when the runner is scheduled.
+        urls = fixed_query_urls(DAY)
         attempts = []
         def flaky(url):
             attempts.append(url)
