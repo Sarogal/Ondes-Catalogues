@@ -181,7 +181,8 @@ def osm_hints(group, center, response):
 
 
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
-                  ign_fetch=None):
+                  ign_fetch=None, official_page_get=None,
+                  approved_official_hosts=()):
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
@@ -207,16 +208,31 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
         # A matching BAN address is geography corroboration only.
         # Never use this flag to modify VENUES or authorize publication.
         result["independent_address"] = independent
+        if (independent.get("address_correlated") is True
+                and official_page_get is not None):
+            from ptitesondes_generic_venue_official_proof import (
+                official_venue_page_proof,
+            )
+            try:
+                page_url, html = official_page_get(group)
+            except (OSError, ValueError, TypeError, KeyError, UnicodeError):
+                page_url, html = None, None
+            result["official_page"] = official_venue_page_proof(
+                group, independent["address_candidate_private"],
+                independent, page_url, html, approved_official_hosts)
     return result
 
 
 def audit(backlog, today, record_fetch=api_record,
-          osm_fetch=fetch_overpass, live=False, ign_fetch=None):
+          osm_fetch=fetch_overpass, live=False, ign_fetch=None,
+          official_page_get=None, approved_official_hosts=()):
     groups = groups_for_review(backlog, today)
     chosen = private_rotation(groups, today)
     checked = []
     for group in chosen:
-        result = (inspect_group(group, record_fetch, osm_fetch, ign_fetch)
+        result = (inspect_group(group, record_fetch, osm_fetch,
+                                ign_fetch, official_page_get,
+                                approved_official_hosts)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
@@ -225,6 +241,11 @@ def audit(backlog, today, record_fetch=api_record,
     address_matched = [
         x for x in checked
         if x.get("independent_address", {}).get("address_correlated") is True
+    ]
+    official_matched = [
+        x for x in checked
+        if x.get("official_page", {}).get(
+            "location_evidence_complete_for_private_review") is True
     ]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
@@ -240,6 +261,9 @@ def audit(backlog, today, record_fetch=api_record,
         "independent_address_matches": len(address_matched),
         "leads_with_independent_address_hint": sum(
             x["lead_count"] for x in address_matched),
+        "official_identity_address_matches": len(official_matched),
+        "leads_with_private_official_place_evidence": sum(
+            x["lead_count"] for x in official_matched),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
