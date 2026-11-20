@@ -178,17 +178,34 @@ def validate(row, today, event_approvals, *, sources=None):
     demand(official is not None and authority is not None,
            "missing official event and authority URLs")
     authority_id = binding.get("authorityArtistId")
-    demand(isinstance(authority_id, str) and authority_id,
-           "missing source artist")
-    eligible = [
-        x for x in _sources(sources)
-        if isinstance(x, dict) and x.get("enabled") is True
-        and x.get("url") == binding["authoritySourceUrl"]
-        and x.get("artistId") == authority_id
-        and x.get("sourceRole") in {"artist_official", "promoter_official"}
-    ]
-    demand(len(eligible) == 1 and authority.hostname == official.hostname,
-           "official event not bound to a reviewed artist/promoter source")
+    if authority_id is None:
+        # An event may have ZERO previously catalogued bands. Admission is
+        # instead scoped to a separately reviewed first-party ORGANIZER,
+        # whose manifest exists in the repository, not in the private lead.
+        # This publisher gate does not trust a sourceId or claimed role
+        # supplied by discovery, and rechecks the exact official URL scope.
+        from automation.concerts import organizer_source_contract as org
+        eligible = [
+            entry for entry in org.read_sources()
+            if entry["enabled"] is True
+            and entry["url"] == binding["authoritySourceUrl"]
+            and dt.date.fromisoformat(entry["checkedAt"]) <= checked
+            and org.scoped_event_url(entry, ev_url)
+        ]
+        demand(len(eligible) == 1 and authority.hostname == official.hostname,
+               "event not bound to reviewed organizer first-party authority")
+    else:
+        demand(isinstance(authority_id, str) and bool(authority_id),
+               "missing source artist")
+        eligible = [
+            x for x in _sources(sources)
+            if isinstance(x, dict) and x.get("enabled") is True
+            and x.get("url") == binding["authoritySourceUrl"]
+            and x.get("artistId") == authority_id
+            and x.get("sourceRole") in {"artist_official", "promoter_official"}
+        ]
+        demand(len(eligible) == 1 and authority.hostname == official.hostname,
+               "official event not bound to a reviewed artist/promoter source")
 
     demand(isinstance(event_approvals, list), "event approvals missing")
     matches = [
@@ -206,7 +223,9 @@ def validate(row, today, event_approvals, *, sources=None):
            and event.get("date") == ev_day
            and event.get("officialUrl") == ev_url
            and event.get("venueId") == venue.get("id")
-           and authority_id in event.get("artistIds", [])
+           and (authority_id is None
+                or authority_id in event.get("artistIds", []))
+           and bool(event.get("artistIds"))
            and event.get("status") == "confirmed"
            and relevant_genres(event.get("genres")),
            "event/artist/date/site/genre binding mismatch")
