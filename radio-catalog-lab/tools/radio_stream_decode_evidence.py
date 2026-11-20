@@ -18,12 +18,17 @@ DECODE_TIMEOUT_SECONDS = 4
 
 
 def _detect_demuxer(data: bytes) -> str | None:
-    from radio_stream_frame_chain import adts_header, mpeg_header
+    from radio_stream_frame_chain import adts_header, mpeg_header, analyze_frame_chain
 
     if data.startswith(b"ID3") or mpeg_header(data, 0):
         return "mp3"
     if adts_header(data, 0):
         return "aac"
+    # A genuine continuous stream can begin mid-frame; reuse the bounded
+    # multi-frame parser instead of assuming the first byte is a sync word.
+    frame = analyze_frame_chain(data)
+    if frame["state"] == "frame_chain":
+        return "mp3" if frame["codec"] == "mpeg_audio" else "aac"
     if data.startswith(b"OggS") and any(
         x in data[:512] for x in (b"OpusHead", b"\x01vorbis", b"Speex   ", b"fLaC")
     ):
