@@ -51,6 +51,20 @@ def _name(value):
     return value.strip()
 
 
+def _country(address):
+    """A first-party geo claim can be inventoried even without country proof.
+
+    Only an explicit France country in the same structured Place is eligible
+    for the independently rechecked public map pin.
+    """
+    raw = address.get("addressCountry")
+    if isinstance(raw, dict):
+        raw = raw.get("name") or raw.get("identifier")
+    if not isinstance(raw, str):
+        return None
+    return "FR" if raw.strip().casefold() in ("fr", "fra", "france") else None
+
+
 def _matching_event(event, row):
     raw_types = event.get("@type", [])
     types = raw_types if isinstance(raw_types, list) else [raw_types]
@@ -116,6 +130,7 @@ def exact_edition_geo(html, row):
                 return None
             facts.append({
                 "slug": row["slug"], "city": locality, "venue": venue,
+                "country": _country(address),
                 "lat": lat, "lon": lon, "source": row["officialSite"],
             })
     if not facts or any(value != facts[0] for value in facts[1:]):
@@ -196,13 +211,16 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
             claim, ensure_ascii=False, sort_keys=True).encode("utf-8")
         ).hexdigest()
         previous = obs.get(slug)
+        # A second check on the same date must NOT erase J+1 verification.
+        # The next date, however, still requires a fresh proof to stay stable.
         second = (isinstance(previous, dict)
                   and previous.get("digest") == digest
-                  and previous.get("lastSeen") == yesterday
-                  and (previous.get("firstSeen") == yesterday
-                       or previous.get("stable") is True))
-        first_seen = (previous["firstSeen"] if second
-                      else today)
+                  and ((previous.get("lastSeen") == yesterday
+                        and (previous.get("firstSeen") == yesterday
+                             or previous.get("stable") is True))
+                       or (previous.get("lastSeen") == today
+                           and previous.get("stable") is True)))
+        first_seen = (previous["firstSeen"] if second else today)
         obs[slug] = {"digest": digest, "firstSeen": first_seen,
                      "lastSeen": today, "stable": second}
         result.update(
