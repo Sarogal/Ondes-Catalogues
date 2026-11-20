@@ -69,6 +69,23 @@ def load_specs(path=MANIFEST):
 SPECS = load_specs()
 ALLOWED_HOSTS = frozenset(row["host"] for row in SPECS.values())
 
+# 'Hardcore Techno' is not a hardcore punk subgenre. A broad substring
+# matcher cannot turn an electronic-only event into a metal show.
+ELECTRONIC_GENRE = re.compile(
+    r"(?<!\\w)(?:hardcore techno|hardcore electro|hardcore electronic|"
+    r"hardtek|frenchcore|gabber)(?!\\w)"
+)
+
+
+def independently_relevant_genre(labels):
+    """At least one *individual* official tag must be relevant and non-electronic."""
+    return (isinstance(labels, list) and any(
+        isinstance(tag, str)
+        and not ELECTRONIC_GENRE.search(triage.words(tag))
+        and bool(triage.genre_evidence({"classification": [tag]}))
+        for tag in labels
+    ))
+
 
 def trusted_spec(candidate):
     """Select a committed venue identity, not a venue claimed by a feed."""
@@ -166,7 +183,7 @@ def verify(candidate, html_text, catalogue, today):
             or not 1 <= len(raw_genres) <= 20
             or not all(isinstance(g, str) and 2 <= len(g.strip()) <= 80
                        for g in raw_genres)
-            or not triage.genre_evidence({"classification": raw_genres})):
+            or not independently_relevant_genre(raw_genres)):
         raise ValueError("Genre musical officiel précis absent")
     genres = [g.strip() for g in raw_genres]
     if genres != fresh.get("classification"):
@@ -203,7 +220,7 @@ def approve_verified_bill(catalogue, venue_id, source, url, today,
             or not isinstance(genres, list) or not genres
             or any(not isinstance(g, str) or not 2 <= len(g.strip()) <= 80
                    for g in genres)
-            or not triage.genre_evidence({"classification": genres})
+            or not independently_relevant_genre(genres)
             or structure not in {
                 "verified-first-party-structured-event-v1",
                 "verified-first-party-visible-bill-v1",
