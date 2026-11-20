@@ -40,27 +40,38 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
     segments = [line for line in lines if line and not line.startswith("#")]
     # Use last segment to maximize availability. One segment max; no variant.
     value = segments[-1]
-    if (len(value) > 200 or any(ord(ch) < 33 or ord(ch) > 126 for ch in value)
-        or "\\" in value or "#" in value or "@" in value or "{" in value or "}" in value
-        or value.startswith(("//", "/", "?")) or "://" in value):
+    # Segment URLs may be absolute HTTPS CDN links. Each independent fetch
+    # still uses the pinned-public-DNS transport, TLS and a strict Range cap.
+    if (len(value) > 512 or any(ord(ch) < 33 or ord(ch) > 126 for ch in value)
+        or "\\" in value or "#" in value or "@" in value
+        or "{" in value or "}" in value or value.startswith(("//", "?"))):
         return None
-    reference = urllib.parse.urlsplit(value)
-    if reference.scheme or reference.netloc or reference.fragment:
+    ref = urllib.parse.urlsplit(value)
+    if ref.fragment or ref.username is not None or ref.password is not None:
         return None
-    # Neither encoded nor literal traversal is allowed, including double encoding.
-    decoded = urllib.parse.unquote(urllib.parse.unquote(reference.path))
+    absolute = bool(ref.scheme or ref.netloc)
+    if absolute and ref.scheme != "https":
+        return None
+    decoded = urllib.parse.unquote(urllib.parse.unquote(ref.path))
     if any(part in (".", "..") for part in decoded.split("/")):
         return None
     if not decoded.lower().endswith(ALLOWED_SEGMENT_EXTENSIONS):
         return None
-    if not re.fullmatch(r"[A-Za-z0-9_./%+~-]+", reference.path):
+    if not re.fullmatch(r"/?[A-Za-z0-9_./%+~-]+", ref.path):
         return None
-    # Permit bounded token queries, never fragments, controls, embedded credentials.
-    if reference.query and not re.fullmatch(r"[A-Za-z0-9_=&%+./~-]{1,128}", reference.query):
+    # Token queries remain bounded and never enter reports or logs.
+    if ref.query and not re.fullmatch(r"[A-Za-z0-9_=&%+./~, :-]{1,384}".replace(" ", ""), ref.query):
         return None
-    target = urllib.parse.urljoin(source_url, value)
-    resolved = validate_endpoint(target)
-    if (resolved.scheme != original.scheme or resolved.hostname != original.hostname
+    try:
+        original = validate_endpoint(source_url)
+        target = urllib.parse.urljoin(source_url, value)
+        resolved = validate_endpoint(target)
+    except UnsafeEndpoint:
+        return None
+    if original.scheme == "https" and resolved.scheme != "https":
+        return None
+    if not absolute and (
+        resolved.scheme != original.scheme or resolved.hostname != original.hostname
         or (resolved.port or (443 if resolved.scheme == "https" else 80))
         != (original.port or (443 if original.scheme == "https" else 80))):
         return None
