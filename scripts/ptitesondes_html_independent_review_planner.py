@@ -16,7 +16,6 @@ from proof import norm
 from ptitesondes_nonmusical_private_queue_handoff import (
     _validate_row, MAX_QUEUE,
 )
-from ptitesondes_nonmusical_html_gate_router import STAGES
 
 SCHEMA = "ptitesondes.html_independent_review_plan.v1"
 MAX_WORK_ITEMS = 80
@@ -42,14 +41,6 @@ COLLISION_CHALLENGES = {
 }
 TERMINAL_HOLDS = frozenset((
     "historical_duplicate", "institutional_source_policy_restricted",
-))
-RETRYABLE_INDEPENDENT = frozenset((
-    "historical_snapshot_unchecked",
-    "reviewed_venue_missing", "reviewed_venue_ambiguous",
-    "reviewed_venue_unchecked", "reviewed_venue_untrusted",
-    "institutional_source_policy_missing",
-    "institutional_source_policy_invalid",
-    "institutional_source_policy_expired",
 ))
 ALL_TASKS = frozenset(CHALLENGES) | frozenset(SOURCE_CHALLENGES.values()) | frozenset(COLLISION_CHALLENGES.values())
 REPORT_KEYS = (
@@ -126,8 +117,7 @@ def plan_independent_reviews(queue, today, *, limit=40, source_limit=12):
         if reason == "institutional_source_policy_restricted":
             counts["restricted_sources_held"] += 1
         if (row["review_class"] == "retryable"
-                and row["next_retry_on"] > today.isoformat()
-                and reason not in RETRYABLE_INDEPENDENT):
+                and row["next_retry_on"] > today.isoformat()):
             counts["deferred_by_existing_retry"] += 1
             continue
         # Classify independent work even if existing v1 queue called the
