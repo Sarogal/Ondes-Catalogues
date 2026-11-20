@@ -566,10 +566,14 @@ class IndependentBANAndNamedOSMWithoutOfficialLinkTests(unittest.TestCase):
                 lead, cat, DAY,
                 fetch=self.fetched(raw, bad, map_data, []))
         raw["location"]["address"]["addressCountry"] = "BE"
+        calls = []
         with self.assertRaises(ValueError):
             reviewer.verify(
-                lead, cat, DAY, fetch=lambda *_: self.fail(
-                    "Wrong country cannot touch BAN/OSM"))
+                lead, cat, DAY,
+                fetch=self.fetched(raw, ban, map_data, calls))
+        # Reading the first-party event is necessary to detect its country.
+        # A falsified country MUST never reach external geography services.
+        self.assertEqual(calls, [EVENT])
 
 
 if __name__ == "__main__":
