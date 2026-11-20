@@ -187,11 +187,14 @@ class EventSiteMicrodataProofTests(unittest.TestCase):
                 '</article>'),
         )
         lead, _, cat, osm = fixture()
-        for page in pages:
-            with self.subTest(page=page[:30]):
-                self.assertEqual(event_site_microdata.read_microdata_events(
-                    page), [] if page.startswith("<template>") or page.startswith("<script>") else
-                    event_site_microdata.read_microdata_events(page))
+        for index, page in enumerate(pages):
+            with self.subTest(case=index):
+                parsed = event_site_microdata.read_microdata_events(page)
+                if index < 2:
+                    self.assertEqual(parsed, [])
+                else:
+                    self.assertEqual(len(parsed), 1)
+                    self.assertNotIn("performer", parsed[0])
                 with self.assertRaises(ValueError):
                     reviewer.verify(lead, cat, DAY,
                                     fetch=fetched(page, osm, []))
