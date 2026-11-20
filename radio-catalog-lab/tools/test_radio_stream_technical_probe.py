@@ -224,6 +224,30 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             probe_candidates(report([station(A)]), request, limit=100)
 
+    def test_rotating_daily_window_does_not_starve_later_uuids(self):
+        d = report([
+            station("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", url="https://a.example.org/live"),
+            station("bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", url="https://b.example.org/live"),
+            station("cccccccc-cccc-4ccc-8ccc-cccccccccccc", url="https://c.example.org/live"),
+            station("dddddddd-dddd-4ddd-8ddd-dddddddddddd", url="https://d.example.org/live"),
+        ])
+        first = probe_candidates(d, lambda _: sample(), limit=2,
+                                 observation_day=dt.date(2026, 11, 20))
+        second = probe_candidates(d, lambda _: sample(), limit=2,
+                                  observation_day=dt.date(2026, 11, 21))
+        self.assertEqual(len(first["checks"]), 2)
+        self.assertEqual(len(second["checks"]), 2)
+        self.assertEqual(
+            {x["stationuuid"] for x in first["checks"]}.intersection(
+                x["stationuuid"] for x in second["checks"]), set())
+        self.assertEqual(
+            len({x["stationuuid"] for x in first["checks"] + second["checks"]}), 4)
+
+    def test_hidden_duplicate_after_daily_probe_budget_still_rejected(self):
+        d = report([station(A), station(B), station(C), station(A)])
+        with self.assertRaises(ValueError):
+            probe_candidates(d, lambda _: sample(), limit=1)
+
     def test_invalid_discovery_report_or_repeated_uuid_refused(self):
         with self.assertRaises(ValueError):
             probe_candidates({"schemaVersion": 1, "publicationAllowed": True,
