@@ -22,24 +22,78 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+# Search terms are intentionally extensible and NOT station admission rules.
+# The daily planner always searches broad families, then rotates deeper subgenres.
+# Variants like 'thrash/trash' and 'nu/nü/nu-metal' are separate API queries.
 DEFAULT_TAGS = (
-    "metal", "heavy metal", "hard rock", "thrash metal", "death metal",
-    "black metal", "doom metal", "power metal", "progressive metal",
-    "metalcore", "deathcore", "grindcore", "sludge", "post metal",
-    "punk", "punk rock", "post punk", "hardcore", "stoner rock", "rock",
-    "alternative rock", "progressive rock", "grunge", "garage rock",
+    "metal", "heavy metal", "hard rock", "rock",
+    "punk", "punk rock", "black metal", "death metal",
+    "thrash metal", "trash metal", "nu metal", "nü metal",
+    "pagan metal", "folk metal", "power metal", "doom metal",
+    "symphonic metal", "progressive metal", "speed metal", "glam metal",
+    "hair metal", "traditional metal", "classic metal", "nwobhm",
+    "new wave of british heavy metal", "melodic metal", "melodic death metal", "melodic black metal",
+    "technical death metal", "brutal death metal", "symphonic death metal", "technical metal",
+    "blackened death metal", "atmospheric black metal", "depressive black metal", "dsbm",
+    "raw black metal", "war metal", "blackgaze", "post black metal",
+    "blackened thrash metal", "viking metal", "celtic metal", "medieval metal",
+    "pirate metal", "epic metal", "fantasy metal", "battle metal",
+    "gothic metal", "goth metal", "industrial metal", "groove metal",
+    "alternative metal", "avant garde metal", "experimental metal", "funk metal",
+    "rap metal", "crossover thrash", "crossover metal", "christian metal",
+    "white metal", "unblack metal", "neoclassical metal", "orchestral metal",
+    "metalcore", "melodic metalcore", "progressive metalcore", "deathcore",
+    "blackened deathcore", "symphonic deathcore", "mathcore", "grindcore",
+    "deathgrind", "goregrind", "pornogrind", "cybergrind",
+    "sludge", "sludge metal", "stoner", "stoner metal",
+    "stoner rock", "desert rock", "drone metal", "drone doom",
+    "funeral doom", "death doom", "gothic doom", "epic doom",
+    "stoner doom", "post metal", "djent", "thall",
+    "nu metalcore", "nü metal", "nu-metal", "post hardcore",
+    "hardcore", "hardcore punk", "beatdown hardcore", "metallic hardcore",
+    "melodic hardcore", "punk hardcore", "street punk", "oi punk",
+    "oi!", "anarcho punk", "crust punk", "crust",
+    "d beat", "d-beat", "skate punk", "pop punk",
+    "folk punk", "celtic punk", "horror punk", "psychobilly",
+    "garage punk", "post punk", "post-punk", "art punk",
+    "egg punk", "proto punk", "grind punk", "screamo",
+    "emoviolence", "emo", "alternative rock", "progressive rock",
+    "hard blues rock", "blues rock", "classic rock", "southern rock",
+    "psychedelic rock", "garage rock", "post rock", "post-rock",
+    "industrial rock", "gothic rock", "grunge", "noise rock",
+    "math rock", "space rock", "desert rock", "new wave of traditional heavy metal",
+    "n w o t h m", "sleaze rock", "glam rock",
 )
+
 DEFAULT_NAMES = (
-    "metal", "punk", "hard rock", "hardcore", "stoner",
-    "deathcore", "grindcore", "rock",
+    "metal", "hard rock", "punk", "rock",
+    "black metal", "death metal", "thrash metal", "trash metal",
+    "pagan metal", "nu metal", "nü metal", "viking metal",
+    "folk metal", "metalcore", "deathcore", "grindcore",
+    "doom metal", "stoner", "djent", "hardcore",
+    "crust punk", "gothic metal", "industrial metal", "power metal",
+    "symphonic metal", "progressive metal", "NWOBHM", "post metal",
 )
+
+CORE_TAGS = (
+    "metal", "heavy metal", "hard rock", "rock",
+    "punk", "punk rock", "black metal", "death metal",
+    "thrash metal", "trash metal", "nu metal", "pagan metal",
+)
+
+CORE_NAMES = (
+    "metal", "punk", "hard rock", "rock",
+)
+
 STRONG_GENRES = (
-    "metal", "heavy metal", "death metal", "black metal", "thrash metal",
-    "doom metal", "symphonic metal", "folk metal", "industrial metal",
-    "progressive metal", "power metal", "metalcore", "deathcore",
-    "grindcore", "sludge", "post metal", "stoner", "punk", "punkrock",
-    "post punk", "hardcore", "grunge", "hard rock", "rock", "post rock",
+    "metallic hardcore", "nü metal", "nu-metal", "d beat",
+    "d-beat", "djent", "thrash", "trash",
+    "crust", "grind", "stoner", "punkrock",
+    "hardcore", "nwobhm", "dsbm", "goregrind",
+    "screamo", "grunge",
 )
+
+
 MAX_JSON_BYTES = 3_000_000
 USER_AGENT = "GrossesOndesDailyDiscovery/0.1 (https://grosses-ondes.fr/)"
 API_HOST_SUFFIX = ".api.radio-browser.info"
@@ -49,6 +103,11 @@ def normalize(value: str) -> str:
     s = unicodedata.normalize("NFKD", str(value))
     s = "".join(ch for ch in s if not unicodedata.combining(ch))
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", s.lower())).strip()
+
+# Include future labels added by the scanner's vocabulary: new stations can
+# be considered relevant without an old UUID or a fixed list of *radios*.
+GENRE_TERMS = tuple(sorted({normalize(x) for x in DEFAULT_TAGS + STRONG_GENRES
+                            if normalize(x)}, key=lambda x: (len(x), x)))
 
 
 def is_public_stream(value: object) -> bool:
@@ -87,7 +146,7 @@ def _uuid(value: object) -> str | None:
 def genre_evidence(name: str, tags: str) -> list[str]:
     text = " " + normalize(name + " " + tags) + " "
     return sorted({
-        genre for genre in STRONG_GENRES
+        genre for genre in GENRE_TERMS
         if " " + genre + " " in text
     })
 
