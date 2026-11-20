@@ -55,6 +55,10 @@ def extract_official_address(group, html):
         parser.close()
     except (TypeError, ValueError, RecursionError):
         return None
+    # JSONLD caps the number of stored blocks; reaching that cap makes
+    # uniqueness unverifiable, so never certify a potentially truncated page.
+    if len(parser.blocks) >= 20:
+        return None
     matches = []
     try:
         for block in parser.blocks:
