@@ -104,9 +104,13 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes):
         if not isinstance(features, list) or len(features) > MAX_RESULTS:
             return None
         expected = normalize(city)
-        dept_code = (known_department.strip().upper()
-                     if isinstance(known_department, str)
-                        and DEPT.fullmatch(known_department.strip().upper()) else None)
+        if known_department not in (None, ""):
+            if (not isinstance(known_department, str)
+                    or DEPT.fullmatch(known_department.strip().upper()) is None):
+                return None  # A département label requires its own government proof.
+            dept_code = known_department.strip().upper()
+        else:
+            dept_code = None
         matches = []
         for feature in features:
             if not isinstance(feature, dict) or feature.get("type") != "Feature":
