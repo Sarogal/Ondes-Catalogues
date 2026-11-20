@@ -103,7 +103,7 @@ def registry_location(lead, evidence=None, on_day=None):
     return None
 
 
-def permitted(lead, today):
+def permitted(lead, today, evidence=None):
     if not isinstance(lead, dict) or lead.get("collector") not in ("opendatasoft-index", "openagenda-v2"):
         return False
     uid = lead.get("external_id")
@@ -125,8 +125,12 @@ def permitted(lead, today):
             return False
     except (ValueError, TypeError, KeyError):
         return False
+    # Preview-only opt-in: never supply a new location to the live publisher
+    # unless a later, separately reviewed integration explicitly opts in.
+    location = (registry_location(lead) if evidence is None
+                else registry_location(lead, evidence, today))
     return bool(lead.get("title") and lead.get("city") and
-                registry_location(lead) is not None)
+                location is not None)
 
 
 
