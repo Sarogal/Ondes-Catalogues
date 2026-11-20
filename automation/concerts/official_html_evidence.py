@@ -13,7 +13,7 @@ from html.parser import HTMLParser
 import re
 
 import official_rss_jsonld_bridge as bridge
-from triage import POSITIVE_GENRES, words
+from triage import ELECTRONIC_HARDCORE_HOMONYMS, POSITIVE_GENRES, words
 
 BLOCKS = frozenset({"h1", "h2", "h3", "h4", "h5", "p", "span",
                     "strong", "time", "li"})
@@ -138,7 +138,7 @@ def _explicit_label(value):
     w = words(label)
     if not (2 <= len(w) <= 48 and len(w.split()) <= 4):
         return None
-    if w in ("rock", "musique", "concert", "live"):
+    if w in ELECTRONIC_HARDCORE_HOMONYMS or w in ("rock", "musique", "concert", "live"):
         return None
     if not any(re.search(
             r"(?<!\w)" + re.escape(genre) + r"(?!\w)", w)
