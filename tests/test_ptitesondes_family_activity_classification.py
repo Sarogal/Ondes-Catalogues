@@ -31,9 +31,11 @@ class FamilyActivityClassificationTests(unittest.TestCase):
             "fete-familiale": "Carnaval en famille",
             "activite-sportive": "Parcours de motricité pour enfants",
         }
-        self.assertEqual(set(examples), set(FAMILY_TYPES))
-        self.assertEqual(set(ACTIVITY_PATTERNS), set(FAMILY_TYPES))
+        self.assertTrue(set(FAMILY_TYPES).issubset(examples))
+        self.assertEqual(set(ACTIVITY_PATTERNS), set(examples))
         for key, title in examples.items():
+            if key not in FAMILY_TYPES:
+                continue
             with self.subTest(key=key):
                 result = propose_family_activity(title, "")
                 self.assertEqual(result["category_proposal"], key)
@@ -42,6 +44,18 @@ class FamilyActivityClassificationTests(unittest.TestCase):
                 self.assertFalse(result["publication_ready"])
                 self.assertTrue(result["requires_independent_event_proof"])
                 self.assertEqual(result["public_writes"], 0)
+
+    def test_sensory_category_activates_only_when_available_in_taxonomy(self):
+        title = "Parcours sensoriel pour bébés"
+        baseline = propose_family_activity(title, "")
+        if "atelier-sensoriel" not in FAMILY_TYPES:
+            self.assertEqual(baseline["category_proposal"], None)
+        with patch.dict(FAMILY_TYPES, {"atelier-sensoriel":
+                                     ("Atelier sensoriel", "atelier")}):
+            activated = propose_family_activity(title, "")
+            self.assertEqual(activated["category_proposal"], "atelier-sensoriel")
+            self.assertFalse(activated["publication_ready"])
+            self.assertEqual(activated["public_writes"], 0)
 
     def test_title_without_juvenile_evidence_is_never_authorized(self):
         candidate = propose_family_activity("Atelier de peinture", "")
