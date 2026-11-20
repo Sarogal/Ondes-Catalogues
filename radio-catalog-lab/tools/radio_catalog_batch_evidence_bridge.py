@@ -127,16 +127,24 @@ def main() -> None:
     parser.add_argument("--batch-report", type=Path, action="append", default=[])
     parser.add_argument("--previous", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--ledger-output", type=Path,
+                        help="Standalone multi-stream ledger for next day's --previous")
     args = parser.parse_args()
-    if args.output.exists():
-        parser.error("Refusing to overwrite existing evidence report")
+    if args.output.exists() or (args.ledger_output and args.ledger_output.exists()):
+        parser.error("Refusing to overwrite existing report or ledger")
+    if args.ledger_output and args.output.resolve() == args.ledger_output.resolve():
+        parser.error("Report and standalone ledger output must be different")
     result = consume_batches(
         load_json(args.plan), [load_json(p) for p in args.batch_report],
         load_json(args.previous) if args.previous else None,
     )
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n",
-                           encoding="utf-8")
+    if args.ledger_output:
+        args.ledger_output.parent.mkdir(parents=True, exist_ok=True)
+        with args.ledger_output.open("x", encoding="utf-8") as writer:
+            writer.write(json.dumps(result["streamEvidence"], ensure_ascii=False, indent=2) + "\n")
+    with args.output.open("x", encoding="utf-8") as writer:
+        writer.write(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     print("RADIO_BATCH_EVIDENCE_OFFLINE"
           f" batches={result['processedBatches']}"
           f" checks={result['processedChecks']}"
