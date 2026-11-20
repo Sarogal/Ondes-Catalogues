@@ -22,6 +22,9 @@ from curated_secondary_discovery import clean_queue
 from curated_targeted_secondary import APPROVED_ALL, validated_targets
 from regional_festival_discovery import APPROVED
 from regional_visible_article_clues import STATUS as VISIBLE_ARTICLE_STATUS
+from national_openagenda_research import (validated_leads as openagenda_private_leads,
+                                         SOURCE as OPENAGENDA_DATASET,
+                                         _canonical_url as openagenda_canonical_url)
 from source_qualification import clean_url, normalized
 
 SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -188,7 +191,11 @@ def build_queue(state, report, curated, today):
                     and url in approved_institutional_urls and origin == url) or (
                     isinstance(url, str)
                     and kind == "PRESS_ARTICLE_DATE_CLAIM_REVIEW"
-                    and url in approved_press_urls and origin == url)
+                    and url in approved_press_urls and origin == url) or (
+                    isinstance(url, str)
+                    and kind == "OPENAGENDA_PUBLIC_RESEARCH_ONLY"
+                    and origin == OPENAGENDA_DATASET
+                    and openagenda_canonical_url(url))
         if (ident is None or not region or not isinstance(url, str)
                 or not (safe or _safe_origin_link(url, origin))
                 or not _recent(first, last, today)):
@@ -345,6 +352,18 @@ def build_queue(state, report, curated, today):
             row["source_index"], "REGIONAL_INDEX_UNVERIFIED",
             row.get("firstSeen"), row.get("lastSeen"),
             archive_slug=row.get("historical_name_slug"))
+
+    # Fixed OpenDataSoft dataset is a broad RESEARCH seed, not an official
+    # festival site or an institutionally linked organizer. These URLs are
+    # NEVER eligible for any first-party fetch/publisher gate.
+    for lead in openagenda_private_leads(state, today):
+        year = lead["edition_year_hint"]
+        if not date.fromisoformat(today).year <= year <= date.fromisoformat(today).year + 2:
+            continue
+        add(lead["name_hint"], year, lead["region_hint"],
+            lead["source_url"], OPENAGENDA_DATASET,
+            "OPENAGENDA_PUBLIC_RESEARCH_ONLY",
+            today, today)
 
     # Institutional observations only join already referenced editions. Do not
     # promote unknown slug names into event titles or infer publication.
