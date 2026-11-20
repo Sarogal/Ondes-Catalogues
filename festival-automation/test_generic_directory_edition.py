@@ -68,7 +68,6 @@ class GenericDirectoryProofTests(TestCase):
             ("source", "https://evil.example/"),
             ("officialSite", "https://evil.example/"),
             ("verificationStatus", "Confirmé"),
-            ("startDate", "2027-06-24"),
         ]:
             with self.subTest(field=field):
                 q = deepcopy(p)
@@ -76,6 +75,17 @@ class GenericDirectoryProofTests(TestCase):
                 self.assertIsNone(validate_private_proposal(q, DAY))
         self.assertIsNone(private_proposal(
             TITLE, "https://127.0.0.1/", DATES, DAY))
+
+        # A structurally valid but forged date remains only a private hint:
+        # the publisher's independent HTTP proof must refuse it.
+        tampered = deepcopy(p)
+        tampered["startDate"] = "2027-06-24"
+        self.assertIsNotNone(validate_private_proposal(tampered, DAY))
+        with patch("grossesondes_generic_directory_edition.verify_primary",
+                   return_value=DATES):
+            self.assertIsNone(independently_verify(
+                tampered, DAY, directory_fetch=lambda _: ENTRY,
+                organizer_fetch=lambda _: OFFICIAL))
 
     def test_publisher_independently_rediscovers_directory_before_site(self):
         p = private_proposal(TITLE, SITE, DATES, DAY)
