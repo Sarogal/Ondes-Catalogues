@@ -20,6 +20,8 @@ on:
       - 'automation/concerts/published_watch.py'
       - 'automation/concerts/official_rss_jsonld_bridge.py'
       - 'automation/concerts/structured_first_party_preflight.py'
+      - 'automation/concerts/dynamic_venue_evidence_preflight.py'
+      - 'automation/concerts/test_dynamic_venue_evidence_preflight.py'
       - 'automation/concerts/venue_adapters.py'
       - 'automation/concerts/*_adapter.py'
       - 'automation/concerts/*_recheck.py'
@@ -193,6 +195,25 @@ jobs:
             echo "::warning::Prévalidation structurée indisponible : les approbations existantes restent inchangées."
           else
             echo "Revérification structurée générique enregistrée en privé, sans approbation."
+          fi
+
+      - name: Attester les concerts de lieux non agréés par des preuves indépendantes (privé seul)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Official pages + independently named OSM geometry. Discovery
+          # sources never authorize an event or venue; no public logs.
+          if ! python public/automation/concerts/dynamic_venue_evidence_preflight.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --sources public/automation/concerts/sources.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --approvals confidential/automation/concerts/approved.json \
+              --out confidential/automation/concerts/intake/dynamic-venue-evidence.json \
+              > "$RUNNER_TEMP/concerts-private-logs/dynamic-venue-evidence.log" 2>&1; then
+            echo "::warning::Diagnostic indépendant des lieux indisponible ; aucune admission."
+          else
+            echo "Diagnostic géographique officiel privé enregistré ; aucune approbation."
           fi
 
       - name: Vérifier les genres individuels sur les sources officielles d'artistes (privé seul)
@@ -440,6 +461,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/structured-first-party-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/structured-first-party-preflight.json
+          fi
+          if [ -f automation/concerts/intake/dynamic-venue-evidence.json ]; then
+            git add --sparse -- automation/concerts/intake/dynamic-venue-evidence.json
           fi
           if [ -f automation/concerts/intake/artist-genre-evidence.json ]; then
             git add --sparse -- automation/concerts/intake/artist-genre-evidence.json
