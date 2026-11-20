@@ -98,6 +98,43 @@ class PrivateNationalEventCampaignTests(unittest.TestCase):
             self.assertEqual(seen, [["0", "0000006"]])
             self.assertEqual(result["next_agenda_index"], 1)
 
+    def test_stale_prepared_plan_reloads_checkpoint_inside_lock(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stale_plan = plan_campaign(index(), DIGEST, DAY, root, steps=1)
+            first = run_campaign(
+                plan_campaign(index(), DIGEST, DAY, root, steps=1),
+                public_key=KEY,
+                explorer=lambda agenda, key, day, **kw: segment(agenda))
+            self.assertEqual(first["next_agenda_index"], 1)
+            seen = []
+            def scan_second(agenda, key, day, *, after):
+                seen.append((agenda["agenda_uid"], after))
+                return segment(agenda)
+            second = run_campaign(stale_plan, public_key=KEY,
+                                  explorer=scan_second)
+            self.assertEqual(seen, [(70001, None)])
+            self.assertEqual(second["segments_examined"], 1)
+            self.assertEqual(second["segments_recovered_from_private_report"], 0)
+            self.assertEqual(second["next_agenda_index"], 2)
+            self.assertEqual(load_checkpoint(root, DIGEST, DAY, 2)["next_agenda_index"], 2)
+
+    def test_stale_plan_rejects_changed_checkpoint_under_lock(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            stale_plan = plan_campaign(index(), DIGEST, DAY, root, steps=1)
+            run_campaign(stale_plan, public_key=KEY,
+                         explorer=lambda agenda, key, day, **kw: segment(agenda))
+            path = root / "national-event-checkpoint.json"
+            checkpoint = json.loads(path.read_text(encoding="utf-8"))
+            checkpoint["source_sha256"] = "b" * 64
+            path.write_text(json.dumps(checkpoint), encoding="utf-8")
+            scan = Mock(side_effect=AssertionError("Never scan with a stale plan"))
+            with self.assertRaisesRegex(ValueError, "cursor_or_source_mismatch"):
+                run_campaign(stale_plan, public_key=KEY, explorer=scan)
+            scan.assert_not_called()
+            self.assertFalse((root / ".national-event-campaign.lock").exists())
+
     def test_changed_source_or_day_never_reuses_cursor(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
