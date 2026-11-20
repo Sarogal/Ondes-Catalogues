@@ -29,6 +29,21 @@ def payload(records):
 
 
 class NationalOpenAgendaResearchTests(unittest.TestCase):
+    def test_public_workflow_preserves_private_runner_boundaries(self):
+        from pathlib import Path
+        workflow = (Path(__file__).resolve().parents[1] / ".github" /
+                    "workflows" /
+                    "grossesondes-festivals-private-intake-on-public-runners.yml"
+                    ).read_text(encoding="utf-8")
+        self.assertIn("runs-on: ubuntu-24.04", workflow)
+        self.assertIn("branches: [main]", workflow)
+        self.assertNotIn("pull_request_target", workflow)
+        self.assertIn("national_openagenda_research.py", workflow)
+        self.assertIn("national-openagenda-research-review.json", workflow)
+        self.assertLess(workflow.index("run_private openagenda_public_research"),
+                        workflow.index("run_private queue"))
+        self.assertIn("intake/automation-intake/grossesondes", workflow)
+
     def test_all_queries_are_fixed_bounded_and_no_user_url(self):
         urls = fixed_query_urls()
         self.assertEqual(len(urls), len(QUERIES))
