@@ -54,6 +54,40 @@ def good_fetch(url):
 
 
 class InstitutionalPreflightTests(unittest.TestCase):
+    def test_rolling_year_window_never_infers_an_edition(self):
+        current_html = (
+            '<main><h1>Festival Metal des Garrigues 2026</h1>'
+            '<p>Les 4 et 5 décembre 2026, festival de métal.</p></main>')
+        source_2026 = {
+            "title": "Festival Metal des Garrigues 2026", "year": 2026,
+        }
+        self.assertEqual(_exact_edition(
+            current_html, source_2026, "2026-11-20"),
+            ("2026-12-04", "2026-12-05"))
+        self.assertIsNone(_exact_edition(
+            current_html, source_2026, "2027-01-05"))
+        # A new year is only admitted if it is explicitly present on page.
+        future_source = {
+            "title": "Festival Metal des Garrigues 2029", "year": 2029,
+        }
+        future_html = (
+            '<main><h1>Festival Metal des Garrigues 2029</h1>'
+            '<p>Les 4 et 5 juin 2029, festival metal.</p></main>')
+        self.assertIsNone(_exact_edition(
+            future_html, future_source, "2026-11-20"))
+        self.assertEqual(_exact_edition(
+            future_html, future_source, "2027-11-20"),
+            ("2029-06-04", "2029-06-05"))
+        self.assertIsNone(_exact_edition(
+            '<main><h1>Festival Metal des Garrigues 2029</h1>'
+            '<p>Programmation bientôt.</p></main>',
+            future_source, "2027-11-20"))
+        self.assertIsNone(_exact_edition(
+            future_html, {
+                "title": "Festival Metal des Garrigues 2028",
+                "year": 2029,
+            }, "2027-11-20"))
+
     def test_two_day_observation_not_two_passes_same_day(self):
         state, queue = fixture(DAY1)
         first = run(state, queue, DAY1, fetch=good_fetch)
