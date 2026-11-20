@@ -1,0 +1,41 @@
+name: "P'tites Ondes — catégories familiales (prévisualisation isolée)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_family_activity_classification.py'
+      - 'tests/test_ptitesondes_family_activity_classification.py'
+      - '.github/workflows/ptitesondes-family-category-discovery-preview-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adversarial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify family classification without network or publication
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_family_activity_classification.py' -v
+      - name: Refuse schedules, secrets and publication access
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          workflow = Path(".github/workflows/ptitesondes-family-category-discovery-preview-tests.yml").read_text()
+          source = Path("scripts/ptitesondes_family_activity_classification.py").read_text()
+          assert "contents: read" in workflow
+          assert "sched" + "ule:" not in workflow and "workflow_" + "dispatch:" not in workflow
+          assert not any(value in workflow for value in (
+              "se" + "crets.", "contents:" + " write", "upload-" + "artifact",
+              "deploy-" + "pages", "git" + " push"))
+          assert not any(value in source for value in ("urlopen", "requests.", "github(", "git" + " push", "merge(", "subprocess"))
+          assert "publication_ready" in source and "public_writes" in source
+          PY
