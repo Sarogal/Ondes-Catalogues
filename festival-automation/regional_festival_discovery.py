@@ -81,6 +81,7 @@ MAX_ARCHIVE_NAMES = 500
 ARCHIVE_SIGNAL = "HISTORICAL_NAME_YEAR_ONLY"
 THEMATIC_SIGNAL = "THEMATIC_NAME_ONLY"
 CONTEXT_SIGNAL = "MUSIC_CATEGORY_CONTEXT_ONLY"
+CROSS_SOURCE_SIGNAL = "OPENAGENDA_NAMED_INSTITUTIONAL_MATCH_REVIEW_ONLY"
 # Only visible, adjacent attribution creates a new PRIVATE discovery hint.
 MUSIC_GENRE = (r"(?:heavy metal|death metal|black metal|thrash metal|"
                r"metalcore|hardcore|hard rock|rock alternatif|rock|metal|punk|"
@@ -230,7 +231,30 @@ class RegionalEventAnchors(Anchors):
             self.accessible_event_label = None
 
 
-def candidate_links(html, source, today, historical_hints=None, diagnostics=None):
+def private_openagenda_name_hints(state, today):
+    """Unverified name/year/region clues from a fixed, validated source.
+
+    Only today's safe private OpenData research may nominate a name. Its
+    URL, alleged date, genre, venue, organizer and location NEVER authorize
+    an institutional fetch or publisher approval. This function does no IO.
+    """
+    # Delayed import avoids a module cycle: public OpenData already imports
+    # the immutable APPROVED regional registry defined in this module.
+    from national_openagenda_research import validated_leads, published_identity
+    hints = set()
+    for row in validated_leads(state, today):
+        base_name = published_identity(row["name_hint"])
+        year, region = row["edition_year_hint"], row["region_hint"]
+        if (base_name and type(year) is int
+                and date.fromisoformat(today).year <= year
+                <= date.fromisoformat(today).year + 2
+                and region in APPROVED.values()):
+            hints.add((base_name, year, region))
+    return frozenset(hints)
+
+
+def candidate_links(html, source, today, historical_hints=None, diagnostics=None,
+                    openagenda_name_hints=None):
     if not isinstance(html, str) or len(html) > 650_000:
         raise ValueError("HTML agenda inexploitable")
     if source not in APPROVED:
@@ -243,6 +267,10 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
         diagnostics["visible_anchors"] = len(parser.anchors)
     found, seen = [], set()
     historical_hints = historical_hints or {}
+    cross_hints = (openagenda_name_hints
+                   if isinstance(openagenda_name_hints, (set, frozenset))
+                   and len(openagenda_name_hints) <= 60
+                   else frozenset())
     for href, label, prefix in parser.anchors[:650]:
         if not isinstance(href, str) or not isinstance(label, str):
             continue
@@ -282,7 +310,21 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                     and isinstance(old.get("slug"), str)
                     and old["last_known_year"] < edition_year):
                 archive_slug = old["slug"]
-        if not thematic and not contextual and not archive_slug:
+        # The provider is not a trusted theme or organizer source. Only
+        # an exact visible name+year anchor on an already-reviewed, same-host
+        # institutional index may connect two independent research hints.
+        # A bare yearless index title or a source-driven URL never qualifies.
+        cross_matched = False
+        if (not thematic and not contextual and not archive_slug
+                and cross_hints and len(years) == 1
+                and re.search(r"(?<![0-9])20[2-4]\d$", name)
+                and FESTIVAL.search(name)
+                and not NON_MUSIC_TITLE.search(name)):
+            from national_openagenda_research import published_identity
+            cross_matched = (
+                published_identity(title), next(iter(years)),
+                APPROVED[source]) in cross_hints
+        if not thematic and not contextual and not archive_slug and not cross_matched:
             continue
         url = clean_url(urljoin(source, href))
         if (not url or url == source or url in seen
@@ -294,7 +336,8 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
         seen.add(url)
         found.append({"candidate_url": url, "title": title,
                       "signal": (THEMATIC_SIGNAL if thematic else
-                                 ARCHIVE_SIGNAL if archive_slug else CONTEXT_SIGNAL),
+                                 ARCHIVE_SIGNAL if archive_slug else
+                                 CONTEXT_SIGNAL if contextual else CROSS_SOURCE_SIGNAL),
                       "archive_slug": archive_slug})
         if len(found) >= MAX_NEW_PER_INDEX:
             break
@@ -412,6 +455,7 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
         raise ValueError("file privée régionale invalide")
     prune_page_queue(pages, APPROVED, today, permitted_url)
     now = date.fromisoformat(today)
+    cross_source_names = private_openagenda_name_hints(state, today)
     known_elsewhere = known_cross_pipeline_urls(report, state)
     # Revalidate persisted intake; an attacker-controlled private state is not
     # allowed to introduce a new fetch target or an authorized publication.
@@ -476,7 +520,8 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
             html_received = True
             page_diagnostics = {}
             links = candidate_links(
-                html, origin, today, historical_hints, page_diagnostics)
+                html, origin, today, historical_hints, page_diagnostics,
+                openagenda_name_hints=cross_source_names)
             # Visible <article> cards without event links are not fetch targets.
             # Store a bounded identity clue only, never a page URL or date proof.
             article_clues, cards_seen = visible_article_clues(
@@ -502,6 +547,8 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
                 origin, today, permitted_url)
             outcome["status"] = "SCANNED"
             outcome["thematic_links"] = len(links)
+            outcome["openagenda_matched_links_review_only"] = sum(
+                x["signal"] == CROSS_SOURCE_SIGNAL for x in links)
             outcome["visible_anchors"] = page_diagnostics["visible_anchors"]
             outcome["page_diagnostic"] = (
                 "CANDIDATE_LINKS_REVIEW_ONLY" if links
@@ -594,6 +641,10 @@ def scan_regional_indexes(report, state, indexes, today, fetch=get_page,
         row.get("discovery_signal") == ARCHIVE_SIGNAL for row in new)
     report["regional_festival_contextual_links_new_review_only"] = sum(
         row.get("discovery_signal") == CONTEXT_SIGNAL for row in new)
+    report["regional_festival_openagenda_name_hints_review_only"] = len(
+        cross_source_names)
+    report["regional_festival_openagenda_matched_new_review_only"] = sum(
+        row.get("discovery_signal") == CROSS_SOURCE_SIGNAL for row in new)
     report["regional_festival_pagination_attempted_review_only"] = page_attempted
     report["regional_festival_pagination_checked_review_only"] = page_checked
     report["regional_festival_pagination_inaccessible_review_only"] = (
