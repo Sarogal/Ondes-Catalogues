@@ -145,7 +145,7 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         self.assertEqual(classify_sample(b"not valid audio", "audio/mpeg"),
                          ("audio_mime_only", "unrecognized_audio_payload"))
         self.assertEqual(classify_sample(b"<html>Oops</html>", "text/html"),
-                         ("not_confirmed_audio", "unknown"))
+                         ("not_confirmed_audio", "non_audio_content_type"))
 
     def test_good_audio_is_only_a_sample_not_release_approval(self):
         calls = []
