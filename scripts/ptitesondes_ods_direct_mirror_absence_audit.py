@@ -96,7 +96,11 @@ def _source(lead):
             or lead.get("date_end") != lead["date_start"]
             or not isinstance(lead.get("title"), str)
             or not lead["title"].strip()
-            or len(lead["title"]) > 180):
+            or len(lead["title"]) > 180
+            or any(type(lead.get(k)) is not str
+                   or not 1 <= len(lead[k].strip()) <= size
+                   or any(c in lead[k] for c in "<>\r\n")
+                   for k, size in (("city", 120), ("venue", 180)))):
         return None
     identity = _source_parts(lead.get("source_url"))
     if identity is None or identity[1] != lead["external_id"]:
