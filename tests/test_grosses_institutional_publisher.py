@@ -89,8 +89,9 @@ class InstitutionalPublisherTests(unittest.TestCase):
         signed = collect_registered_institutional_sources(
             {"additions": [p]}, set(), TODAY, fetcher=fetch)
         self.assertTrue(signed["registered-institutional-verified:"+p["slug"]])
-        cal, hist, _patch = fixtures()
-        patch = {"additions": [p], "updates": []}
+        cal, hist, patch = fixtures()
+        patch["additions"] = [p]
+        patch["updates"] = []
         snapshot = {"festivals.json": cal, "festival-history.json": hist}
         candidate, report = build_candidate(
             snapshot, snapshot, patch, signed, TODAY, trusted_published=True)
