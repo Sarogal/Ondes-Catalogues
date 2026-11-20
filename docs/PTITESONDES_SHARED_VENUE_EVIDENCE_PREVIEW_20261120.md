@@ -77,3 +77,59 @@ les publications réellement effectuées.
 
 **Statut ici : zéro lieu nouveau prouvé en production, zéro séance
 supplémentaire approuvée, zéro écriture publique.**
+
+
+## 20/11 — Déverrouillage du point de recherche direct OpenAgenda
+
+Une lacune concrète empêchait la recherche de nouveaux lieux : le préflight
+demandait systématiquement `api_record(uid)` (miroir OpenDataSoft), même
+lorsque l'entrée était issue directement d'OpenAgenda v2. Ainsi, une panne
+ou absence de la fiche ODS bloquait **avant toute recherche officielle**.
+
+La classe `MunicipalOfficialPageReader` expose désormais
+`source_record_for_group(group, uid)` :
+- pour **OpenAgenda v2**, confirmation de l'agenda par UID/slug auprès de
+  l'API directe, puis lecture de l'événement exact, de son état public,
+  de son lieu, sa commune et ses coordonnées ;
+- pour **ODS**, conservation de la vérification UID + URL canonique + lieu
+  via `ods_immutable_source_match` ;
+- si plusieurs collecteurs/slugs contradictoires désignent le même UID,
+  échec fermé plutôt qu'un choix arbitraire ;
+- aucune coordonnée OA ou ODS n'est considérée comme une preuve GPS.
+
+La liaison dans `ptitesondes_generic_venue_osm_preflight.py` ne s'active
+que si le lecteur privé est instancié explicitement. Elle ne modifie pas
+`permitted()` ni le publisher.
+
+Le mode supplémentaire `--shared-location-evidence`, strictement réservé
+à `--live-probe --official-municipal-pages --official-address-geocode`,
+effectue une **seconde corroboration IGN/BAN indépendante** et peut produire
+en mémoire une `VenueLocationProof`. Il n'ajoute au rapport privé que
+`private_reusable_location_proofs` et
+`leads_with_private_reusable_proof`.
+Les preuves ne sont pas sérialisées et les indicateurs
+`verified_venue_leads=0`, `publication_ready=false` et
+`public_writes=0` sont inchangés.
+
+Exemple de commande dans un runner disposant déjà de l'accès au checkout
+privé, à la clé publique OA de lecture et d'un répertoire de sortie privé :
+
+```bash
+python scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog /espace-prive/automation-intake/ptitesondes/backlog.json \
+  --private-source-config /espace-prive/automation/sources.json \
+  --output-private-report /espace-prive/venue-evidence-preview.json \
+  --day 2026-11-20 --live-probe --official-municipal-pages \
+  --official-address-geocode --shared-location-evidence
+```
+
+Ne pas committer le rapport, ses noms de lieux, UID, coordonnées ou URL
+sur un dépôt public, ni le déposer en artifact Actions public.
+Les logs de CLI contiennent uniquement des compteurs admissibles.
+
+### Statut de preuve
+
+Ce lot teste **le fonctionnement du contrat et l'échec fermé en cas de
+contradiction**. Il ne démontre pas encore combien des 149 dossiers privés
+atteignent la vérification complète en conditions réseau réelles. Ce
+nombre demeure inconnu jusqu'à l'exécution privée autorisée.
