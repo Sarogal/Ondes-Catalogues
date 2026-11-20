@@ -111,6 +111,38 @@ def render(report, deploy_decision=False):
             f"- Enrichissements géographiques du candidat : **{len(geo['accepted_geo_updates'])}** ; différés : **{geo['held_geo']}**",
             "- Un enrichissement n'est publié qu'après commit signé et déploiement Pages réussi.",
         ])
+    city = report.get("future_city_publisher")
+    if city is not None:
+        expected = {
+            "private_report", "private_two_day_candidates",
+            "independent_rechecks", "accepted_city_updates", "held_city",
+            "publication_authorized_by_private_report",
+        }
+        if not isinstance(city, dict) or set(city) != expected:
+            raise ValueError("rapport de vérification de commune invalide")
+        numeric = ("private_two_day_candidates", "independent_rechecks", "held_city")
+        if (any(type(city[k]) is not int or city[k] < 0 for k in numeric)
+                or not isinstance(city["accepted_city_updates"], list)
+                or any(not isinstance(s, str) or not s
+                       for s in city["accepted_city_updates"])
+                or len(set(city["accepted_city_updates"]))
+                   != len(city["accepted_city_updates"])
+                or city["independent_rechecks"] > city["private_two_day_candidates"]
+                or len(city["accepted_city_updates"]) > city["independent_rechecks"]
+                or len(city["accepted_city_updates"]) + city["held_city"]
+                   != city["private_two_day_candidates"]
+                or city["publication_authorized_by_private_report"] is not False
+                or city["private_report"] not in (
+                    "valid", "unavailable", "invalid_or_stale",
+                    "signed_head_not_verified")):
+            raise ValueError("compteurs de commune non réconciliés")
+        lines.extend([
+            "",
+            "Communes de futures éditions (centre indicatif, pas lieu exact) :",
+            f"- Indices J+1 : **{city['private_two_day_candidates']}** ; pages officielles retéléchargées : **{city['independent_rechecks']}**",
+            f"- Centres de commune vérifiés par API officielle : **{len(city['accepted_city_updates'])}** ; différés : **{city['held_city']}**",
+            "- Précision des nouveaux marqueurs : **commune** (ni scène, ni entrée, ni camping).",
+        ])
     if changed:
         lines.append("- Différence de contenu validée : **oui**")
         lines.append("- Déploiement autorisé par la décision du job : "
