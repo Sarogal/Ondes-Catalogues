@@ -484,8 +484,6 @@ jobs:
           fi
           echo "Une collecte sorties réalisée, ${#REVIEW_SLOTS[@]} lots indépendants vérifiés ou rattrapés ; aucune écriture publique." >> "$GITHUB_STEP_SUMMARY"
 
-      # DEACTIVATED until explicit post-merge authorization to set the variable.
-      # Never execute candidate collection or secret-bearing steps for PRs.
       - name: Préparer les séances HTML pour une file exclusivement privée (opt-in)
         if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_HTML_QUEUE == 'enabled' }}
         shell: bash
