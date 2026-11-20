@@ -43,7 +43,27 @@ def describe_venue(item):
     }
 
 
-def build(discovery, tours, registry, official, watch, archive_summaries, when):
+def describe_organizer(item):
+    """Only non-sensitive counters; no organizer URL or event identity in metrics."""
+    def bounded(value):
+        return value if type(value) is int and 0 <= value <= 100_000 else 0
+
+    status = item.get("status", "unknown")
+    if status not in {"read", "held_source_unavailable"}:
+        status = "unknown"
+    return {
+        "organizerSourceId": item.get("organizerSourceId", "unknown"),
+        "status": status,
+        "listingPageFetched": item.get("listingPageFetched") is True,
+        "eventDetailLinks": bounded(item.get("eventDetailLinks")),
+        "individualPagesRead": bounded(item.get("individualPagesRead")),
+        "individualPagesHeld": bounded(item.get("individualPagesHeld")),
+        "candidateCount": bounded(item.get("candidateCount")),
+    }
+
+
+def build(discovery, tours, registry, official, watch, archive_summaries, when,
+          organizers=None):
     if discovery.get("schema") != "grossesondes.concert.discovery.v1":
         raise ValueError("Invalid venue discovery")
     if tours.get("schema") != "grossesondes.concert.discovery.v1":
@@ -54,6 +74,16 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when):
         raise ValueError("Official review missing")
     if not isinstance(watch.get("needsReview"), list):
         raise ValueError("Published watch missing")
+    if organizers is None:
+        organizers = {"schema": "grossesondes.concert.discovery.v1",
+                      "candidates": [], "sourceChecks": []}
+    if (organizers.get("schema") != "grossesondes.concert.discovery.v1"
+            or not isinstance(organizers.get("candidates"), list)
+            or not isinstance(organizers.get("sourceChecks"), list)):
+        raise ValueError("Invalid first-party organizer report")
+    organizer_sources = [describe_organizer(x)
+                         for x in organizers["sourceChecks"]
+                         if isinstance(x, dict)]
     sources = [describe_venue(x) for x in discovery.get("venueChecks", [])]
     partner = [dict(x) for x in discovery.get("partnerChecks", [])]
     tour_checks = tours.get("sourceChecks", [])
@@ -84,6 +114,16 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when):
             for x in tour_checks],
         "venueDiscoveriesThisRun": len(discovery["candidates"]),
         "tourDiscoveriesThisRun": len(tours["candidates"]),
+        "organizerDiscoveriesThisRun": len(organizers["candidates"]),
+        "organizerSources": organizer_sources,
+        "organizerSourcesFetched": sum(
+            x["status"] == "read" for x in organizer_sources),
+        "organizerSourcesHeld": sum(
+            x["status"] == "held_source_unavailable" for x in organizer_sources),
+        "organizerDetailPagesRead": sum(
+            x["individualPagesRead"] for x in organizer_sources),
+        "organizerDetailPagesHeld": sum(
+            x["individualPagesHeld"] for x in organizer_sources),
         "newPrivateCandidates": sum(x.get("added", 0)
                                     for x in archive_summaries),
         "rediscoveredPrivateCandidates": sum(x.get("seenAgain", 0)
@@ -112,11 +152,15 @@ def main():
     for flag in ("discovery", "tours", "registry", "official", "watch",
                  "venue-archive", "tour-archive", "out"):
         parser.add_argument("--" + flag, required=True)
+    parser.add_argument("--organizers", required=True)
+    parser.add_argument("--organizer-archive", required=True)
     args = parser.parse_args()
     data = build(read(args.discovery), read(args.tours), read(args.registry),
                  read(args.official), read(args.watch),
-                 [read(args.venue_archive), read(args.tour_archive)],
-                 dt.datetime.now(dt.timezone.utc).isoformat())
+                 [read(args.venue_archive), read(args.tour_archive),
+                  read(args.organizer_archive)],
+                 dt.datetime.now(dt.timezone.utc).isoformat(),
+                 organizers=read(args.organizers))
     target = Path(args.out)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(
