@@ -1,12 +1,13 @@
 """No-network regression tests for bounded, pinned radio stream evidence."""
 import datetime as dt
 import json
+import io
 import socket
 import unittest
 from unittest.mock import patch
 
 from radio_stream_technical_probe import (
-    MAX_BYTES, MAX_REDIRECTS, PinnedHttpTransport, ResponseSample,
+    MAX_BYTES, MAX_REDIRECTS, IcyCompatibleHTTPResponse, PinnedHttpTransport, ResponseSample,
     UnsafeEndpoint, classify_sample, probe_candidates, probe_url,
     public_resolved_ips, validate_endpoint,
 )
@@ -327,6 +328,110 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                 self.assertNotEqual(
                     classify_sample(suspicious + b"\x00"*40, "application/octet-stream")[0],
                     "audio_sample_ok")
+
+    def test_icy_status_line_works_without_disabling_http_validation(self):
+        class FakeSocket:
+            def makefile(self, *args, **kwargs):
+                return io.BytesIO(
+                    b"ICY 200 OK\r\nContent-Type: audio/mpeg\r\nicy-name: Metal FM\r\n"
+                    b"\r\nID3\x04\x00\x00" + b"\x00"*40)
+        result = IcyCompatibleHTTPResponse(FakeSocket())
+        result.begin()
+        self.assertEqual(result.status, 200)
+        self.assertEqual(result.version, 10)
+        self.assertEqual(result.getheader("icy-name"), "Metal FM")
+        self.assertTrue(result.read1(16).startswith(b"ID3"))
+
+    def test_icy_rejects_malformed_or_untrusted_status(self):
+        class FakeSocket:
+            def __init__(self, text):
+                self.text = text
+            def makefile(self, *args, **kwargs):
+                return io.BytesIO(self.text)
+        for line in (b"ICY BAD no\r\n\r\n", b"IRC 200 OK\r\n\r\n",
+                     b"ICY 0 OK\r\n\r\n", b"ICY 1000 OK\r\n\r\n"):
+            with self.subTest(line=line):
+                with self.assertRaises(Exception):
+                    IcyCompatibleHTTPResponse(FakeSocket(line)).begin()
+
+    def test_m3u_follows_only_one_safe_url_then_confirms_bytes(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            if url.endswith(".m3u"):
+                return sample(mime="audio/x-mpegurl",
+                              data=b"#EXTM3U\nhttps://stream.example.org/radio\n")
+            return sample()
+        result = probe_url("https://radio.example.org/listen.m3u", request)
+        self.assertEqual(result["verdict"], "audio_sample_ok")
+        self.assertEqual(result["redirectCount"], 1)
+        self.assertEqual(calls, ["https://radio.example.org/listen.m3u",
+                                 "https://stream.example.org/radio"])
+
+    def test_pls_follows_one_url_then_confirms_audio(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            if url.endswith(".pls"):
+                return sample(mime="audio/x-scpls",
+                              data=b"[playlist]\nFile1=https://stream.example.org/live\n")
+            return sample(data=b"OggS\x00\x02" + b"\x00"*30 + b"OpusHead")
+        result = probe_url("https://radio.example.org/listen.pls", request)
+        self.assertEqual(result["verdict"], "audio_sample_ok")
+        self.assertEqual(result["formatHint"], "ogg_audio_codec")
+        self.assertEqual(len(calls), 2)
+
+    def test_playlist_ip_private_is_refused_before_followup_request(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            return sample(mime="audio/x-mpegurl",
+                          data=b"#EXTM3U\nhttp://169.254.169.254/latest/meta-data/\n")
+        result = probe_url("https://radio.example.org/listen.m3u", request)
+        self.assertEqual(result["verdict"], "blocked_unsafe")
+        self.assertEqual(len(calls), 1)
+
+    def test_playlist_https_to_http_downgrade_stays_pending(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            return sample(mime="audio/x-mpegurl",
+                          data=b"#EXTM3U\nhttp://radio.example.org/live\n")
+        result = probe_url("https://radio.example.org/listen.m3u", request)
+        self.assertEqual(result["reason"], "tls_downgrade")
+        self.assertEqual(len(calls), 1)
+
+    def test_hls_manifest_does_not_open_untrusted_segments(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            return sample(mime="application/vnd.apple.mpegurl",
+                          data=b"#EXTM3U\n#EXT-X-TARGETDURATION:5\n#EXTINF:5,\n"
+                               b"http://127.0.0.1/local.ts")
+        result = probe_url("https://radio.example.org/stream.m3u8", request)
+        self.assertEqual(result["verdict"], "playlist_pending")
+        self.assertEqual(result["reason"], "hls_manifest_pending")
+        self.assertEqual(len(calls), 1)
+
+    def test_nested_m3u_playlist_does_not_follow_indefinitely(self):
+        calls = []
+        def request(url):
+            calls.append(url)
+            return sample(mime="audio/x-mpegurl",
+                          data=b"#EXTM3U\nhttps://radio.example.org/another.m3u\n")
+        result = probe_url("https://radio.example.org/listen.m3u", request)
+        self.assertEqual(result["verdict"], "playlist_pending")
+        self.assertEqual(result["reason"], "playlist_chain_limit")
+        self.assertEqual(len(calls), 2)
+
+    def test_multiple_m3u_targets_stays_pending(self):
+        result = probe_url(
+            "https://radio.example.org/listen.m3u",
+            lambda url: sample(
+                mime="audio/x-mpegurl",
+                data=b"#EXTM3U\nhttps://a.example.org/live\nhttps://b.example.org/live\n"))
+        self.assertEqual(result["verdict"], "playlist_pending")
+        self.assertEqual(result["reason"], "playlist_multiple_targets")
 
     def test_result_never_contains_user_supplied_url_or_secret(self):
         raw = "https://radio.example.org/live?token=some-public-source-secret"
