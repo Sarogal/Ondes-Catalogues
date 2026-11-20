@@ -1,6 +1,6 @@
 """Offline tests: fair independent HTML evidence planning, zero approval."""
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 import sys
@@ -83,6 +83,36 @@ class IndependentHtmlReviewPlannerTests(unittest.TestCase):
         self.assertEqual(out["report"]["selected_sessions"], 12)
         self.assertGreaterEqual(out["report"]["cities_covered_in_batch"], 11)
         self.assertEqual(out["report"]["pending_sessions_unselected"], 24)
+
+    def test_source_restriction_overrides_weaker_policy_same_host(self):
+        rows = [
+            review(n=5, reason="institutional_source_policy_pending"),
+            review(n=6, reason="institutional_source_policy_restricted"),
+        ]
+        out = plan_independent_reviews(rows, TODAY)
+        self.assertEqual(out["report"]["distinct_host_policies_due"], 1)
+        self.assertEqual(out["private_tasks"]["source_policies"][0]["challenge"],
+                         "maintain_restricted_source_hold")
+        self.assertFalse(out["private_tasks"]["source_policies"][0]["source_approved"])
+
+    def test_source_batches_rotate_nationally_instead_of_starving_hosts(self):
+        rows = [
+            review(n=n, city=f"Ville-{n}", source=f"mairie-{n}.example.fr",
+                   day="2027-03-15")
+            for n in range(1, 29)
+        ]
+        seen = set()
+        for day_offset in range(28):
+            out = plan_independent_reviews(
+                rows, TODAY + timedelta(days=day_offset),
+                source_limit=4)
+            seen.update(
+                item["sample_private_review_id"]
+                for item in out["private_tasks"]["source_policies"]
+            )
+            self.assertEqual(out["report"]["distinct_host_policies_due"], 28)
+            self.assertLessEqual(out["report"]["selected_source_policies"], 4)
+        self.assertEqual(len(seen), 28)
 
     def test_trusted_retry_schedule_is_respected(self):
         a = review(reason="reviewed_venue_unchecked")
