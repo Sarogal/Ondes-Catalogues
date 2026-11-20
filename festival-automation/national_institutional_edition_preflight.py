@@ -22,6 +22,7 @@ from grossesondes_archived_html_intake import official_date
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 
 from national_detail_qualification import _eligible_sources, _seen_again
+from national_live_index_recheck import live_index_for_exact_link
 from festival_event_kind import touring_concert_stop
 from official_watch import get_page
 from grossesondes_archived_html_intake import latest_patch, atomic_json
@@ -195,8 +196,8 @@ def run(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
             "two_day_observation": False,
         }
         try:
-            index_html = fetch(source["index_page"])
-            if not _seen_again(index_html, source):
+            index_html = live_index_for_exact_link(source, fetch)
+            if index_html is None:
                 result["status"] = "LIVE_INDEX_LINK_MISSING"
             else:
                 html = fetch(url)
