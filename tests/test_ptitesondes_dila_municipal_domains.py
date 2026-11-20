@@ -21,7 +21,7 @@ DILA = "Direction de l'information légale et administrative (Premier ministre)"
 def mairie(city=CITY, site=SITE, insee="12345"):
     return {
         "nom": f"Mairie - {city}", "categorie": "SL",
-        "statut_de_diffusion": "Publiable", "copyright": DILA,
+        "statut_de_diffusion": "true", "version_type": "Publiable", "copyright": DILA,
         "url_service_public":
             "https://lannuaire.service-public.gouv.fr/occitanie/aveyron/uuid-abc",
         "code_insee_commune": insee,
@@ -59,11 +59,34 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
         self.assertEqual(approved_municipal_page_host(PAGE, CITY, data),
                          "agenda.ville-les-bois.fr")
 
+    def test_live_dila_payload_contract_and_homepage_scope(self):
+        # These administrative field values were confirmed against the
+        # real official DILA API on 2026-11-20: "true" is diffusion;
+        # "Publiable" belongs to version_type, not diffusion.
+        row = mairie(city="Villethierry", site="https://www.villethierry.fr/",
+                     insee="89467")
+        row["url_service_public"] = (
+            "https://lannuaire.service-public.gouv.fr/"
+            "bourgogne-franche-comte/yonne/"
+            "41763578-2b45-4e83-81f6-f7f9ef44452d")
+        self.assertEqual(municipal_site_hosts(
+            "Villethierry", payload(row)), frozenset({"www.villethierry.fr"}))
+        extra = mairie()
+        extra["site_internet"] = json.dumps([
+            {"libelle": "", "valeur": SITE},
+            {"libelle": "Demande d'acte de naissance",
+             "valeur": "https://external-payments.fr/page"},
+            {"libelle": "", "valeur": "https://external-payments.fr/not-home"},
+        ])
+        self.assertEqual(municipal_site_hosts(CITY, payload(extra)),
+                         frozenset({"www.ville-les-bois.fr"}))
+
     def test_other_city_and_other_service_fail_closed(self):
         for change in (
             {"nom": "Mairie - Autre-ville"},
             {"categorie": "SIL"},
-            {"statut_de_diffusion": "Brouillon"},
+            {"statut_de_diffusion": "false"},
+            {"version_type": "Brouillon"},
             {"copyright": "Portail inconnu"},
             {"code_insee_commune": "99999"},
         ):
