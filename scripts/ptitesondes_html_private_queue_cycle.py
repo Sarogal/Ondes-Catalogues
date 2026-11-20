@@ -19,7 +19,8 @@ from zoneinfo import ZoneInfo
 from ptitesondes_html_index_detail_live_smoke import _independent_context
 from ptitesondes_html_index_detail_funnel import READ_ONLY_ADAPTERS
 from ptitesondes_institutional_source_policy import (
-    MANIFEST_PATH, MAX_REGISTRY_BYTES, _manifest_valid,
+    MANIFEST_PATH, MAX_REGISTRY_BYTES, MAX_SOURCES as POLICY_MAX_SOURCES,
+    _manifest_valid,
 )
 from ptitesondes_nonmusical_private_queue_handoff import (
     MAX_QUEUE, prepare_private_html_review_handoff,
@@ -32,7 +33,6 @@ PRIVATE_REPO = "Sarogal/PtitesOndes"
 PRIVATE_BRANCH = "automation/ptitesondes-intake"
 MAX_FILE_BYTES = 2_000_000
 MAX_SOURCE_BATCH = 4
-MAX_SOURCES = 15
 
 
 def _validated_manifest():
@@ -53,7 +53,7 @@ def _registered_adapters(manifest):
     out = []
     if (type(manifest) is not dict
             or type(manifest.get("entries")) is not list
-            or len(manifest["entries"]) > MAX_SOURCES):
+            or len(manifest["entries"]) > POLICY_MAX_SOURCES):
         raise ValueError("institutional_registry_invalid")
     for entry in manifest["entries"]:
         if type(entry) is not dict:
@@ -164,7 +164,11 @@ def execute_cycle(existing, now, *, batch=0, max_sources=2,
         raise ValueError("invalid_html_cycle_options")
     manifest = _validated_manifest() if manifest is None else manifest
     targets = _registered_adapters(manifest)
-    selected = targets[batch * max_sources:(batch + 1) * max_sources]
+    # Bounded work per invocation, but rotate over ALL registered adapters:
+    # a fixed range of eight batches would permanently starve source 17+.
+    total_batches = max(1, (len(targets) + max_sources - 1) // max_sources)
+    selected_batch = batch % total_batches
+    selected = targets[selected_batch * max_sources:(selected_batch + 1) * max_sources]
     if context is None:
         context = _independent_context()
     # Existing is validated even when there are no eligible adapters.
@@ -175,6 +179,7 @@ def execute_cycle(existing, now, *, batch=0, max_sources=2,
         "recognized_adapters": len(targets),
         "unrecognized_adapters": len(manifest["entries"]) - len(targets),
         "sources_selected": len(selected), "sources_sampled": 0,
+        "source_batches_total": total_batches, "source_batch_selected": selected_batch,
         "sources_unavailable": 0, "sessions_observed_for_private_review": 0,
         "new_private_reviews": 0, "rechecked_private_reviews": 0,
         "total_private_reviews": 0, "public_writes": 0,
@@ -201,8 +206,17 @@ def execute_cycle(existing, now, *, batch=0, max_sources=2,
                     or summary.get("public_writes") != 0
                     or summary.get("publisher_connected") is not False
                     or source.get("publication_ready") is not False
-                    or source.get("public_writes") != 0):
+                    or source.get("public_writes") != 0
+                    or any(type(summary.get(key)) is not int
+                           or not 0 <= summary[key] <= MAX_QUEUE
+                           for key in ("new_private_reviews",
+                                       "rechecked_private_reviews"))):
                 raise ValueError("private_html_unsafe_handoff")
+            # An index fetch that returned zero detail pages is not a
+            # successful sample, however green the runner process may be.
+            pages_read = source.get("child_pages_read")
+            if type(pages_read) is not int or pages_read < 1:
+                raise ValueError("private_html_source_not_sampled")
             current = reconcile_private_html_review_queue(
                 result["queue"], [], source_day.date())["queue"]
             counts["sources_sampled"] += 1
