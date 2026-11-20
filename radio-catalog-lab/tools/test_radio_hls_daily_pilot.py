@@ -243,6 +243,7 @@ class HlsDailyPilotTests(unittest.TestCase):
                 segment_request=lambda _: ResponseSample(206, "video/mp2t", "", ts))
         fn.assert_called_once_with(ts)
         self.assertEqual(result["decodedPcmSegmentCount"], 1)
+        self.assertEqual(result["segmentDecodeStates"], {"decoded_pcm": 1})
         self.assertEqual(result["segmentStructuralEvidenceCount"], 1)
         self.assertEqual(result["technicalVerifiedCount"], 0)
         self.assertFalse(result["publicationAllowed"])
