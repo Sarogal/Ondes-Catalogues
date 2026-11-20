@@ -1,0 +1,17 @@
+{
+  "schema": "grossesondes.concert.reviewed_organizer_sources.v1",
+  "policy": "Independent first-party ORGANIZER authorities only. No artist, band, concert, or venue allowlist; review of host authority and exact path is separate from event and OSM proof.",
+  "sources": [
+    {
+      "id": "sounds-like-hell-productions",
+      "name": "Sounds Like Hell Productions",
+      "url": "https://slhproductions.fr/agenda/",
+      "host": "slhproductions.fr",
+      "eventPathPrefix": "/agenda/",
+      "enabled": true,
+      "checkedAt": "2026-11-20",
+      "officialEvidenceUrl": "https://slhproductions.fr/le-projet/",
+      "notes": "Official Lyon metal concert organizer established 2008; event pages under /agenda/ may represent any named band and any physically attested French venue. Source reviewed once; events need independent recheck and OSM proof."
+    }
+  ]
+}

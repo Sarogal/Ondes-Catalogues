@@ -22,6 +22,7 @@ from scripts import concert_event_site_contract as contract
 
 import discover
 import independent_named_site_geo
+import organizer_source_contract
 import official_rss_jsonld_bridge as bridge
 import triage
 
@@ -31,7 +32,7 @@ OSM_WAY = re.compile(r"https://www[.]openstreetmap[.]org/way/([1-9][0-9]{0,18})/
 HTTPS = re.compile(r"^https://")
 SOURCES = frozenset({
     "artist_official_tour", "promoter_official_tour",
-    "promoter_official_tour_detail",
+    "promoter_official_tour_detail", "organizer_official_event_detail",
 })
 
 
@@ -50,6 +51,15 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
             and lead.get("reviewRequired") is True
             and lead.get("possibleExistingConcert") is not True,
             "untrusted candidate")
+    if lead["source"] == "organizer_official_event_detail":
+        # A reviewed CONCERT ORGANIZER, not a pre-known artist, supplies the
+        # first-party authority. The lead cannot introduce a new domain or
+        # new scope: that authority is committed and checked independently.
+        entry = organizer_source_contract.trusted_organizer_lead(lead)
+        require(entry is not None,
+                "unreviewed organizer or event outside reviewed scope")
+        return {"url": entry["url"], "artistId": None,
+                "sourceRole": "organizer_official"}
     sources = json.loads(Path(source_file).read_text(encoding="utf-8"))
     require(sources.get("schema") ==
             "grossesondes.concert.artist_tour_sources.v1", "unknown source registry")
@@ -331,7 +341,12 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
     raw, names, unnamed, genres, location = _official_event(
         lead, html, url, today)
     ids, fresh = _artists(names, catalogue)
-    require(lead["artistId"] in ids, "authority artist missing from official bill")
+    if lead["source"] != "organizer_official_event_detail":
+        require(lead["artistId"] in ids,
+                "authority artist missing from official bill")
+    # For organizer-scoped event pages, ALL artists may be entirely new.
+    # Explicit named performer evidence, event genre, date and named OSM
+    # location remain mandatory; unknown groups alone prove nothing.
     osm_url, lat, lon, precision = corroborate_physical_site(
         location, fetch)
     location["geoSource"] = osm_url

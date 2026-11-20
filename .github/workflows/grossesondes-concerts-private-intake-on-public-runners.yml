@@ -111,7 +111,8 @@ jobs:
           test -s confidential/automation/concerts/approved.json
           test -s confidential/automation/concerts/intake/registry.json
           mkdir -p "$RUNNER_TEMP/concerts-discovery" \
-            "$RUNNER_TEMP/concerts-tours" "$RUNNER_TEMP/concerts-private-logs"
+            "$RUNNER_TEMP/concerts-tours" "$RUNNER_TEMP/concerts-organizers" \
+            "$RUNNER_TEMP/concerts-private-logs"
           python -m compileall -q public/automation/concerts
 
       - name: Veille nationale des salles, agendas et Ticketmaster
@@ -162,13 +163,42 @@ jobs:
           print("Tournées qualifiées en recherche seulement ; aucune date automatiquement approuvée.")
           PY
 
-      - name: Archiver les deux découvertes dans le registre du dépôt privé
+      # No band is selected from the catalogue here. Each event source is
+      # independently scoped to a reviewed first-party concert organizer;
+      # new names, places, genre, and dates remain private review evidence.
+      - name: Découvrir les concerts officiels sans liste de groupes connus
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/organizer_event_discovery.py \
+              --max-detail 6 --output "$RUNNER_TEMP/concerts-organizers" \
+              > "$RUNNER_TEMP/concerts-private-logs/organizers.log" 2>&1; then
+            echo "::error::La veille des organisateurs officiels a échoué ; aucun ajout privé"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-organizers/candidates.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data.get("schema") == "grossesondes.concert.discovery.v1"
+          assert data.get("publicationAllowed") is False
+          assert data.get("automaticPublication") is False
+          assert all(c.get("publicationAllowed") is False
+                     and c.get("reviewRequired") is True
+                     and c.get("source") == "organizer_official_event_detail"
+                     for c in data["candidates"])
+          print("Découverte organisateurs vérifiée : quarantaine privée uniquement.")
+          PY
+
+      - name: Archiver les trois découvertes dans le registre du dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours; do
+          for channel in concerts-discovery concerts-tours concerts-organizers; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \
