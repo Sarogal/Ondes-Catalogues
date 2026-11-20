@@ -22,6 +22,7 @@ from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v2"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
@@ -50,6 +51,9 @@ STYLE = re.compile(r"\b(?:metal|hard rock|hardcore|punk|post punk|"
                    r"rock|stoner|doom|grindcore|deathcore|metalcore|"
                    r"sludge|thrash|black metal|death metal)\b")
 FORBIDDEN = re.compile(r"[<>{}\x00-\x1f]")
+INDIVIDUAL_EVENT = re.compile(
+    r"^(?:concerts?|spectacles?|soirees?|ateliers?|expositions?|"
+    r"projections?|rencontres?|visites?|show|live)\b")
 OVERSEAS = {
     "RE": "La Réunion", "GP": "Guadeloupe", "MQ": "Martinique",
     "GF": "Guyane", "YT": "Mayotte", "NC": "Nouvelle-Calédonie",
@@ -135,6 +139,46 @@ def _iso_date(value):
         return None
 
 
+def published_identity(name):
+    """Conservative comparison: remove only a trailing year or edition number.
+
+    Every other word remains; matching also requires the SAME region and year.
+    Neither external data nor public catalog can grant a publisher approval.
+    """
+    if not isinstance(name, str):
+        return None
+    name = re.sub(r"\s+20[2-4]\d\s*$", "", name, flags=re.I).strip()
+    name = re.sub(
+        r"\s+(?:#\s?\d{1,2}|(?:edition|édition)\s*#?\s*\d{1,2})\s*$",
+        "", name, flags=re.I).strip()
+    name = re.sub(r"\s+20[2-4]\d\s*$", "", name, flags=re.I).strip()
+    key = normalized(name)
+    return key if len(key) >= 6 else None
+
+
+def known_published_editions(catalog):
+    """Read-only dedup identity list from trusted local public catalog."""
+    if catalog is None:
+        return set()
+    if (not isinstance(catalog, dict) or catalog.get("schema") != 1
+            or not isinstance(catalog.get("festivals"), list)
+            or len(catalog["festivals"]) > 5000):
+        raise ValueError("Invalid local published festival catalog")
+    keys = set()
+    for row in catalog["festivals"]:
+        if not isinstance(row, dict):
+            continue
+        try:
+            year = date.fromisoformat(row.get("startDate", "")).year
+        except (TypeError, ValueError):
+            continue
+        name = published_identity(row.get("name"))
+        region = row.get("region")
+        if name and region in REGIONS:
+            keys.add((name, year, region))
+    return keys
+
+
 def candidate(row, today):
     """Untrusted metadata can become only an unverified discovery lead."""
     if not isinstance(row, dict) or len(row) > 80:
@@ -155,7 +199,8 @@ def candidate(row, today):
     # RESEARCH HINT only. No published edition date is derived from it.
     year = next(iter(years)) if years else first.year
     if (not current.year <= year <= current.year + 2
-            or first.year != year or not FEST.search(key)):
+            or first.year != year or not FEST.search(key)
+            or INDIVIDUAL_EVENT.match(key)):
         return None
     country = row.get("location_countrycode")
     if country not in COUNTRIES:
@@ -192,7 +237,8 @@ def candidate(row, today):
 
 def validated_leads(state, today):
     report = state.get(STATE_KEY, {})
-    if not isinstance(report, dict) or report.get("schema") != SCHEMA:
+    if (not isinstance(report, dict) or report.get("schema") != SCHEMA
+            or report.get("research_ruleset") != RESEARCH_RULESET):
         return []
     if (report.get("as_of") != today or report.get("review_only") is not True
             or report.get("publication_authorized") is not False
@@ -232,12 +278,19 @@ def validated_leads(state, today):
     return valid
 
 
-def scan(state, today, fetch=None):
+def scan(state, today, fetch=None, catalog=None):
     if not isinstance(state, dict) or state.get("schema") != "grossesondes.source-watch.v1":
         raise ValueError("Invalid private source-watch state")
     date.fromisoformat(today)
+    known = known_published_editions(catalog)
+    known_signature = sha256(json.dumps(
+        sorted(known), ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()[:20]
     previous = state.get(STATE_KEY)
-    if (isinstance(previous, dict) and previous.get("as_of") == today
+    if (isinstance(previous, dict)
+            and previous.get("research_ruleset") == RESEARCH_RULESET
+            and previous.get("known_catalog_digest") == known_signature
+            and previous.get("as_of") == today
             and previous.get("status") == "SCANNED"
             and previous.get("review_only") is True
             and previous.get("publication_authorized") is False
@@ -248,7 +301,7 @@ def scan(state, today, fetch=None):
             and len(previous["leads"]) <= MAX_LEADS):
         return previous
     read = (lambda url: fetch_json(url, today)) if fetch is None else fetch
-    found = {}
+    found, already_published = {}, set()
     requests, failures = 0, 0
     for url in fixed_query_urls(today):
         requests += 1
@@ -261,13 +314,23 @@ def scan(state, today, fetch=None):
                 raise ValueError("Malformed OpenData response")
             for row in response["results"]:
                 lead = candidate(row, today)
-                if lead is not None and lead["id"] not in found:
+                if lead is None:
+                    continue
+                identity = (published_identity(lead["name_hint"]),
+                            lead["edition_year_hint"], lead["region_hint"])
+                if identity in known:
+                    already_published.add(lead["id"])
+                    continue
+                if lead["id"] not in found:
                     found[lead["id"]] = lead
         except (OSError, ValueError, TypeError, KeyError, UnicodeError, json.JSONDecodeError):
             failures += 1
     lead_rows = sorted(found.values(), key=lambda r: (r["name_hint"], r["source_url"]))[:MAX_LEADS]
     report = {
         "schema": SCHEMA, "as_of": today,
+        "research_ruleset": RESEARCH_RULESET,
+        "known_catalog_digest": known_signature,
+        "already_published_leads_count": len(already_published),
         "status": "UNAVAILABLE" if failures == requests else "SCANNED" if not failures else "PARTIAL",
         "review_only": True, "safe_to_publish": False,
         "publication_authorized": False, "publications": 0,
@@ -282,12 +345,14 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--intake", type=Path, required=True)
+    parser.add_argument("--catalog", type=Path, required=True)
     args = parser.parse_args()
     folder = args.intake
     today = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
     state_path = folder / "source-watch-state.json"
     state = json.loads(state_path.read_text(encoding="utf-8"))
-    result = scan(state, today)
+    catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
+    result = scan(state, today, catalog=catalog)
     state_path.write_text(json.dumps(state, ensure_ascii=False, indent=2) + "\n",
                           encoding="utf-8")
     (folder / "national-openagenda-research-review.json").write_text(
@@ -296,7 +361,9 @@ def main():
     print("National OpenAgenda OPEN-DATA research only: requests="
           + str(result["requests_attempted"]) + ", unavailable="
           + str(result["requests_failed"]) + ", leads="
-          + str(result["leads_count"]) + ", publications=0")
+          + str(result["leads_count"]) + ", already_published="
+          + str(result["already_published_leads_count"])
+          + ", publications=0")
 
 
 if __name__ == "__main__":
