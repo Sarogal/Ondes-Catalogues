@@ -129,14 +129,29 @@ class SourceOnlyNonMusicalRouterTests(unittest.TestCase):
         self.assertEqual(out["venue_registry_status"], "not_checked")
         self.assert_safe(out)
 
-    def test_stale_or_future_snapshot_is_not_trusted(self):
-        for value in ("2026-11-15", "2026-11-21", "not-a-time", None):
+    def test_invalid_or_future_snapshot_metadata_is_not_trusted(self):
+        for value in (
+            "2026-11-21T01:00:00+01:00", "2026-11-20",
+            "2026-11-20T08:00:00", "not-a-time", None,
+        ):
             with self.subTest(value=value):
                 context = deepcopy(CONTEXT)
                 context["historical_catalogue"]["updated_at"] = value
                 out = route(context=context)
                 self.assertEqual(out["stage"], "historical_snapshot_unchecked")
                 self.assert_safe(out)
+
+    def test_unchanged_historical_data_timestamp_does_not_block_private_routing(self):
+        context = deepcopy(CONTEXT)
+        context["historical_catalogue"]["updated_at"] = (
+            "2026-10-02T08:12:00+02:00")
+        out = route(context=context)
+        self.assertEqual(out["stage"], "institutional_source_policy_pending")
+        self.assertTrue(out["source_exact_session_confirmed"])
+        self.assertIn("live_public_catalogue_duplicate_check",
+                      out["remaining_independent_checks"])
+        self.assertFalse(out["live_duplicates_independently_checked"])
+        self.assert_safe(out)
 
     def test_missing_venue_registry_has_specific_next_action(self):
         context = deepcopy(CONTEXT)

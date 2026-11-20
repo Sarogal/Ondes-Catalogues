@@ -273,9 +273,18 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
         self.assertEqual(out["hypothetical_structural_matches_only"], 0)
         self.assert_not_a_publisher(out)
 
-    def test_future_or_stale_snapshot_requires_refresh_even_if_hash_is_right(self):
+    def test_unchanged_data_timestamp_is_not_a_live_fetch_attestation(self):
         published = deepcopy(CATALOGUE)
         published["updated_at"] = "2026-11-10T09:00:00+01:00"
+        out = simulate([packet(catalogue=published)], public=published)
+        self.assertEqual(out["blockers"]["historical_snapshot_unchecked"], 0)
+        self.assertEqual(out["hypothetical_structural_matches_only"], 1)
+        self.assertTrue(out["requires_independently_fetched_live_catalogue"])
+        self.assert_not_a_publisher(out)
+
+    def test_future_catalogue_timestamp_is_held_even_when_hash_matches(self):
+        published = deepcopy(CATALOGUE)
+        published["updated_at"] = "2026-11-21T09:00:00+01:00"
         out = simulate([packet(catalogue=published)], public=published)
         self.assertEqual(out["blockers"]["historical_snapshot_unchecked"], 1)
         self.assertEqual(out["hypothetical_structural_matches_only"], 0)
