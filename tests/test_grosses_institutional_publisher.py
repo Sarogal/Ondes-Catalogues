@@ -74,6 +74,10 @@ class InstitutionalPublisherTests(unittest.TestCase):
         self.assertEqual(candidate_links(index_html, INDEX, TODAY), [])
         self.assertTrue(independent_institutional_music_genre(
             detail_html, title, 2027))
+        self.assertTrue(independent_institutional_music_genre(
+            '<h1><span>Festival des Rivages 2027</span></h1>'
+            '<p>Festival de rock et de punk.</p>',
+            title, 2027))
         spec = trusted_source(INDEX, INDEX, detail, title, TODAY)
         self.assertIsNotNone(spec)
         p = private_proposal(spec, ("2027-06-04", "2027-06-05"), TODAY)
@@ -123,6 +127,10 @@ class InstitutionalPublisherTests(unittest.TestCase):
             '<main><h1 hidden>Festival des Rivages 2027</h1>'
             '<h1>Autre Festival 2027</h1><p>Festival de metal</p>'
             '<p>Site officiel du Festival des Rivages 2027</p></main>',
+            '<main><h1>Festival des Rivages 2027</h1>'
+            '<p>Dates à venir pour le festival.</p>'
+            '<h2>Autre Festival 2027</h2>'
+            '<p>Festival de metal.</p></main>',
             '<main><h1>Autre Festival 2027</h1><p>Festival de metal'
             ' les 4 et 5 juin 2027.</p></main>',
             '<main><h1>Festival des Rivages 2027</h1>'
