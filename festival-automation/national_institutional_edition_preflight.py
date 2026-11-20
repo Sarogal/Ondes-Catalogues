@@ -39,7 +39,9 @@ def _exact_edition(html, source, today):
     if not isinstance(title, str) or type(year) is not int:
         return None
     match = re.fullmatch(r"(.{8,150}?)\s+(20[2-4][0-9])", title.strip())
-    if not match or int(match.group(2)) != year or year not in (2027, 2028):
+    current_year = date.fromisoformat(today).year
+    if (not match or int(match.group(2)) != year
+            or not current_year <= year <= current_year + 2):
         return None
     base = match.group(1)
     dates = official_date(html, {"name": base}, year)
