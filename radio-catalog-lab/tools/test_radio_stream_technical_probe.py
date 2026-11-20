@@ -165,10 +165,10 @@ class TechnicalStreamProbeTests(unittest.TestCase):
         def request(url):
             requested.append(url)
             return sample(mime="application/vnd.apple.mpegurl",
-                          data=(b"#EXTM3U\\n#EXT-X-TARGETDURATION:5\\n"
-                                b"#EXT-X-MEDIA-SEQUENCE:12\\n"
-                                b"#EXTINF:5,\\nsegment12.ts\\n"
-                                b"#EXTINF:5,\\nsegment13.ts\\n"))
+                          data=(b"#EXTM3U\n#EXT-X-TARGETDURATION:5\n"
+                                b"#EXT-X-MEDIA-SEQUENCE:12\n"
+                                b"#EXTINF:5,\nsegment12.ts\n"
+                                b"#EXTINF:5,\nsegment13.ts\n"))
         result = probe_url("https://radio.example.org/live.m3u8", request)
         self.assertEqual(result["verdict"], "playlist_pending")
         self.assertEqual(result["reason"], "hls_manifest_pending")
@@ -180,11 +180,11 @@ class TechnicalStreamProbeTests(unittest.TestCase):
 
     def test_hls_vod_and_encrypted_manifest_never_become_audio_evidence(self):
         for source, expected in (
-            (b"#EXTM3U\\n#EXT-X-TARGETDURATION:4\\n#EXTINF:4,\\na.ts\\n"
-             b"#EXTINF:4,\\nb.ts\\n#EXT-X-ENDLIST\\n", "media_finite_playlist"),
-            (b"#EXTM3U\\n#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\\n"
-             b"#EXT-X-TARGETDURATION:4\\n#EXTINF:4,\\na.ts\\n"
-             b"#EXTINF:4,\\nb.ts\\n", "manifest_advanced_or_encrypted")
+            (b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+             b"#EXTINF:4,\nb.ts\n#EXT-X-ENDLIST\n", "media_finite_playlist"),
+            (b"#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI=\"key.bin\"\n"
+             b"#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+             b"#EXTINF:4,\nb.ts\n", "manifest_advanced_or_encrypted")
         ):
             with self.subTest(kind=expected):
                 report = probe_url(
@@ -195,8 +195,8 @@ class TechnicalStreamProbeTests(unittest.TestCase):
                 self.assertFalse(report["hlsEvidence"]["liveCandidate"])
 
     def test_hls_candidate_count_is_distinct_from_audio_qualification(self):
-        data = (b"#EXTM3U\\n#EXT-X-TARGETDURATION:4\\n#EXTINF:4,\\na.ts\\n"
-                b"#EXTINF:4,\\nb.ts\\n")
+        data = (b"#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXTINF:4,\na.ts\n"
+                b"#EXTINF:4,\nb.ts\n")
         result = probe_candidates(report([station()]),
                                   lambda _: sample(mime="application/vnd.apple.mpegurl", data=data),
                                   observation_day=dt.date(2026, 11, 20))
