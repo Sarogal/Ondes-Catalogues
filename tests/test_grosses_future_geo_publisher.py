@@ -155,7 +155,7 @@ class GeoPublisherTests(unittest.TestCase):
 
     def test_missing_french_country_or_event_specific_venue_blocks_pin(self):
         no_country = page(location={
-            **json.loads(page().split(">")[1].split("<")[0])["location"],
+            **json.loads(page().split("application/ld+json'>", 1)[1].split("</script>", 1)[0])["location"],
             "address": {"addressLocality": "Colonne"}})
         for html in [no_country, page(location={
                     "@type": "Place", "name": None,
