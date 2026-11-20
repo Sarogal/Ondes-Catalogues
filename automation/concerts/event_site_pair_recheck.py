@@ -439,6 +439,12 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
          "geoPrecision": precision}
     kind = "named-physical-site"
     if is_existing:
+        # One exact first-party bill: neither the publisher nor an untrusted
+        # candidate may invent another band or promote a venue-wide genre.
+        event["officialEvidence"][0].update({
+            "officialArtistNames": names,
+            "officialGenreLabels": genres,
+        })
         # The existing-venue publisher contract independently pins authority,
         # event URL, already-published venue identity and corroborated OSM.
         event["officialEvidence"].append({
