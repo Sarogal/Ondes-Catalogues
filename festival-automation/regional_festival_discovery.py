@@ -70,6 +70,13 @@ THEMES = re.compile(r"\b(?:metal|metallique|hardcore|punk|hard rock|rock|"
                     r"stoner|doom|sludge|grindcore|deathcore|metalcore|"
                     r"post metal|post rock)\b")
 FESTIVAL = re.compile(r"\b(?:fest|festival)\b")
+# Compound names like HelixFest and Festibarock'in are discovery clues only.
+# A visible same-card music category and an exact future year are mandatory.
+# No musical genre or organizer ownership is inferred from these names.
+COMPOUND_FESTIVAL_BRAND = re.compile(
+    r"\b(?:[a-z0-9]{3,40}fest|festi[a-z0-9]{4,40})\b")
+NON_FESTIVAL_BRAND = re.compile(
+    r"\b(?:festivites?|festifs?|festives?|festins?)\b")
 SHRED_FEST = re.compile(r"\bshred fest\b")
 EXCLUDED_EXT = re.compile(r"\.(?:pdf|png|jpe?g|gif|webp|svg|zip)(?:$|/)", re.I)
 
@@ -413,7 +420,9 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
         # without the exact future year and adjacent category stays excluded.
         category_pending = bool(
             not thematic and not contextual
-            and re.search(r"\bfestival\b", name)
+            and (FESTIVAL.search(name)
+                 or (COMPOUND_FESTIVAL_BRAND.search(name)
+                     and not NON_FESTIVAL_BRAND.search(name)))
             and not NON_MUSIC_TITLE.search(name)
             and len(years) == 1
             and re.search(r"\b20[2-4]\d$", name)
