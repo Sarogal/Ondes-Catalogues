@@ -17,6 +17,7 @@ import tempfile
 from zoneinfo import ZoneInfo
 
 from ptitesondes_html_index_detail_live_smoke import _independent_context
+from ptitesondes_public_catalogue_live_drift import check_served_catalogue
 from ptitesondes_html_index_detail_funnel import READ_ONLY_ADAPTERS
 from ptitesondes_institutional_source_policy import (
     MANIFEST_PATH, MAX_REGISTRY_BYTES, MAX_SOURCES as POLICY_MAX_SOURCES,
@@ -154,7 +155,8 @@ def _stage_queue(path, queue):
 
 def execute_cycle(existing, now, *, batch=0, max_sources=2,
                   manifest=None, context=None,
-                  runner=prepare_private_html_review_handoff):
+                  runner=prepare_private_html_review_handoff,
+                  live_checker=check_served_catalogue):
     """All mutable state lives in private memory until caller opts to stage."""
     if (type(now) is not datetime or now.tzinfo is None
             or now.utcoffset() is None
@@ -169,13 +171,31 @@ def execute_cycle(existing, now, *, batch=0, max_sources=2,
     total_batches = max(1, (len(targets) + max_sources - 1) // max_sources)
     selected_batch = batch % total_batches
     selected = targets[selected_batch * max_sources:(selected_batch + 1) * max_sources]
+    live_matched = False
     if context is None:
+        # No collector-controlled URL or "verified" flag: read the
+        # exact fixed GitHub Pages endpoint using strict no-redirect GET,
+        # and compare to the checked-out public catalogue before routing.
+        # The publisher must still independently repeat this at release.
+        witness = live_checker(now)
+        if (type(witness) is not dict
+                or witness.get("same_data_as_checked_out_repository") is not True
+                or witness.get("live_event_count") != witness.get("local_event_count")
+                or type(witness.get("live_event_count")) is not int
+                or witness["live_event_count"] < 100
+                or witness.get("public_writes") != 0
+                or witness.get("publication_ready") is not False
+                or witness.get("approval_granted") is not False):
+            raise ValueError("independent_live_catalogue_mismatch")
         context = _independent_context()
+        live_matched = True
     # Existing is validated even when there are no eligible adapters.
     current = reconcile_private_html_review_queue(
         existing, [], now.astimezone(ZoneInfo("Europe/Paris")).date())["queue"]
     counts = {
-        "schema": SCHEMA, "registered_sources": len(manifest["entries"]),
+        "schema": SCHEMA,
+        "live_catalogue_refetched_and_matching": live_matched,
+        "registered_sources": len(manifest["entries"]),
         "recognized_adapters": len(targets),
         "unrecognized_adapters": len(manifest["entries"]) - len(targets),
         "sources_selected": len(selected), "sources_sampled": 0,
