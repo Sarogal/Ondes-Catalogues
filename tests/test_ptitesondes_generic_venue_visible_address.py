@@ -98,6 +98,18 @@ class VisibleVenueAddressTests(unittest.TestCase):
             self.assertFalse(visible_venue_identity_matches(
                 GROUP, CANDIDATE, page(extra=extra)))
 
+    def test_other_structured_place_cannot_be_overridden_by_visible_page(self):
+        other = ('<script type="application/ld+json">'
+                 '{"@type":"Place","name":"Une autre médiathèque",'
+                 '"address":{"streetAddress":"13 Rue des Chênes",'
+                 '"postalCode":"12345","addressLocality":"Ville-des-Bois"}}'
+                 '</script>')
+        r = official_venue_page_proof(
+            GROUP, CANDIDATE, BAN, URL,
+            page(extra=other), HOSTS)
+        self.assertFalse(r["official_identity_verified"])
+        self.assertEqual(r["status"], "different_structured_place_identity")
+
     def test_schema_org_conflict_never_overridden_by_visible_text(self):
         structured = ('<script type="application/ld+json">'
                       '{"@type":"Place","name":"Maison des enfants",'
