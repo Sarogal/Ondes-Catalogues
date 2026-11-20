@@ -113,6 +113,70 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
             "https://www.ville-les-bois.fr/lieu", CITY, resp),
             "www.ville-les-bois.fr")
 
+    def test_full_geographic_pipeline_uses_dila_not_manual_host_claims(self):
+        from datetime import date
+        from ptitesondes_generic_venue_osm_preflight import (
+            inspect_group, groups_for_review,
+        )
+        day = date(2026, 11, 20)
+        group = groups_for_review([{
+            "collector": "openagenda-v2", "external_id": "123",
+            "title": "Conte jeunesse", "city": CITY,
+            "venue": "Maison des enfants",
+            "date_start": "2026-12-12", "date_end": "2026-12-12",
+            "source_url": "https://openagenda.com/agenda-test/events/conte",
+        }], day)[0]
+        osm = {
+            "type": "node", "id": 11, "lat": 44.5, "lon": 2.25,
+            "tags": {"name": "Maison des enfants", "addr:city": CITY,
+                     "addr:housenumber": "12", "addr:street": "Rue du Parc",
+                     "addr:postcode": "12345"},
+        }
+        address = "12 Rue du Parc 12345 " + CITY
+        ban = {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [2.25, 44.5]},
+            "properties": {"type": "housenumber", "score": 0.99,
+                           "housenumber": "12", "postcode": "12345",
+                           "city": CITY, "label": address},
+        }]}
+        schema = {"@context": "https://schema.org", "@type": "Place",
+                  "name": "Maison des enfants",
+                  "address": {"@type": "PostalAddress",
+                              "streetAddress": "12 Rue du Parc",
+                              "postalCode": "12345", "addressLocality": CITY}}
+        html = ("<html><script type='application/ld+json'>"
+                + json.dumps(schema)
+                + "</script><p>Informations officielles</p></html>")
+        def source(uid):
+            return {"uid": uid, "location_name": "Maison des enfants",
+                    "location_city": CITY,
+                    "location_coordinates": {"lat": 44.5, "lon": 2.25}}
+        kwargs = {
+            "record_fetch": source,
+            "osm_fetch": lambda c: {"elements": [osm]},
+            "ign_fetch": lambda c: ban,
+            "official_page_get": lambda g: (
+                "https://agenda.ville-les-bois.fr/maison-enfants", html),
+            "approved_official_hosts":
+                frozenset({"agenda.ville-les-bois.fr"}),
+        }
+        good = inspect_group(group, dila_directory_get=lambda c: payload(
+            mairie(city=CITY, site="https://www.ville-les-bois.fr/")),
+            **kwargs)
+        self.assertTrue(good["official_page"]["official_identity_verified"])
+        self.assertFalse(good["official_page"]["publication_ready"])
+        self.assertEqual(good["official_page"]["public_writes"], 0)
+        # A prior host allowlist cannot override a missing DILA attestation.
+        spoof = inspect_group(
+            group, dila_directory_get=lambda c: payload(mairie(
+                city=CITY, site="https://www.other-municipality.fr/")), **kwargs)
+        self.assertFalse(spoof["official_page"]["official_identity_verified"])
+        error = inspect_group(
+            group, dila_directory_get=lambda c: (_ for _ in ()).throw(
+                ConnectionError("provider unavailable")), **kwargs)
+        self.assertFalse(error["official_page"]["official_identity_verified"])
+
     def test_without_websites_fails_as_unknown_not_fake_verified(self):
         row = mairie()
         row["site_internet"] = None
