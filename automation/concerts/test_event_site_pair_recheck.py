@@ -13,7 +13,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT))
 from scripts import concerts_cloud_sync as publisher
 import approval_preflight as gate
 import event_site_pair_recheck as reviewer
