@@ -155,6 +155,7 @@ class UnknownLocationDiscoveryTests(unittest.TestCase):
             (event(country="BE"), SOURCE, EVENT_URL),
             (event(), SOURCE, "https://external.example/evenements/fake/"),
             (event(), {**SOURCE, "url": "https://external.example/agenda/"}, EVENT_URL),
+            (event(), {**SOURCE, "url": "http://official-stage.example/agenda/"}, EVENT_URL),
             ({**event(), "@type": "Organization"}, SOURCE, EVENT_URL),
         ]
         for raw, source, page_url in invalid:
