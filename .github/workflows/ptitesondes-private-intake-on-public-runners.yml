@@ -496,7 +496,7 @@ jobs:
           if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
           # Daily shifting round-robin batches. No hardcoded town filter;
           # only trusted source/adapter pairs can be executed.
-          BATCH="$(python -c 'from datetime import datetime, timezone; n=datetime.now(timezone.utc); print((n.toordinal()+n.hour//4)%8)')"
+          BATCH="$(python -c 'from datetime import datetime, timezone; n=datetime.now(timezone.utc); slot=0 if n.hour<9 else 1 if n.hour<12 else 2 if n.hour<17 else 3; print(n.toordinal()*4+slot)')"
           if ! python public/scripts/ptitesondes_html_private_queue_cycle.py \
               --state-checkout state --mode "$MODE" --batch "$BATCH" \
               > "$LOG/html-private-queue-summary.json" 2>&1; then
