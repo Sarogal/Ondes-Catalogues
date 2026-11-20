@@ -145,6 +145,7 @@ class ProvenUnknownVenuePromotionTests(unittest.TestCase):
         self.assertEqual(report["details"][0]["status"], "unverified")
         doc = record()
         doc["title_fr"] = "Goûter au parc pour les enfants"
+        doc["description_fr"] = "Goûter libre au parc pour les enfants"
         candidate = lead(title=doc["title_fr"])
         patch, report = execute(
             candidate=candidate, proof=witness, document=doc,
