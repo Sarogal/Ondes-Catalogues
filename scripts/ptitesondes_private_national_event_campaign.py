@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 
 from ptitesondes_openagenda_national_event_research import (
-    ROOT, MAX_INDEX_BYTES, STATE_SCHEMA as SINGLE_STATE_UNUSED,
+    MAX_INDEX_BYTES,
     select_index_candidate, scan_agenda, valid_after,
     _private_directory, _private_input, _write_new, _write_state,
 )
@@ -93,60 +93,104 @@ def _lock(output_dir):
     return path
 
 
-def run_campaign(plan, *, public_key, explorer=scan_agenda):
-    """One private process, bounded agenda pages, checkpoint after each report.
+def _segment_meta(plan, state):
+    return {
+        "source_sha256": plan["digest"],
+        "scan_day": plan["day"].isoformat(),
+        "agenda_index": state["next_agenda_index"],
+        "segment": state["segment"],
+        "start_cursor": state["event_after"],
+    }
 
-    Crash between report write and checkpoint update fails closed on next
-    invocation due to existing named report; it never silently skips leads.
+
+def _validate_segment(report, agenda, expected_meta):
+    if (not isinstance(report, dict)
+            or report.get("schema") !=
+            "ptitesondes.private_oa_agenda_event_exploration.v1"
+            or report.get("agenda_uid") != agenda["agenda_uid"]
+            or report.get("agenda_slug") != agenda["agenda_slug"]
+            or report.get("campaign_meta") != expected_meta
+            or report.get("publication_ready") is not False
+            or report.get("public_writes") != 0
+            or not isinstance(report.get("event_leads"), list)
+            or len(report["event_leads"]) > 60
+            or type(report.get("agenda_scan_complete")) is not bool
+            or (report.get("next_cursor") is not None
+                and not valid_after(report["next_cursor"]))
+            or (report["agenda_scan_complete"]
+                != (report["next_cursor"] is None))
+            or (not report["agenda_scan_complete"]
+                and report["next_cursor"] == expected_meta["start_cursor"])):
+        raise ValueError("invalid_private_agenda_segment")
+
+
+def _advance(state, report):
+    updated = dict(state)
+    if report["agenda_scan_complete"]:
+        updated["next_agenda_index"] += 1
+        updated["segment"] = 0
+        updated["event_after"] = None
+    else:
+        if updated["segment"] >= 10000:
+            raise ValueError("private_agenda_segment_limit")
+        updated["segment"] += 1
+        updated["event_after"] = report["next_cursor"]
+    return updated
+
+
+def run_campaign(plan, *, public_key, explorer=scan_agenda):
+    """Bounded private campaign with safe replay after checkpoint interruptions.
+
+    Every report carries the exact input digest, agenda index, segment number,
+    and *starting* cursor. A finished report left by an interrupted checkpoint
+    update can be recovered without repeating network work; any mismatch or
+    tampering fails closed, never silently publishing or skipping a session.
     """
     if not _valid_public_read_key(public_key) or not callable(explorer):
         raise ValueError("private_oa_public_read_key_required")
     output_dir = plan["output_dir"]
     marker = _lock(output_dir)
     state = dict(plan["state"])
-    count = 0
+    attempted, freshly_scanned, recovered = 0, 0, 0
     try:
-        while count < plan["steps"] and state["next_agenda_index"] < plan["total"]:
+        while (attempted < plan["steps"]
+               and state["next_agenda_index"] < plan["total"]):
             idx, segment = state["next_agenda_index"], state["segment"]
-            # Fail closed on a replaced private source/configuration.
             agenda = select_index_candidate(plan["index_doc"], idx)
             path = output_dir / f"agenda-{idx:04d}-segment-{segment:04d}.json"
-            if path.exists() or path.is_symlink():
-                raise ValueError("existing_private_segment_requires_recovery")
-            report = explorer(agenda, public_key, plan["day"],
-                              after=state["event_after"])
-            if (not isinstance(report, dict) or
-                    report.get("schema") !=
-                    "ptitesondes.private_oa_agenda_event_exploration.v1"
-                    or report.get("agenda_uid") != agenda["agenda_uid"]
-                    or report.get("agenda_slug") != agenda["agenda_slug"]
-                    or report.get("publication_ready") is not False
-                    or report.get("public_writes") != 0
-                    or not isinstance(report.get("event_leads"), list)
-                    or len(report["event_leads"]) > 60
-                    or type(report.get("agenda_scan_complete")) is not bool
-                    or (report.get("next_cursor") is not None
-                        and not valid_after(report["next_cursor"]))
-                    or (report["agenda_scan_complete"]
-                        != (report["next_cursor"] is None))):
-                raise ValueError("invalid_private_agenda_segment")
-            # A completed agenda can advance. A partial one retains its
-            # cursor and retries a *different segment* on the next call.
-            if report["agenda_scan_complete"]:
-                state["next_agenda_index"] += 1
-                state["segment"] = 0
-                state["event_after"] = None
+            expected = _segment_meta(plan, state)
+            if path.is_symlink():
+                raise ValueError("existing_private_segment_untrusted")
+            if path.exists():
+                # Recovery is permitted only for the EXACT fully validated
+                # segment that starts from the current checkpoint state.
+                try:
+                    stored = json.loads(_private_input(path, 1_500_000))
+                    _validate_segment(stored, agenda, expected)
+                except (OSError, ValueError, TypeError):
+                    raise ValueError("existing_private_segment_requires_recovery") from None
+                state = _advance(state, stored)
+                _write_state(_state_path(output_dir), state)
+                recovered += 1
             else:
-                state["segment"] += 1
-                state["event_after"] = report["next_cursor"]
-            _write_new(path, report)
-            _write_state(_state_path(output_dir), state)
-            count += 1
+                report = explorer(
+                    agenda, public_key, plan["day"], after=state["event_after"])
+                if not isinstance(report, dict):
+                    raise ValueError("invalid_private_agenda_segment")
+                report = {**report, "campaign_meta": expected}
+                _validate_segment(report, agenda, expected)
+                next_state = _advance(state, report)
+                _write_new(path, report)
+                _write_state(_state_path(output_dir), next_state)
+                state = next_state
+                freshly_scanned += 1
+            attempted += 1
     finally:
         marker.unlink()
     return {
         "schema": SCHEMA, "mode": "private_readonly_event_campaign",
-        "segments_examined": count,
+        "segments_examined": freshly_scanned,
+        "segments_recovered_from_private_report": recovered,
         "next_agenda_index": state["next_agenda_index"],
         "total_agendas": plan["total"],
         "finished_index_batch": state["next_agenda_index"] == plan["total"],
