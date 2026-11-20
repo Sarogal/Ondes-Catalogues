@@ -411,7 +411,9 @@ def process(registry, catalogue, approvals, today, fetch=download_official, limi
                   i.get("stableObservations", 0) >= 2 and
                   isinstance(i.get("candidate", {}).get("source"), str) and
                   i.get("candidate", {}).get("source") in VERIFIER_SPECS and
-                  i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"]
+                  (i.get("candidate", {}).get("reviewBucket") == "genre_tag_review"
+                   or (i.get("candidate", {}).get("source") == "agenda_officiel_structuré"
+                       and i.get("candidate", {}).get("reviewBucket") == "genre_unknown"))]
     # A private human decision is permanent: never reconsider a rejected or
     # superseded candidate even if discovery keeps observing the same ID.
     reviewable = [i for i in candidates if i.get("status", "pending_review") == "pending_review"]
