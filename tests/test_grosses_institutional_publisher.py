@@ -8,6 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_institutional_edition import (
     PROOF_MODE, private_proposal, trusted_source, independently_fetch,
+    independent_institutional_music_genre,
     validate_private_proposal, validate_independent,
     conflicts_with_signed_catalogue,
 )
@@ -60,6 +61,87 @@ class InstitutionalPublisherTests(unittest.TestCase):
         self.assertIsNone(trusted_source(
             INDEX, INDEX, DETAIL,
             "Festival Metal des Garrigues 2029", "2026-11-20"))
+
+    def test_genre_missing_from_index_must_be_reproved_from_official_detail(self):
+        from regional_festival_discovery import candidate_links
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index_html = '<main><a href="' + detail + '">' + title + '</a></main>'
+        detail_html = (
+            "<main><h1>Festival des Rivages 2027</h1>"
+            "<p>Les 4 et 5 juin 2027, un festival de métal et punk.</p></main>"
+        )
+        self.assertEqual(candidate_links(index_html, INDEX, TODAY), [])
+        self.assertTrue(independent_institutional_music_genre(
+            detail_html, title, 2027))
+        spec = trusted_source(INDEX, INDEX, detail, title, TODAY)
+        self.assertIsNotNone(spec)
+        p = private_proposal(spec, ("2027-06-04", "2027-06-05"), TODAY)
+        self.assertIsNotNone(p)
+        visits = []
+        def fetch(url):
+            visits.append(url)
+            return {INDEX: index_html, detail: detail_html}[url]
+        fetched = independently_fetch(p, TODAY, fetch=fetch)
+        self.assertEqual(fetched, detail_html)
+        self.assertEqual(visits, [INDEX, detail])
+        self.assertIsNotNone(validate_independent(p, fetched, TODAY))
+        signed = collect_registered_institutional_sources(
+            {"additions": [p]}, set(), TODAY, fetcher=fetch)
+        self.assertTrue(signed["registered-institutional-verified:"+p["slug"]])
+        cal, hist, _patch = fixtures()
+        patch = {"additions": [p], "updates": []}
+        snapshot = {"festivals.json": cal, "festival-history.json": hist}
+        candidate, report = build_candidate(
+            snapshot, snapshot, patch, signed, TODAY, trusted_published=True)
+        self.assertIn(p["slug"], report["accepted_additions"])
+        row = next(x for x in candidate["festivals"] if x["slug"] == p["slug"])
+        self.assertEqual(row["startDate"], "2027-06-04")
+        self.assertEqual(row["endDate"], "2027-06-05")
+        self.assertFalse(row["showOnMap"])
+        self.assertIsNone(row["city"])
+        self.assertIsNone(row["lat"])
+        self.assertEqual(row["lineup"], [])
+        self.assertEqual(row["bands"], 0)
+
+    def test_official_detail_theme_gate_rejects_electronic_hidden_wrong_name_and_tours(self):
+        title = "Festival des Rivages 2027"
+        detail = "https://agenda.montpellier.fr/evenement/festival-des-rivages-2027"
+        index_html = '<main><a href="' + detail + '">' + title + '</a></main>'
+        spec = trusted_source(INDEX, INDEX, detail, title, TODAY)
+        p = private_proposal(spec, ("2027-06-04", "2027-06-05"), TODAY)
+        cases = (
+            "<main><h1>Festival des Rivages 2027</h1><p>Hardcore techno et rave.</p>"
+            "<p>4 et 5 juin 2027.</p></main>",
+            "<main><h1>Festival des Rivages 2027</h1>"
+            "<p>Festival de hardcore techno les 4 et 5 juin 2027.</p></main>",
+            '<main><h1>Festival des Rivages 2027</h1>'
+            '<p hidden>Un festival de metal.</p><p>4 et 5 juin 2027.</p></main>',
+            '<main><h1>Autre Festival 2027</h1><p>Festival de metal'
+            ' les 4 et 5 juin 2027.</p></main>',
+            '<main><h1>Festival des Rivages 2027</h1>'
+            '<script>Festival de metal</script>'
+            '<p>4 et 5 juin 2027.</p></main>',
+            '<main><h1>Festival des Rivages 2027</h1>'
+            '<p>Festival de rock, tournée itinérante de 15 concerts.'
+            ' Les 4 et 5 juin 2027.</p></main>',
+            '<main><h1>Festival des Rivages 2027</h1>'
+            '<p>Festival de metal, annoncé puis annulé.'
+            ' Les 4 et 5 juin 2027.</p></main>',
+        )
+        for html in cases:
+            with self.subTest(html=html[:90]):
+                self.assertFalse(independent_institutional_music_genre(
+                    html, title, 2027))
+                seen = []
+                self.assertIsNone(independently_fetch(
+                    p, TODAY, fetch=lambda url: seen.append(url) or
+                    (index_html if url == INDEX else html)))
+                self.assertEqual(seen, [INDEX, detail])
+                source = collect_registered_institutional_sources(
+                    {"additions": [p]}, set(), TODAY,
+                    fetcher=lambda url: index_html if url == INDEX else html)
+                self.assertFalse(source)
 
     def test_generic_edition_enters_catalogue_only_after_independent_live_reproof(self):
         p = proposed()
