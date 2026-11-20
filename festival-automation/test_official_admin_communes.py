@@ -85,6 +85,10 @@ class AdminCommuneTests(unittest.TestCase):
         # A label is not a code; the duplicate result remains ambiguous.
         self.assertIsNone(verified_commune("Colonne", "Jura",
                                             lambda _: duplicate))
+        # A mismatched signed département LABEL is not silently discarded,
+        # even when the national catalogue returns one exact homonym.
+        self.assertIsNone(verified_commune("Colonne", "Jura",
+                                            lambda _: response(feature())))
 
     def test_reject_nonexact_or_unbounded_untrusted_responses(self):
         variants = [
