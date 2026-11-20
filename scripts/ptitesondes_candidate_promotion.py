@@ -547,7 +547,20 @@ def covered_by_published_range(lead, published_events):
 
 
 
-def unique_review_candidates(leads, today, with_alternatives=False):
+def _private_proof_for_lead(lead, venue_proofs):
+    """Opt-in immutable proof lookup, keyed only by exact normalized city/place.
+
+    The mapping is built inside a trusted private verifier process; neither
+    a backlog-provided flag nor a serialized 'verified' dictionary can mint
+    an in-memory VenueLocationProof.
+    """
+    if not isinstance(lead, dict) or not isinstance(venue_proofs, dict):
+        return None
+    return venue_proofs.get((norm(lead.get("city")), norm(lead.get("venue"))))
+
+
+def unique_review_candidates(leads, today, with_alternatives=False,
+                             venue_proofs=None):
     """Avoid wasting bounded review slots on two mirrors of a single UID/day.
 
     OpenDataSoft and OpenAgenda v2 are *not* independent proofs. They often
@@ -558,7 +571,12 @@ def unique_review_candidates(leads, today, with_alternatives=False):
     Contradictory identity or collector URL for the same UID/date blocks that
     entire group; no fuzzy identity guessing and no widening URL rules.
     """
-    eligible = [x for x in leads if permitted(x, today)]
+    if venue_proofs is not None and not isinstance(venue_proofs, dict):
+        raise ValueError("invalid_private_venue_proof_map")
+    eligible = [
+        x for x in leads
+        if permitted(x, today, evidence=_private_proof_for_lead(x, venue_proofs))
+    ]
     grouped = {}
     for lead in eligible:
         grouped.setdefault((lead["external_id"], lead["date_start"]), []).append(lead)
@@ -617,7 +635,7 @@ def rotating_batch(candidates, today, limit, slot=0):
 
 def evaluate(leads, baseline, published, today, fetch=api_record,
              verifier=verify_event, limit=MAX_FETCH, slot=0,
-             skip_published_prebatch=False):
+             skip_published_prebatch=False, venue_proofs=None):
     historic = byid(baseline)
     existing = byid(published)
     if any(k not in existing or not historical_event_unchanged(v, existing[k])
@@ -631,7 +649,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
     urls = {(e.get("source_url"), e.get("date_start"))
             for e in published["events"]}
     candidates, eligible_raw, duplicates, conflicts = unique_review_candidates(
-        leads, today, with_alternatives=True)
+        leads, today, with_alternatives=True, venue_proofs=venue_proofs)
     # Consume the bounded daily review budget ONLY on sessions not yet public.
     # This is an exact pre-existing duplicate gate moved before pagination,
     # NOT a relaxation of official source, time, venue, GPS or audience checks.
@@ -667,7 +685,10 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
             last_canonical_error = None
             for option in (lead, *lead.get("_same_uid_date_alternatives", ())):
                 try:
-                    event = make_event(option, record, registry_location(option), today)
+                    location = registry_location(
+                        option, _private_proof_for_lead(option, venue_proofs),
+                        today if venue_proofs is not None else None)
+                    event = make_event(option, record, location, today)
                     break
                 except ValueError as exc:
                     if str(exc) != "URL canonique différente":
@@ -698,7 +719,12 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
                         continue
                     try:
                         alternative = make_event(
-                            option, record, registry_location(option), today)
+                            option, record,
+                            registry_location(
+                                option,
+                                _private_proof_for_lead(option, venue_proofs),
+                                today if venue_proofs is not None else None),
+                            today)
                     except (ValueError, TypeError, KeyError):
                         continue
                     # Only the audited origin/aggregate pair, not other
@@ -756,6 +782,7 @@ def evaluate(leads, baseline, published, today, fetch=api_record,
         "openagenda_v2_readonly_funnel": oa2_readonly_funnel,
         "reason_counts": dict(sorted(reasons.items())),
         "date": str(today), "mode": "preview_no_public_write",
+        "opt_in_shared_geo_proofs_in_memory": venue_proofs is not None,
         "backlog_total": len(leads), "eligible_with_reviewed_venue": len(reviewable),
         "already_published_before_batch": already_published_before_batch,
         "eligible_raw": eligible_raw,
