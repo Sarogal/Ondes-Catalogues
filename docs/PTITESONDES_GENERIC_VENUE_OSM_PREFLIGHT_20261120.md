@@ -308,3 +308,49 @@ site d'accueil municipal qualifié, pour les établissements associatifs
 ou privés, les événements éphémères sur place publique et les lieux sans
 numéro de rue, il faut de nouvelles voies de preuve indépendante,
 sans jamais assimiler « absent de DILA » à « événement inexistant ».
+
+## Audit de couverture DILA quotidien, en lecture privée et sans publication
+
+`scripts/ptitesondes_municipal_domain_coverage.py` rend reproductible
+l'étude nationale : le module recalcule les groupes `venue_gps_unverified`
+sur le **backlog privé courant**, regroupe les lieux par commune et interroge
+uniquement `fetch_dila(commune)` sur une sélection tournante. Chaque cycle
+est limité à 12 communes par défaut, au maximum 60 en revue ponctuelle.
+
+Le programme fonctionne **hors réseau par défaut** ; `--live-dila` est
+obligatoire pour lancer des lectures de l'annuaire officiel. Il n'envoie à
+l'annuaire que les noms des communes, jamais les noms des lieux, les fiches
+familiales, les UID OA ni les dates de séance. Les détails individuels du
+rapport restent dans l'espace privé ; la console publique ne produit que
+des compteurs. Aucun cron n'a été créé ni activé.
+
+Exemple de contrôle isolé sans réseau :
+```bash
+python scripts/ptitesondes_municipal_domain_coverage.py \
+  --private-backlog /espace-prive/automation-intake/ptitesondes/backlog.json \
+  --private-report /espace-prive/dila-coverage.json \
+  --day 2026-11-20
+```
+Avec ajout explicite de `--live-dila --max-cities 12`, un runner privé
+peut contrôler la source institutionnelle réelle. La sortie distingue les
+communes dont l'annuaire est indisponible de celles dont aucune page
+municipale d'accueil exploitable n'est prouvée. L'état positif ne vaut
+qu'**un site municipal source potentiel** ; les champs de publication
+restent bloqués par construction.
+
+Les **160 tests adversariaux hors réseau** de la branche, y compris les
+7 scénarios spécifiques à cet audit, ont réussi dans la CI ciblée
+du 20/11. Le synchroniseur global doit également être vert avant fusion.
+
+Contrôle complémentaire en lecture réelle du miroir ODS (20/11) :
+sur un échantillon de 8 lieux distincts actuellement non homologués,
+8 UID uniques, 8 couples lieu/commune cohérents et 8 ensembles de
+coordonnées présents. Ces points ODS ne constituent **pas** des GPS
+attestés de façon indépendante. Pour l'admission finale il faut
+réconcilier source et identité d'établissement sur une page autorisée,
+puis vérifier date, heure, public familial, droit de reprise et doublons.
+
+**Précision sur le champ « site officiel » :** la documentation OpenAgenda
+distingue le champ facultatif `location.website` (auto-déclaré)
+de la preuve d'identité et de provenance du lieu :
+https://developers.openagenda.com/lieux/structure/.
