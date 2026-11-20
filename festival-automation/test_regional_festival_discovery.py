@@ -19,6 +19,138 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_semantic_heading_generic_link_and_year_are_private_only(self):
+        from regional_festival_discovery import CARD_HEADING_PENDING_SIGNAL
+        href = "/actualites-sorties/agenda/mordorfest"
+        card_link = '<a href="' + href + '">En savoir plus</a>'
+        cases = (
+            '<article><h3>MordorFest</h3><p>Musique / Concert</p>'
+            '<time>Les 25 et 26 juin 2027</time>' + card_link + '</article>',
+            '<li><h2>MordorFest 2027</h2><span>Concerts / Musique</span>'
+            + card_link + '</li>',
+            '<div role="article"><div><h4>MordorFest</h4></div>'
+            '<span>Musique / Concert — Édition 2027</span>'
+            + card_link + '</div>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                rows = candidate_links(html, ANGERS, "2026-11-20")
+                self.assertEqual(len(rows), 1)
+                self.assertEqual(rows[0]["title"], "MordorFest 2027")
+                self.assertEqual(rows[0]["signal"], CARD_HEADING_PENDING_SIGNAL)
+                self.assertEqual(rows[0]["candidate_url"],
+                                 "https://www.angers.fr" + href)
+                self.assertIsNone(rows[0]["archive_slug"])
+                self.assertNotIn("startDate", rows[0])
+                self.assertNotIn("safe_to_publish", rows[0])
+
+    def test_heading_is_not_borrowed_or_confused_with_generic_navigation(self):
+        generic = '<a href="/actualites-sorties/agenda/mordorfest">En savoir plus</a>'
+        cases = (
+            '<h3>MordorFest 2027</h3><article><span>Musique / Concert</span>'
+            + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3><span>Musique / Concert</span>'
+            '</article><article>' + generic + '</article>',
+            '<article><h3>MordorFest</h3><span>Musique / Concert</span>'
+            + generic + '</article><span>Édition 2027</span>',
+            '<article><h3>MordorFest</h3><span>Musique / Concert</span>'
+            + generic + '</article>',
+            '<article><h3 hidden>MordorFest 2027</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3 aria-hidden="true">MordorFest 2027</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3 style="display:none">MordorFest 2027</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3>MordorFest</h3><script>2027</script>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3>MordorFest</h3><time datetime="2027-06-25">'
+            'Juin</time><span>Musique / Concert</span>'
+            + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3><h4>Autre évènement</h4>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3><span>Musique / Concert</span>'
+            + generic + '<a href="/autre">Autre</a></article>',
+            '<article><h3>MordorFest 2027</h3>'
+            '<article><span>Musique / Concert</span>' + generic
+            + '</article></article>',
+            '<article><h3>MordorFest 2027</h3>'
+            + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3>'
+            '<span>Culture / Loisirs</span>' + generic + '</article>',
+            '<article><h3>Festival des plantes 2027</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3>Festivités du village 2027</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3>'
+            '<span>Musique / Concert — Édition 2028</span>'
+            + generic + '</article>',
+            '<article><h3>MordorFest 2027</h3>'
+            '<span>Musique / Concert</span>'
+            '<a href="https://evil.example/mordorfest">En savoir plus</a>'
+            '</article>',
+            '<article><h3>MordorFest 2032</h3>'
+            '<span>Musique / Concert</span>' + generic + '</article>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual(candidate_links(
+                    html, ANGERS, "2026-11-20"), [])
+
+    def test_heading_generic_link_next_day_and_no_publisher_bypass(self):
+        from regional_festival_discovery import CARD_HEADING_PENDING_SIGNAL
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources, _seen_again
+        from grossesondes_institutional_edition import (
+            private_proposal, independently_fetch)
+        today, tomorrow = "2026-11-20", "2026-11-21"
+        url = "https://www.angers.fr/actualites-sorties/agenda/mordorfest"
+        html = ('<article><h3>MordorFest</h3>'
+                '<span>Concerts / Musique — Édition 2027</span>'
+                '<a href="' + url + '">En savoir plus</a></article>')
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        fetched = []
+        result = scan_regional_indexes(
+            {"schema": "grossesondes.source-watch-report.v1",
+             "date": today, "source_reference_leads_review_only": []},
+            state, [B], today,
+            fetch=lambda url: fetched.append(url) or html, limit=1)
+        self.assertEqual(fetched, [ANGERS])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["discovery_signal"],
+                         CARD_HEADING_PENDING_SIGNAL)
+        self.assertIs(result[0]["publication_authorized"], False)
+        self.assertIs(result[0]["date_verified"], False)
+        queue = build_queue(
+            state, {"schema": "grossesondes.source-watch-report.v1",
+                    "date": tomorrow, "source_reference_leads_review_only": []},
+            [], tomorrow)
+        self.assertEqual(queue["publications"], 0)
+        self.assertEqual(queue["candidate_dossiers_count"], 1)
+        candidates = _eligible_sources(state, queue, tomorrow, due_only=False)
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(candidates[0]["title"], "MordorFest 2027")
+        self.assertTrue(_seen_again(html, candidates[0]))
+        self.assertFalse(_seen_again(
+            html.replace("</article>", '<a href="/other">Other</a></article>'),
+            candidates[0]))
+        self.assertFalse(_seen_again(
+            html.replace("Édition 2027", "Édition 2028"), candidates[0]))
+        proposal = private_proposal(
+            candidates[0], ("2027-06-25", "2027-06-26"), tomorrow)
+        self.assertIsNotNone(proposal)
+        reads = []
+        rejected = independently_fetch(
+            proposal, tomorrow,
+            fetch=lambda uri: reads.append(uri) or (
+                html if uri == ANGERS
+                else "<h1>MordorFest 2027</h1><p>Festival sans genre démontré</p>"
+            ))
+        self.assertIsNone(rejected)
+        self.assertEqual(reads, [ANGERS, url])
+        self.assertIs(queue["publication_authorized"], False)
+
     def test_visible_year_outside_single_link_is_strict_private_card_hint(self):
         from regional_festival_discovery import CARD_YEAR_PENDING_SIGNAL
         for title in ("Festibarock'in", "MordorFest", "Festival Rock des Forges"):

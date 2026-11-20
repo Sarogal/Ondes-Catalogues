@@ -100,6 +100,10 @@ MUSIC_CATEGORY_PENDING_SIGNAL = "INSTITUTION_MUSIC_CATEGORY_GENRE_REVIEW_ONLY"
 # card, is at most a PRIVATE research year. Independently verify its theme
 # and complete dates on the official detail page before any publisher patch.
 CARD_YEAR_PENDING_SIGNAL = "VISIBLE_INSTITUTIONAL_CARD_YEAR_REVIEW_ONLY"
+# A single semantic card with a visible heading, a visible edition year, and
+# exactly one generic event link is a research lead only. The heading is NOT
+# a genre/organizer/date proof: publisher must independently re-fetch detail.
+CARD_HEADING_PENDING_SIGNAL = "VISIBLE_INSTITUTIONAL_CARD_HEADING_REVIEW_ONLY"
 VISIBLE_CARD_YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 MUSIC_EVENT_CATEGORY = re.compile(r"\b(?:musique concerts?|concerts? musique)\b")
 # Only visible, adjacent attribution creates a new PRIVATE discovery hint.
@@ -229,7 +233,9 @@ class RegionalEventAnchors(Anchors):
         self.article_stack = []
         self.article_music_categories = {}
         self.card_year_anchors = set()
+        self.card_heading_anchors = set()
         self.ambiguous_card_anchors = set()
+        self.card_heading_active = None
         self.div_depth = 0
 
     def handle_starttag(self, tag, attrs):
@@ -260,8 +266,19 @@ class RegionalEventAnchors(Anchors):
                 self.article_stack.append({
                     "start": len(self.anchors), "text": [],
                     "nested": False, "tag": tag,
+                    "heading": [], "heading_count": 0,
                     "div_depth": self.div_depth if tag == "div" else None,
                 })
+        if (tag in ("h2", "h3", "h4") and self.article_stack
+                and self.current is None and not self.hidden and not self.concealed
+                and "hidden" not in attributes
+                and attributes.get("aria-hidden") != "true"
+                and "display:none" not in (attributes.get("style") or
+                    "").replace(" ", "").lower()):
+            frame = self.article_stack[-1]
+            frame["heading_count"] += 1
+            if frame["heading_count"] == 1:
+                self.card_heading_active = (frame, tag)
         if tag.lower() == "a":
             self.accessible_event_label = None
         super().handle_starttag(tag, attrs)
@@ -279,6 +296,10 @@ class RegionalEventAnchors(Anchors):
             parts = self.article_stack[-1]["text"]
             if len(parts) < 32:
                 parts.append(data[:160])
+            if self.card_heading_active is not None:
+                frame = self.card_heading_active[0]
+                if frame is self.article_stack[-1] and len(frame["heading"]) < 16:
+                    frame["heading"].append(data[:160])
         super().handle_data(data)
 
     def handle_endtag(self, tag):
@@ -289,6 +310,9 @@ class RegionalEventAnchors(Anchors):
                     self.current[1].clear()
                     self.current[1].append(self.accessible_event_label)
         tag = tag.lower()
+        if (self.card_heading_active is not None
+                and tag == self.card_heading_active[1]):
+            self.card_heading_active = None
         frame = self.article_stack[-1] if self.article_stack else None
         closing_card = (
             frame is not None and tag == frame["tag"]
@@ -296,6 +320,9 @@ class RegionalEventAnchors(Anchors):
         )
         if closing_card:
             frame = self.article_stack.pop()
+            if (self.card_heading_active is not None
+                    and self.card_heading_active[0] is frame):
+                self.card_heading_active = None
             # Prefix context may nominate an anchor BEFORE the card closes.
             # Mark ALL links in nested or multi-anchor cards as ambiguous;
             # otherwise the first link could borrow the category and pass.
@@ -315,6 +342,32 @@ class RegionalEventAnchors(Anchors):
                 # title-year hint; no date, venue, artist or ownership proof.
                 # Contradictory years in the same card reject the hint.
                 years = set(VISIBLE_CARD_YEAR.findall(visible))
+                # A real event heading may be separate from "En savoir plus".
+                # It is never borrowed across cards or from global headings.
+                # Require an unambiguous future-edition year (candidate_links
+                # enforces the date window) and exactly one heading per card.
+                if len(years) == 1 and frame["heading_count"] == 1:
+                    heading = " ".join(" ".join(frame["heading"]).split())[:160]
+                    heading_name = normalized(heading)
+                    heading_years = set(VISIBLE_CARD_YEAR.findall(heading_name))
+                    genre_in_heading = bool(
+                        THEMES.search(heading_name) and FESTIVAL.search(heading_name))
+                    genre_in_card = bool(
+                        MUSIC_EVENT_CATEGORY.search(visible)
+                        or MUSIC_CATEGORY_CONTEXT.search(visible))
+                    festival_heading = bool(
+                        FESTIVAL.search(heading_name)
+                        or (COMPOUND_FESTIVAL_BRAND.search(heading_name)
+                            and not NON_FESTIVAL_BRAND.search(heading_name)))
+                    href, label, prefix = self.anchors[anchor_index]
+                    if (GENERIC_LINK_TEXT.fullmatch(normalized(label))
+                            and 8 <= len(heading_name) <= 125
+                            and festival_heading
+                            and not NON_MUSIC_TITLE.search(heading_name)
+                            and (genre_in_heading or genre_in_card)
+                            and (not heading_years or heading_years == years)):
+                        self.anchors[anchor_index] = (href, heading, prefix)
+                        self.card_heading_anchors.add(anchor_index)
                 if len(years) == 1:
                     href, label, prefix = self.anchors[anchor_index]
                     event_title = municipal_event_title(label)
@@ -533,7 +586,9 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
             continue
         seen.add(url)
         found.append({"candidate_url": url, "title": title,
-                      "signal": (CARD_YEAR_PENDING_SIGNAL
+                      "signal": (CARD_HEADING_PENDING_SIGNAL
+                                 if anchor_number in parser.card_heading_anchors else
+                                 CARD_YEAR_PENDING_SIGNAL
                                  if anchor_number in parser.card_year_anchors else
                                  THEMATIC_SIGNAL if thematic else
                                  ARCHIVE_SIGNAL if archive_slug else
