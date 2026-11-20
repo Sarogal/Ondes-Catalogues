@@ -565,7 +565,7 @@ class NonMusicalAdmissionGateCountsTests(unittest.TestCase):
     def test_official_html_sessions_report_missing_curated_snapshot_without_publishing(self):
         report, _, _ = probe(details={ONE: MPT_TEMPLATE})
         self.assertEqual(report["router_historical_snapshot_unchecked"], 2)
-        self.assertEqual(report["router_independent_geo_rights_review_required"], 0)
+        self.assertEqual(report["router_institutional_source_policy_pending"], 0)
         public = redact_detail_funnel_report(report)
         self.assertEqual(public["router_historical_snapshot_unchecked"], 2)
         self.assertFalse(public["publisher_connected"])
@@ -590,10 +590,10 @@ class NonMusicalAdmissionGateCountsTests(unittest.TestCase):
         }
         report, _, _ = probe(details={ONE: MPT_TEMPLATE},
                              independent_context=context)
-        self.assertEqual(report["router_independent_geo_rights_review_required"], 2)
+        self.assertEqual(report["router_institutional_source_policy_pending"], 2)
         self.assertEqual(report["factual_private_draft_for_rights_review"], 2)
         public = redact_detail_funnel_report(report)
-        self.assertEqual(public["router_independent_geo_rights_review_required"], 2)
+        self.assertEqual(public["router_institutional_source_policy_pending"], 2)
         self.assertFalse(public["approval_granted"])
         self.assertFalse(public["publication_ready"])
 

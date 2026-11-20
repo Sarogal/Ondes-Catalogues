@@ -15,6 +15,7 @@ from ptitesondes_html_first_party_session_proof import corroborate_first_party_s
 from ptitesondes_html_access_conditions import triage_html_access_conditions
 from ptitesondes_html_family_age import triage_html_family_age
 from ptitesondes_html_registry_history_triage import triage_independent_context
+from ptitesondes_institutional_source_policy import committed_source_policy
 
 SCHEMA = "ptitesondes.nonmusical_html_gate_router_readonly.v1"
 STAGES = frozenset({
@@ -27,6 +28,11 @@ STAGES = frozenset({
     "historical_snapshot_unchecked", "reviewed_venue_missing",
     "reviewed_venue_ambiguous", "reviewed_venue_untrusted",
     "reviewed_venue_unchecked", "independent_geo_rights_review_required",
+    "institutional_source_policy_missing",
+    "institutional_source_policy_invalid",
+    "institutional_source_policy_pending",
+    "institutional_source_policy_restricted",
+    "institutional_source_policy_expired",
 })
 ACTIONS = {
     "session_source_unverified": "recheck_exact_pinned_session",
@@ -45,6 +51,11 @@ ACTIONS = {
     "reviewed_venue_ambiguous": "resolve_reviewed_venue_identity",
     "reviewed_venue_untrusted": "audit_independent_venue_registry",
     "reviewed_venue_unchecked": "load_independent_venue_registry",
+    "institutional_source_policy_missing": "review_source_once_in_curated_registry",
+    "institutional_source_policy_invalid": "repair_curated_source_registry",
+    "institutional_source_policy_pending": "complete_source_level_fact_reuse_review",
+    "institutional_source_policy_restricted": "stop_source_reuse_request_legal_review",
+    "institutional_source_policy_expired": "renew_reviewed_source_reuse_policy",
     "independent_geo_rights_review_required":
         "run_venue_geo_organizer_rights_and_publisher_review",
 }
@@ -186,8 +197,26 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
         return _result("reviewed_venue_untrusted", **kwargs)
     if venue != "matched":
         return _result("reviewed_venue_unchecked", **kwargs)
-    # This is the furthest a source-only, static-registry diagnostic can go.
-    # The existing bounded IGN/BAN probe and rights review are separate.
+    # Source policy is loaded ONLY from the committed, curated registry;
+    # no collector-supplied rights claim can authorize the source. One policy
+    # covers all the site's event pages, and can expire or be revoked.
+    source_policy = committed_source_policy(trusted_index, child_prefix, today)
+    policy_status = source_policy["status"]
+    policy_route = {
+        "source_not_registered": "institutional_source_policy_missing",
+        "source_registry_invalid": "institutional_source_policy_invalid",
+        "source_provenance_needs_live_recheck": "institutional_source_policy_invalid",
+        "source_reuse_policy_pending": "institutional_source_policy_pending",
+        "source_reuse_restricted": "institutional_source_policy_restricted",
+        "source_reuse_review_stale_or_incomplete": "institutional_source_policy_expired",
+    }.get(policy_status)
+    if policy_route is not None:
+        return _result(policy_route, **kwargs)
+    if policy_status != (
+            "source_fact_only_review_recorded_requires_independent_checks"):
+        return _result("institutional_source_policy_invalid", **kwargs)
+    # Even a reviewed SOURCE FACTS policy cannot clear event GPS, current
+    # organizer/session, independent live duplicate check or publisher schema.
     return _result("independent_geo_rights_review_required", **kwargs)
 
 
