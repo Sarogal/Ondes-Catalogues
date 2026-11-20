@@ -191,6 +191,32 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
         self.assertEqual(event["verified_at"], DAY.isoformat())
         self.assert_not_a_publisher(simulate())
 
+    def test_children_only_no_age_is_not_mislabeled_en_famille(self):
+        from ptitesondes_factual_reuse_preflight import (
+            prepare_private_html_factual_draft,
+        )
+        item = packet()
+        proposal = prepare_private_html_factual_draft(
+            item["lead"], item["page"],
+            item["trusted_index"], item["child_prefix"])
+        self.assertEqual(proposal["status"], "private_draft_for_rights_review")
+        children = deepcopy(proposal)
+        children["draft"]["audience_source_claim"] = "explicit_children"
+        with patch(
+            "ptitesondes_nonmusical_catalogue_shape_dryrun."
+            "prepare_private_html_factual_draft",
+            return_value=children,
+        ):
+            event, reason = _prototype(
+                item["lead"], item["page"], item["trusted_index"],
+                item["child_prefix"], item["independent_context"],
+                item["admin_pin"], DAY)
+        self.assertIsNone(reason)
+        self.assertEqual(event["age_label"], "Enfants")
+        self.assertNotIn("age_min", event)
+        self.assertNotIn("age_max", event)
+        self.assert_not_a_publisher(simulate())
+
     def test_historical_duplicate_across_other_source_hosts_is_blocked(self):
         item = packet()
         event, reason = _prototype(
