@@ -16,8 +16,9 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 from ptitesondes_openagenda_v2_direct_evidence import (
-    _source_parts, FR_TZ, read_direct_v2, read_direct_agenda_v2,
+    _source_parts, read_direct_v2, read_direct_agenda_v2,
 )
+from ptitesondes_generic_schemaorg_event_discovery import SOURCE_TIMEZONES
 from ptitesondes_qualification_rootcause import probe_uid_in_index
 from proof import norm
 
@@ -25,7 +26,7 @@ SCHEMA = "ptitesondes.oa_direct_mirror_absence_private_audit.v1"
 MAX_LEADS = 4000
 MAX_AGENDAS = 60
 MAX_WORK = 25
-MAX_RECORDS = 100
+MAX_RECORDS = 500
 UID = re.compile(r"[0-9]{1,12}\Z")
 STATES = frozenset((
     "mirror_absent_direct_day_and_title_confirmed",
@@ -101,22 +102,30 @@ def _source(lead):
     return identity[0], identity[1], lead["date_start"]
 
 
-def _exact_event_claim(event, event_uid, title, day):
-    """An API statement, NOT event proof or permission to publish."""
+def _exact_event_claim(event, event_uid, title, day, city, venue):
+    """Check one exact OA API source claim, NOT independent publication proof."""
     if (type(event) is not dict
             or str(event.get("uid")) != event_uid
-            or type(event.get("status")) is not int
-            or event["status"] != 1
-            or event.get("removed") is True):
+            or type(event.get("state")) is not int or event["state"] != 2
+            or type(event.get("status")) is not int or event["status"] != 1
+            or event.get("removed") is True
+            or event.get("attendanceMode") not in (1, 3)
+            or type(event.get("timezone")) is not str
+            or event["timezone"] not in SOURCE_TIMEZONES):
         return False
     name = event.get("title")
     if type(name) is dict:
         name = name.get("fr")
-    if not isinstance(name, str) or norm(name) != norm(title):
+    location = event.get("location")
+    if (not isinstance(name, str) or norm(name) != norm(title)
+            or type(location) is not dict
+            or norm(location.get("adminLevel4")) != norm(city)
+            or norm(location.get("name")) != norm(venue)):
         return False
     occurrences = event.get("timings")
     if type(occurrences) is not list or len(occurrences) > 800:
         return False
+    zone = ZoneInfo(event["timezone"])
     for slot in occurrences:
         if type(slot) is not dict or type(slot.get("begin")) is not str:
             continue
@@ -124,10 +133,9 @@ def _exact_event_claim(event, event_uid, title, day):
             timestamp = datetime.fromisoformat(slot["begin"].replace("Z", "+00:00"))
             if timestamp.tzinfo is None or timestamp.utcoffset() is None:
                 continue
-            # UTC-to-local translation and venue evidence still have to be
-            # confirmed by the official full verification pipeline. For this
-            # early triage, only same written ISO day is claimed.
-            if timestamp.date().isoformat() == day:
+            # API's timezone is only a source claim; real local timing and
+            # independent organizer/venue proof must be repeated at admission.
+            if timestamp.astimezone(zone).date().isoformat() == day:
                 return True
         except (ValueError, OverflowError):
             continue
@@ -232,7 +240,8 @@ def audit_missing_ods_direct(
                 checked_event[ek] = event_reader(
                     agenda_uid, event_uid, public_read_key)
             valid = _exact_event_claim(
-                checked_event[ek], event_uid, lead["title"], day)
+                checked_event[ek], event_uid, lead["title"], day,
+                lead.get("city"), lead.get("venue"))
             newstate = ("mirror_absent_direct_day_and_title_confirmed"
                         if valid else "mirror_absent_direct_mismatch")
         except (ValueError, TypeError, OSError, KeyError, TimeoutError):
