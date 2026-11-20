@@ -118,7 +118,15 @@ def decoded_pcm_evidence(item: dict) -> bool:
     return True
 
 
-def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
+def next_evidence_report(
+    probe: dict, previous: dict | None = None, *,
+    retain_stream_variants: bool = False,
+) -> dict:
+    """Opt-in per-(UUID, stream SHA) retention; legacy behavior remains default.
+
+    This is only technical evidence retention, not a live-radio certificate.
+    Existing one-stream reports can migrate forward without losing observations.
+    """
     if (not isinstance(probe, dict) or probe.get("schemaVersion") != 1 or
         probe.get("publicationAllowed") is not False or
         not isinstance(probe.get("checks"), list)):
@@ -127,12 +135,18 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
     checks = probe["checks"]
     if len(checks) > 5:
         raise ValueError("Probe count exceeds isolated budget")
-    records: dict[str, dict] = {}
+    records: dict[str | tuple[str, str], dict] = {}
     if previous is not None:
         if (not isinstance(previous, dict) or previous.get("schemaVersion") != 1 or
             previous.get("publicationAllowed") is not False or
             not isinstance(previous.get("records"), list)):
             raise ValueError("Invalid previous evidence report")
+        if previous.get("streamHistoryMode") == "per_stream" and not retain_stream_variants:
+            raise ValueError("Refusing to downgrade multi-stream evidence history")
+        if previous.get("streamHistoryMode") not in (None, "legacy_uuid", "per_stream"):
+            raise ValueError("Unknown historical evidence mode")
+        if len(previous["records"]) > 25000:
+            raise ValueError("Excessive technical stream history")
         for row in previous["records"]:
             if not isinstance(row, dict):
                 raise ValueError("Invalid previous record")
@@ -179,9 +193,10 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
             if continuity_state not in {"not_run", "not_confirmed", "transport_sustained"}:
                 raise ValueError("Invalid previous continuity state")
             last = parse_day(row.get("lastObservedDate"))
-            if last > day or uid in records:
+            key = (uid, sha) if retain_stream_variants else uid
+            if last > day or key in records:
                 raise ValueError("Future or repeated evidence record")
-            records[uid] = {
+            records[key] = {
                 "stationuuid": uid,
                 "streamSha256": sha,
                 "audioEvidenceDates": dates,
@@ -211,7 +226,8 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         sustained = sustained_transport_evidence(item)
         frames = frame_chain_evidence(item)
         decoded = decoded_pcm_evidence(item)
-        old = records.get(uid)
+        key = (uid, sha) if retain_stream_variants else uid
+        old = records.get(key)
         if old is None or old["streamSha256"] != sha:
             old = {
                 "stationuuid": uid, "streamSha256": sha,
@@ -221,7 +237,9 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
                 "lastContinuityState": "not_run",
                 "lastFrameState": "not_run", "lastDecodeState": "not_run",
             }
-            records[uid] = old
+            if len(records) >= 25000:
+                raise ValueError("Technical stream history capacity exceeded")
+            records[key] = old
         old["lastVerdict"] = verdict
         old["lastObservedDate"] = day
         old["lastContinuityState"] = (
@@ -286,6 +304,7 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         })
     return {
         "schemaVersion": 1, "observationDate": day,
+        "streamHistoryMode": "per_stream" if retain_stream_variants else "legacy_uuid",
         "publicationAllowed": False, "technicallyQualifiedCount": 0,
         "repeatAudioCandidateCount": sum(
             x["repeatAudioSample"] for x in output_rows),
@@ -303,12 +322,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--probe", type=Path, required=True)
     parser.add_argument("--previous", type=Path)
+    parser.add_argument(
+        "--retain-stream-variants", action="store_true",
+        help="Opt-in: preserve separate evidence for each UUID + SHA-256 stream",
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     probe = json.loads(args.probe.read_text(encoding="utf-8"))
     previous = (json.loads(args.previous.read_text(encoding="utf-8"))
                 if args.previous else None)
-    report = next_evidence_report(probe, previous)
+    report = next_evidence_report(
+        probe, previous, retain_stream_variants=args.retain_stream_variants,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
