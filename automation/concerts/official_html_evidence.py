@@ -30,6 +30,10 @@ DATE_RE = re.compile(
     + "|".join(MONTHS)
     + r")\s+(20\d{2})(?!\d)"
 )
+# Explicit full dates also appear as HTML <time datetime>, ISO or dd/mm/yyyy.
+# All forms require a year; day/month-only and ticket-sale dates do not qualify.
+ISO_DATE_RE = re.compile(r"(?<![0-9])(20[0-9]{2})-([01][0-9])-([0-3][0-9])(?![0-9])")
+NUMERIC_DATE_RE = re.compile(r"(?<![0-9])([0-3]?[0-9])/([01]?[0-9])/(20[0-9]{2})(?![0-9])")
 END_SECTION = frozenset({
     "vous aimerez aussi", "evenements similaires", "autres concerts",
     "concerts similaires", "related events", "you may also like",
@@ -55,7 +59,17 @@ class VisibleBlocks(HTMLParser):
             self.ignored = 1
             return
         if tag in BLOCKS:
-            self.frames.append([tag, []])
+            # A machine-readable *event* date can be explicit even when the
+            # visible <time> text is a weekday or a short local date. Keep
+            # it bound to the same element, not a page-wide JSON-LD hint.
+            content = []
+            if tag == "time":
+                attr = dict(attrs).get("datetime") or ""
+                if isinstance(attr, str) and re.fullmatch(
+                        r"20[0-9]{2}-[01][0-9]-[0-3][0-9](?:T[0-9:.,+Z-]+)?",
+                        attr):
+                    content.append(attr)
+            self.frames.append([tag, content])
 
     def handle_data(self, data):
         if self.ignored:
@@ -82,13 +96,34 @@ class VisibleBlocks(HTMLParser):
 
 
 def _date_in(text):
-    found = DATE_RE.search(words(text))
-    if not found:
-        return None
-    try:
-        return dt.date(int(found[3]), MONTHS[found[2]], int(found[1])).isoformat()
-    except ValueError:
-        return None
+    """One complete date per event block; disagreement fails closed.
+
+    A date from <time datetime> is treated as local calendar day, never as
+    a concert start hour. Multiple different dates in the same block could
+    denote an on-sale day versus the show: they are not interchangeable.
+    """
+    dates = []
+    for found in DATE_RE.finditer(words(text)):
+        try:
+            dates.append(dt.date(int(found[3]), MONTHS[found[2]],
+                                 int(found[1])).isoformat())
+        except ValueError:
+            return "_invalid_date"
+    for found in ISO_DATE_RE.finditer(text):
+        try:
+            dates.append(dt.date(int(found[1]), int(found[2]),
+                                 int(found[3])).isoformat())
+        except ValueError:
+            return "_invalid_date"
+    for found in NUMERIC_DATE_RE.finditer(text):
+        try:
+            dates.append(dt.date(int(found[3]), int(found[2]),
+                                 int(found[1])).isoformat())
+        except ValueError:
+            return "_invalid_date"
+    if len(set(dates)) > 1:
+        return "_conflicting_dates"
+    return dates[0] if dates else None
 
 
 def _contains(text, needle):
