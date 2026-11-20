@@ -176,16 +176,17 @@ def verify(candidate, html_text, catalogue, today):
     if len(events) != 1:
         raise ValueError("Plusieurs événements structurés ou aucun")
     event = events[0]
-    raw_genres = event.get("genre")
-    if isinstance(raw_genres, str):
-        raw_genres = [raw_genres]
-    if (not isinstance(raw_genres, list)
-            or not 1 <= len(raw_genres) <= 20
+    # A mixed bill can legitimately have Death Metal, Punk and Jazz artists
+    # while the generic Event.genre says "Jazz" or is entirely absent.
+    # Collect genre labels ONLY from this exact Event or its individually
+    # named MusicGroup/Person performers. Never borrow a venue-wide genre,
+    # a biography, or a second event's metadata.
+    genres, genre_scope = bridge.event_genres_from_own_bill(event)
+    if (not isinstance(genres, list) or not 1 <= len(genres) <= 20
             or not all(isinstance(g, str) and 2 <= len(g.strip()) <= 80
-                       for g in raw_genres)
-            or not independently_relevant_genre(raw_genres)):
+                       for g in genres)
+            or not independently_relevant_genre(genres)):
         raise ValueError("Genre musical officiel précis absent")
-    genres = [g.strip() for g in raw_genres]
     if genres != fresh.get("classification"):
         raise ValueError("Genre officiel différent de la découverte")
     bill = bridge.official_named_bill(event.get("performer"))
