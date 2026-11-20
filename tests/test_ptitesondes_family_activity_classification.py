@@ -89,6 +89,14 @@ class FamilyActivityClassificationTests(unittest.TestCase):
         self.assertIsNone(result["category_proposal"])
         self.assertEqual(result["decision"], "ambiguous_activity_category")
 
+    def test_cine_lecture_is_not_a_second_reading_category(self):
+        item = propose_family_activity("Ciné-lecture pour enfants", "")
+        self.assertEqual(item["category_proposal"], "lecture-cinema")
+        ambiguous = propose_family_activity(
+            "Ciné-lecture et lecture d'histoires pour enfants", "")
+        self.assertEqual(ambiguous["decision"], "ambiguous_activity_category")
+        self.assertIsNone(ambiguous["category_proposal"])
+
     def test_unclassified_activity_is_not_guessed_from_family_cue(self):
         result = propose_family_activity(
             "Atelier spécial pour enfants", "Animation pour toute la famille")
