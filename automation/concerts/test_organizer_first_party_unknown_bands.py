@@ -132,6 +132,57 @@ class OrganizerWithoutAnyKnownBandTests(unittest.TestCase):
         self.assertTrue(checked["validatedByPublisher"])
         self.assertEqual(checked["publishableEvents"], 1)
 
+    def test_missing_first_party_region_needs_exact_government_postal_attestation(self):
+        lead, raw, catalogue, osm = fixture()
+        raw["location"]["address"].pop("addressRegion")
+        gov_url = "https://data.geopf.fr/geocodage/search/"
+        calls = []
+
+        def verified_fetch(url, cap):
+            calls.append(url)
+            if url.startswith(gov_url + "?"):
+                return json.dumps({"features": [{
+                    "type": "Feature",
+                    "properties": {
+                        "postcode": "75007", "city": "Paris",
+                        "street": "Avenue des Essais",
+                        "type": "street", "score": 0.97,
+                        "context": "75, Paris, Île-de-France"},
+                    "geometry": {"type": "Point",
+                                 "coordinates": [2.294, 48.858]},
+                }]}), url
+            return fetch(raw, osm, [])(url, cap)
+
+        event, site = reviewer.verify(lead, catalogue, DAY,
+                                      fetch=verified_fetch)
+        self.assertEqual(site["venue"]["region"], "Île-de-France")
+        self.assertTrue(any(u.startswith(gov_url + "?") for u in calls))
+        self.assertEqual(site["venue"]["geoSource"], OSM)
+        self.assertEqual(len(event["newArtists"]), 3)
+
+        # Exact government address but WRONG department is not admissible.
+        def wrong_ban(url, cap):
+            if url.startswith(gov_url + "?"):
+                return json.dumps({"features": [{
+                    "properties": {"postcode": "75007", "city": "Paris",
+                                   "street": "Avenue des Essais",
+                                   "type": "street", "score": 0.97,
+                                   "context": "93, Seine-Saint-Denis, Île-de-France"},
+                    "geometry": {"type": "Point",
+                                 "coordinates": [2.294, 48.858]},
+                }]}), url
+            return fetch(raw, osm, [])(url, cap)
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, catalogue, DAY, fetch=wrong_ban)
+
+        # An official no-region event without government support stays held.
+        def unavailable_ban(url, cap):
+            if url.startswith(gov_url + "?"):
+                raise ValueError("Government address verification unavailable")
+            return fetch(raw, osm, [])(url, cap)
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, catalogue, DAY, fetch=unavailable_ban)
+
     def test_independent_recheck_accepts_only_named_performer_genre_in_same_event(self):
         lead, raw, catalogue, osm = fixture()
         raw.pop("genre")
