@@ -32,6 +32,15 @@ def sustained_row(uid=A, sha=SHA1, verdict="audio_sample_ok"):
     return value
 
 
+def framed_row(uid=A, sha=SHA1):
+    value = sustained_row(uid, sha)
+    value["continuityEvidence"]["frameEvidence"] = {
+        "state": "frame_chain", "codec": "mpeg_audio", "frameCount": 3,
+        "sampleBytes": 32768, "publicationAllowed": False,
+    }
+    return value
+
+
 class StreamRecheckTests(unittest.TestCase):
     def test_first_positive_sample_is_not_qualified(self):
         report = next_evidence_report(probe(checks=[row()]))
@@ -173,6 +182,49 @@ class StreamRecheckTests(unittest.TestCase):
         self.assertEqual(len(evidence["audioEvidenceDates"]), 30)
         self.assertTrue(set(evidence["sustainedTransportDates"]).issubset(
             evidence["audioEvidenceDates"]))
+
+    def test_frame_chain_recurs_on_distinct_dates_without_certification(self):
+        first = next_evidence_report(probe(checks=[framed_row()]))
+        second = next_evidence_report(probe('2026-11-21', [framed_row()]), first)
+        self.assertEqual(second['repeatFrameChainCount'], 1)
+        self.assertEqual(second['records'][0]['frameChainDates'], ['2026-11-20', '2026-11-21'])
+        self.assertFalse(second['records'][0]['technicalQualified'])
+        self.assertFalse(second['publicationAllowed'])
+
+    def test_transport_only_history_cannot_become_frame_history(self):
+        first = next_evidence_report(probe(checks=[sustained_row()]))
+        second = next_evidence_report(probe('2026-11-21', [framed_row()]), first)
+        self.assertEqual(second['repeatSustainedTransportCount'], 1)
+        self.assertEqual(second['repeatFrameChainCount'], 0)
+
+    def test_frame_evidence_rejects_invalid_or_claimed_publication(self):
+        for key, value in (('codec', 'unknown'), ('frameCount', 2),
+                           ('sampleBytes', 90000), ('publicationAllowed', True)):
+            bad = framed_row()
+            bad['continuityEvidence']['frameEvidence'][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                next_evidence_report(probe(checks=[bad]))
+
+    def test_frame_evidence_resets_on_stream_change(self):
+        first = next_evidence_report(probe(checks=[framed_row()]))
+        second = next_evidence_report(probe('2026-11-21', [framed_row(sha=SHA2)]), first)
+        self.assertEqual(second['records'][0]['frameChainDates'], ['2026-11-21'])
+        self.assertFalse(second['records'][0]['repeatFrameChain'])
+
+    def test_no_retroactive_frame_approval_during_mime_only_recheck(self):
+        first = next_evidence_report(probe(checks=[framed_row()]))
+        second = next_evidence_report(probe('2026-11-21', [framed_row()]), first)
+        third = next_evidence_report(probe('2026-11-22', [row(verdict='audio_mime_only')]), second)
+        self.assertFalse(third['records'][0]['repeatFrameChain'])
+        self.assertEqual(len(third['records'][0]['frameChainDates']), 2)
+        self.assertEqual(third['technicallyQualifiedCount'], 0)
+
+    def test_previous_report_cannot_forge_frame_dates_outside_transport(self):
+        first = next_evidence_report(probe(checks=[framed_row()]))
+        bad = copy.deepcopy(first)
+        bad['records'][0]['frameChainDates'] = ['2026-11-19']
+        with self.assertRaises(ValueError):
+            next_evidence_report(probe('2026-11-21', []), bad)
 
 if __name__ == "__main__":
     unittest.main()
