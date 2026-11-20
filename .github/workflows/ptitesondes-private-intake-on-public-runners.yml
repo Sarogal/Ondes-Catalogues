@@ -88,6 +88,9 @@ jobs:
           assert "ptitesondes_html_private_queue_cycle.py" in s
           assert "vars.PTITESONDES_SCHEMAORG_HINTS == 'enabled'" in s
           assert "vars.PTITESONDES_SCHEMAORG_RECHECK == 'enabled'" in s
+          assert "vars.PTITESONDES_ODS_DIRECT_AUDIT == 'enabled'" in s
+          assert 'ptitesondes_ods_direct_mirror_cycle.py' in s
+          assert 'ods-direct-mirror-audit.json' in s
           assert 'ptitesondes_schemaorg_visible_recheck_cycle.py' in s
           assert 'ptitesondes_schemaorg_private_intake.py' in s
           assert 'html-schemaorg-hints.json' in s
@@ -599,6 +602,38 @@ jobs:
             fi
           fi
           echo "Séances Schema.org corroborées uniquement par preuves HTML exactes, stockées pour revue privée ; publication interdite." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diagnostiquer en privé les UID absents du miroir ODS (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_ODS_DIRECT_AUDIT == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          if ! python public/scripts/ptitesondes_ods_direct_mirror_cycle.py \
+              --state-checkout state --mode "$MODE" \
+              > "$LOG/ods-direct-mirror-aggregate-summary.json" 2>&1; then
+            echo "::warning::Diagnostic OA direct indisponible ; aucun dossier publié."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/reports/ods-direct-mirror-audit.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): audit privé des UID OA absents du miroir ODS' \
+                > "$LOG/ods-direct-private-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/ods-direct-private-push.log" 2>&1; then
+                echo "::error::Stockage privé du diagnostic OA refusé ; aucune publication."
+                exit 1
+              fi
+            fi
+          fi
+          echo "UID miroir ODS absents examinés uniquement dans la branche privée, source OA v2 non publiable." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
         if: ${{ env.CYCLE != 'outings' }}

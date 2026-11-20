@@ -11,6 +11,12 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
@@ -29,6 +35,12 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
@@ -71,6 +83,12 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_agenda_census.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_backlog_reconciliation.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_absence_audit.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_cycle.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_workflow_contract.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
