@@ -144,6 +144,38 @@ class GenericVenueOSMTests(unittest.TestCase):
         self.assertEqual(report["public_writes"], 0)
         self.assertEqual(report["records"][0]["lead_count"], 1)
 
+    def test_ign_bridge_keeps_verified_venues_and_events_at_zero(self):
+        from ptitesondes_generic_venue_ign_corroboration import address_candidate
+        osm = element()
+        osm["tags"].update({
+            "addr:housenumber": "12",
+            "addr:street": "Rue des Lilas",
+            "addr:postcode": "12345",
+        })
+        candidate = address_candidate(self.group, osm)
+        self.assertIsNotNone(candidate)
+        ban = {"type": "FeatureCollection", "features": [{
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [3.456, 45.123]},
+            "properties": {
+                "type": "housenumber", "score": 0.98,
+                "city": candidate["city"], "postcode": candidate["postcode"],
+                "housenumber": candidate["housenumber"],
+                "label": candidate["address_query"],
+            },
+        }]}
+        report = audit(
+            self.leads, DAY, self.fetch,
+            lambda xy: {"elements": [osm]}, live=True,
+            ign_fetch=lambda c: ban,
+        )
+        self.assertEqual(report["independent_address_matches"], 1)
+        self.assertEqual(report["leads_with_independent_address_hint"], 2)
+        self.assertEqual(report["verified_venue_leads"], 0)
+        self.assertFalse(report["official_venue_verified"])
+        self.assertEqual(report["public_writes"], 0)
+        self.assertFalse(report["publication_ready"])
+
     def test_invalid_center_refused_before_provider(self):
         with self.assertRaises(ValueError):
             overpass_query(float("nan"), 3.4)
