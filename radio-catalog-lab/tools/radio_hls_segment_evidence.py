@@ -16,6 +16,7 @@ from typing import Callable
 
 from radio_hls_manifest_evidence import inspect_hls_manifest, MAX_HLS_BYTES
 from radio_stream_frame_chain import analyze_frame_chain
+from radio_stream_decode_evidence import decode_audio_prefix
 from radio_stream_technical_probe import (
     PinnedHttpTransport, ResponseSample, UnsafeEndpoint, validate_endpoint,
 )
@@ -233,9 +234,11 @@ def verify_one_segment(
     manifest_url: str,
     request_manifest: Callable[[str], ResponseSample],
     request_segment: Callable[[str], ResponseSample],
+    *, experimental_decode: bool = False,
 ) -> dict:
     """Request at most ONE relative or verified HTTPS-CDN segment, no redirects."""
     output = {"state": "not_confirmed", "segmentEvidence": None,
+              "segmentDecodeEvidence": None,
               "manifestKind": "unconfirmed", "childManifestKind": "not_followed",
               "planningReason": "not_evaluated",
               "publicationAllowed": False, "technicalQualified": False}
@@ -295,6 +298,11 @@ def verify_one_segment(
             "segment_structural_evidence" if evidence["state"] != "not_confirmed"
             else "segment_unrecognized"
         )
+        if experimental_decode and evidence["state"] != "not_confirmed":
+            # Never pass an untrusted URL to the decoder, only capped bytes.
+            # PCM data stays inside the subprocess; return counts only.
+            output["segmentDecodeEvidence"] = decode_audio_prefix(
+                segment_response.body)
         return output
     except (UnsafeEndpoint, ValueError, OSError, TimeoutError) as error:
         output["state"] = "unsafe_or_failed_segment_request"
