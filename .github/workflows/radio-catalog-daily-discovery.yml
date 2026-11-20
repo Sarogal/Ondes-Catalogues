@@ -1,0 +1,157 @@
+name: Grosses Ondes — Radio Browser daily discovery preview
+
+on:
+  push:
+    branches:
+      - feature/radio-daily-discovery-lab-20261120
+    paths:
+      - "radio-catalog-lab/tools/radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/radio_daily_candidate_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_daily_candidate_ledger.py"
+      - "radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_daily_candidate_reconcile.py"
+      - "radio-catalog-lab/tools/radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/test_radio_stream_technical_probe.py"
+      - "radio-catalog-lab/tools/radio_stream_playlist_preview.py"
+      - "radio-catalog-lab/tools/test_radio_stream_playlist_preview.py"
+      - "radio-catalog-lab/tools/test_radio_stream_socket_integration.py"
+      - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
+      - ".github/workflows/radio-catalog-daily-discovery.yml"
+  workflow_dispatch:
+    inputs:
+      run_stream_probes:
+        description: "Manual opt-in: at most 2 safe audio sample probes (preview only)"
+        required: false
+        type: boolean
+        default: false
+  # Only GitHub's default branch executes scheduled workflows. This schedule
+  # is dormant on this isolated review branch until explicitly approved.
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: go-radio-daily-discovery-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  discovery-tests:
+    name: Contract tests (offline, no catalogue writes)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate candidate engine without network
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_technical_probe.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_playlist_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_socket_integration.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
+
+  discovery-preview:
+    name: Limited global radio scan — candidates only
+    needs: discovery-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore previous candidate ledger when available
+        if: github.event_name != 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          previous_id="$(gh run list --repo "$GITHUB_REPOSITORY" \
+            --workflow radio-catalog-daily-discovery.yml --branch "$GITHUB_REF_NAME" \
+            --status success --limit 10 --json databaseId \
+            --jq '.[0].databaseId // empty' || true)"
+          if [[ -n "$previous_id" ]]; then
+            mkdir -p "$RUNNER_TEMP/go-radio-previous"
+            if ! gh run download "$previous_id" --repo "$GITHUB_REPOSITORY" \
+              --name "go-radio-discovery-$previous_id" \
+              --dir "$RUNNER_TEMP/go-radio-previous"; then
+              echo "Previous evidence unavailable; candidate history starts anew"
+            fi
+          fi
+      - name: Scan Radio Browser without UUID allowlist
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-radio-discovery"
+          # On branch pushes, only a tiny real-network sample is used.
+          # Scheduled/manual runs explore many music tags and rotated pages.
+          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --tags "metal,punk,hard rock,black metal,thrash metal,trash metal,pagan metal,nu metal" \
+              --names "metal,punk,hard rock,nu metal" \
+              --page-size 50 --max-pages 1 --crawl-delay 0.3 \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          else
+            # Previous review-only tags are allowed to extend the taxonomy,
+            # but never authorize a radio, stream, logo or station deletion.
+            prior=()
+            if [[ -f "$RUNNER_TEMP/go-radio-previous/candidates.json" ]]; then
+              prior=(--previous-report "$RUNNER_TEMP/go-radio-previous/candidates.json")
+            fi
+            python radio-catalog-lab/tools/radio_daily_discovery.py \
+              --page-size 100 --max-pages 3 --crawl-delay 0.3 \
+              "${prior[@]}" \
+              --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
+          fi
+      - name: Retain cross-day candidates without approving any stream
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/ledger.json" ]]; then
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json" \
+              --previous "$RUNNER_TEMP/go-radio-previous/ledger.json"
+          else
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json"
+          fi
+      - name: Optional bounded audio byte sampling (manual only)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_stream_technical_probe.py \
+            --discovery "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
+            --limit 2 --allow-network
+      - name: Track technical samples over separate days (never approve streams)
+        if: github.event_name == 'workflow_dispatch' && inputs.run_stream_probes == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          previous=()
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/stream-evidence.json" ]]; then
+            previous=(--previous "$RUNNER_TEMP/go-radio-previous/stream-evidence.json")
+          fi
+          python radio-catalog-lab/tools/radio_stream_recheck_ledger.py \
+            --probe "$RUNNER_TEMP/go-radio-discovery/technical-probes.json" \
+            --output "$RUNNER_TEMP/go-radio-discovery/stream-evidence.json" \
+            "${previous[@]}"
+      - name: Upload review-only candidate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-discovery-${{ github.run_id }}
+          path: ${{ runner.temp }}/go-radio-discovery/
+          if-no-files-found: error
+          retention-days: 14
