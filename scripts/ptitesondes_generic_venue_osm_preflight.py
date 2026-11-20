@@ -65,14 +65,15 @@ def source_center(group, record_fetch=api_record):
     """ODS/OA metadata supplies an UNTRUSTED search centre, never GPS proof.
 
     Require exact UID + city + venue for up to three distinct UID records;
-    any missing/contradictory record blocks this particular private probe.
+    any missing/contradictory sampled record blocks the private probe. More
+    records may exist: this is NEVER a full registry or GPS attestation.
     """
     uids = group["uids"]
-    if not uids or len(uids) > 3:
-        return None, "too_many_uids_for_corroborated_probe"
+    if not uids:
+        return None, "no_exact_uid_for_probe"
     centers = []
     try:
-        for uid in uids:
+        for uid in uids[:3]:
             row = record_fetch(uid)
             if (str(row.get("uid")) != uid
                     or norm(row.get("location_city")) != group["key"][0]
