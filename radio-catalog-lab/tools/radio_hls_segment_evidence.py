@@ -114,6 +114,40 @@ def plan_single_variant(master: bytes, content_type: str,
     return SegmentPlan(url=target)
 
 
+def pending_media_reference_reason(manifest: bytes, mime: str, url: str) -> str:
+    """Safe diagnostic category only: no URL, path, token or manifest text."""
+    if inspect_hls_manifest(manifest, mime, url)["kind"] != "live_manifest_candidate":
+        return "not_simple_live_media"
+    lines = manifest.decode("utf-8-sig").splitlines()
+    items = [line.strip() for line in lines if line.strip() and not line.startswith("#")]
+    if not items:
+        return "no_media_reference"
+    value = items[-1]
+    if len(value) > 200 or any(ord(c) < 33 or ord(c) > 126 for c in value):
+        return "reference_too_complex"
+    if value.startswith(("http://", "https://", "//")):
+        return "absolute_segment_reference_pending"
+    if value.startswith("/"):
+        return "root_relative_segment_pending"
+    if "\\" in value or "@" in value or "{" in value or "}" in value:
+        return "unsafe_segment_reference"
+    try:
+        parts = urllib.parse.urlsplit(value)
+        raw_path = urllib.parse.unquote(urllib.parse.unquote(parts.path))
+    except ValueError:
+        return "invalid_reference"
+    if any(piece in (".", "..") for piece in raw_path.split("/")):
+        return "path_traversal"
+    if raw_path.lower().endswith((".m4s", ".mp4", ".cmfa", ".cmfv")):
+        return "fragmented_mp4_requires_init"
+    if not raw_path.lower().endswith(ALLOWED_SEGMENT_EXTENSIONS):
+        return "unsupported_segment_extension"
+    if len(parts.query) > 128 or not re.fullmatch(
+            r"[A-Za-z0-9_=&%+./~-]*", parts.query):
+        return "complex_segment_query"
+    return "other_reference_restriction"
+
+
 def mpeg_ts_packets(sample: bytes) -> dict:
     """Bounded TS transport evidence, not an audio codec verification."""
     proof = {"state": "not_confirmed", "packetCount": 0,
@@ -189,6 +223,7 @@ def verify_one_segment(
     """Request at most ONE same-origin segment, fail closed on redirects."""
     output = {"state": "not_confirmed", "segmentEvidence": None,
               "manifestKind": "unconfirmed", "childManifestKind": "not_followed",
+              "planningReason": "not_evaluated",
               "publicationAllowed": False, "technicalQualified": False}
     try:
         validate_endpoint(manifest_url)
@@ -219,9 +254,13 @@ def verify_one_segment(
                 child_response.body, child_response.content_type, child_url)
             if plan is None:
                 output["state"] = "child_not_simple_live_media"
+                output["planningReason"] = pending_media_reference_reason(
+                    child_response.body, child_response.content_type, child_url)
                 return output
         if plan is None:
             output["state"] = "no_safe_simple_segment"
+            output["planningReason"] = pending_media_reference_reason(
+                manifest_data, content_type, effective_url)
             return output
         segment_response = request_segment(plan.url)
         # No redirects: even an originally same-origin segment might redirect to
