@@ -7,6 +7,8 @@ on:
     paths:
       - "radio-catalog-lab/tools/radio_daily_discovery.py"
       - "radio-catalog-lab/tools/test_radio_daily_discovery.py"
+      - "radio-catalog-lab/tools/radio_daily_candidate_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_daily_candidate_ledger.py"
       - ".github/workflows/radio-catalog-daily-discovery.yml"
   workflow_dispatch:
   # Only GitHub's default branch executes scheduled workflows. This schedule
@@ -16,6 +18,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: go-radio-daily-discovery-preview-${{ github.ref }}
@@ -32,7 +35,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Validate candidate engine without network
-        run: python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily_discovery.py" -v
+        run: python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_daily*.py" -v
 
   discovery-preview:
     name: Limited global radio scan — candidates only
@@ -61,10 +64,43 @@ jobs:
               --page-size 100 --max-pages 3 --crawl-delay 0.3 \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           fi
+      - name: Restore previous candidate ledger when available
+        if: github.event_name != 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          previous_id="$(gh run list --repo "$GITHUB_REPOSITORY" \
+            --workflow radio-catalog-daily-discovery.yml --branch "$GITHUB_REF_NAME" \
+            --status success --limit 10 --json databaseId \
+            --jq '.[0].databaseId // empty' || true)"
+          if [[ -n "$previous_id" ]]; then
+            mkdir -p "$RUNNER_TEMP/go-radio-previous"
+            if ! gh run download "$previous_id" --repo "$GITHUB_REPOSITORY" \
+              --name "go-radio-discovery-$previous_id" \
+              --dir "$RUNNER_TEMP/go-radio-previous"; then
+              echo "Previous evidence unavailable; candidate history starts anew"
+            fi
+          fi
+      - name: Retain cross-day candidates without approving any stream
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -f "$RUNNER_TEMP/go-radio-previous/ledger.json" ]]; then
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json" \
+              --previous "$RUNNER_TEMP/go-radio-previous/ledger.json"
+          else
+            python radio-catalog-lab/tools/radio_daily_candidate_ledger.py \
+              --scan "$RUNNER_TEMP/go-radio-discovery/candidates.json" \
+              --output "$RUNNER_TEMP/go-radio-discovery/ledger.json"
+          fi
       - name: Upload review-only candidate report
         uses: actions/upload-artifact@v4
         with:
           name: go-radio-discovery-${{ github.run_id }}
-          path: ${{ runner.temp }}/go-radio-discovery/candidates.json
+          path: ${{ runner.temp }}/go-radio-discovery/
           if-no-files-found: error
           retention-days: 14
