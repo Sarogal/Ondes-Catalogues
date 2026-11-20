@@ -63,6 +63,69 @@ class RegionalTests(unittest.TestCase):
         self.assertEqual(sources[0]["url"], detail)
         self.assertEqual(queue["publications"], 0)
 
+
+    def test_sibling_visible_category_in_single_article_is_private_only(self):
+        from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
+        from grossesondes_institutional_edition import (
+            independently_fetch, private_proposal)
+        title = "Festival des Rivages 2027"
+        url = ("https://www.angers.fr/actualites-sorties/agenda/"
+               "festival-des-rivages-2027")
+        separate_siblings = (
+            '<article class="event-card"><p>Musique / Concert</p>'
+            '<h3><a href="' + url + '">' + title + '</a></h3>'
+            '</article>')
+        found = candidate_links(separate_siblings, ANGERS, DAY)
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
+        self.assertEqual(found[0]["candidate_url"], url)
+        self.assertEqual(found[0]["title"], title)
+        self.assertEqual(found[0]["archive_slug"], None)
+        # No independent metal/rock/punk proof on the official event detail.
+        spec = {"index_url": ANGERS, "index_page": ANGERS,
+                "url": url, "title": title, "year": 2027}
+        proposal = private_proposal(
+            spec, ("2027-06-04", "2027-06-05"), DAY)
+        self.assertIsNotNone(proposal)
+        seen = []
+        def fetch(u):
+            seen.append(u)
+            if u == ANGERS:
+                return separate_siblings
+            self.assertEqual(u, url)
+            return ('<h1>Festival des Rivages 2027</h1>'
+                    '<p>Les 4 et 5 juin 2027.</p>')
+        self.assertIsNone(independently_fetch(proposal, DAY, fetch=fetch))
+        self.assertEqual(seen, [ANGERS, url])
+
+    def test_article_category_cannot_leak_or_accept_hidden_or_ambiguous_cards(self):
+        title = "Festival des Rivages 2027"
+        url = "/actualites-sorties/agenda/festival-des-rivages-2027"
+        anchor = '<h3><a href="' + url + '">' + title + '</a></h3>'
+        cases = (
+            # Category belongs to another article.
+            "<article><p>Musique / Concert</p></article><article>" + anchor + "</article>",
+            # Hidden category, script, or aria-hidden region is never evidence.
+            '<article><p hidden>Musique / Concert</p>' + anchor + "</article>",
+            '<article><p aria-hidden="true">Musique / Concert</p>' + anchor + "</article>",
+            '<article><script>Musique / Concert</script>' + anchor + "</article>",
+            '<article><div style="display:none">Musique / Concert</div>' + anchor + "</article>",
+            # Two distinct visible links: ambiguous card ownership.
+            '<article><p>Musique / Concert</p><a href="/autre">Autre</a>' + anchor + "</article>",
+            # Multi-card parent may not attribute one child category to a sibling.
+            '<article><p>Musique / Concert</p><article>' + anchor + "</article></article>",
+            # Unrelated sibling DIV is still forbidden by the older local parser.
+            '<div><p>Musique / Concert</p></div><div>' + anchor + "</div>",
+            # Festival without exact edition year, and non-music festival.
+            '<article><p>Musique / Concert</p><h3><a href="' + url +
+            '">Festival des Rivages</a></h3></article>',
+            '<article><p>Musique / Concert</p><h3><a href="' + url +
+            '">Festival des fleurs 2027</a></h3></article>',
+        )
+        for html in cases:
+            with self.subTest(html=html):
+                self.assertEqual(candidate_links(html, ANGERS, DAY), [])
+
     def test_openagenda_name_plus_year_and_region_can_nominate_only_a_live_institutional_link(self):
         """A research clue can find a genre-less title, NEVER authorize publication."""
         from national_openagenda_research import scan as scan_openagenda
