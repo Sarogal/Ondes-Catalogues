@@ -166,7 +166,7 @@ class DailyDiscoveryTests(unittest.TestCase):
     def test_fingerprint_not_a_fake_exact_identity(self):
         self.assertEqual(normalize("MÖTÖRHEAD"), "motorhead")
         self.assertEqual(genre_evidence("Metalcore Zone", "metal"),
-                         ["metal"])
+                         ["metal", "metalcore"])
         self.assertIn("hard rock", genre_evidence("Pure Hard Rock", ""))
 
     def test_metalcore_and_grindcore_are_included_as_candidate_genres(self):
