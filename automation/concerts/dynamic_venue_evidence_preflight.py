@@ -95,15 +95,13 @@ def _select(rows, today, scan_slot, limit):
 
 
 def _coordinates(site, geo_fetch):
-    """The official event's location must match an independent named OSM object."""
-    if site.get("geoSource"):
-        lat, lon = site_review._read_osm_node(
-            site["geoSource"], site, geo_fetch)
-        kind = "named-osm-node"
-        osm_url = site["geoSource"]
-    else:
-        osm_url, lat, lon, kind = independent_geo.verify(site, geo_fetch)
-    return osm_url, lat, lon, kind
+    """Re-use the exact same independent site contract as signed concerts.
+
+    A first-party named way is NOT sufficient: BAN and a fresh named OSM map
+    must corroborate it. One common verifier prevents private diagnostics
+    from accepting a location that the real independent publisher rejects.
+    """
+    return site_review.corroborate_physical_site(site, geo_fetch)
 
 
 def _public_geo_consistent(venue, lat, lon):
