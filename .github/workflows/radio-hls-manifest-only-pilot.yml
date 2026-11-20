@@ -8,6 +8,8 @@ on:
       - ".github/workflows/radio-hls-manifest-only-pilot.yml"
       - "radio-catalog-lab/tools/radio_hls_manifest_evidence.py"
       - "radio-catalog-lab/tools/test_radio_hls_manifest_evidence.py"
+      - "radio-catalog-lab/tools/radio_stream_decode_evidence.py"
+      - "radio-catalog-lab/tools/test_radio_stream_decode_evidence.py"
       - "radio-catalog-lab/tools/radio_hls_segment_evidence.py"
       - "radio-catalog-lab/tools/test_radio_hls_segment_evidence.py"
       - "radio-catalog-lab/tools/radio_hls_daily_pilot.py"
@@ -34,6 +36,15 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_manifest_evidence.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_daily_pilot.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_hls_segment_evidence.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_decode_evidence.py" -v
+      - name: Install FFmpeg only on this ephemeral preview runner
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ffmpeg
+          fi
       - name: Discover Radio Browser metal and rock candidates
         shell: bash
         run: |
@@ -43,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network --check-one-segment
+          python radio-catalog-lab/tools/radio_hls_daily_pilot.py --discovery candidate-manifest-scan.json --output hls-manifest-observations.json --limit 5 --allow-network --check-one-segment --experimental-decode-segment
       - name: Verify no publication or stream data
         shell: bash
         run: |
@@ -56,6 +67,10 @@ jobs:
           assert report["checkedCount"] <= 5
           assert report["segmentVerificationAttemptCount"] <= 1
           assert report["segmentStructuralEvidenceCount"] <= 1
+          assert report["decodedPcmSegmentCount"] <= report["segmentStructuralEvidenceCount"]
+          assert all((x.get("segmentCheck") or {}).get("segmentDecodeEvidence") is None
+                     or x["segmentCheck"]["segmentDecodeEvidence"]["publicationAllowed"] is False
+                     for x in report["checks"])
           assert all(x["publicationAllowed"] is False for x in report["checks"])
           assert all("streamUrl" not in x and "segments" not in x for x in report["checks"])
           assert all("http:" not in str(x) and "https:" not in str(x) for x in report["checks"])
@@ -63,6 +78,7 @@ jobs:
                 "kinds", report["manifestKinds"],
                 "segment_attempts", report["segmentVerificationAttemptCount"],
                 "segment_structures", report["segmentStructuralEvidenceCount"],
+                "segment_pcm", report["decodedPcmSegmentCount"],
                 "verified=0 published=false")
           PY
       - name: Upload redacted evidence only (not candidate URLs)
