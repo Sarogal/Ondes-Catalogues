@@ -7,6 +7,7 @@ private lead. Direct OpenAgenda v2 must then independently confirm the UID,
 venue, municipality and official website in the calling reader. No publisher.
 """
 import math
+import json
 import re
 from urllib.parse import urlsplit
 
@@ -54,9 +55,19 @@ def ods_immutable_source_match(group, uid, source_url, record):
             or norm(record.get("location_name")) != norm(group.get("venue"))
             or norm(record.get("location_city")) != norm(group.get("city"))
             or record.get("location_countrycode") not in (
-                "FR", "GP", "MQ", "GF", "RE", "YT")
-            or type(record.get("status")) not in (int,)
-            or record["status"] != 1):
+                "FR", "GP", "MQ", "GF", "RE", "YT")):
+        return False
+    state = record.get("status")
+    if isinstance(state, str):
+        if len(state) > 1500:
+            return False
+        try:
+            state = json.loads(state)
+        except (ValueError, TypeError):
+            return False
+    # The ODS mirror serializes "status" as a JSON string with an
+    # embedded ID (real 2026-11-20 format). Never infer it from label.
+    if not isinstance(state, dict) or type(state.get("id")) is not int or state["id"] != 1:
         return False
     point = record.get("location_coordinates")
     if not isinstance(point, dict):
