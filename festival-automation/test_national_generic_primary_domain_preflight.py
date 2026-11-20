@@ -146,6 +146,30 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertFalse(row["publication_authorized"])
         self.assertFalse(checked["publication_authorized"])
 
+    def test_administrative_sale_date_does_not_block_primary_private_date_observation(self):
+        state, queue, published = fixture()
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = ("<main><p>Festival Foudre du Nord 2027 : "
+                "les 13 et 14 août 2027, concerts métal.</p>"
+                "<p>Ouverture de la billetterie le 26 mars 2027.</p></main>")
+        first = examine(state, queue, published, DAY1, fetch=lambda _: html)
+        row = first["rows"][0]
+        self.assertEqual(row["status"], "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY")
+        self.assertEqual(row["start_date_hint"], "2027-08-13")
+        self.assertEqual(row["end_date_hint"], "2027-08-14")
+        self.assertFalse(row["publication_authorized"])
+        # Same-day rechecks cannot manufacture a two-day proof.
+        repeated = examine(state, queue, published, DAY1, fetch=lambda _: html)
+        self.assertEqual(repeated["two_day_dates_count"], 0)
+        # Any other festival date on the page remains a hard conflict.
+        altered = html.replace("</main>",
+            "<p>Autre festival : 26 et 27 mars 2027.</p></main>")
+        fresh, q, catalog = fixture()
+        q["dossiers"] = q["dossiers"][:1]
+        refused = examine(fresh, q, catalog, DAY1, fetch=lambda _: altered)
+        self.assertEqual(refused["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+
     def test_same_host_homepage_recovers_dates_without_approving_domain(self):
         state, queue, published = fixture()
         queue["dossiers"] = queue["dossiers"][:1]

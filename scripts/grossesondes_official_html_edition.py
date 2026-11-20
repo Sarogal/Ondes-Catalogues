@@ -141,6 +141,66 @@ class VisibleParagraphs(VisibleText):
         super().handle_endtag(tag)
 
 
+ADMINISTRATIVE_ONSALE = re.compile(
+    r"\b(?:ouverture\s+(?:de\s+|des\s+|du\s+|d\s+)?"
+    r"(?:la\s+)?(?:billetterie|prevente?s?|reservations?|inscriptions?)"
+    r"|(?:la\s+)?billetterie\s+(?:ouvre|ouvrira)"
+    r"|mise\s+en\s+vente\s+(?:des\s+)?(?:billets?|places?)"
+    r"|prevente?s?\s+(?:ouvrent|ouvre|ouvriront)"
+    r"|(?:ticket\s+sales?|presales?)\s+(?:open|opens|start|starts))\b",
+    re.IGNORECASE,
+)
+
+
+def administrative_calendar_dates(html, edition_title, year):
+    """Identify only clearly NON-event single dates in isolated visible blocks.
+
+    "Ouverture de la billetterie le 26 mars 2027" must not contradict an
+    independently explicit festival weekend. A generic date, another festival,
+    a mixed paragraph, a cancellation, an embedded script or a multi-day date
+    NEVER enters this exclusion list. This is a negative classification, not
+    festival proof, a year inference or a newly approved source.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 1_400_000
+            or not isinstance(edition_title, str)
+            or type(year) is not int):
+        return set()
+    words = re.findall(
+        r"[a-z0-9]+",
+        re.sub(r"\b20[2-4]\d\b", "", fold(edition_title)),
+    )
+    if not words or len("".join(words)) < 8:
+        return set()
+    exact_name = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+        + r"(?![a-z0-9])"
+    )
+    parser = VisibleParagraphs()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return set()
+    exclusions = set()
+    for block in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        if not 0 < len(block) <= 220:
+            continue
+        paragraph = " ".join(fold(block).split())
+        if (exact_name.search(paragraph) or CANCEL.search(paragraph)
+                or re.search(r"\bfest(?:ival)?\b", paragraph)):
+            continue
+        dates = list(explicit_ranges(paragraph, year))
+        if len(dates) != 1:
+            continue
+        offset, _end, first, last = dates[0]
+        if first != last:
+            continue
+        preceding = paragraph[max(0, offset - 110):offset]
+        if ADMINISTRATIVE_ONSALE.search(preceding):
+            exclusions.add((first, last))
+    return exclusions
+
+
 def _current_edition_same_paragraph(html, name, start, end):
     """An explicit, noncancelled current-year name/date in ONE visible block."""
     parser = VisibleParagraphs()
@@ -198,6 +258,8 @@ def visible_official_edition(html, edition_title, start, end):
     if not mentions:
         return False
     year = start.year
+    ignored_administrative_days = administrative_calendar_dates(
+        html, edition_title, year)
     matches = set()
     for mention in mentions[:80]:
         left = max(0, mention.start() - 300)
@@ -223,5 +285,6 @@ def visible_official_edition(html, edition_title, start, end):
         if CANCEL.search(excerpt):
             return False
         for _begin, _end, actual_start, actual_end in dates:
-            matches.add((actual_start, actual_end))
+            if (actual_start, actual_end) not in ignored_administrative_days:
+                matches.add((actual_start, actual_end))
     return dominant_visible_range(matches) == (start, end)
