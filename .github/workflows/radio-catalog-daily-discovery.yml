@@ -17,6 +17,8 @@ on:
       - "radio-catalog-lab/tools/radio_stream_playlist_preview.py"
       - "radio-catalog-lab/tools/test_radio_stream_playlist_preview.py"
       - "radio-catalog-lab/tools/test_radio_stream_socket_integration.py"
+      - "radio-catalog-lab/tools/radio_stream_frame_chain.py"
+      - "radio-catalog-lab/tools/test_radio_stream_frame_chain.py"
       - "radio-catalog-lab/tools/radio_stream_continuity_evidence.py"
       - "radio-catalog-lab/tools/test_radio_stream_continuity_evidence.py"
       - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
@@ -61,6 +63,7 @@ jobs:
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_socket_integration.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_continuity_evidence.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_frame_chain.py" -v
 
   discovery-preview:
     name: Limited global radio scan — candidates only
