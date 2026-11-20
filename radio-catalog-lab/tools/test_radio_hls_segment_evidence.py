@@ -360,5 +360,32 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
         self.assertEqual(output["state"], "manifest_fetch_incomplete")
         self.assertEqual(n, 3)
 
+
+    def test_sanitized_reasons_distinguish_fmp4_and_external_media(self):
+        from radio_hls_segment_evidence import pending_media_reference_reason
+        examples = (
+            ("chunks/first.m4s", "fragmented_mp4_requires_init"),
+            ("https://cdn.example.org/secret123.ts", "absolute_segment_reference_pending"),
+            ("/media/private.ts", "root_relative_segment_pending"),
+            ("playlist.mpd", "unsupported_segment_extension"),
+            ("../secret.ts", "path_traversal"),
+        )
+        for reference, expected in examples:
+            with self.subTest(reference=reference):
+                reason = pending_media_reference_reason(
+                    manifest(b=reference), MIME, BASE)
+                self.assertEqual(reason, expected)
+                self.assertNotIn(reference, reason)
+                self.assertNotIn("secret", reason)
+
+    def test_pending_reason_never_discloses_signed_segment_query(self):
+        data = manifest(b="cdn-123.m4s?sig=SENSITIVE_TOKEN_123")
+        out = verify_one_segment(BASE, lambda _: response(data), lambda _: None)
+        self.assertEqual(out["state"], "no_safe_simple_segment")
+        self.assertEqual(out["planningReason"], "fragmented_mp4_requires_init")
+        self.assertNotIn("SENSITIVE_TOKEN", str(out))
+        self.assertFalse(out["technicalQualified"])
+        self.assertFalse(out["publicationAllowed"])
+
 if __name__ == "__main__":
     unittest.main()
