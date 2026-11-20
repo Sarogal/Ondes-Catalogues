@@ -1,0 +1,63 @@
+name: Grosses Ondes — one-shot live radio stream probe (no publication)
+
+# One isolated CI run when this branch-only workflow is created.
+# This workflow is not on main and has no cron or write permissions.
+on:
+  push:
+    branches:
+      - feature/radio-daily-discovery-lab-20261120
+    paths:
+      - ".github/workflows/radio-catalog-live-probe-smoke-20261120.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  real-samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Scan a few public Radio Browser results (no stream requested yet)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/go-one-shot"
+          python radio-catalog-lab/tools/radio_daily_discovery.py \
+            --tags "metal,punk,hard rock" --names "metal" \
+            --page-size 30 --max-pages 1 --crawl-delay 0.3 \
+            --output "$RUNNER_TEMP/go-one-shot/candidates.json"
+      - name: Probe at most two resolved radio streams, no publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python radio-catalog-lab/tools/radio_stream_technical_probe.py \
+            --discovery "$RUNNER_TEMP/go-one-shot/candidates.json" \
+            --output "$RUNNER_TEMP/go-one-shot/technical-probes.json" \
+            --limit 2 --allow-network
+      - name: Verify read-only result, print only aggregate (no URLs or station ids)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import collections, json, os, pathlib
+          p = pathlib.Path(os.environ["RUNNER_TEMP"]) / "go-one-shot/technical-probes.json"
+          report = json.loads(p.read_text(encoding="utf8"))
+          assert report["publicationAllowed"] is False
+          assert report["technicalVerifiedCount"] == 0
+          assert 0 <= report["checkedCount"] <= 2
+          assert all(row["publicationAllowed"] is False for row in report["checks"])
+          outcomes = dict(collections.Counter(item["verdict"] for item in report["checks"]))
+          print(f"ONE_SHOT_REAL_STREAM_SMOKE checks={report['checkedCount']} "
+                f"verdicts={outcomes} technically_verified=0 publication=false")
+          PY
+      - name: Keep redacted technical report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-real-stream-smoke
+          path: ${{ runner.temp }}/go-one-shot/technical-probes.json
+          retention-days: 7
+          if-no-files-found: error
