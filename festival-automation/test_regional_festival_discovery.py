@@ -19,6 +19,46 @@ def page(label="Shred Fest 2027",target=TARGET):
 def report(day=DAY):
     return {"schema":"grossesondes.source-watch-report.v1","date":day}
 class RegionalTests(unittest.TestCase):
+    def test_compound_festival_brand_music_category_is_discovery_only(self):
+        from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
+        # The compound festival token nominates no event without an exact
+        # future year, one uniquely attributed visible institutional card
+        # and a general music category. It cannot prove rock/metal/punk.
+        def card(title, category="Musique / Concert", hidden=False, extra=""):
+            attribute = ' hidden' if hidden else ''
+            return (
+                '<article><p' + attribute + '>' + category + '</p>'
+                '<h3><a href="/actualites-sorties/agenda/branded-2027">'
+                + title + '</a></h3>' + extra + '</article>'
+            )
+
+        for title in ("HelixFest 2027", "MordorFest 2027",
+                      "Festibarock'in 2027", "ProtoFest 2027"):
+            with self.subTest(title=title):
+                hits = candidate_links(card(title), ANGERS, DAY)
+                self.assertEqual(len(hits), 1)
+                self.assertEqual(hits[0]["signal"], MUSIC_CATEGORY_PENDING_SIGNAL)
+                self.assertIsNone(hits[0]["archive_slug"])
+                self.assertEqual(hits[0]["title"], title)
+
+        for title in ("HelixFest", "HelixFest 2032",
+                      "Festivités musicales 2027", "Festin gourmand 2027",
+                      "Festival des plantes 2027"):
+            with self.subTest(title=title):
+                self.assertEqual(candidate_links(card(title), ANGERS, DAY), [])
+        self.assertEqual(candidate_links(card("HelixFest 2027", hidden=True),
+                                         ANGERS, DAY), [])
+        self.assertEqual(candidate_links(card("HelixFest 2027", category="Culture"),
+                                         ANGERS, DAY), [])
+        self.assertEqual(candidate_links(
+            card("HelixFest 2027", extra='<a href="/other">Autre</a>'),
+            ANGERS, DAY), [])
+        # A neighbouring festival cannot borrow an adjacent card's label.
+        adjacent = ('<article><p>Musique / Concert</p></article>'
+                    '<article><h3><a href="/actualites-sorties/agenda/branded-2027">'
+                    'HelixFest 2027</a></h3></article>')
+        self.assertEqual(candidate_links(adjacent, ANGERS, DAY), [])
+
     def test_genreless_named_festival_in_visible_music_category_is_private_lead(self):
         from regional_festival_discovery import MUSIC_CATEGORY_PENDING_SIGNAL
         from national_discovery_queue import build_queue
