@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_shared_venue_location_evidence import (
     VenueLocationProof, mint_private_location_proof, location_from_proof,
 )
-from ptitesondes_candidate_promotion import registry_location
+from ptitesondes_candidate_promotion import registry_location, permitted
 from venue_registry import verified_location
 
 DAY = date(2026, 11, 20)
@@ -84,6 +84,32 @@ class SharedVenueLocationTests(unittest.TestCase):
         self.assertIsNone(registry_location(GROUP))
         self.assertFalse(verified_location(
             {**GROUP, "lat":POINT[0], "lng":POINT[1]})[0])
+
+    def test_optional_location_proof_advances_only_the_first_admission_gate(self):
+        lead = {
+            "city": GROUP["city"], "venue": GROUP["venue"],
+            "title": "Atelier pour enfants",
+            "collector": "openagenda-v2", "external_id": "721",
+            "source_url": "https://openagenda.com/agenda-demo/events/721_atelier",
+            "date_start": "2026-12-12", "date_end": "2026-12-12",
+        }
+        proof = mint(source_center=POINT)
+        self.assertFalse(permitted(lead, DAY))
+        self.assertTrue(permitted(lead, DAY, evidence=proof))
+        self.assertFalse(permitted(lead, DAY, evidence={"verified":True}))
+        self.assertFalse(permitted(
+            {**lead, "venue":"Other venue"}, DAY, evidence=proof))
+        self.assertFalse(permitted(
+            {**lead, "date_start":"2026-01-01",
+             "date_end":"2026-01-01"}, DAY, evidence=proof))
+        self.assertFalse(permitted(
+            {**lead, "source_url":"https://fake.example/event"}, DAY,
+            evidence=proof))
+        self.assertFalse(permitted(lead, DAY+timedelta(days=31),
+                                   evidence=proof))
+        # No source/organizer, audience, time, license, dedupe or published
+        # catalogue check runs at the first admission gate.
+        # The live evaluate() path never supplies evidence automatically.
 
     def test_forbid_forged_dict_and_direct_proof_constructor(self):
         self.assertIsNone(location_from_proof({
