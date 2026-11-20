@@ -222,6 +222,301 @@ class MunicipalOfficialPageReaderTests(unittest.TestCase):
         self.assertEqual(events.call_count, 3)
         self.assertEqual(page.call_count, 1)
 
+    def test_direct_oa_uid_center_does_not_require_ods_mirror(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        from ptitesondes_shared_venue_location_evidence import (
+            mint_private_location_proof, location_from_proof,
+        )
+        direct = event()
+        direct["location"].update({"latitude": 44.5, "longitude": 2.25})
+        ods = Mock(side_effect=AssertionError("ODS mirror must not be read"))
+        reader = MunicipalOfficialPageReader(
+            [lead()], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={
+                "uid": AGENDA, "slug": "agenda-demo"}),
+            event_reader=Mock(return_value=direct),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods,
+        )
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        center, why = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertEqual(center, (44.5, 2.25))
+        self.assertIsNone(why)
+        evidence = inspect_group(
+            group,
+            record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            ign_fetch=lambda candidate: ban(),
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_day=date(2026, 11, 20))
+        self.assertTrue(evidence["shared_location_proof_private_review"])
+        self.assertEqual(evidence["status"],
+                         "official_address_ban_private_review")
+        self.assertTrue(evidence["official_geocode"][
+            "independent_geo_correlated"])
+        self.assertFalse(evidence["official_geocode"]["publication_ready"])
+        self.assertEqual(evidence["official_geocode"]["public_writes"], 0)
+        proof = mint_private_location_proof(
+            group, dila(), WEBSITE, html(), lambda candidate: ban(),
+            date(2026, 11, 20), source_center=center)
+        self.assertIsNotNone(proof)
+        self.assertIsNotNone(location_from_proof(
+            proof, CITY, VENUE, date(2026, 11, 20), center))
+        ods.assert_not_called()
+
+    def test_shared_private_proof_report_is_not_publication_admission(self):
+        from ptitesondes_generic_venue_osm_preflight import audit
+        today = date(2026, 11, 20)
+        direct = event()
+        direct["location"].update({"latitude":44.5, "longitude":2.25})
+        reader, _, _, _, _ = self.reader(
+            events=Mock(return_value=direct))
+        report = audit(
+            [lead()], today,
+            record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            live=True, ign_fetch=lambda candidate: ban(),
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_preview=True)
+        self.assertEqual(report["private_reusable_location_proofs"], 1)
+        self.assertEqual(report["leads_with_private_reusable_proof"], 1)
+        self.assertEqual(report["verified_venue_leads"], 0)
+        self.assertFalse(report["publication_ready"])
+        self.assertFalse(report["gps_verified"])
+        self.assertEqual(report["public_writes"], 0)
+        self.assertEqual(len(report["records"]), 1)
+        self.assertTrue(report["records"][0][
+            "shared_location_proof_private_review"])
+
+    def test_second_independent_geo_read_failure_cannot_mint_shared_proof(self):
+        today = date(2026, 11, 20)
+        direct = event()
+        direct["location"].update({"latitude":44.5, "longitude":2.25})
+        reader, _, _, _, _ = self.reader(
+            events=Mock(return_value=direct))
+        group = groups_for_review([lead()], today)[0]
+        first_ok_second_error = Mock(side_effect=[
+            ban(), {"type":"FeatureCollection", "features":[]}])
+        result = inspect_group(
+            group, record_fetch=Mock(side_effect=AssertionError("ODS forbidden")),
+            osm_fetch=Mock(side_effect=AssertionError("OSM not needed")),
+            ign_fetch=first_ok_second_error,
+            official_page_get=reader.official_page_get,
+            dila_directory_get=reader.dila_directory_get,
+            official_geocode=True,
+            source_record_from_reader=reader.source_record_for_group,
+            shared_proof_day=today)
+        self.assertEqual(first_ok_second_error.call_count, 2)
+        self.assertTrue(result["official_geocode"]["independent_geo_correlated"])
+        self.assertFalse(result["shared_location_proof_private_review"])
+        self.assertFalse(result["official_geocode"]["publication_ready"])
+
+    def test_direct_oa_center_rejects_conflicting_uid_agenda_and_gps(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        group = groups_for_review([lead()], date(2026, 11, 20))[0]
+        valid = event()
+        valid["location"].update({"latitude":44.5, "longitude":2.25})
+        badcases = [
+            ({"uid":722}, "agenda-demo"),
+            ({"state":1}, "agenda-demo"),
+            ({"location":{**valid["location"], "adminLevel4":"other town"}}, "agenda-demo"),
+            ({"location":{**valid["location"], "latitude": float("nan")}}, "agenda-demo"),
+            ({"location":{**valid["location"], "longitude": 200}}, "agenda-demo"),
+            ({}, "different-slug"),
+        ]
+        for change, slug in badcases:
+            with self.subTest(change=change, slug=slug):
+                bad = {**valid, **change}
+                reader = MunicipalOfficialPageReader(
+                    [lead()], [AGENDA], "private-test-key",
+                    agenda_reader=Mock(return_value={"uid":AGENDA, "slug":slug}),
+                    event_reader=Mock(return_value=bad),
+                    directory_reader=Mock(side_effect=AssertionError("no DILA read")),
+                    html_reader=Mock(side_effect=AssertionError("no HTML read")),
+                    ods_reader=Mock(side_effect=AssertionError("no ODS read")),
+                )
+                center, why = source_center(
+                    group, lambda uid: reader.source_record_for_group(group, uid))
+                self.assertIsNone(center)
+                self.assertIsNotNone(why)
+
+    def test_same_uid_dual_collectors_are_reconciled_not_dropped(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        ods_url = "https://openagenda.com/agenda-demo/events/conte-familial"
+        mirrored = {**original, "collector": "opendatasoft-index",
+                    "source_url": ods_url}
+        item = {
+            "uid": int(OA_UID), "canonicalurl": ods_url,
+            "location_city": CITY, "location_name": VENUE,
+            "location_countrycode": "FR",
+            "location_coordinates": {"lat":44.5, "lon":2.25},
+            "status": {"id":1}, "originagenda_uid": AGENDA,
+        }
+        oa = event()
+        oa["location"].update({"latitude":44.5, "longitude":2.25})
+        ods_get = Mock(return_value=item)
+        reader = MunicipalOfficialPageReader(
+            [original, mirrored], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={
+                "uid": AGENDA, "slug":"agenda-demo"}),
+            event_reader=Mock(return_value=oa),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods_get,
+        )
+        group = groups_for_review([original, mirrored],
+                                  date(2026, 11, 20))[0]
+        self.assertEqual(group["lead_count"], 2)
+        self.assertEqual(group["uids"], [OA_UID])
+        center, reason = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertIsNone(reason)
+        self.assertEqual(center, (44.5, 2.25))
+        self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
+        self.assertGreaterEqual(ods_get.call_count, 1)
+
+    def test_dual_collector_transport_outage_uses_curated_direct_oa_only(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        mirror = {**original, "collector":"opendatasoft-index",
+                  "source_url":"https://openagenda.com/agenda-demo/events/conte-familial"}
+        oa = event()
+        oa["location"].update({"latitude":44.5, "longitude":2.25})
+        ods_reader = Mock(side_effect=OSError("mirror unavailable"))
+        reader = MunicipalOfficialPageReader(
+            [original, mirror], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={"uid":AGENDA,"slug":"agenda-demo"}),
+            event_reader=Mock(return_value=oa),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods_reader)
+        group = groups_for_review([original, mirror], date(2026,11,20))[0]
+        point, reason = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertEqual(point, (44.5,2.25))
+        self.assertIsNone(reason)
+        self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
+        self.assertGreaterEqual(ods_reader.call_count, 1)
+        # Without a separately verified direct OA record, ODS downtime is
+        # not grounds to trust an arbitrary metadata point.
+        ods_only = MunicipalOfficialPageReader(
+            [mirror], [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={"uid":AGENDA,"slug":"agenda-demo"}),
+            event_reader=Mock(return_value=oa),
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=ods_reader)
+        self.assertIsNotNone(source_center(
+            group, lambda uid: ods_only.source_record_for_group(group,uid))[1])
+        self.assertEqual(ods_only.official_page_get(group), (None,None))
+
+    def test_dual_collectors_conflicts_fail_closed(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        ods_url = "https://openagenda.com/agenda-demo/events/conte-familial"
+        mirrored = {**original, "collector": "opendatasoft-index",
+                    "source_url": ods_url}
+        source = {
+            "uid": int(OA_UID), "canonicalurl": ods_url,
+            "location_city": CITY, "location_name": VENUE,
+            "location_countrycode": "FR",
+            "location_coordinates": {"lat":44.5, "lon":2.25},
+            "status":{"id":1}, "originagenda_uid": AGENDA,
+        }
+        checked = event()
+        checked["location"].update({"latitude":44.5, "longitude":2.25})
+        for changes in (
+            {"uid": 999}, {"canonicalurl": ods_url + "-other"},
+            {"status": {"id":2}},
+            {"originagenda_uid": AGENDA+2},
+            {"location_coordinates": {"lat":44.51, "lon":2.25}},
+        ):
+            with self.subTest(change=changes):
+                reader = MunicipalOfficialPageReader(
+                    [original, mirrored], [AGENDA], "private-test-key",
+                    agenda_reader=Mock(return_value={
+                        "uid": AGENDA, "slug":"agenda-demo"}),
+                    event_reader=Mock(return_value=checked),
+                    directory_reader=Mock(side_effect=AssertionError("no DILA")),
+                    html_reader=Mock(side_effect=AssertionError("no HTML")),
+                    ods_reader=Mock(return_value={**source, **changes}),
+                )
+                group = groups_for_review(
+                    [original, mirrored], date(2026, 11, 20))[0]
+                self.assertIsNotNone(source_center(
+                    group, lambda uid: reader.source_record_for_group(
+                        group, uid))[1])
+
+    def test_returned_empty_ods_record_is_not_a_network_outage(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        original = lead()
+        mirror = {**original, "collector":"opendatasoft-index",
+                  "source_url":"https://openagenda.com/agenda-demo/events/conte-familial"}
+        group = groups_for_review([original, mirror], date(2026,11,20))[0]
+        oa = event()
+        oa["location"].update({"latitude":44.5,"longitude":2.25})
+        for invalid in (None, {}, {"uid":721}):
+            with self.subTest(record=invalid):
+                reader = MunicipalOfficialPageReader(
+                    [original, mirror], [AGENDA], "private-test-key",
+                    agenda_reader=Mock(return_value={
+                        "uid":AGENDA,"slug":"agenda-demo"}),
+                    event_reader=Mock(return_value=oa),
+                    directory_reader=Mock(side_effect=AssertionError("no DILA")),
+                    html_reader=Mock(side_effect=AssertionError("no HTML")),
+                    ods_reader=Mock(return_value=invalid))
+                self.assertIsNotNone(source_center(
+                    group, lambda uid:reader.source_record_for_group(
+                        group,uid))[1])
+
+    def test_mirror_sources_are_sampled_as_distinct_uids(self):
+        originals = [lead(str(uid)) for uid in range(721, 725)]
+        mixed = originals + [{
+            **x, "collector":"opendatasoft-index",
+            "source_url":"https://openagenda.com/agenda-demo/events/conte-familial-"+x["external_id"],
+        } for x in originals]
+        event_get = Mock(side_effect=lambda agenda, uid, key: event(uid))
+        def ods_get(uid):
+            return {"uid":int(uid),
+                    "canonicalurl":"https://openagenda.com/agenda-demo/events/conte-familial-"+uid,
+                    "location_city":CITY, "location_name":VENUE,
+                    "location_countrycode":"FR",
+                    "location_coordinates":{"lat":44.5,"lon":2.25},
+                    "status":{"id":1}, "originagenda_uid":AGENDA}
+        reader = MunicipalOfficialPageReader(
+            mixed, [AGENDA], "private-test-key",
+            agenda_reader=Mock(return_value={"uid":AGENDA,"slug":"agenda-demo"}),
+            event_reader=event_get,
+            directory_reader=Mock(return_value=dila()),
+            html_reader=Mock(return_value=html()),
+            ods_reader=Mock(side_effect=ods_get))
+        group = groups_for_review(mixed, date(2026, 11, 20))[0]
+        self.assertEqual(reader.official_page_get(group), (WEBSITE, html()))
+        # Three distinct immutable UID identities, each checked twice.
+        self.assertEqual(event_get.call_count, 6)
+
+    def test_direct_oa_center_rejects_ambiguous_source_binding(self):
+        from ptitesondes_generic_venue_osm_preflight import source_center
+        entries = [lead(), lead(slug="other-agenda")]
+        group = groups_for_review(entries, date(2026, 11, 20))[0]
+        reader, _, agenda, events, page = self.reader(leads=entries)
+        center, why = source_center(
+            group, lambda uid: reader.source_record_for_group(group, uid))
+        self.assertIsNone(center)
+        self.assertIsNotNone(why)
+        agenda.assert_not_called()
+        events.assert_not_called()
+        page.assert_not_called()
+
     def test_html_reader_validates_redirects_and_content_type(self):
         class Response:
             def __init__(self, target=WEBSITE, kind="text/html", data=b"hello"):

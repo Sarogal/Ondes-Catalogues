@@ -78,7 +78,7 @@ def official_leads(token):
     return entries
 
 
-def registry_location(lead):
+def registry_location(lead, evidence=None, on_day=None):
     city = norm(lead.get("city"))
     venue = norm(lead.get("venue"))
     matches = [v for v in VENUES if norm(v["city"]) == city
@@ -89,10 +89,21 @@ def registry_location(lead):
         return None  # Ambiguous legacy registry cannot be overruled.
     # Only geographical proof comes from the public places catalogue.
     # OpenAgenda and organizer session checks remain wholly independent.
-    return lookup_public_venue(lead.get("city"), lead.get("venue"))
+    registered = lookup_public_venue(lead.get("city"), lead.get("venue"))
+    if registered is not None:
+        return registered
+    # Opt-in ONLY: production calls provide no evidence. A proof must have
+    # been minted from a DILA-authenticated page plus independent exact BAN.
+    if evidence is not None and on_day is not None:
+        from ptitesondes_shared_venue_location_evidence import (
+            location_from_proof,
+        )
+        return location_from_proof(evidence, lead.get("city"),
+                                   lead.get("venue"), on_day)
+    return None
 
 
-def permitted(lead, today):
+def permitted(lead, today, evidence=None):
     if not isinstance(lead, dict) or lead.get("collector") not in ("opendatasoft-index", "openagenda-v2"):
         return False
     uid = lead.get("external_id")
@@ -114,8 +125,12 @@ def permitted(lead, today):
             return False
     except (ValueError, TypeError, KeyError):
         return False
+    # Preview-only opt-in: never supply a new location to the live publisher
+    # unless a later, separately reviewed integration explicitly opts in.
+    location = (registry_location(lead) if evidence is None
+                else registry_location(lead, evidence, today))
     return bool(lead.get("title") and lead.get("city") and
-                registry_location(lead) is not None)
+                location is not None)
 
 
 

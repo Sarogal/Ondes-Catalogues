@@ -45,21 +45,37 @@ def groups_for_review(backlog, today):
     return [
         {"city": items[0]["city"], "venue": items[0]["venue"],
          "key": list(key), "lead_count": len(items),
+         "unique_candidate_sessions": len({
+             (item["external_id"], item["date_start"]) for item in items
+         }),
          "uids": sorted({item["external_id"] for item in items})}
         for key, items in sorted(groups.items(),
                                  key=lambda p: (-len(p[1]), p[0]))
     ]
 
 
-def private_rotation(groups, today, max_places=MAX_PER_RUN):
-    if not isinstance(today, date) or type(max_places) is not int or not 1 <= max_places <= MAX_PER_RUN:
+def private_rotation(groups, today, max_places=MAX_PER_RUN, batch_index=0):
+    """Disjoint bounded private batches, deterministic for one calendar day.
+
+    Callers opt into later batches explicitly; the default (batch 0) is
+    backward compatible. Every unknown venue is selected exactly once
+    across ceil(len(groups) / max_places) batches in the same day.
+    No network or publisher action happens here.
+    """
+    if (not isinstance(today, date) or type(max_places) is not int
+            or not 1 <= max_places <= MAX_PER_RUN
+            or type(batch_index) is not int or batch_index < 0):
         raise ValueError("invalid_rotation")
     if not groups:
+        if batch_index != 0:
+            raise ValueError("batch_out_of_range")
         return []
-    # Independent of the lexical venue name; spreads the bounded workload.
-    start = (today.toordinal() * max_places) % len(groups)
-    return [groups[(start + i) % len(groups)]
-            for i in range(min(max_places, len(groups)))]
+    offset = batch_index * max_places
+    if offset >= len(groups):
+        raise ValueError("batch_out_of_range")
+    start = ((today.toordinal() * max_places) + offset) % len(groups)
+    count = min(max_places, len(groups) - offset)
+    return [groups[(start + i) % len(groups)] for i in range(count)]
 
 
 def source_center(group, record_fetch=api_record):
@@ -184,7 +200,14 @@ def osm_hints(group, center, response):
 def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
                   ign_fetch=None, official_page_get=None,
                   approved_official_hosts=(), dila_directory_get=None,
-                  official_geocode=False):
+                  official_geocode=False, source_record_from_reader=None,
+                  shared_proof_day=None):
+    # Direct OA-v2 UID data may supply a *search hint*, avoiding an ODS-only
+    # dependency. This is NOT independent GPS proof or publisher admission.
+    if source_record_from_reader is not None:
+        if not callable(source_record_from_reader):
+            raise ValueError("invalid_private_source_callback")
+        record_fetch = lambda uid: source_record_from_reader(group, uid)
     center, why = source_center(group, record_fetch)
     if why:
         return {"status": why, "osm_candidates_unverified": []}
@@ -209,9 +232,31 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
             # Independent municipality + BAN + UID-bound event center.
             # This avoids dependence on an unreliable public OSM endpoint,
             # but NEVER grants publication or publisher venue admission.
-            return {"status": "official_address_ban_private_review",
-                    "osm_candidates_unverified": [],
-                    "official_geocode": official_status}
+            result = {"status": "official_address_ban_private_review",
+                      "osm_candidates_unverified": [],
+                      "official_geocode": official_status}
+            if shared_proof_day is not None:
+                from datetime import date
+                from ptitesondes_shared_venue_location_evidence import (
+                    mint_private_location_proof, location_from_proof,
+                )
+                # The shared proof is deliberately ephemeral and never
+                # serialized to a public artifact or used by a publisher.
+                # A fresh independent BAN check must agree as well.
+                ok = False
+                if type(shared_proof_day) is date:
+                    try:
+                        witness = mint_private_location_proof(
+                            group, directory, page_url, page_html,
+                            ign_fetch, shared_proof_day, source_center=center)
+                        ok = location_from_proof(
+                            witness, group["city"], group["venue"],
+                            shared_proof_day, source_point=center) is not None
+                    except (ValueError, TypeError, KeyError, OSError,
+                            TimeoutError, OverflowError):
+                        ok = False
+                result["shared_location_proof_private_review"] = ok
+            return result
     try:
         response = osm_fetch(center)
         evidence = osm_hints(group, center, response)
@@ -268,25 +313,60 @@ def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
             result["official_page"] = official_venue_page_proof(
                 group, independent["address_candidate_private"],
                 independent, page_url, html, hosts)
+    # A park, public square or other venue without a numbered address may
+    # still merit private research. Require one named OSM geometry and a
+    # DILA-authenticated *specific* municipal venue page. The correlation
+    # is NEVER a certified venue point or publisher admission.
+    if (len(evidence) == 1 and official_page_get is not None
+            and dila_directory_get is not None
+            and not result.get("independent_address", {}).get(
+                "address_correlated", False)):
+        from ptitesondes_unnumbered_venue_osm_official_hint import (
+            unnumbered_named_venue_hint,
+        )
+        try:
+            directory = dila_directory_get(group["city"])
+            url, html = official_page_get(group)
+            result["unnumbered_named_venue_hint"] = (
+                unnumbered_named_venue_hint(
+                    group, center, response, directory, url, html))
+        except (OSError, ValueError, KeyError, TypeError,
+                TimeoutError, UnicodeError):
+            result["unnumbered_named_venue_hint"] = {
+                "status": "municipal_source_unavailable",
+                "official_name_correlated": False,
+                "osm_geometry_correlated": False,
+                "gps_verified": False,
+                "official_venue_verified": False,
+                "event_sessions_verified": False,
+                "publication_ready": False,
+                "public_writes": 0,
+            }
     return result
 
 
 def audit(backlog, today, record_fetch=api_record,
           osm_fetch=fetch_overpass, live=False, ign_fetch=None,
           official_page_get=None, approved_official_hosts=(),
-          dila_directory_get=None, official_geocode=False):
+          dila_directory_get=None, official_geocode=False,
+          source_record_from_reader=None, shared_proof_preview=False,
+          batch_index=0):
     groups = groups_for_review(backlog, today)
-    chosen = private_rotation(groups, today)
+    chosen = private_rotation(groups, today, batch_index=batch_index)
     checked = []
     for group in chosen:
         result = (inspect_group(group, record_fetch, osm_fetch,
                                 ign_fetch, official_page_get,
                                 approved_official_hosts, dila_directory_get,
-                                official_geocode)
+                                official_geocode,
+                                source_record_from_reader,
+                                today if shared_proof_preview else None)
                   if live else {"status": "not_scanned_preview",
                                 "osm_candidates_unverified": []})
         checked.append({"city": group["city"], "venue": group["venue"],
                         "lead_count": group["lead_count"],
+                        "unique_candidate_sessions":
+                            group["unique_candidate_sessions"],
                         "uids": group["uids"], **result})
     address_matched = [
         x for x in checked
@@ -302,12 +382,27 @@ def audit(backlog, today, record_fetch=api_record,
         if x.get("official_geocode", {}).get(
             "independent_geo_correlated") is True
     ]
+    reusable = [x for x in checked
+                if x.get("shared_location_proof_private_review") is True]
+    unnumbered = [x for x in checked
+                  if x.get("unnumbered_named_venue_hint", {}).get(
+                      "official_name_correlated") is True
+                  and x["unnumbered_named_venue_hint"].get(
+                      "osm_geometry_correlated") is True]
     return {
         "schema": SCHEMA, "day": today.isoformat(),
         "mode": "private_osm_hints_no_publisher_access",
         "total_backlog": len(backlog),
         "unknown_venue_leads": sum(x["lead_count"] for x in groups),
+        # Unique UID+date within a venue; aliases in two collectors never
+        # inflate the number of sessions that could progress.
+        "unknown_candidate_sessions": sum(
+            x["unique_candidate_sessions"] for x in groups),
+        "duplicate_collector_or_repeated_leads": sum(
+            x["lead_count"] - x["unique_candidate_sessions"] for x in groups),
         "unknown_unique_venues": len(groups),
+        "batch_index": batch_index,
+        "batch_count": (len(groups) + MAX_PER_RUN - 1) // MAX_PER_RUN,
         "selected_venues": len(checked),
         "queried_venues": len(checked) if live else 0,
         "independent_hints": sum(
@@ -322,6 +417,14 @@ def audit(backlog, today, record_fetch=api_record,
         "independent_official_ban_address_matches": len(official_geo_matched),
         "leads_with_official_ban_geo_private_review": sum(
             x["lead_count"] for x in official_geo_matched),
+        "private_reusable_location_proofs": len(reusable),
+        "leads_with_private_reusable_proof": sum(
+            x["lead_count"] for x in reusable),
+        "candidate_sessions_with_private_reusable_proof": sum(
+            x["unique_candidate_sessions"] for x in reusable),
+        "unnumbered_named_venue_private_hints": len(unnumbered),
+        "candidate_sessions_with_unnumbered_private_hint": sum(
+            x["unique_candidate_sessions"] for x in unnumbered),
         "verified_venue_leads": 0,
         "records": checked,
         "gps_verified": False, "official_venue_verified": False,
@@ -338,6 +441,9 @@ def main():
     parser.add_argument("--live-probe", action="store_true")
     parser.add_argument("--official-municipal-pages", action="store_true")
     parser.add_argument("--official-address-geocode", action="store_true")
+    parser.add_argument("--shared-location-evidence", action="store_true")
+    parser.add_argument("--batch-index", type=int, default=0,
+                        help="0-based private venue batch (maximum 12 places)")
     parser.add_argument("--private-source-config", type=Path)
     args = parser.parse_args()
     # Block BOTH private input and output paths inside the public checkout.
@@ -352,6 +458,10 @@ def main():
         raise ValueError("private_municipal_preview_requires_explicit_opt_in")
     if args.official_address_geocode and not args.official_municipal_pages:
         raise ValueError("official_ban_geocode_requires_private_municipal_source")
+    if args.shared_location_evidence and not (
+            args.live_probe and args.official_municipal_pages
+            and args.official_address_geocode):
+        raise ValueError("shared_evidence_requires_explicit_private_full_probe")
     if (args.private_source_config is not None
             and args.private_source_config.resolve().is_relative_to(repository)):
         raise ValueError("source_config_outside_public_repo_required")
@@ -380,12 +490,15 @@ def main():
             callbacks = {
                 "official_page_get": reader.official_page_get,
                 "dila_directory_get": reader.dila_directory_get,
+                "source_record_from_reader": reader.source_record_for_group,
             }
         report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
                        official_geocode=args.official_address_geocode,
-                       **callbacks)
+                       shared_proof_preview=args.shared_location_evidence,
+                       batch_index=args.batch_index, **callbacks)
     else:
-        report = audit(backlog, args.day, live=False)
+        report = audit(backlog, args.day, live=False,
+                       batch_index=args.batch_index)
     args.output_private_report.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
@@ -394,6 +507,8 @@ def main():
         "unknown_venue_leads": report["unknown_venue_leads"],
         "unknown_unique_venues": report["unknown_unique_venues"],
         "selected_venues": report["selected_venues"],
+        "batch_index": report["batch_index"],
+        "batch_count": report["batch_count"],
         "publication_ready": False, "public_writes": 0,
     }))
 
