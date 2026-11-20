@@ -33,6 +33,28 @@ Les événements au prix inconnu sont projetés avec **« Voir conditions »** :
 
 **Tous les compteurs de compatibilité sont hypothétiques** ; `publication_ready=false`, `approval_granted=false`, `publisher_connected=false` et `public_writes=0` dans chaque réponse.
 
+## Vérification indépendante du catalogue réellement servi
+
+Un contrôle distinct, `scripts/ptitesondes_public_catalogue_live_drift.py`, effectue
+un GET borné, sans redirection et sans secret de l'URL **fixée dans le code** :
+https://sarogal.github.io/Ondes-Catalogues/ptitesondes/sorties.json.
+
+Il compare la structure et l'empreinte canonique SHA-256 du JSON réellement
+servi avec `docs/ptitesondes/sorties.json` sur la branche vérifiée. Il
+signale les écarts éventuels, les réponses non JSON ou invalides, et si
+`updated_at` indique un changement de contenu de plus de 24 heures.
+
+**Limitation importante :** une ancienne date `updated_at` montre seulement
+une absence de changement de données récent ; elle **ne démontre pas**
+l'absence d'exécution des workflows. Seuls les runs GitHub et les journaux
+du publisher permettent de conclure sur la surveillance et son activité.
+
+Le résultat contient uniquement les nombres de fiches, le dernier
+horodatage public, les booléens de concordance et de fraîcheur ; ni liste
+d'événements ni champ du candidat. Ce garde-fou reste une lecture seule,
+sans publication, et ne suffit pas à authentifier des dossiers privés ou
+les droits de réutilisation.
+
 ## Relecture et suite
 
 Tests synthétiques avec le catalogue public du dépôt, 549 fiches au contrôle précédent : catégories non musicales, lieux distincts, sessions multiples, duplications inter-sources, empreintes obsolètes, absence de date, âge et tarif, valeurs adversariales, catalogue immuable. CI HTML et synchroniseur complet à vérifier.
