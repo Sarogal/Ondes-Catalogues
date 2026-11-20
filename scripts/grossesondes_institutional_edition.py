@@ -210,6 +210,7 @@ class VisibleInstitutionHeadings(VisibleText):
     def __init__(self):
         super().__init__()
         self.headings = []
+        self.heading_starts = []
         self.heading_tag = None
         self.heading_words = []
 
@@ -217,6 +218,7 @@ class VisibleInstitutionHeadings(VisibleText):
         super().handle_starttag(tag, attrs)
         if tag in ("h1", "h2") and not self.hidden():
             self.heading_tag = tag
+            self.heading_starts.append(len(self.parts))
             self.heading_words = []
 
     def handle_data(self, data):
@@ -252,21 +254,31 @@ def independent_institutional_music_genre(detail_html, edition_title, year):
         parser.close()
     except (TypeError, UnicodeError, ValueError):
         return False
-    visible = normalized(" ".join(parser.parts))
     label = normalized(edition_title)
-    if (len(label) < 12
-            or label not in {normalized(h) for h in parser.headings}):
+    if len(label) < 12:
         return False
     matcher = re.compile(r"(?<![a-z0-9])" + re.escape(label)
                          + r"(?![a-z0-9])")
-    for reference in list(matcher.finditer(visible))[:20]:
-        nearby = visible[max(0, reference.start() - 160):
-                         reference.end() + 360]
-        if (TOURING_SHOW.search(nearby)
-                or re.search(r"\b(?:annule|annulee|reportee|reporte)\b", nearby)):
-            return False
-        if FESTIVAL_MUSIC_CONTEXT.search(nearby):
-            return True
+    # Every candidate genre must belong to the SAME visible event heading's
+    # own section, ending before the next h1/h2. Nearby OTHER event headings
+    # can never lend a theme to an unrelated festival. Section boundaries
+    # come from the parser's part indices, NOT page-provided separator text.
+    for index, (heading, start) in enumerate(zip(
+            parser.headings, parser.heading_starts)):
+        if normalized(heading) != label:
+            continue
+        end = (parser.heading_starts[index + 1]
+               if index + 1 < len(parser.heading_starts) else len(parser.parts))
+        section = normalized(" ".join(parser.parts[start:end]))
+        for reference in list(matcher.finditer(section))[:5]:
+            nearby = section[max(0, reference.start() - 110):
+                             reference.end() + 320]
+            if (TOURING_SHOW.search(nearby)
+                    or re.search(r"\b(?:annule|annulee|reportee|reporte)\b",
+                                 nearby)):
+                return False
+            if FESTIVAL_MUSIC_CONTEXT.search(nearby):
+                return True
     return False
 
 
