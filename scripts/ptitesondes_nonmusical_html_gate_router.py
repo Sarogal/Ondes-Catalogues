@@ -8,7 +8,7 @@ rights, register a source or emit an event into a queue.
 
 The existing music/OpenAgenda publisher remains entirely unchanged.
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
 from ptitesondes_factual_reuse_preflight import prepare_private_html_factual_draft
 from ptitesondes_html_first_party_session_proof import corroborate_first_party_session
@@ -178,16 +178,26 @@ def route_nonmusical_html_session(lead, page, trusted_index, child_prefix,
         return _result("historical_collision_ambiguous", **kwargs)
     if history != "clear":
         return _result("historical_snapshot_unchecked", **kwargs)
-    # A previously reviewed registry is not an independent live catalogue.
-    # Even its historical snapshot must be recent, never a stale fallback.
+    # updated_at marks the last DATA CHANGE, not the last successful fetch.
+    # A stable catalogue can legitimately remain unchanged for weeks. Here
+    # the snapshot is used ONLY for non-authoritative private routing: the
+    # release-stage fresh live fetch + duplicate check are ALWAYS required.
+    # Reject malformed/future metadata, but do not suppress evidence from an
+    # unchanged catalogue merely because its content is old.
     try:
         raw = independent_context["historical_catalogue"]["updated_at"]
-        stamp = date.fromisoformat(raw[:10])
-        snapshot_fresh = (type(raw) is str and stamp.isoformat() == raw[:10]
-                          and 0 <= (today - stamp).days <= 3)
-    except (TypeError, ValueError, KeyError, IndexError):
-        snapshot_fresh = False
-    if not snapshot_fresh:
+        if type(raw) is not str:
+            raise ValueError("missing_metadata")
+        last_change = datetime.fromisoformat(raw)
+        metadata_valid = (
+            last_change.tzinfo is not None
+            and last_change.utcoffset() is not None
+            and last_change.date() <= today
+            and 2000 <= last_change.year <= 2100
+        )
+    except (TypeError, ValueError, KeyError, OverflowError):
+        metadata_valid = False
+    if not metadata_valid:
         return _result("historical_snapshot_unchecked", **kwargs)
     if venue == "missing":
         return _result("reviewed_venue_missing", **kwargs)
