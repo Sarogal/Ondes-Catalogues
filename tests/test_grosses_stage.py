@@ -3,7 +3,9 @@ from datetime import date
 from pathlib import Path
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from grossesondes_stage import can_add_muscadeath,eligible_autfest,eligible_vouziers,stage,norm
+from grossesondes_stage import (can_add_muscadeath, eligible_autfest,
+                                eligible_vouziers, stage, norm,
+                                published_patch_duplicate)
 from grossesondes_preview import CAL_URL,HIS_URL
 
 def fixtures():
@@ -121,6 +123,45 @@ class StageTests(unittest.TestCase):
         self.assertEqual(out["festivals"][-1]["slug"],"muscadeath-2027")
         self.assertEqual(c["festivals"][1]["lineup"],["Ultra Vomit","Septicflesh","Tagada Jones"])
         self.assertFalse(report["automatic_publication"])
+    def test_already_published_private_patch_is_not_a_failed_new_edition(self):
+        c,h,p=fixtures()
+        addition=dict(p["additions"][0], officialSite="https://muscadeath.fr/")
+        p["additions"]=[addition]
+        signed={"schema":1, "festivals":[dict(addition, lastVerified="2026-11-19")]}
+        self.assertEqual(published_patch_duplicate(addition, signed),
+                         "ALREADY_PUBLISHED")
+        output,report=stage(c,h,p,{},"2026-11-20",
+                            published_calendar=signed)
+        self.assertEqual(output["festivals"], c["festivals"])
+        self.assertEqual(report["already_published"], ["muscadeath-2027"])
+        self.assertEqual(report["accepted_additions"], [])
+        self.assertEqual(len(report["held"]), 1)  # unrelated legacy update
+
+    def test_forged_same_slug_is_held_not_classified_as_published(self):
+        c,h,p=fixtures()
+        addition=dict(p["additions"][0], officialSite="https://muscadeath.fr/")
+        p["additions"]=[addition]
+        signed={"schema":1, "festivals":[dict(addition, city="Paris")]}
+        self.assertEqual(published_patch_duplicate(addition, signed),
+                         "PUBLISHED_COLLISION")
+        output,report=stage(c,h,p,{},"2026-11-20",
+                            published_calendar=signed)
+        self.assertEqual(output["festivals"], c["festivals"])
+        self.assertEqual(report["already_published"], [])
+        self.assertEqual(report["held"][0]["slug"], "muscadeath-2027")
+        self.assertIn("conflit", report["held"][0]["reason"])
+
+    def test_unpublished_patch_still_requires_source_proof(self):
+        c,h,p=fixtures()
+        self.assertEqual(published_patch_duplicate(p["additions"][0],
+                                                    {"schema":1, "festivals":[]}),
+                         "NOT_PUBLISHED")
+        output,report=stage(c,h,p,{},"2026-11-20")
+        self.assertEqual(output["festivals"], c["festivals"])
+        self.assertFalse(report["already_published"])
+        self.assertTrue(any(x["slug"]=="muscadeath-2027"
+                            for x in report["held"]))
+
     def test_stage_missing_source_does_not_accept(self):
         c,h,p=fixtures()
         out,report=stage(c,h,p,{},"2026-10-29")
