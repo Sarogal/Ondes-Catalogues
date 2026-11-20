@@ -189,6 +189,18 @@ def official_venue_page_proof(group, candidate, ign_evidence, page_url,
                         return {**result, "status": "ambiguous_named_place"}
     except (ValueError, TypeError, RecursionError):
         return result
+    if len(same_name_nodes) == 0:
+        # Some genuine institutional venue pages contain only semantic
+        # visible H1 + postal <address>, not schema.org Place. This narrow
+        # fallback never overrides contradictory structured Place evidence.
+        from ptitesondes_generic_venue_visible_address import (
+            visible_venue_identity_matches,
+        )
+        if visible_venue_identity_matches(group, candidate, html):
+            return {**result, "status": "official_visible_name_address_private_review",
+                    "official_identity_verified": True,
+                    "location_evidence_complete_for_private_review": True}
+        return {**result, "status": "named_place_missing_or_ambiguous"}
     if len(same_name_nodes) != 1:
         return {**result, "status": "named_place_missing_or_ambiguous"}
     node = same_name_nodes[0]
