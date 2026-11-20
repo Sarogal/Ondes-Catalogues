@@ -9,6 +9,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).parent))
 from curated_future_lead_watch import (
     load_leads, published_duplicate, select_leads, inspect_primary, scan,
+    scan_if_catalogues_agree,
     SCHEMA, ALLOWED,
 )
 
@@ -204,6 +205,58 @@ class CuratedFutureLeadTests(unittest.TestCase):
                       "2026-11-06", lambda _: "<html>oops</html>", limit=1)
         self.assertEqual(result[0]["status"], "SOURCE_UNAVAILABLE")
         self.assertNotIn(sample["id"], s["curated_future_lead_observations"])
+
+
+    def test_pages_drift_skips_only_curated_research_without_mutating_proof(self):
+        s = state()
+        s["curated_future_lead_observations"] = {
+            SAMPLE["id"]: {"status": "UNVERIFIED_PRIMARY_EDITION",
+                           "firstSeen": DAY, "lastSeen": DAY}}
+        before = copy.deepcopy(s)
+        calls = []
+        pages = {"schema": 1, "festivals": [], "generatedAt": DAY}
+        git = {"schema": 1, "festivals": [], "generatedAt": "2026-11-06"}
+        r = report()
+        result = scan_if_catalogues_agree(
+            r, s, [SAMPLE], pages, git, DAY,
+            fetch=lambda url: calls.append(url), limit=1)
+        self.assertEqual(result, [])
+        self.assertEqual(calls, [])
+        self.assertEqual(s, before)
+        self.assertEqual(r["curated_future_leads_catalogue_status_review_only"],
+                         "PUBLIC_CATALOGUE_DRIFT_SKIP")
+        self.assertEqual(r["curated_future_leads_checked_review_only"], 0)
+        self.assertEqual(r["curated_future_leads_publications"], 0)
+
+    def test_unavailable_catalogue_is_not_false_negative_evidence(self):
+        s = state()
+        r = report()
+        result = scan_if_catalogues_agree(
+            r, s, [SAMPLE], None, {"schema": 1, "festivals": []},
+            DAY, fetch=lambda url: self.fail("must not fetch organizer"))
+        self.assertEqual(result, [])
+        self.assertEqual(r["curated_future_leads_catalogue_status_review_only"],
+                         "PUBLIC_CATALOGUE_UNAVAILABLE_OR_INVALID_SKIP")
+        self.assertNotIn("curated_future_lead_last_checked", s)
+
+    def test_matching_catalogues_keep_normal_two_day_scan(self):
+        s = state()
+        catalog = {"schema": 1, "festivals": []}
+        first = report()
+        result = scan_if_catalogues_agree(
+            first, s, [SAMPLE], catalog, copy.deepcopy(catalog),
+            DAY, fetch=lambda url: html(), limit=1)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["status"], "FIRST_PRIMARY_OBSERVATION_PRIVATE")
+        self.assertEqual(first["curated_future_leads_catalogue_status_review_only"],
+                         "MATCHED")
+        second = report("2026-11-06")
+        result = scan_if_catalogues_agree(
+            second, s, [SAMPLE], catalog, copy.deepcopy(catalog),
+            "2026-11-06", fetch=lambda url: html(), limit=1)
+        self.assertEqual(result[0]["status"], "TWO_DAYS_PRIMARY_OBSERVATION_PRIVATE")
+        self.assertEqual(second["curated_future_leads_publications"], 0)
+
 
 
 if __name__ == "__main__":
