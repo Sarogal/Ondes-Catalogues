@@ -43,8 +43,9 @@ def segment(agenda, *, after=None, done=True):
         "event_leads": [{
             "event_uid": 9001, "title": "Concert jeune public fictif",
             "venue_unverified": "Place sans numéro",
-            "publication_ready": False,
+            "publication_ready": False, "public_writes": 0,
         }],
+        "no_publisher_bridge": True,
         "next_cursor": None if done else after,
         "agenda_scan_complete": done,
         "publication_ready": False, "public_writes": 0,
@@ -147,6 +148,22 @@ class PrivateNationalEventCampaignTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "cursor_or_source_mismatch"):
                 plan_campaign(index(), DIGEST, date(2026, 11, 22), root)
 
+    def test_corrupted_segment_cursor_relationship_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            initial = plan_campaign(index(), DIGEST, DAY, root, steps=1)
+            run_campaign(initial, public_key=KEY,
+                         explorer=lambda agenda, key, day, **kw: segment(agenda))
+            path = root / "national-event-checkpoint.json"
+            good = json.loads(path.read_text(encoding="utf-8"))
+            for segment_num, cursor in ((0, ["abc"]), (1, None)):
+                with self.subTest(segment=segment_num, cursor=cursor):
+                    invalid = {**good, "segment": segment_num,
+                               "event_after": cursor}
+                    path.write_text(json.dumps(invalid), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "cursor_or_source_mismatch"):
+                        plan_campaign(index(), DIGEST, DAY, root, steps=1)
+
     def test_stale_duplicate_segment_fails_closed_without_network(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -208,6 +225,11 @@ class PrivateNationalEventCampaignTests(unittest.TestCase):
             {"publication_ready": True},
             {"public_writes": 1},
             {"event_leads": [{}] * 61},
+            {"event_leads": [{"publication_ready": True, "public_writes": 1}]},
+            {"event_leads": [{"publication_ready": False, "public_writes": 9}]},
+            {"no_publisher_bridge": False},
+            {"counts": {"pages_read": 0, "public_event_uids_seen": 2}},
+            {"counts": {"pages_read": 3, "public_event_uids_seen": 0}},
             {"agenda_scan_complete": True, "next_cursor": ["1"]},
         ):
             with self.subTest(changed=changed):
