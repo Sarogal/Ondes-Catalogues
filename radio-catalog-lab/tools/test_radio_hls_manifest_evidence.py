@@ -1,7 +1,7 @@
 """No-network HLS manifest classification; no segment or variant fetch."""
 import unittest
 
-from radio_hls_manifest_evidence import inspect_hls_manifest
+from radio_hls_manifest_evidence import inspect_hls_manifest, MAX_HLS_BYTES
 
 URL = "https://radio.example.org/hls/channel.m3u8"
 MIME = "application/vnd.apple.mpegurl"
@@ -81,10 +81,20 @@ class HlsManifestTests(unittest.TestCase):
         self.assertEqual(mismatch["kind"], "media_incomplete_segments")
 
     def test_manifest_size_and_lines_are_bounded(self):
-        report = inspect("#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + "#comment\n" * 75)
-        self.assertEqual(report["kind"], "manifest_too_many_lines" if len("#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + "#comment\n" * 75) <= 512 else "manifest_oversized")
-        report = inspect("#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + "#note\n" * 34)
+        report = inspect("#EXTM3U\n#EXT-X-TARGETDURATION:5\n" + "#comment\n" * 150)
         self.assertEqual(report["kind"], "manifest_too_many_lines")
+        report = inspect("#EXTM3U\n" + "x" * MAX_HLS_BYTES + "\n")
+        self.assertEqual(report["kind"], "manifest_oversized")
+        report = inspect("#EXTM3U\n" + "x" * (MAX_HLS_BYTES - 9))
+        self.assertEqual(report["kind"], "manifest_oversized")
+
+    def test_manifest_over_old_512_byte_limit_is_scannable(self):
+        text = ("#EXTM3U\n#EXT-X-TARGETDURATION:5\n"
+                + "# annotation without URL: valid HLS extension \n" * 12
+                + "#EXTINF:5,\na.ts\n#EXTINF:5,\nb.ts\n")
+        self.assertGreater(len(text.encode("utf-8")), 512)
+        self.assertLess(len(text.encode("utf-8")), MAX_HLS_BYTES)
+        self.assertEqual(inspect(text)["kind"], "live_manifest_candidate")
 
     def test_html_and_simple_m3u_are_not_hls(self):
         for content in ("<html>hello</html>\n", "#EXTM3U\nhttps://radio.example.org/live.mp3\n"):
