@@ -105,6 +105,20 @@ class OrganizerNationalDiscoveryTests(unittest.TestCase):
             raw, authority.read_sources()[0], EVENT_URL, CATALOGUE, DAY
         )["classification"], [])
 
+    def test_large_bill_does_not_truncate_only_metal_artist_at_end(self):
+        import official_rss_jsonld_bridge as bridge
+        raw = {"performer": [
+            {"@type": "MusicGroup", "name": f"ACT {i:02d}",
+             "genre": f"Jazz Variation {i:02d}"}
+            for i in range(25)
+        ] + [{"@type": "MusicGroup", "name": "FINALE METAL",
+              "genre": "Black Metal"}]}
+        labels, scope = bridge.event_genres_from_own_bill(raw)
+        self.assertIn("Black Metal", labels)
+        self.assertLessEqual(len(labels), 20)
+        self.assertEqual(scope, "official_artist_in_event_detail")
+        self.assertEqual(len(bridge.official_named_bill(raw["performer"])[0]), 26)
+
     def test_source_redirect_is_held_before_detail_network(self):
         listing, page = documents()
         calls = []
