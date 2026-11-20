@@ -40,10 +40,10 @@ jobs:
           sys.path.insert(0, 'festival-automation')
           from datetime import datetime
           from zoneinfo import ZoneInfo
-          from national_openagenda_research import scan, QUERIES
+          from national_openagenda_research import scan, fixed_query_urls
           today = datetime.now(ZoneInfo('Europe/Paris')).date().isoformat()
           result = scan({'schema': 'grossesondes.source-watch.v1'}, today)
-          assert result['requests_attempted'] == len(QUERIES)
+          assert result['requests_attempted'] == len(fixed_query_urls(today))
           assert result['requests_failed'] < result['requests_attempted']
           assert result['publications'] == 0
           assert result['publication_authorized'] is False

@@ -3,7 +3,7 @@ from copy import deepcopy
 import unittest
 
 from national_openagenda_research import (
-    SCHEMA, STATE_KEY, QUERIES, SOURCE, MAX_LEADS,
+    SCHEMA, STATE_KEY, QUERIES, SOURCE, MAX_LEADS, FESTIVAL_PAGE_OFFSETS,
     candidate, fixed_query_urls, fetch_json, validated_leads, scan,
 )
 
@@ -46,8 +46,12 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
 
     def test_all_queries_are_fixed_bounded_and_no_user_url(self):
         urls = fixed_query_urls()
-        self.assertEqual(len(urls), len(QUERIES))
+        self.assertEqual(len(urls), len(QUERIES) + len(FESTIVAL_PAGE_OFFSETS) - 1)
         self.assertEqual(urls, fixed_query_urls(DAY))
+        self.assertEqual(list(FESTIVAL_PAGE_OFFSETS), list(range(0, 200, 25)))
+        self.assertTrue(all("offset=" in x for x in urls))
+        self.assertTrue(any("offset=175" in x for x in urls))
+        self.assertTrue(any("offset=0" in x for x in urls))
         self.assertEqual(len(urls), len(set(urls)))
         self.assertTrue(all(x.startswith(SOURCE + "?") for x in urls))
         self.assertTrue(all("limit=25" in x for x in urls))
@@ -143,6 +147,28 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
             with self.subTest(item=item):
                 self.assertIsNone(candidate(item, DAY))
 
+    def test_bounded_pagination_reaches_late_festival_pages_without_approving(self):
+        urls = fixed_query_urls(DAY)
+        visits = []
+        first_page = urls[0]
+        late_page = next(u for u in urls if "offset=175" in u)
+        unique = dict(EVENT, title_fr="Magnezik Fest #2",
+                      canonicalurl="https://openagenda.com/shotgun/events/magnezik-festival-2")
+        def fetch(url):
+            visits.append(url)
+            return payload([unique] if url == late_page else [])
+        s = state()
+        result = scan(s, DAY, fetch=fetch)
+        self.assertEqual(result["leads_count"], 1)
+        self.assertEqual(result["publications"], 0)
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["requests_attempted"], len(urls))
+        self.assertIn(first_page, visits)
+        self.assertIn(late_page, visits)
+        self.assertEqual(len(visits), len(set(visits)))
+        self.assertEqual(result["leads"][0]["year_source_review_only"],
+                         "UNVERIFIED_PROVIDER_START_DATE")
+
     def test_scan_deduplicates_5_queries_without_publication(self):
         visited = []
         def fetch(url):
@@ -162,6 +188,23 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         # Second public run today cannot incur an unnecessary OpenData request.
         again = scan(current, DAY, fetch=lambda _: self.fail("No second fetch"))
         self.assertIs(again, report)
+
+    def test_same_day_old_query_budget_rechecks_new_pages(self):
+        current = state()
+        first = scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        self.assertEqual(first["requests_attempted"], len(fixed_query_urls(DAY)))
+        current[STATE_KEY]["requests_attempted"] = 6  # Older six-view engine.
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return payload([EVENT])
+        refreshed = scan(current, DAY, fetch=fetch)
+        self.assertIsNot(refreshed, first)
+        self.assertEqual(visited, list(fixed_query_urls(DAY)))
+        self.assertEqual(refreshed["requests_attempted"],
+                         len(fixed_query_urls(DAY)))
+        self.assertEqual(refreshed["leads_count"], 1)
+        self.assertFalse(refreshed["publication_authorized"])
 
     def test_partial_outage_never_authorizes_and_can_retry_next_slot(self):
         urls = fixed_query_urls()
@@ -189,7 +232,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
             OSError("offline")))
         self.assertEqual(result["status"], "UNAVAILABLE")
         self.assertEqual(result["leads_count"], 0)
-        self.assertEqual(result["requests_failed"], len(QUERIES))
+        self.assertEqual(result["requests_failed"], len(fixed_query_urls(DAY)))
         self.assertEqual(validated_leads(s, DAY), [])
 
     def test_bogus_favorable_state_never_forges_a_publisher_lead(self):
