@@ -24,6 +24,7 @@ from pathlib import Path
 from typing import Callable
 
 from radio_stream_playlist_preview import playlist_hint
+from radio_stream_continuity_evidence import observe_continuity
 
 MAX_BYTES = 512
 MAX_REDIRECTS = 3
@@ -40,6 +41,7 @@ class ResponseSample:
     content_type: str
     location: str
     body: bytes
+    continuity: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -215,9 +217,11 @@ class PinnedHttpTransport:
     HTTPS preserves the original host for SNI and certificate verification
     while socket.create_connection uses only the checked IP address.
     """
-    def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT):
+    def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT,
+                 extended_continuity: bool = False):
         self.resolver = resolver
         self.timeout = timeout
+        self.extended_continuity = extended_continuity
 
     def request(self, url: str) -> ResponseSample:
         parsed = validate_endpoint(url)
@@ -241,22 +245,32 @@ class PinnedHttpTransport:
         connection._create_connection = connect_checked
         target = urllib.parse.urlunsplit(("", "", parsed.path or "/", parsed.query, ""))
         try:
-            connection.request("GET", target, headers={
+            headers = {
                 "User-Agent": USER_AGENT,
                 "Accept": "audio/*,application/octet-stream,*/*;q=0.2",
                 "Icy-MetaData": "0",
-                "Range": "bytes=0-511",
                 "Connection": "close",
-            })
+            }
+            if not self.extended_continuity:
+                headers["Range"] = "bytes=0-511"
+            connection.request("GET", target, headers=headers)
             response = connection.getresponse()
-            # read1() requests only one bounded socket read, rather than
-            # waiting for the full 512 bytes on a live stream.
+            # First read is always bounded, including manifest and redirects.
             data = response.read1(MAX_BYTES) if response.status in (200, 206) else b""
+            mime = response.getheader("Content-Type", "") or ""
+            continuity = None
+            if (self.extended_continuity and response.status == 200 and
+                    classify_sample(data, mime)[0] == "audio_sample_ok"):
+                continuity = observe_continuity(
+                    response, data,
+                    content_length=response.getheader("Content-Length"),
+                ).as_dict()
             return ResponseSample(
                 status=int(response.status),
-                content_type=response.getheader("Content-Type", "") or "",
+                content_type=mime,
                 location=response.getheader("Location", "") or "",
                 body=data,
+                continuity=continuity,
             )
         finally:
             connection.close()
@@ -312,11 +326,14 @@ def probe_url(raw_url: str, request: Callable[[str], ResponseSample]) -> dict:
                             continue
                 else:
                     verdict, reason = "playlist_pending", hint.kind
-            return {
+            report = {
                 "verdict": verdict, "reason": reason, "formatHint": reason,
                 "redirectCount": redirects, "sampleBytes": min(MAX_BYTES, len(sample.body)),
                 "streamSha256": fingerprint,
             }
+            if sample.continuity is not None:
+                report["continuityEvidence"] = sample.continuity
+            return report
     except UnsafeEndpoint as error:
         verdict, reason = "blocked_unsafe", str(error)
     except (OSError, ssl.SSLError, http.client.HTTPException,
@@ -386,6 +403,9 @@ def probe_candidates(
         "publicationAllowed": False,
         "checkedCount": len(rows),
         "audioEvidenceCount": sum(x["verdict"] == "audio_sample_ok" for x in rows),
+        "sustainedTransportEvidenceCount": sum(
+            x.get("continuityEvidence", {}).get("state") == "transport_sustained"
+            for x in rows),
         "technicalVerifiedCount": 0,
         "checks": rows,
     }
@@ -398,18 +418,26 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--limit", type=int, default=3)
     p.add_argument("--allow-network", action="store_true",
                    help="Required for any external stream request; use only on controlled runners.")
+    p.add_argument("--extended-continuity", action="store_true",
+                   help="Observe at most 10 s and 512 KiB per apparent audio stream; "
+                        "NOT decoder or publisher approval.")
     args = p.parse_args(argv)
     if not args.allow_network:
         p.error("Network probing disabled: --allow-network is mandatory")
     if args.discovery.stat().st_size > MAX_INPUT_SIZE:
         p.error("Discovery document too large")
     data = json.loads(args.discovery.read_text(encoding="utf-8"))
-    report = probe_candidates(data, PinnedHttpTransport().request, limit=args.limit)
+    report = probe_candidates(
+        data,
+        PinnedHttpTransport(extended_continuity=args.extended_continuity).request,
+        limit=args.limit,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n",
                            encoding="utf-8")
     print(f"STREAM_PROBE_PREVIEW_ONLY samples={report['checkedCount']} "
           f"audio_evidence={report['audioEvidenceCount']} "
+          f"sustained_transport={report['sustainedTransportEvidenceCount']} "
           "technical_verified=0 published=false")
     return 0
 
