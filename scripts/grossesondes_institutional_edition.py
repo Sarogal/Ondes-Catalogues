@@ -201,6 +201,38 @@ TOURING_SHOW = re.compile(
 )
 
 
+class VisibleInstitutionHeadings(VisibleText):
+    """Capture only explicitly VISIBLE h1/h2 main-event labels.
+
+    A generic "Site officiel du Festival X" footer or a hidden annotation
+    must never authorize an unrelated index event's organizer website.
+    """
+    def __init__(self):
+        super().__init__()
+        self.headings = []
+        self.heading_tag = None
+        self.heading_words = []
+
+    def handle_starttag(self, tag, attrs):
+        super().handle_starttag(tag, attrs)
+        if tag in ("h1", "h2") and not self.hidden():
+            self.heading_tag = tag
+            self.heading_words = []
+
+    def handle_data(self, data):
+        super().handle_data(data)
+        if self.heading_tag is not None and not self.hidden():
+            self.heading_words.append(data)
+
+    def handle_endtag(self, tag):
+        if tag == self.heading_tag:
+            if not self.hidden():
+                self.headings.append(" ".join(self.heading_words))
+            self.heading_tag = None
+            self.heading_words = []
+        super().handle_endtag(tag)
+
+
 def independent_institutional_music_genre(detail_html, edition_title, year):
     """Fresh visible, exact-edition theme, NOT OpenData or a private genre.
 
@@ -214,7 +246,7 @@ def independent_institutional_music_genre(detail_html, edition_title, year):
             or type(year) is not int
             or not edition_title.strip().endswith(" " + str(year))):
         return False
-    parser = VisibleText()
+    parser = VisibleInstitutionHeadings()
     try:
         parser.feed(detail_html)
         parser.close()
@@ -222,7 +254,8 @@ def independent_institutional_music_genre(detail_html, edition_title, year):
         return False
     visible = normalized(" ".join(parser.parts))
     label = normalized(edition_title)
-    if len(label) < 12:
+    if (len(label) < 12
+            or label not in {normalized(h) for h in parser.headings}):
         return False
     matcher = re.compile(r"(?<![a-z0-9])" + re.escape(label)
                          + r"(?![a-z0-9])")
