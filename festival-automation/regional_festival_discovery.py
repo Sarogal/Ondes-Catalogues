@@ -483,7 +483,12 @@ def candidate_links(html, source, today, historical_hints=None, diagnostics=None
                 and not NON_MUSIC_TITLE.search(name)):
             from national_openagenda_research import published_identity
             key = (published_identity(title), next(iter(years)), APPROVED[source])
-            if cross_hints and FESTIVAL.search(name):
+            if cross_hints and (
+                    FESTIVAL.search(name)
+                    or (COMPOUND_FESTIVAL_BRAND.search(name)
+                        and not NON_FESTIVAL_BRAND.search(name))):
+                # Exact name, year and approved geographic registry only:
+                # OpenAgenda metadata is a PRIVATE hint, never genre proof.
                 cross_matched = key in cross_hints
             # A first-party festival may have a distinctive name without a
             # separate "festival" word. An exact municipal anchor is still

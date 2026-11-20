@@ -91,6 +91,75 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("artists", row)
         self.assertNotIn("date_hints", row)
 
+    def test_compound_festival_names_and_fixed_subgenres_remain_private(self):
+        from urllib.parse import parse_qs, urlsplit
+        from national_openagenda_research import RESEARCH_RULESET
+        self.assertTrue(RESEARCH_RULESET.endswith(".v3"))
+        where = [parse_qs(urlsplit(url).query)["where"][0]
+                 for url in fixed_query_urls(DAY)]
+        for keyword in (
+            "black metal", "thrash metal", "folk metal", "pagan metal",
+            "nu metal", "metalcore", "grindcore", "stoner rock",
+            "hard rock", "punk rock",
+        ):
+            with self.subTest(keyword=keyword):
+                self.assertTrue(any(
+                    ('search(description_fr,"' + keyword + '")') in q
+                    for q in where))
+        self.assertEqual(len(where), 23)
+        self.assertEqual(len(fixed_query_urls(DAY)), len(set(fixed_query_urls(DAY))))
+        for title in (
+            "Festibarock'in 2027", "HelixFest 2027",
+            "ProtoFest 2027", "MordorFest 2027",
+        ):
+            with self.subTest(title=title):
+                row = dict(EVENT, title_fr=title,
+                           description_fr="Musique pagan metal et thrash metal",
+                           keywords_fr=["pagan metal"])
+                result = candidate(row, DAY)
+                self.assertIsNotNone(result)
+                self.assertEqual(result["year_source_review_only"], "TITLE")
+                self.assertIs(result["official_site_verified"], False)
+                self.assertIs(result["festival_verified"], False)
+                self.assertIs(result["edition_dates_verified"], False)
+                self.assertIs(result["publication_authorized"], False)
+                self.assertNotIn("startDate", result)
+                self.assertNotIn("officialSite", result)
+        for title in (
+            "Festivités du Metal 2027", "Festin du Metal 2027",
+            "Festive Party 2027", "Festibarock'in 2028",
+        ):
+            with self.subTest(rejected=title):
+                self.assertIsNone(candidate(dict(
+                    EVENT, title_fr=title,
+                    description_fr="Musique metal"), DAY))
+        self.assertIsNone(candidate(dict(
+            EVENT, title_fr="ProtoFest 2027",
+            description_fr="Festival des fleurs, jardinage",
+            keywords_fr=[]), DAY))
+
+    def test_new_query_ruleset_forces_new_same_day_research(self):
+        original = state()
+        original[STATE_KEY] = {
+            "schema": SCHEMA, "as_of": DAY,
+            "research_ruleset": "event-title-and-published-edition-dedup.v2",
+            "known_catalog_digest": "not relevant",
+            "status": "SCANNED",
+            "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False,
+            "requests_attempted": 13, "requests_failed": 0,
+            "leads": [], "leads_count": 0,
+        }
+        seen = []
+        result = scan(original, DAY, fetch=lambda url: (
+            seen.append(url), payload([EVENT]))[1])
+        self.assertEqual(len(seen), 23)
+        self.assertEqual(result["leads_count"], 1)
+        self.assertEqual(result["requests_failed"], 0)
+        self.assertFalse(result["publication_authorized"])
+        self.assertFalse(result["safe_to_publish"])
+        self.assertFalse(result["leads"][0]["official_site_verified"])
+
     def test_yearless_edition_year_from_provider_is_unverified_research_hint(self):
         item = dict(EVENT, title_fr="Kreiz Y Fest #5")
         research = candidate(item, DAY)

@@ -22,7 +22,7 @@ from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
-RESEARCH_RULESET = "event-title-and-published-edition-dedup.v2"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v3"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
@@ -37,6 +37,18 @@ QUERIES = (
     'search(title_fr,"punk")',
     'search(title_fr,"hardcore")',
     'search(description_fr,"metal festival")',
+    # Fixed genre-first searches broaden distinct festival discovery.
+    # No candidate-supplied terms, URLs, hostnames or publisher evidence.
+    'search(description_fr,"black metal")',
+    'search(description_fr,"thrash metal")',
+    'search(description_fr,"folk metal")',
+    'search(description_fr,"pagan metal")',
+    'search(description_fr,"nu metal")',
+    'search(description_fr,"metalcore")',
+    'search(description_fr,"grindcore")',
+    'search(description_fr,"stoner rock")',
+    'search(description_fr,"hard rock")',
+    'search(description_fr,"punk rock")',
 )
 MAX_BYTES = 450_000
 PER_PAGE = 25
@@ -46,10 +58,17 @@ PER_PAGE = 25
 FESTIVAL_PAGE_OFFSETS = tuple(range(0, 200, PER_PAGE))
 MAX_LEADS = 60
 YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
-FEST = re.compile(r"(?:\bfestival\b|\bfest\b|\b[a-z]{3,30}fest\b)")
-STYLE = re.compile(r"\b(?:metal|hard rock|hardcore|punk|post punk|"
+FEST = re.compile(
+    r"(?:\bfestival\b|\bfest\b|\b[a-z0-9]{3,40}fest\b|"
+    r"\bfesti[a-z0-9]{4,40}\b)")
+PLAIN_FEST = re.compile(r"\b(?:festival|fest)\b")
+NOT_A_FESTIVAL_BRAND = re.compile(r"\b(?:festivites?|festives?|festifs?|festins?)\b")
+STYLE = re.compile(r"\b(?:metal|hard rock|hardcore|punk|post punk|post hardcore|"
                    r"rock|stoner|doom|grindcore|deathcore|metalcore|"
-                   r"sludge|thrash|black metal|death metal)\b")
+                   r"sludge|thrash|black metal|death metal|heavy metal|"
+                   r"folk metal|pagan metal|nu metal|power metal|speed metal|"
+                   r"progressive metal|symphonic metal|industrial metal|"
+                   r"viking metal|crust punk)\b")
 FORBIDDEN = re.compile(r"[<>{}\x00-\x1f]")
 INDIVIDUAL_EVENT = re.compile(
     r"^(?:concerts?|spectacles?|soirees?|ateliers?|expositions?|"
@@ -200,6 +219,9 @@ def candidate(row, today):
     year = next(iter(years)) if years else first.year
     if (not current.year <= year <= current.year + 2
             or first.year != year or not FEST.search(key)
+            # Festivités/festin are not a festival brand on their own.
+            or (NOT_A_FESTIVAL_BRAND.search(key)
+                and not PLAIN_FEST.search(key))
             or INDIVIDUAL_EVENT.match(key)):
         return None
     country = row.get("location_countrycode")
