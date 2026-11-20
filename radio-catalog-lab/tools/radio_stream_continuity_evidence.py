@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 from radio_stream_frame_chain import MAX_FRAME_SAMPLE_BYTES, analyze_frame_chain
+from radio_stream_decode_evidence import decode_audio_prefix
 
 MIN_SECONDS = 6.0
 MAX_SECONDS = 10.0
@@ -28,6 +29,7 @@ class ContinuityEvidence:
     observed_bytes: int
     read_chunks: int
     frame_evidence: dict | None = None
+    decode_evidence: dict | None = None
 
     def as_dict(self) -> dict:
         report = {
@@ -40,6 +42,8 @@ class ContinuityEvidence:
         }
         if self.frame_evidence is not None:
             report["frameEvidence"] = self.frame_evidence
+        if self.decode_evidence is not None:
+            report["decodeEvidence"] = self.decode_evidence
         return report
 
 
@@ -49,6 +53,7 @@ def observe_continuity(
     *,
     content_length: str | None = None,
     clock: Callable[[], float] | None = None,
+    experimental_decode: bool = False,
 ) -> ContinuityEvidence:
     """Observe the SAME open HTTP connection after a recognizable audio header.
 
@@ -71,6 +76,11 @@ def observe_continuity(
             observed_bytes=size,
             read_chunks=chunks,
             frame_evidence=analyze_frame_chain(bytes(frame_sample)),
+            decode_evidence=(
+                decode_audio_prefix(bytes(frame_sample))
+                if experimental_decode and state == "transport_sustained"
+                else None
+            ),
         )
 
     if not isinstance(initial_bytes, bytes) or not initial_bytes:
