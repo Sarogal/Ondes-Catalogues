@@ -293,15 +293,26 @@ def examine(state, queue, published, today, fetch=None):
                         and old.get("lastSeen") in (today, yesterday)
                         and isinstance(old.get("firstSeen"), str))
                 try:
-                    first_seen = date.fromisoformat(
+                    prior_first = date.fromisoformat(
                         old["firstSeen"]) if same else current
-                    continuous = (same and first_seen < current
-                                  and old["lastSeen"] == yesterday)
+                    if prior_first >= current:
+                        continuous = False
+                    elif old.get("lastSeen") == yesterday:
+                        # Two consecutive civil days are compulsory. A J1
+                        # observation separated by a missed day is not J+1.
+                        continuous = (old.get("firstSeen") == yesterday
+                                      or old.get("stable") is True)
+                    else:
+                        # A second run on the same date must not DOWNGRADE an
+                        # already certified J+1 proof.
+                        continuous = old.get("stable") is True
+                    first_seen = prior_first if continuous else current
                 except (ValueError, TypeError):
                     first_seen, continuous = current, False
                 observed[url] = {
                     "digest": digest, "firstSeen": first_seen.isoformat(),
                     "lastSeen": today, "lastChecked": today,
+                    "stable": continuous,
                 }
                 row["status"] = (
                     "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"

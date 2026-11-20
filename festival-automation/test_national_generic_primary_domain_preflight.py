@@ -517,5 +517,44 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(second["two_day_dates_count"], 4)
 
 
+    def test_j1_generic_date_survives_twice_daily_followup(self):
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        html = page(URL_A)
+        result = examine(state, queue, published, DAY1, fetch=lambda _: html)
+        self.assertEqual(result["two_day_dates_count"], 0)
+        state2, queue2, _ = fixture(DAY2)
+        state2.update(state)
+        queue2["dossiers"] = queue2["dossiers"][:1]
+        second = examine(state2, queue2, published, DAY2, fetch=lambda _: html)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        same_day = examine(state2, queue2, published, DAY2, fetch=lambda _: html)
+        self.assertEqual(same_day["two_day_dates_count"], 1)
+        proof = state2["national_generic_primary_date_observations_private"][URL_A]
+        self.assertEqual(proof["firstSeen"], DAY1)
+        self.assertTrue(proof["stable"])
+        third_state, third_queue, _ = fixture(DAY3)
+        third_state.update(state2)
+        third_queue["dossiers"] = third_queue["dossiers"][:1]
+        third = examine(third_state, third_queue, published, DAY3,
+                        fetch=lambda _: html)
+        self.assertEqual(third["two_day_dates_count"], 1)
+        self.assertFalse(third["publication_authorized"])
+
+    def test_no_j1_promotion_when_a_calendar_day_was_missed(self):
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        examine(state, queue, published, DAY1, fetch=lambda _: page(URL_A))
+        day3_state, day3_queue, _ = fixture(DAY3)
+        day3_state.update(state)
+        day3_queue["dossiers"] = day3_queue["dossiers"][:1]
+        delayed = examine(day3_state, day3_queue, published, DAY3,
+                          fetch=lambda _: page(URL_A))
+        self.assertEqual(delayed["two_day_dates_count"], 0)
+        saved = day3_state["national_generic_primary_date_observations_private"][URL_A]
+        self.assertEqual(saved["firstSeen"], DAY3)
+        self.assertFalse(saved["stable"])
+
+
 if __name__ == "__main__":
     unittest.main()
