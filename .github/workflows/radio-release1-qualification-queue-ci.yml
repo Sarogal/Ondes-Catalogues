@@ -8,6 +8,8 @@ on:
       - ".github/workflows/radio-release1-qualification-queue-ci.yml"
       - "radio-catalog-lab/tools/radio_catalog_qualification_queue.py"
       - "radio-catalog-lab/tools/test_radio_catalog_qualification_queue.py"
+      - "radio-catalog-lab/tools/radio_catalog_probe_batch_plan.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_probe_batch_plan.py"
       - "radio-catalog-lab/tools/radio_catalog_daily_candidate_reconcile.py"
   workflow_dispatch:
 
@@ -31,6 +33,7 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_qualification_queue.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_probe_batch_plan.py" -v
       - name: Assert no tracked source changes or publication
         run: |
           git diff --quiet --exit-code
