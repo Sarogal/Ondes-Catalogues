@@ -19,7 +19,7 @@ if ENGINE not in sys.path:
 
 from grossesondes_official_html_edition import (
     VisibleText, fold, explicit_ranges, visible_official_edition,
-    dominant_visible_range,
+    dominant_visible_range, administrative_calendar_dates,
 )
 from grossesondes_structured_edition import (
     ROW_KEYS, PRIVATE_KEYS, no_same_edition_jsonld_contradiction, conflicts_with_existing,
@@ -55,8 +55,13 @@ def institutional_date(html, title, year):
     except (ValueError, TypeError, UnicodeError):
         return None
     content = " ".join(fold(" ".join(parser.parts)).split())
+    # An explicit ticket-sale OPENING day in its own visible paragraph
+    # is an administrative milestone, not a second date of this edition.
+    # Never ignore any multi-day, mixed, festival-labelled or cancelled claim.
+    excluded = administrative_calendar_dates(html, title, year)
     unique = {(start, end) for _a, _b, start, end
-              in explicit_ranges(content, year)}
+              in explicit_ranges(content, year)
+              if (start, end) not in excluded}
     dates = dominant_visible_range(unique)
     if dates is None:
         return None
