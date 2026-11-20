@@ -132,7 +132,8 @@ class FutureGeoTests(unittest.TestCase):
         self.assertIsNone(exact_edition_geo(html(event()), known_city))
 
     def test_prior_geo_and_old_year_do_not_create_eligible_row(self):
-        old = {**ROW, "startDate": "2026-10-02", "endDate": "2026-10-03"}
+        old = {**ROW, "slug": "old-edition-2026",
+               "startDate": "2026-10-02", "endDate": "2026-10-03"}
         geocoded = {**ROW, "slug": "geocoded-2027",
                     "lat": 46.8832, "lon": 5.5577}
         self.assertEqual(eligible(catalogue(old, geocoded, ROW),
