@@ -276,7 +276,8 @@ class HlsSegmentEvidenceTests(unittest.TestCase):
                 return response(master)
             return response(b"", status=302, location="http://127.0.0.1/")
         result = verify_one_segment(BASE, fetch, lambda u: reads.append(u))
-        self.assertEqual(result["state"], "child_manifest_fetch_incomplete")
+        # Rejecting an unsafe redirect is stronger than merely marking 302 pending.
+        self.assertEqual(result["state"], "unsafe_or_failed_segment_request")
         self.assertEqual(len(reads), 2)
         self.assertNotIn("127.0.0.1", str(result))
 
