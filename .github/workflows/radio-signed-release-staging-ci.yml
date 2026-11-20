@@ -92,16 +92,17 @@ jobs:
         run: |
           test -n "$GO_RADIO_PY_RELEASE_DIR"
           dart test test/radio_python_signed_wire_interop_test.dart --reporter expanded
-      - name: "Assert no source modification and no deployment"
+      - name: "Assert tracked source untouched; all signed output remains ephemeral"
         shell: bash
         run: |
           set -euo pipefail
-          # dart pub get creates an untracked local pubspec.lock in this
-          # standalone lab. This is not a source edit or a deployment.
-          unexpected="$(git status --porcelain --untracked-files=all | grep -vxF '?? radio-catalog-lab/dart/pubspec.lock' || true)"
-          if [ -n "$unexpected" ]; then
-            echo "Unexpected modified/untracked repository files:" >&2
-            echo "$unexpected" >&2
-            exit 1
-          fi
+          # Python bytecode and Dart .dart_tool files are expected CI scratch.
+          # Check tracked files only; no build/test step may edit them.
+          git diff --quiet --exit-code
+          git diff --cached --quiet --exit-code
+          test -z "$(git status --porcelain --untracked-files=no)"
+          case "$GO_RADIO_PY_RELEASE_DIR" in
+            "$RUNNER_TEMP"/*) ;;
+            *) echo "Synthetic signed output escaped runner temp" >&2; exit 1 ;;
+          esac
           echo "OFFLINE_ONLY_SYNTHETIC_CROSS_RUNTIME_PASS — no publisher, no deploy"
