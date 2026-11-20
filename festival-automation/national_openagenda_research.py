@@ -39,6 +39,10 @@ QUERIES = (
 )
 MAX_BYTES = 450_000
 PER_PAGE = 25
+# Read at most 200 results from the broad festival category each day.
+# Future events beyond the first page were frequently missed despite valid
+# institutionally published metadata. This is bounded discovery only.
+FESTIVAL_PAGE_OFFSETS = tuple(range(0, 200, PER_PAGE))
 MAX_LEADS = 60
 YEAR = re.compile(r"(?<![0-9])20[2-4][0-9](?![0-9])")
 FEST = re.compile(r"(?:\bfestival\b|\bfest\b|\b[a-z]{3,30}fest\b)")
@@ -64,13 +68,16 @@ def fixed_query_urls(today=None):
     current = (date.fromisoformat(today) if today is not None
                else datetime.now(ZoneInfo("Europe/Paris")).date())
     last_year = current.year + 3
+    views = ([(QUERIES[0], offset) for offset in FESTIVAL_PAGE_OFFSETS]
+             + [(query, 0) for query in QUERIES[1:]])
     return tuple(SOURCE + "?" + urlencode({
         "select": SELECT,
         "where": ("(" + query + ") AND lastdate_begin >= date'"
                   + current.isoformat() + "' AND firstdate_begin < date'"
                   + str(last_year) + "-01-01'"),
         "order_by": "updatedat desc", "limit": PER_PAGE,
-    }) for query in QUERIES)
+        "offset": offset,
+    }) for query, offset in views)
 
 
 def fetch_json(url, today=None):
