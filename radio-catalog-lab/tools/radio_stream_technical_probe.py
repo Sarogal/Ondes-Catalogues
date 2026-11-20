@@ -223,11 +223,13 @@ class PinnedHttpTransport:
     while socket.create_connection uses only the checked IP address.
     """
     def __init__(self, resolver=socket.getaddrinfo, timeout: float = CONNECT_TIMEOUT,
-                 extended_continuity: bool = False, experimental_decode: bool = False):
+                 extended_continuity: bool = False, experimental_decode: bool = False,
+                 segment_mode: bool = False):
         self.resolver = resolver
         self.timeout = timeout
         self.extended_continuity = extended_continuity
         self.experimental_decode = experimental_decode
+        self.segment_mode = segment_mode
 
     def request(self, url: str) -> ResponseSample:
         parsed = validate_endpoint(url)
@@ -260,14 +262,29 @@ class PinnedHttpTransport:
             # Request the entire manifest response for .m3u8 paths, but never
             # read beyond MAX_HLS_BYTES. Ordinary audio probes remain 512 B.
             hls_path = parsed.path.lower().endswith(".m3u8")
-            if not self.extended_continuity and not hls_path:
+            if self.segment_mode:
+                # One finite HLS segment sample, never a whole media download.
+                headers["Range"] = "bytes=0-16383"
+            elif not self.extended_continuity and not hls_path:
                 headers["Range"] = "bytes=0-511"
             connection.request("GET", target, headers=headers)
             response = connection.getresponse()
             mime = response.getheader("Content-Type", "") or ""
             data = b""
             if response.status in (200, 206):
-                if hls_path and response.status == 200:
+                if self.segment_mode:
+                    chunks = []
+                    bytes_read = 0
+                    for _ in range(8):
+                        part = response.read1(16384 - bytes_read)
+                        if not part:
+                            break
+                        chunks.append(part)
+                        bytes_read += len(part)
+                        if bytes_read >= 16384:
+                            break
+                    data = b"".join(chunks)
+                elif hls_path and response.status == 200:
                     chunks = []
                     bytes_read = 0
                     for _ in range(4):
@@ -283,8 +300,9 @@ class PinnedHttpTransport:
                 else:
                     data = response.read1(MAX_BYTES)
             continuity = None
-            if (self.extended_continuity and response.status == 200 and
-                    classify_sample(data, mime)[0] == "audio_sample_ok"):
+            if (self.extended_continuity and not self.segment_mode
+                    and response.status == 200
+                    and classify_sample(data, mime)[0] == "audio_sample_ok"):
                 continuity = observe_continuity(
                     response, data,
                     content_length=response.getheader("Content-Length"),
