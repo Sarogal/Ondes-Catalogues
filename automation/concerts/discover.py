@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import html.parser
+import hashlib
 import json
 import os
 import re
@@ -451,6 +452,15 @@ def venue_candidate(raw, source, page_url, known, day):
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
     if offsite:
+        # Long multi-artist bills must not abort the ENTIRE private archive
+        # because a discovered candidate ID exceeds intake_archive's cap.
+        # A cryptographic suffix preserves stable per-event identity.
+        if len(record["candidateId"]) > 220:
+            full_id = record["candidateId"]
+            record["candidateId"] = (
+                full_id[:175] + ":" +
+                hashlib.sha256(full_id.encode("utf-8")).hexdigest()[:20]
+            )
         # The existing publisher has NO verifier for this quarantined source.
         record.update({
             "venueOutsideSource": True,
