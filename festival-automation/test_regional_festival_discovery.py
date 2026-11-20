@@ -127,6 +127,112 @@ class RegionalTests(unittest.TestCase):
             with self.subTest(html=html):
                 self.assertEqual(candidate_links(html, ANGERS, DAY), [])
 
+
+    def test_primary_name_crossmatch_finds_unusual_festival_on_approved_index_only(self):
+        from regional_festival_discovery import (
+            private_prior_primary_name_hints, PRIMARY_CROSS_SIGNAL)
+        from national_discovery_queue import build_queue
+        from national_detail_qualification import _eligible_sources
+        primary = "https://www.festibarockin.fr/"
+        name = "Festibarock'in"
+        title = "Festibarock'in 2027"
+        detail = ("https://www.angers.fr/actualites-sorties/agenda/"
+                  "festibarock-in-2027")
+        day1 = "2026-11-05"
+        prior = {
+            "schema": "grossesondes.national-festival-discovery-private.v1",
+            "as_of": day1, "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False, "publications": 0,
+            "dossiers": [{
+                "id": "national-1234567890abcdef1234",
+                "name_hint": name, "normalized_name": "festibarock in",
+                "edition_year_hint": 2027, "region_hint": "Pays de la Loire",
+                "safe_to_publish": False, "publication_authorized": False,
+                "sources": [{
+                    "kind": "CURATED_PRIMARY_CANDIDATE",
+                    "url": primary, "discovered_via": primary,
+                    "publication_authorized": False,
+                }],
+            }],
+        }
+        expected = frozenset({("festibarock in", 2027, "Pays de la Loire")})
+        self.assertEqual(private_prior_primary_name_hints(prior, day1), expected)
+        html = '<article><a href="' + detail + '">' + title + '</a></article>'
+        self.assertEqual(candidate_links(html, ANGERS, day1), [])
+        links = candidate_links(html, ANGERS, day1,
+                                primary_name_hints=expected)
+        self.assertEqual(len(links), 1)
+        self.assertEqual(links[0]["signal"], PRIMARY_CROSS_SIGNAL)
+        state = {"schema": "grossesondes.source-watch.v1",
+                 "institutional_agenda_candidate_pages": {},
+                 "secondary_source_candidates_private": {}}
+        report1 = {"schema": "grossesondes.source-watch-report.v1",
+                   "date": day1, "source_reference_leads_review_only": []}
+        recorded = scan_regional_indexes(
+            report1, state, [B], day1,
+            fetch=lambda url: html, limit=1, prior_primary_queue=prior)
+        self.assertEqual(len(recorded), 1)
+        self.assertEqual(recorded[0]["discovery_signal"], PRIMARY_CROSS_SIGNAL)
+        self.assertFalse(recorded[0]["publication_authorized"])
+        self.assertEqual(report1["regional_festival_primary_name_hints_review_only"], 1)
+        self.assertEqual(report1["regional_festival_primary_matched_new_review_only"], 1)
+        day2 = "2026-11-06"
+        q = build_queue(state, {"schema": "grossesondes.source-watch-report.v1",
+                                "date": day2, "source_reference_leads_review_only": []},
+                        [], day2)
+        self.assertEqual(q["candidate_dossiers_count"], 1)
+        self.assertEqual(len(_eligible_sources(state, q, day2, due_only=False)), 1)
+        self.assertFalse(q["dossiers"][0]["publication_authorized"])
+
+    def test_prior_first_party_hint_fails_closed_for_stale_or_secondary_input(self):
+        from regional_festival_discovery import private_prior_primary_name_hints
+        good = {
+            "schema": "grossesondes.national-festival-discovery-private.v1",
+            "as_of": DAY, "review_only": True, "safe_to_publish": False,
+            "publication_authorized": False, "publications": 0,
+            "dossiers": [{
+                "name_hint": "Festibarock'in",
+                "normalized_name": "festibarock in",
+                "edition_year_hint": 2027, "region_hint": "Pays de la Loire",
+                "safe_to_publish": False, "publication_authorized": False,
+                "sources": [{
+                    "kind": "CURATED_PRIMARY_CANDIDATE",
+                    "url": "https://www.festibarockin.fr/",
+                    "discovered_via": "https://www.festibarockin.fr/",
+                    "publication_authorized": False,
+                }],
+            }],
+        }
+        from copy import deepcopy
+        variants = []
+        for key, value in (
+                ("safe_to_publish", True),
+                ("publication_authorized", True),
+                ("as_of", "2026-10-01")):
+            altered = deepcopy(good)
+            altered[key] = value
+            variants.append(altered)
+        for key, value in (
+                ("region_hint", "Autre pays"),
+                ("edition_year_hint", 2032),
+                ("normalized_name", "another festival")):
+            altered = deepcopy(good)
+            altered["dossiers"][0][key] = value
+            variants.append(altered)
+        for key, value in (
+                ("kind", "REGIONAL_INDEX_UNVERIFIED"),
+                ("discovered_via", "https://evil.example/"),
+                ("publication_authorized", True)):
+            altered = deepcopy(good)
+            altered["dossiers"][0]["sources"][0][key] = value
+            variants.append(altered)
+        for variant in variants:
+            with self.subTest(case=variant):
+                self.assertEqual(private_prior_primary_name_hints(
+                    variant, DAY), frozenset())
+        self.assertEqual(private_prior_primary_name_hints(
+            good, "2026-11-07"), frozenset())
+
     def test_openagenda_name_plus_year_and_region_can_nominate_only_a_live_institutional_link(self):
         """A research clue can find a genre-less title, NEVER authorize publication."""
         from national_openagenda_research import scan as scan_openagenda

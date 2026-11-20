@@ -21,7 +21,7 @@ from grossesondes_institutional_edition import institutional_date
 from grossesondes_official_html_edition import VisibleText, fold
 from national_detail_qualification import _seen_again
 from regional_festival_discovery import (
-    candidate_links, MUSIC_CATEGORY_PENDING_SIGNAL,
+    candidate_links, INDEX_MUSIC_PROOF_SIGNALS,
 )
 from source_qualification import Anchors, clean_url, classify, normalized
 from festival_website_discovery import visible_event_website_links
@@ -75,7 +75,7 @@ def trusted_live_link(spec, today, institution_fetch=get_page):
         theme_on_index = any(
             c.get("candidate_url") == approved["url"]
             and normalized(c.get("title")) == normalized(approved["title"])
-            and c.get("signal") != MUSIC_CATEGORY_PENDING_SIGNAL
+            and c.get("signal") in INDEX_MUSIC_PROOF_SIGNALS
             for c in candidates)
         # The same-host institutional DETAIL may supply a missing musical
         # genre, but the OpenData/PRIVATE label never counts as proof.

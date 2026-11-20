@@ -65,6 +65,35 @@ class InstitutionalPublisherTests(unittest.TestCase):
         self.assertIsNotNone(validate_independent(proposal, qualified, TODAY))
         self.assertEqual(visited, [INDEX, detail, INDEX, detail])
 
+
+    def test_primary_research_and_openagenda_signals_never_become_genre_proof(self):
+        from unittest.mock import patch
+        from regional_festival_discovery import (
+            PRIMARY_CROSS_SIGNAL, CROSS_SOURCE_SIGNAL, ARCHIVE_SIGNAL)
+        title = "Festibarock'in 2027"
+        url = "https://agenda.montpellier.fr/evenement/festibarock-in-2027"
+        index = '<main><a href="' + url + '">' + title + '</a></main>'
+        detail = ("<main><h1>Festibarock'in 2027</h1>"
+                  "<p>Les 25 et 26 juin 2027.</p></main>")
+        proposed = private_proposal({
+            "index_url": INDEX, "index_page": INDEX,
+            "url": url, "title": title, "year": 2027,
+        }, ("2027-06-25", "2027-06-26"), TODAY)
+        self.assertIsNotNone(proposed)
+        for weak in (PRIMARY_CROSS_SIGNAL, CROSS_SOURCE_SIGNAL, ARCHIVE_SIGNAL):
+            with self.subTest(signal=weak), patch(
+                    "grossesondes_institutional_edition.candidate_links",
+                    return_value=[{
+                        "candidate_url": url, "title": title, "signal": weak
+                    }]):
+                visited = []
+                def read(u):
+                    visited.append(u)
+                    return index if u == INDEX else detail
+                self.assertIsNone(independently_fetch(
+                    proposed, TODAY, fetch=read))
+                self.assertEqual(visited, [INDEX, url])
+
     def test_rolling_year_gate_requires_explicit_current_or_two_future_years(self):
         for today, year, expected in (
             ("2026-11-20", 2026, True),
