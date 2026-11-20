@@ -19,6 +19,7 @@ PIN = {
 }
 MANIFEST = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
 ENTRY = MANIFEST["entries"][0]
+DEFAULT = object()
 AUTHORITY = {
     "url": ENTRY["external_authority_url"],
     "html": (
@@ -29,9 +30,9 @@ AUTHORITY = {
 }
 
 
-def review(manifest=None, pin=None, prefix="/evenement/", today=NOW):
+def review(manifest=DEFAULT, pin=None, prefix="/evenement/", today=NOW):
     return assess_source_policy(
-        deepcopy(MANIFEST if manifest is None else manifest),
+        deepcopy(MANIFEST if manifest is DEFAULT else manifest),
         deepcopy(PIN if pin is None else pin), prefix, today,
     )
 
