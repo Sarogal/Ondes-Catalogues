@@ -1,0 +1,46 @@
+name: "Grosses Ondes — release 1 batch-to-stream evidence bridge (offline)"
+
+on:
+  push:
+    branches:
+      - feature/radio-release1-batch-evidence-bridge-20261120
+    paths:
+      - ".github/workflows/radio-release1-batch-evidence-bridge-ci.yml"
+      - "radio-catalog-lab/tools/radio_catalog_batch_evidence_bridge.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_batch_evidence_bridge.py"
+      - "radio-catalog-lab/tools/radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_recheck_ledger.py"
+      - "radio-catalog-lab/tools/test_radio_stream_multivariant_ledger.py"
+      - "radio-catalog-lab/tools/radio_catalog_probe_batch_plan.py"
+      - "radio-catalog-lab/tools/test_radio_catalog_probe_batch_plan.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: go-radio-release1-batch-bridge
+  cancel-in-progress: true
+
+jobs:
+  offline-bridge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate source scheduler, full evidence ledger and integrated chain
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_daily_candidate_reconcile.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_qualification_queue.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_probe_batch_plan.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_recheck_ledger.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_stream_multivariant_ledger.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_catalog_batch_evidence_bridge.py" -v
+      - name: Guard against tracked writes
+        run: |
+          git diff --quiet --exit-code
+          git diff --cached --quiet --exit-code
+          echo "RELEASE1_BATCH_LEDGER_OFFLINE_PASS no radio checked live, approved or published"
