@@ -47,10 +47,18 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
     def test_all_queries_are_fixed_bounded_and_no_user_url(self):
         urls = fixed_query_urls()
         self.assertEqual(len(urls), len(QUERIES))
+        self.assertEqual(urls, fixed_query_urls(DAY))
         self.assertEqual(len(urls), len(set(urls)))
         self.assertTrue(all(x.startswith(SOURCE + "?") for x in urls))
         self.assertTrue(all("limit=25" in x for x in urls))
         self.assertTrue(all("select=" in x and "where=" in x for x in urls))
+        self.assertTrue(all("lastdate_begin" in x and "firstdate_begin" in x
+                            for x in urls))
+        self.assertTrue(all("2026-11-20" in x and "2029-01-01" in x
+                            for x in urls))
+        self.assertNotEqual(urls, fixed_query_urls("2026-11-21"))
+        with self.assertRaises(ValueError):
+            fixed_query_urls("2026-11-20' OR 1=1")
         for invalid in (
             "https://evil.example/api",
             "http://public.opendatasoft.com/api",
@@ -65,6 +73,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["edition_year_hint"], 2027)
         self.assertEqual(row["region_hint"], "Occitanie")
+        self.assertEqual(row["year_source_review_only"], "TITLE")
         self.assertEqual(row["kind"], "OPENAGENDA_PUBLIC_RESEARCH_ONLY")
         self.assertEqual(row["source_url"], EVENT["canonicalurl"])
         self.assertFalse(row["publication_authorized"])
@@ -75,6 +84,26 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("lat", row)
         self.assertNotIn("artists", row)
         self.assertNotIn("date_hints", row)
+
+    def test_yearless_edition_year_from_provider_is_unverified_research_hint(self):
+        item = dict(EVENT, title_fr="Kreiz Y Fest #5")
+        research = candidate(item, DAY)
+        self.assertIsNotNone(research)
+        self.assertEqual(research["edition_year_hint"], 2027)
+        self.assertEqual(research["year_source_review_only"],
+                         "UNVERIFIED_PROVIDER_START_DATE")
+        self.assertFalse(research["edition_dates_verified"])
+        self.assertFalse(research["official_site_verified"])
+        self.assertFalse(research["publication_authorized"])
+        s = state()
+        report = scan(s, DAY, fetch=lambda _: payload([item]))
+        self.assertEqual(report["leads_count"], 1)
+        self.assertEqual(validated_leads(s, DAY), report["leads"])
+        forged = deepcopy(s)
+        forged[STATE_KEY]["leads"][0]["year_source_review_only"] = "TITLE"
+        self.assertEqual(validated_leads(forged, DAY), [])
+        mismatched = dict(item, firstdate_begin="2028-05-23T18:00:00+02:00")
+        self.assertEqual(candidate(mismatched, DAY)["edition_year_hint"], 2028)
 
     def test_overseas_eligible_as_research_not_geographic_proof(self):
         for country, region in [
@@ -90,8 +119,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
     def test_wrong_year_missing_year_non_festival_unsafe_url_and_false_country_rejected(self):
         cases = [
             dict(EVENT, title_fr="Festival Metal des Garrigues 2028"),
-            dict(EVENT, title_fr="Festival Metal des Garrigues"),
-            dict(EVENT, title_fr="Festival Metal des Garrigues 2026"),
+             dict(EVENT, title_fr="Festival Metal des Garrigues 2026"),
             dict(EVENT, title_fr="Festival Metal des Garrigues 2027 / 2028"),
             dict(EVENT, title_fr="<script>Festival Metal 2027</script>"),
             dict(EVENT, title_fr="Concert Metal des Garrigues 2027"),
@@ -120,7 +148,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
             return payload([deepcopy(EVENT)])
         current = state()
         report = scan(current, DAY, fetch=fetch)
-        self.assertEqual(visited, list(fixed_query_urls()))
+        self.assertEqual(visited, list(fixed_query_urls(DAY)))
         self.assertEqual(report["schema"], SCHEMA)
         self.assertEqual(report["status"], "SCANNED")
         self.assertEqual(report["leads_count"], 1)
