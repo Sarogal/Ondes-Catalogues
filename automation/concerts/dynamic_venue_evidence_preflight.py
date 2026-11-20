@@ -176,11 +176,22 @@ def build(registry, sources, catalogue, approvals, today, *,
                     else:
                         # Exact event name, full date, explicit relevant genre,
                         # named performers, French postal place and full address.
+                        # The event-site verifier accepts a ONE-artist lead,
+                        # while generic venue discovery can capture the full
+                        # "Artist A + Artist B" bill. Never remove a performer
+                        # from the fresh official proof: normalize only the
+                        # supplied lead for the preliminary membership check,
+                        # then enforce the complete original bill below.
+                        announced = str(candidate.get("leadArtist") or "")
+                        first_announced = announced.split(" + ", 1)[0].strip()
+                        lead = dict(candidate, leadArtist=first_announced)
                         _, names, unnamed, genres, site = site_review._official_event(
-                            candidate, html, url, today)
+                            lead, html, url, today)
                         result["individualOfficialEventVerified"] = True
-                        if triage.words(candidate.get("leadArtist")) != triage.words(
-                                " + ".join(names)):
+                        known_bill = triage.words(" + ".join(names))
+                        if (triage.words(announced) not in {
+                                known_bill, triage.words(names[0])}
+                                or not all(triage.words(n) for n in names)):
                             result["reason"] = "official_bill_not_exactly_correlated"
                         else:
                             if geo_fetch is None:
