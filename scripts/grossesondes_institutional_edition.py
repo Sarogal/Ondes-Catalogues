@@ -89,12 +89,11 @@ def trusted_source(origin, index_page, detail, title, today):
                 != index_page):
         return None
     year = int(slug_for(title).rsplit("-", 1)[-1])
-    if year not in (2027, 2028):
-        return None
     try:
-        if date.fromisoformat(today).year > year:
-            return None
+        current_year = date.fromisoformat(today).year
     except (TypeError, ValueError):
+        return None
+    if not current_year <= year <= current_year + 2:
         return None
     return {
         "index_url": origin, "index_page": index_page, "url": detail,
