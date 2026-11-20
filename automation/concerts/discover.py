@@ -354,12 +354,33 @@ def venue_candidate(raw, source, page_url, known, day):
     event_venue = norm(venue)
     source_city = norm(source["city"])
     event_city = norm(city)
-    if (event_venue and source_venue and
-            source_venue not in event_venue and
-            event_venue not in source_venue):
-        return None
-    if source_city and event_city and source_city != event_city:
-        return None
+    offsite = bool(
+        (event_venue and source_venue
+         and source_venue not in event_venue
+         and event_venue not in source_venue)
+        or (source_city and event_city and source_city != event_city)
+    )
+    # Official venue calendars may announce temporary stages or shows at
+    # another hall. Archive these as research leads, not publishable events.
+    if offsite:
+        origin = source.get("url")
+        if (not isinstance(origin, str)
+                or not official_rss_jsonld_bridge.official_event_url(
+                    page_url, origin)):
+            return None
+        types = official_rss_jsonld_bridge._event_types(raw.get("@type"))
+        if "MusicEvent" not in types:
+            return None
+        if official_rss_jsonld_bridge.official_named_bill(
+                raw.get("performer")) is None:
+            return None
+        postal = str(address.get("postalCode") or "")
+        country = address.get("addressCountry")
+        if isinstance(country, dict):
+            country = country.get("name") or country.get("@id")
+        if (norm(country) not in {"fr", "france", "republiquefrancaise"}
+                or not re.fullmatch(r"[0-9]{5}", postal)):
+            return None
     # Only an explicitly typed schema.org MusicGroup/Person is a named
     # performer. Many real official event pages expose a WordPress plugin's
     # generic {"@type": "Organization", "name": "Organization"} value
@@ -391,16 +412,43 @@ def venue_candidate(raw, source, page_url, known, day):
     ref_url = raw.get("url") if isinstance(raw.get("url"), str) else ""
     if not ref_url.startswith("https://"):
         ref_url = page_url
+    # An external venue's department is NOT the source venue's department.
+    postcode = str(address.get("postalCode") or "")
+    department = source["department"]
+    if offsite:
+        if postcode.startswith(("97", "98")):
+            department = postcode[:3]
+        elif postcode.startswith("20"):
+            department = ""  # Corsica's 2A/2B cannot be inferred from ZIP alone.
+        else:
+            department = postcode[:2]
     record = {
-        "candidateId": "venue:" + norm(source["name"]) + ":" + date + ":" + norm(name),
-        "source": "agenda_officiel_structuré", "sourceUrl": ref_url,
-        "sourcePage": page_url, "date": date, "name": name, "leadArtist": artist,
-        "venue": venue, "city": city, "department": source["department"],
+        "candidateId": (
+            ("external:" if offsite else "venue:") + norm(source["name"])
+            + ":" + date + ":" + norm(name)
+            + (":" + norm(venue) if offsite else "")
+        ),
+        "source": ("agenda_officiel_lieu_a_verifier"
+                   if offsite else "agenda_officiel_structuré"),
+        "sourceUrl": ref_url, "sourcePage": page_url,
+        "date": date, "name": name, "leadArtist": artist,
+        "venue": venue, "city": city, "department": department,
         "classification": event_genres,
         "structuredGenreProvenance": provenance,
         "genreToConfirm": not relevant,
         "sourceConfidence": "agenda de salle; programmation et pertinence à contrôler",
     }
+    if offsite:
+        # The existing publisher has NO verifier for this quarantined source.
+        record.update({
+            "venueOutsideSource": True,
+            "newVenueToReview": True,
+            "sourceVenueName": source["name"],
+            "sourceVenueCity": source["city"],
+            "sourceVenueDepartment": source["department"],
+            "sitePostalCodeFromOfficialEvent": postcode,
+            "publicationAllowed": False, "reviewRequired": True,
+        })
     if bill is None:
         record["structuredPerformerProof"] = "missing_review_only"
     if unnamed_support is not None:
