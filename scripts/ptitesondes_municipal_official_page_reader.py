@@ -13,7 +13,8 @@ from urllib.parse import urlsplit
 
 from proof import norm
 from ptitesondes_dila_municipal_domains import (
-    fetch_dila, verified_oa_location_website,
+    fetch_dila, verified_oa_location_website, oa_location_identity_matches,
+    municipal_site_hosts,
 )
 from ptitesondes_openagenda_v2_direct_evidence import (
     _source_parts, read_direct_agenda_v2, read_direct_v2,
@@ -195,13 +196,28 @@ class MunicipalOfficialPageReader:
                 record = self.event_reader(agenda_uid, uid, self.key)
             except (ValueError, OSError, TypeError, KeyError, TimeoutError):
                 return None, None
+            if not oa_location_identity_matches(group, record):
+                return None, None
+            raw_website = record["location"].get("website")
+            if raw_website in (None, ""):
+                # An absent OA URL is not negative evidence. A DILA-proven
+                # municipality root can still lead to the exact named place.
+                continue
             website = verified_oa_location_website(group, record, directory)
             if website is None:
+                # A *conflicting* declared URL must not silently fall back
+                # to the city homepage and hide the contradiction.
                 return None, None
             found.add(website)
-        if len(found) != 1:
+        if len(found) > 1:
             return None, None
-        url = next(iter(found))
+        if found:
+            url = next(iter(found))
+        else:
+            homes = municipal_site_hosts(group["city"], directory)
+            if len(homes) != 1:
+                return None, None
+            url = "https://" + next(iter(homes)) + "/"
         if url not in self.page_cache:
             try:
                 self.page_cache[url] = self.html_reader(url)
@@ -226,4 +242,8 @@ class MunicipalOfficialPageReader:
                             TimeoutError, UnicodeError):
                         return None, None
                 return target, self.page_cache[target]
+            if not found:
+                # Missing OA location.website: an official homepage is
+                # NOT a named venue page and cannot serve as a venue proof.
+                return None, None
         return url, html
