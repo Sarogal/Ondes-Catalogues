@@ -93,10 +93,18 @@ def _validate_schema(data: dict, schema_name: str) -> None:
         raise BundleError(f"{schema_name}: schema validation failed")
 
 
-def validate_release_content(catalog_bytes: bytes, previous: dict | None = None) -> dict:
+def validate_release_content(
+    catalog_bytes: bytes, previous: dict | None = None,
+    *, trusted_signed_history: bool = False,
+) -> dict:
     catalog = strict_json(catalog_bytes, maximum=MAX_CATALOG_BYTES)
     _validate_schema(catalog, "radio_catalog_v1.schema.json")
     errors = validate_catalog(catalog, mode="publish", previous=previous)
+    if trusted_signed_history and previous is None:
+        # This exception is ONLY for verifying a previously trusted, signed
+        # predecessor. A NEW release is never signed without its predecessor.
+        errors = [error for error in errors
+                  if error != "non-initial publication requires the previous catalog"]
     if errors:
         raise BundleError(f"Radio editorial gate failed ({len(errors)} issue(s))")
     if not valid_utc(catalog.get("generated_at")):
@@ -109,7 +117,7 @@ def validate_release_content(catalog_bytes: bytes, previous: dict | None = None)
         sequence <= previous["release_sequence"]
     ):
         raise BundleError("Release sequence did not increase")
-    if previous is None and sequence != 1:
+    if previous is None and sequence != 1 and not trusted_signed_history:
         raise BundleError("Non-initial release requires VERIFIED predecessor")
     return catalog
 
@@ -143,6 +151,7 @@ class ReleaseBundle:
 def verify_bundle(
     pointer_bytes: bytes, catalog_bytes: bytes, public_key: Ed25519PublicKey,
     *, previous: dict | None = None,
+    trusted_signed_history: bool = False,
 ) -> ReleaseBundle:
     pointer = strict_json(pointer_bytes, maximum=MAX_POINTER_BYTES)
     _validate_schema(pointer, "radio_catalog_pointer_v1.schema.json")
@@ -179,7 +188,8 @@ def verify_bundle(
         public_key.verify(signature, signing_message(pointer))
     except InvalidSignature as error:
         raise BundleError("Ed25519 signature verification failed") from error
-    document = validate_release_content(catalog_bytes, previous)
+    document = validate_release_content(
+        catalog_bytes, previous, trusted_signed_history=trusted_signed_history)
     if pointer["release_sequence"] != document["release_sequence"]:
         raise BundleError("Pointer and payload release sequence mismatch")
     return ReleaseBundle(
@@ -272,7 +282,8 @@ def load_verified_predecessor(directory: Path, trusted_public_key: Ed25519Public
     if not isinstance(path, str) or not re.fullmatch(r"releases/[a-f0-9]{64}\.json", path):
         raise BundleError("Invalid predecessor content path")
     body = _read_limited(directory / path, MAX_CATALOG_BYTES)
-    verified = verify_bundle(pointer_bytes, body, trusted_public_key)
+    verified = verify_bundle(
+        pointer_bytes, body, trusted_public_key, trusted_signed_history=True)
     return strict_json(verified.catalog_bytes, maximum=MAX_CATALOG_BYTES)
 
 
