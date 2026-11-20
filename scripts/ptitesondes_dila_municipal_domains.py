@@ -80,7 +80,7 @@ def dila_query(city):
     return DILA_RECORDS + "?" + urlencode({
         "where": condition, "limit": MAX_RECORDS,
         "select": ("nom,pivot,code_insee_commune,adresse,categorie,"
-                   "statut_de_diffusion,site_internet,url_service_public,copyright"),
+                   "statut_de_diffusion,version_type,site_internet,url_service_public,copyright"),
     })
 
 
@@ -128,7 +128,8 @@ def municipal_site_hosts(city, response):
                 or parsed.port not in (None, 443)
                 or norm(row.get("nom")) != norm("Mairie - " + city)
                 or row.get("categorie") != "SL"
-                or row.get("statut_de_diffusion") != "Publiable"
+                or str(row.get("statut_de_diffusion")).lower() != "true"
+                or row.get("version_type") != "Publiable"
                 or row.get("copyright") !=
                     "Direction de l'information légale et administrative (Premier ministre)"):
             continue
@@ -165,7 +166,19 @@ def municipal_site_hosts(city, response):
     for site in sites:
         if not isinstance(site, dict):
             return frozenset()
-        host = _host(site.get("valeur"))
+        # DILA can list multiple labelled deep links alongside its
+        # unlabelled official home page. Never grant authority to all the
+        # unrelated domains referenced by those service links.
+        if site.get("libelle") not in (None, ""):
+            continue
+        value = site.get("valeur")
+        try:
+            parsed_site = urlsplit(value)
+        except (ValueError, TypeError):
+            continue
+        if parsed_site.path not in ("", "/") or parsed_site.query:
+            continue
+        host = _host(value)
         if host is None:
             continue
         result.add(host)
