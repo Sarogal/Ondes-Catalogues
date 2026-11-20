@@ -16,7 +16,7 @@ from ptitesondes_family_national_scope import (
 TODAY = date(2026, 11, 17)
 
 
-def event(category="atelier-creatif", **changes):
+def event(category="lecture-jeunesse", **changes):
     row = {
         "record_kind": "dated_event",
         "category": category,
@@ -64,7 +64,7 @@ class NationalFamilyScopeTests(unittest.TestCase):
         self.assertEqual(len(set(FAMILY_TYPES)), len(FAMILY_TYPES))
         self.assertFalse(set(FAMILY_TYPES) & LEGACY_MUSICAL)
 
-    def test_all_thirteen_familial_categories_only_propose_scope(self):
+    def test_general_taxonomy_remains_but_only_two_radio_adjacent_types_pass(self):
         rows = [event(slug) for slug in FAMILY_TYPES]
         before = deepcopy(rows)
         with patch("merge_policy.merge", side_effect=AssertionError(
@@ -73,11 +73,13 @@ class NationalFamilyScopeTests(unittest.TestCase):
             out = audit_family_scope(rows, TODAY)
         self.assertEqual(rows, before)
         self.assertEqual(out["schema"], SCHEMA)
-        self.assertEqual(out["structurally_plausible_for_independent_review"], 13)
-        self.assertEqual(out["rejected_scope_items"], 0)
-        self.assertEqual(sum(out["proposed_category_counts"].values()), 13)
-        self.assertEqual(out["proposed_routes"], {"sorties": 13})
-        self.assertEqual(out["blocked_reason_counts"], {})
+        self.assertEqual(out["structurally_plausible_for_independent_review"], 2)
+        self.assertEqual(out["rejected_scope_items"], 11)
+        self.assertEqual(out["proposed_category_counts"], {
+            "lecture-jeunesse": 1, "spectacle-jeunesse": 1})
+        self.assertEqual(out["proposed_routes"], {"sorties": 2})
+        self.assertEqual(out["blocked_reason_counts"], {
+            "outside_radio_editorial_scope": 11})
         self.assertFalse(out["publication_ready"])
         self.assertFalse(out["approval_granted_to_publisher"])
         self.assertEqual(out["public_writes"], 0)
@@ -130,7 +132,9 @@ class NationalFamilyScopeTests(unittest.TestCase):
     def test_category_is_not_inferred_from_friendly_title(self):
         out = audit_family_scope([event(category="sortie-nature",
             title="Atelier de dessin pour enfants")], TODAY)
-        self.assertEqual(out["proposed_category_counts"], {"sortie-nature": 1})
+        self.assertEqual(out["proposed_category_counts"], {})
+        self.assertIn("outside_radio_editorial_scope",
+                      out["blocked_reason_counts"])
         # This is *only* the declared category, not source-level validation.
         self.assertTrue(out["source_officiality_and_age_not_verified"])
 
@@ -232,7 +236,7 @@ class NationalFamilyScopeTests(unittest.TestCase):
             self.assertEqual(out["structurally_plausible_for_independent_review"], 0)
 
     def test_single_bad_candidate_blocks_itself_and_never_partially_publishes(self):
-        rows = [event("atelier-numerique"),
+        rows = [event("spectacle-jeunesse"),
                 event("fete-familiale", source_url="http://bad.example")]
         out = audit_family_scope(rows, TODAY)
         self.assertEqual(out["structurally_plausible_for_independent_review"], 1)
