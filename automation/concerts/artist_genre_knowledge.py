@@ -61,7 +61,7 @@ def _relevant_genre(label):
     return bool(genre_evidence({"classification": [label]}))
 
 
-def private_genre_review(registry, catalogue, as_of):
+def private_genre_review(registry, catalogue, as_of, artist_preflight=None):
     """Report only counts of *hints*, never artists, IDs, URLs or approvals."""
     if (registry.get("schema") != "grossesondes.concert.intake.v1"
             or not isinstance(registry.get("items"), dict)
@@ -81,8 +81,40 @@ def private_genre_review(registry, catalogue, as_of):
                 artist_id for artist_id in event.get("artistIds", [])
                 if isinstance(artist_id, str)
             )
+    # Facts from fresh, separate official first-party preflight.
+    # Private research prioritization only, never a publication gate.
+    verified_individual = set()
+    if artist_preflight is not None:
+        if (not isinstance(artist_preflight, dict)
+                or artist_preflight.get("schema") !=
+                    "grossesondes.concert.artist-genre-source-preflight.v1"
+                or artist_preflight.get("publicationAllowed") is not False
+                or artist_preflight.get("approvalsProposed") != 0
+                or not isinstance(artist_preflight.get("verifiedArtists"), list)):
+            raise ValueError("Untrusted artist preflight snapshot")
+        for fact in artist_preflight["verifiedArtists"]:
+            if not isinstance(fact, dict):
+                continue
+            try:
+                verified_day = dt.date.fromisoformat(fact.get("verifiedAt"))
+            except (TypeError, ValueError):
+                continue
+            if (not dt.timedelta(0) <= as_of - verified_day <= dt.timedelta(days=60)
+                    or fact.get("schema") != SCHEMA
+                    or fact.get("scope") != "individual_artist_not_event"
+                    or fact.get("evidenceKind") !=
+                        "first-party-artist-structured-profile"
+                    or fact.get("publicationAllowed") is not False
+                    or fact.get("eventDateLocationAndLineupProved") is not False
+                    or not isinstance(fact.get("sourceUrl"), str)
+                    or not fact["sourceUrl"].startswith("https://")
+                    or not isinstance(fact.get("genres"), list)
+                    or not any(_relevant_genre(g) for g in fact["genres"])):
+                continue
+            verified_individual.add(fact.get("artistId"))
     counters = Counter()
     unique_known = set()
+    unique_verified = set()
     for record in registry["items"].values():
         if not isinstance(record, dict):
             raise ValueError("Corrupt private artist review row")
@@ -112,6 +144,9 @@ def private_genre_review(registry, catalogue, as_of):
             unique_known.update(resolved)
         if resolved & event_hints:
             counters["eventGenreHintOnly"] += 1
+        if resolved & verified_individual:
+            counters["officialArtistGenreVerifiedResearchLead"] += 1
+            unique_verified.update(resolved & verified_individual)
         if resolved and not resolved & event_hints:
             counters["knownArtistWithoutEventGenreHint"] += 1
         if not resolved:
@@ -123,12 +158,18 @@ def private_genre_review(registry, catalogue, as_of):
         "asOf": as_of.isoformat(),
         "publicationAllowed": False,
         "approvalsProposed": 0,
-        "evidenceLevel": "catalogue-event-genre-hints-only",
+        "evidenceLevel": (
+            "official-individual-artist-and-catalogue-event-hints"
+            if artist_preflight is not None else
+            "catalogue-event-genre-hints-only"
+        ),
         "knownDistinctArtists": len(unique_known),
+        "officialGenreVerifiedDistinctArtists": len(unique_verified),
         "counts": dict(sorted(counters.items())),
         "note": (
-            "Event genre is not an individual artist genre. Exact identity "
-            "matches are private research leads only; no genre is assigned."
+            "Only first-party structured artist profiles provide independent "
+            "individual genre signals. Event genres are separate hints. "
+            "Exact matches still cannot approve, date or locate a concert."
         ),
     }
 
