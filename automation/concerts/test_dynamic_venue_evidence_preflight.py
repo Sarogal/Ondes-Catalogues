@@ -91,7 +91,7 @@ def page(event=None):
 
 
 def run(reg=None, src=None, cat=None, approved=None, event=None,
-        osm=None, redirect=False, limit=8, slot=1, robots=None):
+        osm=None, redirect=False, limit=8, slot=2, robots=None):
     calls = []
     def fetch(url, **kwargs):
         calls.append(("official", url))
