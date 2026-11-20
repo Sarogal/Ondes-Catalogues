@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Opt-in, conservative HLS segment evidence; NO automatic radio approval.
 
-Plan one segment from a fully observed, simple LIVE media manifest. No
-variant/master, keys, maps, byte-ranges, cross-origin requests, or URL disclosure.
+Plan one segment from a fully observed LIVE media manifest, optionally via
+ONE safe same-origin master variant. Never choose among multiple renditions,
+open keys/maps, follow redirects or disclose source/segment URLs.
 A segment can be video-only or from a recording: structural evidence is not
 proof of audible live radio. The network caller must use pinned HTTPS/HTTP.
 """
 from __future__ import annotations
 
-import hashlib
 import re
 import urllib.parse
 from dataclasses import dataclass
@@ -67,6 +67,42 @@ def plan_one_segment(manifest: bytes, content_type: str, source_url: str) -> Seg
     return SegmentPlan(url=target)
 
 
+def plan_single_variant(master: bytes, content_type: str,
+                        source_url: str) -> SegmentPlan | None:
+    """Only ONE master rendition may be followed, with the same-origin guard."""
+    hint = inspect_hls_manifest(master, content_type, source_url)
+    if hint["kind"] != "master_single_variant_pending":
+        return None
+    lines = [line.strip() for line in master.decode("utf-8-sig").splitlines()]
+    references = [line for line in lines if line and not line.startswith("#")]
+    if len(references) != 1:
+        return None
+    value = references[0]
+    if (len(value) > 200 or any(ord(c) < 33 or ord(c) > 126 for c in value)
+        or "\\" in value or "#" in value or "@" in value or "{" in value
+        or "}" in value or value.startswith(("//", "/", "?"))
+        or "://" in value):
+        return None
+    ref = urllib.parse.urlsplit(value)
+    if ref.scheme or ref.netloc or ref.fragment:
+        return None
+    unquoted = urllib.parse.unquote(urllib.parse.unquote(ref.path))
+    if (not unquoted.lower().endswith(".m3u8") or
+            any(part in (".", "..") for part in unquoted.split("/")) or
+            not re.fullmatch(r"[A-Za-z0-9_./%+~-]+", ref.path) or
+            (ref.query and not re.fullmatch(
+                r"[A-Za-z0-9_=&%+./~-]{1,128}", ref.query))):
+        return None
+    original = validate_endpoint(source_url)
+    target = urllib.parse.urljoin(source_url, value)
+    parsed = validate_endpoint(target)
+    if (parsed.scheme != original.scheme or parsed.hostname != original.hostname or
+            (parsed.port or (443 if parsed.scheme == "https" else 80))
+            != (original.port or (443 if original.scheme == "https" else 80))):
+        return None
+    return SegmentPlan(url=target)
+
+
 def mpeg_ts_packets(sample: bytes) -> dict:
     """Bounded TS transport evidence, not an audio codec verification."""
     proof = {"state": "not_confirmed", "packetCount": 0,
@@ -113,7 +149,7 @@ def verify_one_segment(
 ) -> dict:
     """Request at most ONE same-origin segment, fail closed on redirects."""
     output = {"state": "not_confirmed", "segmentEvidence": None,
-              "manifestKind": "unconfirmed",
+              "manifestKind": "unconfirmed", "childManifestKind": "not_followed",
               "publicationAllowed": False, "technicalQualified": False}
     try:
         validate_endpoint(manifest_url)
@@ -126,6 +162,22 @@ def verify_one_segment(
         manifest_verdict = inspect_hls_manifest(manifest_data, content_type, manifest_url)
         output["manifestKind"] = manifest_verdict["kind"]
         plan = plan_one_segment(manifest_data, content_type, manifest_url)
+        if plan is None and manifest_verdict["kind"] == "master_single_variant_pending":
+            # One child media playlist maximum. Never auto-pick a quality.
+            child_plan = plan_single_variant(manifest_data, content_type, manifest_url)
+            if child_plan is None:
+                output["state"] = "no_safe_single_variant"
+                return output
+            child = request_manifest(child_plan.url)
+            if child.status != 200:
+                output["state"] = "child_manifest_fetch_incomplete"
+                return output
+            output["childManifestKind"] = inspect_hls_manifest(
+                child.body, child.content_type, child_plan.url)["kind"]
+            plan = plan_one_segment(child.body, child.content_type, child_plan.url)
+            if plan is None:
+                output["state"] = "child_not_simple_live_media"
+                return output
         if plan is None:
             output["state"] = "no_safe_simple_segment"
             return output
