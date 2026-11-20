@@ -13,7 +13,7 @@ from ptitesondes_family_national_scope import FAMILY_TYPES
 # When more than one family activity matches, defer rather than guessing.
 ACTIVITY_PATTERNS = {
     "lecture-jeunesse": (
-        r"\blecture(?:s)?(?: d histoires| jeunesse| pour enfants| a voix haute)\b",
+        r"\b(?<!cine )lecture(?:s)?(?: d histoires| jeunesse| pour enfants| a voix haute)\b",
         r"\bheure du conte\b", r"\bcontes? pour enfants\b",
     ),
     "atelier-numerique": (
