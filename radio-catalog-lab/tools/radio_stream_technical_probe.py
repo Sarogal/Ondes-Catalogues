@@ -141,12 +141,16 @@ def classify_sample(body: bytes, content_type: str) -> tuple[str, str]:
     playlist/format-specific implementation, never blind URL following.
     """
     mime = content_type.split(";", 1)[0].strip().lower()
+    if mime in {"text/html", "application/json", "application/xml", "text/xml"}:
+        return ("not_confirmed_audio", "non_audio_content_type")
     if body.startswith((b"#EXTM3U", b"[playlist]", b"[Playlist]")) or (
         "mpegurl" in mime or "scpls" in mime or "playlist" in mime or
         mime in ("audio/x-mpegurl", "application/vnd.apple.mpegurl")
     ):
         return ("playlist_pending", "playlist")
-    if body.startswith(b"ID3"):
+    if (len(body) >= 10 and body.startswith(b"ID3") and
+            body[3] in (2, 3, 4) and body[4] != 255 and
+            all((byte & 0x80) == 0 for byte in body[6:10])):
         return ("audio_sample_ok", "mp3_id3")
     if len(body) >= 4 and body[0] == 0xFF and body[1] & 0xE0 == 0xE0:
         # Require plausible MPEG or AAC frame header fields, not only 11
