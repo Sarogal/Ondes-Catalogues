@@ -5,7 +5,8 @@ from copy import deepcopy
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from future_geo_preflight import exact_edition_geo, eligible, review
+from future_geo_preflight import (exact_edition_geo, exact_geo_from_official_site,
+                                official_access_links, eligible, review)
 
 
 SITE = "https://festival-example.fr/"
@@ -188,6 +189,79 @@ class FutureGeoTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         with self.assertRaises(ValueError):
             review(saved, catalogue(ROW), "2026-11-21", limit=5)
+
+
+    def test_same_host_access_link_yields_exact_current_edition(self):
+        access = SITE + "infos-pratiques/acces"
+        home = ("""<html><a href="/infos-pratiques/acces">Accès - Parkings</a>"""
+                """<a href="https://evil.example/2027/acces">Accès externe</a>"""
+                """<a href="/images">Photos</a></html>""")
+        self.assertEqual(official_access_links(home, SITE), [access])
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return home if url == SITE else html(event())
+        claim = exact_geo_from_official_site(ROW, fetch)
+        self.assertEqual(calls, [SITE, access])
+        self.assertEqual(claim["city"], "Colonne")
+        self.assertEqual(claim["source"], SITE)
+
+    def test_never_fetch_external_or_unbounded_pages(self):
+        home = """<html>
+        <a href="https://evil.example/acces">Accès externe</a>
+        <a href="//127.0.0.1/acces">Accès réseau local</a>
+        <a href="http://festival-example.fr/acces">Accès sans TLS</a>
+        <a href="/%2e%2e/admin/acces">Accès trompeur</a>
+        <a href="/acces?redirect=https://evil.example">Accès paramétré</a>
+        <a href="/2026/acces">Accès édition 2026</a>
+        <a href="/venez">Venir au festival</a>
+        <a href="/informations-pratiques">Infos pratiques</a>
+        <a href="/faq">F.A.Q.</a>
+        <a href="/contact">Contact</a>
+        </html>"""
+        links = official_access_links(home, SITE)
+        self.assertEqual(len(links), 2)
+        self.assertTrue(all(url.startswith(SITE) for url in links))
+        self.assertEqual(links[0], SITE + "venez")
+        self.assertNotIn("127.0.0.1", str(links))
+        calls = []
+        exact_geo_from_official_site(ROW, lambda url: (
+            calls.append(url) or home))
+        self.assertEqual(calls, [SITE, *links])
+
+    def test_child_page_needs_edition_year_exact_dates_and_coordinates(self):
+        child = SITE + "acces/"
+        home = '<a href="/acces/">Venir au festival</a>'
+        def fetch_unrelated(url):
+            return home if url == SITE else html(event(name="Festival Exemple 2026"))
+        self.assertIsNone(exact_geo_from_official_site(ROW, fetch_unrelated))
+        def fetch_old_date(url):
+            return home if url == SITE else html(event(startDate="2027-07-04"))
+        self.assertIsNone(exact_geo_from_official_site(ROW, fetch_old_date))
+
+    def test_different_exact_edition_geo_on_two_pages_is_veto(self):
+        home = (
+            "<html>" + html(event())
+            + '<a href="/acces">Accès - Parkings</a></html>')
+        other = event()
+        other["location"]["geo"]["latitude"] = 44.2
+        self.assertIsNone(exact_geo_from_official_site(
+            ROW, lambda url: home if url == SITE else html(other)))
+
+    def test_consecutive_daily_report_reuses_same_host_research(self):
+        state_value = state()
+        child = SITE + "infos-pratiques/"
+        home = '<a href="infos-pratiques/">Infos pratiques</a>'
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return home if url == SITE else html(event())
+        first = review(state_value, catalogue(ROW), "2026-11-20", fetch)
+        second = review(state_value, catalogue(ROW), "2026-11-21", fetch)
+        self.assertEqual(first["first_day"], 1)
+        self.assertEqual(second["two_day_stable"], 1)
+        self.assertEqual(calls, [SITE, child, SITE, child])
+
 
 
 if __name__ == "__main__":
