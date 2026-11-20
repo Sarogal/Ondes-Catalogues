@@ -9,7 +9,7 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_dila_municipal_domains import (
     dila_query, municipal_site_hosts, approved_municipal_page_host,
-    redacted_directory_status, _host,
+    redacted_directory_status, verified_oa_location_website, _host,
 )
 
 CITY = "Ville-les-Bois"
@@ -187,6 +187,40 @@ class DILAMunicipalDomainsTests(unittest.TestCase):
             with self.subTest(site=site):
                 self.assertIsNone(approved_municipal_page_host(
                     page_url, CITY, payload(mairie(site=site))))
+
+    def test_openagenda_venue_website_only_used_if_dila_confirms_domain(self):
+        group = {"city": CITY, "venue": "Maison des enfants",
+                 "uids": ["721"]}
+        event = {
+            "uid": 721, "state": 2, "status": 1,
+            "attendanceMode": 1, "removed": False,
+            "location": {
+                "name": "Maison des enfants", "adminLevel4": CITY,
+                "countryCode": "FR", "website": PAGE,
+            },
+        }
+        dila = payload(mairie())
+        self.assertEqual(verified_oa_location_website(group, event, dila), PAGE)
+        for wrong in ("https://openagenda.com/not-official",
+                      "https://other-municipality.fr/child-event",
+                      "http://agenda.ville-les-bois.fr/unsafe"):
+            with self.subTest(website=wrong):
+                x = deepcopy(event)
+                x["location"]["website"] = wrong
+                self.assertIsNone(verified_oa_location_website(group, x, dila))
+        for invalid in (
+            {"uid": 999}, {"state": 0}, {"status": 0},
+            {"attendanceMode": 2}, {"removed": True},
+            {"location": {**event["location"], "name": "Other venue"}},
+            {"location": {**event["location"], "adminLevel4": "Other-city"}},
+            {"location": {**event["location"], "countryCode": "DE"}},
+        ):
+            with self.subTest(changes=invalid):
+                x = deepcopy(event)
+                x.update(invalid)
+                self.assertIsNone(verified_oa_location_website(group, x, dila))
+        self.assertIsNone(verified_oa_location_website(
+            group, event, payload(mairie(site="https://not-this-city.fr/"))))
 
     def test_without_websites_fails_as_unknown_not_fake_verified(self):
         row = mairie()
