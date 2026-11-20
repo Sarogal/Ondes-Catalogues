@@ -79,7 +79,8 @@ jobs:
           # Scheduled/manual runs explore many music tags and rotated pages.
           if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             python radio-catalog-lab/tools/radio_daily_discovery.py \
-              --tags "metal,punk" --names "metal,punk" \
+              --tags "metal,punk,hard rock,black metal,thrash metal,trash metal,pagan metal,nu metal" \
+              --names "metal,punk,hard rock,nu metal" \
               --page-size 50 --max-pages 1 --crawl-delay 0.3 \
               --output "$RUNNER_TEMP/go-radio-discovery/candidates.json"
           else
