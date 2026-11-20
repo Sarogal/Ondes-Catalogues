@@ -145,6 +145,11 @@ def next_evidence_report(probe: dict, previous: dict | None = None) -> dict:
         if sustained and day not in old["sustainedTransportDates"]:
             old["sustainedTransportDates"] = sorted(
                 (old["sustainedTransportDates"] + [day])[-30:])
+        # Retire only old *evidence dates* beyond the 30-sample window, never a station.
+        old["sustainedTransportDates"] = [
+            d for d in old["sustainedTransportDates"]
+            if d in old["audioEvidenceDates"]
+        ]
     output_rows = []
     for uid, row in sorted(records.items()):
         # Repeat evidence is a prompt for extended live-radio checks, not
