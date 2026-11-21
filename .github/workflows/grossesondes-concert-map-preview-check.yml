@@ -17,16 +17,69 @@ on:
       - '.github/workflows/grossesondes-concert-map-preview-check.yml'
 permissions:
   contents: read
+
+# Main pushes must never race with Festival/PO/concert catalogue deployments.
+# PR checks use a unique group so they cannot block privileged publishers.
+concurrency:
+  group: ${{ github.event_name == 'push' && 'ondes-cloud-publication' || format('concert-map-pr-{0}', github.run_id) }}
+  queue: max
+  cancel-in-progress: false
+
 jobs:
   concert-map-static:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
+          ref: ${{ github.event_name == 'push' && 'main' || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Check the public concert map and JavaScript syntax
         run: python -m unittest discover -s tests -p 'test_grossesondes_concert_map_preview.py' -v
+      - name: Preserve all public catalogues in the complete Pages artifact
+        if: github.event_name == 'push'
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('docs')
+          for path in ('grossesondes/concerts.json',
+                       'grossesondes/festivals.json',
+                       'ptitesondes/sorties.json'):
+              p=root / path
+              assert p.is_file() and p.stat().st_size > 1000, path
+              assert isinstance(json.loads(p.read_text(encoding='utf-8-sig')),dict),path
+          assert (root / 'grossesondes/carte-concerts.html').is_file()
+          assert (root / 'ptitesondes/carte-lieux.html').is_file()
+          print("Full public Pages tree preserved; no private registry.")
+          PY
+      - name: Configure GitHub Pages
+        if: github.event_name == 'push'
+        uses: actions/configure-pages@v6
+      - name: Upload all public catalogues and the concert map together
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          name: github-pages-${{ github.run_attempt }}
+          path: docs/
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: concert-map-static
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy entire latest trusted public tree to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
