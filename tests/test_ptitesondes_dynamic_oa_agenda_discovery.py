@@ -136,6 +136,19 @@ class DynamicAgendaDiscoveryTests(unittest.TestCase):
                                    {**event(uid), **attrs})
                 self.assertEqual(result["new_agenda_candidates"], [])
 
+    def test_rescheduled_event_remains_source_research_not_publication(self):
+        item = event()
+        item["status"] = 2
+        self.assertTrue(_direct_location_agrees(lead(), item))
+        for mode in (2, 4, None):
+            with self.subTest(mode=mode):
+                changed = {**item, "attendanceMode": mode}
+                self.assertFalse(_direct_location_agrees(lead(), changed))
+        for bad_status in (0, 3, 4, None):
+            with self.subTest(status=bad_status):
+                changed = {**item, "status": bad_status}
+                self.assertFalse(_direct_location_agrees(lead(), changed))
+
     def test_missing_public_read_key_fails_closed(self):
         with self.assertRaisesRegex(ValueError, "invalid_private_dynamic"):
             self.scan(key="")
