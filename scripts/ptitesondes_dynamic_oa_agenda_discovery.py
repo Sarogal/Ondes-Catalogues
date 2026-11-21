@@ -22,7 +22,11 @@ from ptitesondes_ods_oa_source_binding import (
     independently_confirm_ods_agenda,
 )
 from ptitesondes_openagenda_v2_direct_evidence import (
-    read_direct_agenda_v2, read_direct_v2, _valid_public_read_key,
+    read_direct_agenda_v2, read_direct_v2, _valid_public_read_key, _source_parts,
+)
+from ptitesondes_openagenda_national_event_research import COUNTRY_CODES
+from ptitesondes_openagenda_slug_discovery import (
+    lookup_agenda_by_slug, SCHEMA as SLUG_LOOKUP_SCHEMA,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,23 +37,36 @@ MAX_PRIVATE_BYTES = 1_000_000
 VALID_UID = re.compile(r"[0-9]{1,12}\Z")
 
 
-def candidate_batches(backlog, configured_agendas, today, batch_index=0):
+def candidate_batches(backlog, configured_agendas, today, batch_index=0,
+                      *, include_openagenda_v2=False):
     """Deterministic UID-only rotation; unknown venues are not discarded."""
     if (type(today) is not date or type(batch_index) is not int
             or batch_index < 0 or not isinstance(backlog, list)
             or len(backlog) > MAX_BACKLOG
             or not isinstance(configured_agendas, (tuple, list))
+            or type(include_openagenda_v2) is not bool
             or any(type(x) is not int or x <= 0 for x in configured_agendas)):
         raise ValueError("invalid_private_source_batch")
     unique, conflicts = {}, set()
     for lead in backlog:
-        if not isinstance(lead, dict) or lead.get("collector") != "opendatasoft-index":
+        if not isinstance(lead, dict) or lead.get("collector") not in (
+                ("opendatasoft-index", "openagenda-v2")
+                if include_openagenda_v2 else ("opendatasoft-index",)):
             continue
         uid = lead.get("external_id")
         if not isinstance(uid, str) or not VALID_UID.fullmatch(uid):
             continue
-        slug = ods_source_parts(lead.get("source_url"))
-        if slug is None or not norm(lead.get("city")) or not norm(lead.get("venue")):
+        # Do not require an ODS mirror or known municipality / venue
+        # merely to research an independently discovered OpenAgenda source.
+        if lead["collector"] == "openagenda-v2":
+            parts = _source_parts(lead.get("source_url"))
+            slug = parts[0] if parts and parts[1] == uid else None
+        else:
+            slug = ods_source_parts(lead.get("source_url"))
+        if slug is None:
+            continue
+        if (lead["collector"] == "opendatasoft-index"
+                and (not norm(lead.get("city")) or not norm(lead.get("venue")))):
             continue
         try:
             d = date.fromisoformat(lead.get("date_start"))
@@ -57,7 +74,8 @@ def candidate_batches(backlog, configured_agendas, today, batch_index=0):
             continue
         if not today <= d <= today + timedelta(days=184):
             continue
-        signature = (lead["source_url"], norm(lead["city"]), norm(lead["venue"]))
+        signature = (lead["source_url"], norm(lead.get("city")),
+                     norm(lead.get("venue")))
         if uid in unique and unique[uid][0] != signature:
             conflicts.add(uid)
         unique[uid] = (signature, lead)
@@ -74,7 +92,7 @@ def candidate_batches(backlog, configured_agendas, today, batch_index=0):
     return ordered[offset:offset + MAX_PER_BATCH], count, len(conflicts)
 
 
-def _direct_location_agrees(lead, record):
+def _direct_location_agrees(lead, record, *, allow_missing_lead_place=False):
     """Same ODS UID must have a matching public OA event and physical place."""
     if not isinstance(record, dict):
         return False
@@ -87,10 +105,18 @@ def _direct_location_agrees(lead, record):
     place = record.get("location")
     if not isinstance(place, dict):
         return False
-    if (norm(place.get("name")) != norm(lead["venue"])
-            or norm(place.get("adminLevel4")) != norm(lead["city"])
-            or place.get("countryCode") not in ("FR", "GP", "MQ", "GF", "RE", "YT")):
+    # Legal French jurisdiction, not a hard-coded list of admissible venues.
+    # Reuse the national research ISO territory codes, including the Pacific.
+    if (place.get("countryCode") not in COUNTRY_CODES
+            or not norm(place.get("name"))
+            or not norm(place.get("adminLevel4"))):
         return False
+    for key, field in (("venue", "name"), ("city", "adminLevel4")):
+        claimed = norm(lead.get(key))
+        if claimed and claimed != norm(place.get(field)):
+            return False
+        if not claimed and not allow_missing_lead_place:
+            return False
     lat, lon = place.get("latitude"), place.get("longitude")
     return (type(lat) in (float, int) and type(lon) in (float, int)
             and math.isfinite(lat) and math.isfinite(lon)
