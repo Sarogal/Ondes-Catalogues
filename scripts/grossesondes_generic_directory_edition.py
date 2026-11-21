@@ -51,6 +51,18 @@ CANCELLED = re.compile(
     r"\b(?:edition|festival)\s+20[2-4][0-9]\s+"
     r"(?:annulee?|reporte[e]?|cancelled|postponed)\b"
 )
+# The standalone word "hardcore" can mean either hardcore punk OR hardcore
+# electronic dance music. A festival whose visible official description is
+# explicitly electronic-only is outside this app's metal/rock/punk editorial
+# scope, even if the generic word "hardcore" appears.
+ELECTRONIC_GENRES = re.compile(
+    r"\b(?:hardstyle|rawstyle|frenchcore|uptempo|edm|"
+    r"hardtechno|hard techno|techno|psytrance|trance|"
+    r"dubstep|hard dance|electronic music|musiques electroniques)\b")
+ROCK_METAL_PUNK_GENRES = re.compile(
+    r"\b(?:metal|rock|punk|grindcore|deathcore|metalcore|"
+    r"stoner|doom|sludge|thrash|heavy metal|black metal)\b")
+
 
 
 class Heading(HTMLParser):
@@ -370,7 +382,9 @@ def verify_primary(html, title, year, today):
     except (TypeError, ValueError, UnicodeError):
         return None
     if (not GENRE.search(words) or "festival" not in words
-            or CANCELLED.search(words)):
+            or CANCELLED.search(words)
+            or (ELECTRONIC_GENRES.search(words)
+                and not ROCK_METAL_PUNK_GENRES.search(words))):
         return None
     return dates
 
