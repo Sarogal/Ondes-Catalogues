@@ -8018,11 +8018,22 @@ def merge(reference, current, approvals, today):
             prior_id = incoming.get("id")
             if prior_id in ids:
                 previous = next(e for e in result["events"] if e["id"] == prior_id)
-                require(entry.get("reviewDecision") == "approved" and
+                if prior_id in lineup_by_id:
+                    planned = lineup_contract.plan(
+                        lineup_by_id[prior_id], entry, result, today)
+                    require(
                         all(previous.get(k) == incoming.get(k) for k in
-                            ("id", "title", "date", "artistIds", "venueId", "genres",
-                             "status", "officialUrl", "sourceType")),
-                        "Approbation existante ne correspond pas à la fiche publiée")
+                            ("id", "date", "venueId", "genres", "status",
+                             "officialUrl", "sourceType"))
+                        and previous.get("artistIds") == planned["artistIds"]
+                        and previous.get("title") == planned["title"],
+                        "Programmation publiée différente du correctif signé")
+                else:
+                    require(entry.get("reviewDecision") == "approved" and
+                            all(previous.get(k) == incoming.get(k) for k in
+                                ("id", "title", "date", "artistIds", "venueId", "genres",
+                                 "status", "officialUrl", "sourceType")),
+                            "Approbation existante ne correspond pas à la fiche publiée")
                 counts["alreadyPublished"] += 1
                 continue
             # FIFO batching: a full, separately validated and signed batch
