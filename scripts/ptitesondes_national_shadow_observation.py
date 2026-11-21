@@ -16,7 +16,7 @@ from pathlib import Path
 import re
 
 from ptitesondes_openagenda_public_agenda_index import (
-    MAX_CONFIG_BYTES, load_state as load_index_state,
+    load_state as load_index_state,
     scan_index_pages, _write_new_report, _write_state_atomic,
 )
 from ptitesondes_openagenda_national_event_research import (
@@ -317,7 +317,7 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
             "segment_holds": segment_holds}
 
 
-def run_observation(source_config, root, day, batch_id, *,
+def run_observation(root, day, batch_id, *,
                     execute_live=False, key="", index_reader=scan_index_pages,
                     campaign_runner=run_campaign,
                     segment_runner=run_all_discovered_segments):
@@ -340,20 +340,17 @@ def run_observation(source_config, root, day, batch_id, *,
                 "stored_index_batches": len(existing), "public_writes": 0}
     if not _valid_public_read_key(key):
         raise ValueError("private_observation_read_key_required")
-    config_raw = _private_input(Path(source_config), MAX_CONFIG_BYTES)
-    config = json.loads(config_raw)
-    if (not isinstance(config, dict)
-            or config.get("schema") != "ptitesondes.sources.v1"
-            or not isinstance(config.get("openagenda_agendas"), list)):
-        raise ValueError("invalid_private_sources_contract")
+    # The legacy sources.json is deliberately not an input. Discover ALL
+    # OpenAgenda agendas, including historically known ones, with no manual
+    # source-ID registry, venue registry, or curated source list.
     campaign_root = private_subdir(root / "campaigns")
     rotation_root = private_subdir(root / "rotations")
     control_path = root / "controller.json"
     controller = controller_read(control_path)
     recovered_index = recover_pending_index(index_dir, reports_dir)
 
-    # Index census is independent from the historical 16 known agendas. The
-    # existing config is used only to identify which OA UIDs are already known.
+    # No historical source list filters OpenAgenda's directory; all agenda
+    # identities are merely research leads requiring independent evidence.
     # Keep each batch: adding a fresh index cannot destroy unfinished ones.
     name = f"index-{day.isoformat()}-{batch_id}.json"
     new_path = reports_dir / name
@@ -364,8 +361,7 @@ def run_observation(source_config, root, day, batch_id, *,
             state_path = index_dir / "cursor.json"
             state = load_index_state(state_path)
             result = index_reader(
-                config["openagenda_agendas"],
-                start_cursor=state["after"], public_read_key=key,
+                [], start_cursor=state["after"], public_read_key=key,
             )
             if (result.get("schema") != "ptitesondes.private_national_oa_index.v1"
                     or result.get("publication_ready") is not False
@@ -461,14 +457,13 @@ def run_observation(source_config, root, day, batch_id, *,
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--private-source-config", required=True, type=Path)
-    parser.add_argument("--private-observation-root", required=True, type=Path)
+     parser.add_argument("--private-observation-root", required=True, type=Path)
     parser.add_argument("--day", required=True, type=date.fromisoformat)
     parser.add_argument("--batch-id", required=True)
     parser.add_argument("--execute-live", action="store_true")
     args = parser.parse_args()
     result = run_observation(
-        args.private_source_config, args.private_observation_root,
+        args.private_observation_root,
         args.day, args.batch_id, execute_live=args.execute_live,
         key=os.environ.get("OPENAGENDA_READ_KEY", ""))
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
