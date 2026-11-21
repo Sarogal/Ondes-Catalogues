@@ -38,7 +38,7 @@ from ptitesondes_shared_venue_location_evidence import (
     _coordinates, mint_private_location_proof,
 )
 from ptitesondes_unnumbered_official_geo_proof import (
-    mint_private_unnumbered_location_proof,
+    _exact_official_point, mint_private_unnumbered_location_proof,
 )
 from ptitesondes_municipal_event_venue_ban import (
     mint_municipal_event_location_proof,
@@ -240,10 +240,16 @@ def prepare_open_world_patch(
                     ign_reader, today, source_point)
             if proof is None:
                 # An unnumbered public square/building can have a precise
-                # official point or named-address/OSM proof. No center guess.
-                proof = mint_private_unnumbered_location_proof(
-                    group, directory, venue_url, official_venue_html,
-                    osm_reader(source_point), source_point, today)
+                # municipal Place point or named-address/OSM proof. If OA has
+                # no GPS, only the exact Place on this DILA-authenticated page
+                # may seed the OSM query; never invent a city/street centroid.
+                osm_center = (source_point if source_point is not None
+                              else _exact_official_point(
+                                  group, official_venue_html))
+                if osm_center is not None:
+                    proof = mint_private_unnumbered_location_proof(
+                        group, directory, venue_url, official_venue_html,
+                        osm_reader(osm_center), source_point, today)
             if proof is None:
                 held("fresh_independent_venue_proof_missing")
                 continue
