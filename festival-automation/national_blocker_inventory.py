@@ -28,7 +28,7 @@ def _name(value):
         return ""
     folded = unicodedata.normalize("NFKD", value.casefold())
     folded = "".join(ch for ch in folded if not unicodedata.combining(ch))
-    return " ".join(re.findall(r"[a-z0-9]+", re.sub(r"\\s+20[2-4][0-9]$", "", folded)))
+    return " ".join(re.findall(r"[a-z0-9]+", re.sub(r"\s+20[2-4][0-9]$", "", folded)))
 
 
 def _index(rows, key):
