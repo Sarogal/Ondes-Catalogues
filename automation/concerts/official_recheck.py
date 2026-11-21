@@ -367,18 +367,37 @@ def verify(candidate, html_text, catalogue, today):
 
 
 def download_official(url, robots_cache):
+    # Only code-reviewed first-party hosts can enter this network boundary.
+    # The venue manifest is committed and validated independently; neither
+    # private candidate rows nor discovery feeds can register an extra host.
+    # Import here to avoid a cycle: generic_music_event imports norm/slug.
+    import generic_music_event
+    reviewed_hosts = generic_music_event.ALLOWED_HOSTS
+    legacy_hosts = frozenset({
+        ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr",
+        "leferrailleur.fr", "www.backstage-btm.com",
+        "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org",
+        "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop",
+        "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com",
+    })
+    allowed_hosts = legacy_hosts | reviewed_hosts
+    original = urlsplit(url)
+    if (original.scheme != "https" or original.hostname not in allowed_hosts
+            or original.port is not None or original.username or original.password):
+        raise ValueError("Domaine HTTPS officiel non agréé")
     if not discover.robots_allow(url, robots_cache):
         raise ValueError("robots.txt interdit la récupération")
     response = Request(url, headers={"User-Agent": discover.AGENT})
     with urlopen(response, timeout=12) as r:
-        # Generic source-wide venues cannot delegate their event proof through
-        # any redirect, even to another already trusted official domain.
-        original_host = urlsplit(url).hostname
-        if original_host in ("larayonne.org", "lemetronum.fr"):
-            if (urlsplit(r.geturl()).hostname != original_host or
+        # All reviewed venue hosts (including future reviewed manifest entries)
+        # require the SAME exact event URL. Never trust a redirect to another
+        # host or another event, even if its target host is also approved.
+        final = urlsplit(r.geturl())
+        if original.hostname in reviewed_hosts:
+            if (final.hostname != original.hostname or
                     r.geturl().rstrip("/") != url.rstrip("/")):
                 raise ValueError("Redirection générique hors fiche officielle")
-        if urlsplit(r.geturl()).scheme != "https" or urlsplit(r.geturl()).hostname not in (ALLOWED_HOST, "lemolotov.com", "www.leferrailleur.fr", "leferrailleur.fr", "www.backstage-btm.com", "www.atabal-biarritz.fr", "theblacklab.fr", "www.artefact.org", "rockstore.fr", "www.rockstore.fr", "www.bateauivre.coop", "bonjour-minuit.fr", "bigbandcafe.com", "caveauxpoetes.com", "larayonne.org", "lemetronum.fr"):
+        if final.scheme != "https" or final.hostname not in allowed_hosts:
             raise ValueError("Redirection hors domaine officiel")
         raw = r.read(500_001)
         if len(raw) > 500_000:
