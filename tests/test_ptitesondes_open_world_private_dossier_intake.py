@@ -88,10 +88,11 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertEqual(out["open_world_research"], rows)
         self.assertEqual(len(patch["additions"]), 0)
         self.assertEqual(patch["open_world_research"], [])
-        # Daily requalification may replace a prior research list, never
-        # inherit a "safe_to_publish" claim from an earlier run.
+        # A later review slot often discovers no new dossier: this must NOT
+        # delete a prior slot's pending requests before the Publisher runs.
         refreshed = attach_research_dossiers(out, [], TODAY)
-        self.assertEqual(refreshed["open_world_research"], [])
+        self.assertEqual(refreshed["open_world_research"], rows)
+        self.assertFalse(refreshed["safe_to_publish"])
 
     def test_unpaired_canonical_url_is_research_only_not_autoapproval(self):
         # Any unknown publisher-supplied source is untrusted. It can be
@@ -215,6 +216,43 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertEqual(second, [])
         fourth, _ = self.load(batch_index=3)
         self.assertEqual(fourth, [])
+
+    def test_later_review_slot_keeps_and_deduplicates_queued_dossiers(self):
+        reference = {"updated_at": "unused", "events": []}
+        patch = private_patch(reference, queue=[])
+        a = self.load()[0]
+        self.assertEqual(a, [])
+        first = report()
+        self.write(first)
+        a = self.load()[0]
+        slot1 = attach_research_dossiers(patch, a, TODAY)
+        self.assertEqual(len(slot1["open_world_research"]), 1)
+        # The same clue and an empty following batch must preserve this row.
+        slot2 = attach_research_dossiers(slot1, a, TODAY)
+        slot3 = attach_research_dossiers(slot2, [], TODAY)
+        self.assertEqual(slot2["open_world_research"], a)
+        self.assertEqual(slot3["open_world_research"], a)
+        self.assertEqual(slot3["additions"], [])
+
+    def test_cumulative_research_queue_has_bounded_capacity_without_approval(self):
+        reference = {"updated_at": "unused", "events": []}
+        patch = private_patch(reference, queue=[])
+        seed = self.load()[0]
+        self.assertEqual(seed, [])
+        original = report()
+        self.write(original)
+        item = self.load()[0][0]
+        first = [
+            {**item, "lead": {**item["lead"], "event_uid": 900000 + i}}
+            for i in range(30)]
+        waiting = attach_research_dossiers(patch, first, TODAY)
+        self.assertEqual(len(waiting["open_world_research"]), 30)
+        later = attach_research_dossiers(waiting, [{
+            **item, "lead": {**item["lead"], "event_uid": 990000},
+        }], TODAY)
+        self.assertEqual(later["open_world_research"], first)
+        self.assertEqual(later["additions"], [])
+        self.assertFalse(later["safe_to_publish"])
 
     def test_no_report_yields_safe_empty_queue_and_no_new_publish_claim(self):
         rows, metrics = self.load()
