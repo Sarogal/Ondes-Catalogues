@@ -24,6 +24,7 @@ if AUTOMATION not in sys.path:
 from dns_pinned_https import fetch_public_html, safe_public_url
 from future_city_preflight import (
     SCHEMA as CITY_SCHEMA, _normal, exact_city_from_official_site,
+    undated_future_year,
 )
 from official_admin_communes import verified_commune
 
@@ -132,8 +133,11 @@ def apply_independently_verified_city(target, published, review, today,
                 or old.get("showOnMap") is True
                 or old.get("futureVenueConfirmed") is True
                 or old.get("geoVerification") is not None
-                or iso_day(old.get("startDate")) is None
-                or iso_day(old.get("startDate")) <= date.fromisoformat(today)
+                or not (
+                    (iso_day(old.get("startDate")) is not None
+                     and iso_day(old.get("startDate")) > date.fromisoformat(today))
+                    or undated_future_year(old, today) is not None
+                )
                 or safe_public_url(old.get("officialSite")) is None
                 or private_claim.get("source") != old["officialSite"]
                 or (old.get("city") is not None
