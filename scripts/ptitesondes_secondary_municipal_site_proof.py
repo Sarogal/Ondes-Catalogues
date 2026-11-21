@@ -185,6 +185,15 @@ def mint_secondary_municipal_host_proof(
             or approved_municipal_page_host(
                 municipal_reference_url, city, directory) is None):
         return None
+    # A bare municipal home page is not a specific endorsement page.
+    # This also prevents an untrusted caller from supplying a homepage URL
+    # together with unrelated HTML claiming a link was present there.
+    try:
+        ref = urlsplit(municipal_reference_url)
+        if ref.path in ("", "/") or ref.fragment:
+            return None
+    except ValueError:
+        return None
     host = _host(event_url)
     if (host is None or not _exact_host_url(event_url, host)
             or approved_municipal_page_host(
