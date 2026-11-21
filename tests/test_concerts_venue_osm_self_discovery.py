@@ -97,6 +97,31 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(observed),3)
         self.assertNotIn("https://evil.fr/private",observed)
 
+    def test_official_agenda_then_individual_detail_with_bounded_fetches(self):
+        agenda="https://radio-metal-concert.fr/agenda"
+        pages={
+            "https://api.openstreetmap.org/api/0.6/node/"+NODE_ID:osm(),
+            HOME:'<html><a href="/agenda">Agenda officiel</a></html>',
+            agenda:('<html><a href="/programmation/liste-des-groupes-2027">'
+                    '<time datetime="2027-05-02">2 mai</time>'
+                    'Concert métal huit artistes</a></html>'),
+            DETAIL:event_page(),
+        }
+        calls=[]
+        def fetch(url,cache):
+            calls.append(url)
+            if url not in pages:
+                raise AssertionError("Unexpected external page: "+url)
+            return pages[url]
+        report=discover_osm.scan(catalogue(),TODAY,max_venues=1,
+                                 max_details=2,fetch=fetch)
+        self.assertEqual(len(report["candidates"]),1)
+        self.assertEqual(report["sourceChecks"]["detailPagesRead"],2)
+        self.assertEqual(
+            calls,["https://api.openstreetmap.org/api/0.6/node/"+NODE_ID,
+                   HOME,agenda,DETAIL])
+        self.assertFalse(report["candidates"][0]["publicationAllowed"])
+
     def test_false_source_owner_and_venue_provenance_are_not_used(self):
         cases={
             "missing-website":osm(website="http://evil.fr"),
