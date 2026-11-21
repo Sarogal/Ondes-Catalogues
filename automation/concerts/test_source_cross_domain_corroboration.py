@@ -103,6 +103,20 @@ class CrossHostEvidenceTests(unittest.TestCase):
         self.assertEqual(out["futureCrossDomainLeadGroups"], 0)
         self.assertFalse(out["automaticTrustGranted"])
 
+    def test_duplicate_leads_are_research_only_even_when_all_marked_already_catalogued(self):
+        one = lead()
+        other = lead("new-venue.fr", venue="Salle Nouvelle")
+        for entry in (one, other):
+            entry["candidate"]["possibleExistingConcert"] = True
+            entry["candidate"]["reviewBucket"] = "already_catalogued"
+        out = cross.build(registry(one, other), CATALOGUE, DAY)
+        self.assertEqual(out["futureCrossDomainLeadGroups"], 1)
+        self.assertFalse(out["publicationAllowed"])
+        self.assertFalse(out["automaticTrustGranted"])
+        self.assertTrue(out["groups"][0]["publishedAlreadyKnown"])
+        self.assertTrue(all(s["duplicateResearchLead"]
+                            for s in out["groups"][0]["sources"]))
+
     def test_published_reference_is_retained_for_source_research_not_new_publication(self):
         first = lead()
         catalogue = {"schemaVersion": 1, "events": [{
