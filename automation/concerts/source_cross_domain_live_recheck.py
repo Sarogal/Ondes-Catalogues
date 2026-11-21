@@ -110,6 +110,7 @@ def select_groups(groups, today, slot, limit):
         and item.get("reviewState") in {
             "cross_domain_stable_observation_needs_live_proof",
             "published_reference_cross_domain",
+            "possible_duplicate_cross_domain",
         }
         and isinstance(item.get("sources"), list)
         and len(item["sources"]) >= 2
@@ -139,6 +140,7 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
             "date": row["date"], "leadArtist": row["leadArtist"],
             "city": row["city"], "venue": row["normalizedVenue"],
             "publishedAlreadyKnown": row.get("publishedAlreadyKnown") is True,
+            "markedPossibleDuplicate": row.get("markedPossibleDuplicate") is True,
             "state": "held", "freshIndividualEventWitnesses": 0,
             "verifiedWitnesses": [],
             "crossDomainEventVerified": False,
@@ -186,7 +188,9 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
                 result["state"] = (
                     "fresh_cross_domain_published_reference_confirmed"
                     if result["publishedAlreadyKnown"]
-                    else "fresh_cross_domain_event_confirmed")
+                    else ("fresh_cross_domain_possible_duplicate_confirmed"
+                          if result["markedPossibleDuplicate"]
+                          else "fresh_cross_domain_event_confirmed"))
                 result["crossDomainEventVerified"] = True
             else:
                 result["state"] = "needs_second_fresh_event_witness"
