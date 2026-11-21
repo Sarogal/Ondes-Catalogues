@@ -110,6 +110,21 @@ class LiveCrossDomainTests(unittest.TestCase):
         self.assertFalse(result["checks"][0]["sourceOwnershipVerified"])
         self.assertFalse(result["checks"][0]["publisherAuthorityGranted"])
 
+    def test_possible_duplicate_is_separate_from_actually_published_reference(self):
+        q = report()
+        q["groups"][0]["reviewState"] = "possible_duplicate_cross_domain"
+        q["groups"][0]["markedPossibleDuplicate"] = True
+        q["groups"][0]["publishedAlreadyKnown"] = False
+        result = live.build(q, DAY, slot=2, fetch=lambda url, cache: html(url))
+        self.assertEqual(
+            result["stateCounts"],
+            {"fresh_cross_domain_possible_duplicate_confirmed": 1})
+        self.assertFalse(result["checks"][0]["publishedAlreadyKnown"])
+        self.assertTrue(result["checks"][0]["markedPossibleDuplicate"])
+        self.assertTrue(result["checks"][0]["crossDomainEventVerified"])
+        self.assertFalse(result["publicationAllowed"])
+        self.assertFalse(result["checks"][0]["publisherAuthorityGranted"])
+
     def test_mixed_style_bill_accepts_a_single_metal_band_at_position_40(self):
         q = report()
         result = live.build(q, DAY, slot=2,
