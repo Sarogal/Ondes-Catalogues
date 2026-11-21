@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -40,7 +41,7 @@ def decode_prefix(url: str, *, duration_s: int = 6) -> dict:
     if not public_https(url):
         result["reason"] = "unsafe_url"
         return result
-    executable = shutil.which("ffmpeg")
+    executable = os.environ.get("GO_FFMPEG_PATH") or shutil.which("ffmpeg")
     if not executable:
         result["reason"] = "ffmpeg_missing"
         return result
