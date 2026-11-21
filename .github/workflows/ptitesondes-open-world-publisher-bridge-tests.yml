@@ -1,0 +1,35 @@
+name: "P'tites Ondes — pont Publisher national (tests isolés)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_open_world_patch_bridge.py'
+      - 'scripts/run_cloud_sync.py'
+      - 'tests/test_ptitesondes_open_world_patch_bridge.py'
+      - '.github/workflows/ptitesondes-open-world-publisher-bridge-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-publisher-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate real merge with independent live-proof fixtures
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_patch_bridge.py' -v
+      - name: Regression — open-world municipal source and geography
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_release_rehearsal.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_unnumbered_official_geo_proof.py' -v
