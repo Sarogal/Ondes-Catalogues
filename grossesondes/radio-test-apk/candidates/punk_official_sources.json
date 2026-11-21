@@ -28,7 +28,15 @@
           "url": "https://streams.radiobob.de/bob-punk/aac-64/mediaplayer"
         }
       ],
-      "logo_candidates": [],
+      "logo_candidates": [
+        {
+          "url": "https://images.radiobob.de/files/2025-05/radio_bob_app_icon.jpg",
+          "state": "unreviewed",
+          "scope": "network_brand_not_punk_specific",
+          "source_page": "https://www.radiobob.de/punk-stream",
+          "notes": "Official RADIO BOB app brand art, not yet reviewed as channel-specific Punk logo."
+        }
+      ],
       "status": "candidate",
       "notes": "Official source documents bob-punk. Check actual audio and station-specific artwork before any signed active edition."
     },
@@ -56,7 +64,15 @@
           "url": "https://stream.rockantenne.de/punkrock/stream/aacp"
         }
       ],
-      "logo_candidates": [],
+      "logo_candidates": [
+        {
+          "url": "https://www.rockantenne.de/media/cache/3/version/14/ra-v1.jpg/03af5f7d2e5346c0.jpg",
+          "state": "unreviewed",
+          "scope": "network_brand_not_punk_specific",
+          "source_page": "https://www.rockantenne.de/rockhoeren/streams/punk-rock",
+          "notes": "Official ROCK ANTENNE corporate logo, not necessarily station-specific Punk Rock art."
+        }
+      ],
       "status": "candidate",
       "notes": "Official provider publishes both stream URLs; no assumption about bitrates or artwork authenticity."
     }
