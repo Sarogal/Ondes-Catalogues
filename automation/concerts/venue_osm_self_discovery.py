@@ -33,6 +33,7 @@ import official_rss_jsonld_bridge as bridge
 import source_admission_intake as intake
 import source_evidence_probe as probe
 import triage
+import venue_address_osm_source as address_source
 from independent_named_site_geo import _distance_meters
 
 SCHEMA = "grossesondes.concert.discovery.v1"
@@ -76,7 +77,8 @@ def eligible(catalogue):
         v for v in catalogue["venues"]
         if isinstance(v, dict) and isinstance(v.get("id"), str)
         and isinstance(v.get("geoSource"), str)
-        and osm_node_id(v) is not None
+        and (osm_node_id(v) is not None
+             or address_source.eligible_address(v))
         and isinstance(v.get("name"), str)
         and isinstance(v.get("city"), str)
         and isinstance(v.get("postalCode"), str)
@@ -102,7 +104,13 @@ def select(venues, day, slot, limit):
 def official_source(venue, fetch, cache):
     """OSM website is not authority alone; output is only an exploration seed."""
     node_id=osm_node_id(venue)
-    require(bool(node_id),"not an unambiguous named OSM node")
+    if node_id is None:
+        # A venue lacking canonical OSM provenance may still carry a precise
+        # street address: BAN + a distinct named OSM map feature must confirm
+        # that site before its website becomes an untrusted discovery seed.
+        website, _feature=address_source.website_from_address(
+            venue,fetch=fetch,cache=cache)
+        return website
     url="https://api.openstreetmap.org/api/0.6/node/"+node_id
     body = fetch(url, cache)
     require(isinstance(body, str) and 0 < len(body) <= probe.MAX_BYTES
