@@ -58,10 +58,12 @@ jobs:
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
             --output go-continuity-candidate-evidence.json \
             --live-probe --gap-seconds 5
+      - name: Install isolated FFmpeg decoder (public runner only)
+        run: python -m pip install --disable-pip-version-check "imageio-ffmpeg==0.6.0"
       - name: Decode small bounded audio on official candidate streams (read only)
         run: |
-          ffmpeg -version | head -n 1
-          python radio-catalog-lab/tools/probe_open_radio_decoder.py \
+          FFMPEG_BIN="$(python -c 'import imageio_ffmpeg; print(imageio_ffmpeg.get_ffmpeg_exe())')"
+          GO_FFMPEG_PATH="$FFMPEG_BIN" python radio-catalog-lab/tools/probe_open_radio_decoder.py \
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
             --output go-decoder-candidate-evidence.json \
             --live-probe
