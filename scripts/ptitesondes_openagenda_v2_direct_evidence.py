@@ -205,7 +205,7 @@ def _french_location(location):
     ))
 
 
-def _venue(ev, approved):
+def _venue(ev, approved, *, independent_proof=None, today=None):
     """Two independent coordinate sets: published OA and reviewed venue."""
     loc = ev.get("location")
     if not isinstance(loc, dict) or not isinstance(approved, dict):
@@ -223,6 +223,19 @@ def _venue(ev, approved):
         return False
     a = (loc.get("latitude"), loc.get("longitude"))
     b = (approved.get("lat"), approved.get("lng"))
+    if a == (None, None):
+        # Only the publisher's factory-minted municipal/BAN/OSM proof may
+        # replace missing OA coordinates. A caller-supplied approved dict or
+        # a boolean verification flag is never sufficient for this exception.
+        from ptitesondes_shared_venue_location_evidence import location_from_proof
+        matched = location_from_proof(
+            independent_proof, approved["city"], loc["name"], today)
+        return bool(
+            matched is not None and
+            type(approved.get("lat")) in (int, float) and
+            type(approved.get("lng")) in (int, float) and
+            math.isfinite(approved["lat"]) and math.isfinite(approved["lng"]) and
+            meters((matched["lat"], matched["lng"]), b) <= 1)
     if not all(type(v) in (int, float) and math.isfinite(v) for v in a + b):
         return False
     if (not all(-90 <= lat <= 90 and -180 <= lng <= 180
@@ -273,7 +286,9 @@ def _sessions(event, timezone, target_day, today):
     return sorted(target_times), all_days, ""
 
 
-def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
+def review_direct_v2(
+        lead, api_event, reviewed_agenda, registered_venue, today, *,
+        independent_venue_proof=None):
     """Verify a single candidate against authenticated OpenAgenda *read* data.
 
     Returns a non-publishable source diagnostic. Never accepts an 'approved'
@@ -334,7 +349,9 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     if (not _norm(_fr(api_event, "title")) or not _norm(lead.get("title"))
             or _norm(_fr(api_event, "title")) != _norm(lead.get("title"))):
         return fail("api_title_mismatch")
-    if not _venue(api_event, registered_venue):
+    if not _venue(
+            api_event, registered_venue,
+            independent_proof=independent_venue_proof, today=today):
         return fail("geography_not_independently_verified")
     if (not _norm(lead.get("city")) or not _norm(lead.get("venue"))
             or _norm(api_event["location"].get("adminLevel4")) != _norm(lead.get("city"))
