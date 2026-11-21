@@ -42,9 +42,51 @@ L'option `--execute-live` réalise jusqu'à 12 consultations publiques et enregi
 
 La sortie standard contient uniquement des nombres et des raisons fixes, sans UID, titre, lieu, URL, chemin privé ni clé.
 
+## Rotation automatique sur les segments privés (sans cron)
+
+Nouveau composant : `scripts/ptitesondes_private_national_handoff_rotation.py`.
+
+Il découvre les fichiers `agenda-XXXX-segment-XXXX.json` déjà créés par la
+campagne privée #554, puis appelle automatiquement le raccordement #563 pour
+chaque lot de 12 événements, sans avoir à indiquer un index ou un offset.
+
+- **Un checkpoint privé** suit `next_segment_index` et `next_offset`.
+- Les segments sont parcourus dans l'ordre, sans trous silencieux. Les nouveaux
+  segments ajoutés après une exécution terminée sont pris en charge à la
+  prochaine invocation.
+- Le verrou exclusif empêche les exécutions concurrentes ; un rapport écrit
+  avant une interruption est récupéré seulement si son empreinte SHA-256,
+  son identité de segment et son offset correspondent exactement.
+- Le premier lancement et les relances ordinaires restent **sans réseau ni
+  écriture** tant que `--execute-live` n'est pas présent.
+- En mode explicite, jusqu'à 8 lots de 12 événements sont interrogés et
+  écrits dans le **dossier privé**, jamais dans le catalogue ni dans le
+  backlog actif. Les limites bornent une invocation et **ne sont pas** des
+  plafonds éditoriaux ou des refus de séances.
+
+Exemple :
+
+```bash
+python scripts/ptitesondes_private_national_handoff_rotation.py \
+  --private-agenda-index-report /espace-prive/index.json \
+  --private-campaign-segments /espace-prive/campagne/segments \
+  --private-output-dir /espace-prive/campagne/handoffs \
+  --day 2026-11-21
+```
+
+Après examen de la configuration de sécurité dans le runner privé, ajouter
+`--execute-live` pour lire les événements et écrire les rapports privés.
+Aucun calendrier de lancement n'a été ajouté.
+
+**Adresses canoniques OpenAgenda :** une URL canonique externe est parfois
+celle du site de l'organisateur. Elle ne bloque pas la découverte si la
+réponse directe fournit un `slug` utilisable : le module reconstitue
+l'adresse OpenAgenda exacte à partir de l'UID, du slug d'agenda et du slug
+d'événement. L'URL externe n'est jamais prise pour une preuve d'organisateur.
+
 ## Étapes de raccordement encore à développer et à valider
 
-1. Ajouter un orchestrateur privé contrôlé, qui reprendra automatiquement `next_offset` sur tous les segments sans perdre les nouveaux agendas.
+1. Relier l'orchestrateur privé déjà développé à un runner planifié **après validation indépendante** de ses tests et de son stockage ; les nouveaux segments et offsets sont déjà repris automatiquement dans le code isolé.
 2. Rejouer les lignes `backlog_leads` dans le **reconciler privé existant**, avec comparaison au backlog et au catalogue public, sans les injecter directement dans un patch.
 3. Faire passer ces pistes dans la preuve directe des séances, l'organisateur indépendant, la géolocalisation et la vérification des catégories ; conserver les refus motivés, sans liste exhaustive de salles/agendas.
 4. Adapter et tester le contrat de publication des lectures/spectacles de jeunesse dans `merge_policy.py` tout en préservant les fiches historiques.
