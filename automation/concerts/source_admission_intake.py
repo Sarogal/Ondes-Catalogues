@@ -41,12 +41,18 @@ def normalized(value):
 
 
 def official_claim(source):
-    """Discovery labels only, NEVER authenticated provenance."""
+    """Discovery labels only, NEVER authenticated provenance.
+
+    Festival archive touring nominations point at an UNKNOWN organizer
+    domain. Treat them as source-admission research only; do not register
+    their host, approve an event or trust old Festival metadata.
+    """
     return (isinstance(source, str) and
             (source.startswith("agenda_officiel_")
              or source.startswith("artist_official_")
              or source.startswith("promoter_official_")
-             or "_official_" in source))
+             or "_official_" in source
+             or source == "festival_published_tour_research"))
 
 
 def valid_https(value):

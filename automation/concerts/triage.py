@@ -169,6 +169,13 @@ def triage(candidate, catalogue=None, index=None):
           and row.get("requiresArtistAndVenueReproof") is True):
         bucket, reason = "tour_source_research", ("Date de tournée détectée par Festivals ; "
             "vérifier indépendamment les groupes, le lieu et les genres avant approbation")
+    elif (row.get("source") == "festival_published_tour_research"
+          and row.get("publishedFestivalTourFlag") is True
+          and row.get("festivalCatalogueHintsOnly") is True
+          and row.get("requiresArtistAndVenueReproof") is True):
+        bucket, reason = "tour_source_research", (
+            "Étape de tournée déjà présente dans Festivals ; données d'archive "
+            "à revérifier sur sources concerts officielles, aucune approbation")
     elif NONCONCERT.search(name):
         bucket, reason = "excluded_nonconcert", "Atelier, réunion ou contenu non-concert"
     elif FESTIVAL_WORD.search(name) or row.get("festivalContext"):
