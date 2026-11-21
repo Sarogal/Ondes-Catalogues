@@ -71,29 +71,47 @@ def verified_report(index_doc, index_digest, report, today):
     return agenda
 
 
-def _canonical_url(url, agenda, uid):
-    """Only the immutable public OpenAgenda identity, not arbitrary links."""
-    if not isinstance(url, str) or not 1 <= len(url) <= 700:
-        return None
-    try:
-        parsed = urlsplit(url)
-        if (parsed.scheme != "https" or parsed.hostname != "openagenda.com"
-                or parsed.username or parsed.password or parsed.port not in (None, 443)
-                or parsed.query or parsed.fragment):
-            return None
-        parts = parsed.path.strip("/").split("/")
-        if len(parts) == 4 and parts[0] in ("fr", "en"):
-            parts = parts[1:]
-        if (len(parts) != 3 or parts[0] != agenda["agenda_slug"]
-                or parts[1] != "events" or not SLUG.fullmatch(parts[0])):
-            return None
-        match = EVENT_PART.fullmatch(parts[2])
-        if not match or int(match.group(1)) != uid:
-            return None
-    except (ValueError, TypeError):
-        return None
-    return url
+def _canonical_url(url, agenda, uid, event_slug=None):
+    """Stable OA event identity, never an untrusted organizer URL.
 
+    OpenAgenda's canonicalUrl may point to the ORGANIZER'S own website.
+    That is valid metadata, but not independently verified organizer evidence.
+    Use the exact OA URL from the event's UID and slug instead; never turn a
+    foreign canonical host into a trusted or published source.
+    """
+    if not isinstance(agenda, dict) or not SLUG.fullmatch(
+            agenda.get("agenda_slug", "")):
+        return None
+    if isinstance(url, str) and 1 <= len(url) <= 1000:
+        try:
+            parsed = urlsplit(url)
+            if parsed.hostname == "openagenda.com":
+                if (parsed.scheme != "https" or parsed.username
+                        or parsed.password or parsed.port not in (None, 443)
+                        or parsed.query or parsed.fragment):
+                    return None
+                parts = parsed.path.strip("/").split("/")
+                if len(parts) == 4 and parts[0] in ("fr", "en"):
+                    parts = parts[1:]
+                if (len(parts) != 3 or parts[0] != agenda["agenda_slug"]
+                        or parts[1] != "events"):
+                    return None
+                match = EVENT_PART.fullmatch(parts[2])
+                return url if match and int(match.group(1)) == uid else None
+            if (parsed.hostname and
+                    (parsed.hostname.endswith(".openagenda.com")
+                     or "openagenda.com" in parsed.hostname)):
+                # Do not launder an OpenAgenda lookalike into a source.
+                return None
+        except (ValueError, TypeError):
+            return None
+    # A valid external canonical URL is *not* a blocker at discovery time.
+    # The slug comes from the direct OA API response, not from a search hit.
+    if (isinstance(event_slug, str)
+            and re.fullmatch(r"[a-z0-9][a-z0-9-]{0,139}", event_slug)):
+        return ("https://openagenda.com/" + agenda["agenda_slug"]
+                + "/events/" + str(uid) + "_" + event_slug)
+    return None
 
 def _research_item(original, api_event, agenda, today):
     uid = original["event_uid"]
@@ -119,7 +137,8 @@ def _research_item(original, api_event, agenda, today):
     if (not isinstance(refreshed["title"], str)
             or len(refreshed["title"]) > 180):
         return [], "source_title_requires_private_review"
-    url = _canonical_url(api_event.get("canonicalUrl"), agenda, uid)
+    url = _canonical_url(api_event.get("canonicalUrl"), agenda, uid,
+                         api_event.get("slug"))
     if url is None:
         return [], "canonical_public_event_url_requires_review"
     old_days = set(original["explicit_source_session_days"])
