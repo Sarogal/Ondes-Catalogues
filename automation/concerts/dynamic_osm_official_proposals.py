@@ -151,7 +151,13 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
     # show from another room is still waiting. Every candidate stays in
     # the queue and the daily/slot offset eventually rechecks them all.
     # Only network workload is bounded, not the number of venues or bands.
-    leads.sort(key=lambda row: (row[0], row[1], row[2]))
+    # Spend the first checks on candidates with an explicit genre signal,
+    # while retaining unknown-genre leads for later independent rechecks.
+    # A "genre_unknown" observation is NOT a rejection; first-party event
+    # or artist proof may still establish an eligible concert.
+    leads.sort(key=lambda row: (
+        row[3].get("reviewBucket") != "genre_tag_review",
+        row[0], row[1], row[2]))
     queues = defaultdict(deque)
     for item in leads:
         queues[item[2]].append(item)
