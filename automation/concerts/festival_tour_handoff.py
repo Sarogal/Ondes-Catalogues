@@ -27,7 +27,7 @@ from official_watch import get_page
 from national_live_index_recheck import live_index_for_exact_link
 from grossesondes_institutional_edition import trusted_source
 from festival_to_concerts_handoff import (
-    SCHEMA as FESTIVAL_SCHEMA, _tour_day,
+    SCHEMA as FESTIVAL_SCHEMA, _tour_day, live_tour_card,
 )
 import triage
 
@@ -107,7 +107,7 @@ def reverify(input_doc, today, fetch=get_page, limit=MAX_RECHECK):
     candidates = []
     for row, spec in selected:
         try:
-            index_html = live_index_for_exact_link(spec, fetch)
+            index_html = live_tour_card(spec, today, fetch)
             if index_html is None:
                 continue
             html = fetch(spec["url"])

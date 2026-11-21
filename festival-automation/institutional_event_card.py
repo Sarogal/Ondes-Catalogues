@@ -130,7 +130,9 @@ def exact_event_card_day(html, source):
                 targets.append(urljoin(source["index_page"], href))
             except (ValueError, TypeError):
                 pass
-        if source["url"] not in targets:
+        # A single card with competing outbound event links is ambiguous.
+        # The index authorizes ONLY its one exact named event detail.
+        if not targets or set(targets) != {source["url"]}:
             continue
         parsed = [parse_exact_time(text, machine)
                   for text, machine in card["times"]]

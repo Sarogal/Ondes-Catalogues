@@ -111,6 +111,27 @@ class PrivateTourConcertsHandoffTests(unittest.TestCase):
         self.assertEqual(report["candidates"][0]["date"], "2027-02-12")
         self.assertIs(report["candidates"][0]["publicationAllowed"], False)
 
+    def test_nested_card_rechecked_independently_by_concerts(self):
+        nested = ('<ul><li><article>'
+                  '<a href="/agenda/shred-fest-2027">'
+                  '<time>12 Fév 2027</time><h2>Shred Fest 2027</h2>'
+                  '</a></article></li></ul>')
+        article = ("<main><h1>Shred Fest 2027</h1><p>"
+                   "Festival itinérant annuel de metal, 39 concerts "
+                   "sans aucun jour de repos.</p></main>")
+        calls = []
+        def read(url):
+            calls.append(url)
+            return {INDEX: nested, DETAIL: article}[url]
+        with patch("festival_to_concerts_handoff.official_date",
+                   return_value=None):
+            report = bridge.reverify(envelope(valid_row()), TODAY, fetch=read)
+        self.assertEqual(calls, [INDEX, DETAIL])
+        self.assertEqual(len(report["candidates"]), 1)
+        self.assertEqual(report["candidates"][0]["reviewBucket"],
+                         "tour_source_research")
+        self.assertIs(report["candidates"][0]["publicationAllowed"], False)
+
     def test_removed_live_link_never_fetches_suggested_detail(self):
         calls = []
         with patch("festival_to_concerts_handoff.official_date",

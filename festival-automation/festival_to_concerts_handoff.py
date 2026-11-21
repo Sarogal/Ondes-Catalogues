@@ -51,6 +51,39 @@ def _trusted_spec(source, today):
     return spec
 
 
+
+def live_tour_card(source, today, fetch):
+    """Reprove the exact link+dated card, including nested li > article.
+
+    The broad institutional festival publisher deliberately rejects nested
+    semantic cards because their context can be ambiguous. For CONCERTS
+    research only, a single event's card with its OWN exact h2, linked HTTPS
+    detail and unambiguous printed day is stronger and independently
+    checkable. Never let this relaxed card parser authorize a festival patch.
+    """
+    if _trusted_spec(source, today) is None:
+        return None
+    # A previously reviewed, canonical index_page may point directly to
+    # page=4 today. No requested URL from an external or private candidate is
+    # fetched without first passing the committed trusted_source contract.
+    cached = {}
+    try:
+        direct = fetch(source["index_page"])
+        cached[source["index_page"]] = direct
+        if exact_event_card_day(direct, source) is not None:
+            return direct
+    except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        pass
+    # Preserve the original source-wide exact visible-link reproof as a
+    # fallback for plain anchors or municipal sites without dated cards.
+    # Do not download the same private-safe index page twice per candidate.
+    def read(url):
+        if url in cached:
+            return cached[url]
+        return fetch(url)
+    return live_index_for_exact_link(source, read)
+
+
 def _tour_day(html, source, today, index_html=None):
     """Only precise current date from article OR an exact linked index card."""
     year = source["year"]
@@ -99,7 +132,7 @@ def discover(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
     results = []
     for dossier_id, source in selected:
         try:
-            index_html = live_index_for_exact_link(source, fetch)
+            index_html = live_tour_card(source, today, fetch)
             if index_html is None:
                 continue
             html = fetch(source["url"])

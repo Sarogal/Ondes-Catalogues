@@ -45,6 +45,10 @@ class MunicipalEventCardTests(TestCase):
         bad = CARD.replace("12 Fév 2027", "32 Fév 2027")
         self.assertIsNone(exact_event_card_day(bad, SPEC))
 
+    def test_other_event_links_in_same_card_are_ambiguous(self):
+        extra = CARD.replace(
+            "</article>", '<a href="/agenda/another-event">Another</a></article>')
+        self.assertIsNone(exact_event_card_day(extra, SPEC))
     def test_no_static_date_from_an_unlinked_source(self):
         self.assertIsNone(exact_event_card_day(
             "<main>12 Fév 2027 Shred Fest 2027</main>", SPEC))
