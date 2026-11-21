@@ -284,8 +284,9 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
                         "parent_dossier_id": site.get("dossier_id"),
                         "qualification": item.get("classification"),
                         "source_snapshot_as_of": municipal_report["as_of"],
-                    "publication_authorized": False,
-                    })                    if report_idx == 0:
+                        "publication_authorized": False,
+                    })
+                    if report_idx == 0:
                         current_municipal += 1
 
     patch_leads = _patch_only_leads(patch, catalogue, today)
