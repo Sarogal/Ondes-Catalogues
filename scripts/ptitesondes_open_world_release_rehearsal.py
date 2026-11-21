@@ -13,10 +13,14 @@ from datetime import date, datetime, timedelta
 import re
 from urllib.parse import urlsplit
 
-from merge_policy import ORIGIN, byid, valid, historical_event_unchanged, merge
+from merge_policy import (
+    ORIGIN, byid, valid, historical_event_unchanged, merge,
+    PUBLISHABLE_CHILD_ARTS,
+)
 from official_organizer_proof import canonical_event_title
 from proof import norm, meters
 from ptitesondes_candidate_promotion import category_for
+from ptitesondes_family_activity_classification import propose_family_activity
 from ptitesondes_dila_municipal_domains import (
     approved_municipal_page_host, fetch_dila,
 )
@@ -211,7 +215,15 @@ def rehearse_open_world_municipal_event(
     desc = _french_text(live, "description") + " " + _french_text(live, "longDescription")
     category = category_for(title, desc)
     if category is None:
-        return _blank("musical_editorial_scope_not_confirmed")
+        # The national discovery already recognizes storytelling, children's
+        # theatre and performances. Reclassify only from fresh OA title/text,
+        # never from an untrusted "editorial_category_proposal" on the lead.
+        family = propose_family_activity(title, desc)
+        key = family["category_proposal"]
+        if key in PUBLISHABLE_CHILD_ARTS:
+            category = (key, family["category_label_proposal"])
+    if category is None:
+        return _blank("radio_family_editorial_scope_not_confirmed")
     department, region = loc.get("adminLevel2"), loc.get("adminLevel1")
     if not all(type(x) is str and x.strip() for x in (department, region)):
         return _blank("missing_live_admin_boundaries")
@@ -232,7 +244,9 @@ def rehearse_open_world_municipal_event(
     }
     fields = set().union(*(set(x) for x in baseline["events"]))
     cats = {x["category"] for x in baseline["events"]}
-    structural, _ = valid(event, cats, fields, today)
+    family_scope = frozenset(
+        {event["category"]} & PUBLISHABLE_CHILD_ARTS)
+    structural, _ = valid(event, cats | family_scope, fields, today)
     if not structural:
         return _blank("legacy_public_contract_rejected_candidate")
     key = event["id"]
@@ -282,7 +296,8 @@ def rehearse_open_world_municipal_event(
                     if ok else "candidate différent des preuves indépendantes")
     try:
         merged, audit = merge(
-            baseline, published, patch, today, checker=witness_checked)
+            baseline, published, patch, today, checker=witness_checked,
+            verified_child_arts=family_scope)
     except (ValueError, KeyError, TypeError):
         return _blank("existing_append_only_publisher_policy_rejected")
     if (audit.get("ajoutes") != 1
