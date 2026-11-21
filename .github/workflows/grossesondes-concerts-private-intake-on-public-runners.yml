@@ -31,6 +31,7 @@ on:
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/festival_tour_handoff.py'
+      - 'automation/concerts/municipal_music_handoff.py'
       - 'automation/concerts/published_festival_tour_research.py'
       - 'automation/concerts/source_evidence_probe.py'
       # Any open-ended OSM/BAN discovery or evidence policy change must run
@@ -130,6 +131,9 @@ jobs:
           persist-credentials: false
           sparse-checkout: |
             automation-intake/grossesondes/concert-tour-referrals.json
+            automation-intake/grossesondes/national-festival-discovery-review.json
+            automation-intake/grossesondes/national-municipal-source-research.json
+            automation-intake/grossesondes/national-municipal-pages-review.json
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -146,6 +150,7 @@ jobs:
           test -s confidential/automation/concerts/intake/registry.json
           mkdir -p "$RUNNER_TEMP/concerts-discovery" \
             "$RUNNER_TEMP/concerts-tours" "$RUNNER_TEMP/concerts-organizers" \
+            "$RUNNER_TEMP/concerts-municipal-referrals" \
             "$RUNNER_TEMP/concerts-private-logs"
           python -m compileall -q public/automation/concerts
 
@@ -305,6 +310,47 @@ jobs:
           print("Transfert Festivals -> Concerts vérifié : revue privée uniquement.")
           PY
 
+      - name: Revérifier les événements musicaux municipaux inconnus transmis par Festivals
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Private event URLs are NEVER HTTP authority. Concerts first
+          # rederives today's municipality via Geo + DILA, follows a fresh
+          # same-host homepage -> event-index -> named event link, then
+          # opens its detail. No published event, genre or artist inferred.
+          if ! python public/automation/concerts/municipal_music_handoff.py \
+              --queue festival-intake/automation-intake/grossesondes/national-festival-discovery-review.json \
+              --municipal festival-intake/automation-intake/grossesondes/national-municipal-source-research.json \
+              --pages festival-intake/automation-intake/grossesondes/national-municipal-pages-review.json \
+              --output "$RUNNER_TEMP/concerts-municipal-referrals/candidates.json" \
+              --limit 4 \
+              > "$RUNNER_TEMP/concerts-private-logs/municipal-music-handoff.log" 2>&1; then
+            echo "::error::Passerelle municipale Festivals vers Concerts non vérifiée"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-municipal-referrals/candidates.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data.get("schema") == "grossesondes.concert.discovery.v1"
+          assert data.get("publicationAllowed") is False
+          assert data.get("automaticPublication") is False
+          assert data.get("triageCounts", {}).get("undated_lead", -1) == len(data["candidates"])
+          assert all(c.get("publicationAllowed") is False
+                     and c.get("reviewRequired") is True
+                     and c.get("source") == "festival_municipal_music_handoff"
+                     and c.get("reviewBucket") == "undated_lead"
+                     and c.get("sourceAuthorityVerified") is False
+                     and c.get("municipalMusicResearchOnly") is True
+                     and c.get("leadArtist") is None
+                     and c.get("date") is None
+                     and c.get("venue") is None
+                     for c in data["candidates"])
+          print("Pistes municipales inconnues transférées en revue Concerts privée uniquement.")
+          PY
+
       - name: Recouper les étapes de tournées déjà publiées par Festivals
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -347,7 +393,7 @@ jobs:
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours concerts-organizers concerts-osm-venues concerts-festival-referrals concerts-festival-published; do
+          for channel in concerts-discovery concerts-tours concerts-organizers concerts-osm-venues concerts-festival-referrals concerts-municipal-referrals concerts-festival-published; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \
