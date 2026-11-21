@@ -67,10 +67,13 @@ def build_inventory(reports, catalogue, today):
     for row in catalogue["festivals"]:
         if not isinstance(row, dict):
             raise ValueError("Malformed public festival")
-        try:
-            existing.add((_name(row.get("name")), int(str(row["startDate"])[:4])))
-        except (TypeError, ValueError, KeyError):
-            raise ValueError("Malformed public edition")
+        # Undated signed listings are valid but cannot prove an EXACT edition.
+        start = row.get("startDate")
+        if start is None:
+            continue
+        if not isinstance(start, str) or not re.fullmatch(r"20[2-4][0-9]-[01][0-9]-[0-3][0-9]", start):
+            raise ValueError("Malformed public edition date")
+        existing.add((_name(row.get("name")), int(start[:4])))
     referrals = {}
     for ref in reports["concerts"].get("referrals", []):
         if not isinstance(ref, dict) or ref.get("dossierId") not in ids:
