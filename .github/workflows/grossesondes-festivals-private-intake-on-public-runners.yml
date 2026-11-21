@@ -40,6 +40,7 @@ on:
       - 'scripts/grossesondes_institutional_linked_edition.py'
       - 'scripts/grossesondes_generic_directory_edition.py'
       - 'scripts/grossesondes_venue_reciprocal_edition.py'
+      - 'scripts/grossesondes_first_party_direct_edition.py'
   workflow_dispatch:
     inputs:
       phase:
