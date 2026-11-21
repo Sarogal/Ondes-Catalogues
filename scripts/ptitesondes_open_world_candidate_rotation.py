@@ -30,6 +30,9 @@ from ptitesondes_openagenda_v2_direct_evidence import (
 )
 from ptitesondes_dila_municipal_domains import fetch_dila
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+from ptitesondes_unlisted_exact_session_research import (
+    _structured_source_sessions, MAX_HTML as MAX_OA_SOURCE_HTML,
+)
 
 SCHEMA = "ptitesondes.private_open_world_candidate_rotation.v1"
 MAX_PAGES_PER_CYCLE = 5
@@ -37,6 +40,7 @@ MAX_SOURCES_PER_CYCLE = 5
 MAX_QUEUE = 20_000
 MAX_SEEN = 100_000
 MAX_SOURCE_BYTES = 400_000
+MAX_OA_UNVERIFIED_RECHECKS_PER_CYCLE = 2
 
 
 def _fingerprint(lead):
@@ -58,6 +62,91 @@ def _key(entry):
     return sha256(
         (entry["municipal_url"] + "\n" + entry["source_url"])
         .encode("utf-8")).hexdigest()
+
+
+def _oa_source_key(url):
+    return sha256(("openagenda-unverified-url\n" + url).encode("utf-8")).hexdigest()
+
+
+def _research_unverified_oa_urls(lead, boot, checkpoint, reader):
+    """Bounded, resumable, SSRF-pinned independent HTML *research*.
+
+    URL provenance comes from freshly re-read OpenAgenda metadata, not
+    an approved municipality. Even exact JSON-LD correspondence is not
+    evidence of independent authorship or permission to republish.
+    """
+    review = {"private_oa_url_reviews": [],
+              "oa_urls_rechecked": 0,
+              "oa_exact_session_claims_unverified": 0,
+              "oa_url_recheck_capacity_held": False}
+    candidates = boot.get("private_unverified_oa_web_leads", [])
+    if not isinstance(candidates, list):
+        review["oa_url_recheck_capacity_held"] = True
+        return review
+    existing = checkpoint["seen_source_sha256"]
+    seen = set(existing)
+    pairs = [(x["begin"], x["end"])
+             for x in lead["explicit_source_session_intervals"]]
+    for item in candidates:
+        if review["oa_urls_rechecked"] >= MAX_OA_UNVERIFIED_RECHECKS_PER_CYCLE:
+            break
+        if (not isinstance(item, dict)
+                or item.get("candidate_only") is not True
+                or item.get("owner_verified") is not False
+                or item.get("source_rights_reviewed") is not False
+                or item.get("publication_ready") is not False
+                or not _safe_url(item.get("url"))):
+            review["oa_url_recheck_capacity_held"] = True
+            break
+        digest = _oa_source_key(item["url"])
+        if digest in seen:
+            continue
+        if len(existing) >= MAX_SEEN:
+            review["oa_url_recheck_capacity_held"] = True
+            break
+        detail = {"url": item["url"],
+                  "source_field": item.get("source_field"),
+                  "status": "oa_url_unavailable",
+                  "exact_session_claims_unverified": 0,
+                  "location_conflicts": 0,
+                  "changed_or_cancelled_claims": 0,
+                  "origin_independently_attested": False,
+                  "organizer_verified": False,
+                  "rights_reviewed": False,
+                  "publication_ready": False, "public_writes": 0}
+        try:
+            html = reader(item["url"])
+            if (type(html) is not str
+                    or not 0 < len(html.encode("utf-8")) <= MAX_OA_SOURCE_HTML):
+                raise ValueError("invalid_private_oa_link_html")
+            evidence = _structured_source_sessions(html, lead, pairs)
+            n = evidence["exact_source_session_count"]
+            detail["exact_session_claims_unverified"] = n
+            detail["location_conflicts"] = (
+                evidence["source_venue_conflict_count"])
+            detail["changed_or_cancelled_claims"] = (
+                evidence["source_changed_or_cancelled_count"])
+            if (detail["location_conflicts"]
+                    or detail["changed_or_cancelled_claims"]):
+                detail["status"] = "oa_url_structured_source_conflicts"
+            elif n == len(pairs):
+                detail["status"] = "all_exact_sessions_visible_unverified"
+            elif n:
+                detail["status"] = "some_exact_sessions_visible_unverified"
+            else:
+                detail["status"] = "no_exact_structured_session_match"
+            review["oa_exact_session_claims_unverified"] += n
+        except (OSError, ValueError, TypeError, KeyError,
+                TimeoutError, UnicodeError):
+            # Do not copy raw exception data to private/public diagnostics.
+            detail["status"] = "oa_url_unavailable"
+        review["private_oa_url_reviews"].append(detail)
+        review["oa_urls_rechecked"] += 1
+        # This day's retry history is a work cursor, NOT a permanent denylist.
+        # Failed URLs get a fresh attempt with the next day's checkpoint.
+        seen.add(digest)
+        existing.append(digest)
+    return review
 
 
 def _initial(lead_digest, today):
@@ -110,6 +199,10 @@ def _blank(status, checkpoint=None):
         "private_unverified_oa_web_leads": [],
         "oa_source_web_leads_found": 0,
         "oa_link_partition_required": False,
+        "private_oa_url_reviews": [],
+        "oa_urls_rechecked": 0,
+        "oa_exact_session_claims_unverified": 0,
+        "oa_url_recheck_capacity_held": False,
         "private_checkpoint": checkpoint,
         "private_research_reviews": [],
         "municipal_page_batches_checked": 0,
@@ -135,7 +228,8 @@ def rotate_private_open_world_lead(
         sources_per_cycle=MAX_SOURCES_PER_CYCLE,
         directory_reader=fetch_dila, html_reader=read_unknown_https,
         oa_agenda_reader=read_direct_agenda_v2,
-        oa_event_reader=read_direct_v2, location_proof=None):
+        oa_event_reader=read_direct_v2, location_proof=None,
+        oa_source_reader=read_unknown_https):
     """One read-only private cycle with *no manually selected candidate URLs*.
 
     All source reads are still reauthenticated inside the #599 verifier.
@@ -150,7 +244,7 @@ def rotate_private_open_world_lead(
             or not 1 <= sources_per_cycle <= MAX_SOURCES_PER_CYCLE
             or not all(callable(x) for x in (
                 directory_reader, html_reader, oa_agenda_reader,
-                oa_event_reader))):
+                oa_event_reader, oa_source_reader))):
         return _blank("invalid_private_rotation_request")
     checkpoint = (
         _initial(digest, today) if previous_checkpoint is None
@@ -164,10 +258,15 @@ def rotate_private_open_world_lead(
         agenda_reader=oa_agenda_reader, event_reader=oa_event_reader,
         directory_reader=directory_reader,
         municipal_html_reader=html_reader)
+    # Independently read only safe OpenAgenda-linked HTTPS candidates.
+    # An unknown municipality does NOT cancel this research lane.
+    oa_review = _research_unverified_oa_urls(
+        lead, boot, checkpoint, oa_source_reader)
     if boot["status"] not in (
             "municipal_homepage_source_research_only",
             "municipal_sources_partial_research"):
         held = _blank("live_source_bootstrap_not_confirmed", checkpoint)
+        held.update(oa_review)
         # Preserve the exact safe stage of failure for the next read-only
         # investigation, instead of erasing all failures into one label.
         # Status comes from the closed bootstrap contract, not a domain list.
@@ -182,6 +281,7 @@ def rotate_private_open_world_lead(
             boot.get("oa_link_partition_required") is True)
         return held
     result = _blank("private_rotation_in_progress", checkpoint)
+    result.update(oa_review)
     raw_leads = boot.get("private_unverified_oa_web_leads", [])
     if isinstance(raw_leads, list):
         result["private_unverified_oa_web_leads"] = raw_leads
