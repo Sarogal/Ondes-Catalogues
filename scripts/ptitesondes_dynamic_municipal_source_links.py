@@ -83,7 +83,7 @@ def _blank(status):
         "event_sessions_verified": False, "reuse_rights_verified": False,
         "geography_verified": False, "publisher_connected": False,
         "publication_ready": False, "approval_granted": False,
-        "public_writes": 0, "external_network_requests": 0,
+        "public_writes": 0, "discovered_destination_fetches": 0,
     }
 
 
