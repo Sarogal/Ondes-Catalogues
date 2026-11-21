@@ -109,6 +109,58 @@ class OfficialFirstGeocodeTests(unittest.TestCase):
         self.assertTrue(self.proof(html=visible_html())[
             "independent_geo_correlated"])
 
+    def test_municipal_numbered_h1_with_acronym_and_plain_address(self):
+        # Villeurbanne-style official H1 + ordinary body; no <address> tag.
+        # Venue, town, coordinates below are synthetic test fixtures.
+        group = {**GROUP,
+                 "venue": "Maison du livre de l'image et du son"}
+        page = (
+            "<html><h1>Maison du livre de l'image et du son (MLIS)</h1>"
+            "<p>247 cours Émile-Zola</p>"
+            "<p>12345 Ville-des-Bois</p></html>"
+        )
+        candidate = extract_official_address(group, page)
+        self.assertIsNotNone(candidate)
+        self.assertEqual(candidate["housenumber"], "247")
+        self.assertEqual(candidate["postcode"], "12345")
+        self.assertEqual(candidate["street"], "cours Émile-Zola")
+        def independent_ban(address):
+            return {"type": "FeatureCollection", "features": [{
+                "type": "Feature",
+                "properties": {
+                    "type": "housenumber", "score": 0.99,
+                    "postcode": address["postcode"],
+                    "city": address["city"],
+                    "housenumber": address["housenumber"],
+                    "label": address["address_query"],
+                },
+                "geometry": {"type": "Point",
+                             "coordinates": [2.25, 44.5]},
+            }]}
+        result = confirm_official_address_ban(
+            group, SOURCE, directory(), URL, page, independent_ban)
+        self.assertTrue(result["independent_geo_correlated"])
+        self.assertFalse(result["publication_ready"])
+
+    def test_municipal_numbered_h1_rejects_improper_acronym_and_conflicts(self):
+        group = {**GROUP, "venue": "Maison du livre de l'image et du son"}
+        def html(title, address):
+            return "<html><h1>" + title + "</h1><p>" + address + "</p></html>"
+        for page in (
+            html("Maison du livre de l'image et du son (ANNEXE)",
+                 "247 cours Émile-Zola 12345 Ville-des-Bois"),
+            html("Autre médiathèque", "247 cours Émile-Zola 12345 Ville-des-Bois"),
+            html("Maison du livre de l'image et du son (MLIS)",
+                 "247 cours Émile-Zola 54321 Ville-des-Bois"),
+            html("Maison du livre de l'image et du son (MLIS)",
+                 "247 cours Émile-Zola 12345 Autre-ville"),
+            html("Maison du livre de l'image et du son (MLIS)",
+                 "247 cours Émile-Zola 12345 Ville-des-Bois "
+                 "248 cours Émile-Zola 12345 Ville-des-Bois"),
+        ):
+            with self.subTest(page=page[:90]):
+                self.assertIsNone(extract_official_address(group, page))
+
     def test_conflicting_city_street_house_and_postcode_fail(self):
         for p in (
             {"street": "13 Rue des Chênes"}, {"code": "54321"},
