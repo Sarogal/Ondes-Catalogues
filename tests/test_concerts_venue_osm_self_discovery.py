@@ -115,7 +115,6 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
     def test_festival_nonmusic_offsite_and_past_dates_remain_held(self):
         cases={
             "festival":event_page(name="Festival des métaux 2027"),
-            "wrong-room":event_page(room="Une autre salle"),
             "nonmusic":event_page(music=False),
             "past":event_page(date="2026-01-01"),
         }
@@ -125,6 +124,19 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
                     max_details=2,fetch=fake_fetch(detail=html))
                 self.assertEqual(report["candidates"],[])
                 self.assertFalse(report["publicationAllowed"])
+
+    def test_offsite_new_venue_is_research_not_rejection_or_approval(self):
+        report=discover_osm.scan(catalogue(),TODAY,max_venues=1,
+                                 max_details=2,fetch=fake_fetch(
+                                     detail=event_page(room="Une autre salle")))
+        self.assertEqual(len(report["candidates"]),1)
+        row=report["candidates"][0]
+        self.assertTrue(row["venueOutsideSource"])
+        self.assertTrue(row["newVenueToReview"])
+        self.assertEqual(row["venue"],"Une autre salle")
+        self.assertFalse(row["publicationAllowed"])
+        self.assertTrue(row["reviewRequired"])
+        self.assertFalse(row["sourceAuthorityVerified"])
 
     def test_rotation_covers_venues_without_fixed_list(self):
         sites=[{"id":f"place-{n}"} for n in range(23)]
