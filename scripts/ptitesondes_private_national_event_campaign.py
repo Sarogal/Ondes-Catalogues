@@ -7,14 +7,14 @@ module cannot publish, change configured sources or schedule a GitHub Action.
 The caller must arrange private execution and source updates separately.
 """
 import argparse
-from datetime import date
+from datetime import date, datetime, timedelta
 from hashlib import sha256
 import json
 import os
 from pathlib import Path
 
 from ptitesondes_openagenda_national_event_research import (
-    MAX_INDEX_BYTES,
+    MAX_INDEX_BYTES, MAX_TIMINGS,
     select_index_candidate, scan_agenda, valid_after,
     _private_directory, _private_input, _write_new, _write_state,
 )
@@ -24,6 +24,7 @@ SCHEMA = "ptitesondes.private_national_oa_event_campaign.v1"
 STATE_SCHEMA = "ptitesondes.private_national_oa_event_campaign_cursor.v1"
 MAX_STEPS = 8
 MAX_INDEX_AGENDAS = 160
+MAX_SEGMENT_BYTES = 8_000_000  # supports hundreds of exact session hints per event
 STATE_FILENAME = "national-event-checkpoint.json"
 LOCK_FILENAME = ".national-event-campaign.lock"
 
@@ -112,6 +113,37 @@ def _segment_meta(plan, state):
     }
 
 
+def _valid_session_hints(item):
+    """Validate private API timing hints; their shape never grants publication."""
+    if "explicit_source_session_intervals" not in item:
+        return True  # Backwards-compatible, pre-session historical reports.
+    intervals = item["explicit_source_session_intervals"]
+    if type(intervals) is not list or len(intervals) > MAX_TIMINGS:
+        return False
+    seen = set()
+    for slot in intervals:
+        if (type(slot) is not dict or set(slot) != {"begin", "end"}
+                or any(type(slot[key]) is not str
+                       or not 1 <= len(slot[key]) <= 40
+                       for key in ("begin", "end"))):
+            return False
+        key = (slot["begin"], slot["end"])
+        if key in seen:
+            return False
+        seen.add(key)
+        try:
+            begin, finish = (datetime.fromisoformat(key[0]),
+                             datetime.fromisoformat(key[1]))
+        except ValueError:
+            return False
+        if (begin.tzinfo is None or finish.tzinfo is None
+                or begin.utcoffset() is None or finish.utcoffset() is None
+                or not begin < finish
+                or finish - begin > timedelta(days=2)):
+            return False
+    return True
+
+
 def _validate_segment(report, agenda, expected_meta):
     counts = report.get("counts") if isinstance(report, dict) else None
     leads = report.get("event_leads") if isinstance(report, dict) else None
@@ -125,6 +157,7 @@ def _validate_segment(report, agenda, expected_meta):
             or any(not isinstance(lead, dict)
                    or lead.get("publication_ready") is not False
                    or lead.get("public_writes") != 0
+                   or not _valid_session_hints(lead)
                    for lead in leads)):
         raise ValueError("invalid_private_agenda_segment")
     if (not isinstance(report, dict)
@@ -165,6 +198,7 @@ def _validate_segment(report, agenda, expected_meta):
                 or not 0 < item["event_uid"] < 10**12
                 or item["event_uid"] in seen_research
                 or item["event_uid"] in admitted
+                or not _valid_session_hints(item)
                 or item.get("agenda_uid") != agenda["agenda_uid"]
                 or item.get("agenda_slug") != agenda["agenda_slug"]
                 or not isinstance(item.get("title"), str)
@@ -227,7 +261,7 @@ def run_campaign(plan, *, public_key, explorer=scan_agenda):
                 # Recovery is permitted only for the EXACT fully validated
                 # segment that starts from the current checkpoint state.
                 try:
-                    stored = json.loads(_private_input(path, 1_500_000))
+                    stored = json.loads(_private_input(path, MAX_SEGMENT_BYTES))
                     _validate_segment(stored, agenda, expected)
                 except (OSError, ValueError, TypeError):
                     raise ValueError("existing_private_segment_requires_recovery") from None
@@ -241,6 +275,11 @@ def run_campaign(plan, *, public_key, explorer=scan_agenda):
                     raise ValueError("invalid_private_agenda_segment")
                 report = {**report, "campaign_meta": expected}
                 _validate_segment(report, agenda, expected)
+                # A crash-recovery replay must be able to read the full
+                # private report; never write an unreadable oversized file.
+                if len(json.dumps(report, ensure_ascii=False, indent=2).encode(
+                        "utf-8")) + 1 > MAX_SEGMENT_BYTES:
+                    raise ValueError("private_agenda_segment_too_large")
                 next_state = _advance(state, report)
                 _write_new(path, report)
                 _write_state(_state_path(output_dir), next_state)
