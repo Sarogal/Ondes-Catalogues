@@ -111,7 +111,8 @@ def check_append_only(previous, proposed, today):
             if isinstance(proof, dict)
             and proof.get("proofType") in {
                 "dynamic-existing-venue-first-party-v1",
-                "dynamic-existing-venue-osm-official-v1"}
+                "dynamic-existing-venue-osm-official-v1",
+            "dynamic-existing-venue-address-official-v1"}
         ] if isinstance(approval, dict) and isinstance(
                 approval.get("officialEvidence"), list) else []
         independent_dynamic = (
