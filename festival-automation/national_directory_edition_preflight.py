@@ -22,8 +22,8 @@ from national_generic_primary_domain_preflight import (
     _edition_name, _published, QUEUE_SCHEMA,
 )
 from grossesondes_generic_directory_edition import (
-    directory_url, trusted_linked_site, verify_primary, private_proposal,
-    validate_private_proposal,
+    directory_url, directory_urls, discover_directory_website,
+    verify_primary, private_proposal, validate_private_proposal,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 from grossesondes_archived_html_intake import latest_patch, atomic_json
@@ -80,14 +80,17 @@ def eligible(queue, catalog, today):
     return sorted(selected, key=lambda x: (x["dossier_id"], x["title"]))
 
 
-def proof_digest(source, website, dates):
+def proof_digest(source, website, dates, directory_ref=None):
+    route = directory_ref or source["directory_url"]
+    if route not in directory_urls(source["title"]):
+        raise ValueError("Untrusted directory URL")
     return sha256(json.dumps({
         "id": source["dossier_id"],
         "title": source["title"],
         "year": source["year"],
         "site": website,
         "dates": list(dates),
-        "directory": source["directory_url"],
+        "directory": route,
     }, sort_keys=True).encode("utf-8")).hexdigest()
 
 
@@ -133,11 +136,15 @@ def examine(state, queue, catalog, today, directory_fetch=None,
             "review_only": True, "safe_to_publish": False,
             "publication_authorized": False, "publisher_gate_connected": False,
             "two_day_observation": False, "site_review_only": None,
+            "directory_ref_review_only": None,
             "start_date_hint": None, "end_date_hint": None,
         }
         try:
-            page = read_directory(source["directory_url"])
-            site = trusted_linked_site(page, source["title"])
+            # A wrong compact slug is not evidence against a new festival:
+            # the directory also uses hyphen-separated URLs. Only TWO URLs,
+            # both derived from the edition NAME, may be contacted.
+            directory_ref, site = discover_directory_website(
+                source["title"], read_directory)
             if site is None:
                 result["status"] = "DIRECTORY_OFFICIAL_LINK_UNPROVEN"
             else:
@@ -149,7 +156,7 @@ def examine(state, queue, catalog, today, directory_fetch=None,
                 if dates is None:
                     result["status"] = "OFFICIAL_CURRENT_EDITION_NOT_PROVEN"
                 else:
-                    digest = proof_digest(source, site, dates)
+                    digest = proof_digest(source, site, dates, directory_ref)
                     continuous = bool(
                         isinstance(old, dict)
                         and old.get("digest") == digest
@@ -164,6 +171,7 @@ def examine(state, queue, catalog, today, directory_fetch=None,
                         "firstSeen": (
                             old["firstSeen"] if continuous else today),
                         "lastSeen": today, "lastChecked": today,
+                        "directoryRef": directory_ref,
                         "stable": continuous,
                     }
                     result.update(
@@ -172,6 +180,7 @@ def examine(state, queue, catalog, today, directory_fetch=None,
                                 "FIRST_DAY_DIRECTORY_FIRST_PARTY_PRIVATE"),
                         two_day_observation=continuous,
                         site_review_only=site,
+                        directory_ref_review_only=directory_ref,
                         start_date_hint=dates[0], end_date_hint=dates[1])
         except (OSError, TypeError, ValueError, UnicodeError, KeyError):
             result["status"] = "DIRECTORY_OR_OFFICIAL_HTTPS_UNAVAILABLE"
@@ -216,19 +225,26 @@ def stable_private_proposals(state, queue, catalog, report, today):
         if source is None or source["dossier_id"] in seen:
             continue
         site = row.get("site_review_only")
+        directory_ref = row.get("directory_ref_review_only")
+        if directory_ref not in directory_urls(source["title"]):
+            continue
         dates = row.get("start_date_hint"), row.get("end_date_hint")
         record = records.get(source["dossier_id"])
         if (not isinstance(record, dict)
                 or record.get("stable") is not True
                 or record.get("lastSeen") != today
-                or record.get("digest") != proof_digest(source, site, dates)):
+                or record.get("directoryRef") != directory_ref
+                or record.get("digest") != proof_digest(
+                    source, site, dates, directory_ref)):
             continue
         try:
             if not date.fromisoformat(record["firstSeen"]) < date.fromisoformat(today):
                 continue
         except (KeyError, TypeError, ValueError):
             continue
-        proposal = private_proposal(source["title"], site, dates, today)
+        proposal = private_proposal(
+            source["title"], site, dates, today,
+            directory_ref=directory_ref)
         if (proposal is None or
                 validate_private_proposal(proposal, today) is None):
             continue
