@@ -62,11 +62,12 @@ def _geo(valid):
             and -180 <= valid[0] <= 180 and -56 <= valid[1] <= 52)
 
 
-def _ban_result(site, fetch, *, include_region=False, min_score=0.89):
-    # A lower bound is permissible only to RESEARCH a government-matched
-    # exact address; the publisher continues to call the 0.89 default.
+def _ban_result(site, fetch, *, include_region=False, min_score=0.78):
+    # BAN ranking is not proof of location. Even a low-scored match must
+    # agree EXACTLY on postcode, city, street and house number, followed by
+    # an independently named OSM feature before Publisher validation.
     require(type(min_score) in (int, float) and math.isfinite(min_score)
-            and 0.75 <= min_score <= 0.99,
+            and 0.78 <= min_score <= 0.99,
             "invalid French address confidence policy")
     postcode = site["postalCode"]
     city = site["city"]
