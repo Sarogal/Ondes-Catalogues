@@ -8,6 +8,8 @@ on:
       - "grossesondes/radio-test-apk/candidates/**"
       - "radio-catalog-lab/tools/probe_open_radio_candidates.py"
       - "radio-catalog-lab/tools/test_probe_open_radio_candidates.py"
+      - "radio-catalog-lab/tools/probe_open_radio_artwork.py"
+      - "radio-catalog-lab/tools/test_probe_open_radio_artwork.py"
   workflow_dispatch:
 
 permissions:
@@ -22,21 +24,35 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install image decoder for logo-byte validation
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
       - name: Validate candidate safety and OPEN discovery (OFFLINE)
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
             -p "test_probe_open_radio_candidates.py" -v
+      - name: Verify artwork safety and immutable hash inspection (OFFLINE)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_open_radio_artwork.py" -v
       - name: Check official candidate audio transport (read only; no approval)
         run: |
           python radio-catalog-lab/tools/probe_open_radio_candidates.py \
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
             --output .go-candidate-evidence.json \
             --live-probe
+      - name: Inspect official artwork candidate bytes (read only; no approval)
+        run: |
+          python radio-catalog-lab/tools/probe_open_radio_artwork.py \
+            --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
+            --output .go-logo-candidate-evidence.json \
+            --live-probe
       - name: Upload bounded test evidence (not an approval)
         uses: actions/upload-artifact@v4
         with:
           name: go-open-radio-candidate-evidence
-          path: .go-candidate-evidence.json
+          path: |
+            .go-candidate-evidence.json
+            .go-logo-candidate-evidence.json
           retention-days: 7
           if-no-files-found: error
       - name: Assert unchanged signing and publishing state
