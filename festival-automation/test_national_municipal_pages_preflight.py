@@ -215,6 +215,62 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertEqual(result["publications"], 0)
         self.assertEqual(result["named_municipal_mention_count"], 0)
 
+    def test_unknown_music_not_starved_by_large_municipal_admin_menu(self):
+        """Dynamic agenda priority, without a closed city/domain/event list."""
+        from national_municipal_pages_preflight import _candidate_links
+        homepage = (
+            "<main>" + "".join(
+                '<a href="/actualites/demarche-' + str(i) +
+                '">Actualités administratives</a>' for i in range(65))
+            + '<a href="/agenda-2/">Agenda</a>'
+            + '<a href="/associations/manifestations">Manifestations</a>'
+            + "</main>"
+        )
+        agenda = """<main><h1>Agenda des événements</h1>
+          <a href="/evenement/germirockn-co-2/">GermiRock'n Co #2</a>
+          </main>"""
+        first = _candidate_links(
+            homepage, SITE, SITE, TITLE, 2027, TODAY)
+        self.assertTrue(first)
+        self.assertEqual(first[0], SITE + "agenda-2/")
+        # The same priority works independently for an entirely different
+        # city, unseen artist, and arbitrary municipal HTTPS domain.
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return {
+                SITE: homepage, SITE + "agenda-2/": agenda
+            }.get(url, "<main><h1>Page d'actualités</h1></main>")
+        result = scan(queue(), municipality(), TODAY,
+                      fetch=fetch, commune_lookup=geo,
+                      delegated_lookup=lambda _: None, directory_fetch=dila)
+        self.assertGreaterEqual(len(visited), 2)
+        self.assertEqual(visited[:2], [SITE, SITE + "agenda-2/"])
+        self.assertEqual(result["unknown_music_links_count"], 1)
+        self.assertEqual(
+            result["rows"][0]["unknown_music_links_review_only"][0]["title_hint"],
+            "GermiRock'n Co #2")
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["publications"], 0)
+
+    def test_daily_generic_rotation_preserves_priority(self):
+        from national_municipal_pages_preflight import _candidate_links
+        html = (
+            '<a href="/agenda">Agenda</a>'
+            + "".join(
+                '<a href="/actualites/post-' + str(i) +
+                '">Actualités</a>' for i in range(20))
+        )
+        one = _candidate_links(html, SITE, SITE, TITLE, 2027, "2026-11-21")
+        next_day = _candidate_links(html, SITE, SITE, TITLE, 2027, "2026-11-22")
+        self.assertEqual(one[0], SITE + "agenda")
+        self.assertEqual(next_day[0], SITE + "agenda")
+        # A changing menu rotation covers more sources instead of pinning
+        # the same first three entries forever.
+        self.assertNotEqual(one[1:4], next_day[1:4])
+        self.assertLessEqual(len(one), 12)
+        self.assertLessEqual(len(next_day), 12)
+
     def test_security_challenge_is_unavailable_not_negative_evidence(self):
         # Real municipal administrations may use anti-bot gateways. They
         # cannot be bypassed and must not count as no festival scheduled.
