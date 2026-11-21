@@ -211,7 +211,12 @@ class ODSMissingToProposalContract(unittest.TestCase):
         source["description"] = {"fr": "Goûter avec les familles"}
         self.assertEqual(self.preview(event=source)["state"], "hold")
         lead = dict(LEAD, title="Goûter au parc")
-        self.assertEqual(self.preview(event=source, lead=lead)["reason"],
+        # Make the first-party page corroborate this different title: the
+        # rejection must come from editorial policy, not from a title error.
+        html = (OFFICIAL_HTML.replace("Conte musical des petits", "Goûter au parc")
+                .replace("conte musical jeunesse", "goûter familial"))
+        self.assertEqual(self.preview(event=source, lead=lead,
+                                      official_html=html)["reason"],
                          "outside_historic_music_editorial_categories")
 
     def test_two_source_sessions_but_insufficient_organizer_detail_hold(self):
@@ -227,6 +232,55 @@ class ODSMissingToProposalContract(unittest.TestCase):
         self.assertEqual(r["state"], "candidate_requires_final_gates")
         self.assertEqual(r["proposal"]["time"], "14:30, 16:00")
         self.assertEqual(r["public_writes"], 0)
+
+    def test_public_square_without_street_number_can_be_proposed(self):
+        from test_ptitesondes_unnumbered_official_geo_proof import (
+            mint as mint_square, CITY, VENUE, POINT as SQUARE_POINT,
+        )
+        location_proof = mint_square()
+        lead = dict(
+            LEAD, city=CITY, venue=VENUE,
+            source_url=("https://openagenda.com/ville-les-bois/events/"
+                        "12345678_conte-musical-des-petits"),
+        )
+        event = deepcopy(EVENT)
+        event["location"] = dict(
+            EVENT["location"], name=VENUE, adminLevel4=CITY,
+            latitude=SQUARE_POINT[0], longitude=SQUARE_POINT[1],
+        )
+        official = "https://www.ville-les-bois.fr"
+        registry = dict(
+            REGISTRY, agenda_slug="ville-les-bois",
+            institution_url=official + "/",
+            authority_reference_url=official + "/agenda",
+        )
+        organizer = {
+            "approved_host": "www.ville-les-bois.fr",
+            "exact_url": official + "/agenda/conte-musical-des-petits",
+        }
+        html = (OFFICIAL_HTML.replace("Maison des enfants", VENUE)
+                .replace("Ville-des-Bois", CITY))
+        result = preview_missing_mirror_proposal(
+            lead, registry, location_proof, TODAY, "dummy-read-key",
+            deepcopy(BASE), deepcopy(BASE), organizer,
+            {"url": organizer["exact_url"], "html": html},
+            institutional_page={
+                "url": registry["authority_reference_url"],
+                "text": '<a href="https://openagenda.com/ville-les-bois">Agenda</a>',
+            },
+            ods_probe=lambda uid: "uid_absent",
+            agenda_reader=lambda uid, key: {
+                "uid": 919191, "slug": "ville-les-bois"},
+            event_reader=lambda uid, event_uid, key: deepcopy(event),
+        )
+        self.assertEqual(result["state"], "candidate_requires_final_gates")
+        self.assertEqual(result["proposal"]["venue"], "Place du village")
+        self.assertEqual(
+            (result["proposal"]["lat"], result["proposal"]["lng"]),
+            SQUARE_POINT,
+        )
+        self.assertEqual(result["public_writes"], 0)
+        self.assertFalse(result["publication_ready"])
 
     def test_multi_day_uid_is_not_silently_split_into_cards(self):
         source = deepcopy(EVENT)
