@@ -61,6 +61,11 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                          {"independently_verified_proposal": 1})
         self.assertFalse(report["publicationAllowed"])
         self.assertFalse(report["privateApprovalApplied"])
+        self.assertEqual(report["eligibilityRejections"], {})
+        self.assertEqual(report["candidateChecks"][0]["candidateId"],
+                         "new-unique")
+        self.assertEqual(report["candidateChecks"][0]["state"],
+                         "independently_verified_proposal")
         self.assertEqual(len(proposals["approvals"]), 1)
         app = proposals["approvals"][0]
         self.assertEqual(app["officialEvidence"][0]["proofType"],
@@ -152,6 +157,11 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 self.assertEqual(len(out["approvals"]), 0)
                 self.assertEqual(summary["stateCounts"],
                     {"held_event_or_source_not_verified": 1})
+                self.assertEqual(len(summary["candidateChecks"]), 1)
+                self.assertEqual(summary["candidateChecks"][0]["state"],
+                                 "held_event_or_source_not_verified")
+                self.assertTrue(summary["candidateChecks"][0]["reason"])
+                self.assertEqual(sum(summary["rejectionReasons"].values()), 1)
         def fake_osm(url, cache):
             return (fixture.osm(website="https://attacker.fr")
                     if url.startswith("https://api.openstreetmap.org/")
@@ -161,6 +171,20 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             {"schema": publisher.SCHEMA, "approvals": []},
             TODAY, fetch=fake_osm)
         self.assertEqual(result["approvals"], [])
+
+    def test_private_report_explains_preselection_rejections(self):
+        data = registry(stable=1)
+        proposals, report = pipeline.build(
+            data, BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=fixture.fake_fetch())
+        self.assertEqual(proposals["approvals"], [])
+        self.assertEqual(report["eligibleQueue"], 0)
+        self.assertEqual(report["examined"], 0)
+        self.assertEqual(report["candidateChecks"], [])
+        self.assertEqual(report["eligibilityRejections"],
+                         {"insufficient_stability": 1})
+        self.assertFalse(report["publicationAllowed"])
 
     def test_publisher_rejects_forged_profile_and_extra_fields(self):
         app = pipeline.propose(pipeline.eligible(registry(), BASE, TODAY)[0],

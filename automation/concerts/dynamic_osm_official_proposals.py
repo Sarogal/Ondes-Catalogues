@@ -18,6 +18,7 @@ import argparse
 import copy
 import datetime as dt
 import json
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -74,7 +75,7 @@ def _detail(c):
     return url
 
 
-def eligible(registry, catalogue, today):
+def eligible(registry, catalogue, today, *, diagnostics=None):
     require(isinstance(today, dt.date) and not isinstance(today, dt.datetime),
             "invalid day")
     require(isinstance(registry, dict)
@@ -89,28 +90,57 @@ def eligible(registry, catalogue, today):
     published = {(e.get("officialUrl"), e.get("date"))
                  for e in catalogue["events"] if isinstance(e, dict)}
     leads = []
+    # Diagnostic-only counts: never grant authority based on this report.
+    def held(reason):
+        if diagnostics is not None:
+            diagnostics[reason] += 1
+
     for entry in registry["items"].values():
-        if not isinstance(entry, dict):
+        if not isinstance(entry, dict) or not isinstance(
+                entry.get("candidate"), dict):
+            held("malformed_candidate")
             continue
-        c = entry.get("candidate")
-        if (not isinstance(c, dict)
-                or entry.get("status") != "pending_review"
-                or type(entry.get("stableObservations")) is not int
-                or entry["stableObservations"] < 2
-                or c.get("publicationAllowed") is not False
-                or c.get("reviewRequired") is not True
-                or c.get("possibleExistingConcert") is not False
-                or c.get("reviewBucket") not in REVIEW_BUCKETS
-                or not intake.official_claim(c.get("source"))):
+        c = entry["candidate"]
+        if entry.get("status") != "pending_review":
+            held("not_pending_review")
+            continue
+        if (type(entry.get("stableObservations")) is not int
+                or entry["stableObservations"] < 2):
+            held("insufficient_stability")
+            continue
+        if (c.get("publicationAllowed") is not False
+                or c.get("reviewRequired") is not True):
+            held("unsafe_discovery_flags")
+            continue
+        if c.get("possibleExistingConcert") is not False:
+            held("possible_duplicate")
+            continue
+        if c.get("reviewBucket") not in REVIEW_BUCKETS:
+            held("other_review_bucket")
+            continue
+        if not intake.official_claim(c.get("source")):
+            held("not_official_source_claim")
             continue
         try:
             date = dt.date.fromisoformat(c.get("date"))
-            require(date >= today, "past event")
+        except (TypeError, ValueError):
+            held("invalid_date")
+            continue
+        if date < today:
+            held("past_event")
+            continue
+        try:
             url = _detail(c)
+        except (TypeError, ValueError, KeyError):
+            held("not_individual_first_party_url")
+            continue
+        try:
             venue = _site(catalogue, c)
         except (TypeError, ValueError, KeyError):
+            held("no_unique_published_osm_venue")
             continue
         if (url, date.isoformat()) in published:
+            held("already_published")
             continue
         leads.append((url, date.isoformat(), venue["id"], c))
     # The sort/rotation depend only on stable candidate data, not one
@@ -195,7 +225,9 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             and before.get("schema") == "grossesondes.concert.approvals.v1"
             and isinstance(before.get("approvals"), list),
             "invalid private approval preview")
-    selected = eligible(registry, catalogue, today)
+    eligibility_rejections = Counter()
+    selected = eligible(registry, catalogue, today,
+                        diagnostics=eligibility_rejections)
     # Non-overlapping daily slots; rotate through ANY number of candidates.
     start = (((today - dt.date(2026, 11, 21)).days * 3 + slot) *
              limit) % len(selected) if selected else 0
@@ -206,7 +238,13 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     known = {row["event"]["id"] for row in output["approvals"]
              if isinstance(row, dict) and isinstance(row.get("event"), dict)}
     counts = Counter()
+    reason_counts = Counter()
+    checks = []
     for row in window:
+        candidate = row[3]
+        identifier = str(candidate.get("candidateId", ""))[:120]
+        check = {"candidateId": identifier, "date": row[1],
+                 "venueId": row[2]}
         try:
             approval = propose(row, working, today, fetch=fetch)
             require(approval["event"]["id"] not in known,
@@ -218,9 +256,20 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
                 {"id": a["id"], "name": a["name"], "aliases": []}
                 for a in approval["newArtists"])
             counts["independently_verified_proposal"] += 1
+            check["state"] = "independently_verified_proposal"
         except (ValueError, KeyError, TypeError, IndexError, OSError,
-                TimeoutError):
+                TimeoutError) as exc:
             counts["held_event_or_source_not_verified"] += 1
+            # Exception messages may embed hostile input. Do not expose URLs
+            # or multiline payloads; private, bounded diagnostics only.
+            detail = " ".join(str(exc).split()) if isinstance(
+                exc, ValueError) else type(exc).__name__
+            detail = re.sub(r"https?://\S+", "[url]", detail)[:180]
+            reason = detail or type(exc).__name__
+            check.update(state="held_event_or_source_not_verified",
+                         reason=reason)
+            reason_counts[reason] += 1
+        checks.append(check)
     return output, {
         "schema": SCHEMA,
         "asOf": today.isoformat(),
@@ -228,6 +277,9 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "eligibleQueue": len(selected),
         "examined": len(window),
         "stateCounts": dict(sorted(counts.items())),
+        "eligibilityRejections": dict(sorted(eligibility_rejections.items())),
+        "candidateChecks": checks,
+        "rejectionReasons": dict(sorted(reason_counts.items())),
         "privateApprovalApplied": False,
         "publicationAllowed": False,
     }
