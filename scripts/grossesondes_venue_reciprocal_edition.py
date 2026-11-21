@@ -21,7 +21,12 @@ from dns_pinned_https import fetch_public_html, safe_public_url
 from grossesondes_generic_directory_edition import (
     Heading, verify_official_site_pages,
 )
-from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges
+from grossesondes_official_html_edition import (
+    VisibleText, fold, explicit_ranges, dominant_visible_range,
+    administrative_calendar_dates, CANCEL,
+)
+from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+from festival_event_kind import touring_concert_stop
 from grossesondes_institutional_edition import slug_for
 from grossesondes_structured_edition import ROW_KEYS, PRIVATE_KEYS
 from source_qualification import Anchors, normalized, classify
@@ -238,6 +243,29 @@ def verified_venue_reciprocity(site, title, dates, today,
         homepage = fetch(site)
         primary_dates = verify_official_site_pages(
             site, homepage, title, year, today, fetch=fetch)
+        if primary_dates is None:
+            # Some authentic websites put the announced weekend in a hero
+            # and their exact festival name in the footer rather than the
+            # SAME paragraph. That is not enough by itself: this fallback
+            # is usable ONLY after a separately corroborating venue event
+            # with a reciprocal live backlink is verified below.
+            words = normalized(visible_content(homepage))
+            brand = normalized(title.rsplit(" ", 1)[0])
+            intervals = {(start, end) for _a, _b, start, end in
+                         explicit_ranges(visible_content(homepage), year)
+                         if (start, end) not in administrative_calendar_dates(
+                             homepage, title, year)}
+            dominant = dominant_visible_range(intervals)
+            if (not brand or
+                    re.search(r"(?<![a-z0-9])" + re.escape(brand)
+                              + r"(?![a-z0-9])", words) is None
+                    or CANCEL.search(words)
+                    or dominant is None
+                    or touring_concert_stop(homepage, *dominant)
+                    or not no_same_edition_jsonld_contradiction(
+                        homepage, title, *dominant)):
+                return None
+            primary_dates = tuple(x.isoformat() for x in dominant)
         if primary_dates != tuple(dates):
             return None
         # A festival named "Rock Festival" is not evidence of rock MUSIC.
