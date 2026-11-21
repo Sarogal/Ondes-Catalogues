@@ -39,6 +39,7 @@ on:
       - 'automation/concerts/venue_osm_self_discovery.py'
       - 'automation/concerts/venue_address_osm_source.py'
       - 'automation/concerts/independent_named_site_geo.py'
+      - 'automation/concerts/osm_read_only_fallback.py'
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
       - 'automation/concerts/dynamic_osm_official_proposals.py'
