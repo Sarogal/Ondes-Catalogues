@@ -250,6 +250,12 @@ def prepare_open_world_patch(
             return False, "open_world_event_differed_from_live_evidence"
         return legacy_checker(candidate, originals)
 
+    # This unforgeable-in-the-private-patch, in-memory connection is
+    # derived only from exact live candidates, never from a caller-provided
+    # "approved" flag. The legacy checker cannot add categories.
+    checked_by_live_evidence._verified_child_ids = frozenset(
+        uid for uid, item in checked.items()
+        if item.get("category") in PUBLISHABLE_CHILD_ARTS)
     return output, checked_by_live_evidence, report
 
 
