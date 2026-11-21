@@ -1,0 +1,71 @@
+name: "GO TEST — audit all unresolved logo providers (read-only)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-open-failure-groups-20261121
+    paths:
+      - ".github/workflows/go-test-open-image-provider-failures.yml"
+      - "radio-catalog-lab/tools/group_unverified_v5_artwork_sources.py"
+      - "radio-catalog-lab/tools/test_group_unverified_v5_artwork_sources.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  group-unresolved:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pinned dependency, offline code tests
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_group_unverified_v5_artwork_sources.py" -v
+      - name: Restore previous unsigned evidence, no requests to failing hosts
+        run: |
+          mkdir -p "$RUNNER_TEMP/evidence"
+          gh run download 44925396879 --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-editorial-queue-review-only" --dir "$RUNNER_TEMP/evidence"
+          test -f "$RUNNER_TEMP/evidence/go-v5-editorial-review.json"
+      - name: Group failures by arbitrary HTTPS provider and preserve UUID
+        run: |
+          python radio-catalog-lab/tools/group_unverified_v5_artwork_sources.py \
+            --review "$RUNNER_TEMP/evidence/go-v5-editorial-review.json" \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --output "$RUNNER_TEMP/go-v5-failed-logo-sources-review.json"
+      - name: Protect radio generation, artwork pointers and no-publication
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ["RUNNER_TEMP"])/
+               "go-v5-failed-logo-sources-review.json").read_text())
+          s=d["summary"]
+          assert s["historical_radio_count"]==310
+          assert s["with_public_manifest_association"]==257
+          assert s["without_public_manifest_association"]==53
+          assert s["failed_historical_associations"]==87
+          assert s["failed_distinct_urls"]==79
+          assert d["publication_allowed"] is False
+          assert d["signed_catalog_created"] is False
+          assert all(not g["remove_any_radio"] for g in d["failed_source_groups"])
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          assert not Path("grossesondes/radio-test-apk/artwork/current.json").exists()
+          print("GO_PROVIDER_OPEN_FAILURE_AUDIT_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-all-failed-provider-groups-review-only
+          path: ${{ runner.temp }}/go-v5-failed-logo-sources-review.json
+          retention-days: 14
+          if-no-files-found: error
