@@ -97,11 +97,15 @@ def _french_text(row, key):
     return (obj.get("fr") if isinstance(obj.get("fr"), str) else "")[:5000]
 
 
-def _time_days(timings, today):
-    """Only explicit timezone-aware actual intervals; no guessed recurrence."""
+def _time_sessions(timings, today):
+    """Keep every exact OpenAgenda interval and its original local UTC offset.
+
+    This is PRIVATE research data, not a verified showtime or a right to publish.
+    Never infer dates from a range or collapse two sessions on the same day.
+    """
     if not isinstance(timings, list) or len(timings) > MAX_TIMINGS:
         return [], "timings_invalid_or_too_many"
-    dates = set()
+    sessions = {}
     for timing in timings:
         if not isinstance(timing, dict):
             continue
@@ -117,10 +121,20 @@ def _time_days(timings, today):
                 or not begin < finish or finish - begin > timedelta(days=2)):
             continue
         if today <= begin.date() <= today + timedelta(days=184):
-            dates.add(begin.date().isoformat())
-    return sorted(dates), ("explicit_future_intervals" if dates
-                           else "no_usable_future_dated_session")
+            first = begin.isoformat(timespec="seconds")
+            last = finish.isoformat(timespec="seconds")
+            sessions[(first, last)] = (begin, finish)
+    ordered = sorted(sessions.items(), key=lambda pair: (
+        pair[1][0], pair[1][1], pair[0]))
+    intervals = [{"begin": key[0], "end": key[1]} for key, _ in ordered]
+    return intervals, ("explicit_future_intervals" if intervals
+                       else "no_usable_future_dated_session")
 
+
+def _time_days(timings, today):
+    """Backward-compatible date overview, never a replacement for showtimes."""
+    intervals, reason = _time_sessions(timings, today)
+    return sorted({item["begin"][:10] for item in intervals}), reason
 
 def propose_event(row, agenda, today):
     """Source research item, NEVER proof of rights, official venue or approval."""
@@ -183,7 +197,8 @@ def propose_event(row, agenda, today):
     country = location.get("countryCode")
     country_hint = (country in COUNTRY_CODES if isinstance(country, str)
                     else False)
-    dates, session_reason = _time_days(row.get("timings"), today)
+    sessions, session_reason = _time_sessions(row.get("timings"), today)
+    dates = sorted({item["begin"][:10] for item in sessions})
     result = {**base, "agenda_uid": agenda["agenda_uid"],
               "agenda_slug": agenda["agenda_slug"], "event_uid": row["uid"],
               "title": title, "editorial_category_proposal": category,
@@ -192,6 +207,7 @@ def propose_event(row, agenda, today):
               "country_code_unverified": country,
               "french_territory_claim_present": country_hint,
               "explicit_source_session_days": dates,
+              "explicit_source_session_intervals": sessions,
               "session_research_status": session_reason,
               "requires_reprogramming_verification": status == 2,
               "requires_new_venue_search": bool(city or venue),
@@ -216,7 +232,8 @@ def _unclassified_source_research_hint(row, agenda, today):
     location = row.get("location")
     if not isinstance(location, dict):
         location = {}
-    day_list, _ = _time_days(row.get("timings"), today)
+    sessions, _ = _time_sessions(row.get("timings"), today)
+    day_list = sorted({item["begin"][:10] for item in sessions})
     return {
         "agenda_uid": agenda["agenda_uid"],
         "agenda_slug": agenda["agenda_slug"],
@@ -229,6 +246,7 @@ def _unclassified_source_research_hint(row, agenda, today):
             location.get("name")
             if isinstance(location.get("name"), str) else None),
         "explicit_source_session_days": day_list,
+        "explicit_source_session_intervals": sessions,
         "editorial_category_proposal": None,
         "review_state": "unknown_activity_requires_official_editorial_evidence",
         "source_organizer_independently_verified": False,
