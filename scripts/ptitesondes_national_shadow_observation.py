@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import re
+from time import monotonic
 
 from ptitesondes_openagenda_public_agenda_index import (
     load_state as load_index_state,
@@ -37,7 +38,8 @@ REPORT_RE = re.compile(r"index-(20[0-9]{2}-[0-9]{2}-[0-9]{2})-([a-zA-Z0-9_-]{1,7
 BATCH_RE = re.compile(r"[a-zA-Z0-9_-]{1,70}\Z")
 INDEX_EVERY_N_INVOCATIONS = 12
 MAX_BATCHES_PER_RUN = 2
-MAX_AGENDAS_PER_BATCH = 3
+MAX_AGENDAS_PER_BATCH = 20
+MAX_AGENDA_ROTATION_SECONDS = 600
 AGENDA_SELECTOR_SCHEMA = "ptitesondes.private_national_agenda_rotation.v1"
 MAX_CONTROL_BYTES = 4096
 SEGMENT_REPORT_RE = re.compile(r"agenda-[0-9]{1,8}-segment-[0-9]{1,8}\.json\Z")
@@ -298,7 +300,7 @@ def _safe_failure_reason(exc):
 
 def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                                  rotation_dir, key, campaign_runner,
-                                 segment_runner):
+                                 segment_runner, *, clock=monotonic):
     """Keep each agenda's checkpoint and retry, independent of its neighbors.
 
     One unreachable agenda cannot pin a batch's single sequential checkpoint.
@@ -330,8 +332,14 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                 "segments_examined": 0, "event_slots_examined": 0,
                 "segment_holds": 0}
     start = current["next_index"]
-    segment_holds = 0
+    segment_holds = attempts = 0
+    begun = clock()
     for step in range(min(total, MAX_AGENDAS_PER_BATCH)):
+        # Protect the private checkpoint push from GitHub job timeout.
+        # This is a time budget, NOT a closed list or permanent exclusion.
+        if step and clock() - begun >= MAX_AGENDA_ROTATION_SECONDS:
+            break
+        attempts += 1
         idx = (start + step) % total
         stage, failure = "campaign", None
         observed_hold = False
@@ -380,7 +388,7 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
         _write_atomic_private(selector, (json.dumps({
             **default, "next_index": (idx + 1) % total},
             ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
-    return {"agenda_attempts": min(total, MAX_AGENDAS_PER_BATCH),
+    return {"agenda_attempts": attempts,
             "agenda_advanced": started, "agenda_finished": completed,
             "agenda_held": held, "segments_examined": examined_segments,
             "event_slots_examined": examined_events,
