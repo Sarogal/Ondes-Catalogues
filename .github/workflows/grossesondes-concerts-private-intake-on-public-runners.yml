@@ -34,6 +34,7 @@ on:
       - 'automation/concerts/published_festival_tour_research.py'
       - 'automation/concerts/source_evidence_probe.py'
       - 'automation/concerts/tour_itinerary_evidence.py'
+      - 'automation/concerts/festival_tour_stage_reconciliation.py'
       - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
@@ -296,6 +297,23 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Réconcilier les étapes de tournée et les pistes de salle sans approbation
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Name/date/place/lineup matches from old Festivals entries are
+          # ONLY private research priorities. Municipal hints missing venue
+          # remain weak links. Never sign, approve, publish or delete a stage.
+          if ! python public/automation/concerts/festival_tour_stage_reconciliation.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --out confidential/automation/concerts/intake/festival-tour-stage-reconciliation.json \
+              > "$RUNNER_TEMP/concerts-private-logs/festival-tour-stage-reconciliation.log" 2>&1; then
+            echo "::warning::Réconciliation privée des étapes de tournée indisponible ; aucune migration."
+          else
+            echo "Rapprochement privé des étapes de tournée effectué sans approbation."
+          fi
 
       - name: Revérification générique des concerts structurés (diagnostic privé)
         if: steps.access.outputs.ready == 'true'
@@ -726,6 +744,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/published-lineup-patch-proposals.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-patch-proposals.json
+          fi
+          if [ -f automation/concerts/intake/festival-tour-stage-reconciliation.json ]; then
+            git add --sparse -- automation/concerts/intake/festival-tour-stage-reconciliation.json
           fi
           if [ -f automation/concerts/intake/registry-funnel.json ]; then
             git add --sparse -- automation/concerts/intake/registry-funnel.json
