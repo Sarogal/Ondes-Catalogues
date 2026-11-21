@@ -192,8 +192,9 @@ def address_identity(venue, event_url, fetch, cache):
                 "independent French address or OSM proof unavailable")
         return response, url
 
-    # The publisher enforces government score >= 0.89 and exact street,
-    # municipality and postcode, then a single matching named OSM point/way.
+    # The publisher enforces BAN score >= 0.78 plus exact house number,
+    # street, municipality and postcode, then a single named OSM point/way.
+    # A search ranking score cannot grant first-party domain authority.
     feature, lat, lon, precision = named_geo.verify(venue, bounded)
     require(precision in {"named-site-point", "named-site-area"},
             "independent OSM feature is not a physical named location")
