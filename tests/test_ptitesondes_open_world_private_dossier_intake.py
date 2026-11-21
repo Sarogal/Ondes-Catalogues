@@ -217,6 +217,45 @@ class NationalPrivateDossierTests(unittest.TestCase):
         fourth, _ = self.load(batch_index=3)
         self.assertEqual(fourth, [])
 
+    def test_private_dossier_to_real_publisher_merge_synthetic_pipeline(self):
+        # Exercise the ACTUAL producer contract and Publisher in one test.
+        # Every source is a synthetic independent fixture. A green producer
+        # test alone must never be mistaken for a publication.
+        from test_ptitesondes_open_world_patch_bridge import readers
+        from test_ptitesondes_open_world_release_rehearsal import (
+            SOURCE as EVENT_PAGE,
+        )
+        from test_ptitesondes_unnumbered_official_geo_proof import (
+            URL as VENUE_PAGE,
+        )
+        from ptitesondes_open_world_patch_bridge import (
+            merge_verified_open_world,
+        )
+        from test_ptitesondes_candidate_promotion import base
+
+        ref = base()
+        self.write(report(
+            source=EVENT_PAGE, linked=EVENT_PAGE, municipal=VENUE_PAGE))
+        requests, metrics = self.load()
+        self.assertEqual(metrics["queued"], 1)
+        self.assertNotIn("municipal_source_reference_url", requests[0])
+        staged = attach_research_dossiers(
+            private_patch(ref, queue=[]), requests, TODAY)
+        self.assertFalse(staged["safe_to_publish"])
+        self.assertEqual(staged["additions"], [])
+        # A later private review slot may have no discoveries.
+        cumulative = attach_research_dossiers(staged, [], TODAY)
+        self.assertEqual(len(cumulative["open_world_research"]), 1)
+        published, audit, summary = merge_verified_open_world(
+            ref, ref, cumulative, TODAY,
+            "oa_pk_offline_research_to_publisher", **readers())
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(summary["publisher_accepted_new"], 1)
+        self.assertEqual(summary["held"], 0)
+        self.assertEqual(published["events"][:100], ref["events"])
+        self.assertEqual(published["events"][-1]["source_url"], EVENT_PAGE)
+        self.assertFalse(summary["publication_complete"])
+
     def test_later_review_slot_keeps_and_deduplicates_queued_dossiers(self):
         reference = {"updated_at": "unused", "events": []}
         patch = private_patch(reference, queue=[])
