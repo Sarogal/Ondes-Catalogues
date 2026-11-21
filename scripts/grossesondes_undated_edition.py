@@ -32,13 +32,13 @@ PUBLISHED_CONFIDENCE = "Site officiel (édition future confirmée, sans dates)"
 # 2027", "possible 2027", footer copyright, or last year's lineup are NOT
 # unequivocal confirmation. These are structural phrasing patterns, never
 # festival identities or preferred sources.
-FUTURE_ANNOUNCEMENT = re.compile(
-    r"(?:\brendez[\W_]+vous[\W_]+en[\W_]+{year}\b"
-    r"|\bde[\W_]+retour[\W_]+en[\W_]+{year}\b"
-    r"|\brevient[\W_]+en[\W_]+{year}\b"
-    r"|\bedition[\W_]+(?:[0-9]{{1,2}}[\W_]+)?"
-    r"(?:ete[\W_]+|hiver[\W_]+|printemps[\W_]+)?{year}\b"
-    r"|\bprochaine[\W_]+edition[\W_]+(?:en[\W_]+)?{year}\b)"
+FUTURE_ANNOUNCEMENT_PATTERN = (
+    r"(?:\brendez[\W_]+vous[\W_]+en[\W_]+YEAR_HERE\b"
+    r"|\bde[\W_]+retour[\W_]+en[\W_]+YEAR_HERE\b"
+    r"|\brevient[\W_]+en[\W_]+YEAR_HERE\b"
+    r"|\bedition[\W_]+(?:[0-9]{1,2}[\W_]+)?"
+    r"(?:ete[\W_]+|hiver[\W_]+|printemps[\W_]+)?YEAR_HERE\b"
+    r"|\bprochaine[\W_]+edition[\W_]+(?:en[\W_]+)?YEAR_HERE\b)"
 )
 
 
@@ -76,7 +76,8 @@ def visible_future_edition_without_dates(html, parent, year):
     if any(explicit_ranges(visible, year)):
         return False
     year_phrase = re.compile(
-        FUTURE_ANNOUNCEMENT.pattern.format(year=year), re.IGNORECASE
+        FUTURE_ANNOUNCEMENT_PATTERN.replace("YEAR_HERE", str(year)),
+        re.IGNORECASE,
     )
     positives = list(year_phrase.finditer(visible))
     names = list(event_name.finditer(visible))
