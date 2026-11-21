@@ -109,7 +109,9 @@ def check_append_only(previous, proposed, today):
         dynamic_site_proofs = [
             proof for proof in approval.get("officialEvidence", [])
             if isinstance(proof, dict)
-            and proof.get("proofType") == "dynamic-existing-venue-first-party-v1"
+            and proof.get("proofType") in {
+                "dynamic-existing-venue-first-party-v1",
+                "dynamic-existing-venue-osm-official-v1"}
         ] if isinstance(approval, dict) and isinstance(
                 approval.get("officialEvidence"), list) else []
         independent_dynamic = (
@@ -117,7 +119,10 @@ def check_append_only(previous, proposed, today):
             and len(dynamic_site_proofs) == 1
             and dynamic_site_proofs[0].get("url") == event.get("officialUrl")
             and dynamic_site_proofs[0].get("checkedAt") == today.isoformat()
-            and dynamic_site_proofs[0].get("namedOsmUrl")
+            and isinstance(dynamic_site_proofs[0].get("namedOsmUrl"), str)
+            and bool(dynamic_site_proofs[0]["namedOsmUrl"])
+            # The two profiles have distinct exact evidence field sets;
+            # the production Publisher re-fetches and validates them both.
         )
         independent_existing = (
             isinstance(event, dict)
