@@ -87,7 +87,7 @@ class GenericPublisherFunnelTests(TestCase):
             lambda p: p["additions"][0].update(
                 officialSite="https://attacker.example/"),
             lambda p: p["additions"][0].update(
-                startDate="2027-06-24"),
+                startDate="2027-06-27"),
             lambda p: p["additions"][0].update(
                 proofMode="unreviewed-new-source.v9"),
             lambda p: p["additions"][0].update(
@@ -102,6 +102,18 @@ class GenericPublisherFunnelTests(TestCase):
                 self.assertEqual(
                     result["generic_publisher_recheck_pending_count"], 0)
                 self.assertFalse(result["publication_authorized"])
+
+    def test_plausible_forged_date_is_only_a_recheck_lead(self):
+        # A date can remain STRUCTURALLY consistent after tampering. This
+        # private audit never declares the source proof complete: only the
+        # independent Publisher can fetch the true first-party announcement.
+        discovery, source, signed = fixture()
+        source["additions"][0]["startDate"] = "2027-06-24"
+        output = build_report(discovery, source, signed, DAY)
+        self.assertEqual(output["generic_publisher_recheck_pending_count"], 1)
+        self.assertFalse(output["publication_authorized"])
+        self.assertFalse(
+            output["dossiers"][0]["independent_publisher_recheck_completed"])
 
     def test_same_identity_duplicate_private_proposals_must_not_advance(self):
         discovery, source, signed = fixture()
