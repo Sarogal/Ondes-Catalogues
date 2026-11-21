@@ -26,3 +26,21 @@ La branche privée [PR #320](https://github.com/Sarogal/GrossesOndes/pull/320) i
 3. Ne pas modifier le pointeur actuel `current.json` de génération 4 sans nouvelle qualification et validation sur téléphone et Android Auto.
 4. Conserver les stations RADIO BOB!, éviter la fusion automatique des Wacken, corriger la couverture des images et documenter les exclusions techniques.
 5. Continuer la collecte de nouvelles radios/logos par sources ouvertes et éditeurs officiels, avec signature et contrôles avant admission.
+
+
+## Premier lot de 9 logos signés — TEST uniquement, EN ATTENTE (21/11/2026)
+
+Après récupération de 19 images laut.fm et revue visuelle, 9 images 600×600 comportant un nom de radio lisible ont été retenues. Les 10 autres restent en attente (source visuellement générique, petit format ou ancien logo à comparer). Cette sélection n'est PAS une liste fermée de radios.
+
+- Revue par station : `first_visual_review_20261121.json`.
+- Corps signé immuable : `releases/b85a4ddc27783e2a242747924f28a5438f1fb8d5adb6500c28126a90e588235d.json` — 9 associations UUID historique -> SHA-256, source first-party, dimensions, MIME, provenance ; aucun flux musical.
+- Pointeur Ed25519 TEST : `pending/test-current-v1.json` — signature du contexte propre `GO-RADIO-ARTWORK-POINTER-V1` avec `go-apk-test-20261121`. Les signatures du catalogue radio ne sont pas réutilisables pour l'artwork.
+- **Aucun `artwork/current.json` n'existe** ; cette génération artwork v1 n'est donc PAS ACTIVE. Le catalogue radio signé reste à la génération **4**, inchangée. Aucun de ces neuf logos n'est encore envoyé au téléphone.
+- [CI de signature du lot TEST #44899379263](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/44899379263) : SUCCESS, preuve SHA, Ed25519, anti-rollback, absence de publication et de changement du pointeur radio.
+- Outils : `compose_reviewed_artwork_test_manifest.py`, `artwork_release_packager.py` et leurs tests. Le secret Ed25519 TEST n'est jamais envoyé au dépôt.
+
+### Prochaine recette Android
+
+La [PR privée #320](https://github.com/Sarogal/GrossesOndes/pull/320) contient un vérificateur Dart indépendant pour ce manifeste, un client TEST à cache signé persistant et mode hors connexion, un planificateur UUID-only qui n'écrase pas les logos existants, ainsi que des fixtures cryptographiques réelles. **Ces tests Flutter sont ajoutés au préflight Windows mais ne sont pas encore exécutés.** La version APK TEST actuellement installée ne possède pas encore cette évolution.
+
+Avant d'activer le pointeur artwork TEST : exécuter les tests Flutter et l'analyse, raccorder la lecture des images aux deux écrans (Flutter et Android Auto), compiler un nouvel APK de diagnostic indépendant, contrôler SHA/cache/déduplication/ancien catalogue/favoris sur appareil, puis obtenir validation explicite. Aucun merge, aucune production, aucune mise à jour Play Store.
