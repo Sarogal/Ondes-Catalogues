@@ -133,6 +133,17 @@ class ParagraphBillTests(unittest.TestCase):
         self.assertEqual(result["event"]["genres"],
                          ["Post-Punk – Hardcore Fusion", "Punk – Rock"])
         self.assertIsNone(result["event"]["time"])
+        actual = catalogue()
+        proposal = {"schema": "grossesondes.concert.approvals.v1",
+                    "approvals": [result]}
+        checked = approval_preflight.validate_proposal(
+            {"schema": "grossesondes.concert.approvals.v1", "approvals": []},
+            proposal, actual, copy.deepcopy(actual), DAY, merge)
+        self.assertTrue(checked["validatedByPublisher"])
+        published, stats = merge(actual, actual, proposal, DAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(stats["newVenues"], 0)
+        self.assertEqual(published["events"][-1]["title"], "KNIVES + FRAGILE")
 
     def test_div_header_keeps_mixed_styles_and_many_new_groups(self):
         names = tuple("UNKNOWN BAND %02d" % n for n in range(23))
