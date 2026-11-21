@@ -56,18 +56,13 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.temp = TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        self.cfg = self.root / "sources.json"
-        self.cfg.write_text(json.dumps({
-            "schema": "ptitesondes.sources.v1",
-            "openagenda_agendas": [1234, 4567]}), encoding="utf-8")
-        self.cfg.chmod(0o600)
         self.campaign = Mock(side_effect=campaign_summary)
         self.segments = Mock(side_effect=segment_summary)
 
     def invoke(self, day=DAY, batch_id="run1", *, index=None, live=True):
         index = index or Mock(return_value=index_doc())
         result = run_observation(
-            self.cfg, self.root, day, batch_id,
+            self.root, day, batch_id,
             execute_live=live, key=KEY,
             index_reader=index, campaign_runner=self.campaign,
             segment_runner=self.segments)
@@ -284,6 +279,22 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(len(available_index_reports(
             self.root / "index" / "reports")), 1)
 
+    def test_national_index_does_not_use_historical_sources_json(self):
+        """Known and unknown OA agenda IDs must all enter discovery."""
+        existing_historical_id = 84140759
+        unknown_id = 88008997
+        known = index_doc(existing_historical_id)
+        unknown = dict(known["new_agenda_candidates"][0],
+                       agenda_uid=unknown_id,
+                       agenda_slug="totally-unlisted-unknown")
+        known["new_agenda_candidates"].append(unknown)
+        reader = Mock(return_value=known)
+        out, _ = self.invoke(index=reader)
+        reader.assert_called_once()
+        self.assertEqual(reader.call_args.args[0], [])
+        self.assertEqual(out["index_agendas_observed_in_batch_sample"], 2)
+        self.assertEqual(out["agenda_attempts"], 2)
+
     def test_single_agenda_selector_survives_crash_and_validates_state(self):
         batch = index_doc(uid=990001)
         batch["new_agenda_candidates"] = [
@@ -315,9 +326,9 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertIsNone(REPORT_RE.fullmatch("index-2026-11-21-segment.json.bak"))
         self.assertIsNone(BATCH_RE.fullmatch("bad/segment"))
         with self.assertRaises(ValueError):
-            run_observation(self.cfg, self.root, DAY, "bad/segment")
+            run_observation(self.root, DAY, "bad/segment")
         with self.assertRaises(ValueError):
-            run_observation(self.cfg, self.root, DAY, "good",
+            run_observation(self.root, DAY, "good",
                             execute_live=True, key="")
 
     def test_private_results_have_no_event_id_venue_or_source_url(self):
