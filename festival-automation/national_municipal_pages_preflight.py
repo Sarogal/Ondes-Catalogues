@@ -38,6 +38,7 @@ MAX_DISCOVERED_URLS = 12
 MAX_PAGE_HTML = 650_000
 MAX_VISIBLE_CHARS = 45_000
 MAX_UNKNOWN_MUSIC_LINKS = 16  # bounded PRIVATE clues, no event acceptance
+MAX_UNTYPED_EVENT_LINKS = 12  # all event names, never genre acceptance
 
 # Generic editorial page roles, NOT festival names, municipality hostnames,
 # or an authorized list of festival/event sources.
@@ -312,6 +313,74 @@ def unknown_municipal_music_links(html, base, site):
     return rows
 
 
+
+# Some genuine metal festivals and concert brands have NO genre in their
+# title (e.g. "Le Gros Tonneau"). Requiring music words in the title is
+# an unacceptable CLOSED discovery gate. A visible link within a genuine
+# municipality's EVENT DETAIL route is merely an untyped research clue.
+# Genres, event format and artist identities are checked later from details.
+EVENT_DETAIL_PREFIX = frozenset({
+    "evenement", "evenements", "event", "events",
+    "manifestation", "manifestations",
+})
+
+
+def untyped_municipal_event_links(html, base, site, today,
+                                  music_urls=()):
+    """Research ALL named event details without knowing any genre or festival.
+
+    Only exact same-host HTTPS links from a LIVE independently rederived
+    municipal site. Event route terms are navigation categories, never a
+    list of accepted organizers, municipalities, bands, venues or festivals.
+    """
+    if (not isinstance(html, str) or len(html) > MAX_PAGE_HTML
+            or safe_public_url(site) != site):
+        return []
+    day = date.fromisoformat(today)
+    parser = Anchors()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (OSError, ValueError, TypeError, UnicodeError):
+        return []
+    rows, seen = [], set(music_urls)
+    for href, label, _nearby in parser.anchors[:MAX_ANCHORS_PER_PAGE]:
+        url = safe_same_host_article(href, base, site)
+        if url is None or url in seen:
+            continue
+        parts = [x for x in urlsplit(url).path.lower().split("/") if x]
+        if (len(parts) < 2 or parts[-2] not in EVENT_DETAIL_PREFIX
+                or not 4 <= len(parts[-1]) <= 160):
+            continue
+        if not isinstance(label, str) or not 7 <= len(label.strip()) <= 160:
+            continue
+        if re.search(r"[<>{}\x00-\x1f]", label):
+            continue
+        name = " ".join(label.split())
+        name_fold = normalized(name)
+        if not 5 <= len(name_fold) <= 160 or GENERIC_LABEL.fullmatch(name_fold):
+            continue
+        seen.add(url)
+        rows.append({
+            "title_hint": name,
+            "index_url_review_only": base,
+            "detail_url_review_only": url,
+            "classification": "UNCLASSIFIED_MUNICIPAL_EVENT_RESEARCH_ONLY",
+            "review_only": True,
+            "music_verified": False,
+            "festival_verified": False,
+            "concert_verified": False,
+            "date_verified": False,
+            "publication_authorized": False,
+        })
+    # Daily rotation through event links, including unknown brand names with
+    # no music words at all. No fixed source or artist list, bounded bandwidth.
+    if rows:
+        offset = day.toordinal() % len(rows)
+        rows = rows[offset:] + rows[:offset]
+    return rows[:MAX_UNTYPED_EVENT_LINKS]
+
+
 def _rederive_municipal_site(record, dossier,
                              commune_lookup=verified_commune,
                              delegated_lookup=delegated_municipal_commune,
@@ -405,6 +474,7 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
             "pages_checked": 0,
             "named_visible_pages": [],
             "unknown_music_links_review_only": [],
+            "untyped_event_links_review_only": [],
             "site_rederived": False,
             "access_challenge_pages": 0,
             "publication_authorized": False,
@@ -460,6 +530,20 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                                 < MAX_UNKNOWN_MUSIC_LINKS):
                         result["unknown_music_links_review_only"].append(clue)
                         found.add(clue["detail_url_review_only"])
+                # Titles without any genre keyword must NOT disappear.
+                # Preserve a separate untyped queue for subsequent CONTENT
+                # verification, never a new festival or concert approval.
+                typed = {clue["detail_url_review_only"] for clue in
+                         unknown_municipal_music_links(html, url, site)}
+                existing_untyped = {clue["detail_url_review_only"] for clue
+                                    in result["untyped_event_links_review_only"]}
+                for untyped in untyped_municipal_event_links(
+                        html, url, site, today, music_urls=typed):
+                    if (untyped["detail_url_review_only"] not in existing_untyped
+                            and len(result["untyped_event_links_review_only"])
+                                < MAX_UNTYPED_EVENT_LINKS):
+                        result["untyped_event_links_review_only"].append(untyped)
+                        existing_untyped.add(untyped["detail_url_review_only"])
                 if _visible_named_festival(html, dossier["name_hint"]):
                     result["named_visible_pages"].append({
                         "url": url,
@@ -499,6 +583,9 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
         "unknown_music_links_count": sum(
             len(x["unknown_music_links_review_only"]) for x in rows),
         "unknown_music_links_publications": 0,
+        "untyped_event_links_count": sum(
+            len(x["untyped_event_links_review_only"]) for x in rows),
+        "untyped_event_links_publications": 0,
         "rows": rows,
     }
 
@@ -524,6 +611,7 @@ def main():
           + ", rederived=" + str(result["rederived_official_municipal_sites"])
           + ", named_visible_clues=" + str(result["named_municipal_mention_count"])
           + ", unknown_music_links=" + str(result["unknown_music_links_count"])
+          + ", untyped_event_links=" + str(result["untyped_event_links_count"])
           + ", publications=0")
 
 
