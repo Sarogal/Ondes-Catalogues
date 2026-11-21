@@ -58,6 +58,96 @@ def domain(value):
     return cross.domain(host)
 
 
+def verify_historical(event_approval, site_approval, published_venues,
+                      published_artists, published_event, today):
+    """Replay ONLY an already-published exact event/site identity offline.
+
+    A first admission MUST use verify() with fresh independent network reads.
+    This replay mode requires the publisher to supply the EXISTING public
+    event, prevents unverified events from masquerading as historical, and
+    checks all signed artist/site/source identities against published facts.
+    It does not retroactively grant an unknown domain any new-show authority.
+    """
+    require(isinstance(today, dt.date) and not isinstance(today, dt.datetime)
+            and isinstance(published_event, dict)
+            and isinstance(published_venues, dict)
+            and isinstance(published_artists, dict),
+            "historical replay has no existing public identity")
+    require(isinstance(event_approval, dict)
+            and event_approval.get("reviewDecision") == "approved"
+            and event_approval.get("reviewedBy") == "independent-official-verifier"
+            and isinstance(site_approval, dict)
+            and site_approval.get("reviewDecision") == "approved"
+            and site_approval.get("reviewedBy") == "independent-official-verifier",
+            "historical private approvals not independently signed")
+    event = event_approval.get("event")
+    site = site_approval.get("venue")
+    binding = site_approval.get("eventBinding")
+    require(isinstance(event, dict) and isinstance(site, dict)
+            and isinstance(binding, dict)
+            and site_approval.get("venueKind") == contract.PROFILE
+            and site_approval.get("reviewedAt") == event_approval.get("reviewedAt"),
+            "historical event/site approval not paired")
+    try:
+        reviewed = dt.date.fromisoformat(event_approval.get("reviewedAt"))
+        event_date = dt.date.fromisoformat(event.get("date"))
+    except (TypeError, ValueError):
+        raise ValueError("Open-origin new concert site: bad historical date")
+    require(reviewed <= today and reviewed <= event_date,
+            "signed historical review is future-dated")
+    require(all(event.get(key) == published_event.get(key)
+                for key in ("id", "title", "date", "artistIds", "venueId",
+                            "genres", "officialUrl", "sourceType"))
+            and event.get("status") == "confirmed"
+            and event.get("sourceType") == "organisateur"
+            and event.get("venueId") == site.get("id")
+            and binding.get("eventId") == event.get("id")
+            and binding.get("eventDate") == event.get("date")
+            and binding.get("eventOfficialUrl") == event.get("officialUrl")
+            and binding.get("authorityArtistId") is None,
+            "published show differs from originally approved signed event")
+    evidence = event_approval.get("officialEvidence")
+    require(isinstance(evidence, list) and len(evidence) == 2
+            and isinstance(evidence[0], dict)
+            and evidence[0].get("url") == event.get("officialUrl")
+            and evidence[0].get("checkedAt") == reviewed.isoformat()
+            and evidence[0].get("proofType") == "official-organizer-or-venue"
+            and {"artists", "date", "venue", "genre"}.issubset(
+                set(evidence[0].get("checkedFields") or []))
+            and isinstance(evidence[1], dict)
+            and set(evidence[1]) == FIELDS,
+            "original independent evidence is missing or changed")
+    proof = evidence[1]
+    names = proof.get("officialArtistNames")
+    require(proof.get("proofType") == PROFILE
+            and proof.get("url") == event.get("officialUrl")
+            and proof.get("checkedAt") == reviewed.isoformat()
+            and proof.get("checkedFields") == CHECKED
+            and isinstance(names, list) and len(names) >= 1
+            and all(isinstance(n, str) and n.strip() for n in names)
+            and event.get("title") == " + ".join(names)
+            and event.get("genres") == proof.get("officialGenreLabels")
+            and contract.relevant_genres(event.get("genres")),
+            "historical signed bill and individual music proof differ")
+    known_ids = event.get("artistIds")
+    require(isinstance(known_ids, list) and len(known_ids) == len(names)
+            and all(isinstance(published_artists.get(artist_id), dict)
+                    and published_artists[artist_id].get("name") == name
+                    for artist_id, name in zip(known_ids, names)),
+            "historical published performers differ from original official bill")
+    anchor = published_venues.get(proof.get("originVenueId"))
+    require(isinstance(anchor, dict)
+            and anchor.get("id") != site.get("id")
+            and anchor.get("geoSource") == proof.get("originVenueOsmUrl")
+            and binding.get("authoritySourceUrl")
+            and domain(binding["authoritySourceUrl"])
+                == domain(event.get("officialUrl"))
+            and domain(proof.get("corroboratingEventUrl"))
+                != domain(event.get("officialUrl")),
+            "historical source not tied to its originally published origin")
+    return True
+
+
 def verify(event_approval, site_approval, published_venues, published_artists,
            today, *, fetch=probe.safe_fetch):
     """Fully verify an EVENT-SCOPED signed proof with FRESH independent reads.
