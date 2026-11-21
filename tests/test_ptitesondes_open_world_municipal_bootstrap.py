@@ -194,9 +194,37 @@ class MunicipalBootstrapTests(unittest.TestCase):
                           directory_reader=directory_reader)
                 self.assertIn(out["status"], {
                     "live_oa_agenda_identity_conflict",
-                    "live_oa_event_identity_or_location_conflict",
+                    "live_oa_event_uid_conflict",
+                    "live_oa_event_unpublished_or_cancelled",
                 })
         directory_reader.assert_not_called()
+
+    def test_live_oa_status_object_is_validated_like_first_scan(self):
+        for acceptable in ({"id": 1, "label": "Publié"},
+                           {"id": 2, "label": "Reporté"}):
+            with self.subTest(status=acceptable):
+                out = run(oa_event=event(status=acceptable))
+                self.assertEqual(out["status"],
+                                 "municipal_homepage_source_research_only")
+                self.assertFalse(out["events_independently_attested"])
+                self.assertFalse(out["publication_ready"])
+        denied = ({"id": 3, "label": "Annulé"},
+                  {"id": "1", "label": "Publié"},
+                  {}, {"label": "Publié"}, True)
+        blocked = Mock(side_effect=AssertionError(
+            "must not consult municipality for invalid status"))
+        for invalid in denied:
+            with self.subTest(status=invalid):
+                out = run(oa_event=event(status=invalid),
+                          directory_reader=blocked)
+                self.assertEqual(out["status"],
+                                 "live_oa_event_unpublished_or_cancelled")
+        blocked.assert_not_called()
+
+    def test_live_oa_title_change_has_specific_private_hold_reason(self):
+        out = run(oa_event=event(title={"fr": "Another event"}))
+        self.assertEqual(out["status"], "live_oa_event_title_changed")
+        self.assertFalse(out["publication_ready"])
 
     def test_missing_or_changed_local_session_stops_before_directory(self):
         original = lead()
@@ -225,7 +253,7 @@ class MunicipalBootstrapTests(unittest.TestCase):
         out = run(oa_event=event(location={
             "name": VENUE, "adminLevel4": CITY, "countryCode": "US"}))
         self.assertEqual(out["status"],
-                         "live_oa_event_identity_or_location_conflict")
+                         "live_oa_location_not_french_or_missing")
 
     def test_two_dila_verified_municipal_roots_do_not_depend_on_curated_sources(self):
         data = directory()
