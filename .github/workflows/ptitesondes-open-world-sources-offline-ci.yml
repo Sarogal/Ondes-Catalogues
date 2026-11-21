@@ -22,6 +22,8 @@ on:
       - 'tests/test_ptitesondes_open_world_candidate_rotation.py'
       - 'scripts/ptitesondes_national_segment_rotation_bridge.py'
       - 'tests/test_ptitesondes_national_segment_rotation_bridge.py'
+      - 'scripts/ptitesondes_private_national_rotation_runner.py'
+      - 'tests/test_ptitesondes_private_national_rotation_runner.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -83,3 +85,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_national_segment_rotation_bridge.py' -v
+      - name: Verify private atomic runner and auto-discovered national segments
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_private_national_rotation_runner.py' -v
