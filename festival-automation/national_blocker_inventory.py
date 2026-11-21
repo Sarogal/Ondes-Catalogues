@@ -144,12 +144,18 @@ def municipal_git_history(intake, today):
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise ValueError("Private municipal historical snapshot unavailable") from exc
         if item.returncode != 0 or len(item.stdout) > 1500000:
-            raise ValueError("Private municipal snapshot unreadable")
+            # Old revision can delete or replace the file; never trust it.
+            continue
         try:
             report = json.loads(item.stdout)
             as_of = date.fromisoformat(report.get("as_of", ""))
-        except (ValueError, TypeError, AttributeError) as exc:
-            raise ValueError("Invalid archived municipal source report") from exc
+        except (ValueError, TypeError, AttributeError):
+            continue
+        if (report.get("schema")
+                != "grossesondes.national-municipal-pages-private.v1"
+                or report.get("review_only") is not True
+                or report.get("publication_authorized") is not False):
+            continue
         if (as_of <= date.fromisoformat(today)
                 and (date.fromisoformat(today) - as_of).days
                 <= MAX_MUNICIPAL_AGE_DAYS):
