@@ -17,6 +17,9 @@ from ptitesondes_national_backlog_bridge import _inventory_key
 from ptitesondes_open_world_private_dossier_intake import (
     collect_research_dossiers, attach_research_dossiers,
 )
+from ptitesondes_private_research_carry_forward import (
+    carry_same_day_research,
+)
 
 SOURCE = "https://www.nouvelle-salle.example/spectacles/conte-musical"
 MUNICIPAL = "https://www.commune-inconnue.example/evenement/ancien-concert"
@@ -68,6 +71,70 @@ class NationalPrivateDossierTests(unittest.TestCase):
         return collect_research_dossiers(
             self.observation, self.research, TODAY,
             inventory_reader=lambda _: [self.record], **kwargs)
+
+    def test_research_queue_survives_an_entire_new_collector_run(self):
+        ref = {"updated_at": "unchanged", "events": []}
+        old = private_patch(ref, queue=[])
+        old = attach_research_dossiers(old, [{
+            "lead": lead(), "date_start": TODAY.isoformat(),
+            "official_event_url": SOURCE,
+            "official_venue_url": MUNICIPAL,
+        }], TODAY)
+        # Fresh daily collection may know *nothing* about open-world research.
+        fresh = private_patch(ref, queue=[])
+        fresh.pop("open_world_research")
+        fresh["deferred"] = [{"title": "Other private lead"}]
+        result = carry_same_day_research(old, fresh, TODAY)
+        self.assertEqual(result["open_world_research"], old["open_world_research"])
+        self.assertEqual(result["deferred"], fresh["deferred"])
+        self.assertEqual(result["additions"], fresh["additions"])
+        self.assertFalse(result["safe_to_publish"])
+        # No review slots in the next run: a second carry is idempotent.
+        repeat = carry_same_day_research(result, fresh, TODAY)
+        self.assertEqual(repeat, result)
+        self.assertNotIn("open_world_research", fresh)
+
+    def test_carry_never_changes_fresh_verified_historical_additions(self):
+        ref = {"updated_at": "unchanged", "events": []}
+        old = private_patch(ref, queue=[])
+        old = attach_research_dossiers(old, [{
+            "lead": lead(), "date_start": TODAY.isoformat(),
+            "official_event_url": SOURCE,
+            "official_venue_url": MUNICIPAL,
+        }], TODAY)
+        fresh = private_patch(ref, queue=[])
+        fresh["additions"] = [{"id": "already-verified-by-private-preflight"}]
+        carried = carry_same_day_research(old, fresh, TODAY)
+        self.assertEqual(carried["additions"], fresh["additions"])
+        self.assertEqual(len(carried["open_world_research"]), 1)
+
+    def test_carry_rejects_stale_or_mismatched_private_patches(self):
+        ref = {"updated_at": "unchanged", "events": []}
+        old = private_patch(ref, queue=[])
+        fresh = private_patch(ref, queue=[])
+        for changed in (
+            dict(old, generated_at=(TODAY - timedelta(days=1)).isoformat()),
+            dict(old, safe_to_publish=True),
+            dict(old, source=dict(old["source"], updated_at="other")),
+            dict(old, open_world_research=[{"url": SOURCE}]),
+            dict(old, updates=[{"id": "unapproved-change"}]),
+            dict(old, checks={"ids_unique": False}),
+        ):
+            with self.subTest(mutation=list(changed)):
+                with self.assertRaises(ValueError):
+                    carry_same_day_research(changed, fresh, TODAY)
+
+    def test_private_workflow_carries_queue_before_patch_overwrite(self):
+        workflow = (
+            ROOT / ".github/workflows/ptitesondes-private-intake-on-public-runners.yml"
+        ).read_text(encoding="utf-8")
+        carry = "public/scripts/ptitesondes_private_research_carry_forward.py"
+        overwrite = 'cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"'
+        self.assertIn(carry, workflow)
+        self.assertIn(overwrite, workflow)
+        self.assertLess(workflow.index(carry), workflow.index(overwrite))
+        self.assertIn('if [[ -s "$STATE/patch-$DAY.json" ]]; then', workflow)
+        self.assertIn("ne pas écraser la file", workflow)
 
     def test_municipally_discovered_unknown_domain_creates_research_not_addition(self):
         self.write(report())
