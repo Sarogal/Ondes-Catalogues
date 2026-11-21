@@ -107,6 +107,7 @@ def research_cycle(root, today, key, *, cursor=None,
                    "candidates_with_future_sessions": 0,
                    "events_examined": 0, "source_reviews": 0,
                    "exact_session_claims_unverified": 0,
+                   "visible_session_claims_unverified": 0,
                    "publisher_connected": False,
                    "publication_ready": False, "public_writes": 0}
         return [], state, summary
@@ -143,6 +144,9 @@ def research_cycle(root, today, key, *, cursor=None,
                               for x in reports),
         "exact_session_claims_unverified": sum(
             x["review"]["oa_exact_session_claims_unverified"]
+            for x in reports),
+        "visible_session_claims_unverified": sum(
+            x["review"]["oa_visible_exact_session_claims_unverified"]
             for x in reports),
         "publisher_connected": False, "publication_ready": False,
         "public_writes": 0,
