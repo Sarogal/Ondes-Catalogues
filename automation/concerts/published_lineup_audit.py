@@ -174,15 +174,17 @@ def bill_from_page(html, event, venue, artists):
             raise ValueError("Published artist identity missing")
         published_names.append(artist["name"])
     names = _extra_supports(parser.parts, first, names)
-    if not set(map(normal, published_names)).intersection(map(normal, names)):
+    published_identities = {
+        normal(alias)
+        for aid in event["artistIds"]
+        for alias in [artists[aid]["name"]]
+            + (artists[aid].get("aliases") or [])
+        if isinstance(alias, str)
+    }
+    if not published_identities.intersection(map(normal, names)):
         raise ValueError("Official bill not bound to a published named artist")
     missing = [name for name in names
-               if normal(name) not in {
-                   normal(alias)
-                   for aid in event["artistIds"]
-                   for alias in [artists[aid]["name"]]
-                       + (artists[aid].get("aliases") or [])
-                   if isinstance(alias, str)}]
+               if normal(name) not in published_identities]
     return {"officialNames": names, "missingNamedArtists": missing,
             "publishedArtists": published_names}
 
