@@ -31,7 +31,9 @@ from ptitesondes_openagenda_v2_direct_evidence import (
     _valid_public_read_key,
 )
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
-from ptitesondes_shared_venue_location_evidence import location_from_proof
+from ptitesondes_shared_venue_location_evidence import (
+    location_from_proof, _coordinates,
+)
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_unlisted_visible_session_research import visible_unlisted_sessions
 
@@ -131,6 +133,10 @@ def rehearse_open_world_municipal_event(
     if not isinstance(loc, dict):
         return _blank("live_oa_location_missing")
     source_point = (loc.get("latitude"), loc.get("longitude"))
+    if source_point == (None, None):
+        source_point = None
+    elif _coordinates(source_point) is None:
+        return _blank("invalid_or_partial_oa_coordinates")
     location = location_from_proof(
         venue_proof, lead.get("city_unverified"),
         lead.get("venue_unverified"), today, source_point)
@@ -157,7 +163,7 @@ def rehearse_open_world_municipal_event(
         oa_lead, live,
         {"agenda_uid": lead["agenda_uid"], "agenda_slug": lead["agenda_slug"],
          "timezone": live.get("timezone")},
-        location, today,
+        location, today, independent_venue_proof=venue_proof,
     )
     if (not direct["source_evidence_structurally_valid"]
             or direct["event_kind"] != "single_explicit_dated_occurrence"):
