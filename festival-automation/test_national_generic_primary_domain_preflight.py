@@ -4,7 +4,9 @@ from pathlib import Path
 import json
 import unittest
 
-from national_generic_primary_domain_preflight import examine, SCHEMA
+from national_generic_primary_domain_preflight import (
+    examine, _safe_same_host_edition_links, SCHEMA,
+)
 
 DAY1, DAY2, DAY3 = "2026-11-06", "2026-11-07", "2026-11-08"
 URL_A = "https://foudre-metal.fr/programmation"
@@ -238,6 +240,36 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(second["rows"][0]["date_source_mode"],
                          row["date_source_mode"])
         self.assertFalse(second["publication_authorized"])
+
+    def test_edition_link_rotation_is_unbounded_and_preserves_next_day(self):
+        home = "https://festival-inedit.fr/"
+        page = "<main>" + "".join(
+            '<a href="/programmation-2027-' + str(n) +
+            '">Édition 2027 piste ' + str(n) + '</a>'
+            for n in range(7)) + (
+            '<a href="/actualites">Actualités</a>'
+            '<a href="https://evil.example/edition-2027">faux lien</a>'
+            '</main>')
+        first = _safe_same_host_edition_links(
+            page, home, 2027, today=DAY1)
+        second = _safe_same_host_edition_links(
+            page, home, 2027, today=DAY2)
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 3)
+        self.assertEqual(first[-1], home + "actualites")
+        self.assertNotIn("evil.example", str(first))
+        discovered = set()
+        from datetime import date, timedelta
+        for step in range(0, 10 * 7, 7):
+            day = (date.fromisoformat(DAY1) +
+                   timedelta(days=step)).isoformat()
+            found = _safe_same_host_edition_links(
+                page, home, 2027, today=day)
+            self.assertLessEqual(len(found), 3)
+            discovered.update(found)
+        self.assertEqual(
+            len([u for u in discovered if "programmation-2027-" in u]),
+            7)
 
     def test_unknown_homepage_can_follow_news_index_without_fixed_path(self):
         state, queue, catalog = fixture(DAY1)
