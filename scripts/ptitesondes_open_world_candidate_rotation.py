@@ -104,6 +104,9 @@ def _checkpoint_ok(value, lead_digest, today):
 def _blank(status, checkpoint=None):
     return {
         "schema": SCHEMA, "status": status,
+        # The verified bootstrap status is a non-identifying PRIVATE reason
+        # code; never replace it with an exception message or source URL.
+        "bootstrap_reason_code": None,
         "private_checkpoint": checkpoint,
         "private_research_reviews": [],
         "municipal_page_batches_checked": 0,
@@ -161,7 +164,12 @@ def rotate_private_open_world_lead(
     if boot["status"] not in (
             "municipal_homepage_source_research_only",
             "municipal_sources_partial_research"):
-        return _blank("live_source_bootstrap_not_confirmed", checkpoint)
+        held = _blank("live_source_bootstrap_not_confirmed", checkpoint)
+        # Preserve the exact safe stage of failure for the next read-only
+        # investigation, instead of erasing all failures into one label.
+        # Status comes from the closed bootstrap contract, not a domain list.
+        held["bootstrap_reason_code"] = boot["status"]
+        return held
     result = _blank("private_rotation_in_progress", checkpoint)
     crawl = crawl_private_municipal_sources(
         lead["city_unverified"], checkpoint["crawl_checkpoint"],
