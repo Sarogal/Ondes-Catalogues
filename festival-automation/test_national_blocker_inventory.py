@@ -37,7 +37,7 @@ def fixture():
     handoff = dict(defaults, dossiers=[
         {"id": ident, "status": "PRIMARY_EVIDENCE_PENDING"}
         for ident, name, year in names])
-    municipal = dict(defaults, rows=[
+    municipal = dict(defaults, schema="grossesondes.national-municipal-pages-private.v1", rows=[
         {"dossier_id": names[0][0],
          "unknown_music_links_review_only": [
              {"title_hint": "Festival sans mots-clés 2027",
