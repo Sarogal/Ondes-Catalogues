@@ -14,6 +14,8 @@ on:
       - 'tests/test_ptitesondes_open_world_municipal_bootstrap.py'
       - 'scripts/ptitesondes_open_world_municipal_crawler.py'
       - 'tests/test_ptitesondes_open_world_municipal_crawler.py'
+      - 'scripts/ptitesondes_independent_municipal_event_research.py'
+      - 'tests/test_ptitesondes_independent_municipal_event_research.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -55,3 +57,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_municipal_crawler.py' -v
+      - name: Verify DILA municipal programme and unknown source session claims
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_independent_municipal_event_research.py' -v
