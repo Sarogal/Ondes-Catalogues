@@ -1,0 +1,3116 @@
+{
+  "schema_version": 1,
+  "scope": "GROSSES_ONDES_TEST_ARTWORK_INTAKE_NOT_PUBLICATION",
+  "created_at": "2026-11-21",
+  "source": {
+    "repo": "Sarogal/GrossesOndes",
+    "branch": "feature/radio-central-first-apk-tank3pro-20261121",
+    "path": "assets/catalog/bootstrap_catalog.json",
+    "blob_sha": "fc1a465acfe7cb02ee9578cf5b83a27eba9e0723"
+  },
+  "no_closed_station_list": true,
+  "publication_allowed": false,
+  "can_activate_directly": false,
+  "stations": [
+    {
+      "legacy_media_id": "d0df2a51-9cd3-4f3e-977d-aab92ddef7a3",
+      "display_name": "# 100 GREATEST HEAVY METAL",
+      "primary_genre": "Heavy",
+      "homepage": "https://100-greatest-network.torontocast.stream/",
+      "source_logo_url": "https://static.wixstatic.com/media/f361b3_a5ce07773ea14d209785044fbeb26dca~mv2.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 0
+    },
+    {
+      "legacy_media_id": "daa600d2-3d8d-4e7b-9974-90b5be49b40e",
+      "display_name": "0 N - Heavy Metal on Radio",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.0nradio.com/",
+      "source_logo_url": "https://www.0nradio.com/logos/0n-heavymetal_600x600.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 1
+    },
+    {
+      "legacy_media_id": "aa9282e9-1821-4b22-8b25-f4fc1b542bcc",
+      "display_name": "011.fm – House of Hair",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://011fm.com/",
+      "source_logo_url": "https://cdn-profiles.tunein.com/s296038/images/logoq.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 2
+    },
+    {
+      "legacy_media_id": "716d0d91-4c12-4bd6-bf7e-e5173ef40d39",
+      "display_name": "0nlineradio METAL",
+      "primary_genre": "Death",
+      "homepage": "https://0nlineradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 3
+    },
+    {
+      "legacy_media_id": "962a73d1-0601-11e8-ae97-52543be04c81",
+      "display_name": "1.FM - High Voltage Radio",
+      "primary_genre": "Metal",
+      "homepage": "http://www.1.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 4
+    },
+    {
+      "legacy_media_id": "9637d635-0601-11e8-ae97-52543be04c81",
+      "display_name": "181.FM - 80's HairBand",
+      "primary_genre": "Metal",
+      "homepage": "http://www.181.fm/",
+      "source_logo_url": "http://www.181.fm/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 5
+    },
+    {
+      "legacy_media_id": "a60a0243-00bd-492d-8802-7cf4b97e9e24",
+      "display_name": "4U Hard FM",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.4uradios.com/hard-fm/",
+      "source_logo_url": "https://www.4uradios.com/images/4uhardfm.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 6
+    },
+    {
+      "legacy_media_id": "71533d67-4674-4614-b988-eeff27f68ce9",
+      "display_name": "666 Forgotten Castle",
+      "primary_genre": "Black",
+      "homepage": "https://malangundergroundfest.wordpress.com/",
+      "source_logo_url": "https://i.imgur.com/QRawyJG.jpeg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 7
+    },
+    {
+      "legacy_media_id": "27d8066d-3745-4fea-8d9b-90bbe50a3be8",
+      "display_name": "88.6 Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radio886.at/",
+      "source_logo_url": "https://www.radio886.at/img/stream_logos_2024/886_STREAM_ICON_METAL.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 8
+    },
+    {
+      "legacy_media_id": "2ce54668-bb2c-4361-ab49-c54a6672d30e",
+      "display_name": "__SHREDDED__ by RauteMusik (rm.fm)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rm.fm/shredded/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 9
+    },
+    {
+      "legacy_media_id": "17028094-01a5-49f0-b35a-d792b6ea7da9",
+      "display_name": "__WACKENRADIO__ by rautemusik (rm.fm)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rm.fm/wacken",
+      "source_logo_url": "https://i.ibb.co/rGpB2Bx/wackenradio.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 10
+    },
+    {
+      "legacy_media_id": "18c4a5d4-b2d8-4233-bd84-a2d0369bc515",
+      "display_name": "Ad Infinitum",
+      "primary_genre": "Black",
+      "homepage": "https://laut.fm/ad_infinitum",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 11
+    },
+    {
+      "legacy_media_id": "c2d2c271-3fa4-42a5-8330-f4ae9847ca42",
+      "display_name": "Almost Hell Radio",
+      "primary_genre": "Metalcore",
+      "homepage": "https://almosthellradio.duckdns.org/public/almost_hell_radio",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 12
+    },
+    {
+      "legacy_media_id": "251e6493-47f3-461b-9e15-52cc16c47c7a",
+      "display_name": "Alternativa by MIX (iHeart Radio) - Online - ACIR Online / iHeart Radio - Ciudad de México",
+      "primary_genre": "Metal",
+      "homepage": "https://www.iheart.com/live/alternativa-by-mix-8053/",
+      "source_logo_url": "https://www.iheart.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 13
+    },
+    {
+      "legacy_media_id": "3e06ee89-92c8-40e9-b4da-eab267f15d4d",
+      "display_name": "Altrockmetal-Radiogirls",
+      "primary_genre": "Power",
+      "homepage": "https://laut.fm/altrockmetal-radiogirls",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 14
+    },
+    {
+      "legacy_media_id": "9617d67b-0601-11e8-ae97-52543be04c81",
+      "display_name": "Antyradio",
+      "primary_genre": "Metal",
+      "homepage": "http://www.antyradio.pl/",
+      "source_logo_url": "https://gfx.antyradio.pl/design/antyradio/src/images/favicon/favicon_180x180.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 15
+    },
+    {
+      "legacy_media_id": "17116268-baaa-4a2e-88ee-dc83f5b71a33",
+      "display_name": "ARfm",
+      "primary_genre": "Heavy",
+      "homepage": "http://arfm.co.uk/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 16
+    },
+    {
+      "legacy_media_id": "db74362e-d1a8-47df-a59d-9aadda1efa1e",
+      "display_name": "Australian Digital Radio Network - 1980s Hair Metal (MP3)",
+      "primary_genre": "Metal",
+      "homepage": "http://www.australiandigitalradio.com/",
+      "source_logo_url": "http://www.australiandigitalradio.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 17
+    },
+    {
+      "legacy_media_id": "d47885d3-407f-4d05-bdb1-66a15c49c0cf",
+      "display_name": "Australian Digital Radio Network - Metal (MP3)",
+      "primary_genre": "Metal",
+      "homepage": "http://www.australiandigitalradio.com/",
+      "source_logo_url": "http://www.australiandigitalradio.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 18
+    },
+    {
+      "legacy_media_id": "a46b9381-f9d3-434f-be79-ea9a027ca87d",
+      "display_name": "Australian Digital Radio Network - Punk and Metal Mix (MP3)",
+      "primary_genre": "Metal",
+      "homepage": "http://www.australiandigitalradio.com/",
+      "source_logo_url": "http://www.australiandigitalradio.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 19
+    },
+    {
+      "legacy_media_id": "a2273562-32cb-4f1a-a020-8cf199521eac",
+      "display_name": "Babe Radio",
+      "primary_genre": "Metalcore",
+      "homepage": "https://baberadio.net/",
+      "source_logo_url": "https://file.garden/Zzg7g9nzzkEeNTar/BabeRadio.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 20
+    },
+    {
+      "legacy_media_id": "2091bc8a-ced6-43cd-8f38-5b05d62ce3c5",
+      "display_name": "BadRock Hard & Heavy",
+      "primary_genre": "Death",
+      "homepage": "https://badrockradio.net/",
+      "source_logo_url": "https://www.badrockradio.net/wp-content/uploads/2024/06/960x0-100x100.webp",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 21
+    },
+    {
+      "legacy_media_id": "25608063-9335-43a9-a911-4697ea76a0ad",
+      "display_name": "BadRock Radio",
+      "primary_genre": "Power",
+      "homepage": "https://www.badrockradio.net/",
+      "source_logo_url": "https://www.badrockradio.net/wp-content/uploads/2024/06/960x0-100x100.webp",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 22
+    },
+    {
+      "legacy_media_id": "a9fc150a-579c-44b9-b8c1-6f0e972be3d2",
+      "display_name": "Bandit Metal",
+      "primary_genre": "Death",
+      "homepage": "https://www.ilikeradio.se/banditmetal/",
+      "source_logo_url": "https://www.phonostar.de/images/auto_created/bandit_metal2184x184.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 23
+    },
+    {
+      "legacy_media_id": "168e0796-3b97-479c-949d-b1871ef07379",
+      "display_name": "Bandit Rock",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.ilikeradio.se/banditrock/",
+      "source_logo_url": "https://cdn.khz.se/images/161x80/63808dd23f61e6193a9007a927189e13.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 24
+    },
+    {
+      "legacy_media_id": "fda05c36-b849-4eb6-8ddc-763a3c899e47",
+      "display_name": "Bandung Death Metal Syndicate",
+      "primary_genre": "Death",
+      "homepage": "https://zonacadas.blogspot.com/",
+      "source_logo_url": "https://i0.wp.com/metallagi.com/wp-content/uploads/2022/10/WhatsApp-Image-2022-10-31-at-11.44.37.jpeg?w=720",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 25
+    },
+    {
+      "legacy_media_id": "7dce19c2-bc7a-403f-95e6-c41a9cc075a6",
+      "display_name": "Bavarias Rock Ballads",
+      "primary_genre": "Metal",
+      "homepage": "https://laut.fm/",
+      "source_logo_url": "https://laut.fm/assets/touch-icons/favicon.ico?e0f1f5c1",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 26
+    },
+    {
+      "legacy_media_id": "54340297-7ceb-4ac0-80db-79bf534303ff",
+      "display_name": "BDPST ROCK Rádió (Hi-Fi / Lossless / FLAC)",
+      "primary_genre": "Metal",
+      "homepage": "https://www.bdpstrock.hu/",
+      "source_logo_url": "https://www.bdpstrock.hu/assets/img/front/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 27
+    },
+    {
+      "legacy_media_id": "9626c92b-0601-11e8-ae97-52543be04c81",
+      "display_name": "beatdownx",
+      "primary_genre": "Metalcore",
+      "homepage": "http://laut.fm/beatdownx",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 28
+    },
+    {
+      "legacy_media_id": "9189bb75-e1f7-475c-b837-564a172cb178",
+      "display_name": "Begoodradio.com 80s metal",
+      "primary_genre": "Metal",
+      "homepage": "http://begoodradio.com/",
+      "source_logo_url": "http://begoodradio.com/images/logo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 29
+    },
+    {
+      "legacy_media_id": "9ab7b351-4042-433f-83d7-5ffa3d037153",
+      "display_name": "Best of Rock FM - Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.best-of-rock.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 30
+    },
+    {
+      "legacy_media_id": "ca2d0aa2-6fc8-4761-beb6-ce692a4a9bf5",
+      "display_name": "Best Of Rock.FM Alternative Rock",
+      "primary_genre": "Metal",
+      "homepage": "https://www.best-of-rock.fm/",
+      "source_logo_url": "https://www.best-of-rock.fm/favicons/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 31
+    },
+    {
+      "legacy_media_id": "db4d6757-71c6-40fe-b768-3be8f9c11ba9",
+      "display_name": "Best Of Rock.FM Metallica (mp3-256)",
+      "primary_genre": "Thrash",
+      "homepage": "https://www.best-of-rock.fm/",
+      "source_logo_url": "https://www.best-of-rock.fm/favicons/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 32
+    },
+    {
+      "legacy_media_id": "96274cbb-0601-11e8-ae97-52543be04c81",
+      "display_name": "Big R Radio - 80s Metal FM",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.bigrradio.com/",
+      "source_logo_url": "http://www.bigrradio.com/image/favicon/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 33
+    },
+    {
+      "legacy_media_id": "364de0a8-9c40-4295-aff7-f41b916c7c73",
+      "display_name": "Biker FM",
+      "primary_genre": "Metal",
+      "homepage": "https://vk.com/radio_biker_fm",
+      "source_logo_url": "https://sun9-85.userapi.com/c5665/g26740826/a_f8922e13.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 34
+    },
+    {
+      "legacy_media_id": "290cc1f0-c5e2-11e9-8502-52543be04c81",
+      "display_name": "bizarre Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://laut.fm/bizarre-radio",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 35
+    },
+    {
+      "legacy_media_id": "c5182415-bb25-11e9-acb2-52543be04c81",
+      "display_name": "Blown",
+      "primary_genre": "Heavy",
+      "homepage": "http://crucialvelocity.ca/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 36
+    },
+    {
+      "legacy_media_id": "a3bb290f-da44-48bb-a412-3ec8ecac5396",
+      "display_name": "BOB Hair Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "https://www.phonostar.de/images/auto_created/radio_bob_hair_metal184x184.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 37
+    },
+    {
+      "legacy_media_id": "a9e7148e-167b-11ea-a620-52543be04c81",
+      "display_name": "BOLLOCKS Rock & Metal Radio",
+      "primary_genre": "Heavy",
+      "homepage": "http://bollocksradio.com/",
+      "source_logo_url": "https://u.jimcdn.com/cms/o/s924f1217ff669ab4/img/favicon.png?t=1504408222",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 38
+    },
+    {
+      "legacy_media_id": "9a2fc4f3-f41c-11e9-a96c-52543be04c81",
+      "display_name": "BurnFM - musik intensiv!",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://www.burn-fm.de/",
+      "source_logo_url": "https://www.1aradio.com/logos/burnfm.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 39
+    },
+    {
+      "legacy_media_id": "7d911013-c936-4403-9736-9266303dd100",
+      "display_name": "ChroniX AGGRESSION",
+      "primary_genre": "Metal",
+      "homepage": "https://www.chronixradio.net/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 40
+    },
+    {
+      "legacy_media_id": "edc25b2f-04e5-46ba-b3ce-e2059ba3c2c8",
+      "display_name": "ChroniX Radio - Aggression",
+      "primary_genre": "Heavy",
+      "homepage": "https://chronixradio.net/",
+      "source_logo_url": "https://storage.googleapis.com/wzukusers/user-27172421/images/fav-6a63dee4b19e4b57a9038cc5f853f41a/apple-touch-icon-120x120.png?v=fav-6a63dee4b19e4b57a9038cc5f853f41a",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 41
+    },
+    {
+      "legacy_media_id": "961185f5-0601-11e8-ae97-52543be04c81",
+      "display_name": "ChroniX Radio Metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "http://chronixradio.net/",
+      "source_logo_url": "https://storage.googleapis.com/wzukusers/user-27172421/images/fav-6a63dee4b19e4b57a9038cc5f853f41a/apple-touch-icon-120x120.png?v=fav-6a63dee4b19e4b57a9038cc5f853f41a",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 42
+    },
+    {
+      "legacy_media_id": "6ce6ede8-f66b-4e10-aa9d-5327b9afdafa",
+      "display_name": "Classic 21 Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.rtbf.be/radio/",
+      "source_logo_url": "https://assets.maradio.be/stationimages/29_programme_image.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 43
+    },
+    {
+      "legacy_media_id": "96202df9-0601-11e8-ae97-52543be04c81",
+      "display_name": "CORE Radio!",
+      "primary_genre": "Metalcore",
+      "homepage": "http://coreradio.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 44
+    },
+    {
+      "legacy_media_id": "9626d6b0-0601-11e8-ae97-52543be04c81",
+      "display_name": "core-mix",
+      "primary_genre": "Metalcore",
+      "homepage": "http://laut.fm/core-mix",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 45
+    },
+    {
+      "legacy_media_id": "f957a66c-9ed9-4d96-8878-0f6ca24504ec",
+      "display_name": "CRnet Hard Rock",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.christianhardrock.net/",
+      "source_logo_url": "https://www.christianhardrock.net/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 46
+    },
+    {
+      "legacy_media_id": "768a27cc-bb26-11e9-acb2-52543be04c81",
+      "display_name": "Crucial Velocity Radio",
+      "primary_genre": "Thrash",
+      "homepage": "http://crucialvelocity.ca/",
+      "source_logo_url": "http://crucialvelocity.ca/CrucialVelocityLogo.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 47
+    },
+    {
+      "legacy_media_id": "af6b817a-2eda-4276-aaf0-9b010890ee40",
+      "display_name": "Código Metal Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://www.codigometal.cl/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 48
+    },
+    {
+      "legacy_media_id": "00c83fb8-1395-4cd1-a90e-fb1d9fb40d96",
+      "display_name": "Dark Metal-Radio",
+      "primary_genre": "Power",
+      "homepage": "https://laut.fm/dark-metal-radio",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 49
+    },
+    {
+      "legacy_media_id": "81f64f21-cf21-4d4f-83cc-0374a9f6f98e",
+      "display_name": "Dark Symphony Radio",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://radiostream.novawap.com/",
+      "source_logo_url": "https://darksymphonyradio.co.uk/assets/logo-dsr.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 50
+    },
+    {
+      "legacy_media_id": "bba9410a-8021-4e11-9fff-8c062b0783b7",
+      "display_name": "Dead2Self Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://deadtoselfradio.com/index.php",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 51
+    },
+    {
+      "legacy_media_id": "96120f6d-0601-11e8-ae97-52543be04c81",
+      "display_name": "delta radio Föhnfrisur",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.deltaradio.de/",
+      "source_logo_url": "https://upload.deltaradio.de/production/static/1718010612769/icons/icon_64.800a00w0080.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 52
+    },
+    {
+      "legacy_media_id": "814ff1ae-7f10-46d8-8784-d60be8a43365",
+      "display_name": "DJ 666 Geordieblackcore",
+      "primary_genre": "Black",
+      "homepage": "https://laut.fm/dj666geordieblackcore",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 53
+    },
+    {
+      "legacy_media_id": "70051d2a-30a3-40b1-8b3a-c2fd74dc8455",
+      "display_name": "DrGnu - 20th Century Rock",
+      "primary_genre": "Black",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 54
+    },
+    {
+      "legacy_media_id": "38b0288f-79be-438f-8da8-ec7cfcd6cb2d",
+      "display_name": "DrGnu - 70th Rock",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.fluxfm.de/",
+      "source_logo_url": "https://www.fluxfm.de/assets/favicons/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 55
+    },
+    {
+      "legacy_media_id": "78363b80-d1dd-4a4c-9087-6ed976878360",
+      "display_name": "DrGnu - 80th Rock II",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.fluxfm.de/",
+      "source_logo_url": "https://www.fluxfm.de/assets/favicons/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 56
+    },
+    {
+      "legacy_media_id": "ca89adf8-760f-484f-8fc7-96ac1b412c79",
+      "display_name": "DrGnu - Metal 1",
+      "primary_genre": "Metal",
+      "homepage": "http://streams.radiobob.de/bob-metal/mp3-192/mediaplayer",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 57
+    },
+    {
+      "legacy_media_id": "d4f41697-61c8-4cd5-bcd3-93c0d5248a84",
+      "display_name": "DrGnu - Metal 2",
+      "primary_genre": "Metal",
+      "homepage": "https://www.fluxfm.de/",
+      "source_logo_url": "https://www.fluxfm.de/assets/favicons/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 58
+    },
+    {
+      "legacy_media_id": "02f054a6-cd9d-49a4-b1a9-772da6fa87c3",
+      "display_name": "DrGnu - Metalcore 1",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 59
+    },
+    {
+      "legacy_media_id": "da88f032-a594-4f23-8293-ab8525e75a6e",
+      "display_name": "DrGnu - Metallica",
+      "primary_genre": "Metal",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 60
+    },
+    {
+      "legacy_media_id": "20c21c03-349a-447f-b54b-3f1630d9a41a",
+      "display_name": "DrGnu - Prog Rock Classics",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 61
+    },
+    {
+      "legacy_media_id": "7e7602f5-4fac-4c32-ba32-b015bef00d0d",
+      "display_name": "DrGnu - Rock Party",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 62
+    },
+    {
+      "legacy_media_id": "c60c09ff-559e-435f-a24f-7906ca571d0f",
+      "display_name": "DrGnu - Wacken Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 63
+    },
+    {
+      "legacy_media_id": "ddf0a603-ed3a-4d52-8d1b-cc11357734f3",
+      "display_name": "Epic Rock Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://www.epicrockradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 64
+    },
+    {
+      "legacy_media_id": "d9c4d0d1-c74a-40eb-9643-4387608e7de1",
+      "display_name": "Espiritu Rock",
+      "primary_genre": "Heavy",
+      "homepage": "https://espiritu-rock.top/",
+      "source_logo_url": "https://espiritu-rock.top/wp-content/uploads/2025/09/Logo-Menu.svg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 65
+    },
+    {
+      "legacy_media_id": "5676ffa5-d687-4df9-823b-ecd591caa4ee",
+      "display_name": "Exclusive - Scorpions",
+      "primary_genre": "Heavy",
+      "homepage": "https://you.radio/station/exclusiveradio-scorpions",
+      "source_logo_url": "https://you.radio/cdn-cgi/image/width=100,quality=80/https://manager.uber.radio/static/uploads/brand/1a60ce33-a8ba-4c3f-a9c1-48e384364f3c.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 66
+    },
+    {
+      "legacy_media_id": "1b11baf5-e16e-45ac-bf81-cd8b28db7837",
+      "display_name": "Exclusive Radio – Black Sabbath",
+      "primary_genre": "Doom",
+      "homepage": "https://play.exclusive.radio/station/51/318",
+      "source_logo_url": "https://manager.uber.radio/static/uploads/station/00db5f78-23c8-40c6-86da-e0b06858e062.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 67
+    },
+    {
+      "legacy_media_id": "d7b6cb10-52e8-485c-9e38-5fcdad55aa90",
+      "display_name": "Exclusively Deep Purple",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.exclusive.radio/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 68
+    },
+    {
+      "legacy_media_id": "f41fc2e8-94ef-4c9e-b799-97b90c99e85a",
+      "display_name": "Exclusively Iron Maiden",
+      "primary_genre": "Heavy",
+      "homepage": "https://exclusive.radio/",
+      "source_logo_url": "https://d3kle7qwymxpcy.cloudfront.net/images/broadcasts/05/11/127542/1/c300.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 69
+    },
+    {
+      "legacy_media_id": "d8fc41a4-e013-4877-856c-77dc04f179a1",
+      "display_name": "Exclusively Led Zeppelin",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.exclusive.radio/",
+      "source_logo_url": "https://play.exclusive.radio/static/assets/img/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 70
+    },
+    {
+      "legacy_media_id": "a63988bf-dc92-41aa-8bd8-1c9fe0d1f621",
+      "display_name": "Exclusively Led Zeppelin - Only Hits",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.exclusive.radio/",
+      "source_logo_url": "https://play.exclusive.radio/static/assets/img/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 71
+    },
+    {
+      "legacy_media_id": "5e63c494-2c63-401b-8e4e-ceef8b3bca47",
+      "display_name": "Femmetal Classics Radio",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://femmetal.net/",
+      "source_logo_url": "https://femmetal.net/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 72
+    },
+    {
+      "legacy_media_id": "75b6b22f-f4b7-43ae-aa73-96a7b47eeb4f",
+      "display_name": "FIP Metal",
+      "primary_genre": "Thrash",
+      "homepage": "https://www.radiofrance.fr/fip/radio-metal",
+      "source_logo_url": "https://www.radiofrance.fr/s3/cruiser-production/2022/07/160994f8-296b-4cd8-97a0-34c9111cdd9d/400x400_fip-metal-20222x_2.webp",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 73
+    },
+    {
+      "legacy_media_id": "9645197f-0601-11e8-ae97-52543be04c81",
+      "display_name": "FluxFM - MetalFM",
+      "primary_genre": "Metal",
+      "homepage": "http://www.fluxfm.de/",
+      "source_logo_url": "http://www.fluxfm.de/assets/favicons/apple-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 74
+    },
+    {
+      "legacy_media_id": "9ac79860-890d-4e0a-953e-30698602e294",
+      "display_name": "Gadingharjo Core",
+      "primary_genre": "Black",
+      "homepage": "https://gadingharjo-core.live/",
+      "source_logo_url": "https://i.imgur.io/CDE49Yr.jpeg?maxwidth=640",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 75
+    },
+    {
+      "legacy_media_id": "fcdca0ed-ba45-4a7c-9b43-6207aeea20a6",
+      "display_name": "Glam Rock / Metal - Caprice Radio",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/glam.html",
+      "source_logo_url": "http://radcap.ru/graf2/radcaplogo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 76
+    },
+    {
+      "legacy_media_id": "931af451-e02f-493d-a693-a1ea9d870419",
+      "display_name": "Gnu Radio - Metal FM",
+      "primary_genre": "Metal",
+      "homepage": "https://www.gnuradio.org/",
+      "source_logo_url": "https://www.gnuradio.org/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 77
+    },
+    {
+      "legacy_media_id": "96336b01-0601-11e8-ae97-52543be04c81",
+      "display_name": "Hard Rock Heaven",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://hrhradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 78
+    },
+    {
+      "legacy_media_id": "5b7d9b52-5fe5-11ea-be63-52543be04c81",
+      "display_name": "Hard Rock Hell",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://hardrockhellradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 79
+    },
+    {
+      "legacy_media_id": "b2fdd491-7376-4240-b11c-66af45e71579",
+      "display_name": "HARD ROCK PALACE",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.hardrockpalace.de/",
+      "source_logo_url": "https://i.ibb.co/Qv9q2Hc9/HRP-Senderlogo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 80
+    },
+    {
+      "legacy_media_id": "9afeaf65-bb57-4d76-892d-c7a39fc6c805",
+      "display_name": "Hard Rock Radio FM",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://hardrockradiofm.weebly.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 81
+    },
+    {
+      "legacy_media_id": "960b1fda-0601-11e8-ae97-52543be04c81",
+      "display_name": "HardRadio [AAC+]",
+      "primary_genre": "Metal",
+      "homepage": "http://www.hardradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 82
+    },
+    {
+      "legacy_media_id": "9609c009-0601-11e8-ae97-52543be04c81",
+      "display_name": "HardRadio [MP3]",
+      "primary_genre": "Metal",
+      "homepage": "http://www.hardradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 83
+    },
+    {
+      "legacy_media_id": "f799eab2-2073-4669-bf48-ca62ff8f88a4",
+      "display_name": "Heavy Metal History radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://heavymetalhistory.net/",
+      "source_logo_url": "https://imgur.com/a/ommZIt5",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 84
+    },
+    {
+      "legacy_media_id": "ff293edd-cbc5-4eae-9fb4-f278a6e69501",
+      "display_name": "Heavy Music Atmospheric Radio",
+      "primary_genre": "Doom",
+      "homepage": "https://www.heavy-music.net/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 85
+    },
+    {
+      "legacy_media_id": "e389696c-5217-43d3-aa41-bc3c5b52f049",
+      "display_name": "Heavy1",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.heavy1.radio/",
+      "source_logo_url": "https://static.mytuner.mobi/media/tvos_radios/sdapkvmjcrmh.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 86
+    },
+    {
+      "legacy_media_id": "aca299dd-d28d-43e4-a731-beed1a532fec",
+      "display_name": "Hotmix meal",
+      "primary_genre": "Heavy",
+      "homepage": "https://web.hotmixradio.com/",
+      "source_logo_url": "https://web.hotmixradio.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 87
+    },
+    {
+      "legacy_media_id": "bc59bb52-9386-4c3d-a2bf-782756bea3fa",
+      "display_name": "Hotmix Metal",
+      "primary_genre": "Metalcore",
+      "homepage": "https://hotmixradio.com/",
+      "source_logo_url": "https://cdn.hotmixradio.com/hotmix-metal-en-mp3.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 88
+    },
+    {
+      "legacy_media_id": "87e7c5a2-dbcf-46c1-abd1-85346b70bf27",
+      "display_name": "HuilaGeek Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://radio.huilageek.club/",
+      "source_logo_url": "https://radio.huilageek.club/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 89
+    },
+    {
+      "legacy_media_id": "9614550c-0601-11e8-ae97-52543be04c81",
+      "display_name": "idobi Howl",
+      "primary_genre": "Metal",
+      "homepage": "http://idobi.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 90
+    },
+    {
+      "legacy_media_id": "6a1a6571-b1d4-4fd9-8cba-9586fda25aae",
+      "display_name": "ISKC Extreme Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://iskcrocks.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 91
+    },
+    {
+      "legacy_media_id": "5dd0641a-5592-414e-9cba-a76341f7bca0",
+      "display_name": "La Grosse Radio METAL",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.lagrosseradio.com/metal/radio-metal/",
+      "source_logo_url": "https://www.lagrosseradio.com/wp-content/uploads/2025/03/LGR_Metal_carre-3.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 92
+    },
+    {
+      "legacy_media_id": "961291f5-0601-11e8-ae97-52543be04c81",
+      "display_name": "La Grosse Radio Métal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.lagrosseradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 93
+    },
+    {
+      "legacy_media_id": "4723a254-2bc1-442d-9ddd-7debc003370f",
+      "display_name": "LAGERFEUERMETAL",
+      "primary_genre": "Power",
+      "homepage": "https://laut.fm/lagerfeuermetal",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 94
+    },
+    {
+      "legacy_media_id": "a827152a-7b7a-454d-ae12-5c34a367e353",
+      "display_name": "laut.fm - Dark Sound United",
+      "primary_genre": "Black",
+      "homepage": "https://laut.fm/dark-sound-united",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 95
+    },
+    {
+      "legacy_media_id": "480bcec1-ac7d-4424-8a0b-2a5fc23643de",
+      "display_name": "laut.fm - Endzeit FM",
+      "primary_genre": "Metalcore",
+      "homepage": "https://laut.fm/endzeitfm",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 96
+    },
+    {
+      "legacy_media_id": "55e1c25f-d6b7-40a5-8aa3-cea5da56be32",
+      "display_name": "laut.fm - Shamanic Tunes",
+      "primary_genre": "Doom",
+      "homepage": "https://laut.fm/shamanic_tunes",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 97
+    },
+    {
+      "legacy_media_id": "9649add9-0601-11e8-ae97-52543be04c81",
+      "display_name": "Laut.FM Bang! Radio",
+      "primary_genre": "Death",
+      "homepage": "http://www.laut.fm/bang",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 98
+    },
+    {
+      "legacy_media_id": "961f04d0-0601-11e8-ae97-52543be04c81",
+      "display_name": "Laut.FM RadioEuro",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://laut.fm/radioeuro",
+      "source_logo_url": "https://lh3.ggpht.com/a4M_Oyz2Jek1bkcRe8I7v3A8clEOoOI8Y-NiYuuICuw0wOHwaZgMUit4rRgC18mGZMo_=w300",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 99
+    },
+    {
+      "legacy_media_id": "ca39d796-807b-4641-92a0-3684769f145a",
+      "display_name": "LiSTNR - Hard N Heavy (HLS)",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.listnr.com/station/hardnheavy",
+      "source_logo_url": "https://i.ibb.co/BHvtSRJb/Li-STNR-Square-Tile-3000x3000-HARD-N-HEAVY.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 100
+    },
+    {
+      "legacy_media_id": "b7d5f87f-b033-496c-b655-aedb28e59f76",
+      "display_name": "Manowar Радио",
+      "primary_genre": "Heavy",
+      "homepage": "https://pcradio.app/radio/manowar",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 101
+    },
+    {
+      "legacy_media_id": "234e9835-641e-46d0-99b4-5d5282d27a14",
+      "display_name": "MAXIMUM Ozzy Osbourne",
+      "primary_genre": "Heavy",
+      "homepage": "https://maximum.ru/",
+      "source_logo_url": "https://maximum.ru/b/d/XS_d975tB1YUbdZMJDm-Eo5uJ-xCQw4Ib4niY8fCC5yiPwesYzA2jBpIGTUa-QsLzDVV9OvuSKfcCpztsyGAW15bDCkc=R9sMMhtj79SRcdBBUeF5qg.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 102
+    },
+    {
+      "legacy_media_id": "7a7d4983-a650-4653-8b00-e9f705731ae2",
+      "display_name": "MaximusRockFM",
+      "primary_genre": "Metalcore",
+      "homepage": "https://maximusrockfm.000.pe/",
+      "source_logo_url": "https://maximusrockfm.com/wp-content/uploads/2026/01/512x512.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 103
+    },
+    {
+      "legacy_media_id": "f9621d68-052b-454b-8fa4-a7708ab409f5",
+      "display_name": "Megadeth",
+      "primary_genre": "Heavy",
+      "homepage": "https://radiostream.novawap.com/",
+      "source_logo_url": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/a1/55/11/a155115f-2768-7419-af18-430c6c338e68/00602577361319.rgb.jpg/200x200bb.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 104
+    },
+    {
+      "legacy_media_id": "e5b81ad3-bb7d-41a5-a3d3-0f715434778e",
+      "display_name": "Megarock Radio 320k",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://megarockradio.net/",
+      "source_logo_url": "https://megarockradio.net/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 105
+    },
+    {
+      "legacy_media_id": "a9db006d-5eff-43c1-9c8f-155f43a7c1d8",
+      "display_name": "Metal FM",
+      "primary_genre": "Metal",
+      "homepage": "https://metalfm.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 106
+    },
+    {
+      "legacy_media_id": "5d04caad-a633-4279-9f24-3e72bd49f8ee",
+      "display_name": "Metal Heads",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://metalheads.com.br/",
+      "source_logo_url": "https://spaceks.net/sites/metalheads.com.br/images/logo/logo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 107
+    },
+    {
+      "legacy_media_id": "15580ab2-1817-11e9-a80b-52543be04c81",
+      "display_name": "Metal Heart",
+      "primary_genre": "Metal",
+      "homepage": "https://www.metalheartradio.com/cs/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 108
+    },
+    {
+      "legacy_media_id": "b8246f43-7136-4328-8027-e137515b68dd",
+      "display_name": "Metal Invasion Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://metal-invasion.fr/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 109
+    },
+    {
+      "legacy_media_id": "c3e57425-e517-4d08-90ea-08565adb8add",
+      "display_name": "Metal Live Radio",
+      "primary_genre": "Thrash",
+      "homepage": "https://www.facebook.com/livemetalradio/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 110
+    },
+    {
+      "legacy_media_id": "53dac0bd-de56-447a-a42c-9f841af15e2e",
+      "display_name": "Metal Mayhem",
+      "primary_genre": "Heavy",
+      "homepage": "https://madmix.se/",
+      "source_logo_url": "https://madmix.se/images/logo.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 111
+    },
+    {
+      "legacy_media_id": "259e410c-b516-11e8-afe1-52543be04c81",
+      "display_name": "METAL ONLY - http://www.metal-only.de,METAL ONLY - http://www.metal-only.de - 24h Black Death Heavy Metal Rock und mehr!",
+      "primary_genre": "Heavy",
+      "homepage": "",
+      "source_logo_url": "https://www.metal-only.de/fileadmin/tpl//fav.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 112
+    },
+    {
+      "legacy_media_id": "cbccd4ff-fbbf-4136-9c64-c01dcee69b2e",
+      "display_name": "METAL ONLY - https://www.metal-only.de,METAL ONLY - http://www.metal-only.de - 24h Black Death Heavy Metal Rock und mehr!",
+      "primary_genre": "Heavy",
+      "homepage": "",
+      "source_logo_url": "https://www.metal-only.de/fileadmin/tpl/img/metal-only.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 113
+    },
+    {
+      "legacy_media_id": "d6316691-8619-42ae-8dbb-75dfdd7a7eb5",
+      "display_name": "Metal Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://metalradio.at/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 114
+    },
+    {
+      "legacy_media_id": "ceb6b3af-3bfb-4135-bace-9fa6fac9e8ac",
+      "display_name": "metal rock radio",
+      "primary_genre": "Metal",
+      "homepage": "http://www.metalrock.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 115
+    },
+    {
+      "legacy_media_id": "d30ac0d6-671d-4533-ad9f-d7887aca0412",
+      "display_name": "METAL ZONE",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.metalzone.gr/",
+      "source_logo_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS68I_D2ZIAam8GPJ6BQoiPg26ApOJeMkcHfQ&usqp=CAU",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 116
+    },
+    {
+      "legacy_media_id": "d2daef0d-83c7-4857-904c-cda1b05fe2e2",
+      "display_name": "METALchet",
+      "primary_genre": "Heavy",
+      "homepage": "https://myradio24.com/metalchet",
+      "source_logo_url": "https://vki9.okcdn.ru/i?r=CFtAm_VFBkioSGBqh1KXyQJ05mMTnSO58HCs32SmDNQ0bVVgHhM5jXcqE7Kk7hzSVj_XKt8eq5KzGlJrzWwMCNft-1UaNdbVlpb-USPZT-pLumo9oBw9g_uHfycAAAAp&fn=h_768",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 117
+    },
+    {
+      "legacy_media_id": "3ac98fee-f280-4cb4-ad48-749879522383",
+      "display_name": "Metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "https://radiostream.novawap.com/",
+      "source_logo_url": "https://assets.laut.fm/47b878e8beaf2661de08091dfc6a6bf0",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 118
+    },
+    {
+      "legacy_media_id": "c55bf329-a746-448e-bdf9-8554b83e4055",
+      "display_name": "Metallica",
+      "primary_genre": "Metal",
+      "homepage": "https://radiofm.novawap.com/",
+      "source_logo_url": "https://media.radiospinner.com/media/logos/180/1006418/logo_VZYNG9mdKg.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 119
+    },
+    {
+      "legacy_media_id": "b05bc526-0822-4a8d-9e86-e0b19f119f30",
+      "display_name": "MetalON - The Heavy",
+      "primary_genre": "Heavy",
+      "homepage": "https://metalon.org/",
+      "source_logo_url": "https://metalon.org/wordpress/wp-content/uploads/2017/01/cropped-cropped-metalon-3-9.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 120
+    },
+    {
+      "legacy_media_id": "a2287e74-7d5d-4279-8acb-1e2c5e09e14f",
+      "display_name": "Metalourgio Radio",
+      "primary_genre": "Black",
+      "homepage": "https://metalourgio.com/",
+      "source_logo_url": "https://www.metalourgio.com/wp-content/uploads/2024/03/Metalourgio_avatar_1710105257-192x192.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 121
+    },
+    {
+      "legacy_media_id": "64df75e8-d9c0-420d-9e8c-97762ecf5a26",
+      "display_name": "metalrock.fm",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.metalrock.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 122
+    },
+    {
+      "legacy_media_id": "f77411a2-8285-4271-8fa8-178a0792a22c",
+      "display_name": "METALSCENA netRADIO",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.metalscena.sk/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 123
+    },
+    {
+      "legacy_media_id": "c11e4caf-0344-4ab5-8567-95cfac2f570f",
+      "display_name": "Metalwar",
+      "primary_genre": "Heavy",
+      "homepage": "https://metalwar.gr/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 124
+    },
+    {
+      "legacy_media_id": "f673549e-54be-47c5-b2ff-f635281ec472",
+      "display_name": "Monsters of Rock USSR",
+      "primary_genre": "Heavy",
+      "homepage": "https://zeno.fm/radio/monsters-of-rock-ussr/",
+      "source_logo_url": "https://zeno.fm/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 125
+    },
+    {
+      "legacy_media_id": "6bd67acb-e99e-4673-8270-19d55935be2a",
+      "display_name": "Mosh Head Black Metal ID",
+      "primary_genre": "Black",
+      "homepage": "https://moshhead.org/",
+      "source_logo_url": "https://i.imgur.com/ldM8wDn.jpeg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 126
+    },
+    {
+      "legacy_media_id": "d27842b3-97d8-4be7-9152-503167301955",
+      "display_name": "NRJ LINKIN PARK",
+      "primary_genre": "Metal",
+      "homepage": "https://www.nrj.fr/webradios/mur-des-radios/nrj-linkin-park",
+      "source_logo_url": "https://www.radio.net/300/nrjlinkinpark.jpeg?version=9ec7666b0204107fd6befaf6e99299f6a38aaff9",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 127
+    },
+    {
+      "legacy_media_id": "0de271e3-7a23-4641-9b91-c93dffeede41",
+      "display_name": "Nu Metal Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://www.iheart.com/live/nu-metal-radio-9483/",
+      "source_logo_url": "https://i.iheart.com/v3/re/new_assets/62bb1e3ff5da69e05bc6e121",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 128
+    },
+    {
+      "legacy_media_id": "180e9acf-af32-4a21-9c77-1d66d2af0303",
+      "display_name": "Nuclear Fallout Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.nuclearfalloutradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 129
+    },
+    {
+      "legacy_media_id": "c32673b7-7ab4-4c84-b53a-a2df17afe6d6",
+      "display_name": "NuMetal 1.0 -JubsTones",
+      "primary_genre": "Metal",
+      "homepage": "https://stream.zeno.fm/zg3ps1ckoeiuv",
+      "source_logo_url": "https://stream.zeno.fm/zg3ps1ckoeiuv",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 130
+    },
+    {
+      "legacy_media_id": "51daaa30-b408-4d05-b5b7-a2a3c377b20a",
+      "display_name": "ODINSMETALROCKCLUB",
+      "primary_genre": "Heavy",
+      "homepage": "https://stream.laut.fm/odinsmetalrockclub",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 131
+    },
+    {
+      "legacy_media_id": "c2b4e74d-8392-44fd-b626-36d7854c646b",
+      "display_name": "Overdrive Live! Station",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.overdrivelive.net/",
+      "source_logo_url": "https://overdrivelive.net/wp-content/uploads/2024/06/favicon_overdrivelive.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 132
+    },
+    {
+      "legacy_media_id": "608f5b56-8591-42d1-9b6b-e6c4a09784e4",
+      "display_name": "OÜI FM Alternatif",
+      "primary_genre": "Metal",
+      "homepage": "https://www.ouifm.fr/",
+      "source_logo_url": "https://bocir-prod-bucket.s3.amazonaws.com/radios/oui-fm/radiostream/S2UWS5S3lJ/vignette.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 133
+    },
+    {
+      "legacy_media_id": "ce67b76a-188a-41e9-aa20-31556eac1c70",
+      "display_name": "Pantera",
+      "primary_genre": "Metal",
+      "homepage": "https://pcradio.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 134
+    },
+    {
+      "legacy_media_id": "b824c58a-1030-4618-889e-152922ffdb44",
+      "display_name": "Pinguin Aardschok",
+      "primary_genre": "Power",
+      "homepage": "https://pinguinradio.com/",
+      "source_logo_url": "https://pinguinradio.com/assets/icons/icon-72x72.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 135
+    },
+    {
+      "legacy_media_id": "83668e29-2b34-11ea-aa0c-52543be04c81",
+      "display_name": "Polygon.FM - Loud Russian (fastcast)",
+      "primary_genre": "Metalcore",
+      "homepage": "https://polygon.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 136
+    },
+    {
+      "legacy_media_id": "47c0d54d-381b-11e8-bb9b-52543be04c81",
+      "display_name": "Power FM - Rock FM",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.powerfm.hu/rockfm.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 137
+    },
+    {
+      "legacy_media_id": "cdd8697c-2872-42a2-ae98-c79371310bdc",
+      "display_name": "Primordial Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://primordialradio.com/",
+      "source_logo_url": "https://primordialradio.com/wp-content/themes/the-next-evolution/img/favicons/apple-icon-180x180.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 138
+    },
+    {
+      "legacy_media_id": "a236979e-d4e5-4b42-9321-99c617b9e65c",
+      "display_name": "Prog Palace Radio's The Armory",
+      "primary_genre": "Power",
+      "homepage": "https://www.progpalaceradio.com/the-armory/",
+      "source_logo_url": "https://www.progpalaceradio.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 139
+    },
+    {
+      "legacy_media_id": "e37f8dba-96c9-42cf-831b-6966077ef50f",
+      "display_name": "Prog Rock and Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.progrockandmetal.net/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 140
+    },
+    {
+      "legacy_media_id": "4dacdece-5cbe-4bc2-b9a1-f9160dfc87c8",
+      "display_name": "ProgAlley",
+      "primary_genre": "Progressive",
+      "homepage": "https://laut.fm/progalley",
+      "source_logo_url": "https://laut.fm/assets/touch-icons/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 141
+    },
+    {
+      "legacy_media_id": "844d5de5-52f9-4916-a894-b7f7637b6b19",
+      "display_name": "ProgRadio The Dragon's Tower",
+      "primary_genre": "Progressive",
+      "homepage": "https://www.progradio.com/",
+      "source_logo_url": "https://static.wixstatic.com/media/392d7d_22d5c3f884cc44a5b5f1206a091981d8~mv2.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 142
+    },
+    {
+      "legacy_media_id": "d2ad5a90-8e73-4dde-b62e-a1f5300c1823",
+      "display_name": "ProgressiveMusic",
+      "primary_genre": "Progressive",
+      "homepage": "https://laut.fm/progressivemusic",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 143
+    },
+    {
+      "legacy_media_id": "986d9f4e-8614-490b-a61e-91d23fd57555",
+      "display_name": "Proteus Radio",
+      "primary_genre": "Progressive",
+      "homepage": "https://proteusradio.ddns.net/",
+      "source_logo_url": "https://proteusradio.ddns.net/proteus.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 144
+    },
+    {
+      "legacy_media_id": "ae8a8b9d-2e79-4ac1-b7d0-9118901fa063",
+      "display_name": "Pure Rock KNAC.COM",
+      "primary_genre": "Heavy",
+      "homepage": "https://knac.com/",
+      "source_logo_url": "https://knac.com/",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 145
+    },
+    {
+      "legacy_media_id": "964e946c-0601-11e8-ae97-52543be04c81",
+      "display_name": "PureRock.US - America's Pure Rock",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.purerock.us/",
+      "source_logo_url": "http://www.purerock.us/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 146
+    },
+    {
+      "legacy_media_id": "ff122908-8d92-4af9-81f8-69a8a89951ad",
+      "display_name": "RadCap - Atmospheric Ambient Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/aabmds.html",
+      "source_logo_url": "http://radcap.ru/stylegraf/abm4.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 147
+    },
+    {
+      "legacy_media_id": "5b281201-5964-42c0-98e9-b7fca3466c3c",
+      "display_name": "RadCap - Avant-Garde Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/avantgardemetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 148
+    },
+    {
+      "legacy_media_id": "853963f2-ec56-4e9a-a67c-a25682902781",
+      "display_name": "RadCap - Avantgarde Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/avantblackmet.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 149
+    },
+    {
+      "legacy_media_id": "71e6e2bc-7143-4e06-9e6c-61aebe046966",
+      "display_name": "RadCap - Black Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/blackdeath.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 150
+    },
+    {
+      "legacy_media_id": "0782a18b-ac41-4454-bd91-6798653cc845",
+      "display_name": "RadCap - Black Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://radcap.ru/blackdoom.html",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 151
+    },
+    {
+      "legacy_media_id": "c7df7574-1d55-49b3-b15c-5769cc267ec5",
+      "display_name": "RadCap - Brutal Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 152
+    },
+    {
+      "legacy_media_id": "c06d26a0-75b3-4a93-a680-e3f3ea3f1f68",
+      "display_name": "RadCap - Crossover Thrash Metal",
+      "primary_genre": "Thrash",
+      "homepage": "http://radcap.ru/crossoverthrash.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 153
+    },
+    {
+      "legacy_media_id": "4138cdd2-f8b8-417a-a735-66c2a7ab903d",
+      "display_name": "RadCap - Dark Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/darkmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 154
+    },
+    {
+      "legacy_media_id": "962cabc8-0601-11e8-ae97-52543be04c81",
+      "display_name": "RadCap - Death Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://www.radcap.ru/",
+      "source_logo_url": "http://www.radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 155
+    },
+    {
+      "legacy_media_id": "962ed23b-0601-11e8-ae97-52543be04c81",
+      "display_name": "RadCap - Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://www.radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 156
+    },
+    {
+      "legacy_media_id": "5fea1af2-8488-4213-a744-11ce452c8e25",
+      "display_name": "RadCap - Depressive Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/depressiveblack-m.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 157
+    },
+    {
+      "legacy_media_id": "2fd5c089-24b9-46f5-85c4-6fb3c3c3cd42",
+      "display_name": "RadCap - Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://radcap.ru/doom.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 158
+    },
+    {
+      "legacy_media_id": "19ad483c-32ff-43f0-90f1-bc23a83b7c23",
+      "display_name": "RadCap - Drone Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/dronemetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 159
+    },
+    {
+      "legacy_media_id": "1dd82137-4782-4a91-94e5-d6798feb7221",
+      "display_name": "RadCap - Female Vocal in Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/femalemetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 160
+    },
+    {
+      "legacy_media_id": "8dff953e-e92b-4e05-ba07-863eb9d6b169",
+      "display_name": "RadCap - Folk Metal",
+      "primary_genre": "Folk",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 161
+    },
+    {
+      "legacy_media_id": "21cfadb6-ce28-4fc0-bc97-5b3af7c2456c",
+      "display_name": "RadCap - Funeral Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://radcap.ru/funeraldoom.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 162
+    },
+    {
+      "legacy_media_id": "0d21672d-7737-4081-b09d-aa13107a0057",
+      "display_name": "RadCap - Funk Rock Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/funkrock.html",
+      "source_logo_url": "http://radcap.ru/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 163
+    },
+    {
+      "legacy_media_id": "cdf04cf7-efe0-4242-baa3-c8bb0e78e3ba",
+      "display_name": "RadCap - Gothic Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/gothblackmet.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 164
+    },
+    {
+      "legacy_media_id": "8a74d7b4-7200-4f38-b5e8-c0db3baa41eb",
+      "display_name": "RadCap - Gothic Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/gothdeathmet.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 165
+    },
+    {
+      "legacy_media_id": "80d76811-1d47-431f-853c-3b8fb1129531",
+      "display_name": "RadCap - Gothic Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://radcap.ru/gothdoommet.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 166
+    },
+    {
+      "legacy_media_id": "469f0bea-0cec-4c34-a8ac-d96ff5454d82",
+      "display_name": "RadCap - Groove Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/groovemetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 167
+    },
+    {
+      "legacy_media_id": "9acd84cf-22d3-4260-a7d5-f26589e21956",
+      "display_name": "RadCap - Industrial Metal",
+      "primary_genre": "Industrial",
+      "homepage": "http://radcap.ru/industrialmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 168
+    },
+    {
+      "legacy_media_id": "2fd84d74-eded-4d6d-99e2-e8e4b68c4044",
+      "display_name": "RadCap - Instrumental Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/industrialmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 169
+    },
+    {
+      "legacy_media_id": "b901aa66-c5b1-4ee4-a174-9158ff637959",
+      "display_name": "RadCap - Jazz Fusion Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/jazzmetal.html",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 170
+    },
+    {
+      "legacy_media_id": "eaeec0f2-9b0f-462e-875b-fb59e182c8de",
+      "display_name": "RadCap - Math Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/mathmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 171
+    },
+    {
+      "legacy_media_id": "e828fd36-ef88-4802-b749-2d5a4d7aff13",
+      "display_name": "RadCap - Medieval Metal Rock",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/medieval.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 172
+    },
+    {
+      "legacy_media_id": "b3976db4-5daa-11ea-be63-52543be04c81",
+      "display_name": "RadCap - Melodic Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://www.radcap.ru/mdm.html",
+      "source_logo_url": "http://www.radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 173
+    },
+    {
+      "legacy_media_id": "e467af86-2643-4ab2-93d1-cd9a1f32b8f2",
+      "display_name": "RadCap - Melodic Metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "http://radcap.ru/melodicmetalcore.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 174
+    },
+    {
+      "legacy_media_id": "249d45c8-3711-488a-8d40-904f4fa930b1",
+      "display_name": "RadCap - Melodic Power Metal",
+      "primary_genre": "Power",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 175
+    },
+    {
+      "legacy_media_id": "0ec49d04-75c7-4a56-91f6-7648d463155f",
+      "display_name": "RadCap - Metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "http://radcap.ru/metalcore.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 176
+    },
+    {
+      "legacy_media_id": "08f0eca9-e63c-4186-86ae-0ba97f3250dc",
+      "display_name": "RadCap - Neoclassical Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/neoclassicalmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 177
+    },
+    {
+      "legacy_media_id": "b4466512-327f-4aa9-a387-7afaa682b278",
+      "display_name": "RadCap - New Wave Of British Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://radcap.ru/nwobhm.html",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 178
+    },
+    {
+      "legacy_media_id": "f64559c4-faa2-4c17-b042-00ab4a921dfb",
+      "display_name": "RadCap - Nu Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 179
+    },
+    {
+      "legacy_media_id": "614ea326-b21b-47f8-9413-9257a07ebb06",
+      "display_name": "RadCap - Oriental Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/orientalmetal.html",
+      "source_logo_url": "http://radcap.ru/stylegraf/orientalmetal-c.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 180
+    },
+    {
+      "legacy_media_id": "6c2ec0d6-31af-40f0-ae97-0a0071b3f519",
+      "display_name": "RadCap - Pagan Metal",
+      "primary_genre": "Folk",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 181
+    },
+    {
+      "legacy_media_id": "86f266f5-09c8-477a-8b02-5a9e31e6ab0d",
+      "display_name": "RadCap - Progressive Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radiorecord.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 182
+    },
+    {
+      "legacy_media_id": "96259855-0601-11e8-ae97-52543be04c81",
+      "display_name": "RadCap - Progressive Metal",
+      "primary_genre": "Progressive",
+      "homepage": "http://radcap.ru/progmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 183
+    },
+    {
+      "legacy_media_id": "a873f307-7269-48f6-ba6f-45843c1e49ea",
+      "display_name": "RadCap - Progressive Power Metal",
+      "primary_genre": "Power",
+      "homepage": "http://radcap.ru/progpowermetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 184
+    },
+    {
+      "legacy_media_id": "a3926401-8dab-40b8-a190-2d306d0cd441",
+      "display_name": "RadCap - Sludge Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/sludgemetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 185
+    },
+    {
+      "legacy_media_id": "ef63ea23-f652-44e8-8c07-0000cc15a4b3",
+      "display_name": "RadCap - Speed Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/speedmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 186
+    },
+    {
+      "legacy_media_id": "77e35147-7bdd-4b4c-a200-3f69d7804208",
+      "display_name": "RadCap - Symphonic Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/symphonicblackmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 187
+    },
+    {
+      "legacy_media_id": "9cabd2b9-50dd-4eda-b8ec-ea301cf2b5fb",
+      "display_name": "RadCap - Symphonic Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 188
+    },
+    {
+      "legacy_media_id": "ce72ad9b-82d7-4c6a-b919-625a414ff000",
+      "display_name": "RadCap - Technical Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/techdeathmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 189
+    },
+    {
+      "legacy_media_id": "949aec8c-2342-4f02-9312-e3f74cf840f6",
+      "display_name": "RadCap - Thrash Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/thrashblack.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 190
+    },
+    {
+      "legacy_media_id": "359ffcf7-2429-4d3f-abd5-a7a0c023fb21",
+      "display_name": "RadCap - Thrash Heavy Metal",
+      "primary_genre": "Thrash",
+      "homepage": "http://radcap.ru/thrashheavy.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 191
+    },
+    {
+      "legacy_media_id": "a3385f48-cb74-406c-8bb2-2e64a2d20cea",
+      "display_name": "RADCAP: PROGRESSIVE BLACK / POST-BLACK / BLACKGAZE",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/postblack.html",
+      "source_logo_url": "http://radcap.ru/stylegraf/postblack-c.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 192
+    },
+    {
+      "legacy_media_id": "f232f486-8c1d-48ec-a49a-d8eeb676bb2a",
+      "display_name": "Radio Armageddon",
+      "primary_genre": "Metal",
+      "homepage": "https://radioarmageddon.pl/",
+      "source_logo_url": "https://radioarmageddon.pl/wp-content/uploads/2024/03/cropped-cropped-Radio-Armagedon-180x180.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 193
+    },
+    {
+      "legacy_media_id": "961d7ccb-0601-11e8-ae97-52543be04c81",
+      "display_name": "Radio Beat",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.radiobeat.cz/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 194
+    },
+    {
+      "legacy_media_id": "19052118-563f-4793-8a4c-9f009de0b00f",
+      "display_name": "Radio Bizzz",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://www.radioquebec.biz/",
+      "source_logo_url": "http://www.radioquebec.biz/images/header3.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 195
+    },
+    {
+      "legacy_media_id": "5f6f5a1e-4d61-4b5f-ab5c-74bcfd893ac4",
+      "display_name": "Radio Bloodstream",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobloodstream.com/en/",
+      "source_logo_url": "https://www.radiobloodstream.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 196
+    },
+    {
+      "legacy_media_id": "35ecc442-1ba3-48ff-a874-cacc4e5867c1",
+      "display_name": "RADIO BOB - Power Metal",
+      "primary_genre": "Power",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "https://www.radio.de/images/broadcasts/b2/37/185513/1/c300.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 197
+    },
+    {
+      "legacy_media_id": "85131571-aa06-4e14-82d4-0c34d6fed6bc",
+      "display_name": "RADIO BOB! 2000er Rock [64 kbit/s AAC]",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/bobs-2000er-rock-stream",
+      "source_logo_url": "https://images.radiobob.de/files/streams/bob_stream-tile_2000er.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 198
+    },
+    {
+      "legacy_media_id": "d516ceb6-6ede-45b4-a76a-4b6158291d5f",
+      "display_name": "Radio BOB! AC DC",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 199
+    },
+    {
+      "legacy_media_id": "e5ef8210-7cea-49e5-b2ef-13db01df225f",
+      "display_name": "RADIO BOB! BOB's metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/metalcore-stream",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 200
+    },
+    {
+      "legacy_media_id": "9646b5ee-4b98-11e8-a4d1-52543be04c81",
+      "display_name": "RADIO BOB! BOBs Gothic Rock",
+      "primary_genre": "Metal",
+      "homepage": "https://radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 201
+    },
+    {
+      "legacy_media_id": "9618cb1f-0601-11e8-ae97-52543be04c81",
+      "display_name": "RADIO BOB! BOBs Harte Saite",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 202
+    },
+    {
+      "legacy_media_id": "9618d38b-0601-11e8-ae97-52543be04c81",
+      "display_name": "RADIO BOB! BOBs Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 203
+    },
+    {
+      "legacy_media_id": "527d90da-4b98-11e8-a4d1-52543be04c81",
+      "display_name": "RADIO BOB! BOBs Mittelalter Rock",
+      "primary_genre": "Metal",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 204
+    },
+    {
+      "legacy_media_id": "0e37ece1-7969-42d9-ac04-13bfdd3e8c10",
+      "display_name": "RADIO BOB! BOBs Wacken Nonstop",
+      "primary_genre": "Heavy",
+      "homepage": "http://player.radiobob.de/",
+      "source_logo_url": "http://aggregatorservice.loverad.io/wp-content/uploads/2018/07/radiobob-streamicon_wacken.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 205
+    },
+    {
+      "legacy_media_id": "407dcf1c-f8be-4ec1-91ef-54c257ddcbdb",
+      "display_name": "RADIO BOB! Death Metal",
+      "primary_genre": "Death",
+      "homepage": "https://www.radiobob.de/bobs-death-metal-stream",
+      "source_logo_url": "https://images.radiobob.de/files/2025-05/death_metal_stream_schrift.jpg?width=360&height=360",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 206
+    },
+    {
+      "legacy_media_id": "c2d63237-d3e6-4062-b971-6fc5ae138e82",
+      "display_name": "Radio BOB! Harte Saite",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "https://images.radiobob.de/files/2025-05/harte_saite_stream_schrift.jpg?width=360&height=360",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 207
+    },
+    {
+      "legacy_media_id": "c2a05b77-3a27-48cb-9e39-6139c3045fd0",
+      "display_name": "Radio Bob! Nu Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.radiobob.de/nu-metal-stream",
+      "source_logo_url": "https://images.radiobob.de/files/2024-01/bob_stream-tile_nu-metal.jpg?fm=jpg&w=180&h=180&dpr=2",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 208
+    },
+    {
+      "legacy_media_id": "45c7e4f0-a007-4e4a-a61c-d897d5ff7b29",
+      "display_name": "RADIO BOB! SYMPHONIC METAL",
+      "primary_genre": "Symphonic",
+      "homepage": "http://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 209
+    },
+    {
+      "legacy_media_id": "c0b683b1-4afe-4e78-8985-214e7751881f",
+      "display_name": "Radio BOB! Wacken Nonstop",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 210
+    },
+    {
+      "legacy_media_id": "96474790-0601-11e8-ae97-52543be04c81",
+      "display_name": "Radio Caprice",
+      "primary_genre": "Thrash",
+      "homepage": "https://radcap.ru/thrashmetal.html",
+      "source_logo_url": "https://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 211
+    },
+    {
+      "legacy_media_id": "78c48ebf-ea50-418a-a155-bb9b232a2545",
+      "display_name": "Radio Caprice - Athmospheric Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "https://radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 212
+    },
+    {
+      "legacy_media_id": "96427c67-0601-11e8-ae97-52543be04c81",
+      "display_name": "Radio Caprice - Black Metal",
+      "primary_genre": "Black",
+      "homepage": "https://radcap.ru/",
+      "source_logo_url": "https://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 213
+    },
+    {
+      "legacy_media_id": "0f129823-2b5b-4ea3-a4f9-d1e6eeddf1bf",
+      "display_name": "Radio Caprice - Epic Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 214
+    },
+    {
+      "legacy_media_id": "9f402596-35bd-4184-a1de-29b6050cef16",
+      "display_name": "Radio Caprice - Folk Black Metal",
+      "primary_genre": "Black",
+      "homepage": "http://radcap.ru/folkblackmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 215
+    },
+    {
+      "legacy_media_id": "9db21bfa-0a49-4c34-a96a-fd305d2fda0b",
+      "display_name": "Radio Caprice - Folk Death Metal",
+      "primary_genre": "Death",
+      "homepage": "http://radcap.ru/folkdeathmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 216
+    },
+    {
+      "legacy_media_id": "3130a8da-369c-11ea-8dd7-52543be04c81",
+      "display_name": "Radio Caprice - Funeral Doom Metal",
+      "primary_genre": "Doom",
+      "homepage": "http://radcap.ru/fdm.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 217
+    },
+    {
+      "legacy_media_id": "bbe22a84-0de9-400b-896b-430fddc2ed4a",
+      "display_name": "Radio Caprice - Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 218
+    },
+    {
+      "legacy_media_id": "2f114a0e-33fa-4976-9a64-ba6c2096a446",
+      "display_name": "Radio Caprice - Heavy Power Metal",
+      "primary_genre": "Power",
+      "homepage": "http://radcap.ru/heavypowermetal.html",
+      "source_logo_url": "http://radcap.ru/graf2/radcaplogo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 219
+    },
+    {
+      "legacy_media_id": "c589af7b-ff36-4937-a80a-a71a1592f847",
+      "display_name": "Radio Caprice - Melodic Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 220
+    },
+    {
+      "legacy_media_id": "72a07fa5-5f39-11ea-be63-52543be04c81",
+      "display_name": "Radio Caprice - Melodic Metalcore",
+      "primary_genre": "Metalcore",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 221
+    },
+    {
+      "legacy_media_id": "8f29faf7-5672-481c-b56e-a531ed0e0d38",
+      "display_name": "Radio Caprice - Neue Deutsche Härte",
+      "primary_genre": "Heavy",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "https://mytuner.global.ssl.fastly.net/media/tvos_radios/b8qjdagwc9d8.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 222
+    },
+    {
+      "legacy_media_id": "44cbb6d8-3217-11ea-afca-52543be04c81",
+      "display_name": "Radio Caprice - Nu Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.radcap.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 223
+    },
+    {
+      "legacy_media_id": "dce04592-23a4-481f-bce8-0e40c9efb2ec",
+      "display_name": "Radio Caprice - Post Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/postmetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 224
+    },
+    {
+      "legacy_media_id": "963b429e-0601-11e8-ae97-52543be04c81",
+      "display_name": "Radio Caprice - Power Metal",
+      "primary_genre": "Power",
+      "homepage": "http://79.120.77.11:9099/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 225
+    },
+    {
+      "legacy_media_id": "49f58ea9-eca2-4d1c-ad53-bb2d768d2258",
+      "display_name": "Radio Caprice - Rock / Metal Ballads",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/rockball.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 226
+    },
+    {
+      "legacy_media_id": "78677595-7d16-40e3-8371-e1661290e774",
+      "display_name": "Radio Caprice - Rock Ballads",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "http://radcap.ru/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 227
+    },
+    {
+      "legacy_media_id": "c921edcb-1759-11ea-a620-52543be04c81",
+      "display_name": "Radio Caprice - Stoner Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://radcap.ru/stonermetal.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 228
+    },
+    {
+      "legacy_media_id": "417e89f0-9f5e-4d16-a68a-6e00fb0de6ce",
+      "display_name": "Radio Caprice - Symphonic Power Metal",
+      "primary_genre": "Power",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "https://mytuner.global.ssl.fastly.net/media/tvos_radios/b8qjdagwc9d8.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 229
+    },
+    {
+      "legacy_media_id": "a38fbecf-61f6-4f69-87ab-76607f05f4d3",
+      "display_name": "Radio Caprice - Symponic Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.radcap.ru/symphometal.html",
+      "source_logo_url": "http://radcap.ru/stylegraf/symphonicmetal-c.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 230
+    },
+    {
+      "legacy_media_id": "853ef384-382a-4556-8193-d265b56fe19a",
+      "display_name": "Radio Caprice - Viking Metal",
+      "primary_genre": "Folk",
+      "homepage": "http://radcap.ru/",
+      "source_logo_url": "https://mytuner.global.ssl.fastly.net/media/tvos_radios/b8qjdagwc9d8.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 231
+    },
+    {
+      "legacy_media_id": "677987f5-ddfe-403b-ba08-47af86e5ca50",
+      "display_name": "Radio CAPrise",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.radcap.ru/nwobhm.html",
+      "source_logo_url": "http://www.radcap.ru/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 232
+    },
+    {
+      "legacy_media_id": "8c047842-d874-4094-b4e4-2c5280216cce",
+      "display_name": "Radio Diabolus",
+      "primary_genre": "Black",
+      "homepage": "https://www.radio-diabolus.rocks/",
+      "source_logo_url": "https://radio-diabolus.dk/site/devil.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 233
+    },
+    {
+      "legacy_media_id": "09583181-fc2c-4e96-b432-55bbeacd040b",
+      "display_name": "Radio Fonlord",
+      "primary_genre": "Black",
+      "homepage": "https://a5.asurahosting.com/public/r%C3%A1dio_fonlord",
+      "source_logo_url": "https://fonlord.github.io/Virtualni-basnik/radio-fonlord-logo-512.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 234
+    },
+    {
+      "legacy_media_id": "e1302232-248d-4433-88c6-c12b1bfafc81",
+      "display_name": "Radio Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "https://radioheavymetal76.wixsite.com/monsite",
+      "source_logo_url": "https://static.wixstatic.com/media/bae3bf_0b6fc93bb1584f329723c0241a93c65c~mv2.png/v1/fill/w_111,h_111,al_c,usm_0.66_1.00_0.01,enc_auto/LOGO%20RHM%20SUR%20ROUGE.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 235
+    },
+    {
+      "legacy_media_id": "2e5ada4b-45c7-43c7-8adb-9570e349d129",
+      "display_name": "Radio Maximum - Heavy 80s",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.maximum.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 236
+    },
+    {
+      "legacy_media_id": "d28fbc2f-b061-424d-8897-97ecfac7138b",
+      "display_name": "Radio Maximum - Heavy Monday",
+      "primary_genre": "Black",
+      "homepage": "https://www.maximum.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 237
+    },
+    {
+      "legacy_media_id": "0164c94f-727d-4557-87e0-f1569ae5655e",
+      "display_name": "Radio Maximum - Supernova",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.maximum.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 238
+    },
+    {
+      "legacy_media_id": "9e219cbd-9bd0-4950-997d-f17bd8fbe793",
+      "display_name": "Radio Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.radiometal.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 239
+    },
+    {
+      "legacy_media_id": "30a09972-730a-42d8-8614-c9148b05992f",
+      "display_name": "Radio Metal On: The Thrasher",
+      "primary_genre": "Thrash",
+      "homepage": "https://metalon.org/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 240
+    },
+    {
+      "legacy_media_id": "1f86fce1-5d79-4c52-b06e-462cabb5da26",
+      "display_name": "Radio Metal On: Toxic",
+      "primary_genre": "Metalcore",
+      "homepage": "https://metalon.org/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 241
+    },
+    {
+      "legacy_media_id": "2e3a581d-19f1-4ed1-ba3d-067f4c66819f",
+      "display_name": "RADIO NARCAN",
+      "primary_genre": "Progressive",
+      "homepage": "https://radionarcan.altervista.org/",
+      "source_logo_url": "https://radionarcan.altervista.org/img/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 242
+    },
+    {
+      "legacy_media_id": "45efffad-ba3a-4f83-a17e-3f66681eda67",
+      "display_name": "Radio Regenbogen - Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.regenbogen.de/radio",
+      "source_logo_url": "https://file.atsw.de/production/static/1688454070419/icons/icon_64.b8wxo2c0800.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 243
+    },
+    {
+      "legacy_media_id": "5125ff5f-6965-474b-a702-1017789bd485",
+      "display_name": "Radio RMF Hard and Heavy",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rmfon.pl/play,32#p",
+      "source_logo_url": "https://www.rmfon.pl/assets/images/favicon/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 244
+    },
+    {
+      "legacy_media_id": "4748a2a9-2f27-4e4d-a15f-a91448a75830",
+      "display_name": "Radio ROCKS Kyiv 103.6FM HD",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.tavr.media/radioroks/",
+      "source_logo_url": "https://upload.wikimedia.org/wikipedia/uk/b/be/Logo_radio_roks.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 245
+    },
+    {
+      "legacy_media_id": "255d3cc9-fdd2-4552-8bc2-de8aadb83a1a",
+      "display_name": "Radio ROKS (Moldova) - Hard'n'Heavy",
+      "primary_genre": "Heavy",
+      "homepage": "https://radioroks.md/",
+      "source_logo_url": "https://radioroks.md/front-assets/favicons/favicon-96x96.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 246
+    },
+    {
+      "legacy_media_id": "961f85c0-0601-11e8-ae97-52543be04c81",
+      "display_name": "Radio todamax",
+      "primary_genre": "Thrash",
+      "homepage": "http://laut.fm/todamax",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 247
+    },
+    {
+      "legacy_media_id": "4992d90f-2bed-445d-abc6-6065e7faa38e",
+      "display_name": "Radio-Drachenblut",
+      "primary_genre": "Metal",
+      "homepage": "https://radio-drachenblut.ch/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 248
+    },
+    {
+      "legacy_media_id": "0fd71e3e-b9aa-11e9-acb2-52543be04c81",
+      "display_name": "RadioBOB Metal (64 kbps AAC)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 249
+    },
+    {
+      "legacy_media_id": "8d5f5068-b9ab-11e9-acb2-52543be04c81",
+      "display_name": "RadioBOB Metalcore (64 kbps AAC)",
+      "primary_genre": "Metalcore",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 250
+    },
+    {
+      "legacy_media_id": "c9392b71-b9ab-11e9-acb2-52543be04c81",
+      "display_name": "RadioBOB Metallica (64 kbps AAC)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 251
+    },
+    {
+      "legacy_media_id": "7b3aa4a0-b9a9-11e9-acb2-52543be04c81",
+      "display_name": "RadioBOB Wacken (64 kbps AAC)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.radiobob.de/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 252
+    },
+    {
+      "legacy_media_id": "9647e837-0601-11e8-ae97-52543be04c81",
+      "display_name": "RadioGora - ATD",
+      "primary_genre": "Metal",
+      "homepage": "http://radiogora.ru/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 253
+    },
+    {
+      "legacy_media_id": "9610ca1a-0601-11e8-ae97-52543be04c81",
+      "display_name": "RauteMusik Wacken Radio",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.rautemusik.fm/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 254
+    },
+    {
+      "legacy_media_id": "685672a3-ccc3-4ccc-bc8e-b52eee963c9e",
+      "display_name": "REGENBOGEN 2 - METAL",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.regenbogen2.de/webradio/metal",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 255
+    },
+    {
+      "legacy_media_id": "681c6fee-8d61-437b-84a4-f96b8fd3422c",
+      "display_name": "Ritus",
+      "primary_genre": "Black",
+      "homepage": "https://laut.fm/ritus",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 256
+    },
+    {
+      "legacy_media_id": "72e2c8e3-3d74-41e3-855c-d44812d5023e",
+      "display_name": "Rock Antenne Gothic",
+      "primary_genre": "Metal",
+      "homepage": "https://www.rockantenne.de/webradio/gothic",
+      "source_logo_url": "https://www.rockantenne.de/logos/station-rock-antenne/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 257
+    },
+    {
+      "legacy_media_id": "960cca40-0601-11e8-ae97-52543be04c81",
+      "display_name": "Rock Antenne Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.rockantenne.de/",
+      "source_logo_url": "http://www.rockantenne.de/logos/station-rock-antenne/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 258
+    },
+    {
+      "legacy_media_id": "ae6c1e45-2ec6-43de-99e3-75fc1e77465d",
+      "display_name": "Rock Antenne Modern Metal",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockantenne.de/",
+      "source_logo_url": "https://www.rockantenne.de/logos/station-rock-antenne/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 259
+    },
+    {
+      "legacy_media_id": "70751ca9-f2b9-4c32-8c0d-98c3356eb6f9",
+      "display_name": "Rock FM 105.5",
+      "primary_genre": "Death",
+      "homepage": "https://rockfm.com.ni/",
+      "source_logo_url": "https://rockfm.com.ni/wp-content/uploads/2020/06/cropped-una-logo-rock-1-180x180.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 260
+    },
+    {
+      "legacy_media_id": "dc7e3511-79b2-41f5-8b1f-a6e8098fcda4",
+      "display_name": "ROCK FM Classic Rock",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://www.my-radios.com/es/radio/escuchar/30420/ROCK-FM-CLASSIC-ROCK",
+      "source_logo_url": "http://www.my-radios.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 261
+    },
+    {
+      "legacy_media_id": "ae648419-2ac9-431d-8933-deb732ad6c9c",
+      "display_name": "ROCK FM METAL",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockfm.de/",
+      "source_logo_url": "https://image.atsw.de/atsw/production/2024-05/rockfm_metal_600x600.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 262
+    },
+    {
+      "legacy_media_id": "76e95a1d-f92f-4096-9233-ed0c0a069f7b",
+      "display_name": "ROCK FM METALLICA",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.rockfm.de/",
+      "source_logo_url": "https://image.atsw.de/atsw/production/2024-05/rockfm_metallica_600x600.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 263
+    },
+    {
+      "legacy_media_id": "f385b04f-6882-4cb4-8a96-58d2c90b5fbc",
+      "display_name": "Rock Radio Hard & Heavy SLO",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockradio.si/",
+      "source_logo_url": "https://radijskepostaje.si/uploads/img/rock-radio.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 264
+    },
+    {
+      "legacy_media_id": "23ba9a6d-fc16-4ae6-85f5-52265b8eaa32",
+      "display_name": "Rock The World - Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "https://play.you.radio/station/2349",
+      "source_logo_url": "https://manager.uber.radio/static/uploads/station/9f9e3c8f-59ee-47dd-ab88-32bbd1547223.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 265
+    },
+    {
+      "legacy_media_id": "720feb78-4dec-4c6a-879f-f7cfa7e50c2c",
+      "display_name": "rock.irk.ru :: main-mix",
+      "primary_genre": "Metalcore",
+      "homepage": "https://rock.irk.ru/radio",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 266
+    },
+    {
+      "legacy_media_id": "4ce3f3f1-b68e-11e9-acb2-52543be04c81",
+      "display_name": "ROCKANTENNE Heavy Metal (64 kbps AAC)",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockantenne.de/",
+      "source_logo_url": "https://www.rockantenne.de/logos/station-rock-antenne/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 267
+    },
+    {
+      "legacy_media_id": "091790a1-0f81-4cac-abd4-40a1c437cf3d",
+      "display_name": "Rockaxis Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockaxis.com/",
+      "source_logo_url": "https://catalogo-rm.prochile.cl/wp-content/uploads/2020/10/LOGO_400-169.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 268
+    },
+    {
+      "legacy_media_id": "4512f735-bea8-11e9-8502-52543be04c81",
+      "display_name": "Rocker Rádió",
+      "primary_genre": "Hard Rock",
+      "homepage": "http://rockerradio.online/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 269
+    },
+    {
+      "legacy_media_id": "a8cd8589-8a84-4eea-9bb1-f80867a9f018",
+      "display_name": "RockFM Online",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rockfmonline.be/page.php?id=1",
+      "source_logo_url": "https://cdn-profiles.tunein.com/s355127/images/logod.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 270
+    },
+    {
+      "legacy_media_id": "f99e4bda-71b9-11ea-b1cf-52543be04c81",
+      "display_name": "rockfm.ru heavy",
+      "primary_genre": "Heavy",
+      "homepage": "https://rockfm.ru/",
+      "source_logo_url": "https://www.rockfm.ru/favicons/apple-touch-icon.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 271
+    },
+    {
+      "legacy_media_id": "31a41c92-c94c-417b-9178-23641b8b8d5c",
+      "display_name": "Rockstar Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://tanase.tapinarii.ro/",
+      "source_logo_url": "https://tanase.tapinarii.ro/wp-content/cropped-SIgla-Rockstar-Radio212-1.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 272
+    },
+    {
+      "legacy_media_id": "ee587805-11d2-4d3a-b676-8121e149b0ff",
+      "display_name": "RPR1. Heavy Metal",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.rpr1.de/",
+      "source_logo_url": "https://cdn.rpr1.de/sites/default/files/thumbnails/image/Heavy_Metal_agg_1600x1600.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 273
+    },
+    {
+      "legacy_media_id": "5eba8312-e5c9-4dfc-8db2-2abde7044976",
+      "display_name": "RSTLSS",
+      "primary_genre": "Heavy",
+      "homepage": "https://rstlss.com/",
+      "source_logo_url": "https://rstlss.com/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 274
+    },
+    {
+      "legacy_media_id": "960ef299-0601-11e8-ae97-52543be04c81",
+      "display_name": "RTBF Classic 21 - Metal",
+      "primary_genre": "Metal",
+      "homepage": "http://www.rtbf.be/radio/liveradio/webradio-classic21-metal",
+      "source_logo_url": "http://www.rtbf.be/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 275
+    },
+    {
+      "legacy_media_id": "b506496c-5435-4894-a590-272c490934af",
+      "display_name": "Sabaton Radio",
+      "primary_genre": "Power",
+      "homepage": "https://radiostream.novawap.com/",
+      "source_logo_url": "https://fmcube.net/images/stations/65f5fac021150.jpg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 276
+    },
+    {
+      "legacy_media_id": "c58a8574-bc4d-49d5-9b57-c5266ffbcf39",
+      "display_name": "SFTD RADIO",
+      "primary_genre": "Heavy",
+      "homepage": "https://songs4deaf.blogspot.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 277
+    },
+    {
+      "legacy_media_id": "960de41d-0601-11e8-ae97-52543be04c81",
+      "display_name": "SomaFM Metal Detector (128k AAC)",
+      "primary_genre": "Black",
+      "homepage": "https://somafm.com/metal/",
+      "source_logo_url": "https://somafm.com/img3/metal-400.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 278
+    },
+    {
+      "legacy_media_id": "9a5811ad-f4b5-11e8-a471-52543be04c81",
+      "display_name": "SomaFM Metal Detector (128k MP3)",
+      "primary_genre": "Black",
+      "homepage": "https://somafm.com/metal/",
+      "source_logo_url": "https://somafm.com/img3/metal-400.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 279
+    },
+    {
+      "legacy_media_id": "42b89f69-bff0-48ba-ae66-a554e84414d7",
+      "display_name": "SomaFM Metal Detector (32k AAC)",
+      "primary_genre": "Black",
+      "homepage": "https://somafm.com/metal/",
+      "source_logo_url": "https://somafm.com/img3/metal-400.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 280
+    },
+    {
+      "legacy_media_id": "6424a5b9-1401-415c-a243-6da3fc06dd47",
+      "display_name": "SomaFM Metal Detector (64k AAC)",
+      "primary_genre": "Black",
+      "homepage": "https://somafm.com/metal/",
+      "source_logo_url": "https://somafm.com/img3/metal-400.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 281
+    },
+    {
+      "legacy_media_id": "db00c1f9-f3eb-4da5-acf8-90d26e7ab43b",
+      "display_name": "StarFM From Hell",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.starfm.de/",
+      "source_logo_url": "https://cdn-profiles.tunein.com/s75756/images/logod.png?t=637995548300000000",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 282
+    },
+    {
+      "legacy_media_id": "d319451e-4dc5-433f-8046-8ba1437b74c2",
+      "display_name": "Stone Prog",
+      "primary_genre": "Progressive",
+      "homepage": "https://laut.fm/stone-prog",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 283
+    },
+    {
+      "legacy_media_id": "962faec2-0601-11e8-ae97-52543be04c81",
+      "display_name": "Stone Radio",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.stoneradio.gr/",
+      "source_logo_url": "http://cdn-radiotime-logos.tunein.com/s236876q.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 284
+    },
+    {
+      "legacy_media_id": "871304a3-cf31-4a4a-850c-c1cb898ff2ad",
+      "display_name": "STREETFIGHTER",
+      "primary_genre": "Metal",
+      "homepage": "https://www.radio.de/s/lautfm-streetfighter",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 285
+    },
+    {
+      "legacy_media_id": "6010ee2f-c88e-4ee6-a2a1-1c1526cc48ca",
+      "display_name": "Studio Brussel Zware Gitaren",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.stubru.be/",
+      "source_logo_url": "https://www.vrt.be/content/dam/vrtvideo/branding/logos/stubru-bruut/v4/color.svg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 286
+    },
+    {
+      "legacy_media_id": "4eff4dda-3869-4362-9c92-104179ace2ef",
+      "display_name": "Szent Korona Rádió",
+      "primary_genre": "Heavy",
+      "homepage": "https://szentkoronaradio.com/",
+      "source_logo_url": "https://szentkoronaradio.com/wp-content/uploads/2024/06/cropped-szkrlogo-270x270.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 287
+    },
+    {
+      "legacy_media_id": "9618ac6b-0601-11e8-ae97-52543be04c81",
+      "display_name": "Tangra Mega Rock",
+      "primary_genre": "Heavy",
+      "homepage": "http://www.radiotangra.com/",
+      "source_logo_url": "https://radiotangra.com/wp-content/uploads/2023/02/Vector-Smart-Object.svg",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 288
+    },
+    {
+      "legacy_media_id": "dcedc78c-8cc0-4831-8f4a-5101509c7947",
+      "display_name": "Tattoo metal",
+      "primary_genre": "Heavy",
+      "homepage": "https://usa14.fastcast4u.com/proxy/tattoometal?mp=/1",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 289
+    },
+    {
+      "legacy_media_id": "ad37b092-f582-4841-8022-bd70b7592067",
+      "display_name": "The Generator",
+      "primary_genre": "Heavy",
+      "homepage": "https://thegenerator.co.nz/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 290
+    },
+    {
+      "legacy_media_id": "2eb49b46-e056-4628-80c3-f63f685d22a4",
+      "display_name": "The Pit | NTS",
+      "primary_genre": "Black",
+      "homepage": "https://www.nts.live/infinite-mixtapes/the-pit",
+      "source_logo_url": "https://www.nts.live/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 291
+    },
+    {
+      "legacy_media_id": "94e61c2c-a6fb-4ff0-8b3d-1041a3e8e42e",
+      "display_name": "The Voice Of Doom",
+      "primary_genre": "Death",
+      "homepage": "https://www.thevoiceofdoom.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 292
+    },
+    {
+      "legacy_media_id": "bed93a3d-adc5-493d-8206-082f7b0a3f10",
+      "display_name": "Thrash Heavy Metal - Caprice Radio",
+      "primary_genre": "Thrash",
+      "homepage": "http://radcap.ru/thrashheavy.html",
+      "source_logo_url": "http://radcap.ru/graf2/radcaplogo.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 293
+    },
+    {
+      "legacy_media_id": "3738fc9e-2c16-11e8-91bf-52543be04c81",
+      "display_name": "Thrashking Radio",
+      "primary_genre": "Death",
+      "homepage": "http://www.thrashking.com/",
+      "source_logo_url": "https://cdn-radiotime-logos.tunein.com/s238458q.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 294
+    },
+    {
+      "legacy_media_id": "ee843b89-e69d-4a64-bb8f-0ed8da7a558a",
+      "display_name": "TotalRock Radio",
+      "primary_genre": "Metal",
+      "homepage": "https://totalrock.com/",
+      "source_logo_url": "https://scontent.fcgk8-1.fna.fbcdn.net/v/t1.18169-9/11400985_1602513246663466_6035298720034077887_n.jpg?stp=cp0_dst-jpg_e15_fr_q65&_nc_cat=108&ccb=1-7&_nc_sid=7aed08&efg=eyJpIjoiYiJ9&_nc_eui2=AeEETQvQCq6lHutRRfK171iMKMnkfCxBQUgoyeR8LEFBSC8L74DpSPHz7DvwVuHvpZkIi6qJ0_1acvrVbfekHQL9&_nc_ohc=Oo7DzNH7oTMAX_ZluE8&tn=I4UqcoMHerbAkKms&_nc_ht=scontent.fcgk8-1.fna&oh=00_AfBCXINd2TGpeja3jEiHkpvCmVAH0sxg6_Q39XWj5iRvUA&oe=6407F56B",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 295
+    },
+    {
+      "legacy_media_id": "47278da2-b2c1-4f1b-90ac-e8ffb4918cfb",
+      "display_name": "True Black Metal Radio",
+      "primary_genre": "Black",
+      "homepage": "http://trueblackmetalradio.com/#/home",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 296
+    },
+    {
+      "legacy_media_id": "962abd5c-0601-11e8-ae97-52543be04c81",
+      "display_name": "Ultra Dark Radio",
+      "primary_genre": "Metal",
+      "homepage": "http://www.ultradarkradio.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 297
+    },
+    {
+      "legacy_media_id": "5bb5a826-0579-44f2-9987-149d5bb018a9",
+      "display_name": "UP THE IRONS",
+      "primary_genre": "Heavy",
+      "homepage": "https://laut.fm/up_the_irons",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 298
+    },
+    {
+      "legacy_media_id": "364dc635-5007-4a75-aeac-d9e6e1c856bb",
+      "display_name": "Vinylestimes",
+      "primary_genre": "Hard Rock",
+      "homepage": "https://www.vinylestimes.fr/",
+      "source_logo_url": "https://image.radioking.io/radios/7551/logo/bcebad80-83fa-445a-8b1d-730512cd4e73.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 299
+    },
+    {
+      "legacy_media_id": "d220916c-2d5c-48de-a785-b4a466ec790b",
+      "display_name": "Virage Radio Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.virageradio.com/",
+      "source_logo_url": "https://www.virageradio.com/apple-touch-icon-120x120.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 300
+    },
+    {
+      "legacy_media_id": "d820e06b-d0dc-4727-9aa8-f1e22cb27e72",
+      "display_name": "Virgin Radio Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://www.virginradio.fr/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 301
+    },
+    {
+      "legacy_media_id": "c8cfe002-c6db-4ead-bfc4-69f1ba058a95",
+      "display_name": "Virgin Radio Rockstar: AC/DC",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.virginradio.it/sezioni/12079/rockstar-ac-dc",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 302
+    },
+    {
+      "legacy_media_id": "a1e1e108-0408-47fd-b51c-55974e9111e4",
+      "display_name": "Virgin Radio Rockstar: Aerosmith",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.virginradio.it/sezioni/12081/rockstar-aerosmith",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 303
+    },
+    {
+      "legacy_media_id": "5c327a56-fc92-41f5-b0ab-701b2e5d3c2a",
+      "display_name": "Virgin Radio Rockstar: Guns N' Roses",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.virginradio.it/sezioni/1824/music-star-guns-n-roses1824",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 304
+    },
+    {
+      "legacy_media_id": "b60c41f0-f041-4146-bcca-88d03775e0a2",
+      "display_name": "Waste Water Music",
+      "primary_genre": "Doom",
+      "homepage": "https://wastewatermusic.blogspot.com/?m=1",
+      "source_logo_url": "https://assets.laut.fm/4f002ea7d902e5e084e798c2901fbb9f?t=_120x120",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 305
+    },
+    {
+      "legacy_media_id": "4d193336-66a3-4921-b173-b60a76e55692",
+      "display_name": "WSOU",
+      "primary_genre": "Heavy",
+      "homepage": "https://www.atc-labs.com/SetonHallPlayer/player/wsou2.html",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 306
+    },
+    {
+      "legacy_media_id": "21d284f0-00ce-4f38-8afd-854fd0c877e1",
+      "display_name": "X Transmission FM",
+      "primary_genre": "Black",
+      "homepage": "http://xtransmissionfm.com/",
+      "source_logo_url": "",
+      "logo_state": "discovery_needed",
+      "editorial_decision": "none",
+      "source_position": 307
+    },
+    {
+      "legacy_media_id": "2b11e548-801a-48f3-a74e-dab927c71ece",
+      "display_name": "РокРадіо Metal",
+      "primary_genre": "Metal",
+      "homepage": "https://rockradioua.online/",
+      "source_logo_url": "https://rockradioua.online/wp-content/themes/rock-radio/favicon/favicon-32x32.png",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 308
+    },
+    {
+      "legacy_media_id": "c319a566-e9f1-4649-891b-adc324ab8e3d",
+      "display_name": "夜愿电台Nightwish Radio",
+      "primary_genre": "Heavy",
+      "homepage": "https://zeno.fm/radio/yeyuan/",
+      "source_logo_url": "https://zeno.fm/favicon.ico",
+      "logo_state": "unverified_historical",
+      "editorial_decision": "none",
+      "source_position": 309
+    }
+  ]
+}
