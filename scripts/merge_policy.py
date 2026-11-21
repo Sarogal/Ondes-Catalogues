@@ -6,6 +6,13 @@ import json, math, re
 from urllib.parse import urlparse
 from proof_text import verify_event as proof
 from official_organizer_proof import canonical_event_title
+from ptitesondes_family_activity_classification import ACTIVITY_PATTERNS
+from ptitesondes_family_national_scope import FAMILY_TYPES
+
+# Narrow radio-adjacent expansion. The source's category field is never
+# authority. Only a live, independently verified Publisher bridge may supply
+# these scopes, tied to an ephemeral candidate checker.
+PUBLISHABLE_CHILD_ARTS = frozenset(ACTIVITY_PATTERNS)
 from proof import norm
 
 REQUIRED={"id","title","category","category_label","date_start","date_end","city","department","region","venue","source_url","source_label","verified_at","geo_verified_at","geo_precision","lat","lng"}
@@ -122,7 +129,14 @@ def compatible_published_refinement(old, proposed, today):
         return False
     return True
 
-def merge(ref,public,patch,today,checker=proof):
+def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=frozenset()):
+    # Never accept a declarative category approval from a serialized patch.
+    # Only the trusted, in-memory source/geo/session verifier invokes this
+    # opt-in route. The historical legacy checker cannot enable it.
+    guard(type(verified_child_arts) is frozenset
+          and verified_child_arts <= PUBLISHABLE_CHILD_ARTS
+          and (not verified_child_arts or checker is not proof),
+          "extension jeunesse sans vérificateur indépendant")
     originals=byid(ref)
     published=byid(public)
     validate_patch(patch,ref,date.fromisoformat(patch["generated_at"]),today)
@@ -130,7 +144,7 @@ def merge(ref,public,patch,today,checker=proof):
         guard(key in published and historical_event_unchanged(e, published[key]),
               "fiche historique supprimée ou modifiée : "+key)
     fields=set().union(*(set(e) for e in ref["events"]))
-    categories={e["category"] for e in ref["events"]}
+    categories={e["category"] for e in ref["events"]} | verified_child_arts
     signatures={(canonical_event_title(e),norm(e.get("city")),norm(e.get("venue")),e.get("date_start")) for e in public["events"]}
     seen=set();accepted=[];waiting=[]
     for ev in patch["additions"]:
@@ -152,6 +166,9 @@ def merge(ref,public,patch,today,checker=proof):
         signature=(canonical_event_title(ev),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
         ok,reason=valid(ev,categories,fields,today)
+        if (ok and ev["category"] in verified_child_arts
+                and ev["category_label"] != FAMILY_TYPES[ev["category"]][0]):
+            ok,reason=False,"libellé jeunesse incompatible avec la catégorie"
         if ok:
             ok,reason=checker(ev,ref["events"])
         if ok:
