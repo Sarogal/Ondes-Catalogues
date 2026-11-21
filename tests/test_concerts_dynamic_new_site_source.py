@@ -193,6 +193,13 @@ class OpenOriginNewSiteProofTests(unittest.TestCase):
         # Evidence validation is NOT an admission, publisher mutation,
         # or signed private ledger write.
 
+    def test_live_proof_alone_cannot_bypass_the_existing_publisher_gate(self):
+        review, location, *_ = fixture()
+        # This new verifier deliberately cannot register an event site:
+        # the real Publisher still needs an explicit integrated contract.
+        with self.assertRaises(ValueError):
+            site_contract.validate(location, TODAY, [review])
+
     def test_no_first_party_domain_ownership_cannot_pass(self):
         review, location, origin_venue, raw, witness, node, origin = fixture()
         cases = [
