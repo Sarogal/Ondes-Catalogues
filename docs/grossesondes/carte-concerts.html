@@ -21,6 +21,10 @@ aside h2{font-size:1rem;margin:0 0 10px}.event{display:block;text-align:left;wid
 .event strong,.event span{display:block;margin:3px 0}.event span{font-size:.84rem;color:#d3d4dc}
 .note,footer{font-size:.83rem;line-height:1.5;color:#b8b8c1}footer{margin:0 auto;padding:8px 16px 20px;max-width:1600px}a{color:#ffc4c5}
 .popup-show{padding:6px 0;border-top:1px solid #ddd}.popup-show strong{display:block}
+/* Browser-independent markers: no Canvas renderer or external marker icons. */
+.go-pin{background:transparent;border:0;filter:drop-shadow(0 2px 4px #1118)}
+.go-pin-dot{display:block;width:22px;height:22px;border-radius:50%;background:#e42f48;border:3px solid #fff;box-shadow:0 0 0 3px #bd1f3c88;}
+.go-pin:hover .go-pin-dot,.go-pin:focus .go-pin-dot{background:#fc6d66;box-shadow:0 0 0 5px #bd1f3c77}
 @media(max-width:850px){.panes{grid-template-columns:1fr}#map{height:53vh;min-height:365px}aside{height:330px;min-height:200px}#count{margin-left:0;width:100%}}
 </style>
 </head>
@@ -47,7 +51,7 @@ aside h2{font-size:1rem;margin:0 0 10px}.event{display:block;text-align:left;wid
 const q=document.getElementById("q"),period=document.getElementById("period"),
 area=document.getElementById("area"),count=document.getElementById("count"),
 results=document.getElementById("results"),heading=document.getElementById("heading");
-const map=L.map("map",{scrollWheelZoom:false,preferCanvas:true}).setView([46.6,2.5],6);
+const map=L.map("map",{scrollWheelZoom:false,preferCanvas:false}).setView([46.6,2.5],6);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
 const layer=L.layerGroup().addTo(map);
 let entries=[];
@@ -74,8 +78,11 @@ return !query||norm([s.title,s.venue.name,s.venue.city,s.artists.join(" "),s.gen
 const groups=new Map();list.forEach(function(s){if(!groups.has(s.venue.id))groups.set(s.venue.id,{venue:s.venue,shows:[]});groups.get(s.venue.id).shows.push(s);});
 layer.clearLayers();results.replaceChildren();const markers=new Map(),points=[];
 groups.forEach(function(g,id){const v=g.venue;
-const m=L.circleMarker([v.latitude,v.longitude],{radius:Math.min(13,7+Math.log2(g.shows.length+1)),color:"#fff1f1",weight:1.2,fillColor:"#cc3046",fillOpacity:.9})
-.bindPopup(popup(v,g.shows),{maxWidth:310}).addTo(layer);
+// A DOM-backed divIcon remains visible where canvas circleMarker paint is
+// suppressed by a browser/GPU combination. Never insert catalogue text as HTML.
+const m=L.marker([v.latitude,v.longitude],{
+icon:L.divIcon({className:"go-pin",html:'<span class="go-pin-dot" aria-hidden="true"></span>',iconSize:[22,22],iconAnchor:[11,11]})
+}).bindPopup(popup(v,g.shows),{maxWidth:310}).addTo(layer);
 markers.set(id,m);points.push([v.latitude,v.longitude]);});
 list.slice(0,50).forEach(function(s){const b=add(results,"button",null,"event");b.type="button";
 add(b,"strong",s.title);add(b,"span",displayDay(s.date)+" · "+s.venue.name+" · "+s.venue.city);
