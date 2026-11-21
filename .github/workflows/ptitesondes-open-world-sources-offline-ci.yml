@@ -8,6 +8,8 @@ on:
       - 'tests/test_ptitesondes_dynamic_municipal_source_links.py'
       - 'scripts/ptitesondes_unlisted_source_safe_recheck.py'
       - 'tests/test_ptitesondes_unlisted_source_safe_recheck.py'
+      - 'scripts/ptitesondes_unlisted_exact_session_research.py'
+      - 'tests/test_ptitesondes_unlisted_exact_session_research.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -34,3 +36,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_source_safe_recheck.py' -v
+      - name: Verify exact OpenAgenda source sessions without closed catalogues
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_exact_session_research.py' -v
