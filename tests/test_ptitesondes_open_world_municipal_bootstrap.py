@@ -136,6 +136,48 @@ class MunicipalBootstrapTests(unittest.TestCase):
                   html_reader=reading)
         self.assertEqual(out["status"], "dila_municipal_directory_unavailable")
 
+    def test_unknown_organizer_urls_are_kept_even_without_dila(self):
+        source = event()
+        source["canonicalUrl"] = "https://organisateur-nouveau.fr/spectacle"
+        source["registration"] = [
+            {"type": "link", "value": "https://billetterie-nouvelle.fr/123"},
+            {"type": "email", "value": "contact@example.org"},
+            {"type": "link", "value": "http://insecure.example.org/123"},
+        ]
+        source["location"]["website"] = "https://lieu-nouveau.fr/"
+        source["location"]["links"] = [
+            {"url": "https://lieu-nouveau.fr/agenda"},
+            {"url": "https://localhost/admin"},
+        ]
+        reading = Mock(side_effect=AssertionError("must never fetch new URL"))
+        out = run(oa_event=source, dila={"total_count": 0, "results": []},
+                  html_reader=reading)
+        self.assertEqual(out["status"], "dila_municipal_domain_not_verified")
+        links = out["private_unverified_oa_web_leads"]
+        self.assertEqual([l["url"] for l in links], [
+            "https://organisateur-nouveau.fr/spectacle",
+            "https://lieu-nouveau.fr/",
+            "https://lieu-nouveau.fr/agenda",
+            "https://billetterie-nouvelle.fr/123",
+        ])
+        self.assertTrue(all(l["candidate_only"] and
+                            not l["owner_verified"] and
+                            not l["publication_ready"] for l in links))
+        reading.assert_not_called()
+        self.assertFalse(out["events_independently_attested"])
+        self.assertEqual(out["public_writes"], 0)
+
+    def test_oa_links_over_capacity_hold_without_silent_truncation(self):
+        from ptitesondes_open_world_municipal_bootstrap import MAX_OA_UNVERIFIED_URLS
+        src = event()
+        src["registration"] = [
+            {"type": "link", "value": f"https://new-{i}.fr/show"}
+            for i in range(MAX_OA_UNVERIFIED_URLS + 1)]
+        out = run(oa_event=src, dila={"total_count": 0, "results": []})
+        self.assertTrue(out["oa_link_partition_required"])
+        self.assertEqual(out["private_unverified_oa_web_leads"], [])
+        self.assertFalse(out["publication_ready"])
+
     def test_different_agenda_uid_slug_or_event_uid_stops_before_dila(self):
         directory_reader = Mock(
             side_effect=AssertionError("should not call DILA"))
