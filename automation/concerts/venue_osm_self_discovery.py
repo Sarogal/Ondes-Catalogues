@@ -38,10 +38,10 @@ from independent_named_site_geo import _distance_meters
 SCHEMA = "grossesondes.concert.discovery.v1"
 # OSM node identities already appear in several canonical provenance formats.
 # None is a trust grant: the independent OSM API must confirm site+location.
-OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]*)\\Z")
-OSM_API_NODE = re.compile(r"https://www[.]openstreetmap[.]org/api/0[.]6/node/([1-9][0-9]*)\\Z")
-MAPCARTA_NODE = re.compile(r"https://mapcarta[.]com/(?:fr/)?N([1-9][0-9]*)\\Z")
-TEXT_OSM_NODE = re.compile(r"\\b(?:OpenStreetMap\\s+)?node\\s+([1-9][0-9]*)\\b",re.I)
+OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]*)\Z")
+OSM_API_NODE = re.compile(r"https://www[.]openstreetmap[.]org/api/0[.]6/node/([1-9][0-9]*)\Z")
+MAPCARTA_NODE = re.compile(r"https://mapcarta[.]com/(?:fr/)?N([1-9][0-9]*)\Z")
+TEXT_OSM_NODE = re.compile(r"\b(?:OpenStreetMap\s+)?node\s+([1-9][0-9]*)\b",re.I)
 
 
 def osm_node_id(venue):
