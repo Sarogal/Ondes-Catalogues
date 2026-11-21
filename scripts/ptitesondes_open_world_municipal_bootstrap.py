@@ -44,6 +44,7 @@ def _blank(status):
         "private_link_reports": [],
         "private_unverified_oa_web_leads": [],
         "oa_link_partition_required": False,
+        "venue_alias_requires_independent_recheck": False,
         "organizer_domain_attested": False,
         "source_rights_reviewed": False,
         "events_independently_attested": False,
@@ -132,6 +133,36 @@ def _safe_research_lead(lead, today):
     )
 
 
+def _same_venue_label_contained_for_research(original, live):
+    """Recognize an expanded ROOM LABEL as a lead, never as identity proof.
+
+    "L'Étage" versus "Le Liberté // L'Étage" may be the same venue, but
+    could also describe different rooms: only the next independent venue
+    proof can resolve it. It never grants published or geocoded status.
+    """
+    if not isinstance(original, str) or not isinstance(live, str):
+        return False
+    a, b = norm(original), norm(live)
+    if not a or a == b or len(a) < 5:
+        return False
+    return re.search(r"(?<![a-z0-9])" + re.escape(a)
+                     + r"(?![a-z0-9])", b) is not None
+
+
+def _same_exact_sessions_ignoring_order(first, second):
+    """OA session order is non-semantic; multiplicity and offsets are not."""
+    if not isinstance(first, list) or not isinstance(second, list):
+        return False
+    def pairs(data):
+        if any(type(x) is not dict or set(x) != {"begin", "end"}
+               or not isinstance(x["begin"], str)
+               or not isinstance(x["end"], str) for x in data):
+            return None
+        return sorted((x["begin"], x["end"]) for x in data)
+    a, b = pairs(first), pairs(second)
+    return a is not None and b is not None and bool(a) and a == b
+
+
 def bootstrap_municipal_sources(
         lead, key, today, *,
         agenda_reader=read_direct_agenda_v2,
@@ -197,18 +228,25 @@ def bootstrap_municipal_sources(
     if (not isinstance(city, str) or not 1 <= len(city) <= 120
             or not norm(city)
             or not isinstance(venue, str) or not 1 <= len(venue) <= 180
-            or not norm(venue)
-            or (isinstance(lead.get("city_unverified"), str)
-                and norm(lead["city_unverified"]) != norm(city))
-            or (isinstance(lead.get("venue_unverified"), str)
-                and norm(lead["venue_unverified"]) != norm(venue))
-            or (isinstance(lead.get("country_code_unverified"), str)
-                and lead["country_code_unverified"]
-                != loc.get("countryCode"))):
-        return held_with_leads("live_oa_city_or_venue_changed")
+            or not norm(venue)):
+        return held_with_leads("live_oa_city_or_venue_missing")
+    if (isinstance(lead.get("city_unverified"), str)
+            and norm(lead["city_unverified"]) != norm(city)):
+        return held_with_leads("live_oa_city_changed")
+    if (isinstance(lead.get("country_code_unverified"), str)
+            and lead["country_code_unverified"] != loc.get("countryCode")):
+        return held_with_leads("live_oa_country_changed")
+    earlier_venue = lead.get("venue_unverified")
+    venue_label_changed = (
+        isinstance(earlier_venue, str)
+        and norm(earlier_venue) != norm(venue))
+    if (venue_label_changed
+            and not _same_venue_label_contained_for_research(
+                earlier_venue, venue)):
+        return held_with_leads("live_oa_venue_changed")
     timings, _ = _time_sessions(event.get("timings"), today)
-    if (not timings or timings !=
-            lead["explicit_source_session_intervals"]):
+    if not _same_exact_sessions_ignoring_order(
+            timings, lead["explicit_source_session_intervals"]):
         return held_with_leads("live_oa_explicit_session_changed")
 
     # A structurally valid OA website is a research lead only. Neither OA
@@ -227,6 +265,8 @@ def bootstrap_municipal_sources(
         return held_with_leads("dila_municipal_hosts_ambiguous")
 
     out = held_with_leads("municipal_homepage_source_research_only")
+    # An expanded venue display label triggers research, NEVER admission.
+    out["venue_alias_requires_independent_recheck"] = venue_label_changed
     out["municipality_from_live_oa_not_registry"] = True
     out["municipal_origins_verified_by_dila"] = len(hosts)
     for host in sorted(hosts):
@@ -267,6 +307,9 @@ def public_redacted_municipal_bootstrap(result):
         "live_oa_location_not_french_or_missing",
         "live_oa_event_title_changed",
         "live_oa_city_or_venue_changed",
+        "live_oa_city_or_venue_missing",
+        "live_oa_city_changed", "live_oa_venue_changed",
+        "live_oa_country_changed",
         "live_oa_explicit_session_changed",
         "dila_municipal_directory_unavailable",
         "dila_municipal_domain_not_verified",
