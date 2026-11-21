@@ -406,6 +406,60 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
         self.assertEqual(new["geo_precision"], "venue")
         fixtures["osm_reader"].assert_not_called()
 
+    def test_missing_oa_gps_uses_official_geo_plus_independent_named_osm(self):
+        # The current OA event is authentic but omitted both coordinates.
+        # The official venue page has a unique exact-name JSON-LD Place
+        # with coordinates; OSM independently confirms that exact location.
+        ref = base()
+        live = oa_event()
+        live["location"] = {
+            k: v for k, v in live["location"].items()
+            if k not in ("latitude", "longitude")}
+        fixtures = readers(event=live)
+        fixtures["osm_reader"] = Mock(side_effect=lambda center: (
+            osm() if center == (44.5, 2.25) else
+            (_ for _ in ()).throw(AssertionError("untrusted search centre"))))
+        final, audit, report = merge_verified_open_world(
+            ref, ref, private_patch(ref), TODAY, KEY, **fixtures)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(report["held"], 0)
+        self.assertEqual((final["events"][-1]["lat"],
+                          final["events"][-1]["lng"]), (44.5, 2.25))
+        fixtures["osm_reader"].assert_called_once_with((44.5, 2.25))
+
+    def test_no_oa_gps_and_no_official_point_cannot_query_osm_with_guess(self):
+        ref = base()
+        live = oa_event()
+        live["location"] = {
+            k: v for k, v in live["location"].items()
+            if k not in ("latitude", "longitude")}
+        fixtures = readers(event=live, venue_page=official_venue_html(
+            include_geo=False))
+        fixtures["osm_reader"] = Mock(
+            side_effect=AssertionError("must not query OSM without centre"))
+        rejected, audit, report = merge_verified_open_world(
+            ref, ref, private_patch(ref), TODAY, KEY, **fixtures)
+        self.assertEqual(rejected, ref)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(report["held_reason_counts"], {
+            "fresh_independent_venue_proof_missing": 1})
+        fixtures["osm_reader"].assert_not_called()
+
+    def test_partial_oa_gps_still_rejected_despite_good_official_geo(self):
+        ref = base()
+        live = oa_event()
+        live["location"].pop("longitude")
+        fixtures = readers(event=live)
+        fixtures["osm_reader"] = Mock(
+            side_effect=AssertionError("partial OA GPS must fail early"))
+        rejected, audit, report = merge_verified_open_world(
+            ref, ref, private_patch(ref), TODAY, KEY, **fixtures)
+        self.assertEqual(rejected, ref)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(report["held_reason_counts"], {
+            "live_oa_gps_invalid_or_partial": 1})
+        fixtures["osm_reader"].assert_not_called()
+
     def test_missing_or_partial_oa_gps_can_never_justify_approximation(self):
         from test_ptitesondes_municipal_event_venue_ban import ban
         ref = base()
