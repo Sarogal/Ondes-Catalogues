@@ -37,7 +37,8 @@ def event(uid=12345, title="Les histoires du ciel",
           city="Montpellier", venue="Place de la Comédie",
           country="FR", status=1, day="2026-12-12"):
     return {
-        "uid": uid, "title": {"fr": title},
+        "uid": uid, "slug": "les-histoires-du-ciel",
+        "title": {"fr": title},
         "description": {"fr": description}, "state": 2,
         "status": status, "removed": False,
         "canonicalUrl": f"https://openagenda.com/agenda-demo/events/{uid}_les-histoires-du-ciel",
@@ -113,7 +114,7 @@ class PrivateNationalHandoffTests(unittest.TestCase):
             event(description="Goûter familial au parc pour enfants",
                   title="Goûter familial au parc"),
             event(country="BE"), event(city=None, venue="Lieu temporaire"),
-            {**event(), "canonicalUrl": "https://example.org/agenda-demo/events/12345_fake"},
+            {**event(), "canonicalUrl": "https://openagenda.com.evil.org/agenda-demo/events/12345_fake"},
             {**event(), "canonicalUrl": "https://openagenda.com/agenda-demo/events/12345_fake?secret=1"},
         ):
             with self.subTest(changed=changed):
@@ -123,6 +124,29 @@ class PrivateNationalHandoffTests(unittest.TestCase):
                 self.assertEqual(len(out["research_holds"]), 1)
                 self.assertFalse(out["publication_ready"])
                 self.assertEqual(out["public_writes"], 0)
+
+    def test_organizer_canonical_url_keeps_exact_openagenda_identity(self):
+        official = event()
+        official["canonicalUrl"] = "https://www.theatre-exemple.fr/programme/histoires"
+        result = handoff(index(), DIGEST, segment(), DAY, KEY,
+                         fetcher=lambda *_: official)
+        item, = result["backlog_leads"]
+        self.assertEqual(
+            item["source_url"],
+            "https://openagenda.com/agenda-demo/events/12345_les-histoires-du-ciel")
+        self.assertNotIn("theatre-exemple", json.dumps(result))
+        self.assertFalse(result["publication_ready"])
+        self.assertEqual(result["public_writes"], 0)
+
+    def test_external_url_missing_oa_slug_stays_in_research(self):
+        official = event()
+        official.pop("slug")
+        official["canonicalUrl"] = "https://www.theatre-exemple.fr/les-histoires"
+        result = handoff(index(), DIGEST, segment(), DAY, KEY,
+                         fetcher=lambda *_: official)
+        self.assertEqual(result["backlog_leads"], [])
+        self.assertEqual(result["research_holds"][0]["reason"],
+                         "canonical_public_event_url_requires_review")
 
     def test_reprogrammed_event_kept_as_research_hold(self):
         result = handoff(index(), DIGEST, segment(), DAY, KEY,
