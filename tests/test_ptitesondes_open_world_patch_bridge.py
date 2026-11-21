@@ -201,6 +201,8 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             "category_label": "Lecture jeunesse",
             "date_start": DAY.isoformat(),
             "date_end": DAY.isoformat(),
+            "verified_at": TODAY.isoformat(),
+            "geo_verified_at": TODAY.isoformat(),
         }
         verified_row = {
             **legacy_row, "id": "live-verified-reading",
@@ -230,6 +232,8 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             "category_label": "Lecture jeunesse",
             "date_start": DAY.isoformat(),
             "date_end": DAY.isoformat(),
+            "verified_at": TODAY.isoformat(),
+            "geo_verified_at": TODAY.isoformat(),
         }
         patch["additions"] = [new]
         for scopes in (
