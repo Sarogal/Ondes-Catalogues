@@ -160,6 +160,21 @@ class OpenAgendaLinkedPublisherTests(TestCase):
                 "festival metal, punk et hard rock",
                 "festival de cuisine traditionnelle")))
 
+    def test_electronic_hardcore_is_not_metal_punk_but_crossover_is_valid(self):
+        original = private_proposal(
+            TITLE, SITE, DATES, D1, event_ref=EVENT)
+        techno = ('<main><h1>Ferrailles du Nord Festival 2027</h1>'
+                  '<p>Festival hardcore, hardstyle, rawstyle, techno, '
+                  'EDM les 12 et 13 juin 2027.</p></main>')
+        crossover = techno.replace(
+            'hardcore, hardstyle', 'hardcore punk, hardstyle')
+        self.assertIsNone(independently_verify(
+            original, D2, event_fetch=lambda _: OA,
+            organizer_fetch=lambda _: techno))
+        self.assertIsNotNone(independently_verify(
+            original, D2, event_fetch=lambda _: OA,
+            organizer_fetch=lambda _: crossover))
+
     def test_first_day_does_not_publish_second_day_can_be_prepared(self):
         cal, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
