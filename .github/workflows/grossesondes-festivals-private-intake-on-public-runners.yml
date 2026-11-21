@@ -11,6 +11,7 @@ on:
       - 'festival-automation/national_live_index_recheck.py'
       - '.github/workflows/grossesondes-festivals-private-intake-on-public-runners.yml'
       - 'scripts/grossesondes_archived_html_intake.py'
+      - 'scripts/grossesondes_undated_edition.py'
       - 'scripts/grossesondes_official_html_edition.py'
       - 'scripts/grossesondes_structured_edition.py'
       - 'festival-automation/regional_festival_discovery.py'
