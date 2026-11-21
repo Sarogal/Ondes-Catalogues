@@ -182,19 +182,37 @@ def _candidate_links(html, base, root, festival_name, year, today):
         has_role = AGENDA_ROLE.search(words) is not None
         if not exact and not has_role:
             continue
-        score = 0 if exact else (1 if year_text in years else 2)
+        if exact:
+            score = 0
+        elif year_text in years:
+            score = 1
+        elif re.search(r"\\bagenda\\b", words):
+            # A mairie's actual agenda is far more valuable than unrelated
+            # associative/admin navigation links. This prioritizes a ROLE,
+            # never a hand-written source/domain/festival inventory.
+            score = 2
+        elif re.search(r"\\b(?:concerts?|festivals?|evenements?)\\b", words):
+            score = 3
+        elif re.search(r"\\b(?:actualites?|news)\\b", words):
+            score = 4
+        else:
+            score = 5
         choices[url] = min(score, choices.get(url, score))
-    # Week-based rotation lets a long municipal navigation menu be covered
-    # over time, without a fixed URL or organizer inventory.
+    # Independently rotate EACH navigation tier each day, so a large menu
+    # does not forever select only the lexically first few agenda entries.
+    # The exact named/current-year articles retain priority.
     ordered = sorted(choices.items(), key=lambda x: (x[1], x[0]))
     if not ordered:
         return []
     best = [u for u, score in ordered if score < 2]
-    generic = [u for u, score in ordered if score == 2]
-    if generic:
-        offset = (date.fromisoformat(today).toordinal() // 7) % len(generic)
-        generic = generic[offset:] + generic[:offset]
-    return (best + generic)[:MAX_DISCOVERED_URLS]
+    other = []
+    for priority in (2, 3, 4, 5):
+        group = [u for u, score in ordered if score == priority]
+        if group:
+            offset = date.fromisoformat(today).toordinal() % len(group)
+            group = group[offset:] + group[:offset]
+            other.extend(group)
+    return (best + other)[:MAX_DISCOVERED_URLS]
 
 
 
