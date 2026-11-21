@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-19",
+  "updatedAt": "2026-11-21",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2370,6 +2370,16 @@
     {
       "id": "doppler",
       "name": "DOPPLeR",
+      "aliases": []
+    },
+    {
+      "id": "knives",
+      "name": "KNIVES",
+      "aliases": []
+    },
+    {
+      "id": "fragile",
+      "name": "FRAGILE",
       "aliases": []
     }
   ],
@@ -15047,6 +15057,37 @@
       "history": [
         {
           "date": "2026-11-19",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270402-orleans-knives",
+      "title": "KNIVES + FRAGILE",
+      "date": "2027-04-02",
+      "artistIds": [
+        "knives",
+        "fragile"
+      ],
+      "venueId": "l-astrolabe-orleans",
+      "genres": [
+        "POST-PUNK – HARDCORE FUSION",
+        "PUNK – ROCK"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.lastrolabe.org/agenda/knives/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "L’Astrolabe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-21",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-21",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
