@@ -50,7 +50,8 @@ def fixture():
     concerts = dict(defaults, referrals=[
         {"dossierId": names[1][0], "classification": "EXPLICIT_TOURING_CONCERT_STOP"}])
     catalogue = {"schema": 1, "festivals": [
-        {"name": "MozHell Open Air 2027", "startDate": "2027-07-23"}]}
+        {"slug": "mozhell-open-air-2027", "name": "MozHell Open Air 2027",
+         "startDate": "2027-07-23"}]}
     return dict(discovery=discovery, editorial=editorial, funnel=funnel,
                 handoff=handoff, municipal=municipal, concerts=concerts), catalogue
 
