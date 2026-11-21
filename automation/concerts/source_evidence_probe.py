@@ -131,7 +131,8 @@ class _Metadata(HTMLParser):
         elif tag == "script" and props.get("type", "").lower() == "application/ld+json":
             self.in_ld = True
             self.ld_parts = []
-        elif tag == "link" and props.get("rel", "").casefold() == "canonical":
+        elif tag == "link" and isinstance(props.get("rel"), str) and (
+                props["rel"].casefold() == "canonical"):
             self.canonicals.append(props.get("href"))
 
     def handle_data(self, value):
