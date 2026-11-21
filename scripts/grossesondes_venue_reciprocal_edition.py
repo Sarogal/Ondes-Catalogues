@@ -18,7 +18,9 @@ from urllib.parse import urljoin, urlsplit
 import re
 
 from dns_pinned_https import fetch_public_html, safe_public_url
-from grossesondes_generic_directory_edition import verify_official_site_pages
+from grossesondes_generic_directory_edition import (
+    Heading, verify_official_site_pages,
+)
 from grossesondes_official_html_edition import VisibleText, fold, explicit_ranges
 from grossesondes_institutional_edition import slug_for
 from grossesondes_structured_edition import ROW_KEYS, PRIVATE_KEYS
@@ -167,9 +169,20 @@ def venue_detail_matches(html, title, day_start, day_end, site):
     try:
         visible = normalized(visible_content(html))
         base = normalized(re.sub(r"\s+20[2-4][0-9]$", "", title))
-        if len(base) < 7 or not re.search(
-                r"(?<![a-z0-9])" + re.escape(base) + r"(?![a-z0-9])",
-                visible):
+        headings = Heading()
+        headings.feed(html)
+        headings.close()
+        # A footer mention of the festival beside an unrelated event is
+        # insufficient: the VENUE event H1 must identify this festival.
+        named_heading = re.compile(
+            r"^" + re.escape(base) +
+            r"(?:\s+20[2-4][0-9])?(?:\s+(?:jour|day)\s+[1-7])?$")
+        if (len(base) < 7 or
+                sum(bool(named_heading.fullmatch(h))
+                    for h in headings.headings) != 1 or
+                re.search(r"\b(?:festival|edition)\s+20[2-4][0-9]\s+"
+                          r"(?:annulee?|reporte[e]?|cancelled)\b",
+                          visible)):
             return False
         year = day_start.year
         dates = {(a, b) for _x, _y, a, b in explicit_ranges(
