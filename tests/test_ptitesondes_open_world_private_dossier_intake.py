@@ -135,6 +135,15 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertLess(workflow.index(carry), workflow.index(overwrite))
         self.assertIn('if [[ -s "$STATE/patch-$DAY.json" ]]; then', workflow)
         self.assertIn("ne pas écraser la file", workflow)
+        # The per-report collector already enforces the rolling 14-day
+        # freshness cap. A missed current-day report must not disable
+        # recent, independently rechecked research.
+        self.assertIn(
+            'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
+            workflow)
+        self.assertNotIn(
+            'if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then',
+            workflow)
 
     def test_municipally_discovered_unknown_domain_creates_research_not_addition(self):
         self.write(report())
