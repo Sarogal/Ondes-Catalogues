@@ -1,0 +1,46 @@
+name: "GO Radio — candidate evidence (Punk, no publishing)"
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/radio-open-candidates-evidence-ci.yml"
+      - "grossesondes/radio-test-apk/candidates/**"
+      - "radio-catalog-lab/tools/probe_open_radio_candidates.py"
+      - "radio-catalog-lab/tools/test_probe_open_radio_candidates.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  candidate-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate candidate safety and OPEN discovery (OFFLINE)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_open_radio_candidates.py" -v
+      - name: Check official candidate audio transport (read only; no approval)
+        run: |
+          python radio-catalog-lab/tools/probe_open_radio_candidates.py \
+            --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
+            --output .go-candidate-evidence.json \
+            --live-probe
+      - name: Upload bounded test evidence (not an approval)
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-open-radio-candidate-evidence
+          path: .go-candidate-evidence.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Assert unchanged signing and publishing state
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_RADIO_OPEN_CANDIDATES_CI_OK — no signing, no publish, no station admitted"
