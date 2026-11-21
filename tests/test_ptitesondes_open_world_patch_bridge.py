@@ -187,6 +187,68 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             merge(reference, reference, patch, TODAY,
                   verified_child_arts={"lecture-jeunesse"})
 
+    def test_live_verified_child_category_does_not_authorize_legacy_patch_rows(self):
+        # A verified family-performance candidate must not enable *other*
+        # private-patch-only rows of the same category during merge().
+        from merge_policy import merge
+        reference = base()
+        patch = private_patch(reference, [])
+        legacy_row = {
+            **reference["events"][0],
+            "id": "legacy-private-reading",
+            "title": "Lecture non vérifiée du patch privé",
+            "category": "lecture-jeunesse",
+            "category_label": "Lecture jeunesse",
+            "date_start": DAY.isoformat(),
+            "date_end": DAY.isoformat(),
+            "verified_at": TODAY.isoformat(),
+            "geo_verified_at": TODAY.isoformat(),
+        }
+        verified_row = {
+            **legacy_row, "id": "live-verified-reading",
+            "title": "Lecture jeunesse distincte et vérifiée",
+        }
+        patch["additions"] = [legacy_row, verified_row]
+        outcome, report = merge(
+            reference, reference, patch, TODAY,
+            checker=lambda event, original: (True, "fixture checker"),
+            verified_child_arts={
+                "live-verified-reading": "lecture-jeunesse"})
+        self.assertEqual(report["ajoutes"], 1)
+        self.assertEqual(outcome["events"][-1]["id"], "live-verified-reading")
+        self.assertNotIn("legacy-private-reading",
+                         {event["id"] for event in outcome["events"]})
+        self.assertEqual(len(report["attente"]), 1)
+
+    def test_child_category_permission_must_match_exact_id_and_category(self):
+        from merge_policy import merge
+        reference = base()
+        patch = private_patch(reference, [])
+        new = {
+            **reference["events"][0],
+            "id": "live-reading",
+            "title": "Lecture jeunesse inconnue",
+            "category": "lecture-jeunesse",
+            "category_label": "Lecture jeunesse",
+            "date_start": DAY.isoformat(),
+            "date_end": DAY.isoformat(),
+            "verified_at": TODAY.isoformat(),
+            "geo_verified_at": TODAY.isoformat(),
+        }
+        patch["additions"] = [new]
+        for scopes in (
+            {"another-id": "lecture-jeunesse"},
+            {"live-reading": "spectacle-jeunesse"},
+            {},
+        ):
+            with self.subTest(scopes=scopes):
+                candidate, audit = merge(
+                    reference, reference, patch, TODAY,
+                    checker=lambda e, original: (True, "fixture"),
+                    verified_child_arts=scopes)
+                self.assertEqual(audit["ajoutes"], 0)
+                self.assertEqual(candidate, reference)
+
     def test_unknown_organizer_url_cannot_mint_municipal_authority(self):
         ref = base()
         outsider = "https://organisateur-inconnu.example/atelier"

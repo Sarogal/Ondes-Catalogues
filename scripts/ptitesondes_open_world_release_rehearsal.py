@@ -297,7 +297,8 @@ def rehearse_open_world_municipal_event(
     try:
         merged, audit = merge(
             baseline, published, patch, today, checker=witness_checked,
-            verified_child_arts=family_scope)
+            verified_child_arts=(
+                {event["id"]: event["category"]} if family_scope else {}))
     except (ValueError, KeyError, TypeError):
         return _blank("existing_append_only_publisher_policy_rejected")
     if (audit.get("ajoutes") != 1

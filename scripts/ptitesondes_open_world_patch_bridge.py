@@ -306,11 +306,12 @@ def merge_verified_open_world(
     # Scope comes only from candidates reconstructed by the same live
     # verifier invocation. Neither the private patch nor a category claim
     # from OpenAgenda can authorize this extension.
-    child_scopes = frozenset(
-        candidate["category"] for candidate in patched["additions"]
+    child_scopes = {
+        candidate["id"]: candidate["category"]
+        for candidate in patched["additions"]
         if (isinstance(candidate, dict)
             and candidate.get("id") in getattr(checker, "_verified_child_ids", ())
-            and candidate.get("category") in PUBLISHABLE_CHILD_ARTS))
+            and candidate.get("category") in PUBLISHABLE_CHILD_ARTS)}
     result, audit = merge(
         reference, published, patched, today, checker=checker,
         verified_child_arts=child_scopes)

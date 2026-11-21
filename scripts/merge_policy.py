@@ -129,12 +129,18 @@ def compatible_published_refinement(old, proposed, today):
         return False
     return True
 
-def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=frozenset()):
-    # Never accept a declarative category approval from a serialized patch.
-    # Only the trusted, in-memory source/geo/session verifier invokes this
-    # opt-in route. The historical legacy checker cannot enable it.
-    guard(type(verified_child_arts) is frozenset
-          and verified_child_arts <= PUBLISHABLE_CHILD_ARTS
+def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=None):
+    # Category permissions are per *freshly verified event ID*, not per batch.
+    # Otherwise an independently checked theatre event could inadvertently
+    # enable an unrelated, private-patch-only story with the same category.
+    if verified_child_arts is None:
+        verified_child_arts = {}
+    guard(type(verified_child_arts) is dict
+          and len(verified_child_arts) <= 100
+          and all(type(uid) is str
+                  and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",uid)
+                  and category in PUBLISHABLE_CHILD_ARTS
+                  for uid, category in verified_child_arts.items())
           and (not verified_child_arts or checker is not proof),
           "extension jeunesse sans vérificateur indépendant")
     originals=byid(ref)
@@ -144,7 +150,7 @@ def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=frozenset()
         guard(key in published and historical_event_unchanged(e, published[key]),
               "fiche historique supprimée ou modifiée : "+key)
     fields=set().union(*(set(e) for e in ref["events"]))
-    categories={e["category"] for e in ref["events"]} | verified_child_arts
+    categories={e["category"] for e in ref["events"]}
     signatures={(canonical_event_title(e),norm(e.get("city")),norm(e.get("venue")),e.get("date_start")) for e in public["events"]}
     seen=set();accepted=[];waiting=[]
     for ev in patch["additions"]:
@@ -165,8 +171,12 @@ def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=frozenset()
             continue
         signature=(canonical_event_title(ev),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
-        ok,reason=valid(ev,categories,fields,today)
-        if (ok and ev["category"] in verified_child_arts
+        child_category = verified_child_arts.get(eid)
+        item_categories = (
+            categories | {child_category}
+            if child_category == ev.get("category") else categories)
+        ok,reason=valid(ev,item_categories,fields,today)
+        if (ok and child_category == ev["category"]
                 and ev["category_label"] != FAMILY_TYPES[ev["category"]][0]):
             ok,reason=False,"libellé jeunesse incompatible avec la catégorie"
         if ok:
