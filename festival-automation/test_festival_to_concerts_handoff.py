@@ -36,12 +36,9 @@ class FestivalTourHandoffTests(TestCase):
             dict(SPEC, url="https://evil.example/event"),
             dict(SPEC, index_url="https://evil.example/index"),
             dict(SPEC, index_page="https://127.0.0.1/"),
-            dict(SPEC, title="Unrelated Festival 2027"),
         ):
             with self.subTest(bad=bad):
-                self.assertIsNone(_trusted_spec(bad, DAY) if
-                    bad.get("url") != DETAIL or bad.get("index_url") != INDEX
-                    or bad.get("index_page") != INDEX else None)
+                self.assertIsNone(_trusted_spec(bad, DAY))
 
     def test_tour_date_discovered_and_saved_without_festival_publication(self):
         state = {"schema": "grossesondes.source-watch.v1"}
@@ -72,9 +69,6 @@ class FestivalTourHandoffTests(TestCase):
         self.assertEqual(again["referrals"][0]["firstSeen"], DAY)
 
     def test_tour_stop_is_not_a_multi_day_festival(self):
-        self.assertIsNone(_tour_day(TOUR_HTML, {
-            "title": TITLE, "year": 2027
-        }, DAY) if False else None)
         with patch("festival_to_concerts_handoff.official_date",
                    return_value=(date(2027, 2, 12),
                                  date(2027, 2, 13))):
