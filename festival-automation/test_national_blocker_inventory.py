@@ -37,7 +37,7 @@ def fixture():
     handoff = dict(defaults, dossiers=[
         {"id": ident, "status": "PRIMARY_EVIDENCE_PENDING"}
         for ident, name, year in names])
-    municipal = dict(defaults, rows=[
+    municipal = dict(defaults, schema="grossesondes.national-municipal-pages-private.v1", rows=[
         {"dossier_id": names[0][0],
          "unknown_music_links_review_only": [
              {"title_hint": "Festival sans mots-clés 2027",
@@ -159,6 +159,45 @@ class BlockerInventoryTests(TestCase):
                 patch = {**template, **change}
                 with self.assertRaises(ValueError):
                     build_inventory(reports, catalogue, TODAY, patch=patch)
+
+    def test_municipal_links_survive_rotating_away_from_earlier_city(self):
+        reports, catalogue = fixture()
+        before = deepcopy(reports["municipal"])
+        before["rows"][0]["unknown_music_links_review_only"].append({
+            "title_hint": "Festival jamais connu 2027",
+            "detail_url_review_only": "https://new-city.fr/agenda/new-festival",
+            "classification": "POSSIBLE_FESTIVAL_REVIEW_ONLY",
+        })
+        reports["municipal"]["rows"] = []
+        result = build_inventory(reports, catalogue, TODAY,
+                                 municipal_history=[before])
+        self.assertEqual(result["municipal_current_cycle_leads_count"], 0)
+        self.assertEqual(result["municipal_historical_carryover_count"], 2)
+        self.assertEqual(result["municipal_intermediate_leads_count"], 2)
+        self.assertEqual(result["total_named_leads"], 5)
+        self.assertIn("Festival jamais connu 2027", [
+            row["name"] for row in result["municipal_intermediate_leads"]])
+        self.assertTrue(all(row["publication_authorized"] is False
+                            for row in result["municipal_intermediate_leads"]))
+
+    def test_municipal_history_deduplicated_and_does_not_count_ancient_clues(self):
+        reports, catalogue = fixture()
+        previous = deepcopy(reports["municipal"])
+        expired = deepcopy(previous)
+        expired["as_of"] = "2026-09-01"
+        result = build_inventory(
+            reports, catalogue, TODAY, municipal_history=[previous, expired])
+        self.assertEqual(result["municipal_intermediate_leads_count"], 1)
+        self.assertEqual(result["municipal_current_cycle_leads_count"], 1)
+        self.assertEqual(result["municipal_historical_carryover_count"], 0)
+
+    def test_untrusted_historical_municipal_cannot_authorize_publication(self):
+        reports, catalogue = fixture()
+        old = deepcopy(reports["municipal"])
+        old["publication_authorized"] = True
+        with self.assertRaises(ValueError):
+            build_inventory(reports, catalogue, TODAY,
+                            municipal_history=[old])
 
     def test_never_accepts_missing_stale_or_colliding_pipeline_stage(self):
         reports, catalogue = fixture()
