@@ -146,6 +146,11 @@ def crawl_private_municipal_sources(
     pending = state["pending_pages"]
     completed = state["completed_pages"]
     held = state["held_pages"]
+    # Never turn three failed attempts into a permanent denylist. Resume one
+    # held page on a later invocation when normal work has been exhausted.
+    # The page must be fetched again and the live DILA scope rechecked.
+    if not pending and held:
+        pending.append(_page(held.pop(0)["url"]))
     external_seen = set()
     processed = 0
     while processed < page_budget and pending:
