@@ -1,0 +1,80 @@
+name: "GO TEST — open discovery of 53 historical radios without v5 logos"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-missing-v5-open-discovery-20261121
+    paths:
+      - ".github/workflows/go-v5-missing-historical-open-discovery.yml"
+      - "radio-catalog-lab/tools/discover_historical_no_v5_official_images.py"
+      - "radio-catalog-lab/tools/test_discover_historical_no_v5_official_images.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  source-discovery-only:
+    name: "unlisted historical logos shard ${{ matrix.shard }}/8"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SHARD: ${{ matrix.shard }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned decoder library and run offline tests
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_discover_historical_no_v5_official_images.py" -v
+      - name: Restore original SHA/UUID triage without polling failed logos
+        run: |
+          mkdir -p "$RUNNER_TEMP/queue"
+          gh run download 44925396879 --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-editorial-queue-review-only" --dir "$RUNNER_TEMP/queue"
+          test -s "$RUNNER_TEMP/queue/go-v5-editorial-review.json"
+      - name: Browse independent first-party HTTPS sites of absent historical IDs
+        run: |
+          python radio-catalog-lab/tools/discover_historical_no_v5_official_images.py \
+            --queue "$RUNNER_TEMP/queue/go-v5-editorial-review.json" \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --shard-index "$SHARD" --shard-count 8 --network \
+            --output "$RUNNER_TEMP/go-no-v5-firstparty-shard-$SHARD.json"
+      - name: Verify no image download/approval, preserve radio TEST sequence 4
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          d=json.loads((Path(os.environ["RUNNER_TEMP"])/
+            ("go-no-v5-firstparty-shard-"+os.environ["SHARD"]+".json")).read_text())
+          assert d["historical_total"]==310 and d["historical_with_v5"]==257
+          assert d["historical_without_v5"]==53
+          assert d["publication_allowed"] is False
+          assert d["signed_catalog_created"] is False
+          assert all(r["publication_allowed"] is False and
+                     r["replace_existing_logo"] is False for r in d["records"])
+          assert all(c["verified_image_bytes"] is False and
+                     c["publication_allowed"] is False
+                     for r in d["records"] for c in r["image_candidates"])
+          assert not Path("grossesondes/radio-test-apk/artwork/current.json").exists()
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          print("GO_OPEN_53_HISTORICAL_LOGOS_UNREVIEWED_NO_PUBLICATION")
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-missing-historical-source-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/go-no-v5-firstparty-shard-${{ matrix.shard }}.json
+          retention-days: 14
+          if-no-files-found: error
