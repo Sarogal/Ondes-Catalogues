@@ -3,10 +3,12 @@ from copy import deepcopy
 from pathlib import Path
 import json
 import unittest
+from unittest.mock import patch
 
 from national_generic_primary_domain_preflight import (
-    examine, _safe_same_host_edition_links, SCHEMA,
+    examine, stable_directory_proposals, _safe_same_host_edition_links, SCHEMA,
 )
+from grossesondes_generic_directory_edition import directory_urls, PROOF_MODE
 
 DAY1, DAY2, DAY3 = "2026-11-06", "2026-11-07", "2026-11-08"
 URL_A = "https://foudre-metal.fr/programmation"
@@ -195,6 +197,61 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(second["two_day_dates_count"], 1)
         self.assertEqual(second["rows"][0]["date_source_mode"], "SAME_HOST_HOME")
         self.assertEqual(second["publications"], 0)
+
+    def test_deep_official_page_reaches_directory_contract_only_via_verified_root(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        first = examine(state, queue, catalog, DAY1,
+                        fetch=lambda url: page(URL_A))
+        self.assertEqual(first["two_day_dates_count"], 0)
+        _, next_queue, _ = fixture(DAY2)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        report = examine(state, next_queue, catalog, DAY2,
+                         fetch=lambda url: page(URL_A))
+        self.assertEqual(report["two_day_dates_count"], 1)
+        root = "https://foudre-metal.fr/"
+        directory = directory_urls(NAMES[0] + " 2027")[0]
+        fetched = []
+        def read_verified_home(url):
+            fetched.append(url)
+            self.assertEqual(url, root)
+            return page(URL_A)
+        with patch("national_generic_primary_domain_preflight."
+                   "discover_directory_website",
+                   return_value=(directory, root)) as lookup:
+            proposals = stable_directory_proposals(
+                state, next_queue, catalog, report, DAY2,
+                directory_fetch=lambda _: self.fail("mocked directory"),
+                organizer_fetch=read_verified_home)
+            lookup.assert_called_once_with(
+                NAMES[0] + " 2027", unittest.mock.ANY)
+        self.assertEqual(fetched, [root])
+        self.assertEqual(len(proposals), 1)
+        self.assertEqual(proposals[0]["officialSite"], root)
+        self.assertEqual(proposals[0]["source"], root)
+        self.assertEqual(proposals[0]["proofMode"], PROOF_MODE)
+        self.assertEqual(proposals[0]["evidence"], [directory, root])
+        self.assertFalse(proposals[0]["showOnMap"])
+        self.assertEqual(proposals[0]["startDate"], "2027-06-04")
+        self.assertEqual(proposals[0]["endDate"], "2027-06-05")
+
+        # A deep page NEVER overrules a homepage without the same dates.
+        with patch("national_generic_primary_domain_preflight."
+                   "discover_directory_website", return_value=(directory, root)):
+            rejected = stable_directory_proposals(
+                state, next_queue, catalog, report, DAY2,
+                directory_fetch=lambda _: self.fail("mocked directory"),
+                organizer_fetch=lambda _: "<h1>Dates à venir</h1>")
+        self.assertEqual(rejected, [])
+        # Nor may an independent directory point to a DIFFERENT domain.
+        with patch("national_generic_primary_domain_preflight."
+                   "discover_directory_website",
+                   return_value=(directory, "https://unrelated-fest.fr/")):
+            rejected = stable_directory_proposals(
+                state, next_queue, catalog, report, DAY2,
+                directory_fetch=lambda _: self.fail("mocked directory"),
+                organizer_fetch=lambda _: self.fail("wrong domain fetched"))
+        self.assertEqual(rejected, [])
 
     def test_unknown_organizer_page_finds_current_edition_via_same_host_link(self):
         state, queue, catalog = fixture(DAY1)
