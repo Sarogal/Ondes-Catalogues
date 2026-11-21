@@ -186,14 +186,14 @@ def _candidate_links(html, base, root, festival_name, year, today):
             score = 0
         elif year_text in years:
             score = 1
-        elif re.search(r"\\bagenda\\b", words):
+        elif re.search(r"\bagenda\b", words):
             # A mairie's actual agenda is far more valuable than unrelated
             # associative/admin navigation links. This prioritizes a ROLE,
             # never a hand-written source/domain/festival inventory.
             score = 2
-        elif re.search(r"\\b(?:concerts?|festivals?|evenements?)\\b", words):
+        elif re.search(r"\b(?:concerts?|festivals?|evenements?)\b", words):
             score = 3
-        elif re.search(r"\\b(?:actualites?|news)\\b", words):
+        elif re.search(r"\b(?:actualites?|news)\b", words):
             score = 4
         else:
             score = 5
