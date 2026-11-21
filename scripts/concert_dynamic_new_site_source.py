@@ -377,13 +377,15 @@ def _self_basics(event_approval, site_approval):
 
 
 def verify_self(event_approval, site_approval, published_venues,
-                published_artists, today, *, fetch=probe.safe_fetch):
+                published_artists, today, *, fetch=None):
     """Publisher-bound fresh verification of NEW site + first-party show.
 
     Any venue on any new HTTPS origin can qualify: no source registry,
     registered artist, pre-published venue or second event domain is required.
     Independently named BAN/OSM and OSM's website tag certify the source.
     """
+    if fetch is None:
+        fetch = probe.safe_fetch
     require(isinstance(today, dt.date) and not isinstance(today, dt.datetime)
             and isinstance(published_venues, dict)
             and isinstance(published_artists, dict),
