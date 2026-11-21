@@ -168,11 +168,11 @@ def _city_visible_undated(html, row, year):
     website does not support placing its 2027 edition in that municipality.
     """
     tokens = re.findall(r"[a-z0-9]+", re.sub(
-        r"\\b20[2-4][0-9]\\b", "", fold(row.get("name", ""))))
+        r"\b20[2-4][0-9]\b", "", fold(row.get("name", ""))))
     if len("".join(tokens)) < 8:
         return None
     name = re.compile(
-        r"(?<![a-z0-9])" + r"[\\W_]+".join(map(re.escape, tokens))
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, tokens))
         + r"(?![a-z0-9])"
     )
     parser = VisibleParagraphs()
@@ -186,23 +186,23 @@ def _city_visible_undated(html, row, year):
         if not 0 < len(raw) <= 1100:
             continue
         paragraph = " ".join(fold(raw).split())
-        years = set(re.findall(r"(?<!\\d)20[2-4]\\d(?!\\d)", paragraph))
+        years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", paragraph))
         if (not name.search(paragraph) or years != {str(year)}
                 or CANCEL.search(paragraph)
                 or not re.search(
-                    r"\\b(?:edition|rendez[\\W_]+vous|revient|retour)\\b",
+                    r"\b(?:edition|rendez[\W_]+vous|revient|retour)\b",
                     paragraph)
                 or re.search(
-                    r"\\b(?:preparer?|preparation|projet|eventuel|"
-                    r"incertain|peut[\\W_]+etre|sous[\\W_]+reserve|"
-                    r"cagnotte|financement|tournee|tour)\\b",
+                    r"\b(?:preparer?|preparation|projet|eventuel|"
+                    r"incertain|peut[\W_]+etre|sous[\W_]+reserve|"
+                    r"cagnotte|financement|tournee|tour)\b",
                     paragraph)
                 or any(explicit_ranges(paragraph, year))):
             continue
         for matched in CITY_PATTERN.finditer(raw):
             city = _name(matched.group(1))
             if city and not re.search(
-                    r"\\b(?:Festival|France|Parisien|Vente|Billetterie)\\b",
+                    r"\b(?:Festival|France|Parisien|Vente|Billetterie)\b",
                     city):
                 cities.add(city)
     return next(iter(cities)) if len(cities) == 1 else None
