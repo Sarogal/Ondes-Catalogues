@@ -13,6 +13,7 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
       - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_openagenda_slug_discovery.py'
       - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
       - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
@@ -60,6 +61,7 @@ on:
       - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_openagenda_slug_discovery.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
       - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
@@ -84,6 +86,7 @@ on:
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
       - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_openagenda_slug_discovery.py'
       - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
       - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
       - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
@@ -131,6 +134,7 @@ on:
       - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
       - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
       - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_openagenda_slug_discovery.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
       - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
       - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
@@ -181,6 +185,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_backlog_reconciliation.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_ods_direct_mirror_absence_audit.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_slug_discovery.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_ods_direct_mirror_cycle.py' -v
           python -m unittest discover -s tests \
@@ -250,6 +256,9 @@ jobs:
           smoke = Path("scripts/ptitesondes_openagenda_v2_live_smoke.py").read_text()
           assert "public_writes" in smoke and "approval_granted" in smoke
           assert not any(x in smoke for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          slug_source = Path("scripts/ptitesondes_openagenda_slug_discovery.py").read_text()
+          assert "approval_granted" in slug_source and "public_writes" in slug_source
+          assert not any(x in slug_source for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           organizer = Path("scripts/ptitesondes_openagenda_v2_organizer_bridge.py").read_text()
           assert "public_writes" in organizer and "approval_granted" in organizer
           assert not any(x in organizer for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
