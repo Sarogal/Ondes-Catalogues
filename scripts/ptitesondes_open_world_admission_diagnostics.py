@@ -32,6 +32,7 @@ from ptitesondes_shared_venue_location_evidence import (
     location_from_proof,
 )
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
+from ptitesondes_openagenda_reuse_rights import review_event_rights
 
 SCHEMA = "ptitesondes.open_world_admission_diagnostics.v1"
 MAX_CATALOGUE_ROWS = 100000
@@ -51,6 +52,12 @@ def _blank(reason):
         "organizer_independently_identified": False,
         "organizer_authorship_proven": False,
         "source_reuse_rights_verified": False,
+        # OA's per-event Etalab license is actionable only for factual fields,
+        # not for unknown author / image / descriptive text permissions.
+        "oa_factual_reuse_open_license": False,
+        "oa_licensor_attribution": None,
+        "oa_source_updated_at": None,
+        "oa_attribution_display": None,
         "public_attendance_verified": False,
         "independent_cancellation_watch_active": False,
         "historical_duplicate_check_authoritative": False,
@@ -170,8 +177,15 @@ def inspect_open_world_candidate(
             or event["uid"] != lead["event_uid"]):
         return dict(result, status="live_oa_event_not_verified")
 
+    rights = review_event_rights(event, today)
+    if rights["licensed_factual_reuse_confirmed"]:
+        result["oa_factual_reuse_open_license"] = True
+        result["oa_licensor_attribution"] = rights["licensor_attribution"]
+        result["oa_source_updated_at"] = rights["source_updated_at"]
+        result["oa_attribution_display"] = rights["attribution_display"]
+
     title = _french_text(event, "title")
-    description = (_french_text(event, "description") + " " +
+    description = (_french_text(event, "description") + " "
                    _french_text(event, "longDescription")).strip()
     body = norm(title + " " + description)
     result["source_claimed_adults_only"] = bool(ADULT_ONLY.search(body))
