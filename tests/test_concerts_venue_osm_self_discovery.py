@@ -212,6 +212,89 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertEqual(followup["stableUnreviewedSourceHosts"],1)
         self.assertFalse(followup["automaticTrustGranted"])
 
+    def test_exact_ban_and_named_osm_site_unlock_unlisted_non_osm_venue(self):
+        import urllib.parse
+        site={
+            "id":"salle-independante-tours",
+            "name":"Salle Indépendante",
+            "address":"1 rue Exemple",
+            "city":"Tours","postalCode":"37000",
+            "department":"37","region":"Centre-Val de Loire",
+            "latitude":47.40,"longitude":0.70,
+            "geoSource":"Géolocalisation indicative par commune",
+            "geoPrecision":"centre de commune",
+        }
+        source="https://site-independant-tours.fr/"
+        show="https://site-independant-tours.fr/concerts/nouveau-2027"
+        osm_node="9012345678"
+        osm_api="https://api.openstreetmap.org/api/0.6/node/"+osm_node
+        osm_feature=(
+            '<node id="'+osm_node+'" lat="47.40001" lon="0.70002">'
+            '<tag k="name" v="Salle Indépendante"/>'
+            '<tag k="addr:city" v="Tours"/>'
+            '<tag k="addr:postcode" v="37000"/>'
+            '<tag k="addr:street" v="rue Exemple"/>'
+            '<tag k="addr:housenumber" v="1"/>'
+            '<tag k="website" v="'+source+'"/>'
+            '</node>'
+        )
+        map_xml='<osm version="0.6">'+osm_feature+'</osm>'
+        gov={
+            "features":[{
+                "geometry":{"type":"Point","coordinates":[0.70,47.40]},
+                "properties":{"postcode":"37000","city":"Tours",
+                  "street":"rue Exemple","housenumber":"1",
+                  "type":"housenumber","score":0.98,
+                  "context":"37, Indre-et-Loire, Centre-Val de Loire"},
+            }],
+        }
+        ld={
+            "@context":"https://schema.org","@type":"MusicEvent",
+            "name":"Nuit rock indépendante", "url":show,
+            "startDate":"2027-05-02T20:00:00+02:00",
+            "performer":[{"@type":"MusicGroup","name":"Groupe Jamais Répertorié"}],
+            "genre":["Punk Rock"],
+            "location":{
+                "@type":"Place","name":site["name"],
+                "address":{"@type":"PostalAddress",
+                    "addressLocality":"Tours","postalCode":"37000",
+                    "addressCountry":"FR","streetAddress":"1 rue Exemple"},
+            }
+        }
+        calls=[]
+        def fetch(url,cache):
+            calls.append(url)
+            if url.startswith("https://data.geopf.fr/geocodage/search/"):
+                return json.dumps(gov)
+            if url.startswith("https://api.openstreetmap.org/api/0.6/map?bbox="):
+                return map_xml
+            if url==osm_api:
+                return map_xml
+            if url==source:
+                return '<a href="/concerts/nouveau-2027">Concert punk prochain</a>'
+            if url==show:
+                return '<script type="application/ld+json">'+json.dumps(ld)+'</script>'
+            raise AssertionError("unexpected untrusted website fetch: "+url)
+        catalog={"schemaVersion":1,"events":[],"artists":[],"venues":[site]}
+        self.assertEqual(len(discover_osm.eligible(catalog)),1)
+        report=discover_osm.scan(catalog,TODAY,max_venues=1,
+                                 max_details=2,fetch=fetch)
+        self.assertEqual(len(report["candidates"]),1)
+        self.assertEqual(report["candidates"][0]["venue"],"Salle Indépendante")
+        self.assertEqual(report["candidates"][0]["classification"],["Punk Rock"])
+        self.assertFalse(report["candidates"][0]["publicationAllowed"])
+        self.assertIn(osm_api,calls)
+        self.assertIn(show,calls)
+
+    def test_approximate_address_cannot_claim_a_source_website(self):
+        from automation.concerts import venue_address_osm_source as resolver
+        site=catalogue()["venues"][0]
+        site["geoSource"]="Géolocalisation indicative par commune"
+        site["address"]="Adresse exacte à vérifier"
+        self.assertFalse(resolver.eligible_address(site))
+        self.assertFalse(discover_osm.eligible({"schemaVersion":1,
+            "events":[],"artists":[],"venues":[site]}))
+
     def test_rotation_covers_venues_without_fixed_list(self):
         sites=[{"id":f"place-{n}"} for n in range(23)]
         visited=set()
