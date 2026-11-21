@@ -119,6 +119,8 @@ class RehearsalTests(unittest.TestCase):
         self.assertIn("Licence Ouverte 2.0", e["source_label"])
         self.assertNotIn("Grand agenda national", e["source_label"])
         self.assertTrue(review["published_duplicate_checked"])
+        self.assertTrue(review["publisher_policy_rehearsal_accepted"])
+        self.assertEqual(review["preview_additions"], 1)
         self.assertFalse(review["publication_ready"])
         self.assertFalse(review["publisher_connected"])
         self.assertEqual(review["public_writes"], 0)
@@ -134,6 +136,7 @@ class RehearsalTests(unittest.TestCase):
             municipal_reader=lambda url: official_page(many))
         self.assertTrue(result["private_rehearsal_positive"])
         self.assertEqual(result["municipal_program_exact_sessions"], len(many))
+        self.assertEqual(result["preview_additions"], 1)
         self.assertEqual(len(result["candidate"]["time"].split(";")), len(many))
 
     def test_forged_geometry_and_unsupported_sources_remain_held(self):
