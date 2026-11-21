@@ -14,7 +14,8 @@ from national_generic_primary_domain_preflight import (
 from grossesondes_stage import stage
 from test_grosses_stage import fixtures
 from grossesondes_generic_directory_edition import (
-    directory_url, trusted_linked_site, verify_primary, private_proposal,
+    directory_url, directory_urls, discover_directory_website,
+    trusted_linked_site, verify_primary, private_proposal,
     validate_private_proposal, independently_verify, validate_verified_row,
     PROOF_MODE,
 )
@@ -63,6 +64,81 @@ class GenericDirectoryProofTests(TestCase):
         self.assertIsNone(trusted_linked_site(html, TITLE))
         script = '<script><h1>Festibarock\'in</h1></script>' + ENTRY
         self.assertEqual(trusted_linked_site(script, TITLE), SITE)
+
+    def test_real_directory_slug_variants_and_local_web_attribution(self):
+        # Live directory pages use BOTH /mozhell-open-air and
+        # /festibarockin. They display the external site as "Web" in a
+        # local contact block, rather than always as "Site officiel".
+        title = "MozHell Open Air 2027"
+        compact, hyphen = directory_urls(title)
+        self.assertEqual(
+            compact, "https://www.festivalenfrance.com/festival/mozhellopenair")
+        self.assertEqual(
+            hyphen, "https://www.festivalenfrance.com/festival/mozhell-open-air")
+        site = "https://www.mozhell.fr/"
+        page = ('<main><h1>MozHell Open Air</h1>'
+                '<section><p>Festival metal en Moselle</p>'
+                '<div>Contact</div><div>Web : '
+                '<a href="https://www.mozhell.fr/">www.mozhell.fr</a>'
+                '</div></section></main>')
+        self.assertEqual(trusted_linked_site(page, title), site)
+        calls = []
+        def directory_read(url):
+            calls.append(url)
+            if url == compact:
+                raise OSError("Compact path absent on the directory")
+            self.assertEqual(url, hyphen)
+            return page
+        self.assertEqual(
+            discover_directory_website(title, directory_read),
+            (hyphen, site))
+        self.assertEqual(calls, [compact, hyphen])
+        proposal = private_proposal(
+            title, site, ("2027-07-23", "2027-07-25"), DAY,
+            directory_ref=hyphen)
+        self.assertEqual(validate_private_proposal(proposal, DAY), proposal)
+        checked = []
+        with patch("grossesondes_generic_directory_edition.verify_primary",
+                   return_value=("2027-07-23", "2027-07-25")):
+            proof = independently_verify(
+                proposal, DAY,
+                directory_fetch=lambda url: checked.append(url) or page,
+                organizer_fetch=lambda url: checked.append(url) or
+                    "<main><h1>MozHell Open Air 2027</h1>"
+                    "<p>23 au 25 juillet 2027, festival metal.</p></main>")
+        self.assertEqual(checked, [hyphen, site])
+        self.assertIsNotNone(proof)
+        self.assertFalse(proof["showOnMap"])
+
+    def test_real_directory_variant_cannot_be_forged_as_arbitrary_host(self):
+        title = "MozHell Open Air 2027"
+        compact, hyphen = directory_urls(title)
+        site = "https://www.mozhell.fr/"
+        dates = ("2027-07-23", "2027-07-25")
+        self.assertIsNone(private_proposal(
+            title, site, dates, DAY, directory_ref="https://example.net/"))
+        proper = private_proposal(title, site, dates, DAY,
+                                  directory_ref=hyphen)
+        for bad_url in ("https://evil.example/festival/mozhell-open-air",
+                        "https://www.festivalenfrance.com/admin",
+                        "https://www.festivalenfrance.com/festival/../private"):
+            with self.subTest(bad_url=bad_url):
+                changed = deepcopy(proper)
+                changed["originSlug"] = bad_url
+                changed["evidence"][0] = bad_url
+                self.assertIsNone(validate_private_proposal(changed, DAY))
+                self.assertIsNone(independently_verify(
+                    changed, DAY,
+                    directory_fetch=lambda url: self.fail(
+                        "Forged URL cannot reach the network")))
+        self.assertIsNone(trusted_linked_site(
+            "<main><h1>MozHell Open Air</h1>"
+            '<div>Billetterie : <a href="https://tickets.example.net">'
+            "tickets.example.net</a></div></main>", title))
+        self.assertIsNone(trusted_linked_site(
+            "<main><h1>MozHell Open Air</h1>"
+            '<div hidden>Web : <a href="https://www.mozhell.fr/">'
+            "www.mozhell.fr</a></div></main>", title))
 
     def test_only_map_free_minimal_private_proposal_is_valid(self):
         p = private_proposal(TITLE, SITE, DATES, DAY)

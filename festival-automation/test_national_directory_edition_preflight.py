@@ -99,6 +99,50 @@ class NationalDirectoryAutonomyTests(TestCase):
         self.assertEqual(p["lineup"], [])
         self.assertFalse(p["source"].startswith("https://127.0.0.1"))
 
+    def test_hyphenated_directory_alias_stays_bound_across_two_days(self):
+        # Directory aliases are derived from the exact dossier name, NEVER
+        # from its untrusted candidate source URL.
+        alternate = DURL.replace(
+            "/festival/festivalfoudreimaginaire",
+            "/festival/festival-foudre-imaginaire")
+        visited, state_store = [], state()
+        def directory(url):
+            visited.append(url)
+            if url == DURL:
+                raise OSError("compact alias 404")
+            self.assertEqual(url, alternate)
+            return INDEX
+        def primary(url):
+            visited.append(url)
+            self.assertEqual(url, SITE)
+            return HOMEPAGE
+        with patch("national_directory_edition_preflight.verify_primary",
+                   return_value=DATES):
+            first = examine(state_store, discovery(FIRST), catalog(), FIRST,
+                            directory_fetch=directory,
+                            organizer_fetch=primary, limit=1)
+            second = examine(state_store, discovery(SECOND), catalog(), SECOND,
+                             directory_fetch=directory,
+                             organizer_fetch=primary, limit=1)
+            ready = stable_private_proposals(
+                state_store, discovery(SECOND), catalog(), second, SECOND)
+        self.assertEqual(first["two_day_count"], 0)
+        self.assertEqual(second["two_day_count"], 1)
+        self.assertEqual(second["rows"][0]["directory_ref_review_only"],
+                         alternate)
+        self.assertEqual(len(ready), 1)
+        self.assertEqual(ready[0]["originSlug"], alternate)
+        self.assertEqual(ready[0]["evidence"], [alternate, SITE])
+        self.assertEqual(visited, [DURL, alternate, SITE,
+                                   DURL, alternate, SITE])
+        forged = deepcopy(second)
+        forged["rows"][0]["directory_ref_review_only"] = DURL
+        self.assertEqual(stable_private_proposals(
+            state_store, discovery(SECOND), catalog(), forged, SECOND), [])
+        forged["rows"][0]["directory_ref_review_only"] = "https://evil.example/"
+        self.assertEqual(stable_private_proposals(
+            state_store, discovery(SECOND), catalog(), forged, SECOND), [])
+
     def test_missing_directory_attribution_never_probes_candidate_url(self):
         s, calls = state(), []
         def directory(url):
@@ -109,7 +153,9 @@ class NationalDirectoryAutonomyTests(TestCase):
                          organizer_fetch=lambda u: self.fail(
                              "Unknown organizer domain must never be fetched"),
                          limit=1)
-        self.assertEqual(calls, [DURL])
+        self.assertEqual(calls, [
+            DURL, DURL.replace("/festival/festivalfoudreimaginaire",
+                               "/festival/festival-foudre-imaginaire")])
         self.assertEqual(result["rows"][0]["status"],
                          "DIRECTORY_OFFICIAL_LINK_UNPROVEN")
         self.assertNotIn("digest", s[STATE_KEY][
@@ -135,6 +181,7 @@ class NationalDirectoryAutonomyTests(TestCase):
             "firstSeen": FIRST, "lastSeen": SECOND,
             "lastChecked": SECOND, "stable": True,
             "digest": proof_digest(base, SITE, DATES),
+            "directoryRef": DURL,
         }}
         review = {
             "schema": SCHEMA, "as_of": SECOND, "review_only": True,
@@ -145,6 +192,7 @@ class NationalDirectoryAutonomyTests(TestCase):
                 "status": "TWO_DAY_DIRECTORY_FIRST_PARTY_PRIVATE",
                 "publication_authorized": False,
                 "two_day_observation": True,
+                "directory_ref_review_only": DURL,
                 "site_review_only": SITE, "start_date_hint": DATES[0],
                 "end_date_hint": DATES[1],
             }],
