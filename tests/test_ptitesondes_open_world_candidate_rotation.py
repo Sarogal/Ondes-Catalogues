@@ -188,8 +188,12 @@ class OpenWorldRotationTests(unittest.TestCase):
 
     def test_original_event_vocabulary_never_filters_source_discovery(self):
         item = lead(title="Création sonore hors catégories")
-        a = cycle(item)
-        b = cycle(item, a["private_checkpoint"])
+        unknown_format = source_event(
+            item, description={"fr":
+                "Une expérience inédite pour enfants et familles."})
+        a = cycle(item, event=unknown_format)
+        b = cycle(item, a["private_checkpoint"],
+                  event=unknown_format)
         self.assertEqual(b["source_candidates_examined"], 1)
         self.assertEqual(
             b["private_research_reviews"][0]["diagnostic"]["editorial_status"],
