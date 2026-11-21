@@ -15,10 +15,14 @@ ROOT = "https://www.mairie-fictive.fr/"
 GOOD = {
     "nom": "Mairie - Monthermé",
     "code_insee_commune": INSEE,
-    "statut_de_diffusion": "Publiable",
+    "statut_de_diffusion": "true",
     "pivot": [{"type_service_local": "mairie",
                "code_insee_commune": [INSEE]}],
-    "site_internet": json.dumps([{"valeur": ROOT + "agenda"}]),
+    # The real DILA record may list the homepage and several service pages.
+    "site_internet": json.dumps([
+        {"valeur": ROOT.rstrip("/")},
+        {"valeur": ROOT + "4442-demande-d-acte.htm"},
+    ]),
 }
 
 
@@ -66,6 +70,10 @@ class DynamicMunicipalResearchTests(unittest.TestCase):
         result = verified_mairie_site(
             {"total_count": 1, "results": [GOOD]}, INSEE, CITY)
         self.assertEqual(result, ROOT)
+        # Accept the documented public record's string status but not false.
+        self.assertEqual(verified_mairie_site(
+            {"total_count": 1, "results": [dict(GOOD, statut_de_diffusion=True)]},
+            INSEE, CITY), ROOT)
         # Can handle DILA returning the list as an actual list, too.
         other = dict(GOOD, site_internet=[{"valeur": ROOT}])
         self.assertEqual(verified_mairie_site(
@@ -77,6 +85,9 @@ class DynamicMunicipalResearchTests(unittest.TestCase):
             dict(GOOD, code_insee_commune="75056"),
             dict(GOOD, nom="Salle de concert - Monthermé"),
             dict(GOOD, statut_de_diffusion="Non publiable"),
+            dict(GOOD, statut_de_diffusion="false"),
+            dict(GOOD, statut_de_diffusion=False),
+            {k: v for k, v in GOOD.items() if k != "statut_de_diffusion"},
             dict(GOOD, pivot=[{"type_service_local": "gendarmerie",
                                "code_insee_commune": [INSEE]}]),
             dict(GOOD, site_internet="[]"),
