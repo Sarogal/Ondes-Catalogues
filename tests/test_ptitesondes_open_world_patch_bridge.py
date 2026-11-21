@@ -110,6 +110,83 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             {"openagenda_public_read_key_unavailable": 1})
         calls.assert_not_called()
 
+    def test_nonmusical_child_show_and_storytelling_reach_real_publisher(self):
+        # Radio-adjacent performing arts are recognized by the national
+        # discovery. A fully corroborated candidate must also be publishable,
+        # despite historical catalogue categories being musical-only.
+        for title, description, expected in (
+            ("Spectacle pour enfants",
+             "Spectacle de marionnettes jeune public pour enfants",
+             "spectacle-jeunesse"),
+            ("Lecture d'histoires pour enfants",
+             "Lecture d'histoires jeunesse pour les familles",
+             "lecture-jeunesse"),
+        ):
+            with self.subTest(title=title):
+                live = oa_event()
+                live["title"] = {"fr": title}
+                live["description"] = {"fr": description}
+                item = lead()
+                item["title"] = title
+                # An untrusted category proposal cannot grant publication;
+                # the Publisher derives the category from the live OA read.
+                item["editorial_category_proposal"] = "concert"
+                page = official_page().replace(
+                    "Conte musical pour enfants", title)
+                original = base()
+                published, audit, report = merge_verified_open_world(
+                    original, original, private_patch(original, [
+                        dossier(lead=item)]), TODAY, KEY,
+                    **readers(event=live, municipal_page=page))
+                self.assertEqual(audit["ajoutes"], 1)
+                self.assertEqual(report["held"], 0)
+                self.assertEqual(published["events"][-1]["category"], expected)
+                self.assertEqual(published["events"][:100], original["events"])
+                self.assertFalse(report["publication_complete"])
+
+    def test_generic_gouter_and_arbitrary_category_cannot_be_published(self):
+        for title, description in (
+            ("Goûter au parc",
+             "Rendez-vous convivial pour les enfants et familles"),
+            ("Atelier de bricolage",
+             "Activité pour enfants avec matériel de loisirs créatifs"),
+            ("Spectacle réservé aux adultes",
+             "Spectacle jeunesse interdit aux enfants"),
+        ):
+            with self.subTest(title=title):
+                live = oa_event()
+                live["title"] = {"fr": title}
+                live["description"] = {"fr": description}
+                item = lead()
+                item["title"] = title
+                item["editorial_category_proposal"] = "spectacle-jeunesse"
+                page = official_page().replace(
+                    "Conte musical pour enfants", title)
+                reference = base()
+                published, audit, result = merge_verified_open_world(
+                    reference, reference,
+                    private_patch(reference, [dossier(lead=item)]),
+                    TODAY, KEY, **readers(
+                        event=live, municipal_page=page))
+                self.assertEqual(audit["ajoutes"], 0)
+                self.assertEqual(result["admitted_to_merge"], 0)
+                self.assertEqual(published, reference)
+
+    def test_legacy_source_checker_cannot_self_enable_child_art_categories(self):
+        from merge_policy import merge
+        reference = base()
+        item = {**reference["events"][0], "id": "new-child-reading",
+                "category": "lecture-jeunesse",
+                "category_label": "Lecture jeunesse"}
+        patch = private_patch(reference, [])
+        patch["additions"] = [item]
+        with self.assertRaises(ValueError):
+            merge(reference, reference, patch, TODAY,
+                  verified_child_arts=frozenset({"lecture-jeunesse"}))
+        with self.assertRaises(ValueError):
+            merge(reference, reference, patch, TODAY,
+                  verified_child_arts={"lecture-jeunesse"})
+
     def test_unknown_organizer_url_cannot_mint_municipal_authority(self):
         ref = base()
         outsider = "https://organisateur-inconnu.example/atelier"
