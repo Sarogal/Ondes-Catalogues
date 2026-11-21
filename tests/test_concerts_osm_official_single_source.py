@@ -147,12 +147,62 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             for x in observed))
         self.assertEqual(output["events"][-1]["officialUrl"], URL)
 
+    def test_overpass_read_only_recovers_node_without_scraping_osm_website(self):
+        # Both editing-API origins may reject a public runner or robots
+        # policy. A bounded node query against a dedicated read-only OSM
+        # service must still prove the EXACT name, site, domain and position.
+        calls = []
+        original = fixture.fake_fetch()
+        def network(url, cache):
+            calls.append(url)
+            if url.startswith("https://api.openstreetmap.org/api/0.6/node/"):
+                raise ValueError("Source returned non-success HTTP status")
+            if url.startswith("https://www.openstreetmap.org/api/0.6/node/"):
+                raise ValueError("robots.txt forbids source")
+            if url.startswith("https://overpass.private.coffee/api/interpreter?"):
+                self.assertIn("node%28380889428%29", url)
+                return fixture.osm()
+            return original(url, cache)
+        proposed, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=network)
+        self.assertEqual(report["stateCounts"],
+                         {"independently_verified_proposal": 1})
+        with mock.patch.object(identity, "safe_fetch", side_effect=network):
+            result, stats = publisher.merge(BASE, BASE, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(result["events"][-1]["officialUrl"], URL)
+        self.assertTrue(any("overpass.private.coffee" in x for x in calls))
+
+    def test_read_only_osm_fallback_refuses_forged_name_or_website(self):
+        original = fixture.fake_fetch()
+        for altered in (fixture.osm(name="Impostor Venue"),
+                        fixture.osm(website="https://impostor.invalid"),
+                        fixture.osm(lat="47.400")):
+            def fetch(url, cache):
+                if url.startswith(("https://api.openstreetmap.org/api/0.6/node/",
+                                   "https://www.openstreetmap.org/api/0.6/node/")):
+                    raise ValueError("editing API unavailable")
+                if url.startswith("https://overpass.private.coffee/api/interpreter?"):
+                    return altered
+                return original(url, cache)
+            with self.subTest(osm=altered[:110]):
+                proposed, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=fetch)
+                self.assertEqual(proposed["approvals"], [])
+                self.assertEqual(report["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+
     def test_network_failures_are_reported_by_proof_phase(self):
         original = fixture.fake_fetch()
         for phase in ("osm_identity", "official_event_fetch"):
             def fail_one(url, cache):
                 if phase == "osm_identity" and (
-                    "openstreetmap.org" in url):
+                    "openstreetmap.org" in url or
+                    "overpass.private.coffee" in url):
                     raise ValueError("Source returned non-success HTTP status")
                 if phase == "official_event_fetch" and url == URL:
                     raise ValueError("Source returned non-success HTTP status")
@@ -443,6 +493,59 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                         changed,
                         {v["id"]: v for v in BASE["venues"]},
                         {a["id"]: a for a in BASE["artists"]}, TODAY)
+
+    def test_one_venue_cannot_monopolize_all_daily_checks(self):
+        # The public registry contains many events from the same hall.
+        # The scan window must include OTHER independently published venues,
+        # regardless of whether their band was already known.
+        cat = copy.deepcopy(BASE)
+        base_venue = next(v for v in cat["venues"] if v["id"] ==
+                          fixture.VENUE_ID)
+        cases = registry()
+        template = next(iter(cases["items"].values()))
+        cases["items"] = {}
+        for index in range(40):
+            row = copy.deepcopy(template)
+            url = f"https://long-schedule.fr/concert/{index:03d}"
+            row["candidate"].update(
+                candidateId=f"large-room-{index}",
+                sourceUrl=url, eventDetailUrl=url, sourcePage=url)
+            cases["items"][str(index)] = row
+        for index in range(3):
+            room = copy.deepcopy(base_venue)
+            room["id"] = f"extra-physical-room-{index}"
+            room["name"] = f"Extra Physical Room {index}"
+            room["city"] = f"Test City {index}"
+            room["department"] = str(30 + index)
+            room["geoSource"] = (
+                "https://www.openstreetmap.org/node/" + str(90001000 + index))
+            cat["venues"].append(room)
+            extra = copy.deepcopy(template)
+            extra["candidate"].update(
+                candidateId=f"extra-room-{index}",
+                venue=room["name"], city=room["city"],
+                department=room["department"],
+                sourceUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                eventDetailUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                sourcePage=f"https://extra-room-{index}.fr/annonce/live/")
+            cases["items"][f"extra-{index}"] = extra
+        selected = pipeline.eligible(cases, cat, TODAY)
+        self.assertEqual(len(selected), 43)
+        self.assertEqual(
+            {row[2] for row in selected[:8]},
+            {fixture.VENUE_ID} |
+            {f"extra-physical-room-{x}" for x in range(3)})
+        # Multiple slots keep their bounded budget; distinct venue
+        # candidates do not become a one-off permanently privileged cohort.
+        seen = set()
+        for day_offset in range(6):
+            for slot in (0, 1, 2):
+                day = TODAY + dt.timedelta(days=day_offset)
+                rotated = pipeline.eligible(cases, cat, day)
+                offset = (((day - TODAY).days * 3 + slot) * 8) % len(rotated)
+                seen.update(row[0] for row in
+                    (rotated[(offset+i) % len(rotated)] for i in range(8)))
+        self.assertEqual(len(seen), 43)
 
     def test_scan_budget_rotates_across_any_number_of_candidate_events(self):
         cases = registry()

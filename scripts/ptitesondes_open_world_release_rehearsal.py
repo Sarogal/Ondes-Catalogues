@@ -40,6 +40,7 @@ from ptitesondes_shared_venue_location_evidence import (
 )
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_unlisted_visible_session_research import visible_unlisted_sessions
+from ptitesondes_independent_venue_site_proof import verified_named_osm_venue_website
 
 SCHEMA = "ptitesondes.open_world_release_rehearsal.v1"
 MAX_SESSIONS = 800
@@ -185,17 +186,24 @@ def rehearse_open_world_municipal_event(
                != len(selected)):
         return _blank("source_exact_sessions_changed")
     city = lead["city_unverified"]
-    try:
-        directory = directory_reader(city)
-    except (OSError, TimeoutError, ValueError, TypeError, KeyError):
-        return _blank("dila_municipality_unavailable")
-    if (approved_municipal_page_host(official_url, city, directory) is None
-            and not verified_delegated_source(
-                source_host_proof, city, lead["venue_unverified"],
-                official_url, today)
-            and not verified_secondary_municipal_host(
-                source_host_proof, city, official_url, today)):
-        return _blank("unknown_municipal_official_source")
+    # A separately retrieved exact named OSM feature may identify the
+    # venue's website independently of the untrusted OpenAgenda claim.
+    # This is a second source-authority lane, not an OA-only approval.
+    independent_venue_site = verified_named_osm_venue_website(
+        source_host_proof, official_url, city,
+        lead["venue_unverified"], today)
+    if not independent_venue_site:
+        try:
+            directory = directory_reader(city)
+        except (OSError, TimeoutError, ValueError, TypeError, KeyError):
+            return _blank("dila_municipality_unavailable")
+        if (approved_municipal_page_host(official_url, city, directory) is None
+                and not verified_delegated_source(
+                    source_host_proof, city, lead["venue_unverified"],
+                    official_url, today)
+                and not verified_secondary_municipal_host(
+                    source_host_proof, city, official_url, today)):
+            return _blank("unknown_municipal_official_source")
     # Official source is authenticated BEFORE reading content; never
     # trust an arbitrary OA or organizer URL to mint a host authority.
     try:
@@ -291,7 +299,7 @@ def rehearse_open_world_municipal_event(
             venue_proof, candidate.get("city"), candidate.get("venue"),
             today, (candidate.get("lat"), candidate.get("lng")))
         ok = candidate == event and exact_location is not None
-        return ok, ("source municipale DILA + séances exactes + GPS "
+        return ok, ("source officielle liée au lieu + séances exactes + GPS "
                     "indépendant + licence Etalab vérifiés en mémoire"
                     if ok else "candidate différent des preuves indépendantes")
     try:

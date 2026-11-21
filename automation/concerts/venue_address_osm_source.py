@@ -18,6 +18,7 @@ from xml.etree import ElementTree
 from urllib.parse import urlsplit
 
 import independent_named_site_geo as geo
+import osm_read_only_fallback as readonly
 import source_admission_intake as intake
 import source_evidence_probe as probe
 import triage
@@ -69,7 +70,13 @@ def website_from_address(site, *, fetch=probe.safe_fetch, cache=None):
     feature=OSM_FEATURE.fullmatch(feature_url)
     require(bool(feature),"OSM feature identity ambiguous")
     api_url="https://api.openstreetmap.org/api/0.6/"+feature.group(1)+"/"+feature.group(2)
-    xml=fetch(api_url,cache)
+    try:
+        xml=fetch(api_url,cache)
+    except (ValueError,OSError,TimeoutError):
+        # The read-only provider supplies the EXACT same OSM feature id;
+        # do not skip a robots refusal or use unverified cached OSM tags.
+        api_url=readonly.element(feature.group(1),feature.group(2))
+        xml=fetch(api_url,cache)
     require(isinstance(xml,str) and len(xml)<=probe.MAX_BYTES
             and "<!DOCTYPE" not in xml.upper()
             and "<!ENTITY" not in xml.upper(),

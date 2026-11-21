@@ -39,10 +39,12 @@ on:
       - 'automation/concerts/venue_osm_self_discovery.py'
       - 'automation/concerts/venue_address_osm_source.py'
       - 'automation/concerts/independent_named_site_geo.py'
+      - 'automation/concerts/osm_read_only_fallback.py'
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
       - 'automation/concerts/dynamic_osm_official_proposals.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
+      - 'automation/concerts/dynamic_self_attributed_new_site_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'
       - 'automation/concerts/source_cross_domain_live_recheck.py'
       - 'scripts/concert_dynamic_existing_venue.py'
@@ -662,6 +664,33 @@ jobs:
             echo "::warning::Preuves OSM ou événements non vérifiables ; approbations inchangées."
           fi
 
+      - name: Vérifier les concerts dans des lieux encore inconnus sans registre de domaines
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fresh registry hints are quarantined until the event's OWN
+          # HTTPS site has been independently attributed by an exact French
+          # government address + one named OSM site with matching website.
+          # Publisher then repeats all network checks before any signing.
+          OUTPUT="$RUNNER_TEMP/concerts-self-attributed-new-site-preview.json"
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          if python public/automation/concerts/dynamic_self_attributed_new_site_proposals.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+              --output "$OUTPUT" \
+              --report confidential/automation/concerts/intake/self-attributed-new-site-proposals.json \
+              --scan-slot "$SCAN_SLOT" --limit 4 \
+              > "$RUNNER_TEMP/concerts-private-logs/self-attributed-new-site-proposals.log" 2>&1; then
+            mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
+            echo "New concert venues: independently verified private pairs sent to real Publisher."
+          else
+            rm -f "$OUTPUT"
+            echo "::warning::Unknown-venue evidence unavailable; historical approvals unchanged."
+          fi
+
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
         id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
@@ -994,6 +1023,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/dynamic-new-site-approval-proposals.json ]; then
             git add --sparse -- automation/concerts/intake/dynamic-new-site-approval-proposals.json
+          fi
+          if [ -f automation/concerts/intake/self-attributed-new-site-proposals.json ]; then
+            git add --sparse -- automation/concerts/intake/self-attributed-new-site-proposals.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher

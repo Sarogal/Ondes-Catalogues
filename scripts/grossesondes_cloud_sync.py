@@ -53,6 +53,21 @@ from grossesondes_generic_directory_edition import (
     independently_verify as independently_verify_directory,
     validate_private_proposal as validate_private_directory,
 )
+from grossesondes_openagenda_linked_edition import (
+    PROOF_MODE as OPENAGENDA_LINKED_PROOF_MODE,
+    independently_verify as independently_verify_openagenda_linked,
+    validate_private_proposal as validate_private_openagenda_linked,
+)
+from grossesondes_venue_reciprocal_edition import (
+    PROOF_MODE as VENUE_RECIPROCAL_PROOF_MODE,
+    independently_verify as independently_verify_venue_reciprocal,
+    validate_private_proposal as validate_private_venue_reciprocal,
+)
+from grossesondes_first_party_direct_edition import (
+    PROOF_MODE as DIRECT_FIRST_PARTY_PROOF_MODE,
+    independently_verify as independently_verify_direct_first_party,
+    validate_private_proposal as validate_private_direct_first_party,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -675,6 +690,139 @@ def collect_registered_directory_sources(
     return sources
 
 
+
+def collect_registered_openagenda_sources(
+        patch, published_slugs, today, event_fetch=None,
+        organizer_fetch=None):
+    """Re-fetch public OpenAgenda attribution BEFORE any proposed website.
+
+    An untrusted private event URL must be a canonical openagenda.com event;
+    the independent LIVE page alone chooses the eligible first-party site.
+    Website/date/genre proofs are independently recovered on this runner.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed published identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual publisher date required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == OPENAGENDA_LINKED_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_openagenda_linked(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not candidates:
+        return {}
+    start = (ordinal * 2) % len(candidates)
+    selected = [candidates[(start + n) % len(candidates)]
+                for n in range(min(2, len(candidates)))]
+    sources = {}
+    for row in selected:
+        try:
+            opts = {}
+            if event_fetch is not None:
+                opts["event_fetch"] = event_fetch
+            if organizer_fetch is not None:
+                opts["organizer_fetch"] = organizer_fetch
+            proven = independently_verify_openagenda_linked(
+                row, today, **opts)
+            if proven is None:
+                continue
+            slug = row["slug"]
+            sources["registered-openagenda:" + slug] = proven
+            sources["registered-openagenda-verified:" + slug] = True
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            print("OpenAgenda/organizer festival evidence not re-confirmed.")
+    return sources
+
+
+def collect_registered_direct_first_party_sources(
+        patch, published_slugs, today, fetch=None):
+    """Current official edition facts, reread exclusively at official domain.
+
+    A private proposal may nominate any canonical branded festival domain.
+    Its date/location claim remains untrusted; no third-party event source,
+    fixed festival registry or external repetition of dates is required.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed catalogue identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual Publisher day required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == DIRECT_FIRST_PARTY_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_direct_first_party(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not candidates:
+        return {}
+    offset = (ordinal * 2) % len(candidates)
+    selected = [candidates[(offset + i) % len(candidates)]
+                for i in range(min(2, len(candidates)))]
+    sources = {}
+    for row in selected:
+        try:
+            opts = {"fetch": fetch} if fetch is not None else {}
+            proven = independently_verify_direct_first_party(
+                row, today, **opts)
+            if proven is None:
+                continue
+            slug = row["slug"]
+            sources["registered-direct-first-party:" + slug] = proven
+            sources["registered-direct-first-party-verified:" + slug] = True
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            print("Festival first-party edition not reconfirmed by Publisher.")
+    return sources
+
+
+def collect_registered_venue_reciprocal_sources(
+        patch, published_slugs, today, fetch=None):
+    """Independently recheck two-site reciprocal festival proof on Publisher.
+
+    The nominated HTTPS festival root may only produce a source AFTER its
+    own edition and a real venue site's exact-title, dated event page and
+    organizer-site backlink agree. Venue host is newly rederived today.
+    No private URL is granted a trusted-host role by patch membership.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed catalogue identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual Publisher date required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == VENUE_RECIPROCAL_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_venue_reciprocal(row, today) is not None)
+    ), key=lambda r: r["slug"])
+    if not candidates:
+        return {}
+    shift = (ordinal * 2) % len(candidates)
+    chosen = [candidates[(shift + i) % len(candidates)]
+              for i in range(min(2, len(candidates)))]
+    sources = {}
+    for row in chosen:
+        try:
+            kwargs = {"fetch": fetch} if fetch is not None else {}
+            approved = independently_verify_venue_reciprocal(
+                row, today, **kwargs)
+            if approved is None:
+                continue
+            slug = row["slug"]
+            sources["registered-venue-reciprocal:" + slug] = approved
+            sources["registered-venue-reciprocal-verified:" + slug] = True
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            print("Reciprocal venue/festival proof failed independently.")
+    return sources
+
+
 def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep):
     """Fetch only pinned organizer/municipal URLs; retry transient server errors.
 
@@ -807,6 +955,12 @@ def main():
     sources.update(collect_registered_linked_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_directory_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_openagenda_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_direct_first_party_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_venue_reciprocal_sources(
         patch, signed_published_slugs, today.isoformat()))
     geo_review = private_geo_report(token)
     city_review = private_city_report(token)

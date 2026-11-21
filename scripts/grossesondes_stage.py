@@ -47,6 +47,18 @@ from grossesondes_generic_directory_edition import (
     PROOF_MODE as DIRECTORY_PROOF_MODE,
     validate_verified_row as validate_directory_verified_row,
 )
+from grossesondes_openagenda_linked_edition import (
+    PROOF_MODE as OPENAGENDA_LINKED_PROOF_MODE,
+    validate_verified_row as validate_openagenda_linked_row,
+)
+from grossesondes_venue_reciprocal_edition import (
+    PROOF_MODE as VENUE_RECIPROCAL_PROOF_MODE,
+    validate_verified_row as validate_venue_reciprocal_row,
+)
+from grossesondes_first_party_direct_edition import (
+    PROOF_MODE as DIRECT_FIRST_PARTY_PROOF_MODE,
+    validate_verified_row as validate_direct_first_party_row,
+)
 from grossesondes_history_guard import validate_history_extension
 from grossesondes_noel_2026 import (
     PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
@@ -301,6 +313,67 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             report["accepted_additions"].append(slug)
             report["source_proofs"].extend(
                 [e["originSlug"], accepted["officialSite"]])
+        elif e.get("proofMode") == OPENAGENDA_LINKED_PROOF_MODE:
+            known_rows = rows + (
+                published_calendar.get("festivals", [])
+                if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", [])
+                if published_history else [])
+            proven = validate_openagenda_linked_row(
+                e, sources.get("registered-openagenda:" + slug), today)
+            if (sources.get("registered-openagenda-verified:" + slug) is not True
+                    or proven is None
+                    or institutional_conflicts(e, known_rows, known_history)):
+                report["held"].append({
+                    "slug": slug,
+                    "reason": "site OpenAgenda ou dates officielles non revérifiés"})
+                continue
+            rows.append(proven)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].extend(
+                [e["originSlug"], proven["officialSite"]])
+        elif e.get("proofMode") == DIRECT_FIRST_PARTY_PROOF_MODE:
+            known_rows = rows + (
+                published_calendar.get("festivals", [])
+                if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", [])
+                if published_history else [])
+            verified = validate_direct_first_party_row(
+                e, sources.get("registered-direct-first-party:" + slug),
+                today)
+            if (sources.get("registered-direct-first-party-verified:" + slug)
+                    is not True or verified is None
+                    or institutional_conflicts(e, known_rows, known_history)):
+                report["held"].append({
+                    "slug": slug,
+                    "reason": "annonce du site officiel non revérifiée indépendamment"})
+                continue
+            rows.append(verified)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].append(verified["officialSite"])
+        elif e.get("proofMode") == VENUE_RECIPROCAL_PROOF_MODE:
+            known_rows = rows + (
+                published_calendar.get("festivals", [])
+                if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", [])
+                if published_history else [])
+            proven = validate_venue_reciprocal_row(
+                e, sources.get("registered-venue-reciprocal:" + slug),
+                today)
+            if (sources.get("registered-venue-reciprocal-verified:" + slug)
+                    is not True or proven is None
+                    or institutional_conflicts(e, known_rows, known_history)):
+                report["held"].append({
+                    "slug": slug,
+                    "reason": "festival ou annonce de salle independante non revérifié"})
+                continue
+            rows.append(proven)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].extend(
+                [e["originSlug"], proven["officialSite"]])
         elif e.get("proofMode") == INSTITUTIONAL_LINKED_PROOF_MODE:
             known_rows = rows + (
                 published_calendar.get("festivals", []) if published_calendar else [])

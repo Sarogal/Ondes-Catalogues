@@ -17,6 +17,7 @@ from urllib.parse import urlencode
 from xml.etree import ElementTree
 
 import triage
+import osm_read_only_fallback as readonly
 
 BAN = "https://data.geopf.fr/geocodage/search/"
 OSM_MAP = "https://api.openstreetmap.org/api/0.6/map"
@@ -155,7 +156,16 @@ def _osm_map(site, center, fetch):
     bbox = ",".join(f"{v:.6f}" for v in (
         lon-LON_HALF, lat-LAT_HALF, lon+LON_HALF, lat+LAT_HALF))
     url = OSM_MAP + "?bbox=" + bbox
-    body, final = fetch(url, 650_000)
+    try:
+        body, final = fetch(url, 650_000)
+    except (ValueError, OSError, TimeoutError):
+        # OpenStreetMap's editing API can be unavailable/robots-protected
+        # for unattended public runners. The read-only Overpass request
+        # covers the SAME tiny bbox, including referenced nodes for ways.
+        fallback = readonly.nearby(
+            lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF)
+        body, final = fetch(fallback, 650_000)
+        url = fallback
     require(final == url and isinstance(body, str)
             and len(body) <= 650_000
             and "<!DOCTYPE" not in body.upper()

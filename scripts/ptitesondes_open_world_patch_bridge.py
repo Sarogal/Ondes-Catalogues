@@ -44,6 +44,9 @@ from ptitesondes_municipal_event_venue_ban import (
     mint_municipal_event_location_proof,
 )
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+from ptitesondes_independent_venue_site_proof import (
+    mint_named_osm_venue_website_proof,
+)
 
 MAX_DOSSIERS = 30
 DOSSIER_KEYS = frozenset({
@@ -179,45 +182,14 @@ def prepare_open_world_patch(
         event_url = dossier["official_event_url"]
         venue_url = dossier["official_venue_url"]
         try:
-            # Authenticated municipal origin BEFORE reading unknown HTML.
-            directory = directory_reader(city)
-            if approved_municipal_page_host(
-                    venue_url, city, directory) is None:
-                held("independent_municipal_domain_unverified")
-                continue
-            source_proof = None
-            if approved_municipal_page_host(
-                    event_url, city, directory) is None:
-                reference_url = dossier.get(SOURCE_REFERENCE_FIELD)
-                if (reference_url is None
-                        or approved_municipal_page_host(
-                            reference_url, city, directory) is None):
-                    held("independent_municipal_source_delegation_missing")
-                    continue
-                reference_html = official_reader(reference_url)
-                source_proof = mint_delegated_venue_source_proof(
-                    city, venue, event_url, directory,
-                    reference_url, reference_html, today)
-                if source_proof is None:
-                    # Municipality-run secondary sites (e.g. culture calendars)
-                    # need a DILA-site link PLUS their own legal declaration.
-                    # A mere backlink or self-declared organizer is not enough.
-                    source_proof = mint_secondary_municipal_host_proof(
-                        city, event_url, directory,
-                        reference_url, reference_html, today,
-                        reader=official_reader)
-                if source_proof is None:
-                    held("independent_municipal_source_delegation_unconfirmed")
-                    continue
+            # Always re-read the exact OpenAgenda UID before trusting its
+            # coordinates. No GPS may be copied from a private dossier.
             api_event = event_reader(
                 lead["agenda_uid"], lead["event_uid"], public_key)
             loc = api_event.get("location") if isinstance(api_event, dict) else None
             source_point = (
                 (loc.get("latitude"), loc.get("longitude"))
                 if isinstance(loc, dict) else None)
-            # Missing OA coordinates are not a reason to reject an exact
-            # municipality-address + independent BAN venue proof. Partially
-            # specified or malformed coordinates remain invalid.
             if _coordinates(source_point) is None:
                 if source_point != (None, None):
                     held("live_oa_gps_invalid_or_partial")
@@ -226,33 +198,71 @@ def prepare_open_world_patch(
             group = {"city": city, "venue": venue,
                      "key": [norm(city), norm(venue)],
                      "uids": [str(lead["event_uid"])]}
-            official_venue_html = official_reader(venue_url)
-            proof = mint_private_location_proof(
-                group, directory, venue_url, official_venue_html,
-                ign_reader, today, source_center=source_point)
+            source_proof, proof = None, None
+
+            # Nonmunicipal venues can be discovered without a municipal
+            # backlink. The first-party event website must be SAME host
+            # independently attributed to ONE exact named OSM venue near
+            # the freshly re-read UID-bound OA point. An OSM website by
+            # itself grants no event/session/admission permission.
+            if venue_url == event_url and source_point is not None:
+                try:
+                    response = osm_reader(source_point)
+                    proof = mint_named_osm_venue_website_proof(
+                        group, event_url, source_point, response, today)
+                except (OSError, TimeoutError, ValueError, TypeError, KeyError):
+                    proof = None
+                if proof is not None:
+                    source_proof = proof
+
             if proof is None:
-                # Municipality may list the *event* and a named venue under
-                # "Adresse — 1 esplanade ..." without JSON-LD or postcode.
-                # BAN must return an exact numbered building point that
-                # agrees independently with OA, never a town centroid.
-                proof = mint_municipal_event_location_proof(
+                # Preserve the pre-existing DILA municipal and delegated
+                # organizer paths, including numbered BAN and unnumbered
+                # municipal exact-Place/OSM evidence.
+                directory = directory_reader(city)
+                if approved_municipal_page_host(
+                        venue_url, city, directory) is None:
+                    held("independent_municipal_domain_unverified")
+                    continue
+                if approved_municipal_page_host(
+                        event_url, city, directory) is None:
+                    reference_url = dossier.get(SOURCE_REFERENCE_FIELD)
+                    if (reference_url is None
+                            or approved_municipal_page_host(
+                                reference_url, city, directory) is None):
+                        held("independent_municipal_source_delegation_missing")
+                        continue
+                    reference_html = official_reader(reference_url)
+                    source_proof = mint_delegated_venue_source_proof(
+                        city, venue, event_url, directory,
+                        reference_url, reference_html, today)
+                    if source_proof is None:
+                        source_proof = mint_secondary_municipal_host_proof(
+                            city, event_url, directory,
+                            reference_url, reference_html, today,
+                            reader=official_reader)
+                    if source_proof is None:
+                        held("independent_municipal_source_delegation_unconfirmed")
+                        continue
+                official_venue_html = official_reader(venue_url)
+                proof = mint_private_location_proof(
                     group, directory, venue_url, official_venue_html,
-                    ign_reader, today, source_point)
-            if proof is None:
-                # An unnumbered public square/building can have a precise
-                # municipal Place point or named-address/OSM proof. If OA has
-                # no GPS, only the exact Place on this DILA-authenticated page
-                # may seed the OSM query; never invent a city/street centroid.
-                osm_center = (source_point if source_point is not None
-                              else _exact_official_point(
-                                  group, official_venue_html))
-                if osm_center is not None:
-                    proof = mint_private_unnumbered_location_proof(
+                    ign_reader, today, source_center=source_point)
+                if proof is None:
+                    proof = mint_municipal_event_location_proof(
                         group, directory, venue_url, official_venue_html,
-                        osm_reader(osm_center), source_point, today)
-            if proof is None:
-                held("fresh_independent_venue_proof_missing")
-                continue
+                        ign_reader, today, source_point)
+                if proof is None:
+                    osm_center = (source_point if source_point is not None
+                                  else _exact_official_point(
+                                      group, official_venue_html))
+                    if osm_center is not None:
+                        proof = mint_private_unnumbered_location_proof(
+                            group, directory, venue_url, official_venue_html,
+                            osm_reader(osm_center), source_point, today)
+                if proof is None:
+                    held("fresh_independent_venue_proof_missing")
+                    continue
             validation = rehearse_open_world_municipal_event(
                 lead, dossier["date_start"], event_url, proof,
                 reference, published, today, public_key,
