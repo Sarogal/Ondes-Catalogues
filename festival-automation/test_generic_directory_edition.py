@@ -397,10 +397,27 @@ class GenericDirectoryProofTests(TestCase):
         catalog = {"schema": 1, "festivals": []}
         fetch = lambda url: (self.assertEqual(url, DIRECTORY) or ENTRY)
         result = stable_directory_proposals(
-            state, queue, catalog, report, DAY, directory_fetch=fetch)
+            state, queue, catalog, report, DAY, directory_fetch=fetch,
+            organizer_fetch=lambda url: (self.assertEqual(url, SITE) or OFFICIAL))
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["officialSite"], SITE)
         self.assertFalse(result[0]["showOnMap"])
+
+        # A historical festival is NOT a privileged source, but when its
+        # observation survives J+1 and a separate public directory rederives
+        # the SAME official root, it should not be blocked by a curated-only
+        # kind check. The Publisher must still independently re-fetch.
+        historical = deepcopy(queue)
+        historical["dossiers"][0]["sources"][0]["kind"] = (
+            "HISTORICAL_HOMEPAGE_YEAR_HINT")
+        recovered = stable_directory_proposals(
+            state, historical, catalog, report, DAY,
+            directory_fetch=fetch,
+            organizer_fetch=lambda url: (self.assertEqual(url, SITE) or OFFICIAL))
+        self.assertEqual(len(recovered), 1)
+        self.assertEqual(recovered[0]["officialSite"], SITE)
+        self.assertEqual(recovered[0]["proofMode"], PROOF_MODE)
+        self.assertFalse(recovered[0]["showOnMap"])
 
         negative = [
             lambda st, qu, rp: st[
@@ -411,6 +428,8 @@ class GenericDirectoryProofTests(TestCase):
                     digest="0"*64),
             lambda st, qu, rp: qu["dossiers"][0]["sources"][0].update(
                 kind="PRESS_ARTICLE_DATE_CLAIM_REVIEW"),
+            lambda st, qu, rp: qu["dossiers"][0]["sources"][0].update(
+                kind="OPENAGENDA_PUBLIC_RESEARCH_ONLY"),
             lambda st, qu, rp: rp["rows"][0].update(
                 start_date_hint="2027-06-24"),
             lambda st, qu, rp: rp["rows"][0].update(
@@ -423,7 +442,8 @@ class GenericDirectoryProofTests(TestCase):
                 mutation(st, qu, rp)
                 self.assertEqual(stable_directory_proposals(
                     st, qu, catalog, rp, DAY,
-                    directory_fetch=fetch), [])
+                    directory_fetch=fetch,
+            organizer_fetch=lambda url: (self.assertEqual(url, SITE) or OFFICIAL)), [])
 
 
 if __name__ == "__main__":
