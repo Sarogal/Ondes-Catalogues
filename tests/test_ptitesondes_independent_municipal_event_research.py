@@ -197,8 +197,10 @@ class MunicipalThreeSourceTests(unittest.TestCase):
             timing(10), status={"@id": "https://schema.org/EventCancelled"})],
             links=())
         out = run(item, organizer_html=external)
+        # A cancelled organizer record is stronger negative evidence than
+        # merely missing an intersection; preserve the explicit hold reason.
         self.assertEqual(out["status"],
-                         "no_shared_exact_claimed_session")
+                         "oa_or_third_party_claims_not_current")
         self.assertEqual(out["triple_corresponding_session_count"], 0)
 
     def test_changed_oa_schedule_or_status_holds_even_if_pages_match(self):
