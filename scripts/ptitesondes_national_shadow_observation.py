@@ -268,7 +268,6 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                 or not 0 <= current["next_index"] < max(total, 1)):
             raise ValueError("invalid_private_agenda_selector")
     started = held = completed = examined_segments = examined_events = 0
-    agenda_attempts = agenda_held = 0
     if not total:
         return {"agenda_attempts": 0, "agenda_advanced": 0,
                 "agenda_finished": 0, "agenda_held": 0,
@@ -378,6 +377,7 @@ def run_observation(source_config, root, day, batch_id, *,
     reports = available_index_reports(reports_dir)
     n = len(reports)
     started = held = completed = examined_segments = examined_events = 0
+    agenda_attempts = agenda_held = 0
     agenda_keys, event_keys, session_keys = set(), set(), set()
     venue_keys, territory_claims = set(), set()
     invalid_metric_segments = 0
