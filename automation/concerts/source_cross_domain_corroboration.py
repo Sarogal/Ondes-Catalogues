@@ -132,10 +132,13 @@ def build(registry, catalogue, today):
                 r["independentDomainHint"] for r in entries
                 if r["stableOnDistinctDays"]
             }) >= 2:
-            status = ("published_reference_cross_domain"
-                      if any(r["publishedReference"] or r["duplicateResearchLead"]
-                             for r in entries)
+            status = (
+                "published_reference_cross_domain"
+                if any(r["publishedReference"] for r in entries)
+                else ("possible_duplicate_cross_domain"
+                      if any(r["duplicateResearchLead"] for r in entries)
                       else "cross_domain_stable_observation_needs_live_proof")
+            )
         else:
             status = "cross_domain_observation_needs_second_day"
         first_by_host = {}
@@ -150,8 +153,9 @@ def build(registry, catalogue, today):
             "normalizedVenue": (next(iter(rooms)) if len(rooms) == 1 else None),
             "reviewState": status,
             "publishedAlreadyKnown": any(
-                r["publishedReference"] or r["duplicateResearchLead"]
-                for r in entries),
+                r["publishedReference"] for r in entries),
+            "markedPossibleDuplicate": any(
+                r["duplicateResearchLead"] for r in entries),
             "distinctDomainHints": len(domains),
             "sources": sorted(first_by_host.values(), key=lambda x: x["host"]),
             "independentOwnershipVerified": False,
@@ -167,6 +171,8 @@ def build(registry, catalogue, today):
             "cross_domain_stable_observation_needs_live_proof"],
         "publishedReferenceCrossDomainGroups": counts[
             "published_reference_cross_domain"],
+        "possibleDuplicateCrossDomainGroups": counts[
+            "possible_duplicate_cross_domain"],
         "conflictingVenueGroups": counts["conflicting_venue_identity"],
         "awaitingSecondDayGroups": counts[
             "cross_domain_observation_needs_second_day"],
