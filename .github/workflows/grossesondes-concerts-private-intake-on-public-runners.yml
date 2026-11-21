@@ -40,6 +40,7 @@ on:
       - 'automation/concerts/independent_named_site_geo.py'
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
+      - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'
       - 'automation/concerts/source_cross_domain_live_recheck.py'
       - 'scripts/concert_dynamic_existing_venue.py'
@@ -509,6 +510,35 @@ jobs:
             fi
           fi
 
+      - name: Produire des paires concert + nouveau lieu depuis deux preuves fraîches (privé)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Last cross-domain report is discovery only, never authorization.
+          # This module independently re-fetches the first-party MusicEvent,
+          # OSM/BAN named-site geometry, original OSM-attributed source and
+          # different-domain witness before proposing ONE atomic pair.
+          CROSS=confidential/automation/concerts/intake/source-cross-domain-fresh-evidence.json
+          if [ -s "$CROSS" ]; then
+            OUTPUT="$RUNNER_TEMP/concerts-new-site-paired-preview.json"
+            UTC_HOUR="$(date -u +%H)"
+            SCAN_SLOT=$((10#$UTC_HOUR / 8))
+            if python public/automation/concerts/dynamic_new_site_approval_proposals.py \
+                --cross "$CROSS" \
+                --catalogue public/docs/grossesondes/concerts.json \
+                --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+                --output "$OUTPUT" \
+                --report confidential/automation/concerts/intake/dynamic-new-site-approval-proposals.json \
+                --scan-slot "$SCAN_SLOT" \
+                > "$RUNNER_TEMP/concerts-private-logs/dynamic-new-site-approval-proposals.log" 2>&1; then
+              mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
+              echo "Concerts et nouveaux sites : paires privées préparées, Publisher souverain."
+            else
+              echo "::warning::Paires dynamiques non disponibles ; aucun lieu ou concert ajouté."
+            fi
+          fi
+
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
         id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
@@ -875,6 +905,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/dynamic-first-party-venue-admission.json ]; then
             git add --sparse -- automation/concerts/intake/dynamic-first-party-venue-admission.json
+          fi
+          if [ -f automation/concerts/intake/dynamic-new-site-approval-proposals.json ]; then
+            git add --sparse -- automation/concerts/intake/dynamic-new-site-approval-proposals.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
