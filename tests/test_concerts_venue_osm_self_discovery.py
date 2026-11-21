@@ -252,7 +252,7 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
                 "geometry":{"type":"Point","coordinates":[0.70,47.40]},
                 "properties":{"postcode":"37000","city":"Tours",
                   "street":"rue Exemple","housenumber":"1",
-                  "type":"housenumber","score":0.98,
+                  "type":"housenumber","score":0.80,
                   "context":"37, Indre-et-Loire, Centre-Val de Loire"},
             }],
         }
@@ -293,6 +293,18 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertFalse(report["candidates"][0]["publicationAllowed"])
         self.assertIn(osm_api,calls)
         self.assertIn(show,calls)
+        # A true exact government address can score below 0.89.
+        # The Publisher must still use its original strict threshold.
+        from automation.concerts import independent_named_site_geo as geo
+        with self.assertRaises(ValueError):
+            geo.verify(site,lambda url,cap:(fetch(url,{}),url))
+        # Relaxing the ranking score must not relax EXACT street identity.
+        gov["features"][0]["properties"]["score"]=0.99
+        gov["features"][0]["properties"]["street"]="rue des Faux Positifs"
+        rejected=discover_osm.scan(catalog,TODAY,max_venues=1,
+                                   max_details=2,fetch=fetch)
+        self.assertEqual(len(rejected["candidates"]),0)
+        self.assertEqual(rejected["sourceChecks"].get("sourcesHeld"),1)
 
     def test_approximate_address_cannot_claim_a_source_website(self):
         from automation.concerts import venue_address_osm_source as resolver
