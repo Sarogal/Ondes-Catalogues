@@ -271,6 +271,88 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertLessEqual(len(one), 12)
         self.assertLessEqual(len(next_day), 12)
 
+    def test_unknown_brand_without_rock_metal_or_fest_kept_for_research(self):
+        """No closed genre-token requirement for a genuinely NEW festival."""
+        from national_municipal_pages_preflight import (
+            untyped_municipal_event_links, unknown_municipal_music_links)
+        agenda = """<main><h1>Agenda communal</h1>
+          <a href="/evenement/le-gros-tonneau-2027/">Le Gros Tonneau 2027</a>
+          <a href="/evenement/les-gueules-de-bois/">Les Gueules de Bois</a>
+          <a href="/evenement/atelier-couture/">Atelier de couture</a>
+          <a href="/evenement/helixfest-2027/">HelixFest 2027</a>
+          <a href="/evenement/festival-rock-2027/">Festival Rock 2027</a>
+          <a href="https://evil.example/secret">Le Festival de l'ombre</a>
+          <a hidden href="/evenement/crochet-cache/">Concert caché 2027</a>
+          <script><a href="/evenement/faux">Le Gros Faux Festival</a></script>
+          </main>"""
+        typed = unknown_municipal_music_links(agenda, SITE+"agenda", SITE)
+        typed_urls = {x["detail_url_review_only"] for x in typed}
+        self.assertEqual(len(typed_urls), 2)
+        untyped = untyped_municipal_event_links(
+            agenda, SITE+"agenda", SITE, TODAY, music_urls=typed_urls)
+        self.assertEqual({x["title_hint"] for x in untyped},
+                         {"Le Gros Tonneau 2027", "Les Gueules de Bois",
+                          "Atelier de couture"})
+        for x in untyped:
+            self.assertEqual(
+                x["classification"],
+                "UNCLASSIFIED_MUNICIPAL_EVENT_RESEARCH_ONLY")
+            self.assertFalse(x["music_verified"])
+            self.assertFalse(x["festival_verified"])
+            self.assertFalse(x["concert_verified"])
+            self.assertFalse(x["date_verified"])
+            self.assertFalse(x["publication_authorized"])
+            self.assertNotIn("startDate", x)
+            self.assertNotIn("officialSite", x)
+
+    def test_untyped_event_route_is_discovery_not_authorization(self):
+        from national_municipal_pages_preflight import untyped_municipal_event_links
+        index = """<h1>Agenda</h1>
+          <a href="/evenement/nouvelle-scene-2027/">La Nouvelle Scène</a>
+          <a href="/demarches/manifestation/">Organiser une manifestation</a>
+          <a href="/actualites/mairie/">Actualités de la mairie</a>
+          <a href="http://evil.example/evenement/faux/">Le Faux Festival</a>
+          <a href="/evenement/%2e%2e/private/">Ceci est invalide</a>
+          """
+        h = '<a href="/agenda">Agenda</a>'
+        pages = {SITE: h, SITE+"agenda": index}
+        seen = []
+        def fetch(url):
+            seen.append(url)
+            return pages.get(url, "<main><h1>Actualités</h1></main>")
+        result = scan(
+            queue(), municipality(), TODAY, fetch=fetch,
+            commune_lookup=geo, delegated_lookup=lambda _: None,
+            directory_fetch=dila)
+        self.assertEqual(seen[:2], [SITE, SITE+"agenda"])
+        self.assertEqual(result["unknown_music_links_count"], 0)
+        self.assertEqual(result["untyped_event_links_count"], 1)
+        self.assertEqual(result["untyped_event_links_publications"], 0)
+        self.assertEqual(
+            result["rows"][0]["untyped_event_links_review_only"][0]["title_hint"],
+            "La Nouvelle Scène")
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["publications"], 0)
+        self.assertEqual(untyped_municipal_event_links(
+            '<a href="https://evil.example/evenement/foo/">Un événement</a>',
+            SITE, SITE, TODAY), [])
+
+    def test_untyped_day_rotation_does_not_favour_first_twelve_ever(self):
+        from national_municipal_pages_preflight import (
+            untyped_municipal_event_links, MAX_UNTYPED_EVENT_LINKS)
+        html = "".join(
+            '<a href="/evenement/inconnu-' + str(i) +
+            '/">Le Rendez Vous ' + str(i) + '</a>'
+            for i in range(40))
+        a = untyped_municipal_event_links(html, SITE, SITE, "2026-11-21")
+        b = untyped_municipal_event_links(html, SITE, SITE, "2026-11-22")
+        self.assertEqual(len(a), MAX_UNTYPED_EVENT_LINKS)
+        self.assertEqual(len(b), MAX_UNTYPED_EVENT_LINKS)
+        self.assertNotEqual(
+            [x["detail_url_review_only"] for x in a],
+            [x["detail_url_review_only"] for x in b])
+        self.assertTrue(all(x["publication_authorized"] is False for x in a+b))
+
     def test_security_challenge_is_unavailable_not_negative_evidence(self):
         # Real municipal administrations may use anti-bot gateways. They
         # cannot be bypassed and must not count as no festival scheduled.
