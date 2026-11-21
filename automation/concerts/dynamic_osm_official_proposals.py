@@ -264,7 +264,7 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             # or multiline payloads; private, bounded diagnostics only.
             detail = " ".join(str(exc).split()) if isinstance(
                 exc, ValueError) else type(exc).__name__
-            detail = re.sub(r"https?://\\S+", "[url]", detail)[:180]
+            detail = re.sub(r"https?://\S+", "[url]", detail)[:180]
             reason = detail or type(exc).__name__
             check.update(state="held_event_or_source_not_verified",
                          reason=reason)
