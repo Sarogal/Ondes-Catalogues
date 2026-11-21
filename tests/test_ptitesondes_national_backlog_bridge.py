@@ -1,6 +1,7 @@
 """Private national backlog bridge: offline regression and security contract."""
 from datetime import date
 from pathlib import Path
+from hashlib import sha256
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 import json
@@ -115,6 +116,75 @@ class BridgeTests(unittest.TestCase):
                     side_effect=AssertionError("no I/O")):
                 main()
             self.assertFalse(output.exists())
+
+    def test_real_index_campaign_layout_finds_isolated_agenda_segment(self):
+        # The source index holds many agendas, but shadow observation saves
+        # each isolated campaign under the FULL index digest and a one-agenda
+        # digest inside the per-agenda segment's provenance.
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = {
+                "schema": "ptitesondes.private_national_oa_index.v1",
+                "mode": "private_index_readonly_discovery_not_admission",
+                "new_agenda_candidates": [
+                    {"agenda_uid": 100, "agenda_slug": "unrelated",
+                     "source_identity_only": True, "publisher_enabled": False},
+                    {"agenda_uid": 101, "agenda_slug": "scene-libre",
+                     "source_identity_only": True, "publisher_enabled": False},
+                ],
+                "publication_ready": False, "public_writes": 0,
+            }
+            index_dir = root / "index" / "reports"
+            index_dir.mkdir(parents=True)
+            raw = json.dumps(source).encode("utf-8")
+            (index_dir / "index-2026-11-20-livescan.json").write_bytes(raw)
+            full_digest = sha256(raw).hexdigest()
+            one_agenda = dict(source,
+                              new_agenda_candidates=[source["new_agenda_candidates"][1]])
+            one_digest = sha256(json.dumps(
+                one_agenda, sort_keys=True, ensure_ascii=False,
+                separators=(",", ":")).encode("utf-8")).hexdigest()
+            segment = {
+                "schema": "ptitesondes.private_oa_agenda_event_exploration.v1",
+                "mode": "private_research_event_leads_only",
+                "agenda_uid": 101, "agenda_slug": "scene-libre",
+                "counts": {"pages_read": 1, "public_event_uids_seen": 1},
+                "event_leads": [{
+                    "agenda_uid": 101, "agenda_slug": "scene-libre",
+                    "event_uid": 12345, "title": "Concert jeunesse inédit",
+                    "explicit_source_session_days": ["2026-12-01"],
+                    "explicit_source_session_intervals": [{
+                        "begin": "2026-12-01T11:00:00+01:00",
+                        "end": "2026-12-01T11:40:00+01:00",
+                    }],
+                    "publication_ready": False, "public_writes": 0,
+                }],
+                "next_cursor": None, "agenda_scan_complete": True,
+                "no_publisher_bridge": True,
+                "publication_ready": False, "public_writes": 0,
+                "campaign_meta": {
+                    "source_sha256": one_digest,
+                    "scan_day": "2026-11-20", "agenda_index": 0,
+                    "segment": 0, "start_cursor": None,
+                },
+            }
+            folder = (root / "campaigns" / full_digest[:24] /
+                      "agenda-0001")
+            folder.mkdir(parents=True)
+            path = folder / "agenda-0000-segment-0000.json"
+            path.write_text(json.dumps(segment), encoding="utf-8")
+            found = _inventory(root)
+            self.assertEqual(len(found), 1)
+            self.assertEqual(found[0][1], one_digest)
+            self.assertEqual(found[0][3], SCAN_DAY)
+            self.assertEqual(found[0][2]["event_leads"][0]["event_uid"],
+                             12345)
+            # An altered report cannot be used to introduce another event.
+            segment["event_leads"][0]["event_uid"] = 54321
+            segment["campaign_meta"]["source_sha256"] = "f" * 64
+            path.write_text(json.dumps(segment), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                _inventory(root)
 
     def test_absent_observation_yields_unchanged_private_backlog(self):
         with TemporaryDirectory() as temp:
