@@ -16,7 +16,7 @@ from test_grosses_stage import fixtures
 from grossesondes_generic_directory_edition import (
     directory_url, directory_urls, discover_directory_website,
     trusted_linked_site, verify_primary, visible_adjacent_edition_dates,
-    private_proposal,
+    private_proposal, verify_official_site_pages,
     validate_private_proposal, independently_verify, validate_verified_row,
     PROOF_MODE,
 )
@@ -137,6 +137,101 @@ class GenericDirectoryProofTests(TestCase):
         self.assertIsNone(trusted_linked_site(html, TITLE))
         script = '<script><h1>Festibarock\'in</h1></script>' + ENTRY
         self.assertEqual(trusted_linked_site(script, TITLE), SITE)
+
+    def test_publisher_finds_independent_edition_article_after_directory(self):
+        # First party landing pages often have no dates: only a separately
+        # linked current-edition article contains the exact announcement.
+        root = ('<main><h1>Festibarock in</h1>'
+                '<a href="/actualites">Actualités</a>'
+                '<a href="https://evil.example/edition-2027">Faux externe</a>'
+                '<a href="/%2e%2e/private/edition-2027">Traversal</a>'
+                '<a href="/../private/edition-2027">Dot segments</a>'
+                '</main>')
+        index = ('<h1>Actualités</h1><a href="/edition-2027">'
+                 'Notre édition 2027</a>')
+        article = ("<main><h1>Festibarock'in 2027</h1>"
+                   "<p>25 et 26 juin 2027, festival de rock et metal.</p>"
+                   "</main>")
+        pages = {
+            SITE: root,
+            SITE + "actualites": index,
+            SITE + "edition-2027": article,
+        }
+        calls = []
+        def primary(url):
+            calls.append(url)
+            self.assertIn(url, pages)
+            return pages[url]
+        proposal = private_proposal(TITLE, SITE, DATES, DAY)
+        approved = independently_verify(
+            proposal, DAY,
+            directory_fetch=lambda u: (
+                self.assertEqual(u, DIRECTORY) or ENTRY),
+            organizer_fetch=primary)
+        self.assertIsNotNone(approved)
+        self.assertEqual(calls, list(pages))
+        self.assertEqual(approved["startDate"], DATES[0])
+        self.assertEqual(approved["endDate"], DATES[1])
+        self.assertFalse(approved["showOnMap"])
+
+        tampered = deepcopy(proposal)
+        tampered["startDate"] = "2027-06-24"
+        calls.clear()
+        self.assertIsNone(independently_verify(
+            tampered, DAY, directory_fetch=lambda _: ENTRY,
+            organizer_fetch=primary))
+        self.assertEqual(calls, list(pages))
+
+    def test_publisher_refuses_contradictions_without_cherry_picking(self):
+        title = TITLE
+        valid = ("<h1>Festibarock'in 2027</h1>"
+                 "<p>25 et 26 juin 2027, festival rock.</p>")
+        other = valid.replace("25 et 26 juin", "11 et 12 juillet")
+        root = ('<h1>Festibarock in</h1>'
+                '<a href="/edition-2027-a">Édition 2027 A</a>'
+                '<a href="/edition-2027-b">Édition 2027 B</a>')
+        visited = []
+        pages = {SITE + "edition-2027-a": valid,
+                 SITE + "edition-2027-b": other}
+        dates = verify_official_site_pages(
+            SITE, root, title, 2027, DAY,
+            fetch=lambda url: visited.append(url) or pages[url])
+        self.assertIsNone(dates)
+        self.assertEqual(set(visited), set(pages))
+        # A different visible 2027 date on the homepage may not be
+        # overridden by a conveniently linked 2027 article.
+        conflicted = root + "<p>Un festival les 11 et 12 juillet 2027</p>"
+        visited.clear()
+        self.assertIsNone(verify_official_site_pages(
+            SITE, conflicted, title, 2027, DAY,
+            fetch=lambda url: visited.append(url)))
+        self.assertEqual(visited, [])
+        # Explicit cancellation anywhere on the root vetoes old articles.
+        cancelled = root + "<p>Festival 2027 annulé.</p>"
+        visited.clear()
+        self.assertIsNone(verify_official_site_pages(
+            SITE, cancelled, title, 2027, DAY,
+            fetch=lambda url: visited.append(url)))
+        self.assertEqual(visited, [])
+
+    def test_publisher_allows_onsale_day_but_never_tour_or_unlinked_page(self):
+        linked = ('<h1>Festibarock in</h1>'
+                  '<p>Ouverture de la billetterie le 5 mars 2027.</p>'
+                  '<a href="/programmation">Programmation</a>')
+        article = ("<h1>Festibarock'in 2027</h1>"
+                   "<p>25 et 26 juin 2027 : festival de rock</p>")
+        self.assertEqual(verify_official_site_pages(
+            SITE, linked, TITLE, 2027, DAY,
+            fetch=lambda url: article), DATES)
+        # A tour must still be routed to Concerts, not published as Festival.
+        tour = article + "<p>Concerts de la tournée itinérante 2027</p>"
+        self.assertIsNone(verify_official_site_pages(
+            SITE, linked, TITLE, 2027, DAY, fetch=lambda _: tour))
+        # The candidate URL itself cannot create an extra publisher fetch.
+        self.assertIsNone(verify_official_site_pages(
+            SITE, "<h1>Festibarock'in 2027</h1>",
+            TITLE, 2027, DAY,
+            fetch=lambda url: self.fail("Unlinked article fetched")))
 
     def test_real_directory_slug_variants_and_local_web_attribution(self):
         # Live directory pages use BOTH /mozhell-open-air and

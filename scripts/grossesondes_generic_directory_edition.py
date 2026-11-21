@@ -13,7 +13,7 @@ from __future__ import annotations
 from datetime import date
 from html.parser import HTMLParser
 import re
-from urllib.parse import urlsplit
+from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import Anchors, normalized, visible_text
@@ -326,6 +326,160 @@ def verify_primary(html, title, year, today):
     return dates
 
 
+
+# Publication-side reconstruction: this is independent of private national
+# article discovery, not an import of the private observation as authority.
+# The site root is first derived from a newly fetched PUBLIC directory page.
+MAX_PUBLISHER_SAME_HOST_PAGES = 3
+
+
+def _publisher_same_host_links(html, site, year, today, *, second_level=False):
+    """Find visible current-edition links from a verified first-party page.
+
+    Only exact-host HTTPS, non-encoded paths without queries are allowed.
+    Search terms rank generic page *roles*, never festival names or domains.
+    Weekly rotation eventually covers a long menu while keeping J/J+1 stable.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or safe_public_url(site) != site or urlsplit(site).path != "/"
+            or type(year) is not int):
+        return []
+    parser = Anchors()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return []
+    host = urlsplit(site).hostname
+    ranked = {}
+    for href, label, _context in parser.anchors[:250]:
+        if (not isinstance(href, str) or not 0 < len(href) <= 900
+                or "%" in href or "\\" in href
+                or any(part in (".", "..") for part in
+                       urlsplit(href).path.split("/"))):
+            continue
+        try:
+            candidate = urljoin(site, href)
+            parts = urlsplit(candidate)
+            if (parts.scheme != "https" or parts.hostname != host
+                    or parts.port is not None or parts.username is not None
+                    or parts.password is not None or parts.query or parts.fragment
+                    or parts.path in ("", "/")
+                    or safe_public_url(candidate) != candidate):
+                continue
+            descriptor = normalized(str(label) + " " +
+                                    parts.path.replace("-", " ").replace("_", " "))
+            years = set(re.findall(r"(?<![0-9])20[2-4][0-9](?![0-9])",
+                                   descriptor))
+            if years and years != {str(year)}:
+                continue
+            current_year = str(year) in years
+            generic_role = bool(re.search(
+                r"\b(?:programmation|programme|actualites?|actus?|news|"
+                r"edition|editions|dates?|agenda|affiche|annonce|annonces)\b",
+                descriptor))
+            if (second_level and not current_year) or not (
+                    current_year or generic_role):
+                continue
+            rank = 0 if current_year else 1
+            ranked[candidate] = min(rank, ranked.get(candidate, rank))
+        except (TypeError, ValueError, UnicodeError):
+            continue
+    current = sorted(url for url, rank in ranked.items() if rank == 0)
+    generic = sorted(url for url, rank in ranked.items() if rank == 1)
+    # Keep two consecutive days on the same deterministic rotation. No fixed
+    # inventory of target article paths is permitted.
+    week = date.fromisoformat(today).toordinal() // 7
+    def rotate(urls):
+        if not urls:
+            return urls
+        offset = (week * 2) % len(urls)
+        return urls[offset:] + urls[:offset]
+    return (rotate(current)[:2] + rotate(generic)[:1])[:3]
+
+
+def _nonadministrative_dates_visible(html, title, year):
+    """Other visible dates prohibit cherry-picking a convenient article."""
+    if not isinstance(html, str):
+        return True
+    parser = VisibleParagraphs()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (TypeError, ValueError, UnicodeError):
+        return True
+    visible = " ".join(fold(" ".join(parser.parts)).split())
+    excluded = administrative_calendar_dates(html, title, year)
+    return any((first, last) not in excluded
+               for _start, _end, first, last in
+               explicit_ranges(visible, year))
+
+
+def verify_official_site_pages(site, homepage_html, title, year, today,
+                               fetch=fetch_public_html):
+    """Recheck a directory-attributed SITE independently of private URL hints.
+
+    Try the root first, then at most 3 independently downloaded same-host
+    links. A news index may lead to a dated article. A mismatched range or
+    current-edition cancellation prevents selection. Nothing from a private
+    dossier chooses the downloaded paths or overrides conflicting evidence.
+    """
+    if (safe_public_url(site) != site or urlsplit(site).path != "/"
+            or type(year) is not int):
+        return None
+    dates = verify_primary(homepage_html, title, year, today)
+    if dates is not None:
+        return dates
+    try:
+        visible_home = visible_text(homepage_html)
+        if (CANCELLED.search(visible_home) or
+                _nonadministrative_dates_visible(homepage_html, title, year)):
+            return None
+        pending = _publisher_same_host_links(
+            homepage_html, site, year, today)
+        seen = {site}
+        observed = set()
+        remaining = MAX_PUBLISHER_SAME_HOST_PAGES
+        while pending and remaining:
+            link = pending.pop(0)
+            if link in seen:
+                continue
+            seen.add(link)
+            remaining -= 1
+            try:
+                page = fetch(link)
+            except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                # Network failure never supplies proof.
+                continue
+            event_dates = verify_primary(page, title, year, today)
+            if event_dates is not None:
+                if (not no_same_edition_jsonld_contradiction(
+                        homepage_html, title,
+                        date.fromisoformat(event_dates[0]),
+                        date.fromisoformat(event_dates[1]))):
+                    return None
+                observed.add(tuple(event_dates))
+            else:
+                # A year-dated article with conflicting visible dates and the
+                # festival name must veto the result, not be skipped to find
+                # another convenient article.
+                if (_nonadministrative_dates_visible(page, title, year)
+                        and normalized(title.rsplit(" ", 1)[0]) in
+                        normalized(visible_text(page))):
+                    return None
+                # A generic programme/news index may reveal a year-dated
+                # article one level below. Still use the shared total budget.
+                if remaining and not re.search(
+                        r"(?<![0-9])" + str(year) + r"(?![0-9])", link):
+                    for discovered in _publisher_same_host_links(
+                            page, site, year, today, second_level=True):
+                        if discovered not in seen and discovered not in pending:
+                            pending.append(discovered)
+        return next(iter(observed)) if len(observed) == 1 else None
+    except (TypeError, ValueError, UnicodeError):
+        return None
+
+
 def private_proposal(title, site, dates, today, *, directory_ref=None):
     routes = directory_urls(title)
     if (not routes or slug_for(title) is None
@@ -421,7 +575,8 @@ def independently_verify(proposal, today, directory_fetch=fetch_public_html,
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
         return None
     year = int(proposal["name"].rsplit(" ", 1)[-1])
-    dates = verify_primary(html, proposal["name"], year, today)
+    dates = verify_official_site_pages(
+        site, html, proposal["name"], year, today, fetch=organizer_fetch)
     if dates != (proposal["startDate"], proposal["endDate"]):
         return None
     approved = {key: proposal[key] for key in ROW_KEYS}
