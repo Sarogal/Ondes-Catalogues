@@ -117,9 +117,13 @@ class SourceProbeTests(unittest.TestCase):
                 return html_event()
             return "<html><h1>No structured event</h1></html>"
         statuses = []
-        for slot in (0, 1):
+        # One eligible domain is assigned to the final daily scan slot;
+        # rotate its event example on two consecutive calendar days.
+        for delta in (0, 1):
             reads.clear()
-            result = probe.build(report([row]), TODAY, slot=slot, fetch=fetch)
+            result = probe.build(
+                report([row]), TODAY + dt.timedelta(days=delta),
+                slot=2, fetch=fetch)
             check = result["sourceChecks"][0]
             statuses.append(check["status"])
             self.assertEqual(len(reads), 2)  # listing + ONE detail per host
