@@ -218,6 +218,22 @@ class UndatedFutureEditionTests(unittest.TestCase):
         self.assertEqual(len(duplicated["festivals"]), 90)
         self.assertEqual(blocked["already_published"], ["xtreme-fest-2027"])
 
+    def test_archive_intake_itself_proposes_not_publishes_an_undated_edition(self):
+        import grossesondes_archived_html_intake as intake
+        source = {"officialSite": ARCHIVED["officialSite"],
+                  "proofUrl": ARCHIVED["officialSite"], "year": 2027}
+        proposed = intake.candidate(ARCHIVED, source, OFFICIAL, TODAY)
+        self.assertIsNotNone(proposed)
+        self.assertEqual(proposed["proofMode"], PROOF_MODE)
+        self.assertEqual(proposed["status"], "Dates à venir")
+        self.assertIsNone(proposed["startDate"])
+        self.assertFalse(proposed["showOnMap"])
+        self.assertEqual(proposed, self.proposal)
+        self.assertIsNone(intake.candidate(
+            ARCHIVED, source,
+            "<h2>Préparation de l'Xtreme Fest 2027 en cours</h2>",
+            TODAY))
+
     def test_two_days_required_even_if_same_page_is_repeated_today(self):
         import grossesondes_archived_html_intake as intake
         state = {}
