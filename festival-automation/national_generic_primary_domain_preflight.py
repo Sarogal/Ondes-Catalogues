@@ -40,7 +40,7 @@ from grossesondes_venue_reciprocal_edition import (
     verified_venue_reciprocity,
     private_proposal as venue_private_proposal,
     validate_private_proposal as validate_venue_private_proposal,
-    safe_root as safe_venue_root,
+    safe_root as safe_venue_root, first_party_hero_hint,
 )
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
@@ -278,6 +278,13 @@ def _recheck_current_dates(source, primary_html, fetch, today):
             primary_html, title, year, today)
     if dates is not None:
         return dates, "SOURCE_PAGE", None, "SOURCE_PAGE"
+    weak_hero_dates = first_party_hero_hint(primary_html, title, today)
+    if weak_hero_dates is not None:
+        # Observation ONLY: J+1 itself cannot promote this unadjacent hero.
+        # Only an independently verified external venue site with an exact
+        # dated concert page and a backlink may eventually authorize it.
+        return tuple(date.fromisoformat(x) for x in weak_hero_dates), (
+            "SOURCE_HERO_REQUIRES_VENUE_BACKLINK"), None, "SOURCE_PAGE"
     primary_code = _private_date_rejection_code(primary_html, title, year)
     if _visible_date_ranges(primary_html, year):
         return None, None, primary_code, "SOURCE_PAGE"
@@ -298,6 +305,12 @@ def _recheck_current_dates(source, primary_html, fetch, today):
     if homepage_dates is None:
         homepage_dates = visible_adjacent_edition_dates(
             homepage_html, title, year, today)
+    if homepage_dates is None:
+        weak_hero_dates = first_party_hero_hint(
+            homepage_html, title, today)
+        if weak_hero_dates is not None:
+            homepage_dates = tuple(
+                date.fromisoformat(x) for x in weak_hero_dates)
     if homepage_dates is not None:
         if not no_same_edition_jsonld_contradiction(
                 primary_html, title, *homepage_dates):
