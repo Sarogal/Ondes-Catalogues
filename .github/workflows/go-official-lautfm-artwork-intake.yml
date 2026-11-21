@@ -13,6 +13,9 @@ on:
       - "radio-catalog-lab/tools/stage_official_logo_sha_candidates.py"
       - "radio-catalog-lab/tools/test_stage_official_logo_sha_candidates.py"
       - "radio-catalog-lab/tools/render_laut_fm_logo_contact_sheet.py"
+      - "grossesondes/radio-test-apk/artwork/first_visual_review_20261121.json"
+      - "radio-catalog-lab/tools/compose_reviewed_artwork_test_manifest.py"
+      - "radio-catalog-lab/tools/test_compose_reviewed_artwork_test_manifest.py"
   workflow_dispatch:
 
 permissions:
@@ -37,6 +40,10 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
             -p "test_stage_official_logo_sha_candidates.py" -v
+      - name: Verify reviewed high-resolution logo publication gates (OFFLINE)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_compose_reviewed_artwork_test_manifest.py" -v
       - name: Collect read-only laut.fm metadata and logo byte evidence
         run: |
           python radio-catalog-lab/tools/discover_official_laut_fm_logos.py \
@@ -55,6 +62,12 @@ jobs:
             --queue go-lautfm-sha-review-queue.json \
             --output go-lautfm-logo-contact-sheet.png \
             --report go-lautfm-contact-sheet-report.json
+      - name: Compose unsigned reviewed artwork sidecar (9 names, no activation)
+        run: |
+          python radio-catalog-lab/tools/compose_reviewed_artwork_test_manifest.py \
+            --queue go-lautfm-sha-review-queue.json \
+            --visual-review grossesondes/radio-test-apk/artwork/first_visual_review_20261121.json \
+            --output go-artwork-test-unsigned-pending-v1.json
       - uses: actions/upload-artifact@v4
         with:
           name: go-official-lautfm-artwork-candidates
@@ -63,6 +76,7 @@ jobs:
             go-lautfm-sha-review-queue.json
             go-lautfm-logo-contact-sheet.png
             go-lautfm-contact-sheet-report.json
+            go-artwork-test-unsigned-pending-v1.json
           retention-days: 14
           if-no-files-found: error
       - name: Assert no catalog mutation or public deployment
