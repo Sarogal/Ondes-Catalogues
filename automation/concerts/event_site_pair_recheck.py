@@ -187,9 +187,9 @@ def _visible_artist_genres_from_this_event(html, title):
                 if kind == "h1"]
     if len(headings) != 1 or _name(headings[0][1]) != _name(title):
         return None
-    if re.search(r"\\bfest(?:ival)?\\b", _name(title)):
+    if re.search(r"\bfest(?:ival)?\b", _name(title)):
         return None
-    band_names = [s.strip() for s in re.split(r"\\s+\\+\\s+", title)]
+    band_names = [s.strip() for s in re.split(r"\s+\+\s+", title)]
     if not band_names or any(not 2 <= len(s) <= 120 for s in band_names):
         return None
     normalized = [_name(s) for s in band_names]
@@ -199,14 +199,14 @@ def _visible_artist_genres_from_this_event(html, title):
     # an artist count cap. Only names already in the current H1 can qualify.
     section = blocks[headings[0][0] + 1:headings[0][0] + 101]
     early_text = " ".join(t for _kind, t in section[:20])
-    if re.search(r"\\b(?:annulee?|reportee?|cancelled|postponed|rescheduled)\\b",
+    if re.search(r"\b(?:annulee?|reportee?|cancelled|postponed|rescheduled)\b",
                  _name(early_text)):
         return None
     found = {}
     for kind, text in section:
         if kind != "strong":
             continue
-        match = re.fullmatch(r"\\s*(.{2,120}?)\\s+[–—-]\\s+(.{2,80}?)\\s*",
+        match = re.fullmatch(r"\s*(.{2,120}?)\s+[–—-]\s+(.{2,80}?)\s*",
                              text)
         if not match:
             continue
