@@ -106,6 +106,19 @@ def check_append_only(previous, proposed, today):
             and proof.get("proofType") == "independent-existing-venue-v1"
         ] if isinstance(approval, dict) and isinstance(
                 approval.get("officialEvidence"), list) else []
+        dynamic_site_proofs = [
+            proof for proof in approval.get("officialEvidence", [])
+            if isinstance(proof, dict)
+            and proof.get("proofType") == "dynamic-existing-venue-first-party-v1"
+        ] if isinstance(approval, dict) and isinstance(
+                approval.get("officialEvidence"), list) else []
+        independent_dynamic = (
+            isinstance(event, dict)
+            and len(dynamic_site_proofs) == 1
+            and dynamic_site_proofs[0].get("url") == event.get("officialUrl")
+            and dynamic_site_proofs[0].get("checkedAt") == today.isoformat()
+            and dynamic_site_proofs[0].get("namedOsmUrl")
+        )
         independent_existing = (
             isinstance(event, dict)
             and len(existing_site_proofs) == 1
@@ -118,7 +131,7 @@ def check_append_only(previous, proposed, today):
             (reviewer == "independent-official-verifier"
              and isinstance(event, dict)
              and (event.get("id") in paired_site_events
-                  or independent_existing))
+                  or independent_existing or independent_dynamic))
         )
         require(isinstance(approval, dict)
                 and approval.get("reviewDecision") == "approved"
