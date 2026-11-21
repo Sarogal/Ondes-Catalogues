@@ -133,20 +133,15 @@ def _newly_discovered_osm_source(candidate, catalogue, origin_fetch, cache):
     return {"url": homepage, "_osmFirstPartyResearchOnly": True}
 
 
-def _select(rows, today, scan_slot, limit):
-    """Disjoint slots, daily rotating windows, without an arbitrary venue list."""
-    if (type(scan_slot) is not int or scan_slot not in (0, 1, 2)
-            or type(limit) is not int or not 1 <= limit <= 12
-            or not isinstance(today, dt.date)
-            or isinstance(today, dt.datetime)):
-        raise ValueError("Invalid national venue preview scan")
+def _rotate(rows, today, scan_slot, limit):
+    """Disjoint daily network windows for any open-ended research queue."""
+    if not rows or limit <= 0:
+        return []
     rows = sorted(rows, key=lambda c: (
         str(c.get("date") or "9999-12-31"),
         str(c.get("candidateId") or ""),
         str(c.get("sourceUrl") or ""),
     ))
-    if not rows:
-        return []
     n = len(rows)
     window = min(n, 3 * limit)
     days = (today - dt.date(2026, 11, 20)).days
@@ -154,6 +149,56 @@ def _select(rows, today, scan_slot, limit):
     start = scan_slot * window // 3
     end = (scan_slot + 1) * window // 3
     return [rows[(offset + i) % n] for i in range(start, end)]
+
+
+def _is_new_origin_or_location(candidate):
+    """Only queue priority, never source authority or publisher approval."""
+    return (isinstance(candidate, dict)
+            and (candidate.get("newVenueToReview") is True
+                 or candidate.get("newlyDiscoveredFirstPartySource") is True))
+
+
+def _select(rows, today, scan_slot, limit):
+    """Fair rotation: new sites/sources get capacity, legacy leads do too.
+
+    Each of the three daily slots respects the SAME overall network budget.
+    Without priority leads this is identical to the previous open-ended
+    window. No finite venue, organizer, artist or domain directory exists.
+    """
+    if (type(scan_slot) is not int or scan_slot not in (0, 1, 2)
+            or type(limit) is not int or not 1 <= limit <= 12
+            or not isinstance(today, dt.date)
+            or isinstance(today, dt.datetime)):
+        raise ValueError("Invalid national venue preview scan")
+    if not rows:
+        return []
+    priority = [c for c in rows if _is_new_origin_or_location(c)]
+    ordinary = [c for c in rows if not _is_new_origin_or_location(c)]
+    if not priority or not ordinary:
+        return _rotate(rows, today, scan_slot, limit)
+    if limit == 1:
+        # A one-request budget must alternate rather than starve one queue.
+        chosen = (priority if (today.toordinal() + scan_slot) % 2 == 0
+                  else ordinary)
+        return _rotate(chosen, today, scan_slot, limit)
+    priority_budget = min((limit + 1) // 2, len(priority))
+    ordinary_budget = limit - priority_budget
+    selected = (_rotate(priority, today, scan_slot, priority_budget)
+                + _rotate(ordinary, today, scan_slot, ordinary_budget))
+    # Small queues may not fill all three slots. Reuse the free per-run
+    # capacity for other, independently rotated records without duplicates.
+    seen = {id(row) for row in selected}
+    if len(selected) < limit:
+        for pool in (ordinary, priority):
+            for row in _rotate(pool, today, scan_slot, limit):
+                if id(row) not in seen:
+                    selected.append(row)
+                    seen.add(id(row))
+                if len(selected) >= limit:
+                    break
+            if len(selected) >= limit:
+                break
+    return selected[:limit]
 
 
 def _coordinates(site, geo_fetch):
@@ -372,6 +417,10 @@ def build(registry, sources, catalogue, approvals, today, *,
     return {
         "schema": SCHEMA, "asOf": today.isoformat(),
         "eligible": len(eligible), "attempted": len(selected),
+        "newSiteOrSourceEligible": sum(
+            _is_new_origin_or_location(c) for c in eligible),
+        "newSiteOrSourceAttempted": sum(
+            _is_new_origin_or_location(c) for c in selected),
         "awaitingIndividualOfficialDetail": awaiting_individual_detail,
         "scanSlot": scan_slot,
         "officialEventEvidenceVerified": sum(
