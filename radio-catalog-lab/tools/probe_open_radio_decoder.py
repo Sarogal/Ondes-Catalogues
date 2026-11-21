@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -61,6 +62,10 @@ def decode_prefix(url: str, *, duration_s: int = 6) -> dict:
         )
         output_seconds = parse_ffmpeg_time(proc.stdout)
         result["decoded_seconds"] = output_seconds
+        result["decoder_exit_code"] = proc.returncode
+        result["decoder_stderr_tail_redacted"] = re.sub(
+            r"https?://[^\s]+", "[source_url]", proc.stderr[-700:]
+        )[:500]
         result["audio_decoder_passed"] = (
             proc.returncode == 0 and output_seconds >= duration_s - 1
         )
