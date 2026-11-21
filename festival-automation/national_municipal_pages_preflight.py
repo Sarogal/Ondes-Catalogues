@@ -213,6 +213,7 @@ EMBEDDED_MUSIC_NAME = re.compile(
 )
 GENERIC_LABEL = re.compile(
     r"^(?:agenda|actualites?|evenements?|manifestations?|"
+    r"concerts?|festivals?|culture|programmation|"
     r"en savoir plus|voir plus|lire la suite|decouvrir|"
     r"consulter|infos? pratiques?|voir l evenement|billetterie)$"
 )
@@ -421,8 +422,19 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                 found = {item["detail_url_review_only"] for item in
                          result["unknown_music_links_review_only"]}
                 for clue in unknown_municipal_music_links(html, url, site):
-                    if (clue["detail_url_review_only"] not in found and
-                            len(result["unknown_music_links_review_only"])
+                    # The dossier's already-known title must not be counted
+                    # as a *new* event. Normalize the visible year suffix.
+                    candidate_name = normalized(clue["title_hint"])
+                    known_name = normalized(dossier["name_hint"])
+                    known_without_year = re.sub(
+                        r"\s+20[2-4][0-9]$", "", known_name)
+                    candidate_without_year = re.sub(
+                        r"\s+20[2-4][0-9]$", "", candidate_name)
+                    if (candidate_name not in (known_name, known_without_year)
+                            and candidate_without_year not in
+                                (known_name, known_without_year)
+                            and clue["detail_url_review_only"] not in found
+                            and len(result["unknown_music_links_review_only"])
                                 < MAX_UNKNOWN_MUSIC_LINKS):
                         result["unknown_music_links_review_only"].append(clue)
                         found.add(clue["detail_url_review_only"])
