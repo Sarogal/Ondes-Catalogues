@@ -542,5 +542,45 @@ class GenericDirectoryProofTests(TestCase):
                         self.assertEqual(url, SITE) or OFFICIAL)), [])
 
 
+class VisibleWeekendFallbackTests(TestCase):
+    def test_publisher_accepts_ticket_sale_and_contained_programme_day(self):
+        html = (
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>Notre festival rock revient les 25 et 26 juin 2027.</p>"
+            "<p>Ouverture de la billetterie le 16 mars 2027.</p>"
+            "<p>Samedi 26 juin 2027 : concerts punk et rock.</p></main>"
+        )
+        self.assertEqual(
+            verify_primary(html, TITLE, 2027, DAY), DATES)
+        self.assertEqual(
+            verify_official_site_pages(SITE, html, TITLE, 2027, DAY),
+            DATES)
+
+    def test_second_real_weekend_is_conflicting_not_a_contained_day(self):
+        html = (
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>Festival rock les 25 et 26 juin 2027.</p>"
+            "<p>Autre festival rock les 2 et 3 juillet 2027.</p></main>"
+        )
+        self.assertIsNone(verify_primary(html, TITLE, 2027, DAY))
+
+    def test_ticket_sale_alone_cannot_become_event_date(self):
+        html = (
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>Festival rock, programme à venir.</p>"
+            "<p>Ouverture de la billetterie le 16 mars 2027.</p></main>"
+        )
+        self.assertIsNone(verify_primary(html, TITLE, 2027, DAY))
+
+    def test_touring_concert_is_not_a_new_festival(self):
+        html = (
+            "<main><h1>Festibarock'in 2027</h1>"
+            "<p>Festival rock les 25 et 26 juin 2027.</p>"
+            "<p>La tournée de 7 concerts traverse plusieurs villes.</p></main>"
+        )
+        self.assertIsNone(verify_primary(html, TITLE, 2027, DAY))
+
+
+
 if __name__ == "__main__":
     main()

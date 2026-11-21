@@ -20,7 +20,7 @@ from source_qualification import Anchors, normalized, visible_text
 from grossesondes_institutional_linked_edition import prove_dates
 from grossesondes_official_html_edition import (
     VisibleParagraphs, explicit_ranges, dominant_visible_range,
-    administrative_calendar_dates, fold, CANCEL,
+    administrative_calendar_dates, visible_official_edition, fold, CANCEL,
 )
 from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from festival_event_kind import touring_concert_stop
@@ -308,10 +308,59 @@ def _misleading_adjacent_date(html, title, year):
         return True
 
 
+
+def unique_current_edition_visible_dates(html, title, year, today):
+    """Recover the event weekend without mistaking sale or programme days for it.
+
+    This is an event-proof fallback, not an identity/host authorization:
+    - ignore *only* independently labelled administrative ticket-sale dates;
+    - tolerate single programme days wholly inside one announced weekend;
+    - reject all other contradictory dates, missing event-name proximity,
+      cancellations, unsupported structured data and explicit concert tours.
+    A publisher still re-fetches an independently attributed organizer site.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or not isinstance(title, str) or type(year) is not int
+            or not 2026 <= year <= 2049):
+        return None
+    try:
+        checked = date.fromisoformat(today)
+        parser = VisibleParagraphs()
+        parser.feed(html)
+        parser.close()
+        visible = " ".join(fold(" ".join(parser.parts)).split())
+        excluded = administrative_calendar_dates(html, title, year)
+        intervals = {(start, end) for _a, _b, start, end
+                     in explicit_ranges(visible, year)
+                     if (start, end) not in excluded}
+        chosen = dominant_visible_range(intervals)
+        if chosen is None:
+            return None
+        start, end = chosen
+        # Multi-day marketing tours are not standalone festival editions.
+        # The older adjacent-heading proof already applies this exact veto;
+        # the new paragraph fallback must not bypass it.
+        explicit_tour = re.search(
+            r"\b(?:tournee itinerante|tournee de [0-9]+ concerts?|"
+            r"concerts? de la tournee|date de la tournee|"
+            r"concert tour|tour de concerts?)\b", visible)
+        if (explicit_tour or start < checked or start.year != year
+                or end.year != year
+                or not visible_official_edition(html, title, start, end)
+                or not no_same_edition_jsonld_contradiction(
+                    html, title, start, end)
+                or touring_concert_stop(html, start, end)):
+            return None
+        return start.isoformat(), end.isoformat()
+    except (TypeError, ValueError, UnicodeError, OverflowError):
+        return None
+
 def verify_primary(html, title, year, today):
     if not isinstance(html, str) or _misleading_adjacent_date(html, title, year):
         return None
     dates = prove_dates(html, title, year, today)
+    if dates is None:
+        dates = unique_current_edition_visible_dates(html, title, year, today)
     if dates is None:
         dates = visible_adjacent_edition_dates(html, title, year, today)
     if dates is None:

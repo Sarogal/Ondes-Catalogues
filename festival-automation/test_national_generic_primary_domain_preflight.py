@@ -854,5 +854,45 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertFalse(saved["stable"])
 
 
+    def test_official_event_weekend_survives_ticket_sale_and_contained_day(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        official = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Le festival metal revient les 13 et 14 août 2027.</p>"
+            "<p>Ouverture de la billetterie le 26 mars 2027.</p>"
+            "<p>Samedi 14 août 2027 : concerts metal et punk.</p></main>"
+        )
+        first = examine(state, queue, catalog, DAY1, fetch=lambda _: official)
+        row = first["rows"][0]
+        self.assertEqual(row["status"], "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY")
+        self.assertEqual((row["start_date_hint"], row["end_date_hint"]),
+                         ("2027-08-13", "2027-08-14"))
+        self.assertFalse(row["publication_authorized"])
+        _, queue2, _ = fixture(DAY2)
+        queue2["dossiers"] = queue2["dossiers"][:1]
+        second = examine(state, queue2, catalog, DAY2, fetch=lambda _: official)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        self.assertEqual(second["rows"][0]["status"],
+                         "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE")
+        self.assertEqual(second["publications"], 0)
+
+    def test_actual_second_weekend_cannot_be_ignored_as_administrative(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        official = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Festival metal les 13 et 14 août 2027.</p>"
+            "<p>Deuxième weekend les 21 et 22 août 2027.</p>"
+            "<p>Ouverture de la billetterie le 26 mars 2027.</p></main>"
+        )
+        report = examine(state, queue, catalog, DAY1, fetch=lambda _: official)
+        self.assertEqual(report["two_day_dates_count"], 0)
+        self.assertEqual(report["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        self.assertIsNone(report["rows"][0]["start_date_hint"])
+
+
+
 if __name__ == "__main__":
     unittest.main()
