@@ -293,11 +293,12 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertFalse(report["candidates"][0]["publicationAllowed"])
         self.assertIn(osm_api,calls)
         self.assertIn(show,calls)
-        # A true exact government address can score below 0.89.
-        # The Publisher must still use its original strict threshold.
+        # BAN confidence 0.80 is safe only with exact address fields and
+        # the same independently corroborated named OSM feature.
         from automation.concerts import independent_named_site_geo as geo
-        with self.assertRaises(ValueError):
-            geo.verify(site,lambda url,cap:(fetch(url,{}),url))
+        point = geo.verify(site,lambda url,cap:(fetch(url,{}),url))
+        self.assertEqual(point[0],
+                         'https://www.openstreetmap.org/node/' + osm_node)
         # Relaxing the ranking score must not relax EXACT street identity.
         gov["features"][0]["properties"]["score"]=0.99
         gov["features"][0]["properties"]["street"]="rue des Faux Positifs"
