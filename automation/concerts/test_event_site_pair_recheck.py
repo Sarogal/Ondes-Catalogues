@@ -179,6 +179,29 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
                 lead, event_html().replace(json.dumps(raw, ensure_ascii=False),
                     json.dumps(conflicting, ensure_ascii=False)), EVENT, DAY)
 
+    def test_typographic_apostrophe_does_not_rename_a_verified_artist(self):
+        lead, raw, _cat, _osm = fixture()
+        raw["name"] = "MAZE’D + SECOND ACT"
+        raw["performer"] = [
+            {"@type": "MusicGroup", "name": "MAZE’D", "genre": "Metalcore"},
+            {"@type": "MusicGroup", "name": "SECOND ACT", "genre": "Punk"},
+        ]
+        lead["name"] = "MAZE'D + SECOND ACT"
+        lead["leadArtist"] = "MAZE'D"
+        body = '<script type="application/ld+json">' + json.dumps(
+            raw, ensure_ascii=False) + "</script>"
+        self.assertEqual(reviewer._name("MAZE’D"),
+                         reviewer._name("MAZE'D"))
+        self.assertNotEqual(reviewer._name("MAZED"),
+                            reviewer._name("MAZE'D"))
+        _event, names, _, genres, _site = reviewer._official_event(
+            lead, body, EVENT, DAY)
+        self.assertEqual(names, ["MAZE’D", "SECOND ACT"])
+        self.assertIn("Metalcore", genres)
+        wrong = dict(lead, name="MAZE'D + DIFFERENT ACT")
+        with self.assertRaises(ValueError):
+            reviewer._official_event(wrong, body, EVENT, DAY)
+
     def test_many_unknown_bands_not_capped(self):
         names = ("7WEEKS",) + tuple(f"NEW BAND {i:02d}" for i in range(9))
         lead, raw, cat, osm = fixture(names=names)
