@@ -49,7 +49,8 @@ def decode_prefix(url: str, *, duration_s: int = 6) -> dict:
     argv = [
         executable, "-hide_banner", "-nostdin",
         "-loglevel", "error", "-stats_period", "1",
-        "-protocol_whitelist", "https,tls,tcp",
+        "-protocol_whitelist", "https,http,tls,tcp",
+        "-user_agent", "GrossesOndes/central-test-evidence-20261121",
         "-i", url, "-t", str(duration_s), "-vn", "-sn", "-dn",
         "-f", "null", "-", "-progress", "pipe:1",
     ]
