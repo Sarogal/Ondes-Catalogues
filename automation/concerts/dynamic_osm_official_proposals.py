@@ -20,7 +20,7 @@ import datetime as dt
 import json
 import re
 import sys
-from collections import Counter
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
@@ -145,10 +145,29 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
             held("already_published")
             continue
         leads.append((url, date.isoformat(), venue["id"], c))
-    # The sort/rotation depend only on stable candidate data, not one
-    # predetermined host, venue, genre, artist, or city list.
-    leads.sort(key=lambda row: (row[0], row[1], row[2]))
-    return leads
+    # Rotate across distinct ACTUAL published venues, not contiguous
+    # alphabetical URL cohorts. An agenda with fifty undated/pop events
+    # must never consume eight consecutive rechecks while a verified rock
+    # show from another room is still waiting. Every candidate stays in
+    # the queue and the daily/slot offset eventually rechecks them all.
+    # Only network workload is bounded, not the number of venues or bands.
+    # Spend the first checks on candidates with an explicit genre signal,
+    # while retaining unknown-genre leads for later independent rechecks.
+    # A "genre_unknown" observation is NOT a rejection; first-party event
+    # or artist proof may still establish an eligible concert.
+    leads.sort(key=lambda row: (
+        row[3].get("reviewBucket") != "genre_tag_review",
+        row[0], row[1], row[2]))
+    queues = defaultdict(deque)
+    for item in leads:
+        queues[item[2]].append(item)
+    venue_ids = sorted(queues)
+    ordered = []
+    while len(ordered) < len(leads):
+        for venue_id in venue_ids:
+            if queues[venue_id]:
+                ordered.append(queues[venue_id].popleft())
+    return ordered
 
 
 def propose(row, catalogue, today, *, fetch=verified.safe_fetch):

@@ -494,6 +494,59 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                         {v["id"]: v for v in BASE["venues"]},
                         {a["id"]: a for a in BASE["artists"]}, TODAY)
 
+    def test_one_venue_cannot_monopolize_all_daily_checks(self):
+        # The public registry contains many events from the same hall.
+        # The scan window must include OTHER independently published venues,
+        # regardless of whether their band was already known.
+        cat = copy.deepcopy(BASE)
+        base_venue = next(v for v in cat["venues"] if v["id"] ==
+                          fixture.VENUE_ID)
+        cases = registry()
+        template = next(iter(cases["items"].values()))
+        cases["items"] = {}
+        for index in range(40):
+            row = copy.deepcopy(template)
+            url = f"https://long-schedule.fr/concert/{index:03d}"
+            row["candidate"].update(
+                candidateId=f"large-room-{index}",
+                sourceUrl=url, eventDetailUrl=url, sourcePage=url)
+            cases["items"][str(index)] = row
+        for index in range(3):
+            room = copy.deepcopy(base_venue)
+            room["id"] = f"extra-physical-room-{index}"
+            room["name"] = f"Extra Physical Room {index}"
+            room["city"] = f"Test City {index}"
+            room["department"] = str(30 + index)
+            room["geoSource"] = (
+                "https://www.openstreetmap.org/node/" + str(90001000 + index))
+            cat["venues"].append(room)
+            extra = copy.deepcopy(template)
+            extra["candidate"].update(
+                candidateId=f"extra-room-{index}",
+                venue=room["name"], city=room["city"],
+                department=room["department"],
+                sourceUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                eventDetailUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                sourcePage=f"https://extra-room-{index}.fr/annonce/live/")
+            cases["items"][f"extra-{index}"] = extra
+        selected = pipeline.eligible(cases, cat, TODAY)
+        self.assertEqual(len(selected), 43)
+        self.assertEqual(
+            {row[2] for row in selected[:8]},
+            {fixture.VENUE_ID} |
+            {f"extra-physical-room-{x}" for x in range(3)})
+        # Multiple slots keep their bounded budget; distinct venue
+        # candidates do not become a one-off permanently privileged cohort.
+        seen = set()
+        for day_offset in range(6):
+            for slot in (0, 1, 2):
+                day = TODAY + dt.timedelta(days=day_offset)
+                rotated = pipeline.eligible(cases, cat, day)
+                offset = (((day - TODAY).days * 3 + slot) * 8) % len(rotated)
+                seen.update(row[0] for row in
+                    (rotated[(offset+i) % len(rotated)] for i in range(8)))
+        self.assertEqual(len(seen), 43)
+
     def test_scan_budget_rotates_across_any_number_of_candidate_events(self):
         cases = registry()
         proto = next(iter(cases["items"].values()))
