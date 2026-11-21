@@ -66,10 +66,10 @@ class SignedSidecarTests(unittest.TestCase):
         p=json.loads(self.ptr)
         from artwork_release_packager import sign_message
         self.assertTrue(
-            sign_message(p).startswith(b"GO-RADIO-ARTWORK-POINTER-V1\\n")
+            sign_message(p).startswith(b"GO-RADIO-ARTWORK-POINTER-V1\n")
         )
         self.assertFalse(
-            sign_message(p).startswith(b"GO-RADIO-CATALOG-POINTER-V1\\n")
+            sign_message(p).startswith(b"GO-RADIO-CATALOG-POINTER-V1\n")
         )
 
     def test_replacement_and_duplicate_uuid_forbidden(self):
