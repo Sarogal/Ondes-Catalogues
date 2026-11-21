@@ -1,0 +1,32 @@
+name: Concerts — approbations concert et nouveau lieu (contrat rapide)
+on:
+  pull_request:
+    paths:
+      - 'automation/concerts/dynamic_new_site_approval_proposals.py'
+      - 'tests/test_concerts_auto_new_site_approval_proposals.py'
+      - 'scripts/concert_dynamic_new_site_source.py'
+      - 'scripts/concert_event_site_contract.py'
+      - '.github/workflows/grossesondes-concerts-auto-new-site-pair-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'automation/concerts/dynamic_new_site_approval_proposals.py'
+      - 'tests/test_concerts_auto_new_site_approval_proposals.py'
+      - 'scripts/concert_dynamic_new_site_source.py'
+      - 'scripts/concert_event_site_contract.py'
+      - '.github/workflows/grossesondes-concerts-auto-new-site-pair-tests.yml'
+permissions:
+  contents: read
+jobs:
+  paired-producer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test paired live evidence proposals without any private data
+        run: python -m unittest discover -s tests -p 'test_concerts_auto_new_site_approval_proposals.py' -v
