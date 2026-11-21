@@ -12,6 +12,7 @@ import unittest
 
 from automation.concerts import event_site_pair_recheck as sites
 from scripts import concert_event_site_contract as site_contract
+from scripts import concerts_cloud_sync as sync
 from scripts import concert_dynamic_new_site_source as checker
 
 TODAY = dt.date(2026, 11, 21)
@@ -156,7 +157,8 @@ def fixture():
 
 
 def read(review=None, site_review=None, venue=None,
-         raw=None, witness=None, node=None, origin=None):
+         raw=None, witness=None, node=None, origin=None,
+         through_contract=False, through_publisher=False):
     base = fixture()
     review = copy.deepcopy(review if review is not None else base[0])
     site_review = copy.deepcopy(site_review if site_review is not None else base[1])
@@ -179,6 +181,16 @@ def read(review=None, site_review=None, venue=None,
         if url not in pages:
             raise AssertionError("Unexpected internet request: " + url)
         return pages[url]
+    if through_publisher:
+        return sync.validate_venue_approval(
+            site_review, TODAY, [review],
+            origin_venues={venue["id"]: venue},
+            origin_artists={}, fetch=fetch), calls
+    if through_contract:
+        return site_contract.validate(
+            site_review, TODAY, [review],
+            origin_venues={venue["id"]: venue},
+            origin_artists={}, fetch=fetch), calls
     return checker.verify(
         review, site_review, {venue["id"]: venue}, {}, TODAY,
         fetch=fetch), calls
@@ -199,6 +211,74 @@ class OpenOriginNewSiteProofTests(unittest.TestCase):
         # the real Publisher still needs an explicit integrated contract.
         with self.assertRaises(ValueError):
             site_contract.validate(location, TODAY, [review])
+
+    def test_real_event_site_contract_accepts_only_fresh_live_origin_proof(self):
+        _review, location, *_ = fixture()
+        approved_site, requests = read(through_contract=True)
+        self.assertEqual(approved_site, location["venue"])
+        self.assertEqual(
+            requests, [ORIGIN_API, EVENT_URL, SITE_API, WITNESS_URL])
+
+    def test_real_event_site_contract_blocks_forged_origin_and_site_proof(self):
+        review, location, venue, raw, witness, node, origin = fixture()
+        for fake in (
+            {"originVenueId": "forged-unpublished-venue"},
+            {"corroboratingEventUrl": EVENT_URL},
+            {"officialArtistNames": BANDS[:-1]},
+        ):
+            broken = copy.deepcopy(review)
+            broken["officialEvidence"][1].update(fake)
+            with self.subTest(fake=fake), self.assertRaises(ValueError):
+                read(review=broken, through_contract=True)
+        moved = copy.deepcopy(node)
+        moved["elements"][0]["lat"] = 48.100
+        with self.assertRaises(ValueError):
+            read(node=moved, through_contract=True)
+        bad_site = copy.deepcopy(location)
+        bad_site["officialEvidence"][1]["latitude"] += 1.0
+        with self.assertRaises(ValueError):
+            read(site_review=bad_site, through_contract=True)
+
+    def test_cloud_sync_venue_validator_uses_live_source_gate(self):
+        _review, location, *_ = fixture()
+        approved_site, calls = read(through_publisher=True)
+        self.assertEqual(approved_site, location["venue"])
+        self.assertEqual(calls, [ORIGIN_API, EVENT_URL, SITE_API, WITNESS_URL])
+
+    def test_published_historical_site_replay_cannot_create_new_authority(self):
+        review, location, origin_venue, *_ = fixture()
+        published_artist_rows = {
+            a["id"]: a for a in review["newArtists"]}
+        old = copy.deepcopy(review["event"])
+        later = TODAY + dt.timedelta(days=240)
+        def replay(row=location, event=old, actual=review):
+            return site_contract.validate(
+                row, later, [actual],
+                origin_venues={origin_venue["id"]: origin_venue},
+                origin_artists=published_artist_rows,
+                historical_event=event,
+                fetch=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("historical replay MUST NOT fetch")))
+        self.assertEqual(replay(), location["venue"])
+        forged = dict(old, officialUrl="https://inconnu.fr/autre-concert")
+        with self.assertRaises(ValueError):
+            replay(event=forged)
+        bad_site = copy.deepcopy(location)
+        bad_site["venue"]["latitude"] += 1
+        with self.assertRaises(ValueError):
+            replay(row=bad_site)
+        changed = copy.deepcopy(review)
+        changed["officialEvidence"][1]["originVenueId"] = "not-published"
+        with self.assertRaises(ValueError):
+            replay(actual=changed)
+        with self.assertRaises(ValueError):
+            # A new site has NO historical shortcut, even after its date.
+            site_contract.validate(
+                location, later, [review],
+                origin_venues={origin_venue["id"]: origin_venue},
+                origin_artists=published_artist_rows,
+                fetch=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("untrusted first admission attempted")))
 
     def test_no_first_party_domain_ownership_cannot_pass(self):
         review, location, origin_venue, raw, witness, node, origin = fixture()

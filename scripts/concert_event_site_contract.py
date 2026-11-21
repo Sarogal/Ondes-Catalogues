@@ -103,6 +103,25 @@ def official_url(value):
     return p
 
 
+def official_source_root(value):
+    """An OSM-attributed first-party source may be a bare HTTPS homepage.
+
+    Event URLs must STILL use official_url(), which requires an individual
+    non-root detail. This parser never confers source authority by itself.
+    """
+    if not isinstance(value, str) or len(value) > 2048:
+        return None
+    try:
+        p = urlsplit(value)
+        if (p.scheme != "https" or not p.hostname
+                or p.username or p.password or p.port is not None
+                or p.query or p.fragment):
+            return None
+        return p
+    except ValueError:
+        return None
+
+
 def geo_url(value):
     p = official_url(value)
     if not p or p.hostname != "www.openstreetmap.org":
@@ -133,7 +152,9 @@ def _sources(raw=None):
     return rows
 
 
-def validate(row, today, event_approvals, *, sources=None):
+def validate(row, today, event_approvals, *, sources=None,
+             origin_venues=None, origin_artists=None, fetch=None,
+             historical_event=None):
     """Return a defensive copy of a new public site only with TWO signed proofs.
 
     Requires a matching independent event approval already in the PRIVATE
@@ -174,26 +195,63 @@ def validate(row, today, event_approvals, *, sources=None):
         raise ValueError("Concert event-site: invalid concert date")
     demand(checked <= actual_day, "site proof recorded after concert")
     official = official_url(ev_url)
+    authority_id = binding.get("authorityArtistId")
     authority = official_url(binding.get("authoritySourceUrl"))
+    if authority is None and authority_id is None:
+        # Unknown OSM-attributed venues may legitimately use a homepage
+        # origin. The subsequent LIVE origin/OSM/event witness check
+        # is mandatory; a valid HTTPS homepage is not by itself trusted.
+        authority = official_source_root(binding.get("authoritySourceUrl"))
     demand(official is not None and authority is not None,
            "missing official event and authority URLs")
-    authority_id = binding.get("authorityArtistId")
     if authority_id is None:
-        # An event may have ZERO previously catalogued bands. Admission is
-        # instead scoped to a separately reviewed first-party ORGANIZER,
-        # whose manifest exists in the repository, not in the private lead.
-        # This publisher gate does not trust a sourceId or claimed role
-        # supplied by discovery, and rechecks the exact official URL scope.
-        from automation.concerts import organizer_source_contract as org
-        eligible = [
-            entry for entry in org.read_sources()
-            if entry["enabled"] is True
-            and entry["url"] == binding["authoritySourceUrl"]
-            and dt.date.fromisoformat(entry["checkedAt"]) <= checked
-            and org.scoped_event_url(entry, ev_url)
-        ]
-        demand(len(eligible) == 1 and authority.hostname == official.hostname,
-               "event not bound to reviewed organizer first-party authority")
+        # An unknown organizer or announcing venue MAY prove ownership live,
+        # rather than appearing in a pre-committed finite domain directory.
+        # But the lead's own "official" label is NEVER a source of trust.
+        from scripts import concert_dynamic_new_site_source as new_source
+        live_claims = [
+            a for a in event_approvals
+            if isinstance(a, dict) and isinstance(a.get("event"), dict)
+            and a["event"].get("id") == ev_id
+            and isinstance(a.get("officialEvidence"), list)
+            and any(isinstance(proof, dict)
+                    and proof.get("proofType") == new_source.PROFILE
+                    for proof in a["officialEvidence"])
+        ] if isinstance(event_approvals, list) else []
+        if live_claims:
+            demand(len(live_claims) == 1
+                   and isinstance(origin_venues, dict)
+                   and isinstance(origin_artists, dict),
+                   "independent published-origin identity missing")
+            # Crucially, this re-reads the real named OSM/BAN feature,
+            # attributed first-party HTTPS site, FULL official MusicEvent,
+            # different named physical location and cross-domain event.
+            # It grants no blanket permission for other dates or shows.
+            kwargs = {} if fetch is None else {"fetch": fetch}
+            if historical_event is None:
+                new_source.verify(
+                    live_claims[0], row, origin_venues, origin_artists,
+                    today, **kwargs)
+            else:
+                # This mode is permissible ONLY when the Publisher hands us
+                # the exact public event already stored alongside this site.
+                # It cannot open a new site or authorize a new show.
+                new_source.verify_historical(
+                    live_claims[0], row, origin_venues,
+                    origin_artists, historical_event, today)
+        else:
+            # Legacy reviewed organizer route unchanged.
+            from automation.concerts import organizer_source_contract as org
+            eligible = [
+                entry for entry in org.read_sources()
+                if entry["enabled"] is True
+                and entry["url"] == binding["authoritySourceUrl"]
+                and dt.date.fromisoformat(entry["checkedAt"]) <= checked
+                and org.scoped_event_url(entry, ev_url)
+            ]
+            demand(len(eligible) == 1
+                   and authority.hostname == official.hostname,
+                   "event not bound to reviewed organizer first-party authority")
     else:
         demand(isinstance(authority_id, str) and bool(authority_id),
                "missing source artist")

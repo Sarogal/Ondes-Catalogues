@@ -1835,7 +1835,9 @@ def norm_date(value):
     return dt.date.fromisoformat(value)
 
 
-def validate_venue_approval(row, today, event_approvals=None):
+def validate_venue_approval(row, today, event_approvals=None, *,
+                            origin_venues=None, origin_artists=None,
+                            historical_event=None, fetch=None):
     """Validate either a reviewed permanent venue or an event-scoped site.
 
     Event sites are never allowed through the legacy permanent-venue allowlist:
@@ -1851,7 +1853,10 @@ def validate_venue_approval(row, today, event_approvals=None):
                 "Vérificateur d'emplacement événementiel manquant")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
-        return module.validate(row, today, event_approvals)
+        return module.validate(
+            row, today, event_approvals,
+            origin_venues=origin_venues, origin_artists=origin_artists,
+            historical_event=historical_event, fetch=fetch)
     require(isinstance(row, dict) and row.get("reviewDecision") == "approved"
             and row.get("reviewedBy") == "independent-official-verifier",
             "Salle non approuvée indépendamment")
@@ -7975,6 +7980,11 @@ def merge(reference, current, approvals, today):
     ids = {x["id"] for x in result["events"]}
     venues = {x["id"]: x for x in result["venues"]}
     artists = {x["id"]: x for x in result["artists"]}
+    # Only ALREADY PUBLISHED map entries may anchor a new origin. Another
+    # proposal in this batch must never introduce a self-authorizing source.
+    published_origin_venues = {v["id"]: v for v in current["venues"]}
+    published_origin_artists = {a["id"]: a for a in current["artists"]}
+    published_event_by_id = {e["id"]: e for e in current["events"]}
     venue_approvals = approvals.get("venueApprovals", [])
     require(isinstance(venue_approvals, list),
             "Liste d'approbations de salles inattendue")
@@ -7989,7 +7999,12 @@ def merge(reference, current, approvals, today):
         approval = approved_venues.get(prior["id"])
         require(approval is not None and prior == (
                     validate_venue_approval(
-                        approval, today, approvals["approvals"])
+                        approval, today, approvals["approvals"],
+                        origin_venues=published_origin_venues,
+                        origin_artists=published_origin_artists,
+                        historical_event=published_event_by_id.get(
+                            approval.get("eventBinding", {}).get("eventId"))
+                    )
                     if approval.get("venueKind") == "independent-event-site-v1"
                     else validate_venue_approval(approval, today)),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
@@ -8010,7 +8025,13 @@ def merge(reference, current, approvals, today):
                 counts["deferredVenues"] += 1
                 continue
             incoming = (validate_venue_approval(
-                entry, today, approvals["approvals"])
+                entry, today, approvals["approvals"],
+                origin_venues=published_origin_venues,
+                origin_artists=published_origin_artists,
+                historical_event=(
+                    published_event_by_id.get(
+                        entry.get("eventBinding", {}).get("eventId"))
+                    if v_id in published_origin_venues else None))
                 if entry.get("venueKind") == "independent-event-site-v1"
                 else validate_venue_approval(entry, today))
             v_id = incoming["id"]
