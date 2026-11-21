@@ -445,7 +445,7 @@ def reconciled_openagenda_url(lead, row):
     return canonical
 
 
-def make_event(lead, row, location, today):
+def make_event(lead, row, location, today, *, oa_rights_event=None):
     """Build only from exact dated first-party fields and reviewed venue coords."""
     if str(row.get("uid")) != lead["external_id"]:
         raise ValueError("UID source différent")
@@ -483,6 +483,29 @@ def make_event(lead, row, location, today):
     source = row.get("originagenda_title")
     if not all(isinstance(v, str) and v.strip() for v in (department, region, source)):
         raise ValueError("Département, région ou auteur manquant")
+    source_label = source
+    if oa_rights_event is not None:
+        # Explicit opt-in only. A direct, freshly fetched OA API record
+        # must match this exact immutable UID, title and place. It cannot
+        # borrow another agenda's licence or misattribute a syndicated event.
+        from ptitesondes_openagenda_reuse_rights import review_event_rights
+        if not isinstance(oa_rights_event, dict):
+            raise ValueError("Enregistrement de droits OpenAgenda malformé")
+        rights_loc = oa_rights_event.get("location")
+        title_obj = oa_rights_event.get("title")
+        live_title = (title_obj.get("fr") if isinstance(title_obj, dict)
+                      else title_obj)
+        if (str(oa_rights_event.get("uid")) != lead["external_id"]
+                or norm(live_title) != norm(row["title_fr"])
+                or not isinstance(rights_loc, dict)
+                or norm(rights_loc.get("name")) != norm(lead["venue"])
+                or norm(rights_loc.get("adminLevel4")) != norm(lead["city"])):
+            raise ValueError("Droits OpenAgenda non liés à la même édition")
+        rights = review_event_rights(oa_rights_event, today)
+        if not rights["licensed_factual_reuse_confirmed"]:
+            raise ValueError("Licence OpenAgenda ou attribution non vérifiée")
+        source_label = rights["attribution_display"]
+
     e = {
         "id": "openagenda-" + lead["external_id"] + "-" + day,
         "title": row["title_fr"].strip(),
@@ -492,7 +515,7 @@ def make_event(lead, row, location, today):
         "city": row["location_city"], "department": department,
         "region": region, "venue": row["location_name"],
         "source_url": canonical,
-        "source_label": source,
+        "source_label": source_label,
         "verified_at": today.isoformat(), "geo_verified_at": today.isoformat(),
         "geo_precision": "venue",
         # Use independently documented venue registry point, never blind ODS coords.
