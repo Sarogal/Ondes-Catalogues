@@ -416,6 +416,32 @@ jobs:
             echo "Revue officielle en prévisualisation : approbations inchangées." >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Qualifier les domaines officiels inconnus et proposer leurs concerts (privé)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Input is LAST securely archived cross-domain report. It is only a
+          # lead: this stage re-fetches its OSM website, individual MusicEvent
+          # and cross-domain source. The next step independently replays the
+          # FULL production Publisher before any signed private write.
+          CROSS=confidential/automation/concerts/intake/source-cross-domain-fresh-evidence.json
+          if [ -s "$CROSS" ]; then
+            OUTPUT="$RUNNER_TEMP/concerts-dynamic-official-preview.json"
+            if python public/automation/concerts/dynamic_first_party_venue_proposals.py \
+                --cross "$CROSS" \
+                --catalogue public/docs/grossesondes/concerts.json \
+                --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+                --output "$OUTPUT" \
+                --report confidential/automation/concerts/intake/dynamic-first-party-venue-admission.json \
+                > "$RUNNER_TEMP/concerts-private-logs/dynamic-first-party-venue-admission.log" 2>&1; then
+              mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
+              echo "Voie dynamique : propositions privées contrôlées, aucune autorité acquise avant le Publisher."
+            else
+              echo "::warning::Examen dynamique des domaines inconnu indisponible ; propositions inchangées."
+            fi
+          fi
+
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
         id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
@@ -777,6 +803,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/source-cross-domain-fresh-evidence.json ]; then
             git add --sparse -- automation/concerts/intake/source-cross-domain-fresh-evidence.json
+          fi
+          if [ -f automation/concerts/intake/dynamic-first-party-venue-admission.json ]; then
+            git add --sparse -- automation/concerts/intake/dynamic-first-party-venue-admission.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher

@@ -3904,6 +3904,19 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "Aucune preuve officielle indépendante")
     event = approval.get("event")
     require(isinstance(event, dict), "Fiche absente")
+    # Open-ended first-party VENUE admissions, bound to an existing published
+    # physical venue and independently validated on every initial publication.
+    # The source domain is never read from a committed venue/artist allowlist.
+    dynamic_existing_source = any(
+        isinstance(p, dict)
+        and p.get("proofType") == "dynamic-existing-venue-first-party-v1"
+        for p in evidence)
+    if dynamic_existing_source:
+        from scripts import concert_dynamic_existing_venue
+        # Fresh verified independent OSM source ownership, exact MusicEvent,
+        # full named bill and another separately verified event domain.
+        concert_dynamic_existing_venue.validate(
+            approval, venues, known_artist_ids, today)
     event_id = event.get("id", "")
     require(isinstance(event_id, str) and re.fullmatch(r"go-c-[a-z0-9-]{7,150}", event_id),
             "Identifiant d'événement invalide")
@@ -4340,8 +4353,10 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 "Big Band Café : identifiant réservé à sa salle")
     require(any(
         item.get("url") == official_url and
-        (item.get("proofType") == "official-organizer-or-venue"
-         or (event_id == "go-c-20270122-paris-7weeks"
+        (item.get("proofType") in (
+            "official-organizer-or-venue",
+            "dynamic-existing-venue-first-party-v1")
+          or (event_id == "go-c-20270122-paris-7weeks"
              and item.get("proofType") == "official-artist-tour-calendar")) and
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
         for item in evidence if isinstance(item, dict)
@@ -4802,6 +4817,26 @@ def validate_approval(approval, venues, known_artist_ids, today):
         require(any(re.search(r"(?<![a-z0-9])(metal|punk|hardcore|grind|doom|sludge|stoner|hard rock)(?![a-z0-9])",
                               norm(g)) for g in event.get("genres",[])),
                 "Genre métal ou punk officiel absent")
+    if dynamic_existing_source:
+        # A dynamically proven existing venue is deliberately outside the
+        # legacy PER-VENUE fixed schedule. Never treat an old pilot list as a
+        # closed inventory of future artists or first-party domains.
+        # All general event/artist guards above still apply; the independent
+        # dynamic verifier has just re-fetched OSM, the complete named bill
+        # and a second independent event source. Preserve anti-alias safety.
+        known_names = {norm(a["name"]) for a in known_artist_ids.values()}
+        known_aliases = {
+            norm(alias)
+            for artist in known_artist_ids.values()
+            for alias in (artist.get("aliases") or [])
+            if isinstance(alias, str)
+        }
+        require(all(norm(a["name"]) not in known_names | known_aliases
+                    and a["id"] == norm(a["name"]).replace(" ", "-")[:72].strip("-")
+                    for a in new_artists),
+                "Source dynamique : alias ou identité d'artiste en collision")
+        return event, added
+
     # Salles historiquement géolocalisées de façon indicative : une nouvelle
     # affiche ne peut passer qu'avec sa propre signature nominative. Aucune
     # approbation générique fondée sur le seul domaine du site.

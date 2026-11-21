@@ -1,0 +1,26 @@
+name: Concerts — admission dynamique de sources inconnues
+on:
+  pull_request:
+    paths:
+      - 'scripts/concert_dynamic_existing_venue.py'
+      - 'automation/concerts/dynamic_first_party_venue_proposals.py'
+      - 'automation/concerts/approval_preflight.py'
+      - 'scripts/concerts_cloud_sync.py'
+      - 'tests/test_concerts_dynamic_existing_venue.py'
+      - '.github/workflows/grossesondes-concerts-dynamic-source-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier sans accès privé ni accès réseau les domaines inconnus
+        run: python -m unittest discover -s tests -p 'test_concerts_dynamic_existing_venue.py' -v
