@@ -17,6 +17,7 @@ import datetime as dt
 import json
 from collections import Counter
 from pathlib import Path
+from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import discover
@@ -43,7 +44,8 @@ def event_page_witness(html, *, url, date, lead_artist, city, venue):
     witnesses = []
     for raw in events:
         canonical = raw.get("url")
-        if canonical is not None and canonical.rstrip("/") != url.rstrip("/"):
+        if canonical is not None and (not isinstance(canonical, str)
+                                      or canonical.rstrip("/") != url.rstrip("/")):
             continue
         if discover.iso_day(raw.get("startDate")) != date:
             continue
@@ -135,23 +137,38 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
         }
         try:
             signed = []
-            for lead in row["sources"]:
-                host = lead.get("host")
-                url = lead.get("eventUrl")
-                if (not isinstance(host, str)
-                        or intake.valid_https(url) != host
-                        or not isinstance(url, str)
-                        or not url.split("https://" + host, 1)[1].strip("/")
-                        or lead.get("stableOnDistinctDays") is not True):
+            # Different websites can independently fail or have calendar
+            # listings rather than individual Event documents. One failure
+            # must not suppress a valid witness from another domain.
+            sources = sorted(row["sources"], key=lambda x: (
+                str(x.get("host") or ""), str(x.get("eventUrl") or "")))
+            # Rotate the bounded per-run budget through ANY length of queue.
+            # Never impose a total allowed source/band count.
+            start = ((today - dt.date(2026, 11, 21)).days * 3 + slot) * 6
+            size = min(len(sources), 6)
+            checked = [sources[(start + n) % len(sources)]
+                       for n in range(size)]
+            for lead in checked:
+                try:
+                    host = lead.get("host")
+                    url = lead.get("eventUrl")
+                    if (not isinstance(host, str)
+                            or intake.valid_https(url) != host
+                            or not isinstance(url, str)
+                            or urlsplit(url).path in ("", "/")
+                            or lead.get("stableOnDistinctDays") is not True):
+                        continue
+                    text = fetch(url, cache)
+                    proof = event_page_witness(
+                        text, url=url, date=row["date"],
+                        lead_artist=row["leadArtist"], city=row["city"],
+                        venue=row["normalizedVenue"])
+                    signed.append({"host": host,
+                                   "domainHint": lead["independentDomainHint"],
+                                   "url": url, "genre": proof["qualifyingGenre"]})
+                except (ValueError, TypeError, OSError, TimeoutError,
+                        StopIteration, KeyError, IndexError):
                     continue
-                text = fetch(url, cache)
-                proof = event_page_witness(
-                    text, url=url, date=row["date"],
-                    lead_artist=row["leadArtist"], city=row["city"],
-                    venue=row["normalizedVenue"])
-                signed.append({"host": host,
-                               "domainHint": lead["independentDomainHint"],
-                               "url": url, "genre": proof["qualifyingGenre"]})
             # Two separate registrable-domain HINTS, each with its OWN named
             # event/date/location and one genre-qualified official Event.
             if (len({x["domainHint"] for x in signed}) >= 2
