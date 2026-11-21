@@ -82,7 +82,7 @@ def dila(url):
 HOME = '<main><a href="/agenda">Agenda</a></main>'
 AGENDA = (
     '<h1>Agenda municipal</h1>'
-    '<a href="/evenement/germirockn-co-2/">GermiRock\\'n Co #2</a>'
+    "<a href=\"/evenement/germirockn-co-2/\">GermiRock'n Co #2</a>"
     '<a href="/evenement/punkfest/">Festival PunkFest 2027</a>'
 )
 ARTICLE = """<main><h1>GermiRock'n Co #2</h1>
