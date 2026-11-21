@@ -86,6 +86,41 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(row["startDate"], DATES[0])
         self.assertEqual(row["endDate"], DATES[1])
 
+    def test_official_split_hero_and_brand_in_founder_quote_is_valid(self):
+        """Real-world visual structure: dated hero, slogan h1, brand below."""
+        split = (
+            "<main><section>"
+            "<p>Wild &amp; Civilized et le 6MIC présentent</p>"
+            "<p>4e édition · 23 &amp; 24 avril 2027 · Aix-en-Provence</p>"
+            "<h1>Ça va faire du bruit</h1>"
+            "<p>Blind Pass · 2 jours</p>"
+            "<h2>Qui joue</h2><p>Vendredi 23 · Samedi 24</p>"
+            "<h3>Le running order</h3>"
+            "<p>Deux scènes, deux soirs, zéro temps mort.</p>"
+            "</section><section>"
+            "<p>Le mot du fondateur</p>"
+            "<blockquote>Pour l'amour du Rock et de la Montagne Sainte-Victoire, "
+            "j'avais un rêve : La Sainte Rock Festival.</blockquote>"
+            "</section></main>"
+        )
+        self.assertTrue(branded_official_site(SITE, TITLE, split))
+        self.assertEqual(verify_first_party_claims(
+            SITE, TITLE, DAY1, fetch=lambda _: split),
+            (DATES, "Aix-en-Provence"))
+        cal, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = examine(state, queue(DAY1), cal, DAY1, fetch=lambda _: split)
+        self.assertEqual(first["rows"][0]["start_date_hint"], DATES[0])
+        self.assertEqual(first["rows"][0]["end_date_hint"], DATES[1])
+        second = examine(state, queue(DAY2), cal, DAY2, fetch=lambda _: split)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        proposed = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, second, DAY2,
+            fetch=lambda _: split)
+        self.assertEqual(len(proposed), 1)
+        self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
+        self.assertFalse(proposed[0]["showOnMap"])
+
     def test_no_independent_venue_or_municipal_confirmation_ever_needed(self):
         # These fixtures explicitly contain NO external hyperlinks.
         self.assertNotIn("href=", HOME)
