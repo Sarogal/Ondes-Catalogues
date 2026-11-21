@@ -161,15 +161,24 @@ def bootstrap_municipal_sources(
     except (OSError, ValueError, TypeError, KeyError, TimeoutError):
         return _blank("oa_live_metadata_unavailable")
     if (not isinstance(event, dict)
-            or type(event.get("uid")) is not int or event["uid"] != eid
-            or type(event.get("state")) is not int or event["state"] != 2
+            or type(event.get("uid")) is not int or event["uid"] != eid):
+        return _blank("live_oa_event_uid_conflict")
+    # The OA v2 detail API can express the same published/rescheduled status
+    # either as an integer or as {"id": integer, "label": ...}. The original
+    # national reader already accepts both. Never accept a missing, cancelled,
+    # symbolic or otherwise untrusted status.
+    status = event.get("status")
+    if isinstance(status, dict):
+        status = status.get("id")
+    if (type(event.get("state")) is not int or event["state"] != 2
             or event.get("removed") is True
-            or type(event.get("status")) is not int
-            or event["status"] not in (1, 2)
-            or not isinstance(event.get("location"), dict)
-            or not _french_location(event["location"])
-            or norm(_french_text(event, "title")) != norm(lead["title"])):
-        return _blank("live_oa_event_identity_or_location_conflict")
+            or type(status) is not int or status not in (1, 2)):
+        return _blank("live_oa_event_unpublished_or_cancelled")
+    if (not isinstance(event.get("location"), dict)
+            or not _french_location(event["location"])):
+        return _blank("live_oa_location_not_french_or_missing")
+    if norm(_french_text(event, "title")) != norm(lead["title"]):
+        return _blank("live_oa_event_title_changed")
     loc = event["location"]
     city = loc.get("adminLevel4")
     venue = loc.get("name")
@@ -247,6 +256,10 @@ def public_redacted_municipal_bootstrap(result):
         "invalid_private_oa_lead", "live_oa_agenda_identity_conflict",
         "oa_live_metadata_unavailable",
         "live_oa_event_identity_or_location_conflict",
+        "live_oa_event_uid_conflict",
+        "live_oa_event_unpublished_or_cancelled",
+        "live_oa_location_not_french_or_missing",
+        "live_oa_event_title_changed",
         "live_oa_city_or_venue_changed",
         "live_oa_explicit_session_changed",
         "dila_municipal_directory_unavailable",
