@@ -300,9 +300,15 @@ def build(registry, sources, catalogue, approvals, today, *,
                             lead, html, url, today)
                         result["individualOfficialEventVerified"] = True
                         known_bill = triage.words(" + ".join(names))
+                        recorded_bill = candidate.get("officialArtistNames")
+                        dynamic_bill_mismatch = dynamic and (
+                            not isinstance(recorded_bill, list)
+                            or [triage.words(n) for n in recorded_bill]
+                            != [triage.words(n) for n in names])
                         if (triage.words(announced) not in {
                                 known_bill, triage.words(names[0])}
-                                or not all(triage.words(n) for n in names)):
+                                or not all(triage.words(n) for n in names)
+                                or dynamic_bill_mismatch):
                             result["reason"] = "official_bill_not_exactly_correlated"
                         else:
                             if geo_fetch is None:
