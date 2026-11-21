@@ -304,6 +304,22 @@ jobs:
               echo "::warning::Enquête nationale privée incomplète ; aucun candidat admis par cette voie."
             fi
           fi
+          # A subsequent same-day collection rebuilds the historical patch,
+          # but the collector does not know about the unapproved open-world
+          # research queue. Carry it forward from PRIVATE state before the
+          # patch overwrite, including when there are zero review slots.
+          # No cached approval: the public Publisher rechecks all requests.
+          if [[ -s "$STATE/patch-$DAY.json" ]]; then
+            if ! python public/scripts/ptitesondes_private_research_carry_forward.py \
+                 --existing "$STATE/patch-$DAY.json" \
+                 --fresh "$OUT/patch-$DAY.json" \
+                 --output "$OUT/patch-carried-$DAY.json" --day "$DAY" \
+                 > "$LOG/research-carry.log" 2>&1; then
+              echo "::error::Conservation privée des recherches impossible ; ne pas écraser la file."
+              exit 1
+            fi
+            mv "$OUT/patch-carried-$DAY.json" "$OUT/patch-$DAY.json"
+          fi
           cp "$OUT/backlog.json" "$STATE/backlog.json"
           cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
           mkdir -p "$STATE/reports"
