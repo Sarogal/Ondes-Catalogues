@@ -97,6 +97,37 @@ class FestivalTourHandoffTests(TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["dateHint"], "2027-02-12")
 
+    def test_nested_municipal_list_card_survives_broad_index_ambiguity(self):
+        # Municipal lists commonly wrap <article> inside <li>; the festival
+        # publisher keeps refusing ambiguous context, but the Concerts-only
+        # exact named+dated card is safe to preserve as research.
+        nested = ('<ul><li><article>'
+                  '<a href="/agenda/shred-fest-2027">'
+                  '<time>12 Fév 2027</time><h2>Shred Fest 2027</h2>'
+                  '<span>Musique / Concert</span></a>'
+                  '</article></li></ul>')
+        article = ("<main><h1>Shred Fest 2027</h1><p>"
+                   "Festival itinérant annuel avec 39 concerts de metal"
+                   "</p></main>")
+        seen = []
+        def read(url):
+            seen.append(url)
+            return {INDEX: nested, DETAIL: article}[url]
+        with patch("festival_to_concerts_handoff._eligible_sources",
+                   return_value=[SPEC]), patch(
+                   "festival_to_concerts_handoff.official_date",
+                   return_value=None), patch(
+                   "festival_to_concerts_handoff.live_index_for_exact_link",
+                   side_effect=AssertionError("nested card should be proven "
+                                              "without relying on generic matcher")):
+            observations = discover(
+                {"schema": "grossesondes.source-watch.v1"}, {},
+                DAY, fetch=read)
+        self.assertEqual(seen, [INDEX, DETAIL])
+        self.assertEqual(len(observations), 1)
+        self.assertEqual(observations[0]["dateHint"], "2027-02-12")
+        self.assertFalse(observations[0]["publicationAllowed"])
+
     def test_missing_official_index_blocks_source_detail_request(self):
         state = {"schema": "grossesondes.source-watch.v1"}
         calls = []
