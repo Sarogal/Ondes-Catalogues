@@ -201,5 +201,131 @@ class MirrorAbsencePrivateEvidenceTests(unittest.TestCase):
                 agenda_reader=agenda)
 
 
+    def test_unknown_agenda_slug_can_be_researched_without_manifest(self):
+        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+        calls = []
+        def lookup(slug, key):
+            calls.append(("lookup", slug))
+            return {
+                "schema": LOOKUP_SCHEMA, "uid": 9977, "slug": slug,
+                "status": "public_uid_slug_only_independent_ownership_pending",
+                "independent_ownership_verified": False,
+                "organizer_verified": False, "rights_reviewed": False,
+                "publication_ready": False, "approval_granted": False,
+                "publisher_connected": False, "public_writes": 0,
+            }
+        def read(uid, key):
+            calls.append(("read", uid))
+            return {"uid": uid, "slug": (
+                "bibliotheques-france" if uid == 551 else
+                "autre-ville" if uid == 552 else "new-unlisted-city")}
+        out = audit_missing_ods_direct(
+            [lead(slug="new-unlisted-city")], [],
+            [551, 552], "oa_pk_publictestkey123", TODAY,
+            agenda_reader=read, event_reader=event,
+            ods_probe=lambda uid: "uid_absent",
+            agenda_discovery=lookup)
+        self.assertEqual(out["report"]["unregistered_agendas_resolved_for_research"], 1)
+        self.assertEqual(out["report"]["unregistered_agenda_lookups_failed"], 0)
+        self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 1)
+        self.assertEqual(out["private_rows"][0]["agenda_uid"], 9977)
+        self.assertEqual(calls.count(("lookup", "new-unlisted-city")), 1)
+        self.assertEqual(calls.count(("read", 9977)), 1)
+        self.assertFalse(out["private_rows"][0]["organizer_independently_verified"])
+        self.assertFalse(out["private_rows"][0]["rights_reviewed"])
+        self.assertFalse(out["private_rows"][0]["publication_ready"])
+        self.assertFalse(out["private_rows"][0]["approved"])
+        self.assertEqual(out["private_rows"][0]["public_writes"], 0)
+        public_report = json.dumps(out["report"])
+        for secret in ("9977", "new-unlisted-city", "12345",
+                       "oa_pk_publictestkey123"):
+            self.assertNotIn(secret, public_report)
+
+    def test_unknown_slug_remains_held_for_ambiguous_mismatch_or_forgery(self):
+        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+        candidate = dict(
+            schema=LOOKUP_SCHEMA, uid=9977, slug="new-unlisted-city",
+            status="public_uid_slug_only_independent_ownership_pending",
+            independent_ownership_verified=False,
+            organizer_verified=False, rights_reviewed=False,
+            publication_ready=False, approval_granted=False,
+            publisher_connected=False, public_writes=0)
+        for corrupt in (
+            dict(candidate, uid=0),
+            dict(candidate, uid=True),
+            dict(candidate, uid=9977, slug="different"),
+            dict(candidate, organizer_verified=True),
+            dict(candidate, approval_granted=True),
+            dict(candidate, public_writes=False),
+            dict(candidate, status="approved"),
+            {"uid": 9977, "slug": "new-unlisted-city"},
+            None,
+        ):
+            with self.subTest(corrupt=corrupt):
+                out = audit_missing_ods_direct(
+                    [lead(slug="new-unlisted-city")], [], [551], "oa_pk_publictestkey123",
+                    TODAY, agenda_reader=lambda uid, key: {
+                        "uid": uid, "slug": ("bibliotheques-france"
+                                           if uid == 551 else "new-unlisted-city")},
+                    event_reader=event, ods_probe=lambda uid: "uid_absent",
+                    agenda_discovery=lambda slug, key: corrupt)
+                self.assertEqual(out["private_rows"], [])
+                self.assertEqual(out["report"]["unregistered_agendas_held"], 1)
+                self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 0)
+
+    def test_unknown_slug_uid_confirmation_disagreement_blocks_direct_read(self):
+        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+        def lookup(slug, key):
+            return {
+                "schema": LOOKUP_SCHEMA, "uid": 9977, "slug": slug,
+                "status": "public_uid_slug_only_independent_ownership_pending",
+                "independent_ownership_verified": False, "organizer_verified": False,
+                "rights_reviewed": False, "publication_ready": False,
+                "approval_granted": False, "publisher_connected": False,
+                "public_writes": 0,
+            }
+        event_called = []
+        def no_event(*args):
+            event_called.append(1)
+            raise AssertionError("should never GET event on agenda mismatch")
+        out = audit_missing_ods_direct(
+            [lead(slug="new-unlisted-city")], [], [551],
+            "oa_pk_publictestkey123", TODAY,
+            agenda_reader=lambda uid, key: {
+                "uid": uid, "slug": "bibliotheques-france"},
+            event_reader=no_event, ods_probe=lambda uid: "uid_absent",
+            agenda_discovery=lookup)
+        self.assertEqual(out["report"]["unregistered_agendas_held"], 1)
+        self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 0)
+        self.assertFalse(event_called)
+
+    def test_new_agenda_lookup_cached_per_slug_across_two_real_days(self):
+        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+        calls = []
+        def lookup(slug, key):
+            calls.append(slug)
+            return {
+                "schema": LOOKUP_SCHEMA, "uid": 9977, "slug": slug,
+                "status": "public_uid_slug_only_independent_ownership_pending",
+                "independent_ownership_verified": False, "organizer_verified": False,
+                "rights_reviewed": False, "publication_ready": False,
+                "approval_granted": False, "publisher_connected": False,
+                "public_writes": 0,
+            }
+        out = audit_missing_ods_direct(
+            [lead(day="2026-12-10", slug="new-unlisted-city"),
+             lead(day="2026-12-11", slug="new-unlisted-city")], [],
+            [551], "oa_pk_publictestkey123", TODAY,
+            agenda_reader=lambda uid, key: {
+                "uid": uid, "slug": ("bibliotheques-france"
+                                   if uid == 551 else "new-unlisted-city")},
+            event_reader=event, ods_probe=lambda uid: "uid_absent",
+            agenda_discovery=lookup)
+        self.assertEqual(calls, ["new-unlisted-city"])
+        self.assertEqual(out["report"]["unregistered_agendas_resolved_for_research"], 2)
+        self.assertEqual(len(out["private_rows"]), 2)
+        self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()
