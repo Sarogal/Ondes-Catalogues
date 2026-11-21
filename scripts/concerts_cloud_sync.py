@@ -3914,7 +3914,9 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # The source domain is never read from a committed venue/artist allowlist.
     dynamic_existing_source = any(
         isinstance(p, dict)
-        and p.get("proofType") == "dynamic-existing-venue-first-party-v1"
+        and p.get("proofType") in {
+            "dynamic-existing-venue-first-party-v1",
+            "dynamic-existing-venue-osm-official-v1"}
         for p in evidence)
     if dynamic_existing_source:
         from scripts import concert_dynamic_existing_venue
@@ -4360,7 +4362,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
         item.get("url") == official_url and
         (item.get("proofType") in (
             "official-organizer-or-venue",
-            "dynamic-existing-venue-first-party-v1")
+            "dynamic-existing-venue-first-party-v1",
+            "dynamic-existing-venue-osm-official-v1")
           or (event_id == "go-c-20270122-paris-7weeks"
              and item.get("proofType") == "official-artist-tour-calendar")) and
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
