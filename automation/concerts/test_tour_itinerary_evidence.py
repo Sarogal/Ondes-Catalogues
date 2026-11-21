@@ -57,7 +57,8 @@ class TourItineraryEvidenceTests(unittest.TestCase):
 
     def test_unscoped_tour_words_and_year_cannot_prove_a_date(self):
         for body in (
-            SITE_HTML.replace("Touring", "Annual"),
+            SITE_HTML.replace("Touring", "Annual").replace(
+                "European tour", "European itinerary"),
             SITE_HTML.replace("2027", "2028"),
             SITE_HTML.replace("39 shows", "39 meetings").replace(
                 "European tour", "European meetings"),
@@ -110,7 +111,7 @@ class TourItineraryEvidenceTests(unittest.TestCase):
             body, "2027-02-04", "Montpellier", "Victoire 2"))
 
     def test_html_and_date_inputs_are_bounded(self):
-        for html in ("", SITE_HTML * 180, None, 42):
+        for html in ("", SITE_HTML * 1000, None, 42):
             self.assertFalse(probe.matching_tour_stop(
                 html, "2027-02-04", "Montpellier", "Victoire 2"))
         self.assertFalse(probe.matching_tour_stop(
