@@ -32,7 +32,7 @@ from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_generic_directory_edition import (
     private_proposal as directory_private_proposal,
-    discover_directory_website, directory_url,
+    discover_directory_website, directory_url, verify_primary,
     visible_adjacent_edition_dates,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
@@ -496,7 +496,8 @@ def examine(state, queue, published, today, fetch=None):
 
 
 def stable_directory_proposals(state, queue, catalog, report, today,
-                               directory_fetch=fetch_public_html):
+                               directory_fetch=fetch_public_html,
+                               organizer_fetch=fetch_public_html):
     """Require J+1 genuine private evidence AND a fresh independent directory.
 
     This is NOT an approval. The public publisher must re-fetch the independent
@@ -530,8 +531,7 @@ def stable_directory_proposals(state, queue, catalog, report, today,
         for source in sources:
             if (source["dossier_id"] != row.get("dossier_id")
                     or source.get("kind") != "CURATED_PRIMARY_CANDIDATE"
-                    or directory_url(source["title"]) is None
-                    or source["url"] in seen):
+                    or directory_url(source["title"]) is None):
                 continue
             old = records.get(source["url"])
             if (not isinstance(old, dict)
@@ -545,8 +545,17 @@ def stable_directory_proposals(state, queue, catalog, report, today,
                     continue
             except (TypeError, ValueError, KeyError):
                 continue
+            # The observed proof may live at /programmation/ or an article.
+            # The independently reviewed directory identifies a SITE, not
+            # that untrusted research path. Reconstruct only its HTTPS root;
+            # never pass the deep private URL as publication authority.
+            host = urlsplit(source["url"]).hostname
+            site_root = "https://" + host + "/" if host else ""
+            if (safe_public_url(site_root) != site_root
+                    or site_root in seen):
+                continue
             proposed = directory_private_proposal(
-                source["title"], source["url"], dates, today)
+                source["title"], site_root, dates, today)
             if proposed is not None:
                 candidates.append(proposed)
         if len(candidates) != 1:
@@ -558,6 +567,17 @@ def stable_directory_proposals(state, queue, catalog, report, today,
         directory_ref, site = discover_directory_website(
             proposal["name"], directory_fetch)
         if site != proposal["officialSite"]:
+            continue
+        # A deep-page date alone cannot pass the root-only Publisher proof.
+        # Check the independently derived homepage NOW as well; the cloud
+        # Publisher will re-fetch this site independently before publication.
+        try:
+            homepage = organizer_fetch(site)
+            if verify_primary(
+                    homepage, proposal["name"],
+                    int(proposal["name"].rsplit(" ", 1)[-1]), today) != dates:
+                continue
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
             continue
         # Carry exactly the independently rederived directory origin so that
         # the Publisher checks the same page again on its own runner.
