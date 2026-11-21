@@ -1,0 +1,29 @@
+name: Concerts — portée du budget de revue (test rapide)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+      - 'automation/concerts/official_recheck.py'
+      - 'tests/test_concerts_review_budget_binding.py'
+      - '.github/workflows/grossesondes-concerts-review-budget-binding-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
+      - 'automation/concerts/official_recheck.py'
+      - 'tests/test_concerts_review_budget_binding.py'
+      - '.github/workflows/grossesondes-concerts-review-budget-binding-tests.yml'
+permissions:
+  contents: read
+jobs:
+  review-budget-scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s tests -p 'test_concerts_review_budget_binding.py' -v
