@@ -112,7 +112,7 @@ def _div_event_header(text_nodes, expected_title, today):
             if not preceding:
                 continue
             witnesses.append((expected_title, when.isoformat(),
-                              page[title.start():min(len(page), date.end() + 400)]))
+                              page[max(0, title.start() - 180):min(len(page), date.end() + 400)]))
     # Repeated/mismatching headlines are ambiguous, not a permission to pick.
     if len(witnesses) != 1:
         raise ValueError("Ambiguous official dated concert headline")
