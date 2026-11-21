@@ -7807,11 +7807,42 @@ def merge(reference, current, approvals, today):
         a.get("event", {}).get("id"): a
         for a in approvals["approvals"] if a.get("reviewDecision") == "approved"
     }
+    from scripts import concert_published_lineup_contract as lineup_contract
+    lineup_rows = approvals.get("lineupCorrections", [])
+    require(isinstance(lineup_rows, list),
+            "Correctifs de programmation privée non conformes")
+    lineup_by_id = {
+        row.get("eventId"): row for row in lineup_rows
+        if isinstance(row, dict) and isinstance(row.get("eventId"), str)
+    }
+    require(len(lineup_by_id) == len(lineup_rows)
+            and all(event_id in approved_ids for event_id in lineup_by_id)
+            and not set(lineup_by_id).intersection(
+                {e["id"] for e in reference["events"]}),
+            "Correctif absent, dupliqué ou ciblant une référence immuable")
     gwendoline_approval = None
     for existing in current["events"][len(reference["events"]):]:
         approval = approved_ids.get(existing["id"])
         require(bool(approval), "Concert cloud publié sans approbation privée")
         expected = approval["event"]
+        if existing["id"] in lineup_by_id:
+            planned = lineup_contract.plan(
+                lineup_by_id[existing["id"]], approval, current, today)
+            require(all(existing.get(k) == expected.get(k) for k in
+                        ("id", "date", "venueId", "genres", "status",
+                         "officialUrl", "sourceType")),
+                    "Programmation: identité publique modifiée hors signature")
+            require(
+                (existing["title"] == expected["title"]
+                 and existing["artistIds"] == expected["artistIds"])
+                or (existing["title"] == planned["title"]
+                    and existing["artistIds"] == planned["artistIds"]
+                    and existing.get("lastVerified") == planned["reviewedAt"]
+                    and bool(existing.get("history"))
+                    and existing["history"][-1].get("change") ==
+                        "Programmation complétée après nouvelle vérification de la fiche officielle"),
+                "Programmation cloud modifiée hors correctif signé")
+            continue
         if existing["id"] == GWENDOLINE_CORRECTION_ID:
             if existing.get("title") == "Gwendoline" and expected.get("title") != "Gwendoline":
                 require(validate_gwendoline_signed_correction(existing, approval),
@@ -7826,6 +7857,16 @@ def merge(reference, current, approvals, today):
                      "status", "officialUrl", "sourceType")),
                 "Concert cloud modifié hors de son approbation : " + existing["id"])
     result = copy.deepcopy(current)
+    lineup_changes = 0
+    lineup_new_artists = 0
+    for row in lineup_rows:
+        # A signed correction operates on the existing event ID and venue.
+        # Independently re-fetch its original first-party URL on first apply;
+        # later replays need no live page (old events may disappear online).
+        result, changed, new_artist_count = lineup_contract.apply(
+            row, approved_ids[row["eventId"]], result, today)
+        lineup_changes += int(changed)
+        lineup_new_artists += new_artist_count
     if gwendoline_approval is not None:
         apply_gwendoline_signed_correction(result, gwendoline_approval)
     location_review = validate_secret_place_location_correction(
@@ -7912,8 +7953,8 @@ def merge(reference, current, approvals, today):
                     else validate_venue_approval(approval, today)),
                 "Salle cloud ajoutée/modifiée sans approbation privée")
     event_sites_added_this_run = {}
-    counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None), "newVenues": 0,
-              "correctedEvents": corrected_count + int(gwendoline_approval is not None), "correctedVenues": venue_corrected_count,
+    counts = {"newEvents": 0, "newArtists": int(gwendoline_approval is not None) + lineup_new_artists, "newVenues": 0,
+              "correctedEvents": corrected_count + int(gwendoline_approval is not None) + lineup_changes, "correctedVenues": venue_corrected_count,
               "alreadyPublished": 0, "alreadyRegisteredVenues": 0,
               "deferredUnprocessed": 0, "deferredVenues": 0, "held": []}
     for entry in venue_approvals:
