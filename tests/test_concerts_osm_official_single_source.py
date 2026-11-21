@@ -1,6 +1,7 @@
 """End-to-end no-network test: official venue + OSM, NO second website."""
 import copy
 import datetime as dt
+import html
 import unittest
 from unittest import mock
 
@@ -32,6 +33,32 @@ def registry(stable=2, *, source="agenda_officiel_structuré",
                     "publicationAllowed": False, "reviewRequired": True,
                 }}}
             }
+
+
+
+def html_microdata_event():
+    venue = next(v for v in BASE["venues"] if v["id"] == fixture.VENUE_ID)
+    bill = "".join(
+        '<div itemprop="performer" itemscope '
+        'itemtype="https://schema.org/MusicGroup">'
+        '<span itemprop="name">' + html.escape(name) + '</span></div>'
+        for name in fixture.NAMES)
+    return (
+        '<html><article itemscope itemtype="https://schema.org/Event">'
+        '<h1 itemprop="name">' + html.escape(" + ".join(fixture.NAMES)) + '</h1>'
+        '<a itemprop="url" href="' + html.escape(URL, quote=True) + '">Concert</a>'
+        '<time itemprop="startDate" datetime="2027-03-05">5 March 2027</time>'
+        '<meta itemprop="genre" content="Black Metal">'
+        + bill + '<div itemprop="location" itemscope '
+        'itemtype="https://schema.org/Place"><span itemprop="name">Le Bikini</span>'
+        '<div itemprop="address" itemscope '
+        'itemtype="https://schema.org/PostalAddress">'
+        '<span itemprop="streetAddress">' + html.escape(venue["address"]) + '</span>'
+        '<span itemprop="postalCode">31520</span>'
+        '<span itemprop="addressLocality">Ramonville-Saint-Agne</span>'
+        '<meta itemprop="addressCountry" content="FR">'
+        '</div></div></article></html>'
+    )
 
 
 class SingleOSMOfficialPublisherTests(unittest.TestCase):
@@ -92,6 +119,55 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertEqual(again["newEvents"], 0)
         self.assertEqual(same, merged)
 
+    def test_generic_event_or_html_microdata_reaches_real_publisher(self):
+        # Some official venue sites emit schema.org Event, or HTML microdata,
+        # rather than MusicEvent. Neither may borrow a genre or bill from
+        # neighboring cards; the OSM website attribution is still mandatory.
+        for page in (fixture.page(URL, music=False), html_microdata_event()):
+            with self.subTest(format="microdata" if "itemscope" in page else "jsonld"):
+                fetch = fixture.fake_fetch({"primary": page})
+                proposed, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=fetch)
+                self.assertEqual(report["stateCounts"],
+                                 {"independently_verified_proposal": 1})
+                self.assertEqual(len(proposed["approvals"]), 1)
+                with mock.patch.object(identity, "safe_fetch",
+                                       side_effect=fetch):
+                    result, stats = publisher.merge(
+                        BASE, BASE, proposed, TODAY)
+                self.assertEqual(stats["newEvents"], 1)
+                self.assertEqual(result["events"][-1]["genres"],
+                                 ["Black Metal"])
+                self.assertEqual(result["events"][-1]["artistIds"],
+                                 fixture.IDS)
+
+    def test_generic_event_without_own_music_proof_or_fake_source_is_held(self):
+        # Type Event alone is never music proof. Even a correctly typed
+        # concert cannot be validated from a forged OSM website.
+        cases = [
+            (fixture.page(URL, music=False, genres=False), fixture.osm()),
+            (fixture.page(URL, music=False), fixture.osm(
+                website="https://impostor.invalid")),
+            (fixture.page(URL, music=False, status="EventCancelled"),
+             fixture.osm()),
+            (fixture.page(URL, music=False,
+                          event_name="Festival du Metal 2027"), fixture.osm()),
+        ]
+        for page, osm in cases:
+            def fetch(url, cache):
+                return osm if url.startswith(
+                    "https://api.openstreetmap.org/") else page
+            with self.subTest(case=page[:80], osm=osm[:90]):
+                proposed, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=fetch)
+                self.assertEqual(proposed["approvals"], [])
+                self.assertEqual(report["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+
     def test_unknown_genre_discovery_may_be_proven_by_exact_event_performer(self):
         leads = pipeline.eligible(registry(bucket="genre_unknown"), BASE, TODAY)
         self.assertEqual(len(leads), 1)
@@ -142,7 +218,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             fixture.page(URL, date="2027-03-06"),
             fixture.page(URL, venue_name="Wrong Hall"),
             fixture.page(URL, genres=False),
-            fixture.page(URL, music=False),
+            fixture.page(URL, music=False, genres=False),
             fixture.page(URL, country="BE"),
             fixture.page(URL, names=["Unrelated Artist"]),
         ]
