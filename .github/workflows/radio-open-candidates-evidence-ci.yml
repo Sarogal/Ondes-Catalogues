@@ -10,6 +10,8 @@ on:
       - "radio-catalog-lab/tools/test_probe_open_radio_candidates.py"
       - "radio-catalog-lab/tools/probe_open_radio_artwork.py"
       - "radio-catalog-lab/tools/test_probe_open_radio_artwork.py"
+      - "radio-catalog-lab/tools/probe_open_radio_continuity.py"
+      - "radio-catalog-lab/tools/test_probe_open_radio_continuity.py"
   workflow_dispatch:
 
 permissions:
@@ -34,12 +36,22 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
             -p "test_probe_open_radio_artwork.py" -v
+      - name: Test time-separated audio evidence safeguards (OFFLINE)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_open_radio_continuity.py" -v
       - name: Check official candidate audio transport (read only; no approval)
         run: |
           python radio-catalog-lab/tools/probe_open_radio_candidates.py \
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
             --output go-candidate-evidence.json \
             --live-probe
+      - name: Probe timed audio continuity (three windows per station, read only)
+        run: |
+          python radio-catalog-lab/tools/probe_open_radio_continuity.py \
+            --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
+            --output go-continuity-candidate-evidence.json \
+            --live-probe --gap-seconds 5
       - name: Inspect official artwork candidate bytes (read only; no approval)
         run: |
           python radio-catalog-lab/tools/probe_open_radio_artwork.py \
@@ -53,6 +65,7 @@ jobs:
           path: |
             go-candidate-evidence.json
             go-logo-candidate-evidence.json
+            go-continuity-candidate-evidence.json
           retention-days: 7
           if-no-files-found: error
       - name: Assert unchanged signing and publishing state
