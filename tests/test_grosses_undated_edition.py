@@ -201,8 +201,8 @@ class UndatedFutureEditionTests(unittest.TestCase):
             original, history, patch_data, sources, TODAY.isoformat())
         self.assertEqual(report["accepted_additions"], ["xtreme-fest-2027"])
         self.assertEqual(target["festivals"][-1]["status"], "Dates à venir")
-        self.assertIsNone(target["festivals"][0]["startDate"])
-        self.assertFalse(target["festivals"][0]["showOnMap"])
+        self.assertIsNone(target["festivals"][-1]["startDate"])
+        self.assertFalse(target["festivals"][-1]["showOnMap"])
         rejected, fail = stage(
             original, history, patch_data,
             {"registered-edition:xtreme-fest-2027":
