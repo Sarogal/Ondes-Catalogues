@@ -87,6 +87,78 @@ class BlockerInventoryTests(TestCase):
             build_inventory(reports, catalogue, TODAY)["dossiers"][0]["name"],
             "Les Riffs du Bout du Monde")
 
+
+    def test_patch_deferred_festival_names_not_lost_outside_discovery(self):
+        reports, catalogue = fixture()
+        patch = {
+            "schema": "grossesondes.patch.v1", "generated_at": TODAY,
+            "safe_to_publish": False,
+            "additions": [{"slug": "mozhell-open-air-2027",
+                           "name": "MozHell Open Air 2027"}],
+            "deferred": [
+                {"slug": "betizfest-2027",
+                 "issue": "Future edition announced secondarily, not proven",
+                 "sources": ["https://betizfest.info/"]},
+                {"slug": "festival-metal-vouziers-2027",
+                 "issue": "Tourist listing without official edition announcement"},
+                {"slug": "festival-d-hiver-faverock-2026",
+                 "issue": "Precise site of earlier edition not located"},
+                {"slug": "rock-in-bourlon",
+                 "issue": "Archived registry differs from published history"},
+                {"slug": "heavy-metal-breizh",
+                 "issue": "Archived registry differs from published history"},
+                {"slug": "bully-on-rocks",
+                 "issue": "Archived registry differs from published history"},
+                {"slug": "mozhell-open-air-2027", "issue": "Already signed"},
+                {"slug": "betizfest-2027",
+                 "issue": "Do not duplicate a second deferral"},
+            ],
+        }
+        out = build_inventory(reports, catalogue, TODAY, patch=patch)
+        self.assertEqual(out["patch_only_unpublished_references_count"], 6)
+        self.assertEqual(out["total_named_leads"], 10)
+        self.assertEqual(len({r["slug"] for r in
+                              out["patch_only_unpublished_references"]}), 6)
+        self.assertIn("betizfest-2027", {r["slug"] for r in
+                      out["patch_only_unpublished_references"]})
+        self.assertTrue(all(not r["publication_authorized"]
+                            for r in out["patch_only_unpublished_references"]))
+        self.assertEqual(out["publications"], 0)
+
+    def test_private_patch_only_addition_is_not_automatically_approved(self):
+        reports, catalogue = fixture()
+        patch = {
+            "schema": "grossesondes.patch.v1", "generated_at": TODAY,
+            "safe_to_publish": False,
+            "additions": [{"slug": "festival-jamais-repertorie-2027",
+                           "name": "Festival jamais repertorie 2027",
+                           "startDate": "2027-12-12"}],
+            "deferred": [],
+        }
+        out = build_inventory(reports, catalogue, TODAY, patch=patch)
+        self.assertEqual(out["patch_only_unpublished_references_count"], 1)
+        lead = out["patch_only_unpublished_references"][0]
+        self.assertEqual(lead["record_kinds"],
+                         ["PRIVATE_ADDITION_NOT_PUBLISHED"])
+        self.assertFalse(lead["publication_authorized"])
+
+    def test_forged_or_stale_private_patch_fails_closed(self):
+        reports, catalogue = fixture()
+        template = {
+            "schema": "grossesondes.patch.v1", "generated_at": TODAY,
+            "safe_to_publish": False, "deferred": [], "additions": [],
+        }
+        for change in (
+            {"safe_to_publish": True},
+            {"generated_at": "2026-11-20"},
+            {"deferred": [{"slug": "other/secret"}]},
+            {"additions": ["wrong-shape"]},
+        ):
+            with self.subTest(change=change):
+                patch = {**template, **change}
+                with self.assertRaises(ValueError):
+                    build_inventory(reports, catalogue, TODAY, patch=patch)
+
     def test_never_accepts_missing_stale_or_colliding_pipeline_stage(self):
         reports, catalogue = fixture()
         cases = []
