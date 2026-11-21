@@ -13,9 +13,6 @@ import os
 from pathlib import Path
 import re
 
-from ptitesondes_private_national_event_campaign import (
-    _lock, _state_path as _unused_campaign_state_path,
-)
 from ptitesondes_openagenda_national_event_research import (
     MAX_INDEX_BYTES, _private_directory, _private_input, _write_new,
     _write_state,
