@@ -493,7 +493,9 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         result = examine(state, queue, published, DAY1, fetch=fetch)
         self.assertEqual(result["rows"][0]["status"],
                          "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
-        self.assertEqual(visited, [URL_A, root])
+        # Stronger safety: the same-edition conflicting day is rejected on
+        # the source page, BEFORE any additional homepage HTTP fetch.
+        self.assertEqual(visited, [URL_A])
         self.assertEqual(result["publications"], 0)
 
     def test_same_domain_reconciliation_rejects_conflicting_home_or_jsonld(self):
