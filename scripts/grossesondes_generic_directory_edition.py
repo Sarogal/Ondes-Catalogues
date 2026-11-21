@@ -18,6 +18,12 @@ from urllib.parse import urlsplit
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import Anchors, normalized, visible_text
 from grossesondes_institutional_linked_edition import prove_dates
+from grossesondes_official_html_edition import (
+    VisibleParagraphs, explicit_ranges, dominant_visible_range,
+    administrative_calendar_dates, fold, CANCEL,
+)
+from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
+from festival_event_kind import touring_concert_stop
 from grossesondes_institutional_edition import (
     slug_for, conflicts_with_signed_catalogue,
 )
@@ -189,10 +195,125 @@ def discover_directory_website(title, directory_fetch):
     return None, None
 
 
+def visible_adjacent_edition_dates(html, title, year, today):
+    """Exact name + immediately adjacent visible date block, never metadata.
+
+    Some first-party hero sections split the festival heading and its dates
+    into adjacent elements instead of a single paragraph. No text from
+    private queues, hidden markup, footers, generic year labels or unrelated
+    festival listings can grant authority. Only a first-party page already
+    independently linked from the public directory reaches this function.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or not isinstance(title, str) or type(year) is not int
+            or not 2026 <= year <= 2049):
+        return None
+    name = normalized(title.rsplit(" ", 1)[0])
+    if not 8 <= len(name) <= 130:
+        return None
+    try:
+        checked = date.fromisoformat(today)
+        parser = VisibleParagraphs()
+        parser.feed(html)
+        parser.close()
+        chunks = [text for chunk in
+                  " ".join(parser.parts).split(VisibleParagraphs.SEP)
+                  if (text := " ".join(fold(chunk).split()))]
+        pairs = []
+        for index, chunk in enumerate(chunks[:-1]):
+            if normalized(chunk) != name:
+                continue
+            next_chunk = chunks[index + 1]
+            if (not 8 <= len(next_chunk) <= 140
+                    or CANCEL.search(next_chunk)
+                    or re.search(r"\b(?:billetterie|tickets?|vente|prevente|"
+                                 r"ouverture|inscription|sold out)\b", next_chunk)):
+                continue
+            years = {int(y) for y in re.findall(r"(?<![0-9])20[2-4][0-9](?![0-9])",
+                                                 next_chunk)}
+            if years != {year}:
+                continue
+            found = list(explicit_ranges(next_chunk, year))
+            if len(found) != 1:
+                continue
+            a, b, start, end = found[0]
+            # The adjacent block must BE the printed event date, not
+            # an unrelated descriptive paragraph which happens to contain it.
+            surrounding = (next_chunk[:a] + next_chunk[b:]).strip(" :;.,- ")
+            if surrounding not in ("", "dates", "date", "dates du festival"):
+                continue
+            if start < checked or start.year != year or end.year != year:
+                continue
+            pairs.append((start, end))
+        if not pairs or len(set(pairs)) != 1:
+            return None
+        start, end = pairs[0]
+        # Other printed current-year event ranges can veto this near-title
+        # hero. Ticket on-sale dates in isolated paragraphs are excluded
+        # only by the already tested administrative-calendar rule.
+        body = " ".join(fold(" ".join(parser.parts)).split())
+        excludes = administrative_calendar_dates(html, title, year)
+        all_dates = {(a, b) for _s, _e, a, b
+                     in explicit_ranges(body, year)
+                     if (a, b) not in excludes}
+        # The normal first-party date verifier explicitly vetoes touring
+        # formats even when they contain a marketing "Fest" name. Its new
+        # adjacent-block fallback must enforce the SAME tour classification.
+        tour_claim = re.search(
+            r"\b(?:tournee itinerante|tournee de [0-9]+ concerts?|"
+            r"concerts? de la tournee|date de la tournee|concert tour|"
+            r"tour de concerts?)\b", body)
+        if (dominant_visible_range(all_dates) != (start, end)
+                or tour_claim
+                or touring_concert_stop(html, start, end)
+                or not no_same_edition_jsonld_contradiction(
+                    html, title, start, end)):
+            return None
+        return start.isoformat(), end.isoformat()
+    except (OSError, ValueError, TypeError, OverflowError, UnicodeError):
+        return None
+
+
+def _misleading_adjacent_date(html, title, year):
+    """Never turn sale dates or a DIFFERENT following festival into this show.
+
+    The legacy paragraph-proximity proof can see a valid date after the exact
+    festival heading even when the next block explicitly says it belongs to
+    a ticket on-sale or to a different festival. This negative filter applies
+    before both the legacy proof and the new adjacent-date path.
+    """
+    try:
+        parser = VisibleParagraphs()
+        parser.feed(html)
+        parser.close()
+        chunks = [text for chunk in
+                  " ".join(parser.parts).split(VisibleParagraphs.SEP)
+                  if (text := " ".join(fold(chunk).split()))]
+        name = normalized(title.rsplit(" ", 1)[0])
+        for index, chunk in enumerate(chunks[:-1]):
+            if normalized(chunk) != name:
+                continue
+            near = chunks[index + 1]
+            if (re.search(r"\b(?:ouverture|billetterie|tickets?|prevente|"
+                          r"mise en vente|inscription)\b", near)
+                    and any(explicit_ranges(near, year))):
+                return True
+            if (re.search(r"\b(?:autre|different|other|another)\b", near)
+                    and re.search(r"\bfestival\b", near)
+                    and index + 2 < len(chunks)
+                    and any(explicit_ranges(chunks[index + 2], year))):
+                return True
+        return False
+    except (TypeError, ValueError, UnicodeError):
+        return True
+
+
 def verify_primary(html, title, year, today):
-    if not isinstance(html, str):
+    if not isinstance(html, str) or _misleading_adjacent_date(html, title, year):
         return None
     dates = prove_dates(html, title, year, today)
+    if dates is None:
+        dates = visible_adjacent_edition_dates(html, title, year, today)
     if dates is None:
         return None
     try:
