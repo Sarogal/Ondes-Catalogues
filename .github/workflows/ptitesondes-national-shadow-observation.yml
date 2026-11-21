@@ -37,14 +37,18 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_national_shadow_observation.py' -v
 
   observe-private:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    # TEMPORARY ONE-SHOT: PR #608 from this exact same-repo owner branch.
+    # Revert to the main-only condition immediately after the observation.
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.number == 608 && github.event.pull_request.head.repo.full_name == 'Sarogal/Ondes-Catalogues' && github.head_ref == 'feat/ptitesondes-isolated-national-observation-20261121' && github.actor == 'Sarogal')
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
-      - name: Charger le code validé (jamais une branche de PR)
+      - name: Charger le code isolé du pilote (branche interne uniquement)
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
 
       - name: Charger la branche privée de checkpoints
