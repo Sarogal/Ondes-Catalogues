@@ -4,8 +4,11 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_open_world_patch_bridge.py'
+      - 'scripts/ptitesondes_delegated_source_authority.py'
+      - 'scripts/ptitesondes_open_world_release_rehearsal.py'
       - 'scripts/run_cloud_sync.py'
       - 'tests/test_ptitesondes_open_world_patch_bridge.py'
+      - 'tests/test_ptitesondes_delegated_source_authority.py'
       - '.github/workflows/ptitesondes-open-world-publisher-bridge-tests.yml'
 
 permissions:
@@ -27,6 +30,7 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_patch_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_delegated_source_authority.py' -v
       - name: Regression — open-world municipal source and geography
         env:
           PYTHONWARNINGS: error
