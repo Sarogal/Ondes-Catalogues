@@ -297,7 +297,9 @@ class NationwideVenueAdmissionPreviewTests(unittest.TestCase):
                 self.assertEqual(calls, [("official", EVENT)])
 
     def test_private_diagnostics_distinguish_event_proofs_without_leaking_urls(self):
-        missing, _ = run(event={"@type": "MusicEvent"})
+        no_bill = copy.deepcopy(EVENT_OBJ)
+        no_bill.pop("performer")
+        missing, _ = run(event=no_bill)
         self.assertEqual(missing["results"][0]["verificationStage"],
                          "official_named_bill_missing")
         for edit, expected in (
