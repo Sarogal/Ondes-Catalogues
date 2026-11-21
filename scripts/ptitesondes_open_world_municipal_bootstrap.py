@@ -174,11 +174,23 @@ def bootstrap_municipal_sources(
             or event.get("removed") is True
             or type(status) is not int or status not in (1, 2)):
         return _blank("live_oa_event_unpublished_or_cancelled")
+    # An identity/timing conflict blocks admission, NOT independent
+    # investigation. Preserve only safe, untrusted OA-linked HTTPS source
+    # leads so the next private cycle can research the organizer's page.
+    # Never infer organizer ownership, location or a published session here.
+    source_leads, needs_partition = _candidate_links_from_openagenda(event)
+
+    def held_with_leads(reason):
+        held = _blank(reason)
+        held["private_unverified_oa_web_leads"] = source_leads
+        held["oa_link_partition_required"] = needs_partition
+        return held
+
     if (not isinstance(event.get("location"), dict)
             or not _french_location(event["location"])):
         return _blank("live_oa_location_not_french_or_missing")
     if norm(_french_text(event, "title")) != norm(lead["title"]):
-        return _blank("live_oa_event_title_changed")
+        return held_with_leads("live_oa_event_title_changed")
     loc = event["location"]
     city = loc.get("adminLevel4")
     venue = loc.get("name")
@@ -193,20 +205,14 @@ def bootstrap_municipal_sources(
             or (isinstance(lead.get("country_code_unverified"), str)
                 and lead["country_code_unverified"]
                 != loc.get("countryCode"))):
-        return _blank("live_oa_city_or_venue_changed")
+        return held_with_leads("live_oa_city_or_venue_changed")
     timings, _ = _time_sessions(event.get("timings"), today)
     if (not timings or timings !=
             lead["explicit_source_session_intervals"]):
-        return _blank("live_oa_explicit_session_changed")
+        return held_with_leads("live_oa_explicit_session_changed")
 
-    source_leads, needs_partition = _candidate_links_from_openagenda(event)
     # A structurally valid OA website is a research lead only. Neither OA
     # nor its canonical link can certify ownership or the right to reuse.
-    def held_with_leads(status):
-        held = _blank(status)
-        held["private_unverified_oa_web_leads"] = source_leads
-        held["oa_link_partition_required"] = needs_partition
-        return held
 
     # This is a **query**, not a whitelist. Any new place name is eligible
     # for an independent authority lookup, including overseas municipalities.

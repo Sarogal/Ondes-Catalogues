@@ -100,6 +100,7 @@ jobs:
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_backlog_bridge.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
@@ -268,12 +269,30 @@ jobs:
           fi
           test -s "$OUT/backlog.json"
           test -s "$OUT/patch-$DAY.json"
+          # Consume existing national observations ONLY as unverified private
+          # leads. The historical candidate preflight and merge are unchanged.
+          # A fresh OpenAgenda read is mandatory; failure stops private intake.
+          if [[ -d "$STATE/national-observation" ]]; then
+            if ! python public/scripts/ptitesondes_national_backlog_bridge.py \
+                 --private-observation-root "$STATE/national-observation" \
+                 --backlog-file "$OUT/backlog.json" \
+                 --output-file "$OUT/backlog-with-national.json" \
+                 --cursor-file "$STATE/national-observation/backlog-bridge-cursor.json" \
+                 --day "$DAY" --execute-live > "$LOG/national-backlog-bridge.log" 2>&1; then
+              echo "::error::Relecture nationale privée échouée : aucune admission."
+              exit 1
+            fi
+            mv "$OUT/backlog-with-national.json" "$OUT/backlog.json"
+          fi
           cp "$OUT/backlog.json" "$STATE/backlog.json"
           cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
           mkdir -p "$STATE/reports"
           cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
+            if [[ -f "$STATE/national-observation/backlog-bridge-cursor.json" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/national-observation/backlog-bridge-cursor.json"
+            fi
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
           # Optional ultra-marine probes. Both remain STRICTLY discovery-only.
