@@ -157,16 +157,21 @@ def _location_state(node, lead):
     known_city = lead.get("city_unverified")
     known_venue = norm(known_venue) if isinstance(known_venue, str) else None
     known_city = norm(known_city) if isinstance(known_city, str) else None
+    matching = False
     for venue, city in claims:
         venue_match = (norm(venue) == known_venue
                        if venue and known_venue else None)
         city_match = (norm(city) == known_city
                       if city and known_city else None)
+        # Conflicting data anywhere in a multi-location list cannot be
+        # hidden by one matching venue appearing earlier in the same node.
         if venue_match is False or city_match is False:
-            continue
-        return "matching_source_location_claim" if (
-            venue_match is True or city_match is True) else "location_not_comparable"
-    return "source_location_conflicts" if claims else "source_location_not_stated"
+            return "source_location_conflicts"
+        if venue_match is True or city_match is True:
+            matching = True
+    if matching:
+        return "matching_source_location_claim"
+    return "location_not_comparable" if claims else "source_location_not_stated"
 
 
 def _structured_source_sessions(html, lead, intervals):
@@ -188,7 +193,7 @@ def _structured_source_sessions(html, lead, intervals):
     for block in parser.blocks:
         try:
             doc = json.loads(block)
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, RecursionError):
             continue
         for node in _nodes(doc):
             if not _is_event(node):
@@ -201,10 +206,17 @@ def _structured_source_sessions(html, lead, intervals):
             if norm(node["name"]) != expected_title:
                 continue
             state = node.get("eventStatus")
-            if isinstance(state, str) and any(
-                    marker in state.lower()
-                    for marker in ("cancelled", "canceled", "postponed",
-                                   "rescheduled")):
+            if isinstance(state, dict):
+                state = state.get("@id")
+            states = state if isinstance(state, list) else [state]
+            states = [value.get("@id") if isinstance(value, dict) else value
+                      for value in states]
+            if any(
+                    isinstance(value, str)
+                    and any(marker in value.lower()
+                            for marker in ("cancelled", "canceled",
+                                           "postponed", "rescheduled"))
+                    for value in states):
                 # One explicit cancellation/reprogramming is a conflict for
                 # this exact occurrence, not a publication-friendly positive.
                 disposition = "source_changed_or_cancelled"
@@ -347,7 +359,7 @@ def review_unlisted_exact_sessions(
         html = source_reader(url)
         matched = _structured_source_sessions(html, lead, pairs)
     except (OSError, ValueError, TypeError, KeyError, TimeoutError,
-            UnicodeError):
+            UnicodeError, RecursionError):
         return _blank("unlisted_source_not_recheckable")
     status = ("structured_source_exact_sessions_research_only"
               if matched["exact_source_session_count"] else
