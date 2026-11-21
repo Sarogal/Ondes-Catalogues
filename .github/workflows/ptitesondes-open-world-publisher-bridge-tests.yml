@@ -5,12 +5,14 @@ on:
     paths:
       - 'scripts/ptitesondes_open_world_patch_bridge.py'
       - 'scripts/ptitesondes_delegated_source_authority.py'
+      - 'scripts/ptitesondes_secondary_municipal_site_proof.py'
       - 'scripts/ptitesondes_municipal_event_venue_ban.py'
       - 'scripts/ptitesondes_shared_venue_location_evidence.py'
       - 'scripts/ptitesondes_open_world_release_rehearsal.py'
       - 'scripts/run_cloud_sync.py'
       - 'tests/test_ptitesondes_open_world_patch_bridge.py'
       - 'tests/test_ptitesondes_delegated_source_authority.py'
+      - 'tests/test_ptitesondes_secondary_municipal_site_proof.py'
       - 'tests/test_ptitesondes_municipal_event_venue_ban.py'
       - '.github/workflows/ptitesondes-open-world-publisher-bridge-tests.yml'
 
@@ -34,6 +36,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_patch_bridge.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_delegated_source_authority.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_secondary_municipal_site_proof.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_municipal_event_venue_ban.py' -v
       - name: Regression — open-world municipal source and geography
         env:

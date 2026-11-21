@@ -21,6 +21,9 @@ from ptitesondes_dila_municipal_domains import (
     approved_municipal_page_host, fetch_dila,
 )
 from ptitesondes_delegated_source_authority import verified_delegated_source
+from ptitesondes_secondary_municipal_site_proof import (
+    verified_secondary_municipal_host,
+)
 from ptitesondes_openagenda_national_event_research import _french_text
 from ptitesondes_openagenda_reuse_rights import review_event_rights
 from ptitesondes_openagenda_v2_direct_evidence import (
@@ -179,7 +182,9 @@ def rehearse_open_world_municipal_event(
     if (approved_municipal_page_host(official_url, city, directory) is None
             and not verified_delegated_source(
                 source_host_proof, city, lead["venue_unverified"],
-                official_url, today)):
+                official_url, today)
+            and not verified_secondary_municipal_host(
+                source_host_proof, city, official_url, today)):
         return _blank("unknown_municipal_official_source")
     # Official source is authenticated BEFORE reading content; never
     # trust an arbitrary OA or organizer URL to mint a host authority.
