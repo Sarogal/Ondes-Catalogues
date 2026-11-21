@@ -215,6 +215,30 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertEqual(result["publications"], 0)
         self.assertEqual(result["named_municipal_mention_count"], 0)
 
+    def test_security_challenge_is_unavailable_not_negative_evidence(self):
+        # Real municipal administrations may use anti-bot gateways. They
+        # cannot be bypassed and must not count as no festival scheduled.
+        html = """<html><head><title>S.H.I.E.L.D.</title></head>
+          <main><h1>Vérification de sécurité</h1>
+          <p>Secure Handler for Intelligent Enforcement & Legitimate Detection</p>
+          <p>Vérifie que votre navigateur est légitime.</p>
+          </main></html>"""
+        observed = []
+        out = scan(
+            queue(), municipality(), TODAY,
+            fetch=lambda url: observed.append(url) or html,
+            commune_lookup=geo, delegated_lookup=lambda _: None,
+            directory_fetch=dila)
+        self.assertEqual(observed, [SITE])
+        row = out["rows"][0]
+        self.assertEqual(row["access_challenge_pages"], 1)
+        self.assertEqual(row["pages_checked"], 1)
+        self.assertEqual(row["status"],
+                         "MUNICIPAL_ACCESS_CHALLENGE_RESEARCH_UNAVAILABLE")
+        self.assertEqual(out["named_municipal_mention_count"], 0)
+        self.assertFalse(out["publication_authorized"])
+        self.assertEqual(out["publications"], 0)
+
     def test_private_report_cannot_claim_published_or_use_old_day(self):
         for key, bad in [
             ("publication_authorized", True),
