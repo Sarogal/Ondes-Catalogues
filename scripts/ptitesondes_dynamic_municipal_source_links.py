@@ -85,11 +85,16 @@ def _safe_url(raw, *, base=None):
             or re.search(r"[\x00-\x20\x7f\\]", raw)
             or raw.startswith("//")):
         return None
-    if raw.startswith("/") or raw.startswith("./") or raw.startswith("../"):
-        if not isinstance(base, str):
-            return None
-        raw = urljoin(base, raw)
+    # Ordinary municipal pages frequently use bare relative hrefs such
+    # as "agenda/jeunesse" or "sorties.html", not only /, ./ and ../.
+    # Scheme-bearing payloads (javascript:, data:, http:) must never be
+    # rewritten into seemingly harmless HTTPS paths.
     try:
+        relative = urlsplit(raw)
+        if not relative.scheme and not relative.netloc:
+            if not isinstance(base, str) or not _safe_url(base):
+                return None
+            raw = urljoin(base, raw)
         u = urlsplit(raw)
         host = u.hostname
         if (u.scheme != "https" or host is None or u.username
