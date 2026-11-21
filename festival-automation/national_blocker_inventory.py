@@ -42,7 +42,72 @@ def _index(rows, key):
     return out
 
 
-def build_inventory(reports, catalogue, today):
+def _patch_only_leads(patch, catalogue, today):
+    """Include unadmitted private patch leads without trusting their claims.
+
+    A deferred item can document an unannounced edition, unresolved geolocation
+    or an archival mismatch. None is a publisher approval. Never limit names,
+    genres, sites or organizers to a preapproved registry.
+    """
+    if patch is None:
+        return []
+    if (not isinstance(patch, dict)
+            or patch.get("schema") != "grossesondes.patch.v1"
+            or patch.get("generated_at") != today
+            or patch.get("safe_to_publish") is not False):
+        raise ValueError("Unsafe or stale private patch")
+    if (not isinstance(patch.get("deferred"), list)
+            or not isinstance(patch.get("additions"), list)
+            or len(patch["deferred"]) > 10000
+            or len(patch["additions"]) > 2000):
+        raise ValueError("Invalid private patch entries")
+    known_slugs = {
+        r.get("slug") for r in catalogue["festivals"] if isinstance(r, dict)
+    }
+    extra = {}
+    for entry, kind in (
+        *((row, "PRIVATE_ADDITION_NOT_PUBLISHED") for row in patch["additions"]),
+        *((row, "DEFERRED_RESEARCH_ONLY") for row in patch["deferred"]),
+    ):
+        if not isinstance(entry, dict):
+            raise ValueError("Malformed private patch item")
+        slug = entry.get("slug")
+        if slug is None:
+            # A field-level research note can lack a distinct festival identity.
+            continue
+        if (not isinstance(slug, str)
+                or re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug) is None):
+            raise ValueError("Unsafe private patch slug")
+        if slug in known_slugs:
+            continue
+        record = extra.setdefault(slug, {
+            "slug": slug,
+            "name_hint": (entry.get("name") if isinstance(entry.get("name"), str)
+                          else slug.replace("-", " ")),
+            "record_kinds": [],
+            "issues_review_only": [],
+            "sources_review_only": [],
+            "publication_authorized": False,
+            "independent_publisher_recheck_completed": False,
+            "editorial_fit": "UNASSESSED_BY_AUTOMATION",
+        })
+        if kind not in record["record_kinds"]:
+            record["record_kinds"].append(kind)
+        issue = entry.get("issue")
+        if isinstance(issue, str) and len(issue) <= 2000:
+            if issue not in record["issues_review_only"]:
+                record["issues_review_only"].append(issue)
+        # These are clues only, never authorization for HTTP fetches.
+        sources = entry.get("sources", [])
+        if isinstance(sources, list):
+            for source in sources[:12]:
+                if (isinstance(source, str) and len(source) <= 1200
+                        and source not in record["sources_review_only"]):
+                    record["sources_review_only"].append(source)
+    return sorted(extra.values(), key=lambda row: row["slug"])
+
+
+def build_inventory(reports, catalogue, today, patch=None):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)):
         raise ValueError("Signed public catalogue required")
@@ -153,6 +218,7 @@ def build_inventory(reports, catalogue, today):
                     "qualification": item.get("classification"),
                     "publication_authorized": False,
                 })
+    patch_leads = _patch_only_leads(patch, catalogue, today)
     counts = Counter(r["publisher_funnel_status"] for r in output)
     return {
         "schema": SCHEMA, "as_of": today, "review_only": True,
@@ -164,8 +230,10 @@ def build_inventory(reports, catalogue, today):
         "dossiers_with_first_party_dates_without_proposal": sum(
             r["first_party_dates_without_generic_proposal"] for r in output),
         "municipal_intermediate_leads_count": len(extra),
-        "total_named_leads": len(output) + len(extra),
+        "patch_only_unpublished_references_count": len(patch_leads),
+        "total_named_leads": len(output) + len(extra) + len(patch_leads),
         "dossiers": output, "municipal_intermediate_leads": extra,
+        "patch_only_unpublished_references": patch_leads,
     }
 
 
@@ -178,13 +246,16 @@ def main():
     reports = {name: json.loads((args.intake / file).read_text(encoding="utf-8"))
                for name, file in REPORTS.items()}
     catalogue = json.loads(args.catalog.read_text(encoding="utf-8"))
-    inventory = build_inventory(reports, catalogue, today)
+    private_patch = json.loads((args.intake / f"patch-{today}.json").read_text(
+        encoding="utf-8"))
+    inventory = build_inventory(reports, catalogue, today, patch=private_patch)
     output = args.intake / "national-festival-blocker-inventory.json"
     output.write_text(json.dumps(inventory, ensure_ascii=False, indent=2) + "\n",
                       encoding="utf-8")
     print("Private inventory: named national=" + str(inventory["dossiers_count"])
           + ", unpublished=" + str(inventory["dossiers_without_generic_proposal"])
           + ", municipal extra=" + str(inventory["municipal_intermediate_leads_count"])
+          + ", patch-only references=" + str(inventory["patch_only_unpublished_references_count"])
           + ", publications=0")
 
 
