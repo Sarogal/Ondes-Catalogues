@@ -1,0 +1,66 @@
+name: "GO TEST — public v5 radio-logo SHA evidence (no publication)"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-v5-logo-byte-evidence.yml"
+      - "radio-catalog-lab/tools/probe_reconciled_public_logo_bytes.py"
+      - "radio-catalog-lab/tools/test_probe_reconciled_public_logo_bytes.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image-byte-audit:
+    name: "Unreviewed image bytes, shard ${{ matrix.shard }}/8"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install image decoder and enforce offline audit tests
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_reconciled_public_logo_bytes.py" -v
+      - name: Retrieve public logo references only
+        run: |
+          curl -fSL --retry 2 --connect-timeout 8 --max-time 30 \
+            --max-filesize 1048576 -H "Accept: application/json" \
+            -o "$RUNNER_TEMP/go-live-logo-manifest.json" \
+            "https://grosses-ondes.fr/logo-manifest.json"
+      - name: Build exact-UUID reference queue (never signed)
+        run: |
+          python radio-catalog-lab/tools/reconcile_legacy_logo_manifests.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --current-manifest "$RUNNER_TEMP/go-live-logo-manifest.json" \
+            --output "$RUNNER_TEMP/go-reference-queue.json"
+      - name: Verify public image bytes in a bounded source-open shard
+        run: |
+          python radio-catalog-lab/tools/probe_reconciled_public_logo_bytes.py \
+            --reconciliation "$RUNNER_TEMP/go-reference-queue.json" \
+            --shard-index ${{ matrix.shard }} --shard-count 8 --network \
+            --output "$RUNNER_TEMP/go-public-logo-shard-${{ matrix.shard }}.json"
+      - name: Archive only SHA evidence and candidate provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-image-sha-evidence-${{ matrix.shard }}
+          path: ${{ runner.temp }}/go-public-logo-shard-${{ matrix.shard }}.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Assert no signed sidecar, image publishing or source changes
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "GO_V5_PUBLIC_LOGO_BYTES_REVIEW_ONLY"

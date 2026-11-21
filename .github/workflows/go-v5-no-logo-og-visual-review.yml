@@ -1,0 +1,68 @@
+name: "GO TEST — SHA-locked no-v5 OG visual review, never publish"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-missing-v5-open-discovery-20261121
+    paths:
+      - ".github/workflows/go-v5-no-logo-og-visual-review.yml"
+      - "radio-catalog-lab/tools/render_no_v5_og_sha_previews.py"
+      - "radio-catalog-lab/tools/test_render_no_v5_og_sha_previews.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  visual-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pin Pillow and validate offline visual-review tests
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_render_no_v5_og_sha_previews.py" -v
+      - name: Recover previous verified SHA report
+        run: |
+          mkdir -p "$RUNNER_TEMP/source" "$RUNNER_TEMP/out"
+          gh run download 44931636306 --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-missing-historical-og-sha-review-only" \
+            --dir "$RUNNER_TEMP/source"
+          test -s "$RUNNER_TEMP/source/go-no-v5-og-image-sha-review.json"
+      - name: Re-fetch and SHA-match at most thirty first-party OG previews
+        run: |
+          python radio-catalog-lab/tools/render_no_v5_og_sha_previews.py \
+            --sha-report "$RUNNER_TEMP/source/go-no-v5-og-image-sha-review.json" \
+            --output "$RUNNER_TEMP/out/go-no-v5-og-review.png" \
+            --report "$RUNNER_TEMP/out/go-no-v5-og-review.json"
+      - name: Reject publication and keep radio generation 4
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"out"/"go-no-v5-og-review.json"
+          d=json.loads(p.read_text())
+          assert d["candidate_stations"]<=30
+          assert d["publication_allowed"] is False
+          assert d["editorial_identity_approved"] is False
+          assert d["signed_catalog_created"] is False
+          assert all(r["publication_allowed"] is False for r in d["records"])
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          assert not Path("grossesondes/radio-test-apk/artwork/current.json").exists()
+          print("GO_OG_CONTACT_SHEET_SHA_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-no-v5-sha-locked-og-visual-review
+          path: ${{ runner.temp }}/out/*
+          retention-days: 7
+          if-no-files-found: error

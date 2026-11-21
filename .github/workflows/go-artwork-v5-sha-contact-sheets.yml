@@ -1,0 +1,80 @@
+name: "GO TEST — v5 visual logo contact sheets SHA-locked (no publish)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-editorial-triage-20261121
+    paths:
+      - ".github/workflows/go-artwork-v5-sha-contact-sheets.yml"
+      - "radio-catalog-lab/tools/render_v5_sha_review_contact_sheet.py"
+      - "radio-catalog-lab/tools/test_render_v5_sha_review_contact_sheet.py"
+  workflow_dispatch:
+    inputs:
+      review_run:
+        description: "Successful unsigned v5 editorial queue workflow run"
+        required: true
+        default: "44925396879"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  contact-sheet:
+    name: "Unapproved v5 SHA thumbnails ${{ matrix.shard }}/6"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.review_run || '44925396879' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow, run isolated tests without internet
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_render_v5_sha_review_contact_sheet.py" -v
+      - name: Recover existing SHA-verified editorial evidence
+        run: |
+          mkdir -p "$RUNNER_TEMP/queue"
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-editorial-queue-review-only" --dir "$RUNNER_TEMP/queue"
+          test -f "$RUNNER_TEMP/queue/go-v5-editorial-review.json"
+      - name: Render SHA-locked thumbnails (bounded HTTPS, no approvals)
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python radio-catalog-lab/tools/render_v5_sha_review_contact_sheet.py \
+            --queue "$RUNNER_TEMP/queue/go-v5-editorial-review.json" \
+            --shard-index "$SHARD" --shard-count 6 \
+            --output "$RUNNER_TEMP/go-v5-review-shard-${SHARD}.png" \
+            --report "$RUNNER_TEMP/go-v5-review-shard-${SHARD}.json"
+      - name: Assert untouched central pointers and source tree
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("grossesondes/radio-test-apk/current.json")
+          assert json.loads(p.read_text())["release_sequence"] == 4
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "GO_V5_VISUAL_SHA_CONTACT_SHEETS_ONLY"
+      - name: Store temporary thumbnails and editorial review logs only
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-visual-review-shard-${{ matrix.shard }}
+          path: |
+            ${{ runner.temp }}/go-v5-review-shard-${{ matrix.shard }}.png
+            ${{ runner.temp }}/go-v5-review-shard-${{ matrix.shard }}.json
+          retention-days: 3
+          if-no-files-found: error

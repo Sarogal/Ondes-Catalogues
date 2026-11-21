@@ -1,0 +1,50 @@
+name: "GO TEST — unsigned v2 11-logo artwork preview (not active)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-official-source-evidence-20261121
+    paths:
+      - ".github/workflows/go-test-artwork-v2-preview-ci.yml"
+      - "grossesondes/radio-test-apk/artwork/previews/**"
+      - "grossesondes/radio-test-apk/artwork/v5_first_source_visual_review_20261121.json"
+      - "radio-catalog-lab/tools/test_v5_artwork_unsigned_v2_preview.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the same pinned signed-body protocol dependency
+        run: python -m pip install --disable-pip-version-check "cryptography==44.0.2"
+      - name: Reject invalid previews and enforce exact manual review
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_release_packager.py" -v
+      - name: Guard all TEST/public pointers
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          test ! -f grossesondes/radio-test-apk/artwork/pending/test-current-v2.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          radio=json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())
+          assert radio["release_sequence"]==4
+          p=Path("grossesondes/radio-test-apk/artwork/previews/unsigned-v2-11-logos-20261121.json")
+          q=json.loads(p.read_text())
+          assert q["release_sequence"]==2 and len(q["assets"])==11
+          assert q["production_publication_allowed"] is False
+          print("GO_TEST_UNSIGNED_V2_11_LOGOS_VALIDATED_NO_SIGNING")
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
