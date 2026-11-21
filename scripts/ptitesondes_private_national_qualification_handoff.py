@@ -200,6 +200,130 @@ def handoff(index_doc, digest, report, today, public_key, *,
     }
 
 
+
+def validate_private_handoff_chunk(report, segment, start):
+    """Fail closed before recovering or consuming a private handoff.
+
+    The source campaign segment binds every UID and each legitimate session
+    day. A previously written report must not be able to introduce an
+    unrelated event, alternate title/date, rights, approval or publisher patch.
+    """
+    expected_fields = {
+        "schema", "mode", "backlog_leads", "research_holds", "counts",
+        "events_examined", "next_offset", "finished_segment",
+        "publisher_connected", "publication_ready", "safe_to_publish",
+        "public_writes",
+    }
+    if (not isinstance(report, dict)
+            or set(report) not in (expected_fields,
+                                  expected_fields | {"rotation_meta"})
+            or report.get("schema") != SCHEMA
+            or report.get("mode") != "private_intake_research_only"
+            or report.get("publisher_connected") is not False
+            or report.get("publication_ready") is not False
+            or report.get("safe_to_publish") is not False
+            or type(report.get("public_writes")) is not int
+            or report["public_writes"] != 0
+            or not isinstance(segment, dict)
+            or not isinstance(segment.get("event_leads"), list)
+            or type(start) is not int or start < 0
+            or type(report.get("events_examined")) is not int
+            or not 0 <= report["events_examined"] <= MAX_FETCH
+            or type(report.get("next_offset")) is not int
+            or report["next_offset"] != start + report["events_examined"]
+            or not start <= report["next_offset"] <= len(segment["event_leads"])
+            or type(report.get("finished_segment")) is not bool
+            or report["finished_segment"] !=
+            (report["next_offset"] == len(segment["event_leads"]))
+            or not isinstance(report.get("counts"), dict)
+            or not isinstance(report.get("backlog_leads"), list)
+            or not isinstance(report.get("research_holds"), list)):
+        raise ValueError("invalid_private_handoff_contract")
+
+    expected = segment["event_leads"][start:report["next_offset"]]
+    by_uid = {item["event_uid"]: item for item in expected}
+    # Never silently collapse a duplicated source UID.
+    if len(by_uid) != len(expected):
+        raise ValueError("duplicate_private_source_event")
+    counts = report["counts"]
+    if (len(counts) > MAX_FETCH
+            or any(type(k) is not str or
+                   re.fullmatch(r"[a-z_]{1,80}", k) is None or
+                   type(v) is not int or not 1 <= v <= MAX_FETCH
+                   for k, v in counts.items())
+            or sum(counts.values()) != report["events_examined"]):
+        raise ValueError("inconsistent_private_handoff_counts")
+    if (len(report["research_holds"]) > MAX_FETCH
+            or len(report["backlog_leads"]) > MAX_FETCH * 185):
+        raise ValueError("private_handoff_size_exceeded")
+    hold_uids = set()
+    for item in report["research_holds"]:
+        if (not isinstance(item, dict)
+                or set(item) != {"event_uid", "reason"}
+                or type(item["event_uid"]) is not int
+                or item["event_uid"] not in by_uid
+                or item["event_uid"] in hold_uids
+                or type(item["reason"]) is not str
+                or re.fullmatch(r"[a-z_]{1,80}", item["reason"]) is None):
+            raise ValueError("untrusted_private_handoff_hold")
+        hold_uids.add(item["event_uid"])
+
+    from urllib.parse import urlsplit
+    seen_days = set()
+    lead_uids = set()
+    required = {"title", "source_url", "date_start", "date_end",
+                "city", "venue", "reason", "collector", "external_id"}
+    for lead in report["backlog_leads"]:
+        if (not isinstance(lead, dict) or set(lead) != required
+                or type(lead.get("external_id")) is not str
+                or not re.fullmatch(r"[1-9][0-9]{0,11}",
+                                    lead["external_id"])):
+            raise ValueError("untrusted_private_handoff_lead")
+        uid = int(lead["external_id"])
+        if uid not in by_uid:
+            raise ValueError("private_handoff_unknown_event_uid")
+        original = by_uid[uid]
+        if (type(lead.get("title")) is not str
+                or norm(lead["title"]) != norm(original["title"])
+                or type(lead.get("date_start")) is not str
+                or lead["date_start"] not in
+                original["explicit_source_session_days"]
+                or lead.get("date_end") != lead["date_start"]
+                or type(lead.get("city")) is not str
+                or not 0 < len(lead["city"]) <= 120
+                or type(lead.get("venue")) is not str
+                or not 0 < len(lead["venue"]) <= 200
+                or lead.get("collector") != "openagenda-v2"
+                or lead.get("reason") != BACKLOG_REASON
+                or type(lead.get("source_url")) is not str):
+            raise ValueError("private_handoff_source_identity_changed")
+        try:
+            p = urlsplit(lead["source_url"])
+            parts = p.path.strip("/").split("/")
+            if len(parts) == 4 and parts[0] in ("fr", "en"):
+                parts = parts[1:]
+            url_good = (p.scheme == "https" and p.hostname == "openagenda.com"
+                        and not p.username and not p.password and p.port in (None, 443)
+                        and not p.query and not p.fragment
+                        and len(parts) == 3
+                        and parts[0] == segment["agenda_slug"]
+                        and parts[1] == "events"
+                        and EVENT_PART.fullmatch(parts[2]) is not None
+                        and int(EVENT_PART.fullmatch(parts[2]).group(1)) == uid)
+        except (TypeError, ValueError):
+            url_good = False
+        if not url_good:
+            raise ValueError("private_handoff_url_not_pinned_to_openagenda")
+        day_key = (uid, lead["date_start"])
+        if day_key in seen_days:
+            raise ValueError("duplicate_private_handoff_occurrence")
+        seen_days.add(day_key)
+        lead_uids.add(uid)
+    if lead_uids | hold_uids != set(by_uid):
+        raise ValueError("unexplained_private_handoff_event")
+    return True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--private-agenda-index-report", required=True, type=Path)
