@@ -12,6 +12,8 @@ on:
       - 'tests/test_ptitesondes_unlisted_exact_session_research.py'
       - 'scripts/ptitesondes_open_world_municipal_bootstrap.py'
       - 'tests/test_ptitesondes_open_world_municipal_bootstrap.py'
+      - 'scripts/ptitesondes_open_world_municipal_crawler.py'
+      - 'tests/test_ptitesondes_open_world_municipal_crawler.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -48,3 +50,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_municipal_bootstrap.py' -v
+      - name: Verify resumable open-world municipal page crawl
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_municipal_crawler.py' -v
