@@ -16,9 +16,9 @@ def public_summary(report):
     """Résumé agrégé uniquement : aucune piste privée ni motif détaillé dans Actions."""
     counts=report.get("open_world_counts",{})
     extra=(
-        f"- Dossiers nationaux présentés : {counts['research_dossiers']}\\n"
-        f"- Dossiers recontrôlés pour fusion : {counts['reviewed_for_merge']}\\n"
-        f"- Dossiers maintenus en vérification : {counts['held_for_independent_review']}\\n"
+        f"- Dossiers nationaux présentés : {counts['research_dossiers']}\n"
+        f"- Dossiers recontrôlés pour fusion : {counts['reviewed_for_merge']}\n"
+        f"- Dossiers maintenus en vérification : {counts['held_for_independent_review']}\n"
         if counts else "")
     return (
         "### P'tites Ondes — contrôle de publication\n\n"
