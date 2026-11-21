@@ -245,7 +245,8 @@ class DynamicMunicipalResearchTests(unittest.TestCase):
         self.assertFalse(out["publication_authorized"])
         self.assertEqual(out["publications"], 0)
         self.assertNotIn("officialSite", str(out))
-        self.assertNotIn("lat", str(out).lower())
+        self.assertFalse(any(field in row for field in
+                             ("lat", "lon", "venue", "officialSite")))
 
     def test_delegated_ambiguous_or_foreign_relation_never_fetches_mairie(self):
         name = "Village aux noms communs"
