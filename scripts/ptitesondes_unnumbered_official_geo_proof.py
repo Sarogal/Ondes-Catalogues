@@ -187,10 +187,18 @@ def mint_private_unnumbered_location_proof(
     """
     if (type(checked_on) is not date or not isinstance(group, dict)
             or not norm(group.get("city")) or not norm(group.get("venue"))
-            or _coordinates(source_center) is None
             or not isinstance(official_url, str)
             or approved_municipal_page_host(
                 official_url, group.get("city"), directory) is None):
+        return None
+    # OA may legitimately omit GPS. An independently authenticated municipal
+    # Place with an exact named point can be a PRIVATE OSM search centre,
+    # never a published coordinate without a distinct matching OSM feature.
+    # A partial/invalid OA coordinate is rejected earlier by the Publisher.
+    official_point = _exact_official_point(group, official_html)
+    if source_center is None and official_point is not None:
+        source_center = official_point
+    if _coordinates(source_center) is None:
         return None
     try:
         url = urlsplit(official_url)
@@ -198,7 +206,6 @@ def mint_private_unnumbered_location_proof(
         return None
     if url.path in ("", "/") or url.query or url.fragment:
         return None
-    official_point = _exact_official_point(group, official_html)
     if official_point is None:
         # Non-numbered municipal address: independent named OSM building
         # point + exact municipal street/postcode + UID-bound OA/ODS centre.
