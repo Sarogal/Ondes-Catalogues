@@ -456,7 +456,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         cases["items"] = {}
         for index in range(40):
             row = copy.deepcopy(template)
-            url = f"https://long-schedule.example/concert/{index:03d}"
+            url = f"https://long-schedule.fr/concert/{index:03d}"
             row["candidate"].update(
                 candidateId=f"large-room-{index}",
                 sourceUrl=url, eventDetailUrl=url, sourcePage=url)
@@ -475,9 +475,9 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 candidateId=f"extra-room-{index}",
                 venue=room["name"], city=room["city"],
                 department=room["department"],
-                sourceUrl=f"https://extra-room-{index}.example/annonce/live/",
-                eventDetailUrl=f"https://extra-room-{index}.example/annonce/live/",
-                sourcePage=f"https://extra-room-{index}.example/annonce/live/")
+                sourceUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                eventDetailUrl=f"https://extra-room-{index}.fr/annonce/live/",
+                sourcePage=f"https://extra-room-{index}.fr/annonce/live/")
             cases["items"][f"extra-{index}"] = extra
         selected = pipeline.eligible(cases, cat, TODAY)
         self.assertEqual(len(selected), 43)
