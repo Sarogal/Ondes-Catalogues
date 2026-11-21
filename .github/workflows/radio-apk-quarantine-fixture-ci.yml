@@ -1,0 +1,35 @@
+name: "GO Android APK — quarantine-only signed test fixtures"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/radio-apk-quarantine-fixture-ci.yml"
+      - "grossesondes/radio-test-apk/**"
+      - "radio-catalog-lab/tools/test_radio_apk_quarantine_fixture.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-signed-fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated offline verifier dependencies
+        run: |
+          python -m pip install --disable-pip-version-check "cryptography==44.0.3" "jsonschema==4.23.0"
+      - name: Verify signed test releases + quarantine-only admission
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_apk_quarantine_fixture.py" -v
+      - name: Assert test-only no mutation
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_APK_TEST_FIXTURE_CI_OK — no publish, no real stations activated"
