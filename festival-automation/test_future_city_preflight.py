@@ -124,7 +124,7 @@ class FutureCityProofTests(unittest.TestCase):
         home = ('<main>'
                 '<a href="/programme-2027">Programme 2027</a>'
                 '<a href="/partenaires-2027">Partenaires 2027</a>'
-                '<a href="/benevoles-2027">Bénévoles 2027</a>'
+                '<a href="/inscription-benevoles-2027">Bénévoles 2027</a>'
                 '<a href="/actualites">Actualités</a>'
                 '<a href="https://evil.example/news">Actualités externes</a>'
                 '</main>')
