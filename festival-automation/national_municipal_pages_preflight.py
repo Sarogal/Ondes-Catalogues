@@ -37,6 +37,7 @@ MAX_ANCHORS_PER_PAGE = 180
 MAX_DISCOVERED_URLS = 12
 MAX_PAGE_HTML = 650_000
 MAX_VISIBLE_CHARS = 45_000
+MAX_UNKNOWN_MUSIC_LINKS = 16  # bounded PRIVATE clues, no event acceptance
 
 # Generic editorial page roles, NOT festival names, municipality hostnames,
 # or an authorized list of festival/event sources.
@@ -196,6 +197,99 @@ def _candidate_links(html, base, root, festival_name, year, today):
     return (best + generic)[:MAX_DISCOVERED_URLS]
 
 
+
+# Festival and Concerts must accept previously unknown names. Genre keywords
+# are only broad SEARCH HINTS, not a whitelist of artists or festival brands.
+MUSIC_WORDS = re.compile(
+    r"\b(?:metal|metallique|rock|hardrock|hardcore|punk|"
+    r"grind|doom|stoner|sludge|heavy|thrash|deathcore|metalcore|"
+    r"rockabilly|grunge|screamo|concerts?|musique|"
+    r"festival|fest|tournee|tourne es|live|gig|showcase)\b"
+)
+# Artistic event names often embed their genre in one token:
+# e.g. "GermiRock'n Co". This only authorizes private research.
+EMBEDDED_MUSIC_NAME = re.compile(
+    r"\b[a-z0-9]*(?:rock|metal|punk|hardcore|fest)[a-z0-9]*\b"
+)
+GENERIC_LABEL = re.compile(
+    r"^(?:agenda|actualites?|evenements?|manifestations?|"
+    r"concerts?|festivals?|culture|programmation|"
+    r"en savoir plus|voir plus|lire la suite|decouvrir|"
+    r"consulter|infos? pratiques?|voir l evenement|billetterie)$"
+)
+FESTIVAL_LABEL = re.compile(r"\b(?:festival|fest)\b")
+TOUR_LABEL = re.compile(r"\b(?:tournee|tour|tour dates)\b")
+CONCERT_LABEL = re.compile(r"\b(?:concert|concerts|live|gig|soiree)\b")
+MUNICIPAL_EVENT_PATH = re.compile(
+    r"/(?:evenement|evenements|event|agenda|actualite|"
+    r"actualites|manifestation|festivals?|concerts?)(?:/|-|$)"
+)
+
+
+def unknown_municipal_music_links(html, base, site):
+    """Visible linked event NAMES unknown to the pre-existing festival catalog.
+
+    Called ONLY on pages visited after fresh independent Geo+DILA proof.
+    Each clue is a non-authorizing index-to-URL research suggestion.
+    No untrusted link is fetched here. A title with no explicit music/festival
+    hint remains outside this narrow research queue; it can still be found
+    through broader indexes elsewhere.
+    """
+    if (not isinstance(html, str) or len(html) > MAX_PAGE_HTML
+            or safe_public_url(site) != site):
+        return []
+    parser = Anchors()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (TypeError, UnicodeError, ValueError):
+        return []
+    rows, seen = [], set()
+    for href, label, _nearby in parser.anchors[:MAX_ANCHORS_PER_PAGE]:
+        target = safe_same_host_article(href, base, site)
+        if target is None or target in seen:
+            continue
+        if not isinstance(label, str) or not 7 <= len(label.strip()) <= 160:
+            continue
+        # No URL, scripts, email, or copied HTML can be an event title.
+        if re.search(r"[<>{}\x00-\x1f]", label):
+            continue
+        name = " ".join(label.split())
+        name_fold = normalized(name)
+        if not 5 <= len(name_fold) <= 160 or GENERIC_LABEL.fullmatch(name_fold):
+            continue
+        path_fold = normalized(urlsplit(target).path.replace("-", " "))
+        # When the event's name is unconventional (e.g. GermiRock'n Co),
+        # an event detail URL supplies context, but it never supplies proof.
+        contextual = MUNICIPAL_EVENT_PATH.search(
+            urlsplit(target).path.lower()) is not None
+        genre = MUSIC_WORDS.search(name_fold) or EMBEDDED_MUSIC_NAME.search(name_fold)
+        path_music = MUSIC_WORDS.search(path_fold) or EMBEDDED_MUSIC_NAME.search(path_fold)
+        if not genre and not (contextual and path_music):
+            continue
+        if FESTIVAL_LABEL.search(name_fold):
+            classification = "POSSIBLE_FESTIVAL_REVIEW_ONLY"
+        elif TOUR_LABEL.search(name_fold) or CONCERT_LABEL.search(name_fold):
+            classification = "POSSIBLE_CONCERT_OR_TOUR_REVIEW_ONLY"
+        else:
+            classification = "UNCLASSIFIED_MUSIC_EVENT_REVIEW_ONLY"
+        seen.add(target)
+        rows.append({
+            "title_hint": name,
+            "detail_url_review_only": target,
+            "index_url_review_only": base,
+            "classification": classification,
+            "review_only": True,
+            "festival_verified": False,
+            "concert_verified": False,
+            "date_verified": False,
+            "publication_authorized": False,
+        })
+        if len(rows) >= MAX_UNKNOWN_MUSIC_LINKS:
+            break
+    return rows
+
+
 def _rederive_municipal_site(record, dossier,
                              commune_lookup=verified_commune,
                              delegated_lookup=delegated_municipal_commune,
@@ -288,6 +382,7 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
             "status": "INDEPENDENT_MAIRIE_RECHECK_NOT_PROVEN",
             "pages_checked": 0,
             "named_visible_pages": [],
+            "unknown_music_links_review_only": [],
             "site_rederived": False,
             "access_challenge_pages": 0,
             "publication_authorized": False,
@@ -321,6 +416,28 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                     # negative festival observation and must not be parsed as
                     # a genuine institutional announcement.
                     continue
+                # Record *unknown* music names from the verified municipal
+                # page without opening their URLs or granting authority.
+                # A concert discovered by Festivals must not disappear.
+                found = {item["detail_url_review_only"] for item in
+                         result["unknown_music_links_review_only"]}
+                for clue in unknown_municipal_music_links(html, url, site):
+                    # The dossier's already-known title must not be counted
+                    # as a *new* event. Normalize the visible year suffix.
+                    candidate_name = normalized(clue["title_hint"])
+                    known_name = normalized(dossier["name_hint"])
+                    known_without_year = re.sub(
+                        r"\s+20[2-4][0-9]$", "", known_name)
+                    candidate_without_year = re.sub(
+                        r"\s+20[2-4][0-9]$", "", candidate_name)
+                    if (candidate_name not in (known_name, known_without_year)
+                            and candidate_without_year not in
+                                (known_name, known_without_year)
+                            and clue["detail_url_review_only"] not in found
+                            and len(result["unknown_music_links_review_only"])
+                                < MAX_UNKNOWN_MUSIC_LINKS):
+                        result["unknown_music_links_review_only"].append(clue)
+                        found.add(clue["detail_url_review_only"])
                 if _visible_named_festival(html, dossier["name_hint"]):
                     result["named_visible_pages"].append({
                         "url": url,
@@ -357,6 +474,9 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
             1 for x in rows if x["site_rederived"]),
         "named_municipal_mention_count": sum(
             len(x["named_visible_pages"]) for x in rows),
+        "unknown_music_links_count": sum(
+            len(x["unknown_music_links_review_only"]) for x in rows),
+        "unknown_music_links_publications": 0,
         "rows": rows,
     }
 
@@ -381,6 +501,7 @@ def main():
           + ", checked=" + str(result["checked_sites"])
           + ", rederived=" + str(result["rederived_official_municipal_sites"])
           + ", named_visible_clues=" + str(result["named_municipal_mention_count"])
+          + ", unknown_music_links=" + str(result["unknown_music_links_count"])
           + ", publications=0")
 
 

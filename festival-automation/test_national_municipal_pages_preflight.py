@@ -239,6 +239,99 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertFalse(out["publication_authorized"])
         self.assertEqual(out["publications"], 0)
 
+    def test_unlisted_music_event_names_from_municipal_agenda_are_retained(self):
+        """One official agenda can nominate NEW festival, concert and unknown music.
+
+        No artist, site, municipal URL or festival name is hard-coded as an
+        acceptance rule. It only classifies unverified research clues.
+        """
+        from national_municipal_pages_preflight import unknown_municipal_music_links
+        index = """<main><h1>Agenda de la ville</h1>
+          <a href="/evenement/germirockn-co-2/">GermiRock'n Co #2</a>
+          <a href="/evenement/meteorite/">Festival Météorite Noire 2027</a>
+          <a href="/evenement/concert-des-ombres/">Concert des Ombres Punk</a>
+          <a href="/evenement/accueil-famille/">Accueil des familles</a>
+          <a href="/evenement/atelier/">Atelier de couture</a>
+          <a href="/evenement/annonce">Lire la suite</a>
+          <a href="https://127.0.0.1/secret">Festival Métal privé</a>
+          <a hidden href="/evenement/faux-festival/">Festival Metal Fake 2027</a>
+          <script><a href="/evenement/fake">Festival Metal 2027</a></script>
+          </main>"""
+        clues = unknown_municipal_music_links(index, SITE+"agenda", SITE)
+        titles = {x["title_hint"]: x for x in clues}
+        self.assertEqual(set(titles), {
+            "GermiRock'n Co #2", "Festival Météorite Noire 2027",
+            "Concert des Ombres Punk",
+        })
+        self.assertEqual(
+            titles["GermiRock'n Co #2"]["classification"],
+            "UNCLASSIFIED_MUSIC_EVENT_REVIEW_ONLY")
+        self.assertEqual(
+            titles["Festival Météorite Noire 2027"]["classification"],
+            "POSSIBLE_FESTIVAL_REVIEW_ONLY")
+        self.assertEqual(
+            titles["Concert des Ombres Punk"]["classification"],
+            "POSSIBLE_CONCERT_OR_TOUR_REVIEW_ONLY")
+        for row in clues:
+            self.assertTrue(row["review_only"])
+            self.assertFalse(row["festival_verified"])
+            self.assertFalse(row["concert_verified"])
+            self.assertFalse(row["date_verified"])
+            self.assertFalse(row["publication_authorized"])
+            self.assertTrue(row["detail_url_review_only"].startswith(SITE))
+            self.assertNotIn("startDate", row)
+            self.assertNotIn("officialSite", row)
+
+        home = '<a href="/agenda">Agenda</a>'
+        pages = {SITE: home, SITE+"agenda": index}
+        result = scan(queue(), municipality(), TODAY,
+                      fetch=lambda url: pages.get(url, "<h1>Page mairie</h1>"),
+                      commune_lookup=geo, delegated_lookup=lambda _: None,
+                      directory_fetch=dila)
+        self.assertEqual(result["unknown_music_links_count"], 3)
+        self.assertEqual(result["unknown_music_links_publications"], 0)
+        self.assertFalse(result["publication_authorized"])
+        self.assertEqual(result["publications"], 0)
+
+    def test_unknown_music_links_are_not_repeated_current_known_festival(self):
+        from national_municipal_pages_preflight import unknown_municipal_music_links
+        html = """<a href="/evenement/known">Festival Foudre Libre 2027</a>
+          <a href="/evenement/foudre-2027">Festival Foudre Libre</a>
+          <a href="/evenement/other">Punk Rock Electrique inédit</a>
+          <a href="/concerts">Concerts</a>
+        """
+        raw = unknown_municipal_music_links(html, SITE, SITE)
+        self.assertEqual(len(raw), 3)  # Includes old name before dossier comparison.
+        out = scan(queue(), municipality(), TODAY, fetch=lambda _: html,
+                   commune_lookup=geo, delegated_lookup=lambda _: None,
+                   directory_fetch=dila)
+        clues = out["rows"][0]["unknown_music_links_review_only"]
+        self.assertEqual(len(clues), 1)
+        self.assertEqual(clues[0]["title_hint"], "Punk Rock Electrique inédit")
+        self.assertFalse(out["publication_authorized"])
+
+    def test_unknown_music_refs_fail_closed_to_bad_links_overbudget_and_hidden(self):
+        from national_municipal_pages_preflight import (
+            unknown_municipal_music_links, MAX_UNKNOWN_MUSIC_LINKS)
+        html = "<main>" + "".join(
+            '<a href="/evenement/punk-' + str(i) +
+            '">Punk Rock Festival ' + str(i) + '</a>' for i in range(40))
+        html += ('<a href="/%2e%2e/admin">Punk Metal</a>'
+                 '<a href="http://localhost/secret">Metal Festival</a>'
+                 '<a href="/event?a=1">Rock Fest Unknown</a>'
+                 '<a aria-hidden="true" href="/evil">Metal Hidden</a>'
+                 '</main>')
+        rows = unknown_municipal_music_links(html, SITE, SITE)
+        self.assertEqual(len(rows), MAX_UNKNOWN_MUSIC_LINKS)
+        self.assertEqual(len(set(x["detail_url_review_only"] for x in rows)),
+                         MAX_UNKNOWN_MUSIC_LINKS)
+        self.assertTrue(all("punk-" in x["detail_url_review_only"]
+                            for x in rows))
+        self.assertEqual(unknown_municipal_music_links(
+            "<script>Festival Rock 2027</script>", SITE, SITE), [])
+        self.assertEqual(unknown_municipal_music_links(
+            "<main>Festival Rock 2027</main>", SITE, SITE), [])
+
     def test_private_report_cannot_claim_published_or_use_old_day(self):
         for key, bad in [
             ("publication_authorized", True),
