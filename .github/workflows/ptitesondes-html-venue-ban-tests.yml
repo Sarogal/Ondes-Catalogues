@@ -1,0 +1,28 @@
+name: "P'tites Ondes — preuve géographique HTML indépendante (lecture seule)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_html_independent_venue_geo.py'
+      - 'tests/test_ptitesondes_html_independent_venue_geo.py'
+      - '.github/workflows/ptitesondes-html-venue-ban-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  independent-geo-preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: "Tester lieu officiel exact, BAN, provenance et isolation du publisher"
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_html_independent_venue_geo.py' -v

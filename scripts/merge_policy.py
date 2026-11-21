@@ -6,6 +6,13 @@ import json, math, re
 from urllib.parse import urlparse
 from proof_text import verify_event as proof
 from official_organizer_proof import canonical_event_title
+from ptitesondes_family_activity_classification import ACTIVITY_PATTERNS
+from ptitesondes_family_national_scope import FAMILY_TYPES
+
+# Narrow radio-adjacent expansion. The source's category field is never
+# authority. Only a live, independently verified Publisher bridge may supply
+# these scopes, tied to an ephemeral candidate checker.
+PUBLISHABLE_CHILD_ARTS = frozenset(ACTIVITY_PATTERNS)
 from proof import norm
 
 REQUIRED={"id","title","category","category_label","date_start","date_end","city","department","region","venue","source_url","source_label","verified_at","geo_verified_at","geo_precision","lat","lng"}
@@ -122,7 +129,20 @@ def compatible_published_refinement(old, proposed, today):
         return False
     return True
 
-def merge(ref,public,patch,today,checker=proof):
+def merge(ref,public,patch,today,checker=proof,*,verified_child_arts=None):
+    # Category permissions are per *freshly verified event ID*, not per batch.
+    # Otherwise an independently checked theatre event could inadvertently
+    # enable an unrelated, private-patch-only story with the same category.
+    if verified_child_arts is None:
+        verified_child_arts = {}
+    guard(type(verified_child_arts) is dict
+          and len(verified_child_arts) <= 100
+          and all(type(uid) is str
+                  and re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*",uid)
+                  and category in PUBLISHABLE_CHILD_ARTS
+                  for uid, category in verified_child_arts.items())
+          and (not verified_child_arts or checker is not proof),
+          "extension jeunesse sans vérificateur indépendant")
     originals=byid(ref)
     published=byid(public)
     validate_patch(patch,ref,date.fromisoformat(patch["generated_at"]),today)
@@ -151,7 +171,14 @@ def merge(ref,public,patch,today,checker=proof):
             continue
         signature=(canonical_event_title(ev),norm(ev.get("city")),norm(ev.get("venue")),ev.get("date_start"))
         guard(signature not in signatures,"doublon sémantique : "+eid)
-        ok,reason=valid(ev,categories,fields,today)
+        child_category = verified_child_arts.get(eid)
+        item_categories = (
+            categories | {child_category}
+            if child_category == ev.get("category") else categories)
+        ok,reason=valid(ev,item_categories,fields,today)
+        if (ok and child_category == ev["category"]
+                and ev["category_label"] != FAMILY_TYPES[ev["category"]][0]):
+            ok,reason=False,"libellé jeunesse incompatible avec la catégorie"
         if ok:
             ok,reason=checker(ev,ref["events"])
         if ok:

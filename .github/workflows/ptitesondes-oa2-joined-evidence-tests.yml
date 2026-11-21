@@ -1,0 +1,95 @@
+name: "P'tites Ondes — diagnostics OA2 + GPS + organisateur reunis"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_joined_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_organizer_index.py'
+      - 'scripts/ptitesondes_openagenda_v2_institutional_delegation.py'
+      - 'scripts/ptitesondes_oa2_live_pinned_bridge.py'
+      - 'scripts/ptitesondes_oa2_official_index_discovery.py'
+      - 'scripts/ptitesondes_official_html_index_discovery.py'
+      - 'scripts/ptitesondes_html_index_detail_funnel.py'
+      - 'tests/test_ptitesondes_html_index_detail_funnel.py'
+      - 'tests/test_ptitesondes_official_html_index_discovery.py'
+      - 'tests/test_ptitesondes_oa2_official_index_discovery.py'
+      - 'tests/test_ptitesondes_oa2_live_pinned_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_institutional_delegation.py'
+      - 'scripts/ptitesondes_oa2_private_registry_census_cli.py'
+      - 'tests/test_ptitesondes_oa2_private_registry_census_cli.py'
+      - 'docs/PTITESONDES_OA2_INSTITUTIONAL_DELEGATION_20261118.md'
+      - 'tests/test_ptitesondes_openagenda_v2_organizer_index.py'
+      - 'docs/PTITESONDES_OA2_JOINED_EVIDENCE_20261118.md'
+      - 'tests/test_ptitesondes_openagenda_v2_joined_evidence.py'
+      - 'scripts/ptitesondes_openagenda_v2_structured_organizer.py'
+      - 'tests/test_ptitesondes_openagenda_v2_structured_organizer.py'
+      - '.github/workflows/ptitesondes-oa2-joined-evidence-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  independent-joined-gates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate joined proof contracts with adversarial fixtures
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_joined_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_organizer_index.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_institutional_delegation.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_private_registry_census_cli.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_live_pinned_bridge.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_official_index_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_official_html_index_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_html_index_detail_funnel.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
+      - name: Assert only read-only diagnostics are exposed
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path("scripts/ptitesondes_openagenda_v2_joined_evidence.py").read_text()
+          flow = Path(".github/workflows/ptitesondes-oa2-joined-evidence-tests.yml").read_text()
+          assert "contents: read" in flow and "pull_request:" in flow
+          assert not any(line.startswith(("  schedule:", "  workflow_dispatch:")) for line in flow.splitlines())
+          assert not any(line.lstrip().startswith("uses: actions/" + "deploy-pages@")
+                         for line in flow.splitlines())
+          assert not any(line.lstrip().startswith("env: " + "\u0024{{ secrets.")
+                         for line in flow.splitlines())
+          assert all(x in src for x in ("approval_granted", "public_writes", "outstanding_gates", "REMAINING_GATES"))
+          assert not any(x in src for x in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          census_cli = Path("scripts/ptitesondes_oa2_private_registry_census_cli.py").read_text()
+          assert not any(x in census_cli for x in ("urlopen(", "requests.", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
+          assert "public_writes" not in census_cli or "census_institution_pins_on_private_backlog" in census_cli
+          delegation = Path("scripts/ptitesondes_openagenda_v2_institutional_delegation.py").read_text()
+          assert all(k in delegation for k in ("public_writes", "independent_event_session_verified", "approval_granted"))
+          assert not any(k in delegation for k in ("urlopen(", "requests.post(", "git" + " push", "PRIVATE_" + "INTAKE", "patch.v1"))
+          live = Path("scripts/ptitesondes_oa2_live_pinned_bridge.py").read_text()
+          assert all(x in live for x in ("read_direct_v2", "fetch_official_page", "approval_granted", "public_writes"))
+          assert not any(x in live for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
+          discovery = Path("scripts/ptitesondes_oa2_official_index_discovery.py").read_text()
+          assert all(x in discovery for x in ("private_review_queue", "approved", "redacted_discovery_counts", "public_writes"))
+          assert not any(x in discovery for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
+          html_index = Path("scripts/ptitesondes_official_html_index_discovery.py").read_text()
+          assert all(x in html_index for x in ("private_routing_proposals", "redacted_html_index_counts", "approval_granted", "public_writes"))
+          assert not any(x in html_index for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
+          funnel = Path("scripts/ptitesondes_html_index_detail_funnel.py").read_text()
+          assert all(x in funnel for x in ("discover_live_html_event_pages", "parse_montpellier_mpt_detail", "scope_proposals", "publisher_connected", "public_writes"))
+          assert not any(x in funnel for x in ("git" + " push", "requests.post(", "urlopen(", "patch.v1", "publish_event("))
+          print("PASS: readonly, never publisher, no credentials or schedule")
+          PY

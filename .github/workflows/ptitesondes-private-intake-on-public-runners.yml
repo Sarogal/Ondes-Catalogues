@@ -82,11 +82,33 @@ jobs:
           assert ("deploy" + "-pages") not in s and "docs/ptitesondes/sorties.json" in s
           assert ("git push origin HEAD" + ":main") not in s
           assert "ptitesondes_schedule_catchup.py" in s
+          assert "ptitesondes_national_openworld_research_cycle.py" in s
+          assert 'automation-intake/ptitesondes/national-observation/research' in s
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
+          assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
+          assert "ptitesondes_html_private_queue_cycle.py" in s
+          assert "vars.PTITESONDES_SCHEMAORG_HINTS == 'enabled'" in s
+          assert "vars.PTITESONDES_SCHEMAORG_RECHECK == 'enabled'" in s
+          assert "vars.PTITESONDES_ODS_DIRECT_AUDIT == 'enabled'" in s
+          assert 'ptitesondes_ods_direct_mirror_cycle.py' in s
+          assert 'ods-direct-mirror-audit.json' in s
+          assert 'ptitesondes_schemaorg_visible_recheck_cycle.py' in s
+          assert 'ptitesondes_schemaorg_private_intake.py' in s
+          assert 'html-schemaorg-hints.json' in s
+          assert "ptitesondes_html_independent_review_cycle.py" in s
+          assert "html-independent-worklist.json" in s
+          assert "automation-intake/ptitesondes/html-review-candidates.json" in s
           print('Contrat public / données privées : OK. Activation des cycles via variable.')
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_backlog_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_openworld_research_cycle.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_reuse_rights.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_release_rehearsal.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_admission_diagnostics.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_visible_session_research.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_candidate_rotation.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
@@ -255,35 +277,46 @@ jobs:
           fi
           test -s "$OUT/backlog.json"
           test -s "$OUT/patch-$DAY.json"
+          # Consume existing national observations ONLY as unverified private
+          # leads. The historical candidate preflight and merge are unchanged.
+          # A fresh OpenAgenda read is mandatory; failure stops private intake.
+          if [[ -d "$STATE/national-observation" ]]; then
+            if ! python public/scripts/ptitesondes_national_backlog_bridge.py \
+                 --private-observation-root "$STATE/national-observation" \
+                 --backlog-file "$OUT/backlog.json" \
+                 --output-file "$OUT/backlog-with-national.json" \
+                 --cursor-file "$STATE/national-observation/backlog-bridge-cursor.json" \
+                 --day "$DAY" --execute-live > "$LOG/national-backlog-bridge.log" 2>&1; then
+              echo "::error::Relecture nationale privée échouée : aucune admission."
+              exit 1
+            fi
+            mv "$OUT/backlog-with-national.json" "$OUT/backlog.json"
+          fi
+          # Investigate newly discovered unknown organizers and places with
+          # existing SSRF-safe OA / DILA / municipal / independent HTML
+          # readers. Strictly private: these claims NEVER become a patch or
+          # trusted venue. A research outage cannot block proven old events.
+          if [[ -d "$STATE/national-observation" && -n "$OPENAGENDA_READ_KEY" ]]; then
+            if ! python public/scripts/ptitesondes_national_openworld_research_cycle.py \
+              --private-observation-root "$STATE/national-observation" \
+              --private-research-root "$STATE/national-observation/research" \
+              --day "$DAY" --execute-live > "$LOG/national-openworld-research.log" 2>&1; then
+              echo "::warning::Enquête nationale privée incomplète ; aucun candidat admis par cette voie."
+            fi
+          fi
           cp "$OUT/backlog.json" "$STATE/backlog.json"
           cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
           mkdir -p "$STATE/reports"
           cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
-            push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
-          fi
-          # Once per local day, independently check actual OpenAgenda v2 API
-          # metadata for the configured sources. Store only aggregated counters
-          # in the PRIVATE intake branch. No UID, source, title, URL or key.
-          # Failure is non-blocking: it NEVER changes admission/publication.
-          if [[ "$RUN_MODE" == "write" ]]; then
-            OA2_REPORT="$STATE/reports/openagenda-v2-agendas-$DAY.json"
-            if [[ ! -s "$OA2_REPORT" ]]; then
-              OA2_TMP="$RUNNER_TEMP/ptitesondes-oa2-agendas.json"
-              if python public/scripts/ptitesondes_openagenda_v2_agenda_census.py \
-                   --sources src/automation/sources.json \
-                   > "$OA2_TMP" 2> "$LOG/openagenda-v2-census-error.log" &&
-                 python public/scripts/ptitesondes_oa2_census_guard.py \
-                   --input "$OA2_TMP" --output "$OA2_REPORT" \
-                   > "$LOG/openagenda-v2-census-guard.log" 2>&1; then
-                git -C state add -- "automation-intake/ptitesondes/reports/openagenda-v2-agendas-$DAY.json"
-                push_private 'data(ptitesondes): stocker uniquement les compteurs anonymes OA v2'
-              else
-                rm -f -- "$OA2_REPORT"
-                echo "::warning::Recensement OpenAgenda v2 non disponible ; aucune preuve ni publication affectée."
-              fi
+            if [[ -f "$STATE/national-observation/backlog-bridge-cursor.json" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/national-observation/backlog-bridge-cursor.json"
             fi
+            if [[ -d "$STATE/national-observation/research" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/national-observation/research"
+            fi
+            push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
           # Optional ultra-marine probes. Both remain STRICTLY discovery-only.
           # The approved private main branch, never a PR branch, supplies code.
@@ -456,6 +489,23 @@ jobs:
             fi
             test -s "$WORK/patch-$DAY.json"
             test -s "$WORK/qualification-summary.json"
+            # Consume national research reports as research dossiers only.
+            # The public Publisher must independently re-read every source,
+            # exact OA session and venue GPS; nothing here grants APPROVED.
+            # The private patch is the only place the research URLs go.
+            if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then
+              if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
+                --observation-root "$STATE/national-observation" \
+                --research-root "$STATE/national-observation/research" \
+                --patch-file "$WORK/patch-$DAY.json" \
+                --output-file "$WORK/patch-$DAY-openworld.json" \
+                --day "$DAY" --batch-index "$REVIEW_SLOT" \
+                > "$LOG/openworld-dossiers-slot$REVIEW_SLOT.log" 2>&1; then
+                mv "$WORK/patch-$DAY-openworld.json" "$WORK/patch-$DAY.json"
+              else
+                echo "::warning::Dossiers nationaux indisponibles : le patch historique demeure inchangé."
+              fi
+            fi
             cp "$WORK/patch-$DAY.json" "$STATE/patch-$DAY.json"
             if [[ "$RUN_MODE" == "write" ]]; then
               cp "$LOG/fusion-verifiee-slot$REVIEW_SLOT.log" "$STATE/reports/verification-$DAY.json"
@@ -502,6 +552,147 @@ jobs:
             fi
           fi
           echo "Une collecte sorties réalisée, ${#REVIEW_SLOTS[@]} lots indépendants vérifiés ou rattrapés ; aucune écriture publique." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Préparer les séances HTML pour une file exclusivement privée (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_HTML_QUEUE == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          # Daily shifting round-robin batches. No hardcoded town filter;
+          # only trusted source/adapter pairs can be executed.
+          BATCH="$(python -c 'from datetime import datetime, timezone; n=datetime.now(timezone.utc); slot=0 if n.hour<9 else 1 if n.hour<12 else 2 if n.hour<17 else 3; print(n.toordinal()*4+slot)')"
+          if ! python public/scripts/ptitesondes_html_private_queue_cycle.py \
+              --state-checkout state --mode "$MODE" --batch "$BATCH" \
+              > "$LOG/html-private-queue-summary.json" 2>&1; then
+            echo "::warning::File HTML privée non préparée ; état historique conservé, aucune publication."
+            exit 0
+          fi
+          # A separate independent-evidence worklist is PRIVATE and NOT a
+          # verification result. It does not publish or grant approvals.
+          if ! python public/scripts/ptitesondes_html_independent_review_cycle.py \
+              --state-checkout state --mode "$MODE" \
+              > "$LOG/html-independent-worklist-summary.json" 2>&1; then
+            echo "::warning::Planification de preuves indisponible ; aucune admission HTML."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/html-review-candidates.json
+            git -C state add -- automation-intake/ptitesondes/html-independent-worklist.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): conserver les séances HTML à revoir en privé' \
+                > "$LOG/git-html-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/git-html-push.log" 2>&1; then
+                echo "::error::Stockage privé HTML indisponible ; aucune publication."
+                exit 1
+              fi
+            fi
+          fi
+          echo "Séances HTML triées en mémoire, sauvegarde autorisée seulement dans le privé ; aucune publication." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Relever les pistes Schema.org institutionnelles en privé (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_SCHEMAORG_HINTS == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          BATCH="$(python -c 'from datetime import datetime, timezone; n=datetime.now(timezone.utc); print(n.toordinal()*4+n.hour//6)')"
+          if ! python public/scripts/ptitesondes_schemaorg_private_intake.py \
+              --state-checkout state --mode "$MODE" --source-batch "$BATCH" \
+              > "$LOG/schemaorg-private-hints-summary.json" 2>&1; then
+            echo "::warning::Collecte Schema.org privée indisponible ; aucune piste publiée."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/html-schemaorg-hints.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): conserver uniquement les indices Schema.org prives' \
+                > "$LOG/schemaorg-private-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/schemaorg-private-push.log" 2>&1; then
+                echo "::error::Stockage des pistes Schema.org refusé ; aucun catalogue affecté."
+                exit 1
+              fi
+            fi
+          fi
+          echo "Pistes Schema.org structurées conservées exclusivement dans la branche privée ; sans preuve de séance ni publication." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Revérifier les pistes Schema.org visibles avant une revue privée (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_SCHEMAORG_HINTS == 'enabled' && vars.PTITESONDES_SCHEMAORG_RECHECK == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          if ! python public/scripts/ptitesondes_schemaorg_visible_recheck_cycle.py \
+              --state-checkout state --mode "$MODE" \
+              > "$LOG/schemaorg-visible-recheck-summary.json" 2>&1; then
+            echo "::warning::Revérification visible Schema.org en échec ; aucune admission ni publication."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/html-review-candidates.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): seances Schema.org visibles a examiner en prive' \
+                > "$LOG/schemaorg-visible-private-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/schemaorg-visible-private-push.log" 2>&1; then
+                echo "::error::Conservation privée des relectures HTML refusée ; aucune publication."
+                exit 1
+              fi
+            fi
+          fi
+          echo "Séances Schema.org corroborées uniquement par preuves HTML exactes, stockées pour revue privée ; publication interdite." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Diagnostiquer en privé les UID absents du miroir ODS (opt-in)
+        if: ${{ env.CYCLE != 'places' && vars.PTITESONDES_ODS_DIRECT_AUDIT == 'enabled' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          LOG="$RUNNER_TEMP/ptitesondes-private-logs"
+          MODE='preview'
+          if [[ "$RUN_MODE" == 'write' ]]; then MODE='stage'; fi
+          if ! python public/scripts/ptitesondes_ods_direct_mirror_cycle.py \
+              --state-checkout state --mode "$MODE" \
+              > "$LOG/ods-direct-mirror-aggregate-summary.json" 2>&1; then
+            echo "::warning::Diagnostic OA direct indisponible ; aucun dossier publié."
+            exit 0
+          fi
+          if [[ "$RUN_MODE" == 'write' ]]; then
+            git -C state add -- automation-intake/ptitesondes/reports/ods-direct-mirror-audit.json
+            if ! git -C state diff --cached --quiet; then
+              git -C state config user.name 'github-actions[bot]'
+              git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+              git -C state commit -m 'data(ptitesondes): audit privé des UID OA absents du miroir ODS' \
+                > "$LOG/ods-direct-private-commit.log" 2>&1
+              AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+              if ! git -C state -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+                  push origin HEAD:automation/ptitesondes-intake \
+                  > "$LOG/ods-direct-private-push.log" 2>&1; then
+                echo "::error::Stockage privé du diagnostic OA refusé ; aucune publication."
+                exit 1
+              fi
+            fi
+          fi
+          echo "UID miroir ODS absents examinés uniquement dans la branche privée, source OA v2 non publiable." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Rechercher et qualifier les lieux permanents pour enfants
         if: ${{ env.CYCLE != 'outings' }}

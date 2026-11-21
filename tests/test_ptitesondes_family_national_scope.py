@@ -60,11 +60,11 @@ class NationalFamilyScopeTests(unittest.TestCase):
         }
         for slug, label in four.items():
             self.assertEqual(FAMILY_TYPES[slug][0], label)
-        self.assertEqual(len(FAMILY_TYPES), 13)
+        self.assertEqual(len(FAMILY_TYPES), 14)
         self.assertEqual(len(set(FAMILY_TYPES)), len(FAMILY_TYPES))
         self.assertFalse(set(FAMILY_TYPES) & LEGACY_MUSICAL)
 
-    def test_all_thirteen_familial_categories_only_propose_scope(self):
+    def test_all_fourteen_familial_categories_only_propose_scope(self):
         rows = [event(slug) for slug in FAMILY_TYPES]
         before = deepcopy(rows)
         with patch("merge_policy.merge", side_effect=AssertionError(
@@ -73,11 +73,23 @@ class NationalFamilyScopeTests(unittest.TestCase):
             out = audit_family_scope(rows, TODAY)
         self.assertEqual(rows, before)
         self.assertEqual(out["schema"], SCHEMA)
-        self.assertEqual(out["structurally_plausible_for_independent_review"], 13)
+        self.assertEqual(out["structurally_plausible_for_independent_review"], 14)
         self.assertEqual(out["rejected_scope_items"], 0)
-        self.assertEqual(sum(out["proposed_category_counts"].values()), 13)
-        self.assertEqual(out["proposed_routes"], {"sorties": 13})
+        self.assertEqual(sum(out["proposed_category_counts"].values()), 14)
+        self.assertEqual(out["proposed_routes"], {"sorties": 14})
         self.assertEqual(out["blocked_reason_counts"], {})
+        self.assertFalse(out["publication_ready"])
+        self.assertFalse(out["approval_granted_to_publisher"])
+        self.assertEqual(out["public_writes"], 0)
+
+    def test_explicit_sensory_workshop_is_proposal_not_publication(self):
+        self.assertEqual(FAMILY_TYPES["atelier-sensoriel"],
+                         ("Atelier sensoriel", "atelier"))
+        row = event("atelier-sensoriel", title="Atelier sensoriel pour bébés")
+        out = audit_family_scope([row], TODAY)
+        self.assertEqual(
+            out["proposed_category_counts"], {"atelier-sensoriel": 1})
+        self.assertEqual(out["structurally_plausible_for_independent_review"], 1)
         self.assertFalse(out["publication_ready"])
         self.assertFalse(out["approval_granted_to_publisher"])
         self.assertEqual(out["public_writes"], 0)

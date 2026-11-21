@@ -11,6 +11,8 @@ avoids per-event allowlist exceptions while preserving evidence requirements.
 """
 from datetime import date
 import re
+
+from ptitesondes_openagenda_v2_direct_evidence import MAX_TIMINGS
 from urllib.parse import urlsplit
 
 from ptitesondes_family_national_source_preflight import (
@@ -104,10 +106,12 @@ def check_independent_session(lead, api_event, direct_proof, reviewed_organizer,
         return fail("organizer_explicit_adult_only")
 
     # Exact OA identity/title/venue/timezone is already checked in direct_proof.
+    # Bound by the upstream documented 800 timing records, not an arbitrary
+    # 4/20-session editorial exclusion; every time still needs official proof.
     # The first-party source must corroborate each distinct local session time
     # on the selected day, rather than mixing times from different paragraphs.
     times = direct_proof.get("explicit_local_times_for_candidate_day")
-    if (not isinstance(times, list) or not 1 <= len(times) <= 20
+    if (not isinstance(times, list) or not 1 <= len(times) <= MAX_TIMINGS
             or len(set(times)) != len(times)
             or not all(isinstance(t, str) and len(t) == 5 and
                        t[2] == ":" and t[:2].isdigit() and t[3:].isdigit()

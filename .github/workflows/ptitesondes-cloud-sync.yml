@@ -103,6 +103,8 @@ jobs:
         id: sync
         env:
           PRIVATE_INTAKE_READ_TOKEN: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          # Read-only OpenAgenda verification for unknown venue candidates.
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
         run: python scripts/run_cloud_sync.py
       - name: Rattrapage Pages limité à l'horaire scolaire Momo déjà corrigé
         id: history_pages

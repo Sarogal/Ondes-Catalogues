@@ -1,0 +1,72 @@
+name: "P'tites Ondes — preuve GPS institution + IGN/BAN (isolée)"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'scripts/ptitesondes_openagenda_v2_geo_fetch.py'
+      - 'scripts/ptitesondes_openagenda_v2_geo_batch.py'
+      - 'scripts/ptitesondes_openagenda_v2_geo_registry.py'
+      - 'scripts/ptitesondes_oa2_backlog_geo_coverage.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_bridge.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_fetch.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_batch.py'
+      - 'tests/test_ptitesondes_openagenda_v2_geo_registry.py'
+      - 'tests/test_ptitesondes_oa2_backlog_geo_coverage.py'
+      - 'docs/PTITESONDES_OPENAGENDA_V2_GEO_BRIDGE_20261118.md'
+      - '.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  geo-adversarial-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run generic venue geocode contract tests
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_bridge.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_fetch.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_batch.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_geo_registry.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_oa2_backlog_geo_coverage.py' -v
+      - name: Verify isolated test job has no secret, publish or cron
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          wf = Path('.github/workflows/ptitesondes-openagenda-v2-geo-bridge-tests.yml').read_text()
+          assert 'contents: read' in wf
+          assert not any(line.strip().startswith('schedule:') for line in wf.splitlines())
+          assert not any(word in wf for word in ('se' + 'crets.', 'contents:' + ' write', 'git' + ' push', 'deploy' + '-pages'))
+          src = Path('scripts/ptitesondes_openagenda_v2_geo_bridge.py').read_text()
+          assert 'public_writes' in src and 'publisher_connected' in src
+          assert not any(word in src for word in ('urlopen(', 'requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          retrieval = Path('scripts/ptitesondes_openagenda_v2_geo_fetch.py').read_text()
+          assert 'public_writes' in retrieval and 'approval_granted' in retrieval
+          assert not any(x in retrieval for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          batch = Path('scripts/ptitesondes_openagenda_v2_geo_batch.py').read_text()
+          assert 'public_writes' in batch and 'approval_granted' in batch
+          assert not any(x in batch for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          registry = Path('scripts/ptitesondes_openagenda_v2_geo_registry.py').read_text()
+          assert 'diagnose_batch' in registry and '_validate_registry' in registry
+          assert 'source_pins_selected_from_curated_registry_only' in registry
+          assert not any(x in registry for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          coverage = Path('scripts/ptitesondes_oa2_backlog_geo_coverage.py').read_text()
+          assert 'contains_candidate_identifiers' in coverage
+          assert 'public_writes' in coverage and 'approval_granted' in coverage
+          assert not any(x in coverage for x in ('requests.post(', 'git' + ' push', 'PRIVATE_INTAKE' + '_READ_TOKEN'))
+          print('PASS: isolated offline geometry tests, zero secrets/publisher')
+          PY

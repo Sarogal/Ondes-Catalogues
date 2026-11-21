@@ -1,0 +1,38 @@
+name: "P'tites Ondes — provenance institutionnelle et droits (lecture seule)"
+
+# La source est épinglée et versionnée. Aucune publication ni secret.
+# L'échec de la lecture distante produit un état non confirmé, jamais un droit.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_institutional_source_policy.py'
+      - 'scripts/ptitesondes_institutional_source_live_check.py'
+      - 'config/ptitesondes_institutional_source_policies.json'
+      - 'tests/test_ptitesondes_institutional_source_policy.py'
+      - 'tests/test_ptitesondes_institutional_source_live_check.py'
+      - '.github/workflows/ptitesondes-institutional-source-policy-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-institutional-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests hors réseau des politiques de sources
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_institutional_source_*.py' -v
+      - name: Attestation externe bornée des sites municipaux, sans publication
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python scripts/ptitesondes_institutional_source_live_check.py

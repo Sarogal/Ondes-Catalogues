@@ -28,7 +28,32 @@ MAX_DAYS_AHEAD = 184
 FR_TZ = frozenset({
     "Europe/Paris", "America/Guadeloupe", "America/Martinique",
     "America/Cayenne", "Indian/Reunion", "Indian/Mayotte",
+    # Independent IANA/CLDR territory zones, without inventing local dates.
+    "Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier",
+    "Pacific/Noumea", "Pacific/Wallis", "America/Miquelon",
+    "America/St_Barthelemy", "America/Marigot",
 })
+# The API's ISO country code and the reviewed timezone must be compatible.
+# This check is structural only, NOT geographical or organiser proof.
+ADDITIONAL_TERRITORY_ZONES = {
+    "PF": frozenset({"Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier"}),
+    "NC": frozenset({"Pacific/Noumea"}),
+    "WF": frozenset({"Pacific/Wallis"}),
+    "PM": frozenset({"America/Miquelon"}),
+    "BL": frozenset({"America/St_Barthelemy"}),
+    "MF": frozenset({"America/Marigot"}),
+}
+# OpenAgenda's French-region / department labels vary across collectivities;
+# require an explicit matching territorial label but not a street number or a
+# pre-approved town. Independent latitude/longitude confirmation is mandatory.
+ADDITIONAL_TERRITORY_NAMES = {
+    "PF": frozenset({"polynesie francaise"}),
+    "NC": frozenset({"nouvelle caledonie"}),
+    "WF": frozenset({"wallis et futuna"}),
+    "PM": frozenset({"saint pierre et miquelon"}),
+    "BL": frozenset({"saint barthelemy"}),
+    "MF": frozenset({"saint martin"}),
+}
 # Some source feeds represent French overseas departments by ISO territory
 # codes. Require both independently declared administrative names rather than
 # accepting any non-FR country that happens to be near a reviewed venue.
@@ -166,11 +191,21 @@ def _french_location(location):
     if code == "FR":
         return True
     names = OVERSEAS_ADMIN.get(code)
-    return bool(names and _norm(location.get("adminLevel1")) in names
-                and _norm(location.get("adminLevel2")) in names)
+    if names:
+        return bool(_norm(location.get("adminLevel1")) in names
+                    and _norm(location.get("adminLevel2")) in names)
+    names = ADDITIONAL_TERRITORY_NAMES.get(code)
+    if not names:
+        return False
+    # A collectivity may contain different islands/provinces/departments:
+    # requiring adminLevel1 == adminLevel2 would reject valid new places.
+    return bool(_norm(location.get("adminLevel4")) and (
+        _norm(location.get("adminLevel1")) in names
+        or _norm(location.get("adminLevel2")) in names
+    ))
 
 
-def _venue(ev, approved):
+def _venue(ev, approved, *, independent_proof=None, today=None):
     """Two independent coordinate sets: published OA and reviewed venue."""
     loc = ev.get("location")
     if not isinstance(loc, dict) or not isinstance(approved, dict):
@@ -188,6 +223,19 @@ def _venue(ev, approved):
         return False
     a = (loc.get("latitude"), loc.get("longitude"))
     b = (approved.get("lat"), approved.get("lng"))
+    if a == (None, None):
+        # Only the publisher's factory-minted municipal/BAN/OSM proof may
+        # replace missing OA coordinates. A caller-supplied approved dict or
+        # a boolean verification flag is never sufficient for this exception.
+        from ptitesondes_shared_venue_location_evidence import location_from_proof
+        matched = location_from_proof(
+            independent_proof, approved["city"], loc["name"], today)
+        return bool(
+            matched is not None and
+            type(approved.get("lat")) in (int, float) and
+            type(approved.get("lng")) in (int, float) and
+            math.isfinite(approved["lat"]) and math.isfinite(approved["lng"]) and
+            meters((matched["lat"], matched["lng"]), b) <= 1)
     if not all(type(v) in (int, float) and math.isfinite(v) for v in a + b):
         return False
     if (not all(-90 <= lat <= 90 and -180 <= lng <= 180
@@ -238,7 +286,9 @@ def _sessions(event, timezone, target_day, today):
     return sorted(target_times), all_days, ""
 
 
-def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
+def review_direct_v2(
+        lead, api_event, reviewed_agenda, registered_venue, today, *,
+        independent_venue_proof=None):
     """Verify a single candidate against authenticated OpenAgenda *read* data.
 
     Returns a non-publishable source diagnostic. Never accepts an 'approved'
@@ -283,6 +333,12 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
         return fail("not_physical_family_event")
     if api_event.get("timezone") != reviewed_agenda["timezone"]:
         return fail("unreviewed_territory_timezone")
+    loc = api_event.get("location")
+    code = loc.get("countryCode") if isinstance(loc, dict) else None
+    if (code in ADDITIONAL_TERRITORY_ZONES
+            and reviewed_agenda["timezone"] not in
+            ADDITIONAL_TERRITORY_ZONES[code]):
+        return fail("unreviewed_territory_timezone")
     try:
         target_day = date.fromisoformat(lead["date_start"])
         if (not today <= target_day <= today + timedelta(days=MAX_DAYS_AHEAD)
@@ -293,7 +349,9 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     if (not _norm(_fr(api_event, "title")) or not _norm(lead.get("title"))
             or _norm(_fr(api_event, "title")) != _norm(lead.get("title"))):
         return fail("api_title_mismatch")
-    if not _venue(api_event, registered_venue):
+    if not _venue(
+            api_event, registered_venue,
+            independent_proof=independent_venue_proof, today=today):
         return fail("geography_not_independently_verified")
     if (not _norm(lead.get("city")) or not _norm(lead.get("venue"))
             or _norm(api_event["location"].get("adminLevel4")) != _norm(lead.get("city"))
