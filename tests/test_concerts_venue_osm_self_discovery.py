@@ -287,7 +287,7 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(discover_osm.eligible(catalog)),1)
         report=discover_osm.scan(catalog,TODAY,max_venues=1,
                                  max_details=2,fetch=fetch)
-        self.assertEqual(len(report["candidates"]),1)
+        self.assertEqual(len(report["candidates"]),1,report)
         self.assertEqual(report["candidates"][0]["venue"],"Salle Indépendante")
         self.assertEqual(report["candidates"][0]["classification"],["Punk Rock"])
         self.assertFalse(report["candidates"][0]["publicationAllowed"])
