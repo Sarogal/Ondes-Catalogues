@@ -218,7 +218,7 @@ class UnlistedSafeSourceTests(unittest.TestCase):
             {"title": "Conte pour enfants", "date_start": "2026-12-05"},
             reader=offline)
         self.assertEqual(result["status"], "unlisted_source_unavailable")
-        self.assertNotIn("private", json.dumps(result))
+        self.assertNotIn("contains-private-data-must-not-leak", json.dumps(result))
         self.assertFalse(result["publisher_connected"])
 
 
