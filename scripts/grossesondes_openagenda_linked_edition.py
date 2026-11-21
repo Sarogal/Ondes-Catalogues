@@ -54,7 +54,7 @@ def event_url(url):
 
 
 def attributed_site(event_html, title, url):
-    """Visible exact event h1 + sole explicitly labelled website hyperlink.
+    """One exact visible event h1 + unique labelled festival website root.
 
     The event platform's URLs, tickets, other events and hidden links are
     never site attribution. Source HTML merely nominates a host; primary
@@ -75,8 +75,8 @@ def attributed_site(event_html, title, url):
         return None
     base = normalized(title.rsplit(" ", 1)[0])
     exact = normalized(title)
-    if len(base) < 7 or not any(
-            x in (base, exact) for x in heading.headings):
+    if len(base) < 7 or sum(
+            x in (base, exact) for x in heading.headings) != 1:
         return None
     # Avoid attributing a site for a different edition via an old OA page.
     from grossesondes_official_html_edition import VisibleText, fold
@@ -104,7 +104,7 @@ def attributed_site(event_html, title, url):
         parts = urlsplit(href)
         if (parts.scheme != "https" or parts.username or parts.password
                 or parts.port is not None
-                or parts.path not in ("", "/")
+                or not parts.path.startswith("/")
                 or parts.query or parts.fragment
                 or parts.hostname == "openagenda.com"
                 or classify(href) not in ALLOWED_ROLES):
