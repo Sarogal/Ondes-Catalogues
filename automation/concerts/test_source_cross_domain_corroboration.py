@@ -103,7 +103,7 @@ class CrossHostEvidenceTests(unittest.TestCase):
         self.assertEqual(out["futureCrossDomainLeadGroups"], 0)
         self.assertFalse(out["automaticTrustGranted"])
 
-    def test_already_published_exactly_matched_lead_is_not_recorroborated(self):
+    def test_published_reference_is_retained_for_source_research_not_new_publication(self):
         first = lead()
         catalogue = {"schemaVersion": 1, "events": [{
             "date": first["candidate"]["date"],
@@ -111,7 +111,14 @@ class CrossHostEvidenceTests(unittest.TestCase):
         }]}
         out = cross.build(registry(first, lead("new-venue.fr")),
                           catalogue, DAY)
-        self.assertEqual(out["futureCrossDomainLeadGroups"], 0)
+        self.assertEqual(out["futureCrossDomainLeadGroups"], 1)
+        self.assertEqual(out["publishedReferenceCrossDomainGroups"], 1)
+        self.assertEqual(out["stableSameVenueCrossDomainGroups"], 0)
+        group = out["groups"][0]
+        self.assertEqual(group["reviewState"], "published_reference_cross_domain")
+        self.assertTrue(group["publishedAlreadyKnown"])
+        self.assertFalse(group["publicationAllowed"])
+        self.assertFalse(out["automaticTrustGranted"])
 
     def test_malformed_private_registry_fails_closed(self):
         for bad in ({}, {"schema": "wrong", "items": {}},
