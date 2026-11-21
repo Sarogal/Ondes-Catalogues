@@ -9,6 +9,7 @@ on:
       - 'scripts/ptitesondes_municipal_event_venue_ban.py'
       - 'scripts/ptitesondes_shared_venue_location_evidence.py'
       - 'scripts/ptitesondes_open_world_release_rehearsal.py'
+      - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/run_cloud_sync.py'
       - 'tests/test_ptitesondes_open_world_patch_bridge.py'
       - 'tests/test_ptitesondes_delegated_source_authority.py'
