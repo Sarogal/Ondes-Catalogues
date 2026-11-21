@@ -121,6 +121,60 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
             VENUE_ID, original))
 
+    def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
+        # Five real published venues use the API-node spelling; the old
+        # validator rejected these even though it fetches that exact API.
+        for origin in (
+            "https://www.openstreetmap.org/api/0.6/node/380889428",
+            "https://api.openstreetmap.org/api/0.6/node/380889428",
+        ):
+            with self.subTest(origin=origin):
+                venue_map = copy.deepcopy(BASE)
+                venue = next(v for v in venue_map["venues"]
+                             if v["id"] == VENUE_ID)
+                venue["geoSource"] = origin
+                signed = signed_approval()
+                signed["officialEvidence"][0]["namedOsmUrl"] = origin
+                reads = []
+                fetch = fake_fetch()
+                def observe(url, cache):
+                    reads.append(url)
+                    return fetch(url, cache)
+                self.assertTrue(dynamic.validate(
+                    signed, {v["id"]: v for v in venue_map["venues"]},
+                    {a["id"]: a for a in venue_map["artists"]},
+                    TODAY, fetch=observe))
+                self.assertIn(
+                    "https://api.openstreetmap.org/api/0.6/node/380889428",
+                    reads)
+                self.assertIn(EVENT, reads)
+                self.assertIn(WITNESS, reads)
+
+    def test_osm_api_node_source_rejects_lookalikes_and_wrong_object(self):
+        venue = copy.deepcopy(next(v for v in BASE["venues"]
+                                  if v["id"] == VENUE_ID))
+        unsafe = (
+            "http://www.openstreetmap.org/api/0.6/node/380889428",
+            "https://www.openstreetmap.org.evil.example/api/0.6/node/380889428",
+            "https://www.openstreetmap.org/api/0.6/way/380889428",
+            "https://www.openstreetmap.org/api/0.6/node/380889428?x=1",
+            "https://www.openstreetmap.org/api/0.6/node/380889428/extra",
+            "https://www.openstreetmap.org/api/0.6/node/0",
+            "https://api.openstreetmap.org.evil.example/api/0.6/node/380889428",
+        )
+        for ref in unsafe:
+            with self.subTest(ref=ref):
+                venue["geoSource"] = ref
+                with self.assertRaisesRegex(ValueError, "named OSM node"):
+                    dynamic.osm_identity(venue, EVENT,
+                        lambda *_: self.fail("Invalid ref must not fetch"),
+                        {})
+        venue["geoSource"] = (
+            "https://www.openstreetmap.org/api/0.6/node/380889429")
+        with self.assertRaisesRegex(ValueError, "node mismatched"):
+            dynamic.osm_identity(venue, EVENT,
+                                 lambda *_: osm(), {})
+
     def test_unknown_domain_and_eight_unknown_artists_publish_without_manifest(self):
         approval = signed_approval()
         calls = []
