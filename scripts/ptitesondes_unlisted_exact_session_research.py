@@ -45,6 +45,7 @@ class _JsonLD(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.active = False
         self.parts = []
+        self.part_size = 0
         self.blocks = []
         self.exceeded = False
 
@@ -52,18 +53,20 @@ class _JsonLD(HTMLParser):
         if tag != "script":
             return
         attr = dict(attrs)
-        self.active = (str(attr.get("type") or "").lower().strip()
+        self.active = (str(attr.get("type") or "").lower().split(";", 1)[0].strip()
                        == "application/ld+json")
         self.parts = []
+        self.part_size = 0
 
     def handle_data(self, data):
         if self.active:
-            if sum(map(len, self.parts)) + len(data) > MAX_BLOCK_BYTES:
+            if self.part_size + len(data) > MAX_BLOCK_BYTES:
                 self.exceeded = True
                 self.active = False
                 self.parts = []
                 return
             self.parts.append(data)
+            self.part_size += len(data)
 
     def handle_endtag(self, tag):
         if tag == "script" and self.active:
@@ -176,7 +179,8 @@ def _structured_source_sessions(html, lead, intervals):
     if parser.exceeded:
         raise ValueError("structured_data_unbounded")
     expected_title = norm(lead["title"])
-    target = {k: _interval(k) for k in intervals}
+    target = {(a, b): _interval({"begin": a, "end": b})
+              for a, b in intervals}
     if len(target) != len(intervals) or any(v is None for v in target.values()):
         raise ValueError("invalid_oa_intervals")
     status = {}
