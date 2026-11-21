@@ -24,7 +24,8 @@ if SCRIPTS not in sys.path:
     sys.path.insert(0, SCRIPTS)
 
 from dns_pinned_https import DNSPinnedHTTPSConnection, safe_public_url
-from official_admin_communes import verified_commune, normalize
+from official_admin_communes import (verified_commune, normalize,
+    search_url as current_commune_url, fetch_admin_communes)
 
 SCHEMA = "grossesondes.national-dynamic-municipal-research-private.v1"
 HOST = "api-lannuaire.service-public.gouv.fr"
@@ -39,6 +40,146 @@ EXCLUDED_WEBSITE_FAMILIES = frozenset((
     "youtube.com", "linktr.ee", "helloasso.com", "billetweb.fr",
     "shotgun.live", "weezevent.com",
 ))
+
+
+# Independent, public government mapping of formerly independent villages
+# (communes déléguées/associées) to the current parent commune. No names,
+# festival brands, or municipalities in an allowlist.
+GEO_HOST = "geo.api.gouv.fr"
+DELEGATED_PATH = "/communes_associees_deleguees"
+MAX_DELEGATED_ROWS = 40
+MAX_GEO_BYTES = 160_000
+
+
+def delegated_commune_url(city):
+    # Reuse existing narrow search grammar from the public Geo API client.
+    current_commune_url(city)
+    return ("https://" + GEO_HOST + DELEGATED_PATH + "?" + urlencode({
+        "nom": city.strip(),
+        "fields": "nom,code,type,chefLieu,codeDepartement",
+        "format": "json",
+    }))
+
+
+def parent_commune_url(code):
+    if not isinstance(code, str) or INSEE.fullmatch(code) is None:
+        raise ValueError("Invalid parent commune code")
+    return ("https://" + GEO_HOST + "/communes/" + code + "?" + urlencode({
+        "fields": "nom,code,codeDepartement",
+        "format": "json",
+    }))
+
+
+def _expected_geo_request_path(url):
+    """Accept only two specific official public lookups reconstructed locally."""
+    from urllib.parse import parse_qs, urlsplit
+    try:
+        parts = urlsplit(url)
+        if (parts.scheme != "https" or parts.netloc != GEO_HOST
+                or parts.fragment or parts.username is not None):
+            raise ValueError("Unapproved Geo authority")
+        query = parse_qs(parts.query, strict_parsing=True)
+        if not query or any(len(v) != 1 for v in query.values()):
+            raise ValueError("Ambiguous Geo query")
+        if parts.path == DELEGATED_PATH:
+            if set(query) != {"nom", "fields", "format"}:
+                raise ValueError("Unapproved delegated query")
+            expected = delegated_commune_url(query["nom"][0])
+        else:
+            match = re.fullmatch(r"/communes/([0-9A-B]{5})", parts.path)
+            if match is None or set(query) != {"fields", "format"}:
+                raise ValueError("Unapproved parent query")
+            expected = parent_commune_url(match.group(1))
+        if url != expected:
+            raise ValueError("Noncanonical Geo query")
+        return parts.path + "?" + parts.query
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise ValueError("Unapproved Geo request") from exc
+
+
+def fetch_delegated_geo(url):
+    """Strict government-only HTTPS transport; absolutely no redirects/proxy."""
+    path = _expected_geo_request_path(url)
+    conn = DNSPinnedHTTPSConnection(GEO_HOST, port=443, timeout=10,
+                                    context=ssl.create_default_context())
+    try:
+        conn.request("GET", path, headers={
+            "User-Agent": "GrossesOndesDelegatedCommuneResearch/1.0",
+            "Accept": "application/json",
+            "Accept-Encoding": "identity",
+        })
+        response = conn.getresponse()
+        raw = response.read(MAX_GEO_BYTES + 1)
+        if (response.status != 200 or len(raw) > MAX_GEO_BYTES
+                or response.getheader("Content-Encoding", "identity").lower()
+                   != "identity"
+                or response.getheader("Content-Type", "").split(";", 1)[0].lower()
+                   != "application/json"):
+            raise ValueError("Invalid official Geo response")
+        return json.loads(raw.decode("utf-8"))
+    finally:
+        conn.close()
+
+
+def delegated_municipal_commune(city, reader=fetch_delegated_geo,
+                                current_reader=fetch_admin_communes):
+    """Prove an exact former-commune -> current mairie mapping twice.
+
+    Fail closed if a current municipality of the same name exists (including
+    ambiguity in the normal Geo lookup). A delegated entry alone never
+    supplies venue, GPS, an official festival website, or publication rights.
+    """
+    try:
+        current = current_reader(current_commune_url(city))
+        if (not isinstance(current, dict)
+                or current.get("type") != "FeatureCollection"
+                or not isinstance(current.get("features"), list)
+                or len(current["features"]) > 50):
+            return None
+        # An ambiguous current commune cannot be resolved by choosing a
+        # similarly named delegated commune in another department.
+        if any(isinstance(x, dict)
+               and isinstance(x.get("properties"), dict)
+               and normalize(x["properties"].get("nom")) == normalize(city)
+               for x in current["features"]):
+            return None
+        url = delegated_commune_url(city)
+        entries = reader(url)
+        if not isinstance(entries, list) or len(entries) > MAX_DELEGATED_ROWS:
+            return None
+        matched = []
+        for item in entries:
+            if not isinstance(item, dict):
+                continue
+            if normalize(item.get("nom")) != normalize(city):
+                continue
+            code, parent, dept = (item.get("code"), item.get("chefLieu"),
+                                  item.get("codeDepartement"))
+            if (item.get("type") not in ("commune-deleguee", "commune-associee")
+                    or not isinstance(code, str) or INSEE.fullmatch(code) is None
+                    or not isinstance(parent, str)
+                    or INSEE.fullmatch(parent) is None
+                    or not isinstance(dept, str)
+                    or not re.fullmatch(r"[0-9A-B]{2,3}", dept)):
+                return None
+            matched.append((code, parent, dept))
+        if len(matched) != 1:
+            return None
+        old_code, parent, dept = matched[0]
+        parent_record = reader(parent_commune_url(parent))
+        if (not isinstance(parent_record, dict)
+                or parent_record.get("code") != parent
+                or parent_record.get("codeDepartement") != dept
+                or not isinstance(parent_record.get("nom"), str)
+                or not 2 <= len(parent_record["nom"]) <= 100):
+            return None
+        return {"city": parent_record["nom"], "codeInsee": parent,
+                "delegated_city": city, "delegated_code_insee": old_code,
+                "geoSource": url, "parentGeoSource": parent_commune_url(parent),
+                "markerMeaning": "rattachement_commune_deleguee_recherche_seulement"}
+    except (OSError, TimeoutError, TypeError, ValueError,
+            UnicodeError, KeyError):
+        return None
 
 
 def mairie_records_url(code):
@@ -207,7 +348,8 @@ def select_dossiers(queue, today, limit=MAX_CHECKS):
 
 
 def research(queue, today, commune_lookup=verified_commune,
-             directory_fetch=fetch_dila_records, limit=MAX_CHECKS):
+             directory_fetch=fetch_dila_records, limit=MAX_CHECKS,
+             delegated_lookup=delegated_municipal_commune):
     chosen, eligible = select_dossiers(queue, today, limit=limit)
     rows = []
     for item in chosen:
@@ -216,13 +358,29 @@ def research(queue, today, commune_lookup=verified_commune,
                  "status": "COMMUNE_NOT_IDENTIFIED"}
         try:
             admin = commune_lookup(city)
+            if admin is None:
+                admin = delegated_lookup(city)
             if admin is not None:
                 insee = admin.get("codeInsee")
                 verified_city = admin.get("city")
+                delegated = admin.get("delegated_city")
+                is_delegated = delegated is not None
                 if (not isinstance(insee, str) or INSEE.fullmatch(insee) is None
-                        or normalize(verified_city) != normalize(city)):
+                        or not isinstance(verified_city, str)
+                        or not 2 <= len(verified_city) <= 100
+                        or (is_delegated and (
+                            delegated != city or
+                            not isinstance(admin.get("delegated_code_insee"), str)
+                            or INSEE.fullmatch(admin["delegated_code_insee"]) is None))
+                        or (not is_delegated and
+                            normalize(verified_city) != normalize(city))):
                     raise ValueError("Invalid government commune match")
                 entry.update(code_insee=insee, status="MAIRIE_NOT_ATTRIBUTED")
+                if is_delegated:
+                    entry.update(parent_commune=verified_city,
+                                 delegated_commune=city,
+                                 delegated_code_insee=admin["delegated_code_insee"],
+                                 administrative_relation="COMMUNE_DELEGUEE_RESEARCH_ONLY")
                 endpoint = mairie_records_url(insee)
                 municipal = verified_mairie_site(
                     directory_fetch(endpoint), insee, verified_city)
