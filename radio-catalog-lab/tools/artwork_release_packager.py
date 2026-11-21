@@ -96,7 +96,7 @@ def official_laut_fm_artwork_url(url:str,width:int,height:int)->bool:
             or not re.fullmatch(r"/[a-f0-9]{24,80}",p.path)):
         return False
     if not p.query:
-        return True
+        return "?" not in url
     size=re.fullmatch(r"t=_(\d{3,4})x(\d{3,4})",p.query)
     return bool(size and int(size.group(1))==width
                 and int(size.group(2))==height
