@@ -5,6 +5,7 @@ on:
     paths:
       - 'festival-automation/**'
       - 'scripts/grossesondes_generic_directory_edition.py'
+      - 'scripts/grossesondes_venue_reciprocal_edition.py'
       - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
       - 'GROSSES_ONDES_MIGRATION_PUBLIQUE.md'
   push:
@@ -12,6 +13,7 @@ on:
     paths:
       - 'festival-automation/**'
       - 'scripts/grossesondes_generic_directory_edition.py'
+      - 'scripts/grossesondes_venue_reciprocal_edition.py'
       - '.github/workflows/grossesondes-festivals-public-engine-tests.yml'
   workflow_dispatch:
 
