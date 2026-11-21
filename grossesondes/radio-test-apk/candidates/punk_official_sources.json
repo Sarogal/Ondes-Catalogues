@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "purpose": "Non-production discovery/qualification candidates, never an allowlist and NEVER an activation manifest.",
+  "reviewed_at": "2026-11-21",
+  "publication_allowed": false,
+  "candidates": [
+    {
+      "candidate_id": "candidate-radio-bob-punk-20261121",
+      "name": "RADIO BOB! BOBs Punk",
+      "country_code": "DE",
+      "genres": [
+        "Punk"
+      ],
+      "known_legacy_ids": [
+        "9618c802-0601-11e8-ae97-52543be04c81"
+      ],
+      "official_station_page": "https://www.radiobob.de/punk-stream",
+      "official_stream_evidence": "https://www.radiobob.de/radiobob/empfang/livestream",
+      "streams": [
+        {
+          "codec": "MP3",
+          "bitrate_kbps": 192,
+          "url": "https://streams.radiobob.de/bob-punk/mp3-192/mediaplayer"
+        },
+        {
+          "codec": "AAC",
+          "bitrate_kbps": 64,
+          "url": "https://streams.radiobob.de/bob-punk/aac-64/mediaplayer"
+        }
+      ],
+      "logo_candidates": [],
+      "status": "candidate",
+      "notes": "Official source documents bob-punk. Check actual audio and station-specific artwork before any signed active edition."
+    },
+    {
+      "candidate_id": "candidate-rock-antenne-punk-20261121",
+      "name": "ROCK ANTENNE Punk Rock",
+      "country_code": "DE",
+      "genres": [
+        "Punk"
+      ],
+      "known_legacy_ids": [
+        "960c4c2a-0601-11e8-ae97-52543be04c81"
+      ],
+      "official_station_page": "https://www.rockantenne.de/rockhoeren/streams/punk-rock",
+      "official_stream_evidence": "https://www.rockantenne.de/rockhoeren/empfang/streamlinks",
+      "streams": [
+        {
+          "codec": "MP3",
+          "bitrate_kbps": 0,
+          "url": "https://stream.rockantenne.de/punkrock/stream/mp3"
+        },
+        {
+          "codec": "AAC",
+          "bitrate_kbps": 0,
+          "url": "https://stream.rockantenne.de/punkrock/stream/aacp"
+        }
+      ],
+      "logo_candidates": [],
+      "status": "candidate",
+      "notes": "Official provider publishes both stream URLs; no assumption about bitrates or artwork authenticity."
+    }
+  ]
+}
