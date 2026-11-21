@@ -104,6 +104,8 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_national_backlog_bridge.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_national_openworld_research_cycle.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_reuse_rights.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_admission_diagnostics.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_visible_session_research.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_candidate_rotation.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
