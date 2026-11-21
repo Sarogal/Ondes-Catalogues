@@ -32,7 +32,7 @@ from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_generic_directory_edition import (
     private_proposal as directory_private_proposal,
-    discover_directory_website, directory_url, verify_primary,
+    discover_directory_website, directory_url, verify_official_site_pages,
     visible_adjacent_edition_dates,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
@@ -577,9 +577,10 @@ def stable_directory_proposals(state, queue, catalog, report, today,
         # Publisher will re-fetch this site independently before publication.
         try:
             homepage = organizer_fetch(site)
-            if verify_primary(
-                    homepage, proposal["name"],
-                    int(proposal["name"].rsplit(" ", 1)[-1]), today) != dates:
+            if verify_official_site_pages(
+                    site, homepage, proposal["name"],
+                    int(proposal["name"].rsplit(" ", 1)[-1]), today,
+                    fetch=organizer_fetch) != dates:
                 continue
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
             continue
