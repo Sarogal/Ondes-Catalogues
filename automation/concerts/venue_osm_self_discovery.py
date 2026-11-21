@@ -217,20 +217,6 @@ def event_leads(html, url, source, catalogue, today):
         if genres:
             cand["classification"]=genres
             cand["genreEvidenceScope"]=scope
-        cand.update({
-            "source":"agenda_officiel_structuré",
-            "sourcePage":url,
-            "eventDetailUrl":url,
-            "officialDetailFound":True,
-            # A source venue may announce an event at a new physical place.
-            # NEVER bind that event to the announcing venue's public ID.
-            "venueCatalogueId":(
-                None if cand.get("venueOutsideSource") else source["id"]),
-            "newlyDiscoveredFirstPartySource":True,
-            "sourceAuthorityVerified":False,
-            "publicationAllowed":False,
-            "reviewRequired":True,
-        })
         # Cross-domain event identity uses the named headliner only.
         # Keep the COMPLETE official bill in its own field, so a second
         # site listing only the headliner can corroborate the same date/venue
