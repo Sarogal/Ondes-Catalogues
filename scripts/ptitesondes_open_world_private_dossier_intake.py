@@ -11,7 +11,7 @@ Designed for the same runner that already checks out the private intake state.
 Never run against a public repository checkout or log candidate names/URLs.
 """
 import argparse
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 import re
@@ -28,6 +28,9 @@ from ptitesondes_delegated_source_authority import _url_host
 SCHEMA = "ptitesondes.private_open_world_dossier_intake.v1"
 MAX_DOSSIERS = 30
 MAX_PRIVATE_REPORTS = 10000
+# Recent PRIVATE research is a rotating hint cache, never a cached approval.
+# The Publisher always re-reads all official evidence before an addition.
+MAX_REPORT_AGE_DAYS = 14
 MAX_RESEARCH_BYTES = 1_500_000
 DAY_REF = re.compile(r"[a-f0-9]{64}\.json\Z")
 
@@ -74,34 +77,44 @@ def collect_research_dossiers(observation_root, research_root, today,
             or not 0 <= batch_index < 4
             or not callable(inventory_reader) or not callable(report_reader)):
         raise ValueError("invalid_private_dossier_schedule")
-    day_root = Path(research_root) / "reports" / today.isoformat()
-    if not day_root.is_dir():
-        return [], {"reports": 0, "pairs": 0, "candidate_dossiers": 0,
-                    "queued": 0, "more_dossiers_deferred": 0}
-    if day_root.is_symlink():
-        raise ValueError("symlink_private_research_directory")
-    reports = sorted(day_root.glob("*.json"))
-    if len(reports) > MAX_PRIVATE_REPORTS:
-        raise ValueError("private_report_capacity_exceeded")
+    # A crawler can find a municipal backlink in one run and the matching
+    # OpenAgenda URL on a different run. Do not lose those untrusted clues
+    # at midnight or when a per-event crawl advances to its next page.
     by_ref = {}
-    for path in reports:
-        if not DAY_REF.fullmatch(path.name):
-            raise ValueError("untrusted_private_research_filename")
-        data, _ = report_reader(path, MAX_RESEARCH_BYTES)
-        if (not isinstance(data, dict) or data.get("ref") != path.stem
-                or data.get("day") != today.isoformat()
-                or not isinstance(data.get("review"), dict)
-                or data["review"].get("publication_ready") is not False
-                or data["review"].get("public_writes") != 0):
-            raise ValueError("invalid_private_national_research_result")
-        by_ref[path.stem] = data["review"]
+    report_count = 0
+    for age_days in range(MAX_REPORT_AGE_DAYS + 1):
+        scan_day = today - timedelta(days=age_days)
+        day_root = Path(research_root) / "reports" / scan_day.isoformat()
+        if not day_root.exists():
+            continue
+        if not day_root.is_dir() or day_root.is_symlink():
+            raise ValueError("unsafe_private_research_directory")
+        reports = sorted(day_root.glob("*.json"))
+        report_count += len(reports)
+        if report_count > MAX_PRIVATE_REPORTS:
+            raise ValueError("private_report_capacity_exceeded")
+        for path in reports:
+            if not DAY_REF.fullmatch(path.name):
+                raise ValueError("untrusted_private_research_filename")
+            data, _ = report_reader(path, MAX_RESEARCH_BYTES)
+            review = data.get("review") if isinstance(data, dict) else None
+            if (not isinstance(data, dict)
+                    or data.get("ref") != path.stem
+                    or data.get("day") != scan_day.isoformat()
+                    or type(review) is not dict
+                    or review.get("schema") !=
+                        "ptitesondes.private_open_world_candidate_rotation.v1"
+                    or review.get("publication_ready") is not False
+                    or review.get("public_writes") != 0):
+                raise ValueError("invalid_private_national_research_result")
+            by_ref.setdefault(path.stem, []).append(review)
     proposals = []
     pair_count = 0
     seen = set()
     for entry in inventory_reader(Path(observation_root)):
         ref = _inventory_key(entry)
-        review = by_ref.get(ref)
-        if review is None:
+        reviews = by_ref.get(ref, [])
+        if not reviews:
             continue
         lead = _future_original(entry, today)
         if lead is None or not _safe_research_lead(lead, today):
@@ -109,36 +122,46 @@ def collect_research_dossiers(observation_root, research_root, today,
         # Untrusted OA URLs do not attest authorship. Prefer a specific
         # canonicalUrl but also investigate other exact HTTPS OA links.
         oa_urls = []
-        for source in review.get("private_unverified_oa_web_leads", []):
-            if (not isinstance(source, dict)
-                    or source.get("candidate_only") is not True
-                    or source.get("owner_verified") is not False
-                    or source.get("publication_ready") is not False
-                    or source.get("source_rights_reviewed") is not False):
-                continue
-            candidate = _https(source.get("url"))
-            host = _host(candidate)
-            if candidate and host:
-                oa_urls.append((0 if source.get("source_field")
-                                == "canonicalUrl" else 1, host, candidate))
+        pairs = []
+        for review in reviews:
+            for source in review.get("private_unverified_oa_web_leads", []):
+                if (not isinstance(source, dict)
+                        or source.get("candidate_only") is not True
+                        or source.get("owner_verified") is not False
+                        or source.get("publication_ready") is not False
+                        or source.get("source_rights_reviewed") is not False):
+                    continue
+                candidate = _https(source.get("url"))
+                host = _host(candidate)
+                if candidate and host:
+                    oa_urls.append((0 if source.get("source_field")
+                                    == "canonicalUrl" else 1, host, candidate))
+            for pair in review.get("private_research_reviews", []):
+                if not isinstance(pair, dict):
+                    continue
+                municipal, target = (_https(pair.get("municipal_url")),
+                                     _https(pair.get("source_url")))
+                # Historical discovery is untrusted. The Publisher must
+                # fetch fresh independent authority, session and geography.
+                if municipal and target and _host(municipal) and _host(target):
+                    pairs.append((_host(target), municipal))
+        pair_count += len(set(pairs))
         if not oa_urls:
             continue
-        pairs = []
-        for pair in review.get("private_research_reviews", []):
-            if not isinstance(pair, dict):
-                continue
-            municipal, target = (_https(pair.get("municipal_url")),
-                                 _https(pair.get("source_url")))
-            # Discovered municipal <a> links remain only research hints.
-            if municipal and target and _host(municipal) and _host(target):
-                pairs.append((_host(target), municipal))
-        pair_count += len(pairs)
-        if not pairs:
-            continue
-        for _priority, host, official_event_url in sorted(set(oa_urls)):
-            for related_host, municipal_url in pairs:
-                if host != related_host:
-                    continue
+        for priority, host, official_event_url in sorted(set(oa_urls)):
+            matching = sorted(set(
+                municipal_url for related_host, municipal_url in pairs
+                if host == related_host))
+            # A municipal event page can be linked DIRECTLY from OA while
+            # its page stays internal to the municipal crawler. That crawler
+            # only records EXTERNAL links, so an external-link prerequisite
+            # silently loses all direct municipal calendars. This fallback is
+            # a research REQUEST only: DILA, venue GPS and exact sessions
+            # are verified later by the Publisher. Never allow the fallback
+            # to mint authority for an arbitrary OA-supplied website.
+            if priority == 0 and not matching:
+                matching = [official_event_url]
+            for municipal_url in matching:
                 municipal_host = _host(municipal_url)
                 dossier = {
                     "lead": lead,
@@ -168,7 +191,7 @@ def collect_research_dossiers(observation_root, research_root, today,
     first = wave * daily_capacity + batch_index * MAX_DOSSIERS
     chosen = proposals[first:first + MAX_DOSSIERS]
     return chosen, {
-        "reports": len(reports), "pairs": pair_count,
+        "reports": report_count, "pairs": pair_count,
         "candidate_dossiers": len(proposals), "queued": len(chosen),
         "more_dossiers_deferred": max(0, len(proposals)-len(chosen)),
     }
