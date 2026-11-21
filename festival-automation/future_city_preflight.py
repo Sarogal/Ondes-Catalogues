@@ -197,7 +197,21 @@ def official_city_links(home_html, homepage, edition_year=None):
     if edition_year is None:
         for i, url in enumerate(official_access_links(home_html, homepage)):
             selected.setdefault(url, 3 + i)
-    return sorted(selected, key=lambda url: (selected[url], len(url), url))[:MAX_INTERNAL_PAGES]
+    ranked = sorted(selected, key=lambda url: (selected[url], len(url), url))
+    chosen = ranked[:MAX_INTERNAL_PAGES]
+    if edition_year is None and chosen:
+        # Several 2027 marketing links can use BOTH bounded slots before
+        # visiting the official NEWS INDEX with the exact dated article.
+        # Reserve one of the SAME two slots for an already-validated,
+        # SAME-HOST news index. No candidate/private URL may choose a host.
+        news = next(
+            (u for u in ranked if re.search(
+                r"(?:/|^)(?:actu|news|actualite|nouveaute|articles)[a-z-]*(?:/|$)",
+                unquote(urlsplit(u).path).casefold())),
+            None)
+        if news is not None and news not in chosen:
+            chosen[-1] = news
+    return chosen
 
 
 def exact_city_from_official_site(row, fetcher=fetch_public_html):
