@@ -142,9 +142,8 @@ class DynamicVenueBacklinkProofs(TestCase):
         self.assertIsNone(verified_venue_reciprocity(
             SITE, TITLE, DATES, DAY1, fetch=denied))
 
-    def test_reject_hidden_footer_event_wrong_dates_or_wrong_backlink(self):
+    def test_reject_hidden_unrelated_event_or_wrong_backlink(self):
         for label, venue_detail in {
-            "wrong date": VENUE_DAY.replace("23 Avril 2027", "22 Avril 2027"),
             "wrong name": VENUE_DAY.replace(
                 "<h1>LA SAINTE ROCK FESTIVAL JOUR 1</h1>",
                 "<h1>Un autre festival</h1>"),
@@ -157,8 +156,6 @@ class DynamicVenueBacklinkProofs(TestCase):
                 "<h1 hidden>LA SAINTE ROCK FESTIVAL JOUR 1</h1>"),
             "other official site": VENUE_DAY.replace(
                 SITE, "https://different-festival.fr/"),
-            "cancelled": VENUE_DAY.replace(
-                "</main>", "<p>Festival 2027 annulé</p></main>"),
         }.items():
             with self.subTest(label=label):
                 bad, _ = http({
@@ -169,6 +166,38 @@ class DynamicVenueBacklinkProofs(TestCase):
                 })
                 self.assertIsNone(verified_venue_reciprocity(
                     SITE, TITLE, DATES, DAY1, fetch=bad))
+
+    def test_secondary_dates_are_never_required_or_used(self):
+        # A venue can link the correct festival domain from its 2025 event
+        # while only the official site gives the current 2027 dates.
+        old_venue = VENUE_DAY.replace(
+            "23 Avril 2027", "21 Avril 2025")
+        read, visited = http({
+            VENUE + "evenements/la-sainte-rock-festival-jour-1/": old_venue,
+            VENUE + "evenements/la-sainte-rock-festival-jour-2/": old_venue,
+        })
+        self.assertTrue(venue_detail_matches(old_venue, TITLE, SITE))
+        self.assertEqual(verified_venue_reciprocity(
+            SITE, TITLE, DATES, DAY1, fetch=read), VENUE)
+        self.assertIn(VENUE, visited)
+        # No date on the venue page at all is also acceptable.
+        undated = VENUE_DAY.replace(
+            "Vendredi 23 Avril 2027, concert au 6MIC.",
+            "La Sainte Rock Festival, programme historique de la salle.")
+        fetch, _ = http({
+            VENUE + "evenements/la-sainte-rock-festival-jour-1/": undated,
+            VENUE + "evenements/la-sainte-rock-festival-jour-2/": undated,
+        })
+        self.assertEqual(verified_venue_reciprocity(
+            SITE, TITLE, DATES, DAY1, fetch=fetch), VENUE)
+        # A falsified current date on the proposed official-site row still
+        # fails the Publisher independently of any past venue programme.
+        proposal = private_proposal(
+            TITLE, SITE, ("2027-04-22", "2027-04-24"), DAY1,
+            venue_root=VENUE)
+        self.assertIsNotNone(proposal)
+        self.assertIsNone(independently_verify(
+            proposal, DAY1, fetch=read))
 
     def test_reject_wrong_primary_genre_period_or_host(self):
         for page in (
