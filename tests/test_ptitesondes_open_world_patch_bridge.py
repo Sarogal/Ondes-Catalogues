@@ -120,7 +120,69 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
         self.assertEqual(published, ref)
         self.assertEqual(audit["ajoutes"], 0)
         self.assertEqual(result["held_reason_counts"],
-                         {"independent_municipal_domain_unverified": 1})
+                         {"independent_municipal_source_delegation_missing": 1})
+
+    def test_unknown_first_party_organizer_is_admitted_only_by_municipal_delegation(self):
+        # A first-party venue host not on any hand-maintained registry.
+        # A separately DILA-authenticated municipal page names the venue
+        # and explicitly references the organizer site. All fixture data
+        # here is synthetic and no actual publication occurs.
+        ref = base()
+        outsider = "https://nouvel-organisateur.example/spectacles/conte-musical"
+        municipal_reference = "https://www.ville-les-bois.fr/culture/lieu"
+        reference_html = (
+            "<html><main><article><h2>Place du village</h2>"
+            "<p>La salle propose sa programmation sur "
+            "https://nouvel-organisateur.example/spectacles</p>"
+            "</article></main></html>"
+        )
+        checks = readers()
+        original = checks["official_reader"]
+        checks["official_reader"] = lambda url: (
+            official_page() if url == outsider else
+            reference_html if url == municipal_reference else
+            original(url))
+        item = dossier(
+            official_event_url=outsider,
+            municipal_source_reference_url=municipal_reference,
+        )
+        published, audit, result = merge_verified_open_world(
+            ref, ref, private_patch(ref, [item]), TODAY, KEY, **checks)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(result["held"], 0)
+        self.assertEqual(published["events"][-1]["source_url"], outsider)
+
+        # The municipal page's named venue/domain match is provenance,
+        # never sufficient without the current official event's own times.
+        altered = dict(checks)
+        altered["official_reader"] = lambda url: (
+            official_page((10,)) if url == outsider else
+            reference_html if url == municipal_reference else original(url))
+        rejected, audit, result = merge_verified_open_world(
+            ref, ref, private_patch(ref, [item]), TODAY, KEY, **altered)
+        self.assertEqual(rejected, ref)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(result["held"], 1)
+
+    def test_unknown_nonmunicipal_host_cannot_borrow_unrelated_city_link(self):
+        ref = base()
+        outsider = "https://nouvel-organisateur.example/spectacles/conte"
+        reference = "https://www.ville-les-bois.fr/culture/lieu"
+        checks = readers()
+        original = checks["official_reader"]
+        checks["official_reader"] = lambda url: (
+            "<html><main><article><h2>Autre salle</h2>"
+            "<p>nouvel-organisateur.example</p></article></main></html>"
+            if url == reference else original(url))
+        bad, audit, result = merge_verified_open_world(
+            ref, ref, private_patch(ref, [dossier(
+                official_event_url=outsider,
+                municipal_source_reference_url=reference)]),
+            TODAY, KEY, **checks)
+        self.assertEqual(bad, ref)
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(result["held_reason_counts"],
+                         {"independent_municipal_source_delegation_unconfirmed": 1})
 
     def test_changed_oa_schedule_cancellation_source_or_geo_are_not_admitted(self):
         ref = base()
