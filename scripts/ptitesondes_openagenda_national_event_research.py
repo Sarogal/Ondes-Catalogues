@@ -245,6 +245,13 @@ def _unclassified_source_research_hint(row, agenda, today):
         "venue_unverified": (
             location.get("name")
             if isinstance(location.get("name"), str) else None),
+        # An unrecognized editorial category must not erase geographic
+        # claims. These are RESEARCH hints only, not proof of France coverage.
+        "country_code_unverified": (
+            location.get("countryCode")
+            if isinstance(location.get("countryCode"), str) else None),
+        "french_territory_claim_present": (
+            location.get("countryCode") in COUNTRY_CODES),
         "explicit_source_session_days": day_list,
         "explicit_source_session_intervals": sessions,
         "editorial_category_proposal": None,
