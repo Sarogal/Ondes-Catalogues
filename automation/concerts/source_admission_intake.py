@@ -19,6 +19,7 @@ import re
 import unicodedata
 from collections import Counter, defaultdict
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit
 
 import generic_music_event
@@ -233,7 +234,7 @@ def main():
     result = build(
         json.loads(args.registry.read_text(encoding="utf-8")),
         json.loads(args.catalogue.read_text(encoding="utf-8")),
-        dt.datetime.now(dt.timezone.utc).date())
+        dt.datetime.now(ZoneInfo("Europe/Paris")).date())
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(
         result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
