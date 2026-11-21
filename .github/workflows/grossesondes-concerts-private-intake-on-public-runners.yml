@@ -510,6 +510,28 @@ jobs:
             echo "Audit privé de complétude effectué sans modification des concerts."
           fi
 
+      - name: Préparer les correctifs de programmation sur preuves officielles fraîches (privé)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The audit is read-only; its hints cannot sign any public change.
+          # Independently fetch each candidate first-party event detail again,
+          # compare named acts, event date and venue and construct exact rows.
+          # Store private PROPOSALS only. Publisher must independently verify
+          # every row before approval; do not mutate approved.json here.
+          if [ -s confidential/automation/concerts/intake/published-lineup-audit.json ]; then
+            if ! python public/automation/concerts/published_lineup_patch_builder.py \
+                --catalogue public/docs/grossesondes/concerts.json \
+                --audit confidential/automation/concerts/intake/published-lineup-audit.json \
+                --output confidential/automation/concerts/intake/published-lineup-patch-proposals.json \
+                > "$RUNNER_TEMP/concerts-private-logs/lineup-patch-proposals.log" 2>&1; then
+              echo "::warning::Aucune proposition de correctif de programmation approuvée."
+            else
+              echo "Propositions de programmation vérifiées en privé, sans publication."
+            fi
+          fi
+
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -701,6 +723,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/published-lineup-audit.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-audit.json
+          fi
+          if [ -f automation/concerts/intake/published-lineup-patch-proposals.json ]; then
+            git add --sparse -- automation/concerts/intake/published-lineup-patch-proposals.json
           fi
           if [ -f automation/concerts/intake/registry-funnel.json ]; then
             git add --sparse -- automation/concerts/intake/registry-funnel.json
