@@ -209,6 +209,12 @@ def event_leads(html, url, source, catalogue, today):
         if genres:
             cand["classification"]=genres
             cand["genreEvidenceScope"]=scope
+        # Cross-domain event identity uses the named headliner only.
+        # Keep the COMPLETE official bill in its own field, so a second
+        # site listing only the headliner can corroborate the same date/venue
+        # without losing or inventing any support band.
+        cand["leadArtist"]=bill[0][0]
+        cand["officialArtistNames"]=list(bill[0])
         cand.update({
             "source":"agenda_officiel_structuré",
             "sourcePage":url,
