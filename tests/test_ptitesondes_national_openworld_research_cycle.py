@@ -92,6 +92,36 @@ class ResearchCycleTests(unittest.TestCase):
             inventory_reader=lambda _: items, operator=capture)
         self.assertEqual(len(set(seen)), 2)
 
+    def test_higher_budget_rotates_through_unlisted_candidates_without_skips(self):
+        items = [entry(400 + i, category="spectacle-jeunesse"
+                       if i % 3 == 0 else None) for i in range(18)]
+        seen = []
+        def capture(lead, *args, **kwargs):
+            seen.append(lead["event_uid"])
+            return valid_operator(lead, *args, **kwargs)
+        _, first, first_report = research_cycle(
+            Path("/unused"), DAY, KEY, max_events=8,
+            inventory_reader=lambda _: items, operator=capture)
+        self.assertEqual(first_report["events_examined"], 8)
+        self.assertEqual(len(set(seen)), 8)
+        _, second, second_report = research_cycle(
+            Path("/unused"), DAY, KEY, cursor=first, max_events=8,
+            inventory_reader=lambda _: items, operator=capture)
+        self.assertEqual(second_report["events_examined"], 8)
+        self.assertEqual(len(set(seen)), 16)
+        _, _, third_report = research_cycle(
+            Path("/unused"), DAY, KEY, cursor=second, max_events=2,
+            inventory_reader=lambda _: items, operator=capture)
+        self.assertEqual(third_report["events_examined"], 2)
+        self.assertEqual(len(set(seen)), 18)
+        self.assertEqual(third_report["candidates_with_future_sessions"], 18)
+
+    def test_unbounded_cycle_request_does_not_exceed_safe_budget(self):
+        with self.assertRaises(ValueError):
+            research_cycle(Path("/unused"), DAY, KEY, max_events=9,
+                           inventory_reader=lambda _: [entry(400)],
+                           operator=valid_operator)
+
     def test_pending_original_slots_are_retained_without_session_limit(self):
         item = entry(115, "conte-musical", n_sessions=12)
         self.assertEqual(len(_future_original(item, DAY)[
