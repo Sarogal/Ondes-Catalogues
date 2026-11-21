@@ -32,6 +32,7 @@ from ptitesondes_private_national_rotation_runner import (
 )
 
 CONTROLLER_SCHEMA = "ptitesondes.private_national_observation_control.v1"
+INDEX_JOURNAL_SCHEMA = "ptitesondes.private_national_index_transaction.v1"
 REPORT_RE = re.compile(r"index-(20[0-9]{2}-[0-9]{2}-[0-9]{2})-([a-zA-Z0-9_-]{1,70})\.json\Z")
 BATCH_RE = re.compile(r"[a-zA-Z0-9_-]{1,70}\Z")
 INDEX_EVERY_N_INVOCATIONS = 12
@@ -65,14 +66,112 @@ def controller_read(path):
 
 
 def available_index_reports(index_dir):
+    """Enumerate without opening candidates: a bad report must not starve others."""
+    _private_directory(index_dir)
     reports = []
     for path in index_dir.iterdir():
         match = REPORT_RE.fullmatch(path.name)
         if match:
-            _private_input(path, MAX_INDEX_BYTES)
-            scan_day = date.fromisoformat(match.group(1))
+            try:
+                scan_day = date.fromisoformat(match.group(1))
+            except ValueError:
+                scan_day = None   # Retain as held research, never silently drop.
             reports.append((path, scan_day))
     return sorted(reports, key=lambda pair: pair[0].name)
+
+
+def _cursor_state(state, after, completed):
+    return {"schema": state["schema"], "after": after,
+            "completed_passes": completed}
+
+
+def _pending_index_path(index_dir):
+    return index_dir / "pending-index-transaction.json"
+
+
+def recover_pending_index(index_dir, reports_dir):
+    """Finish an interrupted index/report commit, without skipping a page."""
+    pending = _pending_index_path(index_dir)
+    if not pending.exists():
+        if pending.is_symlink():
+            raise ValueError("unsafe_pending_index_transaction")
+        return False
+    raw = _safe_existing_file(pending, MAX_CONTROL_BYTES)
+    tx = json.loads(raw)
+    if (not isinstance(tx, dict)
+            or set(tx) != {"schema", "report_name", "report_sha256",
+                           "source_after", "source_passes",
+                           "target_after", "target_passes"}
+            or tx["schema"] != INDEX_JOURNAL_SCHEMA
+            or not isinstance(tx["report_name"], str)
+            or REPORT_RE.fullmatch(tx["report_name"]) is None
+            or not isinstance(tx["report_sha256"], str)
+            or re.fullmatch(r"[0-9a-f]{64}", tx["report_sha256"]) is None
+            or type(tx["source_passes"]) is not int
+            or type(tx["target_passes"]) is not int
+            or tx["source_passes"] < 0
+            or tx["target_passes"] not in (tx["source_passes"],
+                                             tx["source_passes"] + 1)):
+        raise ValueError("invalid_private_index_transaction")
+    state_path = index_dir / "cursor.json"
+    source = _cursor_state(load_index_state(state_path),
+                           tx["source_after"], tx["source_passes"])
+    target = _cursor_state(source, tx["target_after"], tx["target_passes"])
+    report_path = reports_dir / tx["report_name"]
+    current = load_index_state(state_path)
+    if not report_path.exists():
+        # Crash before writing report: no cursor advance is allowed.
+        if current != source or report_path.is_symlink():
+            raise ValueError("index_transaction_report_missing_or_untrusted")
+        pending.unlink()
+        return False
+    report_raw = _private_input(report_path, MAX_INDEX_BYTES)
+    if sha256(report_raw).hexdigest() != tx["report_sha256"]:
+        raise ValueError("index_transaction_report_digest_mismatch")
+    report = json.loads(report_raw)
+    if (report.get("schema") != "ptitesondes.private_national_oa_index.v1"
+            or report.get("next_cursor") != target["after"]
+            or report.get("publication_ready") is not False
+            or report.get("public_writes") != 0):
+        raise ValueError("index_transaction_report_invalid")
+    if current == source:
+        _write_state_atomic(state_path, target)
+    elif current != target:
+        raise ValueError("index_transaction_cursor_conflict")
+    pending.unlink()
+    return True
+
+
+def store_index_batch(index_dir, reports_dir, report_path, report, state):
+    """Write-ahead log protects the interval between report and index cursor."""
+    state_path = index_dir / "cursor.json"
+    if report_path.exists() or report_path.is_symlink():
+        raise ValueError("index_report_already_exists")
+    target = _cursor_state(state, report["next_cursor"],
+                           state["completed_passes"] +
+                           int(report["index_pass_exhausted"]))
+    encoded_report = (json.dumps(report, ensure_ascii=False, indent=2) +
+                      "\n").encode("utf-8")
+    if len(encoded_report) > MAX_INDEX_BYTES:
+        raise ValueError("index_report_exceeds_resumable_capacity")
+    journal = {
+        "schema": INDEX_JOURNAL_SCHEMA,
+        "report_name": report_path.name,
+        "report_sha256": sha256(encoded_report).hexdigest(),
+        "source_after": state["after"],
+        "source_passes": state["completed_passes"],
+        "target_after": target["after"],
+        "target_passes": target["completed_passes"],
+    }
+    pending = _pending_index_path(index_dir)
+    if pending.exists() or pending.is_symlink():
+        raise ValueError("index_transaction_pending")
+    _write_atomic_private(pending, (json.dumps(
+        journal, ensure_ascii=False, separators=(",", ":")) + "\n").encode())
+    # These two writes are deliberately separate; recovery reconciles them.
+    _write_new_report(report_path, report)
+    _write_state_atomic(state_path, target)
+    pending.unlink()
 
 
 def run_observation(source_config, root, day, batch_id, *,
@@ -108,6 +207,7 @@ def run_observation(source_config, root, day, batch_id, *,
     rotation_root = private_subdir(root / "rotations")
     control_path = root / "controller.json"
     controller = controller_read(control_path)
+    recovered_index = recover_pending_index(index_dir, reports_dir)
 
     # Index census is independent from the historical 16 known agendas. The
     # existing config is used only to identify which OA UIDs are already known.
@@ -115,7 +215,8 @@ def run_observation(source_config, root, day, batch_id, *,
     name = f"index-{day.isoformat()}-{batch_id}.json"
     new_path = reports_dir / name
     index_scanned = False
-    if controller["invocations"] % INDEX_EVERY_N_INVOCATIONS == 0:
+    if (not recovered_index
+            and controller["invocations"] % INDEX_EVERY_N_INVOCATIONS == 0):
         if not new_path.exists():
             state_path = index_dir / "cursor.json"
             state = load_index_state(state_path)
@@ -127,13 +228,7 @@ def run_observation(source_config, root, day, batch_id, *,
                     or result.get("publication_ready") is not False
                     or result.get("public_writes") != 0):
                 raise ValueError("untrusted_national_index_response")
-            _write_new_report(new_path, result)
-            # The report is safely stored BEFORE advancing the index cursor.
-            _write_state_atomic(state_path, {
-                "schema": state["schema"], "after": result["next_cursor"],
-                "completed_passes": state["completed_passes"] +
-                                    int(result["index_pass_exhausted"]),
-            })
+            store_index_batch(index_dir, reports_dir, new_path, result, state)
             index_scanned = True
 
     reports = available_index_reports(reports_dir)
