@@ -195,7 +195,10 @@ def event_leads(html, url, source, catalogue, today):
             "sourcePage":url,
             "eventDetailUrl":url,
             "officialDetailFound":True,
-            "venueCatalogueId":source["id"],
+            # A source venue may announce an event at a new physical place.
+            # NEVER bind that event to the announcing venue's public ID.
+            "venueCatalogueId":(
+                None if cand.get("venueOutsideSource") else source["id"]),
             "newlyDiscoveredFirstPartySource":True,
             "sourceAuthorityVerified":False,
             "publicationAllowed":False,
