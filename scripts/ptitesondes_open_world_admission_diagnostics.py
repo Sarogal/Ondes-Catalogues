@@ -232,12 +232,16 @@ def inspect_open_world_candidate(
         matches = key in triples
         blockers = [
             "organizer_identity_and_authorship_unproven",
-            "source_reuse_rights_unreviewed",
             "family_access_and_age_not_independently_verified",
             "no_authoritative_public_deduplication",
             "final_editorial_admission_not_granted",
             "no_publisher_bridge",
         ]
+        # OpenAgenda's per-event Etalab-2.0 license permits factual-data
+        # reuse with licensor + updatedAt attribution; images/descriptions
+        # remain out of scope and no organizer authority is inferred.
+        if not result["oa_factual_reuse_open_license"]:
+            blockers.append("source_reuse_rights_unreviewed")
         if not matches:
             blockers.append("exact_cross_source_session_not_confirmed")
         if result["geography_status"] != "independent_named_location_correlated":
