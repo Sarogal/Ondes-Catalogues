@@ -443,7 +443,8 @@ class GenericDirectoryProofTests(TestCase):
                 self.assertEqual(stable_directory_proposals(
                     st, qu, catalog, rp, DAY,
                     directory_fetch=fetch,
-            organizer_fetch=lambda url: (self.assertEqual(url, SITE) or OFFICIAL)), [])
+                    organizer_fetch=lambda url: (
+                        self.assertEqual(url, SITE) or OFFICIAL)), [])
 
 
 if __name__ == "__main__":
