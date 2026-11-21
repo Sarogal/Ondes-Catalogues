@@ -66,11 +66,11 @@
       ],
       "logo_candidates": [
         {
-          "url": "https://www.rockantenne.de/media/cache/3/version/14/ra-v1.jpg/03af5f7d2e5346c0.jpg",
+          "url": "https://www.rockantenne.de/media/cache/3/version/581/streamlogo_punkrock_ra-v1.jpg/a7719c86d6edfd9d.jpg",
           "state": "unreviewed",
-          "scope": "network_brand_not_punk_specific",
+          "scope": "official_punk_channel_artwork_candidate",
           "source_page": "https://www.rockantenne.de/rockhoeren/streams/punk-rock",
-          "notes": "Official ROCK ANTENNE corporate logo, not necessarily station-specific Punk Rock art."
+          "notes": "Image displayed on official Punk Rock stream page; exact bytes and visual logo identity must be checked."
         }
       ],
       "status": "candidate",
