@@ -489,6 +489,23 @@ jobs:
             fi
             test -s "$WORK/patch-$DAY.json"
             test -s "$WORK/qualification-summary.json"
+            # Consume national research reports as research dossiers only.
+            # The public Publisher must independently re-read every source,
+            # exact OA session and venue GPS; nothing here grants APPROVED.
+            # The private patch is the only place the research URLs go.
+            if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then
+              if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
+                --observation-root "$STATE/national-observation" \
+                --research-root "$STATE/national-observation/research" \
+                --patch-file "$WORK/patch-$DAY.json" \
+                --output-file "$WORK/patch-$DAY-openworld.json" \
+                --day "$DAY" --batch-index "$REVIEW_SLOT" \
+                > "$LOG/openworld-dossiers-slot$REVIEW_SLOT.log" 2>&1; then
+                mv "$WORK/patch-$DAY-openworld.json" "$WORK/patch-$DAY.json"
+              else
+                echo "::warning::Dossiers nationaux indisponibles : le patch historique demeure inchangé."
+              fi
+            fi
             cp "$WORK/patch-$DAY.json" "$STATE/patch-$DAY.json"
             if [[ "$RUN_MODE" == "write" ]]; then
               cp "$LOG/fusion-verifiee-slot$REVIEW_SLOT.log" "$STATE/reports/verification-$DAY.json"
