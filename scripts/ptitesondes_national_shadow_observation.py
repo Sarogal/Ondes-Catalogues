@@ -37,6 +37,8 @@ REPORT_RE = re.compile(r"index-(20[0-9]{2}-[0-9]{2}-[0-9]{2})-([a-zA-Z0-9_-]{1,7
 BATCH_RE = re.compile(r"[a-zA-Z0-9_-]{1,70}\Z")
 INDEX_EVERY_N_INVOCATIONS = 12
 MAX_BATCHES_PER_RUN = 2
+MAX_AGENDAS_PER_BATCH = 3
+AGENDA_SELECTOR_SCHEMA = "ptitesondes.private_national_agenda_rotation.v1"
 MAX_CONTROL_BYTES = 4096
 SEGMENT_REPORT_RE = re.compile(r"agenda-[0-9]{1,8}-segment-[0-9]{1,8}\.json\Z")
 
@@ -238,6 +240,84 @@ def summarize_private_segment_hints(campaign, digest, scan_day,
     return invalid
 
 
+def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
+                                 rotation_dir, key, campaign_runner,
+                                 segment_runner):
+    """Keep each agenda's checkpoint and retry, independent of its neighbors.
+
+    One unreachable agenda cannot pin a batch's single sequential checkpoint.
+    All agendas, including unknown ones, enter a resumable round-robin.
+    Bounded budgets are per invocation, never eligibility filters.
+    """
+    candidates = index_doc["new_agenda_candidates"]
+    total = len(candidates)
+    selector = campaign_dir / "agenda-selector.json"
+    default = {"schema": AGENDA_SELECTOR_SCHEMA,
+               "source_sha256": digest, "scan_day": scan_day.isoformat(),
+               "next_index": 0}
+    current = default
+    if selector.exists() or selector.is_symlink():
+        raw = _safe_existing_file(selector, MAX_CONTROL_BYTES)
+        current = json.loads(raw)
+        if (not isinstance(current, dict)
+                or set(current) != set(default)
+                or current["schema"] != AGENDA_SELECTOR_SCHEMA
+                or current["source_sha256"] != digest
+                or current["scan_day"] != scan_day.isoformat()
+                or type(current["next_index"]) is not int
+                or not 0 <= current["next_index"] < max(total, 1)):
+            raise ValueError("invalid_private_agenda_selector")
+    started = held = completed = examined_segments = examined_events = 0
+    agenda_attempts = agenda_held = 0
+    if not total:
+        return {"agenda_attempts": 0, "agenda_advanced": 0,
+                "agenda_finished": 0, "agenda_held": 0,
+                "segments_examined": 0, "event_slots_examined": 0,
+                "segment_holds": 0}
+    start = current["next_index"]
+    segment_holds = 0
+    for step in range(min(total, MAX_AGENDAS_PER_BATCH)):
+        idx = (start + step) % total
+        try:
+            agenda_dir = private_subdir(campaign_dir / f"agenda-{idx:04d}")
+            rotation_state = private_subdir(rotation_dir / f"agenda-{idx:04d}")
+            single_doc = dict(index_doc, new_agenda_candidates=[candidates[idx]])
+            single_digest = sha256(json.dumps(
+                single_doc, sort_keys=True, ensure_ascii=False,
+                separators=(",", ":")).encode("utf-8")).hexdigest()
+            plan = plan_campaign(single_doc, single_digest, scan_day, agenda_dir)
+            result = campaign_runner(plan, public_key=key)
+            if (result.get("public_writes") != 0
+                    or result.get("publication_ready") is not False):
+                raise ValueError("unsafe_private_individual_campaign")
+            started += 1
+            completed += int(result["finished_index_batch"])
+            rotated = segment_runner(
+                agenda_dir, rotation_state, scan_day,
+                execute_live=True, key=key,
+                segment_budget=MAX_SEGMENTS_PER_RUN)
+            if (rotated.get("public_writes") != 0
+                    or rotated.get("publication_ready") is not False):
+                raise ValueError("unsafe_private_individual_rotation")
+            examined_segments += rotated["segment_reports_examined"]
+            examined_events += rotated["event_slots_examined"]
+            segment_holds += rotated["segment_reports_held"]
+        except (OSError, ValueError, TypeError, KeyError, TimeoutError,
+                UnicodeError):
+            # Preserve existing per-agenda state for a subsequent retry.
+            held += 1
+        # Persist AFTER each attempt to survive power loss and avoid allowing
+        # the same failed source to starve other candidates after restart.
+        _write_atomic_private(selector, (json.dumps({
+            **default, "next_index": (idx + 1) % total},
+            ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8"))
+    return {"agenda_attempts": min(total, MAX_AGENDAS_PER_BATCH),
+            "agenda_advanced": started, "agenda_finished": completed,
+            "agenda_held": held, "segments_examined": examined_segments,
+            "event_slots_examined": examined_events,
+            "segment_holds": segment_holds}
+
+
 def run_observation(source_config, root, day, batch_id, *,
                     execute_live=False, key="", index_reader=scan_index_pages,
                     campaign_runner=run_campaign,
@@ -312,29 +392,39 @@ def run_observation(source_config, root, day, batch_id, *,
             digest = sha256(raw).hexdigest()
             campaign = private_subdir(campaign_root / digest[:24])
             rotation = private_subdir(rotation_root / digest[:24])
+            # A whole index batch is validated first, but each agenda
+            # executes in its own cursor namespace to avoid starvation.
             plan = plan_campaign(json.loads(raw), digest, scan_day, campaign)
-            result = campaign_runner(plan, public_key=key)
-            if (result.get("public_writes") != 0
-                    or result.get("publication_ready") is not False):
-                raise ValueError("unsafe_national_campaign_result")
-            started += 1
-            completed += int(result["finished_index_batch"])
-            rotation_result = segment_runner(
-                campaign, rotation, scan_day, execute_live=True, key=key,
-                segment_budget=MAX_SEGMENTS_PER_RUN,
-            )
-            if (rotation_result.get("public_writes") != 0
-                    or rotation_result.get("publication_ready") is not False):
-                raise ValueError("unsafe_national_rotation_result")
-            examined_segments += rotation_result["segment_reports_examined"]
-            examined_events += rotation_result["event_slots_examined"]
-            held += rotation_result["segment_reports_held"]
+            result = rotate_agendas_independently(
+                plan["index_doc"], digest, scan_day, campaign, rotation,
+                key, campaign_runner, segment_runner)
+            started += int(result["agenda_advanced"] > 0)
+            completed += int(result["agenda_finished"] > 0)
+            agenda_attempts += result["agenda_attempts"]
+            agenda_held += result["agenda_held"]
+            examined_segments += result["segments_examined"]
+            examined_events += result["event_slots_examined"]
+            held += result["segment_holds"] + result["agenda_held"]
             for candidate in plan["index_doc"]["new_agenda_candidates"]:
                 if type(candidate.get("agenda_uid")) is int:
                     agenda_keys.add(candidate["agenda_uid"])
-            invalid_metric_segments += summarize_private_segment_hints(
-                campaign, digest, scan_day, event_keys, session_keys,
-                venue_keys, territory_claims)
+            for candidate_dir in sorted(campaign.iterdir()):
+                if not candidate_dir.is_dir() or not candidate_dir.name.startswith("agenda-"):
+                    continue
+                candidate_index = candidate_dir.name.split("-")[-1]
+                if not candidate_index.isdecimal():
+                    continue
+                item_idx = int(candidate_index)
+                if item_idx >= len(plan["index_doc"]["new_agenda_candidates"]):
+                    continue
+                single_doc = dict(plan["index_doc"], new_agenda_candidates=[
+                    plan["index_doc"]["new_agenda_candidates"][item_idx]])
+                single_digest = sha256(json.dumps(
+                    single_doc, sort_keys=True, ensure_ascii=False,
+                    separators=(",", ":")).encode("utf-8")).hexdigest()
+                invalid_metric_segments += summarize_private_segment_hints(
+                    candidate_dir, single_digest, scan_day,
+                    event_keys, session_keys, venue_keys, territory_claims)
         except (OSError, ValueError, TypeError, KeyError, TimeoutError,
                 UnicodeError):
             # This report stays on disk and remains in the next rotation.
@@ -353,6 +443,8 @@ def run_observation(source_config, root, day, batch_id, *,
             "index_batches_examined": len(selected),
             "index_batches_advanced": started,
             "index_batches_finished_this_pass": completed,
+            "agenda_attempts": agenda_attempts,
+            "agenda_held_for_research": agenda_held,
             "segments_examined": examined_segments,
             "event_slots_examined": examined_events,
             "held_for_research": held,
