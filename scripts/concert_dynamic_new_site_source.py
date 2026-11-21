@@ -292,3 +292,198 @@ def verify(event_approval, site_approval, published_venues, published_artists,
     require(names[0] in other["names"],
             "independent witness does not confirm the lead artist")
     return True
+
+
+# A first-party venue need not ALREADY belong to the public map to announce
+# a show. In this profile the new venue's website is independently certified
+# by a precise French government address and ONE named OSM feature, so a
+# SECOND event publisher is not mandatory. All artist/date/genre facts remain
+# anchored to a single individual event on that independently attributed site.
+SELF_PROFILE = "dynamic-self-attributed-new-site-v1"
+SELF_CHECKED = [
+    "artists", "date", "venue", "genre", "sourceWebsite",
+    "independentLocation",
+]
+SELF_FIELDS = frozenset({
+    "url", "proofType", "checkedAt", "checkedFields",
+    "officialArtistNames", "officialGenreLabels", "namedOsmUrl",
+    "officialSiteWebsite",
+})
+
+
+def _self_basics(event_approval, site_approval):
+    """Strictly bind the new site and event ledger entries without trusting either."""
+    require(isinstance(event_approval, dict)
+            and isinstance(site_approval, dict)
+            and event_approval.get("reviewDecision") == "approved"
+            and event_approval.get("reviewedBy") == "independent-official-verifier"
+            and site_approval.get("reviewDecision") == "approved"
+            and site_approval.get("reviewedBy") == "independent-official-verifier"
+            and site_approval.get("venueKind") == contract.PROFILE
+            and site_approval.get("reviewedAt") == event_approval.get("reviewedAt"),
+            "new site/event not independently paired")
+    event = event_approval.get("event")
+    site = site_approval.get("venue")
+    binding = site_approval.get("eventBinding")
+    proofs = event_approval.get("officialEvidence")
+    require(isinstance(event, dict) and isinstance(site, dict)
+            and isinstance(binding, dict)
+            and isinstance(proofs, list) and len(proofs) == 2
+            and isinstance(proofs[0], dict)
+            and proofs[0].get("proofType") == "official-organizer-or-venue"
+            and proofs[0].get("url") == event.get("officialUrl")
+            and proofs[0].get("checkedAt") == event_approval.get("reviewedAt")
+            and proofs[0].get("checkedFields") ==
+                ["artists", "date", "venue", "genre"]
+            and isinstance(proofs[1], dict)
+            and set(proofs[1]) == SELF_FIELDS,
+            "signed individual first-party event evidence malformed")
+    proof = proofs[1]
+    require(proof.get("proofType") == SELF_PROFILE
+            and proof.get("url") == event.get("officialUrl")
+            and proof.get("checkedAt") == event_approval.get("reviewedAt")
+            and proof.get("checkedFields") == SELF_CHECKED
+            and isinstance(proof.get("officialArtistNames"), list)
+            and len(proof["officialArtistNames"]) >= 1
+            and isinstance(proof.get("officialGenreLabels"), list)
+            and contract.relevant_genres(proof["officialGenreLabels"])
+            and event.get("genres") == proof["officialGenreLabels"]
+            and event.get("title") == " + ".join(proof["officialArtistNames"])
+            and event.get("status") == "confirmed"
+            and event.get("sourceType") == "organisateur"
+            and event.get("time") is None
+            and event.get("venueId") == site.get("id")
+            and site.get("id") == contract.site_id(
+                site.get("name", ""), site.get("city", ""),
+                site.get("geoSource", ""))
+            and binding.get("eventId") == event.get("id")
+            and binding.get("eventDate") == event.get("date")
+            and binding.get("eventOfficialUrl") == event.get("officialUrl")
+            and binding.get("authorityArtistId") is None
+            and binding.get("authoritySourceUrl") ==
+                proof.get("officialSiteWebsite")
+            and proof.get("namedOsmUrl") == site.get("geoSource"),
+            "newly discovered venue, signer, artist or date differs")
+    url = event.get("officialUrl")
+    homepage = proof.get("officialSiteWebsite")
+    require(isinstance(url, str) and isinstance(homepage, str)
+            and intake.valid_https(url)
+            and urlsplit(url).path not in ("", "/")
+            and not urlsplit(url).query and not urlsplit(url).fragment
+            and intake.valid_https(homepage)
+            and domain(homepage) == domain(url),
+            "new venue event URL is not first-party")
+    return event, site, binding, proof
+
+
+def verify_self(event_approval, site_approval, published_venues,
+                published_artists, today, *, fetch=None):
+    """Publisher-bound fresh verification of NEW site + first-party show.
+
+    Any venue on any new HTTPS origin can qualify: no source registry,
+    registered artist, pre-published venue or second event domain is required.
+    Independently named BAN/OSM and OSM's website tag certify the source.
+    """
+    if fetch is None:
+        fetch = probe.safe_fetch
+    require(isinstance(today, dt.date) and not isinstance(today, dt.datetime)
+            and isinstance(published_venues, dict)
+            and isinstance(published_artists, dict),
+            "new site has no trusted publisher baseline")
+    event, venue, binding, proof = _self_basics(
+        event_approval, site_approval)
+    try:
+        checked = dt.date.fromisoformat(event_approval.get("reviewedAt"))
+        day = dt.date.fromisoformat(event.get("date"))
+    except (TypeError, ValueError):
+        raise ValueError("Open-origin new concert site: invalid signed date")
+    require(0 <= (today - checked).days <= 7 and day >= today
+            and checked <= day
+            and not discover.reject_listing(event.get("title")),
+            "stale, excluded or expired first-party concert")
+    require(venue.get("id") not in published_venues
+            and not any(
+                sites._name(v.get("name")) == sites._name(venue.get("name"))
+                and sites._name(v.get("city")) == sites._name(venue.get("city"))
+                for v in published_venues.values()
+                if isinstance(v, dict)),
+            "venue already published; existing-site route required")
+
+    cache = {}
+    html = fetch(event["officialUrl"], cache)
+    require(isinstance(html, str) and 100 <= len(html) <= probe.MAX_BYTES,
+            "fresh individual first-party Event inaccessible")
+    lead = {"name": event["title"], "date": event["date"],
+            "leadArtist": proof["officialArtistNames"][0],
+            "venue": venue["name"], "city": venue["city"]}
+    _raw, names, _unnamed, genres, loc = sites._official_event(
+        lead, html, event["officialUrl"], today)
+    require(names == proof["officialArtistNames"]
+            and genres == proof["officialGenreLabels"],
+            "independent full lineup or relevant genre changed")
+    ids, fresh = sites._artists(
+        names, {"artists": list(published_artists.values())})
+    require(event.get("artistIds") == ids
+            and event_approval.get("newArtists", []) == fresh,
+            "unknown artists or duplicate identity not independently established")
+    require(all(loc.get(k) == venue.get(k)
+                for k in ("name", "city", "address", "postalCode",
+                          "department", "region")),
+            "first-party named place differs from approved location")
+
+    import venue_address_osm_source as address_osm
+    import independent_named_site_geo as named_geo
+
+    def safe_geo(url, limit):
+        require(type(limit) is int and 0 < limit <= 650_000,
+                "invalid bounded geography fetch")
+        body = fetch(url, cache)
+        require(isinstance(body, str)
+                and 0 < len(body) <= min(limit, probe.MAX_BYTES),
+                "named-site geography unavailable or too large")
+        return body, url
+
+    # Both BAN AND a unique named OSM feature must identify the actual site.
+    # A link asserted in the Event is only a hint, never a map authorization.
+    geo_url, lat, lon, precision = named_geo.verify(loc, safe_geo)
+    website, feature = address_osm.website_from_address(
+        loc, fetch=fetch, cache=cache)
+    require(feature == geo_url == venue.get("geoSource")
+            and lat == venue.get("latitude")
+            and lon == venue.get("longitude")
+            and precision == venue.get("geoPrecision"),
+            "independent exact French address and named site differ")
+    require(website == proof["officialSiteWebsite"]
+            and domain(website) == domain(event["officialUrl"]),
+            "OSM feature does not attribute individual event's HTTPS origin")
+    return True
+
+
+def verify_self_historical(event_approval, site_approval, published_venues,
+                           published_artists, published_event, today):
+    """Replay historical self-attributed site without re-fetching past events.
+
+    Historical replay is ONLY allowed with the exact existing public event,
+    immutable venue fields and signed artist identities; never a new event.
+    """
+    require(isinstance(today, dt.date)
+            and isinstance(published_event, dict)
+            and isinstance(published_venues, dict)
+            and isinstance(published_artists, dict),
+            "historical first-party proof requires signed public baseline")
+    event, venue, binding, proof = _self_basics(
+        event_approval, site_approval)
+    require(all(event.get(k) == published_event.get(k)
+                for k in ("id", "title", "date", "artistIds", "venueId",
+                          "genres", "status", "officialUrl", "sourceType"))
+            and published_event.get("venueId") == venue.get("id")
+            and published_venues.get(venue.get("id")) == venue,
+            "historical first-party concert or venue identity changed")
+    names = proof["officialArtistNames"]
+    require(event.get("artistIds")
+            and len(event["artistIds"]) == len(names)
+            and all(isinstance(published_artists.get(ident), dict)
+                    and published_artists[ident].get("name") == name
+                    for ident, name in zip(event["artistIds"], names)),
+            "published artist bill differs from historical first-party proof")
+    return True
