@@ -15,7 +15,8 @@ from grossesondes_stage import stage
 from test_grosses_stage import fixtures
 from grossesondes_generic_directory_edition import (
     directory_url, directory_urls, discover_directory_website,
-    trusted_linked_site, verify_primary, private_proposal,
+    trusted_linked_site, verify_primary, visible_adjacent_edition_dates,
+    private_proposal,
     validate_private_proposal, independently_verify, validate_verified_row,
     PROOF_MODE,
 )
@@ -35,6 +36,78 @@ OFFICIAL = ("<main><h1>Festibarock'in</h1>"
 
 
 class GenericDirectoryProofTests(TestCase):
+    def test_adjacent_first_party_festival_hero_dates_can_be_proven(self):
+        # Real homepages frequently print a headline and dates as separate
+        # visible blocks instead of repeating them in one paragraph.
+        home = ('<main><section><h2>FESTIBAROCK\'IN</h2>'
+                '<div>25 &amp; 26 Juin 2027</div>'
+                '<p>Un festival de rock pour tous, avec concerts.</p>'
+                '</section></main>')
+        # Assert that the NEW alternate structural reader really works;
+        # the legacy near-title reader may sometimes reach the same result.
+        self.assertEqual(
+            visible_adjacent_edition_dates(home, TITLE, 2027, DAY), DATES)
+        self.assertEqual(
+            verify_primary(home, TITLE, 2027, DAY), DATES)
+        route = private_proposal(TITLE, SITE, DATES, DAY)
+        self.assertIsNotNone(route)
+        visited = []
+        published = independently_verify(
+            route, DAY,
+            directory_fetch=lambda url: visited.append(url) or ENTRY,
+            organizer_fetch=lambda url: visited.append(url) or home)
+        self.assertIsNotNone(published)
+        self.assertEqual(visited, [DIRECTORY, SITE])
+        self.assertFalse(published["showOnMap"])
+        self.assertEqual(published["lineup"], [])
+
+    def test_hero_proof_rejects_unrelated_hidden_cancelled_and_forged_dates(self):
+        head = "<main><h2>FESTIBAROCK'IN</h2>"
+        date = "<p>25 &amp; 26 Juin 2027</p>"
+        tail = "<p>Festival de rock et metal.</p></main>"
+        valid = head + date + tail
+        cases = {
+            "hidden_date": head +
+                "<p hidden>25 &amp; 26 Juin 2027</p>" + tail,
+            "hidden_title": "<main><h2 hidden>FESTIBAROCK'IN</h2>" +
+                date + tail,
+            "other_year": head + "<p>25 &amp; 26 Juin 2026</p>" + tail,
+            "ticket_on_sale": head +
+                "<p>Ouverture billetterie 25 &amp; 26 Juin 2027</p>" + tail,
+            "mixed_date": head +
+                "<p>25 &amp; 26 Juin 2027; 01 &amp; 02 Juillet 2027</p>" + tail,
+            "cancelled": head + date +
+                "<p>Festival 2027 annulé.</p></main>",
+            "tour": head + date +
+                "<p>Festival de rock: tournée itinérante de concerts en 2027.</p></main>",
+            "jsonld_conflict": valid + (
+                '<script type="application/ld+json">'
+                '{"@type":"MusicEvent","name":"Festibarock\'in 2027",'
+                '"startDate":"2027-07-25","endDate":"2027-07-26"}'
+                "</script>"),
+            "script_only": head +
+                "<script>25 &amp; 26 Juin 2027</script>" + tail,
+            "identity_mismatch": valid.replace(
+                "FESTIBAROCK'IN", "Festival totalement étranger"),
+            "other_festival_between": head +
+                "<h3>Un autre festival</h3>" + date + tail,
+        }
+        for kind, html in cases.items():
+            with self.subTest(kind=kind):
+                self.assertIsNone(verify_primary(html, TITLE, 2027, DAY))
+        # A different, explicitly announced FUTURE date is not invalid on
+        # its own. The signed candidate dates must still match EXACTLY.
+        shifted = head + "<p>24 &amp; 25 Juin 2027</p>" + tail
+        self.assertEqual(
+            verify_primary(shifted, TITLE, 2027, DAY),
+            ("2027-06-24", "2027-06-25"))
+        proposal = private_proposal(TITLE, SITE, DATES, DAY)
+        self.assertIsNotNone(proposal)
+        self.assertIsNone(independently_verify(
+            proposal, DAY,
+            directory_fetch=lambda _url: ENTRY,
+            organizer_fetch=lambda _url: shifted))
+
     def test_directory_derived_from_identity_not_patch_url(self):
         self.assertEqual(directory_url(TITLE), DIRECTORY)
         for bad in ("Other Name", "Festival 2027/../../../private",
