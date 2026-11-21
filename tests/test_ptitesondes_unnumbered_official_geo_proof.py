@@ -92,6 +92,31 @@ class UnnumberedOfficialGeoTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             proof.lat = 0
 
+    def test_no_oa_gps_uses_only_exact_municipal_geo_and_unique_osm(self):
+        # This is an independent venue proof, never event approval.
+        proof = mint(source_center=None)
+        self.assertIsInstance(proof, VenueLocationProof)
+        self.assertEqual(proof.method, "dila_official_geo_plus_named_osm")
+        self.assertEqual(
+            (location_from_proof(proof, CITY, VENUE, DAY, None)["lat"],
+             location_from_proof(proof, CITY, VENUE, DAY, None)["lng"]),
+            POINT)
+        # A missing official geo cannot be replaced by town/road centre.
+        self.assertIsNone(mint(
+            source_center=None, official_html=html(include_geo=False)))
+        # OSM must corroborate the exact same unique, named geometry.
+        self.assertIsNone(mint(
+            source_center=None, osm_response=osm(duplicate=True)))
+        self.assertIsNone(mint(
+            source_center=None, osm_response=osm(point=(44.51, 2.25))))
+        self.assertIsNone(mint(
+            source_center=None, official_html=html(city="Autre commune")))
+        self.assertIsNone(mint(
+            source_center=None, official_html=html(venue="Autre salle")))
+        # DILA must attest the site, regardless of any self-declared Place.
+        self.assertIsNone(mint(
+            source_center=None, directory={}))
+
     def test_not_restricted_to_curated_outdoor_types_or_numbered_address(self):
         group = {**GROUP, "venue": "Rue du futur",
                  "key": ["ville les bois", "rue du futur"]}
