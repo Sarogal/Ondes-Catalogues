@@ -100,6 +100,18 @@ def visible_future_edition_without_dates(html, parent, year):
                     r"artiste|20(?:2[0-6]|[0-1][0-9]))\b",
                     between):
                 continue
+            # An official organizer can seek donations *to prepare* a future
+            # edition without confirming it will happen. Such conditional
+            # language is not a calendar announcement. Keep as research.
+            context = visible[max(0, first - 120):min(len(visible), last + 120)]
+            if re.search(
+                    r"\b(?:preparer?|preparation|projet|envisage|"
+                    r"eventuel|eventuelle|incertain|hypothetique|"
+                    r"peut[\W_]+etre|sous[\W_]+reserve|"
+                    r"financement|cagnotte|collecte[\W_]+de[\W_]+fonds|"
+                    r"si[\W_]+les[\W_]+fonds|annulation)\b",
+                    context):
+                continue
             return True
     return False
 
