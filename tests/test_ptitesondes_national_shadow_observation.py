@@ -104,6 +104,22 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(old.read_bytes(), original)
         self.assertEqual(self.segments.call_args.args[2], DAY)
 
+    def test_daily_census_runs_on_third_scheduled_invocation(self):
+        # With two scheduled runs daily, the first run and then every
+        # second following invocation should collect the unfiltered index.
+        self.invoke()
+        second, second_reader = self.invoke(batch_id="second")
+        self.assertEqual(second["new_index_census"], 0)
+        second_reader.assert_not_called()
+        third, third_reader = self.invoke(
+            day=DAY + timedelta(days=1), batch_id="new-day",
+            index=Mock(return_value=index_doc(889900)))
+        third_reader.assert_called_once()
+        self.assertEqual(third["new_index_census"], 1)
+        self.assertEqual(third["stored_index_batches"], 2)
+        self.assertEqual(third["public_writes"], 0)
+        self.assertFalse(third["publication_ready"])
+
     def test_later_new_report_joins_rotation_without_erasing_old(self):
         self.invoke()
         original = list((self.root / "index" / "reports").iterdir())[0]
@@ -144,8 +160,9 @@ class NationalShadowObservationTests(unittest.TestCase):
             path.write_bytes(raw)
             path.chmod(0o600)
         self.campaign.reset_mock()
-        first, _ = self.invoke(batch_id="fresh")
-        second, _ = self.invoke(batch_id="fresher")
+        with patch("ptitesondes_national_shadow_observation.INDEX_EVERY_N_INVOCATIONS", 12):
+            first, _ = self.invoke(batch_id="fresh")
+            second, _ = self.invoke(batch_id="fresher")
         self.assertEqual(first["stored_index_batches"], 4)
         self.assertGreaterEqual(first["held_for_research"], 1)
         self.assertEqual(second["stored_index_batches"], 4)
@@ -358,14 +375,16 @@ class NationalShadowObservationTests(unittest.TestCase):
             for i in range(160)
         ]
         first_index = Mock(return_value=batch)
-        first, _ = self.invoke(index=first_index)
+        with patch("ptitesondes_national_shadow_observation.INDEX_EVERY_N_INVOCATIONS", 12):
+            first, _ = self.invoke(index=first_index)
         self.assertEqual(first["agenda_attempts"], 20)
         self.assertEqual(first["index_agendas_observed_in_batch_sample"], 160)
-        for idx in range(1, 8):
-            later, reader = self.invoke(
-                batch_id=f"continuation-{idx}", index=Mock())
-            self.assertEqual(later["agenda_attempts"], 20)
-            reader.assert_not_called()
+        with patch("ptitesondes_national_shadow_observation.INDEX_EVERY_N_INVOCATIONS", 12):
+            for idx in range(1, 8):
+                later, reader = self.invoke(
+                    batch_id=f"continuation-{idx}", index=Mock())
+                self.assertEqual(later["agenda_attempts"], 20)
+                reader.assert_not_called()
         self.assertEqual(self.campaign.call_count, 160)
         observed = [
             call.args[0]["index_doc"]["new_agenda_candidates"][0]["agenda_uid"]
