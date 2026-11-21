@@ -10,6 +10,9 @@ on:
       - "radio-catalog-lab/tools/test_artwork_release_packager.py"
       - "radio-catalog-lab/tools/probe_v5_reviewed_resized_artwork.py"
       - "radio-catalog-lab/tools/test_probe_v5_reviewed_resized_artwork.py"
+      - "radio-catalog-lab/tools/test_v5_artwork_unsigned_v2_12_preview.py"
+      - "radio-catalog-lab/tools/test_v5_artwork_unsigned_v2_preview.py"
+      - "grossesondes/radio-test-apk/artwork/previews/**"
   workflow_dispatch:
 
 permissions:
@@ -36,6 +39,8 @@ jobs:
             -p "test_probe_v5_reviewed_resized_artwork.py" -v
           python -m unittest discover -s radio-catalog-lab/tools \
             -p "test_v5_artwork_unsigned_v2_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_12_preview.py" -v
       - name: Fetch immutable old audit reports only
         run: |
           set -euo pipefail
