@@ -39,6 +39,96 @@ def catalogue(row=ROW):
 
 
 class FutureCityProofTests(unittest.TestCase):
+    def test_confirmed_future_edition_without_dates_can_prove_a_city(self):
+        from future_city_preflight import (
+            undated_future_year, eligible_undated,
+        )
+        row = {
+            "slug": "festival-exemple-2027",
+            "name": "Festival Exemple 2027", "startDate": None, "endDate": None,
+            "status": "Dates à venir", "officialSite": SITE,
+            "showOnMap": False, "lat": None, "lon": None, "city": None,
+        }
+        html = (
+            "<html><p>Festival Exemple : rendez-vous en 2027 "
+            "à Colonne pour la prochaine édition.</p></html>"
+        )
+        self.assertEqual(undated_future_year(row, "2026-11-21"), 2027)
+        self.assertEqual(eligible_undated(catalogue(row), "2026-11-21"), [row])
+        self.assertEqual(exact_edition_city(html, row), {
+            "slug": row["slug"], "city": "Colonne", "source": SITE,
+        })
+        calls = []
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda url: calls.append(url) or html), {
+            "slug": row["slug"], "city": "Colonne", "source": SITE,
+        })
+        self.assertEqual(calls, [SITE])
+
+    def test_undated_city_must_be_on_explicit_future_edition_paragraph(self):
+        row = {
+            "slug": "festival-exemple-2027",
+            "name": "Festival Exemple 2027", "startDate": None, "endDate": None,
+            "status": "Dates à venir", "officialSite": SITE,
+            "showOnMap": False, "lat": None, "lon": None, "city": None,
+        }
+        invalid = [
+            "<p>Festival Exemple 2026 à Colonne</p>"
+            "<p>Festival Exemple : édition 2027</p>",
+            "<p>Festival Exemple : rendez-vous en 2027 à Colonne"
+            " et à Bordeaux.</p>",
+            "<p>Festival Exemple : préparation de l'édition 2027"
+            " à Colonne sous réserve de financement.</p>",
+            "<p>Festival Exemple : édition 2027 à Colonne annulée.</p>",
+            "<p style='display:none'>Festival Exemple : édition 2027 "
+            "à Colonne.</p>",
+            "<p>Festival Exemple : édition 2027 à Colonne 12-13 juin 2027.</p>",
+        ]
+        for html in invalid:
+            with self.subTest(html=html):
+                self.assertIsNone(exact_edition_city(html, row))
+        self.assertIsNone(exact_edition_city(
+            "<p>Festival Exemple : édition 2027 à Bordeaux.</p>",
+            {**row, "city": "Colonne"}))
+        self.assertEqual(exact_edition_city(
+            "<p>Festival Exemple : édition 2027 à Colonne.</p>",
+            {**row, "city": "Colonne"})["city"], "Colonne")
+        for forged in (
+            {"startDate": "2027-01-01"},
+            {"endDate": "2027-01-01"},
+            {"status": "Confirmé"},
+            {"showOnMap": True},
+            {"slug": "festival-exemple-2026"},
+            {"lat": 48.0},
+        ):
+            with self.subTest(forged=forged):
+                from future_city_preflight import undated_future_year
+                self.assertIsNone(undated_future_year(
+                    {**row, **forged}, "2026-11-21"))
+
+    def test_undated_geo_cannot_skip_two_independent_days(self):
+        row = {
+            "slug": "festival-exemple-2027", "name": "Festival Exemple 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": SITE, "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        html = ("<p>Festival Exemple revient en 2027 à Colonne.</p>")
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = review(state, catalogue(row), "2026-11-20",
+                       lambda _: html)
+        self.assertEqual(first["checked"], 1)
+        self.assertEqual(first["first_day"], 1)
+        same = review(state, catalogue(row), "2026-11-20",
+                      lambda _: html)
+        self.assertEqual(same["two_day_stable"], 0)
+        next_day = review(state, catalogue(row), "2026-11-21",
+                          lambda _: html)
+        # The exact state logic never counts repeated checks on the same day
+        # as separate proofs; only two civil dates can stabilize it.
+        self.assertLessEqual(next_day["two_day_stable"], 1)
+        self.assertTrue(next_day["publication_authorized"] is False)
+
     def test_current_year_city_visible_in_one_dated_official_paragraph(self):
         value = exact_edition_city(MESSAGE, ROW)
         self.assertEqual(value, {
