@@ -35,6 +35,7 @@ from automation.concerts import official_rss_jsonld_bridge as bridge
 from automation.concerts import source_admission_intake as intake
 from automation.concerts import source_cross_domain_corroboration as cross
 from automation.concerts import dynamic_first_party_venue_proposals as official
+from automation.concerts import venue_address_osm_source as address_osm
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
@@ -56,10 +57,11 @@ def _site(catalogue, c):
                     intake.normalized(c.get("city"))
                 and (not c.get("department") or
                      str(venue.get("department")) == str(c["department"]))
-                and verified.OSM_NODE.fullmatch(
-                    str(venue.get("geoSource", "")))]
+                and (verified.OSM_NODE.fullmatch(
+                    str(venue.get("geoSource", "")))
+                    or address_osm.eligible_address(venue))]
     require(len(matching) == 1,
-            "exact published venue with independent named OSM node required")
+            "exact published venue with independently verifiable geography required")
     return matching[0]
 
 
@@ -159,8 +161,15 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     cache = {}
     # The OSM claim is independent of the event page; do not read a domain
     # from a candidate as publisher authority.
+    has_named_node = bool(verified.OSM_NODE.fullmatch(
+        str(venue.get("geoSource", ""))))
     try:
-        verified.osm_identity(venue, url, fetch, cache)
+        if has_named_node:
+            feature = verified.osm_identity(venue, url, fetch, cache)
+            website = None
+        else:
+            feature, website = verified.address_identity(
+                venue, url, fetch, cache)
     except (ValueError, OSError, TimeoutError) as exc:
         raise ValueError("osm_identity: " + str(exc)) from exc
     try:
@@ -196,19 +205,27 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
         for e in catalogue["events"] if isinstance(e, dict)),
         "already published or overlapping concert")
     now = today.isoformat()
+    proof = {
+        "url": url,
+        "proofType": (verified.OSM_SINGLE_PROFILE if has_named_node
+                      else verified.OSM_ADDRESS_PROFILE),
+        "checkedAt": now,
+        "checkedFields": (list(verified.CHECKED) if has_named_node else
+                          list(verified.ADDRESS_CHECKED)),
+        "officialArtistNames": names,
+        "officialGenreLabels": genres,
+        "namedOsmUrl": feature,
+    }
+    if not has_named_node:
+        proof.update({
+            "publishedVenueGeoSource": venue["geoSource"],
+            "sourceWebsite": website,
+        })
     approval = {
         "reviewDecision": "approved",
         "reviewedBy": "independent-official-verifier",
         "reviewedAt": now,
-        "officialEvidence": [{
-            "url": url,
-            "proofType": verified.OSM_SINGLE_PROFILE,
-            "checkedAt": now,
-            "checkedFields": list(verified.CHECKED),
-            "officialArtistNames": names,
-            "officialGenreLabels": genres,
-            "namedOsmUrl": venue["geoSource"],
-        }],
+        "officialEvidence": [proof],
         "event": {
             "id": eid, "title": " + ".join(names),
             "date": date, "time": None, "artistIds": artists,
