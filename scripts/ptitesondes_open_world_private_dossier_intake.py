@@ -50,7 +50,8 @@ def _https(url):
 def _host(url):
     if _https(url) is None:
         return None
-    return _url_host(url)
+    host = _url_host(url)
+    return host.removeprefix("www.") if host else None
 
 
 def _day_sessions(lead, today):
@@ -161,8 +162,9 @@ def collect_research_dossiers(observation_root, research_root, today,
     # Four independent reviews per day can cover successive partitions. A
     # bounded time budget is NOT a permanent semantic denylist.
     first = (batch_index * MAX_DOSSIERS) % len(proposals) if proposals else 0
-    chosen = (proposals[first:first+MAX_DOSSIERS]
-              + proposals[:max(0, first+MAX_DOSSIERS-len(proposals))])
+    count = min(MAX_DOSSIERS, len(proposals))
+    chosen = (proposals[first:first+count]
+              + proposals[:max(0, first+count-len(proposals))])
     return chosen, {
         "reports": len(reports), "pairs": pair_count,
         "candidate_dossiers": len(proposals), "queued": len(chosen),
@@ -182,7 +184,9 @@ def attach_research_dossiers(patch, dossiers, today):
             or not isinstance(patch.get("deferred"), list)
             or not isinstance(dossiers, list)
             or len(dossiers) > MAX_DOSSIERS
-            or "open_world_research" in patch):
+            or ("open_world_research" in patch
+                and (not isinstance(patch["open_world_research"], list)
+                     or len(patch["open_world_research"]) > MAX_DOSSIERS))):
         raise ValueError("invalid_private_dossier_patch")
     # Never merge untrusted research into additions. Publisher recomputes all
     # evidence and rejects any dossier whose origin/GPS/clock/rights disagree.
