@@ -9,6 +9,7 @@ untrusted but UID-bound OpenAgenda/ODS source point. Nothing is published.
 import json
 import math
 import re
+from html.parser import HTMLParser
 
 from proof import meters, norm
 from ptitesondes_dila_municipal_domains import approved_municipal_page_host
@@ -43,6 +44,111 @@ def _candidate(group, number, street, postcode, city):
     return {"city": group["city"], "venue": group["venue"],
             "housenumber": number, "street": street, "postcode": postcode,
             "address_query": value}
+
+
+_FRENCH_LINK_WORDS = frozenset(("de", "du", "des", "la", "le", "les",
+                               "l", "d", "et", "a", "au", "aux"))
+
+
+def _official_heading_matches(heading, venue):
+    """Exact title or its printed French acronym, never a fuzzy place name."""
+    if norm(heading) == norm(venue):
+        return True
+    match = re.fullmatch(r"(.+?)\s+\(([A-Za-zÀ-ÿ]{2,10})\)\s*", heading)
+    if not match or norm(match.group(1)) != norm(venue):
+        return False
+    words = [w for w in norm(venue).split() if w not in _FRENCH_LINK_WORDS]
+    acronym = "".join(w[0] for w in words)
+    return len(acronym) >= 2 and norm(match.group(2)) == acronym
+
+
+class _MunicipalHeadingText(HTMLParser):
+    """Visible H1-associated text, excluding unrelated sections and footer."""
+    HIDDEN = frozenset(("script", "style", "noscript", "template", "svg",
+                        "iframe", "footer", "nav"))
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.hidden = 0
+        self.nodes = 0
+        self.head = None
+        self.text = []
+        self.in_heading = False
+        self.sections = []
+
+    def _finish(self):
+        if self.head is not None:
+            self.sections.append(
+                (" ".join(self.head).strip(), " ".join(self.text).strip()))
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.HIDDEN:
+            self.hidden += 1
+            return
+        if self.hidden:
+            return
+        self.nodes += 1
+        if self.nodes > 3500:
+            raise ValueError("too_many_visible_nodes")
+        if tag in ("h1", "h2", "h3"):
+            self._finish()
+            self.head, self.text = [], []
+            self.in_heading = True
+
+    def handle_data(self, data):
+        if self.hidden or self.head is None:
+            return
+        target = self.head if self.in_heading else self.text
+        if sum(map(len, target)) <= 10000:
+            target.append(" ".join(data.split()))
+
+    def handle_endtag(self, tag):
+        if tag in self.HIDDEN:
+            self.hidden = max(0, self.hidden - 1)
+        elif not self.hidden and tag in ("h1", "h2", "h3"):
+            self.in_heading = False
+
+
+def _municipal_visible_numbered_address(group, html):
+    """Recover an official numbered address even without an <address> tag.
+
+    Municipality pages can display an exact titled building and its street
+    address in ordinary page text. This fallback does NOT accept arbitrary
+    venues or coordinates: DILA authorization and exact BAN check still apply.
+    """
+    if (not isinstance(group, dict) or not isinstance(html, str)
+            or not 30 <= len(html) <= 350000
+            or not norm(group.get("city")) or not norm(group.get("venue"))):
+        return None
+    parser = _MunicipalHeadingText()
+    try:
+        parser.feed(html)
+        parser.close()
+        parser._finish()
+        city = group["city"]
+        pattern = re.compile(
+            r"(?<!\w)([0-9]{1,4}(?:[ -]?(?:bis|ter|quater|[a-z]))?)\s+"
+            r"([^\d,]{3,100}?)\s*,?\s+([0-9]{5})\s+"
+            + re.escape(city) + r"(?:\b|$)", re.IGNORECASE)
+        addresses = []
+        for heading, body in parser.sections:
+            if not _official_heading_matches(heading, group["venue"]):
+                continue
+            pairs = pattern.findall(body[:350])
+            # One address per named section; conflicting ones fail closed.
+            if len(pairs) != 1:
+                return None
+            number, street, postcode = pairs[0]
+            candidate = _candidate(group, number, street.strip(), postcode, city)
+            if candidate is None:
+                return None
+            addresses.append(candidate)
+        if addresses and len({
+                norm(x["address_query"]) for x in addresses}) == 1:
+            return addresses[0]
+    except (TypeError, ValueError, KeyError, RecursionError, OverflowError):
+        return None
+    return None
 
 
 def extract_official_address(group, html):
@@ -116,10 +222,12 @@ def extract_official_address(group, html):
     if (len(p.headings) != 1 or len(p.addresses) != 1
             or norm(p.headings[0]) != norm(group.get("venue"))):
         return None
-    m = VISIBLE_ADDRESS.fullmatch(p.addresses[0])
-    if m is None:
-        return None
-    return _candidate(group, m.group(1), m.group(2), m.group(3), m.group(4))
+    if (len(p.headings) == 1 and len(p.addresses) == 1
+            and norm(p.headings[0]) == norm(group.get("venue"))):
+        m = VISIBLE_ADDRESS.fullmatch(p.addresses[0])
+        if m is not None:
+            return _candidate(group, m.group(1), m.group(2), m.group(3), m.group(4))
+    return _municipal_visible_numbered_address(group, html)
 
 
 def confirm_official_address_ban(group, source_center, directory,
