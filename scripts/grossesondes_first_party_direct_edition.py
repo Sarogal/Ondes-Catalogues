@@ -23,6 +23,7 @@ from grossesondes_venue_reciprocal_edition import (
     safe_root, visible_content, first_party_hero_hint,
     STYLE_WITHOUT_BRAND, BLOCKED_FAMILIES,
 )
+from grossesondes_official_html_edition import VisibleParagraphs, explicit_ranges
 from grossesondes_institutional_edition import slug_for
 from grossesondes_structured_edition import ROW_KEYS, PRIVATE_KEYS
 from source_qualification import normalized, classify
@@ -43,6 +44,16 @@ GENERIC_WORDS = frozenset((
     "musique", "edition", "open", "plein", "air", "live",
 ))
 MAX_OFFICIAL_HTML = 650_000
+# Only an explicitly printed town beside the current festival date can be
+# copied. It is NOT a geocoder or a second-source date confirmation.
+CITY_AFTER_DATE = re.compile(
+    r"(?:\\b(?:à|au|in|at)\\s+|[·•]\\s*)"
+    r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
+    r"(?:\\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})")
+CITY_FORBIDDEN = frozenset(("Festival", "France", "Programmation",
+                             "Billetterie", "Musique", "Concert",
+                             "Rock", "Metal", "Punk"))
+
 
 
 def branded_official_site(site, title, html):
@@ -91,8 +102,46 @@ def branded_official_site(site, title, html):
     return STYLE_WITHOUT_BRAND.search(outside_brand) is not None
 
 
-def verify_first_party_edition(site, title, today, fetch=fetch_public_html):
-    """Official website recheck: festival/domain, genre, dates; no venue."""
+
+def official_city_on_current_date(html, title, dates):
+    """Read the current edition's city ONLY if printed next to its dates.
+
+    Never inherit locations from older festival editions. Ambiguous cities
+    or unlabelled venue names remain absent and can be revisited via future
+    geo enrichment; no external event announcement is required.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= MAX_OFFICIAL_HTML:
+        return None
+    try:
+        start, end = map(date.fromisoformat, dates)
+        parser = VisibleParagraphs()
+        parser.feed(html)
+        parser.close()
+        locations = set()
+        for block in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+            if not 0 < len(block) <= 900:
+                continue
+            visible_ranges = {
+                (a, b) for _start, _end, a, b
+                in explicit_ranges(block, start.year)
+            }
+            if (start, end) not in visible_ranges:
+                continue
+            # Keep the text after the actual printed date, so unrelated
+            # festival names/mentions elsewhere cannot supply the city.
+            for matched in CITY_AFTER_DATE.finditer(block):
+                city = matched.group(1).strip()
+                if (len(city) >= 3
+                        and city not in CITY_FORBIDDEN
+                        and re.search(r"[0-9<>]", city) is None):
+                    locations.add(city)
+        return next(iter(locations)) if len(locations) == 1 else None
+    except (ValueError, TypeError, UnicodeError, KeyError):
+        return None
+
+
+def verify_first_party_claims(site, title, today, fetch=fetch_public_html):
+    """Read official current-edition dates and optional city in ONE download."""
     if safe_root(site) is None:
         return None
     try:
@@ -111,12 +160,19 @@ def verify_first_party_edition(site, title, today, fetch=fetch_public_html):
                 or end.year != year or start > end
                 or (end - start).days > 7):
             return None
-        return tuple(dates)
+        return tuple(dates), official_city_on_current_date(html, title, dates)
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
         return None
 
 
-def private_proposal(title, site, dates, today):
+
+def verify_first_party_edition(site, title, today, fetch=fetch_public_html):
+    """Compatibility wrapper: official dates only, no second event source."""
+    claims = verify_first_party_claims(site, title, today, fetch)
+    return claims[0] if claims is not None else None
+
+
+def private_proposal(title, site, dates, today, *, city=None):
     if (safe_root(site) is None or slug_for(title) is None
             or not re.fullmatch(r".{7,150} 20[2-4][0-9]", title)):
         return None
@@ -129,10 +185,15 @@ def private_proposal(title, site, dates, today):
             return None
     except (ValueError, TypeError, KeyError, OverflowError):
         return None
+    if (city is not None
+            and (not isinstance(city, str)
+                 or not 3 <= len(city) <= 110
+                 or re.search(r"[<>\\x00-\\x1f0-9]", city))):
+        return None
     return {
         "slug": slug_for(title), "name": title,
         "startDate": first.isoformat(), "endDate": last.isoformat(),
-        "city": None, "department": None, "region": None, "venue": None,
+        "city": city, "department": None, "region": None, "venue": None,
         "lat": None, "lon": None, "showOnMap": False,
         "dateRangeIsContinuous": False, "lineup": [], "bands": 0,
         "price": None, "status": "Annoncé",
@@ -159,7 +220,8 @@ def validate_private_proposal(row, today):
         return None
     expected = private_proposal(
         row.get("name"), row.get("officialSite"),
-        (row.get("startDate"), row.get("endDate")), row.get("verified_at"))
+        (row.get("startDate"), row.get("endDate")), row.get("verified_at"),
+        city=row.get("city"))
     return row if expected == row else None
 
 
@@ -167,9 +229,12 @@ def independently_verify(proposal, today, fetch=fetch_public_html):
     """Do not accept private proof text: re-download primary site live."""
     if validate_private_proposal(proposal, today) is None:
         return None
-    dates = verify_first_party_edition(
+    claims = verify_first_party_claims(
         proposal["officialSite"], proposal["name"], today, fetch)
-    if dates != (proposal["startDate"], proposal["endDate"]):
+    if (claims is None
+            or claims[0] != (proposal["startDate"], proposal["endDate"])
+            or (proposal["city"] is not None
+                and proposal["city"] != claims[1])):
         return None
     row = {key: proposal[key] for key in ROW_KEYS}
     row.update(
