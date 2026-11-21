@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-21",
+  "generatedAt": "2026-11-22",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -5141,7 +5141,7 @@
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
         "source": "https://www.motocultor-festival.com/",
-        "verifiedAt": "2026-11-21",
+        "verifiedAt": "2026-11-22",
         "scope": "per_category_only",
         "categories": [
           {
@@ -5150,7 +5150,7 @@
           },
           {
             "name": "Pass 4 jours",
-            "status": "limited_availability"
+            "status": "in_stock"
           }
         ]
       }
@@ -6037,6 +6037,54 @@
       "status": "Annoncé",
       "lon": null,
       "region": null
+    },
+    {
+      "officialSite": "https://www.festibarockin.fr/",
+      "notes": "Lien vers le site du festival retrouvé dans un annuaire public puis dates et genre revérifiés directement sur le site officiel. Lieu exact, artistes et coordonnées à confirmer.",
+      "price": null,
+      "startDate": "2027-06-25",
+      "lon": null,
+      "bands": 0,
+      "region": null,
+      "lineup": [],
+      "endDate": "2027-06-26",
+      "status": "Annoncé",
+      "sourceConfidence": "Annuaire public (lien vérifié) + site officiel (dates)",
+      "department": null,
+      "venue": null,
+      "verificationStatus": "Provenance et édition revérifiées indépendamment",
+      "source": "https://www.festibarockin.fr/",
+      "city": null,
+      "name": "Festibarock'in 2027",
+      "dateRangeIsContinuous": false,
+      "showOnMap": false,
+      "lastVerified": "2026-11-22",
+      "slug": "festibarock-in-2027",
+      "lat": null
+    },
+    {
+      "officialSite": "https://xtremefest.fr/",
+      "notes": "Retour de l'édition future explicitement annoncé sur le site officiel ; dates exactes, artistes, lieu futur et coordonnées non établis. Ne pas déduire les informations de l'édition précédente.",
+      "price": null,
+      "startDate": null,
+      "lon": null,
+      "bands": 0,
+      "region": null,
+      "lineup": [],
+      "endDate": null,
+      "status": "Dates à venir",
+      "sourceConfidence": "Site officiel (édition future confirmée, sans dates)",
+      "department": null,
+      "venue": null,
+      "verificationStatus": "Édition future revérifiée sur le site officiel ; dates à confirmer",
+      "source": "https://xtremefest.fr/",
+      "city": null,
+      "name": "Xtreme Fest 2027",
+      "dateRangeIsContinuous": false,
+      "showOnMap": false,
+      "lastVerified": "2026-11-22",
+      "slug": "xtreme-fest-2027",
+      "lat": null
     }
   ]
 }
