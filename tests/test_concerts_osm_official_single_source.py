@@ -250,7 +250,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             "geometry": {"type": "Point", "coordinates": [1.48568, 43.54795]},
             "properties": {"postcode": "31520", "city": "Ramonville-Saint-Agne",
                            "street": venue["address"], "type": "street",
-                           "score": 0.94,
+                           "score": 0.81,
                            "context": "31, Haute-Garonne, Occitanie"},
         }]})
         def osm(*, website=homepage, name="Le Bikini"):
@@ -311,7 +311,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             "geometry": {"type": "Point", "coordinates": [1.48568, 43.54795]},
             "properties": {"postcode": "31520", "city": "Ramonville-Saint-Agne",
                            "street": venue["address"], "type": "street",
-                           "score": 0.83},
+                           "score": 0.70},
         }]})
         for label, kwargs in (
             ("ban_low_score", {"ban_result": bad_ban}),
