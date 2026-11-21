@@ -78,6 +78,19 @@ class TourItineraryEvidenceTests(unittest.TestCase):
             '<script>2/4 🇫🇷 Montpellier – Victoire 2</script>')
         self.assertFalse(probe.matching_tour_stop(
             body, "2027-02-04", "Montpellier", "Victoire 2"))
+        body = SITE_HTML.replace(
+            "2/4 🇫🇷 Montpellier – Victoire 2<br/>",
+            '<div class="visually-hidden">'
+            '2/4 🇫🇷 Montpellier – Victoire 2</div>')
+        self.assertFalse(probe.matching_tour_stop(
+            body, "2027-02-04", "Montpellier", "Victoire 2"))
+
+    def test_latest_visible_year_before_itinerary_must_match(self):
+        misleading = SITE_HTML.replace(
+            "1/20 🇩🇪 Aschaffenburg",
+            "2026 world tour. 1/20 🇩🇪 Aschaffenburg")
+        self.assertFalse(probe.matching_tour_stop(
+            misleading, "2027-02-04", "Montpellier", "Victoire 2"))
 
     def test_ambiguous_numeric_date_order_requires_disambiguation(self):
         body = """<html><p>2027 touring metal festivals, 39 shows across Europe.</p>
