@@ -107,10 +107,12 @@ def reverify(input_doc, today, fetch=get_page, limit=MAX_RECHECK):
     candidates = []
     for row, spec in selected:
         try:
-            if live_index_for_exact_link(spec, fetch) is None:
+            index_html = live_index_for_exact_link(spec, fetch)
+            if index_html is None:
                 continue
             html = fetch(spec["url"])
-            verified_day = _tour_day(html, spec, today)
+            verified_day = _tour_day(
+                html, spec, today, index_html=index_html)
             if verified_day != row["dateHint"]:
                 continue
         except (OSError, ValueError, TypeError, UnicodeError, KeyError):
