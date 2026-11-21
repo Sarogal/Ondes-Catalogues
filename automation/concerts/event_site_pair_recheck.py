@@ -116,7 +116,12 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
 
 
 def _name(value):
-    return triage.words(value)
+    # Unicode apostrophes in official artist/venue names differ by CMS.
+    # Normalize typography, NOT different artist words or extra performers.
+    text = str(value or "").translate(str.maketrans({
+        "’": "'", "‘": "'", "ʼ": "'", "＇": "'",
+    }))
+    return triage.words(text)
 
 
 def _department(postal, address):
