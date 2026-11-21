@@ -1,0 +1,36 @@
+name: "P'tites Ondes — recherches de sources ouvertes (tests hors réseau)"
+
+# Only PR validation; never scheduled, dispatched for production or allowed writes.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_dynamic_municipal_source_links.py'
+      - 'tests/test_ptitesondes_dynamic_municipal_source_links.py'
+      - 'scripts/ptitesondes_unlisted_source_safe_recheck.py'
+      - 'tests/test_ptitesondes_unlisted_source_safe_recheck.py'
+      - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adversarial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify DILA-origin source links without a registry
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_dynamic_municipal_source_links.py' -v
+      - name: Verify DNS pinning, no SSRF and non-publishing source checks
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_source_safe_recheck.py' -v
