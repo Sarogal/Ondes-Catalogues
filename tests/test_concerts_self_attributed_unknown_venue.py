@@ -9,6 +9,7 @@ import datetime as dt
 import json
 import unittest
 from unittest import mock
+from urllib.parse import parse_qs, urlsplit
 
 from automation.concerts import dynamic_self_attributed_new_site_proposals as producer
 from automation.concerts import approval_preflight
@@ -80,7 +81,8 @@ def osm_xml(*, website=HOME, name="Place Libre",
     return '<osm version="0.6">' + unit + duplicate + '</osm>'
 
 
-def fetch_for(*, government=None, osm=None, raw=None, page=None):
+def fetch_for(*, government=None, osm=None, raw=None, page=None,
+              editing_unavailable=False):
     _, _, _, original, _, geo_node, _ = fixture.fixture()
     geo = copy.deepcopy(geo_node)
     if raw is not None:
@@ -100,9 +102,20 @@ def fetch_for(*, government=None, osm=None, raw=None, page=None):
         seen.append(url)
         if url.startswith("https://data.geopf.fr/geocodage/search/"):
             return government if government is not None else ban()
+        if url.startswith("https://overpass.private.coffee/api/interpreter?"):
+            q = parse_qs(urlsplit(url).query).get("data", [""])[0]
+            if "[out:json]" in q and "node(912345678)" in q:
+                return json.dumps(geo)
+            if "[out:xml]" in q:
+                return osm if osm is not None else osm_xml()
+            raise AssertionError("Invalid read-only OSM request")
         if url.startswith("https://api.openstreetmap.org/api/0.6/map?bbox="):
+            if editing_unavailable:
+                raise ValueError("OSM editing API unavailable")
             return osm if osm is not None else osm_xml()
         if url in pages:
+            if editing_unavailable and "api.openstreetmap.org" in url:
+                raise ValueError("OSM editing API unavailable")
             return pages[url]
         raise AssertionError("Unexpected public network origin: " + url)
     return get, seen
@@ -155,6 +168,34 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["officialUrl"], URL)
         self.assertEqual(published["venues"][-1]["id"],
                          room["venue"]["id"])
+
+    def test_new_room_and_eight_new_bands_reach_publisher_when_osm_editing_api_fails(self):
+        # This covers the actual public runner failure: direct OSM editing API
+        # is unavailable. Never skip independent identity; use a safe bounded
+        # Overpass read-only geometry and exact OSM website instead.
+        base = test_catalogue()
+        fetch, seen = fetch_for(editing_unavailable=True)
+        approvals, review = producer.build(
+            lead(), base, before(), TODAY, fetch=fetch)
+        self.assertEqual(review["stateCounts"],
+                         {"publisher_bound_event_site_pair": 1}, review)
+        self.assertTrue(any("overpass.private.coffee" in x for x in seen))
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            published, summary = publisher.merge(
+                base, base, approvals, TODAY)
+        self.assertEqual(summary["newEvents"], 1, summary.get("held"))
+        self.assertEqual(summary["newVenues"], 1)
+        self.assertEqual(summary["newArtists"], 8)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+
+    def test_overpass_bad_geography_cannot_override_official_site(self):
+        fake = osm_xml(website="https://impostor.invalid")
+        fetch, _ = fetch_for(osm=fake, editing_unavailable=True)
+        proposed, report = producer.build(
+            lead(), test_catalogue(), before(), TODAY, fetch=fetch)
+        self.assertEqual(proposed, before())
+        self.assertEqual(report["stateCounts"],
+                         {"held_source_or_site_unverified": 1})
 
     def test_mismatched_first_party_genre_geo_and_domain_never_propose(self):
         _, _, _, original, _, _, _ = fixture.fixture()
