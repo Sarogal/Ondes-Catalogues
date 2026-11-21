@@ -133,13 +133,109 @@ def _city_visible(html, row):
     return next(iter(facts)) if len(facts) == 1 else None
 
 
+def undated_future_year(row, today=None):
+    """Only signed, explicitly undated *future* festival edition identities.
+
+    Never infer a new year or municipality from the archived site alone.
+    Called on already-published rows, not on arbitrary private candidates.
+    """
+    if (not isinstance(row, dict)
+            or row.get("startDate") is not None
+            or row.get("endDate") is not None
+            or row.get("status") != "Dates à venir"
+            or row.get("showOnMap") is True
+            or row.get("lat") is not None or row.get("lon") is not None):
+        return None
+    slug, title = row.get("slug"), row.get("name")
+    if not isinstance(slug, str) or not isinstance(title, str):
+        return None
+    match = re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*-(20[2-4][0-9])", slug)
+    suffix = re.search(r"(?<![0-9])20[2-4][0-9]$", title)
+    if match is None or suffix is None or suffix.group() != match.group(1):
+        return None
+    year = int(match.group(1))
+    if today is not None:
+        current = date.fromisoformat(today).year
+        if not current < year <= current + 2:
+            return None
+    return year
+
+
+def _city_visible_undated(html, row, year):
+    """Same-block organizer claim: edition identity + future year + city.
+
+    Dates are still unknown. 'Festival X 2026 at City Y' somewhere else on the
+    website does not support placing its 2027 edition in that municipality.
+    """
+    tokens = re.findall(r"[a-z0-9]+", re.sub(
+        r"\\b20[2-4][0-9]\\b", "", fold(row.get("name", ""))))
+    if len("".join(tokens)) < 8:
+        return None
+    name = re.compile(
+        r"(?<![a-z0-9])" + r"[\\W_]+".join(map(re.escape, tokens))
+        + r"(?![a-z0-9])"
+    )
+    parser = VisibleParagraphs()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (TypeError, ValueError, UnicodeError):
+        return None
+    cities = set()
+    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        if not 0 < len(raw) <= 1100:
+            continue
+        paragraph = " ".join(fold(raw).split())
+        years = set(re.findall(r"(?<!\\d)20[2-4]\\d(?!\\d)", paragraph))
+        if (not name.search(paragraph) or years != {str(year)}
+                or CANCEL.search(paragraph)
+                or not re.search(
+                    r"\\b(?:edition|rendez[\\W_]+vous|revient|retour)\\b",
+                    paragraph)
+                or re.search(
+                    r"\\b(?:preparer?|preparation|projet|eventuel|"
+                    r"incertain|peut[\\W_]+etre|sous[\\W_]+reserve|"
+                    r"cagnotte|financement|tournee|tour)\\b",
+                    paragraph)
+                or any(explicit_ranges(paragraph, year))):
+            continue
+        for matched in CITY_PATTERN.finditer(raw):
+            city = _name(matched.group(1))
+            if city and not re.search(
+                    r"\\b(?:Festival|France|Parisien|Vente|Billetterie)\\b",
+                    city):
+                cities.add(city)
+    return next(iter(cities)) if len(cities) == 1 else None
+
+
+def eligible_undated(calendar, today):
+    if not isinstance(calendar, dict) or not isinstance(calendar.get("festivals"), list):
+        raise ValueError("Invalid signed catalogue")
+    rows = []
+    for item in calendar["festivals"]:
+        if not isinstance(item, dict):
+            raise ValueError("Invalid signed row")
+        if undated_future_year(item, today) is not None:
+            rows.append(item)
+    return rows
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
         return None
     start = iso_day(row.get("startDate"))
-    if start is None or start.year not in range(2026, 2050):
+    undated_year = undated_future_year(row)
+    if start is None and undated_year is None:
         return None
+    if start is not None and start.year not in range(2026, 2050):
+        return None
+    if undated_year is not None:
+        city = _city_visible_undated(html, row, undated_year)
+        if not city or (row.get("city")
+                        and _normal(city) != _normal(row["city"])):
+            return None
+        return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
     structured = _city_jsonld(html, row)
     if structured is False:
         return None
@@ -225,8 +321,9 @@ def exact_city_from_official_site(row, fetcher=fetch_public_html):
     home = row.get("officialSite")
     if safe_public_url(home) is None:
         return None
-    year = iso_day(row.get("startDate"))
-    if year is None:
+    start = iso_day(row.get("startDate"))
+    target_year = start.year if start is not None else undated_future_year(row)
+    if target_year is None:
         return None
     body = fetcher(home)
     facts = []
@@ -251,7 +348,7 @@ def exact_city_from_official_site(row, fetcher=fetch_public_html):
             news_indexes.append((url, page))
     further = []
     for index_url, index_page in news_indexes:
-        for linked in official_city_links(index_page, index_url, edition_year=year.year):
+        for linked in official_city_links(index_page, index_url, edition_year=target_year):
             if linked not in visited and linked not in further:
                 further.append(linked)
             if len(further) >= MAX_NESTED_NEWS_PAGES:
@@ -282,7 +379,9 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
     if (not isinstance(observations, dict) or len(observations) > 150
             or type(cursor) is not int or not 0 <= cursor <= 1_000_000):
         raise ValueError("Invalid city observer state")
-    rows = [r for r in eligible(calendar, today)
+    dated = eligible(calendar, today)
+    undated = eligible_undated(calendar, today)
+    rows = [r for r in dated + undated
             if safe_public_url(r.get("officialSite")) and r.get("showOnMap") is not True
             and r.get("futureVenueConfirmed") is not True]
     active = {r["slug"] for r in rows}
