@@ -11,12 +11,12 @@ directory validates only the *municipal page's* own origin, not its links.
 No Git writes, no public catalogue access, no scheduler, no publisher bridge.
 """
 from hashlib import sha256
+from html.parser import HTMLParser
 import ipaddress
 import re
 from urllib.parse import urljoin, urlsplit
 
 from ptitesondes_dila_municipal_domains import approved_municipal_page_host
-from ptitesondes_institutional_source_policy import _AuthorityLinks
 from ptitesondes_municipal_official_page_reader import MunicipalOfficialPageReader
 
 SCHEMA = "ptitesondes.dynamic_municipal_source_links_research.v1"
@@ -35,6 +35,48 @@ REPORT_STATUSES = frozenset({
     "private_source_link_research_only", "invalid_private_municipal_reader",
     "municipal_page_unavailable",
 })
+
+
+class _VisiblePageLinks(HTMLParser):
+    """All visible HTML links, regardless of page structure or event wording.
+
+    Older municipal sites use arbitrary wrappers, not <main>/<article>.
+    Discovery must not discard their URLs for lack of a preferred HTML tag.
+    Hidden/script/template URLs are not rendered links, so they are excluded.
+    """
+    NON_RENDERED = frozenset({
+        "script", "style", "noscript", "template", "iframe", "svg", "head",
+    })
+    VOID = frozenset({
+        "area", "base", "br", "col", "embed", "hr", "img", "input",
+        "link", "meta", "param", "source", "track", "wbr",
+    })
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.ancestors = []
+        self.links = []
+
+    def handle_starttag(self, tag, attrs):
+        if len(self.ancestors) > 100:
+            raise ValueError("municipal_html_depth_exceeded")
+        props = dict(attrs)
+        style = str(props.get("style") or "").lower().replace(" ", "")
+        prior_hidden = self.ancestors[-1][1] if self.ancestors else False
+        hidden = (prior_hidden or tag in self.NON_RENDERED
+                  or "hidden" in props or props.get("aria-hidden") == "true"
+                  or "display:none" in style or "visibility:hidden" in style)
+        if tag == "a" and not hidden:
+            self.links.append(props.get("href"))
+        if tag not in self.VOID:
+            self.ancestors.append((tag, hidden))
+
+    def handle_endtag(self, tag):
+        if tag not in self.VOID:
+            for idx in range(len(self.ancestors) - 1, -1, -1):
+                if self.ancestors[idx][0] == tag:
+                    del self.ancestors[idx:]
+                    break
 
 
 def _safe_url(raw, *, base=None):
@@ -112,7 +154,7 @@ def scan_municipal_page(city, dila_directory, page, *, cursor=None,
     if authority_host is None or authority_host != urlsplit(page_url).hostname:
         return empty
 
-    parser = _AuthorityLinks()
+    parser = _VisiblePageLinks()
     try:
         parser.feed(page["html"])
         parser.close()
