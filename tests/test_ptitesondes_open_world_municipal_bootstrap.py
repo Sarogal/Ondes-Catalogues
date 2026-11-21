@@ -331,8 +331,6 @@ class MunicipalBootstrapTests(unittest.TestCase):
             "live_oa_city_changed": event(location={
                 "name": VENUE, "adminLevel4": "Autre ville",
                 "countryCode": "FR"}),
-            "live_oa_country_changed": event(location={
-                "name": VENUE, "adminLevel4": CITY, "countryCode": "GF"}),
             "live_oa_venue_changed": event(location={
                 "name": "Un lieu inconnu", "adminLevel4": CITY,
                 "countryCode": "FR"}),
@@ -345,6 +343,11 @@ class MunicipalBootstrapTests(unittest.TestCase):
                 self.assertEqual(
                     public_redacted_municipal_bootstrap(out)["status"],
                     expected)
+        original = lead()
+        original["country_code_unverified"] = "GF"
+        mismatch = run(item=original, oa_event=event(original))
+        self.assertEqual(mismatch["status"], "live_oa_country_changed")
+        self.assertFalse(mismatch["publication_ready"])
 
     def test_untrusted_international_event_is_not_a_municipal_french_claim(self):
         out = run(oa_event=event(location={
