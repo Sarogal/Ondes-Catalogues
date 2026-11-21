@@ -18,7 +18,7 @@ from ptitesondes_openagenda_national_event_research import (
     _write_state,
 )
 from ptitesondes_private_national_qualification_handoff import (
-    handoff, verified_report, MAX_REPORT_BYTES,
+    handoff, verified_report, validate_private_handoff_chunk, MAX_REPORT_BYTES,
 )
 from ptitesondes_openagenda_v2_direct_evidence import _valid_public_read_key
 
@@ -78,7 +78,7 @@ def _state(output_dir, index_digest, today, segment_total):
     return state
 
 
-def _safe_recovered(output, expected, start, segment_count):
+def _safe_recovered(output, expected, segment, start):
     if (not isinstance(output, dict)
             or output.get("schema") !=
             "ptitesondes.private_national_oa_intake_handoff.v1"
@@ -92,12 +92,13 @@ def _safe_recovered(output, expected, start, segment_count):
             or not 0 <= output["events_examined"] <= 12
             or type(output.get("next_offset")) is not int
             or output["next_offset"] != start + output["events_examined"]
-            or not 0 <= output["next_offset"] <= segment_count
+            or not 0 <= output["next_offset"] <= len(segment["event_leads"])
             or output.get("finished_segment")
-            is not (output["next_offset"] == segment_count)
+            is not (output["next_offset"] == len(segment["event_leads"]))
             or not isinstance(output.get("backlog_leads"), list)
             or not isinstance(output.get("research_holds"), list)):
         raise ValueError("invalid_recovered_private_handoff")
+    validate_private_handoff_chunk(output, segment, start)
 
 
 def run_rotation(index_doc, index_digest, today, input_dir, output_dir,
@@ -143,7 +144,7 @@ def run_rotation(index_doc, index_digest, today, input_dir, output_dir,
                 raise ValueError("untrusted_existing_private_handoff")
             if destination.exists():
                 saved = json.loads(_private_input(destination, MAX_REPORT_BYTES))
-                _safe_recovered(saved, expected, start, total)
+                _safe_recovered(saved, expected, segment, start)
                 outcome = saved
                 recovered += 1
             else:
@@ -152,7 +153,7 @@ def run_rotation(index_doc, index_digest, today, input_dir, output_dir,
                 if not isinstance(outcome, dict):
                     raise ValueError("invalid_handoff_operator_result")
                 outcome = {**outcome, "rotation_meta": expected}
-                _safe_recovered(outcome, expected, start, total)
+                _safe_recovered(outcome, expected, segment, start)
                 _write_new(destination, outcome)
                 examined += outcome["events_examined"]
             end = outcome["next_offset"]
