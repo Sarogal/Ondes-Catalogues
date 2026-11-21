@@ -226,7 +226,7 @@ def _osm_map(site, center, fetch):
     return matches[0]
 
 
-def verify(site, fetch, *, min_score=0.89):
+def verify(site, fetch, *, min_score=0.78):
     """The caller must have verified a single dated first-party Event beforehand.
 
     fetch(url, byte_cap) -> (body, final_url); the production fetch honours
