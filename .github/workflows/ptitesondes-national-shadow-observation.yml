@@ -47,17 +47,6 @@ jobs:
           ref: main
           persist-credentials: false
 
-      - name: Charger la configuration privée, lecture seule
-        uses: actions/checkout@v4
-        with:
-          repository: Sarogal/PtitesOndes
-          ref: main
-          path: src
-          sparse-checkout: |
-            automation/sources.json
-          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
-          persist-credentials: false
-
       - name: Charger la branche privée de checkpoints
         uses: actions/checkout@v4
         with:
@@ -80,16 +69,13 @@ jobs:
           set -euo pipefail
           umask 077
           OBS="$RUNNER_TEMP/ptitesondes-national-observation"
-          install -d -m 700 "$OBS" "$OBS/config"
+          install -d -m 700 "$OBS"
           STORED="state/automation-intake/ptitesondes/national-observation"
           if [[ -d "$STORED" ]]; then
             cp -a "$STORED/." "$OBS/"
           fi
           find "$OBS" -type d -exec chmod 700 {} +
           find "$OBS" -type f -exec chmod 600 {} +
-          test -s src/automation/sources.json
-          cp src/automation/sources.json "$OBS/config/sources.json"
-          chmod 600 "$OBS/config/sources.json"
 
       - name: Exécuter la campagne réseau en observation strictement privée
         id: observe
@@ -105,8 +91,7 @@ jobs:
           fi
           DAY="$(TZ=Europe/Paris date +%F)"
           if ! python scripts/ptitesondes_national_shadow_observation.py \
-            --private-source-config "$OBS/config/sources.json" \
-            --private-observation-root "$OBS" \
+             --private-observation-root "$OBS" \
             --day "$DAY" --batch-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
             --execute-live > "$RUNNER_TEMP/national-observation-summary.json" \
             2> "$RUNNER_TEMP/national-observation-errors.private.log"; then
