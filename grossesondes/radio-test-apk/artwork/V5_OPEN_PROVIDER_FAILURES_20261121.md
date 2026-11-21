@@ -16,7 +16,7 @@ Le rapport d'audit de tous les UUID (historiques + huit hors inventaire) comptai
 | `www.maximum.ru` | 3 | 3 | 3 | InventoryError |
 | `storage.googleapis.com` | 3 | 1 | 1 | InventoryError |
 | `www.hardradio.com` | 2 | 1 | 2 | InventoryError |
-| Autres fournisseurs | 12 | 12 | 5 | Format, MIME, réseau ou HTTP |
+| Autres fournisseurs | 12 | 12 | 4 | Format, MIME, réseau ou HTTP |
 
 Les autres hôtes sont ARFM, FemMetal, Maximum, Metalradio.at, MyRadio24, Radio Diabolus, Radio Gora, Radio Tangra, Rock FM Nicaragua, Wix Static, Christian Hardrock et Radio Metal. Les 87 associations en échec concernent aussi des fournisseurs hors RADCAP : il ne faut pas créer une correction spéciale bloquant ceux-ci.
 
