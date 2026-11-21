@@ -86,16 +86,35 @@ class Heading(HTMLParser):
                 del self.stack[index:]
                 break
 
-def directory_url(title):
+def directory_urls(title):
+    """Only bounded title-derived paths on ONE independently fetched directory.
+
+    The directory uses both compact paths (festibarockin) and hyphenated
+    paths (mozhell-open-air). A missed slug is a discovery failure, not
+    grounds to fetch a private queue URL or skip an unknown festival.
+    """
     if not isinstance(title, str) or not 8 <= len(title) <= 150:
-        return None
+        return ()
     m = re.fullmatch(r"(.{7,130}?)\s+(20[2-4][0-9])", title.strip())
     if m is None:
-        return None
-    label = "".join(normalized(m.group(1)).split())
-    if not re.fullmatch(r"[a-z][a-z0-9]{7,75}", label):
-        return None
-    return DIRECTORY + label
+        return ()
+    words = normalized(m.group(1)).split()
+    compact = "".join(words)
+    dashed = "-".join(words)
+    if not re.fullmatch(r"[a-z][a-z0-9]{7,75}", compact):
+        return ()
+    paths = [DIRECTORY + compact]
+    if (dashed != compact
+            and len(dashed) <= 100
+            and re.fullmatch(r"[a-z][a-z0-9-]{7,99}", dashed)):
+        paths.append(DIRECTORY + dashed)
+    return tuple(paths)
+
+
+def directory_url(title):
+    """Back-compatible primary directory path; no private URL is trusted."""
+    variants = directory_urls(title)
+    return variants[0] if variants else None
 
 
 def trusted_linked_site(directory_html, title):
@@ -132,20 +151,42 @@ def trusted_linked_site(directory_html, title):
         link = normalized(label)
         context = normalized(prefix)
         hostname = normalized(host.removeprefix("www."))
+        # The real directory also uses a local "Web: www.example.fr"
+        # contact line. A generic ticket, social or sponsor URL is NOT an
+        # official website merely because its host is mentioned on the page.
         role = ("site web" in context or "site officiel" in context
+                or context == "web" or context.endswith(" web")
                 or link in ("site web", "site officiel"))
         # A labelled link to a different host is a conflict even when a
         # preceding list item labels it "site web".
         if not (role and
                 link in (hostname, normalized(host), "site web", "site officiel")):
             continue
-        if not re.search(r"\b(?:site web|site officiel)\b", context + " " + link):
+        if not re.search(r"\b(?:site web|site officiel|web)\b", context + " " + link):
             continue
         canonical = "https://" + host + "/"
         if safe_public_url(canonical) is None:
             continue
         urls.add(canonical)
     return next(iter(urls)) if len(urls) == 1 else None
+
+
+def discover_directory_website(title, directory_fetch):
+    """Read at most two deterministic directory URLs; return only a lead.
+
+    A private candidate's URL or host never influences the network request.
+    A 404/failed compact alias must not prevent the next safe title variant.
+    This alone conveys no festival publication authority.
+    """
+    for url in directory_urls(title):
+        try:
+            html = directory_fetch(url)
+            site = trusted_linked_site(html, title)
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            continue
+        if site is not None:
+            return url, site
+    return None, None
 
 
 def verify_primary(html, title, year, today):
@@ -164,9 +205,13 @@ def verify_primary(html, title, year, today):
     return dates
 
 
-def private_proposal(title, site, dates, today):
-    if (directory_url(title) is None or slug_for(title) is None
+def private_proposal(title, site, dates, today, *, directory_ref=None):
+    routes = directory_urls(title)
+    if (not routes or slug_for(title) is None
             or not isinstance(site, str) or safe_public_url(site) is None):
+        return None
+    origin = directory_ref if directory_ref is not None else routes[0]
+    if origin not in routes:
         return None
     try:
         parts = urlsplit(site)
@@ -198,8 +243,8 @@ def private_proposal(title, site, dates, today):
         "lastVerified": today, "notes": PRIVATE_NOTES,
         "verificationStatus": PRIVATE_STATUS,
         "sourceConfidence": PRIVATE_CONFIDENCE,
-        "proofMode": PROOF_MODE, "originSlug": directory_url(title),
-        "evidence": [directory_url(title), site], "verified_at": today,
+        "proofMode": PROOF_MODE, "originSlug": origin,
+        "evidence": [origin, site], "verified_at": today,
     }
 
 
@@ -215,13 +260,14 @@ def validate_private_proposal(row, today):
         return None
     if (not isinstance(row.get("evidence"), list)
             or len(row["evidence"]) != 2
-            or row["evidence"] != [directory_url(row.get("name")),
-                                    row.get("officialSite")]
-            or row.get("originSlug") != directory_url(row.get("name"))):
+            or row.get("originSlug") not in directory_urls(row.get("name"))
+            or row["evidence"] != [row.get("originSlug"),
+                                    row.get("officialSite")]):
         return None
     expected = private_proposal(
         row.get("name"), row.get("officialSite"),
-        (row.get("startDate"), row.get("endDate")), row["verified_at"])
+        (row.get("startDate"), row.get("endDate")), row["verified_at"],
+        directory_ref=row["originSlug"])
     return expected if expected == row else None
 
 
@@ -242,7 +288,9 @@ def independently_verify(proposal, today, directory_fetch=fetch_public_html,
     """Never fetch proposed organizer URL until rederived from fixed directory."""
     if validate_private_proposal(proposal, today) is None:
         return None
-    url = directory_url(proposal["name"])
+    # URL is in the finite name-derived set checked by the strict private
+    # proposal contract, never accepted merely because private JSON supplied it.
+    url = proposal["originSlug"]
     try:
         document = directory_fetch(url)
         site = trusted_linked_site(document, proposal["name"])
