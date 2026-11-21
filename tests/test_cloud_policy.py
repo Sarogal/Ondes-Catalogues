@@ -45,6 +45,33 @@ class TestsCloud(unittest.TestCase):
         self.assertIn("déploiement est décidé séparément", summary)
 
 
+    def test_empty_patch_input_is_not_reported_as_empty_private_backlog(self):
+        # The real 21 Nov 2026 patch had zero additions and 100 deferred
+        # entries while the upstream private backlog still held 450 leads.
+        # Public logs must communicate both stages without leaking leads.
+        report = {
+            "initial": 549, "final": 549, "ajoutes": 0,
+            "attente": [],
+            "private_patch_counts": {"additions": 0, "deferred": 100},
+        }
+        summary = public_summary(report)
+        self.assertIn("Candidats transmis au Publisher : 0", summary)
+        self.assertIn("Pistes différées dans le patch privé : 100", summary)
+        self.assertIn("Propositions différées : 0 (après contrôle du Publisher)", summary)
+        self.assertIn("ne sont PAS les refus du Publisher", summary)
+
+    def test_sync_summary_stays_aggregated_with_private_input(self):
+        secret = "https://secret.example/privately-rejected-event"
+        report = {
+            "initial": 549, "final": 549, "ajoutes": 0,
+            "attente": [{"id": secret, "raison": secret}],
+            "private_patch_counts": {"additions": 1, "deferred": 34},
+        }
+        summary = public_summary(report)
+        self.assertIn("Candidats transmis au Publisher : 1", summary)
+        self.assertIn("Pistes différées dans le patch privé : 34", summary)
+        self.assertNotIn(secret, summary)
+
     def test_add_with_proof(self):
         b,p=fixture()
         out,r=merge(b,b,p,TODAY,checker=lambda e,ref:(True,"preuve"))
