@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import date, datetime, timedelta, timezone
 import json
+import socket
 from pathlib import Path
 import sys
 import unittest
@@ -14,7 +15,10 @@ from ptitesondes_unlisted_exact_session_research import (
     review_unlisted_exact_sessions, public_redacted_exact_session_summary,
     SCHEMA,
 )
-from ptitesondes_dynamic_municipal_source_links import SCHEMA as LINK_SCHEMA
+from ptitesondes_dynamic_municipal_source_links import (
+    SCHEMA as LINK_SCHEMA, scan_municipal_page,
+)
+from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_openagenda_national_event_research import _time_sessions
 
 TODAY = date(2026, 11, 21)
@@ -352,6 +356,85 @@ class UnlistedExactSessionsTests(unittest.TestCase):
         out = check(item, "", source_reader=outage)
         self.assertEqual(out["status"], "unlisted_source_not_recheckable")
         self.assertNotIn("PRIVATE-URL", json.dumps(out))
+
+    def test_full_private_chain_dila_to_new_source_to_exact_session(self):
+        """Real module-to-module path, fake providers, no outbound network."""
+        city = "Ville inconnue"
+        official_url = "https://www.ville-inconnue.fr/sorties"
+        municipal_html = (
+            "<html><body><main><a href='" + URL + "'>"
+            "Le conte sonore des lucioles</a></main></body></html>")
+        insee = "12345"
+        dila = {
+            "total_count": 1,
+            "results": [{
+                "nom": "Mairie - " + city, "categorie": "SL",
+                "statut_de_diffusion": "true",
+                "version_type": "Publiable",
+                "copyright": (
+                    "Direction de l'information légale "
+                    "et administrative (Premier ministre)"),
+                "url_service_public":
+                    "https://lannuaire.service-public.gouv.fr/test/uuid",
+                "code_insee_commune": insee,
+                "pivot": json.dumps([{
+                    "type_service_local": "mairie",
+                    "code_insee_commune": [insee]}]),
+                "adresse": json.dumps([{
+                    "nom_commune": city, "pays": "France"}]),
+                "site_internet": json.dumps([{
+                    "libelle": "", "valeur": "https://www.ville-inconnue.fr/"}]),
+            }],
+        }
+        discovered = scan_municipal_page(
+            city, dila, {"url": official_url, "html": municipal_html})
+        self.assertEqual(discovered["source_candidates_this_batch"], 1)
+        self.assertEqual(discovered["source_candidates"][0]["url"], URL)
+
+        item = lead(plan([instant(5, 10)]))
+        beginning, ending = (
+            item["explicit_source_session_intervals"][0][field]
+            for field in ("begin", "end"))
+        body = site(event_jsonld(item["title"], beginning, ending))
+        raw = body.encode("utf-8")
+        connected = []
+        class FakeResponse:
+            status = 200
+            def getheader(self, header):
+                return "text/html" if header == "Content-Type" else None
+            def read(self, limit):
+                return raw[:limit]
+        class FakeConnection:
+            def request(self, method, path, headers):
+                connected.append((method, path))
+            def getresponse(self):
+                return FakeResponse()
+            def close(self):
+                connected.append(("closed",))
+        def resolve(*args, **kwargs):
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
+                     ("8.8.8.8", 443))]
+        def connect(host, ip):
+            self.assertEqual(host, "nouveau-theatre-unlisted.fr")
+            self.assertEqual(ip, "8.8.8.8")
+            return FakeConnection()
+        def pinned_reader(url):
+            return read_unknown_https(
+                url, resolver=resolve, connection_factory=connect)
+
+        result = check(
+            item, "", given_links=discovered, source_reader=pinned_reader)
+        self.assertEqual(result["source_exact_session_count"], 1)
+        self.assertEqual(result["status"],
+                         "structured_source_exact_sessions_research_only")
+        self.assertEqual(connected, [
+            ("GET", "/representation"), ("closed",)])
+        self.assertFalse(result["organizer_independently_attested"])
+        self.assertFalse(result["venue_geography_verified"])
+        self.assertFalse(result["rights_reviewed"])
+        self.assertFalse(result["publication_ready"])
+        self.assertFalse(result["publisher_connected"])
+        self.assertEqual(result["public_writes"], 0)
 
     def test_redacted_aggregates_never_leak_organizer_or_showtime(self):
         span = plan([instant(5, 10)])
