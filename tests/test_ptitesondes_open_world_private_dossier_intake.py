@@ -87,7 +87,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertFalse(out["safe_to_publish"])
         self.assertEqual(out["open_world_research"], rows)
         self.assertEqual(len(patch["additions"]), 0)
-        self.assertNotIn("open_world_research", patch)
+        self.assertEqual(patch["open_world_research"], [])
         # Daily requalification may replace a prior research list, never
         # inherit a "safe_to_publish" claim from an earlier run.
         refreshed = attach_research_dossiers(out, [], TODAY)
