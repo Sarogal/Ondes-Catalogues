@@ -14,7 +14,7 @@ TOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(TOOLS))
 from audit_open_radio_artwork_inventory import (
     InventoryError, MetadataImages, audit, inspect_bytes, public_https,
-    validate_inventory,
+    validate_inventory, upgraded_https_homepage,
 )
 
 INVENTORY = (
@@ -121,6 +121,34 @@ class OpenArtworkInventoryTests(unittest.TestCase):
         Image.new("RGB", (16, 16), (2, 3, 4)).save(tiny, format="PNG")
         with self.assertRaises(InventoryError):
             inspect_bytes(tiny.getvalue(), content_type="image/png")
+
+    def test_plaintext_homepage_is_never_fetched_even_during_upgrade(self):
+        self.assertEqual(
+            upgraded_https_homepage("http://laut.fm/beatdownx"),
+            "https://laut.fm/beatdownx",
+        )
+        self.assertEqual(
+            upgraded_https_homepage("https://www.example.org/stream"),
+            "https://www.example.org/stream",
+        )
+        self.assertIsNone(upgraded_https_homepage("http://127.0.0.1/private"))
+        self.assertIsNone(upgraded_https_homepage(
+            "http://user:password@station.example.org/secret"))
+        self.assertIsNone(upgraded_https_homepage(
+            "http://localhost/example"))
+
+    def test_official_site_icons_remain_unreviewed_candidates(self):
+        parser = MetadataImages()
+        parser.feed("""
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+            <link rel="icon" type="image/png" href="/radio.ico">
+            <link rel="preload" href="/not-a-logo.jpg">
+        """)
+        self.assertEqual(len(parser.urls), 2)
+        self.assertTrue(all(
+            kind == "html:link-icon-unreviewed"
+            for kind, _ in parser.urls
+        ))
 
     def test_official_page_metadata_is_unapproved(self):
         parser = MetadataImages()
