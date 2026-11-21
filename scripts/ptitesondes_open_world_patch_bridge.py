@@ -37,6 +37,9 @@ from ptitesondes_shared_venue_location_evidence import (
 from ptitesondes_unnumbered_official_geo_proof import (
     mint_private_unnumbered_location_proof,
 )
+from ptitesondes_municipal_event_venue_ban import (
+    mint_municipal_event_location_proof,
+)
 from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 
 MAX_DOSSIERS = 30
@@ -176,6 +179,14 @@ def prepare_open_world_patch(
             proof = mint_private_location_proof(
                 group, directory, venue_url, official_venue_html,
                 ign_reader, today, source_center=source_point)
+            if proof is None:
+                # Municipality may list the *event* and a named venue under
+                # "Adresse — 1 esplanade ..." without JSON-LD or postcode.
+                # BAN must return an exact numbered building point that
+                # agrees independently with OA, never a town centroid.
+                proof = mint_municipal_event_location_proof(
+                    group, directory, venue_url, official_venue_html,
+                    ign_reader, today, source_point)
             if proof is None:
                 # An unnumbered public square/building can have a precise
                 # official point or named-address/OSM proof. No center guess.
