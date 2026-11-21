@@ -102,6 +102,69 @@ class SourceProbeTests(unittest.TestCase):
         self.assertEqual(result["sourceChecks"][0]["status"],
                          "needs_individual_event_evidence")
 
+    def test_unknown_source_rotates_distinct_event_examples_without_more_requests(self):
+        row = queue()
+        row["sameHostEventLeads"] = row["eventLeads"] = 2
+        row["examples"].append({
+            "sourcePage": LISTING,
+            "eventUrl": "https://unknown-venue.fr/agenda/broken-show/",
+            "date": "2027-03-04",
+        })
+        reads = []
+        def fetch(url, cache):
+            reads.append(url)
+            if url == DETAIL:
+                return html_event()
+            return "<html><h1>No structured event</h1></html>"
+        statuses = []
+        for slot in (0, 1):
+            reads.clear()
+            result = probe.build(report([row]), TODAY, slot=slot, fetch=fetch)
+            check = result["sourceChecks"][0]
+            statuses.append(check["status"])
+            self.assertEqual(len(reads), 2)  # listing + ONE detail per host
+            self.assertFalse(check["publicationAllowed"])
+            self.assertFalse(check["automaticTrustGranted"])
+            self.assertFalse(result["automaticTrustGranted"])
+        self.assertEqual(set(statuses), {
+            "needs_independent_official_corroboration",
+            "needs_individual_event_evidence",
+        })
+
+    def test_unknown_source_rotator_rejects_other_hosts_and_is_stable(self):
+        row = queue()
+        row["examples"].append({
+            "sourcePage": "https://evil.example.org/agenda/",
+            "eventUrl": "https://unknown-venue.fr/agenda/evil/",
+            "date": "2027-03-04",
+        })
+        for slot in (0, 1, 2):
+            selected = probe.rotating_example(row, TODAY, slot)
+            self.assertEqual(selected["eventUrl"], DETAIL)
+        self.assertEqual(probe.rotating_example(row, TODAY, 0),
+                         probe.rotating_example(row, TODAY, 0))
+
+    def test_nested_graph_official_event_is_detected_without_trusting_source(self):
+        page = ('<html><script type="application/ld+json">'
+                + json.dumps({"@context": "https://schema.org",
+                              "@graph": [
+                                  {"@type": "Organization", "name": "Venue"},
+                                  {"@type": "https://schema.org/MusicEvent",
+                                   "name": "Unknown metal band",
+                                   "url": DETAIL,
+                                   "startDate": "2027-03-03T20:00:00+01:00"}]})
+                + '</script></html>')
+        self.assertTrue(probe.event_indicators(page, DETAIL, "2027-03-03"))
+        self.assertFalse(probe.event_indicators(page, DETAIL, "2027-03-04"))
+        self.assertFalse(probe.event_indicators(
+            page, "https://evil.example.org/show", "2027-03-03"))
+        cancelled = page.replace(
+            '"startDate": "2027-03-03T20:00:00+01:00"',
+            '"eventStatus": "https://schema.org/EventCancelled", '
+            '"startDate": "2027-03-03T20:00:00+01:00"')
+        self.assertFalse(probe.event_indicators(
+            cancelled, DETAIL, "2027-03-03"))
+
     def test_page_claim_cannot_grant_trust_or_event_approval(self):
         before = report([queue()])
         untouched = copy.deepcopy(before)
