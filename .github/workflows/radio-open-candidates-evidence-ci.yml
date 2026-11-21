@@ -38,21 +38,21 @@ jobs:
         run: |
           python radio-catalog-lab/tools/probe_open_radio_candidates.py \
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
-            --output .go-candidate-evidence.json \
+            --output go-candidate-evidence.json \
             --live-probe
       - name: Inspect official artwork candidate bytes (read only; no approval)
         run: |
           python radio-catalog-lab/tools/probe_open_radio_artwork.py \
             --manifest grossesondes/radio-test-apk/candidates/punk_official_sources.json \
-            --output .go-logo-candidate-evidence.json \
+            --output go-logo-candidate-evidence.json \
             --live-probe
       - name: Upload bounded test evidence (not an approval)
         uses: actions/upload-artifact@v4
         with:
           name: go-open-radio-candidate-evidence
           path: |
-            .go-candidate-evidence.json
-            .go-logo-candidate-evidence.json
+            go-candidate-evidence.json
+            go-logo-candidate-evidence.json
           retention-days: 7
           if-no-files-found: error
       - name: Assert unchanged signing and publishing state
