@@ -25,6 +25,8 @@ from national_detail_qualification import _eligible_sources
 from national_live_index_recheck import live_index_for_exact_link
 from official_watch import get_page
 from festival_event_kind import touring_concert_stop
+from institutional_event_card import exact_event_card_day
+from source_qualification import visible_text, normalized
 from grossesondes_archived_html_intake import official_date, atomic_json
 from grossesondes_institutional_edition import trusted_source
 
@@ -49,11 +51,21 @@ def _trusted_spec(source, today):
     return spec
 
 
-def _tour_day(html, source, today):
+def _tour_day(html, source, today, index_html=None):
+    """Only precise current date from article OR an exact linked index card."""
     year = source["year"]
     name = re.sub(r"\s+20[2-4][0-9]$", "", source["title"])
     try:
         dates = official_date(html, {"name": name}, year)
+        if dates is None and index_html is not None:
+            # The official Limoges agenda prints e.g. "12 Fév 2027" on its
+            # linked card, but omits that day in the long event description.
+            # Keep this as CONCERT RESEARCH only and recheck both URLs again
+            # in Concerts; never treat the card as festival-publisher proof.
+            card_day = exact_event_card_day(index_html, source)
+            if (card_day is not None
+                    and normalized(source["title"]) in visible_text(html)):
+                dates = (card_day, card_day)
         if dates is None:
             return None
         first, last = dates
@@ -87,10 +99,11 @@ def discover(state, queue, today, fetch=get_page, limit=MAX_CHECKS):
     results = []
     for dossier_id, source in selected:
         try:
-            if live_index_for_exact_link(source, fetch) is None:
+            index_html = live_index_for_exact_link(source, fetch)
+            if index_html is None:
                 continue
             html = fetch(source["url"])
-            day = _tour_day(html, source, today)
+            day = _tour_day(html, source, today, index_html=index_html)
             if day is None:
                 continue
             key = sha256(json.dumps({
