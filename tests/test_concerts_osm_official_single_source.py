@@ -147,12 +147,62 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             for x in observed))
         self.assertEqual(output["events"][-1]["officialUrl"], URL)
 
+    def test_overpass_read_only_recovers_node_without_scraping_osm_website(self):
+        # Both editing-API origins may reject a public runner or robots
+        # policy. A bounded node query against a dedicated read-only OSM
+        # service must still prove the EXACT name, site, domain and position.
+        calls = []
+        original = fixture.fake_fetch()
+        def network(url, cache):
+            calls.append(url)
+            if url.startswith("https://api.openstreetmap.org/api/0.6/node/"):
+                raise ValueError("Source returned non-success HTTP status")
+            if url.startswith("https://www.openstreetmap.org/api/0.6/node/"):
+                raise ValueError("robots.txt forbids source")
+            if url.startswith("https://overpass.private.coffee/api/interpreter?"):
+                self.assertIn("node%28380889428%29", url)
+                return fixture.osm()
+            return original(url, cache)
+        proposed, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=network)
+        self.assertEqual(report["stateCounts"],
+                         {"independently_verified_proposal": 1})
+        with mock.patch.object(identity, "safe_fetch", side_effect=network):
+            result, stats = publisher.merge(BASE, BASE, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(result["events"][-1]["officialUrl"], URL)
+        self.assertTrue(any("overpass.private.coffee" in x for x in calls))
+
+    def test_read_only_osm_fallback_refuses_forged_name_or_website(self):
+        original = fixture.fake_fetch()
+        for altered in (fixture.osm(name="Impostor Venue"),
+                        fixture.osm(website="https://impostor.invalid"),
+                        fixture.osm(lat="47.400")):
+            def fetch(url, cache):
+                if url.startswith(("https://api.openstreetmap.org/api/0.6/node/",
+                                   "https://www.openstreetmap.org/api/0.6/node/")):
+                    raise ValueError("editing API unavailable")
+                if url.startswith("https://overpass.private.coffee/api/interpreter?"):
+                    return altered
+                return original(url, cache)
+            with self.subTest(osm=altered[:110]):
+                proposed, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=fetch)
+                self.assertEqual(proposed["approvals"], [])
+                self.assertEqual(report["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+
     def test_network_failures_are_reported_by_proof_phase(self):
         original = fixture.fake_fetch()
         for phase in ("osm_identity", "official_event_fetch"):
             def fail_one(url, cache):
                 if phase == "osm_identity" and (
-                    "openstreetmap.org" in url):
+                    "openstreetmap.org" in url or
+                    "overpass.private.coffee" in url):
                     raise ValueError("Source returned non-success HTTP status")
                 if phase == "official_event_fetch" and url == URL:
                     raise ValueError("Source returned non-success HTTP status")
