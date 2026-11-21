@@ -145,10 +145,14 @@ def verified_mairie_site(payload, insee, city):
         if not isinstance(row, dict):
             continue
         name = row.get("nom")
+        status = row.get("statut_de_diffusion")
+        is_public = (status is True or
+                     isinstance(status, str) and
+                     status.strip().casefold() in ("true", "publiable"))
         if (row.get("code_insee_commune") != insee
                 or not isinstance(name, str) or not name.startswith("Mairie - ")
                 or normalize(name[len("Mairie - "):]) != normalize(city)
-                or row.get("statut_de_diffusion") not in ("Publiable", None)):
+                or not is_public):
             continue
         # The mairie type is part of the DILA locally published schema.
         pivots = row.get("pivot")
