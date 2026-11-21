@@ -115,6 +115,59 @@ class PrivateMetricsTests(unittest.TestCase):
         self.assertNotIn("url", a)
         self.assertNotIn("artist", str(a))
 
+
+    def test_osm_discovery_yield_is_private_and_cannot_approve(self):
+        venues = {"schema": "grossesondes.concert.discovery.v1",
+                  "catalogue": {"events": 379}, "venueChecks": [],
+                  "partnerChecks": [], "candidates": []}
+        tours = {"schema": "grossesondes.concert.discovery.v1",
+                 "sourceChecks": [], "candidates": []}
+        registry = {"schema": "grossesondes.concert.intake.v1",
+                    "items": {"a": {"status": "pending_review"}}}
+        osm = {"schema": "grossesondes.concert.discovery.v1",
+               "publicationAllowed": False, "automaticPublication": False,
+               "eligiblePhysicalVenues": 88,
+               "sourceChecks": {"roomsConsidered": 5,
+                                "namedOsmWebsitesVerified": 2,
+                                "individualDetailsQueued": 11,
+                                "detailPagesRead": 4,
+                                "sourcesHeld": 3,
+                                "untrustedUrl": "https://private.example/"},
+               "triageCounts": {"genre_tag_review": 1},
+               "candidates": [{"candidateId": "private-unpublished",
+                               "sourceUrl": "https://secret.example/event",
+                               "publicationAllowed": False,
+                               "reviewRequired": True}]}
+        kwargs = dict(osm_venues=osm,
+                      osm_archive={"added": 1, "seenAgain": 2})
+        report = m.build(venues, tours, registry,
+                         {"results": [], "newApprovals": []},
+                         {"needsReview": []}, [{"added": 2, "seenAgain": 3}],
+                         "2026-11-21", **kwargs)
+        self.assertEqual(report["osmEligibleVenues"], 88)
+        self.assertEqual(report["osmSitesVerified"], 2)
+        self.assertEqual(report["osmRoomsConsidered"], 5)
+        self.assertEqual(report["osmDetailPagesQueued"], 11)
+        self.assertEqual(report["osmDetailPagesRead"], 4)
+        self.assertEqual(report["osmHeldSources"], 3)
+        self.assertEqual(report["osmDiscoveryCandidates"], 1)
+        self.assertEqual(report["osmNewPrivateCandidates"], 1)
+        self.assertEqual(report["newPrivateCandidates"], 3)
+        self.assertEqual(report["rediscoveredPrivateCandidates"], 5)
+        self.assertEqual(report["actuallyPublishedByThisIntake"], 0)
+        self.assertNotIn("https://", str(report))
+        self.assertNotIn("private-unpublished", str(report))
+        osm["sourceChecks"]["roomsConsidered"] = True
+        self.assertEqual(m.describe_osm(osm, {"added": True})[
+            "osmRoomsConsidered"], 0)
+        self.assertEqual(m.describe_osm(osm, {"added": True})[
+            "osmNewPrivateCandidates"], 0)
+        osm["candidates"][0]["publicationAllowed"] = True
+        with self.assertRaises(ValueError):
+            m.describe_osm(osm, {"added": 1})
+        with self.assertRaises(ValueError):
+            m.describe_osm(None, {"added": 1})
+
     def test_rejects_broken_or_missing_source_payload(self):
         with self.assertRaises(ValueError):
             m.build({"schema": "other"}, {}, {}, {}, {}, [], "2026-11-09")

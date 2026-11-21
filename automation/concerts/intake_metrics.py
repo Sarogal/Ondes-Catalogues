@@ -62,8 +62,54 @@ def describe_organizer(item):
     }
 
 
+
+def describe_osm(discovery, archive):
+    """Bounded COUNTERS only; never copy untrusted site/artist/URL records."""
+    fields = ("osmEligibleVenues", "osmRoomsConsidered", "osmSitesVerified",
+              "osmDetailPagesQueued", "osmDetailPagesRead",
+              "osmHeldSources", "osmDiscoveryCandidates",
+              "osmNewPrivateCandidates", "osmRediscoveredPrivateCandidates")
+    if discovery is None and archive is None:
+        return {key: 0 for key in fields}
+    if not isinstance(discovery, dict) or not isinstance(archive, dict):
+        raise ValueError("Incomplete OSM metrics inputs")
+    if (discovery.get("schema") != "grossesondes.concert.discovery.v1"
+            or discovery.get("publicationAllowed") is not False
+            or discovery.get("automaticPublication") is not False
+            or not isinstance(discovery.get("candidates"), list)
+            or not isinstance(discovery.get("triageCounts"), dict)
+            or not isinstance(discovery.get("sourceChecks", {}), dict)):
+        raise ValueError("Untrusted OSM discovery metrics")
+    candidates = discovery["candidates"]
+    values = discovery["triageCounts"]
+    if (not all(type(v) is int and 0 <= v <= 100_000
+                for v in values.values())
+            or sum(values.values()) != len(candidates)):
+        raise ValueError("OSM discovery counts inconsistent")
+    if (len(candidates) > 100_000
+            or not all(isinstance(c, dict)
+                       and c.get("publicationAllowed") is False
+                       and c.get("reviewRequired") is True
+                       for c in candidates)):
+        raise ValueError("OSM discovery candidates not quarantined")
+    source = discovery.get("sourceChecks", {})
+    def number(value):
+        return value if type(value) is int and 0 <= value <= 100_000 else 0
+    return {
+        "osmEligibleVenues": number(discovery.get("eligiblePhysicalVenues")),
+        "osmRoomsConsidered": number(source.get("roomsConsidered")),
+        "osmSitesVerified": number(source.get("namedOsmWebsitesVerified")),
+        "osmDetailPagesQueued": number(source.get("individualDetailsQueued")),
+        "osmDetailPagesRead": number(source.get("detailPagesRead")),
+        "osmHeldSources": number(source.get("sourcesHeld")),
+        "osmDiscoveryCandidates": len(candidates),
+        "osmNewPrivateCandidates": number(archive.get("added")),
+        "osmRediscoveredPrivateCandidates": number(archive.get("seenAgain")),
+    }
+
+
 def build(discovery, tours, registry, official, watch, archive_summaries, when,
-          organizers=None):
+          organizers=None, osm_venues=None, osm_archive=None):
     if discovery.get("schema") != "grossesondes.concert.discovery.v1":
         raise ValueError("Invalid venue discovery")
     if tours.get("schema") != "grossesondes.concert.discovery.v1":
@@ -81,6 +127,7 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when,
             or not isinstance(organizers.get("candidates"), list)
             or not isinstance(organizers.get("sourceChecks"), list)):
         raise ValueError("Invalid first-party organizer report")
+    osm_metrics = describe_osm(osm_venues, osm_archive)
     organizer_sources = [describe_organizer(x)
                          for x in organizers["sourceChecks"]
                          if isinstance(x, dict)]
@@ -90,6 +137,7 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when,
     items = list(registry["items"].values())
     return {
         "schema": "grossesondes.concert.intake.metrics.v1",
+        **osm_metrics,
         "generatedAt": when,
         "publicCatalogueEventsObservedAtDiscovery": discovery.get(
             "catalogue", {}).get("events"),
@@ -124,10 +172,12 @@ def build(discovery, tours, registry, official, watch, archive_summaries, when,
             x["individualPagesRead"] for x in organizer_sources),
         "organizerDetailPagesHeld": sum(
             x["individualPagesHeld"] for x in organizer_sources),
-        "newPrivateCandidates": sum(x.get("added", 0)
-                                    for x in archive_summaries),
-        "rediscoveredPrivateCandidates": sum(x.get("seenAgain", 0)
-                                              for x in archive_summaries),
+        "newPrivateCandidates": (sum(x.get("added", 0)
+                                    for x in archive_summaries)
+                                 + osm_metrics["osmNewPrivateCandidates"]),
+        "rediscoveredPrivateCandidates": (sum(x.get("seenAgain", 0)
+                                              for x in archive_summaries)
+                                           + osm_metrics["osmRediscoveredPrivateCandidates"]),
         "privateCandidatesTotal": len(items),
         "privatePending": sum(x.get("status") == "pending_review" for x in items),
         "privateEligibleStable": sum(
@@ -154,13 +204,17 @@ def main():
         parser.add_argument("--" + flag, required=True)
     parser.add_argument("--organizers", required=True)
     parser.add_argument("--organizer-archive", required=True)
+    parser.add_argument("--osm-venues")
+    parser.add_argument("--osm-archive")
     args = parser.parse_args()
     data = build(read(args.discovery), read(args.tours), read(args.registry),
                  read(args.official), read(args.watch),
                  [read(args.venue_archive), read(args.tour_archive),
                   read(args.organizer_archive)],
                  dt.datetime.now(dt.timezone.utc).isoformat(),
-                 organizers=read(args.organizers))
+                 organizers=read(args.organizers),
+                 osm_venues=read(args.osm_venues) if args.osm_venues else None,
+                 osm_archive=read(args.osm_archive) if args.osm_archive else None)
     target = Path(args.out)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(

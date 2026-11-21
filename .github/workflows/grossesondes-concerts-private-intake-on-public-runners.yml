@@ -646,6 +646,8 @@ jobs:
               --venue-archive "$RUNNER_TEMP/concerts-discovery/archive-summary.json" \
               --tour-archive "$RUNNER_TEMP/concerts-tours/archive-summary.json" \
               --organizer-archive "$RUNNER_TEMP/concerts-organizers/archive-summary.json" \
+              --osm-venues "$RUNNER_TEMP/concerts-osm-venues/candidates.json" \
+              --osm-archive "$RUNNER_TEMP/concerts-osm-venues/archive-summary.json" \
               --out confidential/automation/concerts/intake/daily-metrics.json \
               > "$RUNNER_TEMP/concerts-private-logs/intake-metrics.log" 2>&1; then
             # Metrics cannot destroy the already-collected private leads.
