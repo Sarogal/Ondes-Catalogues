@@ -81,7 +81,9 @@ OLD = {
     "lat": 47.0, "lng": -1.0,
 }
 BASE = {"version": 3, "updated_at": "2026-11-17T08:49:57+01:00",
-        "events": [OLD]}
+        # The real publisher requires at least 100 immutable historic records.
+        "events": [dict(OLD, id=f"historic-conte-{i}",
+                        title=f"Conte historique {i}") for i in range(100)]}
 
 
 class ODSMissingToProposalContract(unittest.TestCase):
