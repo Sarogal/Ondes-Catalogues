@@ -11,7 +11,6 @@ directory validates only the *municipal page's* own origin, not its links.
 No Git writes, no public catalogue access, no scheduler, no publisher bridge.
 """
 from hashlib import sha256
-from html.parser import HTMLParser
 import ipaddress
 import re
 from urllib.parse import urljoin, urlsplit
@@ -30,6 +29,12 @@ DNS_LABELS = re.compile(
     r"(?!-)[a-z0-9-]{1,63}(?<!-)(?:\.(?!-)[a-z0-9-]{1,63}(?<!-))+\Z"
 )
 NONPUBLIC_SUFFIXES = (".local", ".localhost", ".internal", ".test", ".invalid")
+REPORT_STATUSES = frozenset({
+    "unverified_municipal_source", "municipal_page_html_invalid",
+    "municipal_page_needs_partition", "municipal_source_cursor_mismatch",
+    "private_source_link_research_only", "invalid_private_municipal_reader",
+    "municipal_page_unavailable",
+})
 
 
 def _safe_url(raw, *, base=None):
@@ -180,7 +185,13 @@ def research_from_private_municipal_reader(group, reader, *, cursor=None,
 
 def public_redacted_summary(report):
     """Safe aggregate only: never reveal private links, city or place names."""
-    if not isinstance(report, dict) or report.get("schema") != SCHEMA:
+    if (not isinstance(report, dict) or report.get("schema") != SCHEMA
+            or report.get("status") not in REPORT_STATUSES
+            or type(report.get("source_candidates_this_batch")) is not int
+            or not 0 <= report["source_candidates_this_batch"] <= MAX_BATCH
+            or (report.get("next_cursor") is not None
+                and (type(report["next_cursor"]) is not dict
+                     or set(report["next_cursor"]) != {"page_sha256", "next_index"}))):
         raise ValueError("invalid_private_source_research_report")
     return {
         "schema": SCHEMA,
