@@ -363,7 +363,7 @@ def build_queue(state, report, curated, today):
         add(lead["name_hint"], year, lead["region_hint"],
             lead["source_url"], OPENAGENDA_DATASET,
             "OPENAGENDA_PUBLIC_RESEARCH_ONLY",
-            today, today)
+            today, today, city=lead.get("city_hint_review_only"))
 
     # Institutional observations only join already referenced editions. Do not
     # promote unknown slug names into event titles or infer publication.
