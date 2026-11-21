@@ -428,15 +428,28 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertNotIn("https://", dumped)
         self.assertNotIn(KEY, dumped)
 
-    def test_workflow_is_manual_only_for_live_and_never_replaces_active_workflow(self):
+    def test_scheduled_national_observation_is_private_main_only_and_pausable(self):
         workflow = (ROOT / ".github/workflows/ptitesondes-national-shadow-observation.yml")
         content = workflow.read_text(encoding="utf-8")
         self.assertIn("workflow_dispatch:", content)
-        self.assertIn("github.event_name == 'workflow_dispatch'", content)
+        self.assertIn("  schedule:", content)
+        self.assertIn("- cron: '05 05 * * *'", content)
+        self.assertIn("- cron: '05 16 * * *'", content)
+        self.assertIn("github.event_name == 'schedule'", content)
+        self.assertIn("vars.PTITESONDES_NATIONAL_OBSERVATION != 'paused'", content)
         self.assertIn("github.ref == 'refs/heads/main'", content)
-        self.assertNotIn("  schedule:", content)
+        self.assertIn("github.repository == 'Sarogal/Ondes-Catalogues'", content)
+        self.assertIn("if: github.event_name == 'pull_request'", content)
+        self.assertIn("ref: main", content)
+        self.assertIn("persist-credentials: false", content)
+        # Live scheduled observation is deliberately not an admission path,
+        # and must never directly mutate the public map.
         self.assertNotIn("deploy-pages", content)
         self.assertNotIn("docs/ptitesondes/sorties.json", content)
+        self.assertNotIn("ptitesondes_candidate_promotion.py", content)
+        self.assertIn("private_observation_readonly", content)
+        self.assertIn("publication_ready", content)
+        self.assertIn("public_writes", content)
         self.assertIn("ptitesondes-public-private-intake", content)
 
 
