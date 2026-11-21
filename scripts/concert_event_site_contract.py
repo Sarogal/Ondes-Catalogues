@@ -218,7 +218,35 @@ def validate(row, today, event_approvals, *, sources=None,
                     and proof.get("proofType") == new_source.PROFILE
                     for proof in a["officialEvidence"])
         ] if isinstance(event_approvals, list) else []
-        if live_claims:
+        # A new room may announce a show on its OWN attributed website.
+        # A strict one-event, one-room signature is rechecked from BAN/OSM
+        # plus the official HTTPS event, not from a previously known room.
+        self_claims = [
+            a for a in event_approvals
+            if isinstance(a, dict) and isinstance(a.get("event"), dict)
+            and a["event"].get("id") == ev_id
+            and isinstance(a.get("officialEvidence"), list)
+            and any(isinstance(p, dict) and p.get("proofType") ==
+                    new_source.SELF_PROFILE
+                    for p in a["officialEvidence"])
+        ] if isinstance(event_approvals, list) else []
+        demand(not (live_claims and self_claims),
+               "contradictory new-site source authorities")
+        if self_claims:
+            demand(len(self_claims) == 1
+                   and isinstance(origin_venues, dict)
+                   and isinstance(origin_artists, dict),
+                   "new-site publisher baseline absent or duplicated")
+            kwargs = {} if fetch is None else {"fetch": fetch}
+            if historical_event is None:
+                new_source.verify_self(
+                    self_claims[0], row, origin_venues, origin_artists,
+                    today, **kwargs)
+            else:
+                new_source.verify_self_historical(
+                    self_claims[0], row, origin_venues, origin_artists,
+                    historical_event, today)
+        elif live_claims:
             demand(len(live_claims) == 1
                    and isinstance(origin_venues, dict)
                    and isinstance(origin_artists, dict),
