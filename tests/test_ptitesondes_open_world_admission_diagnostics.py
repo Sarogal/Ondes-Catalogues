@@ -201,6 +201,41 @@ class OpenWorldDiagnosticsTests(unittest.TestCase):
             in x["publication_blockers"]
             for x in out["private_session_diagnostics"]))
 
+    def test_possible_duplicate_is_limited_to_its_actual_calendar_day(self):
+        item = lead(10, 15)
+        other_day = {
+            field: value.replace("2026-12-05", "2026-12-06")
+            for field, value in time_slot(10).items()}
+        item["explicit_source_session_intervals"].append(other_day)
+        snapshot = [{
+            "title": item["title"], "city": CITY, "venue": VENUE,
+            "date_start": "2026-12-05", "date_end": "2026-12-05"}]
+        out = inspect(item, snapshot=snapshot,
+                      location_proof=mint_unnumbered())
+        self.assertEqual(out["source_catalogue_duplicate_hints"], 1)
+        self.assertEqual(len(out["private_session_diagnostics"]), 3)
+        self.assertTrue(all(
+            "potential_public_duplicate_requires_recheck"
+            in row["publication_blockers"]
+            for row in out["private_session_diagnostics"][:2]))
+        self.assertNotIn(
+            "potential_public_duplicate_requires_recheck",
+            out["private_session_diagnostics"][2]["publication_blockers"])
+
+    def test_invalid_private_intervals_fail_closed_without_exceptions(self):
+        bad = lead()
+        bad["explicit_source_session_intervals"][0]["begin"] = "bad-date"
+        out = inspect(bad)
+        self.assertEqual(out["status"], "invalid_private_candidate_sessions")
+        self.assertFalse(out["publication_ready"])
+        malformed = lead()
+        malformed["explicit_source_session_intervals"].append(
+            deepcopy(malformed["explicit_source_session_intervals"][0]))
+        out = inspect(malformed)
+        self.assertEqual(out["status"], "invalid_private_candidate_sessions")
+        public = public_redacted_admission_summary([out])
+        self.assertEqual(public["sessions_examined"], 0)
+
     def test_missing_or_changed_organizer_session_blocks_precise_only(self):
         item = lead(10, 15)
         changed = page(item, False).replace(
