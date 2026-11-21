@@ -209,7 +209,8 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                     '<tag k="name" v="' + name + '"/>'
                     '<tag k="addr:city" v="Ramonville-Saint-Agne"/>'
                     '<tag k="addr:postcode" v="31520"/>'
-                    '<tag k="addr:street" v="Rue Théodore Monod"/>'
+                    # Optional OSM addr:street is not authority when absent;
+                    # BAN exact address and the same named OSM point still are.
                     '<tag k="website" v="' + website + '"/>'
                     '</node></osm>')
         def fetcher(*, ban_result=ban, map_result=None, event_html=None):
