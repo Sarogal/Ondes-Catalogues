@@ -93,6 +93,39 @@ class SignedSidecarTests(unittest.TestCase):
             verify(p,updated,self.secret.public_key(),previous=self.doc)
             ["release_sequence"],2)
 
+    def test_unknown_official_provider_is_supported_after_explicit_review(self):
+        d=deepcopy(self.doc)
+        s=d["assets"][0]["source"]
+        s["provider"]="new-independent-community-radio"
+        s["official_station_page"]="https://brand-new.example.net/stations/punk"
+        s["station_slug"]="unique-channel-2026"
+        s["visual_identity_evidence"]="Verified station-specific wordmark from the official station page"
+        d["assets"][0]["logo"]["url"] = (
+            "https://new-cdn.example.net/artwork/channel_logo.png?revision=5"
+        )
+        content=wire(d)
+        pointer=sign_pending(content,self.secret,KEY_ID,PUBLISHED)
+        self.assertEqual(len(verify(pointer,content,self.secret.public_key())["assets"]),1)
+
+    def test_non_laut_source_still_needs_official_page_and_identity_review(self):
+        d=deepcopy(self.doc)
+        d["assets"][0]["source"]["provider"]="new-independent-radio"
+        d["assets"][0]["source"]["official_station_page"]="http://localhost/private"
+        with self.assertRaises(ArtworkBundleError):
+            validate_body(wire(d))
+        d["assets"][0]["source"]["official_station_page"] = (
+            "https://independent.example.org/stations/punk"
+        )
+        d["assets"][0]["source"]["visual_identity_evidence"]="just favicon"
+        with self.assertRaises(ArtworkBundleError):
+            validate_body(wire(d))
+
+    def test_laut_fm_existing_strict_source_mapping_is_unchanged(self):
+        d=deepcopy(self.doc)
+        d["assets"][0]["logo"]["url"]="https://unrelated.example.org/logo.png"
+        with self.assertRaises(ArtworkBundleError):
+            validate_body(wire(d))
+
     def test_rejects_http_private_ips_and_low_res(self):
         for url in ("http://station.example.org/a.png","https://127.0.0.1/a",
                     "https://localhost/logo.png"):
