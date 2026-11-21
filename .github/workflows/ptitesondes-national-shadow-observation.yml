@@ -1,9 +1,14 @@
-name: "P'tites Ondes — observation nationale isolée (non activée)"
+name: "P'tites Ondes — observation nationale privée programmée"
 
 # Separate from ptitesondes-private-intake-on-public-runners.yml.
-# A draft PR can run offline tests but cannot start a live private campaign.
-# Manual live dispatch is only possible on approved main AFTER a later merge.
+# All scheduled/manual live work comes exclusively from approved main.
+# A PR can run offline checks only; no unmerged PR uses credentials or state.
+# Each run saves unverified private observations, NEVER a publisher patch.
 on:
+  schedule:
+    # UTC. Two opportunities daily; GitHub may delay cron delivery.
+    - cron: '05 05 * * *'
+    - cron: '05 16 * * *'
   pull_request:
     paths:
       - ".github/workflows/ptitesondes-national-shadow-observation.yml"
@@ -37,7 +42,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_national_shadow_observation.py' -v
 
   observe-private:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    if: (github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && vars.PTITESONDES_NATIONAL_OBSERVATION != 'paused')) && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
     runs-on: ubuntu-24.04
     timeout-minutes: 50
     steps:
