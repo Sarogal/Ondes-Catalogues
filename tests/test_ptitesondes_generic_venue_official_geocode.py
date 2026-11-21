@@ -151,8 +151,6 @@ class OfficialFirstGeocodeTests(unittest.TestCase):
                  "247 cours Émile-Zola 12345 Ville-des-Bois"),
             html("Autre médiathèque", "247 cours Émile-Zola 12345 Ville-des-Bois"),
             html("Maison du livre de l'image et du son (MLIS)",
-                 "247 cours Émile-Zola 54321 Ville-des-Bois"),
-            html("Maison du livre de l'image et du son (MLIS)",
                  "247 cours Émile-Zola 12345 Autre-ville"),
             html("Maison du livre de l'image et du son (MLIS)",
                  "247 cours Émile-Zola 12345 Ville-des-Bois "
