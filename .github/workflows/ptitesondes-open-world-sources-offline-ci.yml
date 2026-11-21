@@ -20,6 +20,8 @@ on:
       - 'tests/test_ptitesondes_open_world_admission_diagnostics.py'
       - 'scripts/ptitesondes_open_world_candidate_rotation.py'
       - 'tests/test_ptitesondes_open_world_candidate_rotation.py'
+      - 'scripts/ptitesondes_national_segment_rotation_bridge.py'
+      - 'tests/test_ptitesondes_national_segment_rotation_bridge.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -76,3 +78,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_candidate_rotation.py' -v
+      - name: Verify full national OA segment research fairness and resumption
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_segment_rotation_bridge.py' -v
