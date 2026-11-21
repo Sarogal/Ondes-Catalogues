@@ -228,6 +228,53 @@ def _venue_event_links(page_html, index_url, venue_root, title, year):
     return unique[:MAX_EVENT_PAGES]
 
 
+
+def first_party_hero_hint(html, title, today):
+    """Research-only current festival date, when hero and brand are separate.
+
+    This NEVER authorizes a festival. Only independent venue event + domain
+    backlink (checked later by Publisher) may upgrade its evidence. Important
+    for real first-party sites that use a slogan h1 and a dated event hero.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650000
+            or not isinstance(title, str)
+            or not re.fullmatch(r".{7,150} 20[2-4][0-9]", title)):
+        return None
+    try:
+        today_date = date.fromisoformat(today)
+        year = int(title.rsplit(" ", 1)[-1])
+        words = normalized(visible_content(html))
+        brand = normalized(title.rsplit(" ", 1)[0])
+        if (not brand or
+                re.search(r"(?<![a-z0-9])" + re.escape(brand) +
+                          r"(?![a-z0-9])", words) is None
+                or CANCEL.search(words)):
+            return None
+        stripped = re.sub(
+            r"(?<![a-z0-9])" + re.escape(brand) +
+            r"(?:\s+20[2-4][0-9])?(?![a-z0-9])",
+            " ", words)
+        if STYLE_WITHOUT_BRAND.search(stripped) is None:
+            return None
+        ranges = {(first, end) for _a, _b, first, end
+                  in explicit_ranges(visible_content(html), year)
+                  if (first, end) not in administrative_calendar_dates(
+                      html, title, year)}
+        chosen = dominant_visible_range(ranges)
+        if chosen is None:
+            return None
+        first, end = chosen
+        if (not today_date <= first <= end
+                or first.year != year or end.year != year
+                or touring_concert_stop(html, first, end)
+                or not no_same_edition_jsonld_contradiction(
+                    html, title, first, end)):
+            return None
+        return first.isoformat(), end.isoformat()
+    except (TypeError, ValueError, UnicodeError, OverflowError, KeyError):
+        return None
+
+
 def verified_venue_reciprocity(site, title, dates, today,
                                 fetch=fetch_public_html):
     """Return a unique independent venue host or fail closed."""
@@ -244,28 +291,9 @@ def verified_venue_reciprocity(site, title, dates, today,
         primary_dates = verify_official_site_pages(
             site, homepage, title, year, today, fetch=fetch)
         if primary_dates is None:
-            # Some authentic websites put the announced weekend in a hero
-            # and their exact festival name in the footer rather than the
-            # SAME paragraph. That is not enough by itself: this fallback
-            # is usable ONLY after a separately corroborating venue event
-            # with a reciprocal live backlink is verified below.
-            words = normalized(visible_content(homepage))
-            brand = normalized(title.rsplit(" ", 1)[0])
-            intervals = {(start, end) for _a, _b, start, end in
-                         explicit_ranges(visible_content(homepage), year)
-                         if (start, end) not in administrative_calendar_dates(
-                             homepage, title, year)}
-            dominant = dominant_visible_range(intervals)
-            if (not brand or
-                    re.search(r"(?<![a-z0-9])" + re.escape(brand)
-                              + r"(?![a-z0-9])", words) is None
-                    or CANCEL.search(words)
-                    or dominant is None
-                    or touring_concert_stop(homepage, *dominant)
-                    or not no_same_edition_jsonld_contradiction(
-                        homepage, title, *dominant)):
-                return None
-            primary_dates = tuple(x.isoformat() for x in dominant)
+            # Brand/date separation is not a standalone publication proof.
+            # The venue detail below MUST independently corroborate it.
+            primary_dates = first_party_hero_hint(homepage, title, today)
         if primary_dates != tuple(dates):
             return None
         # A festival named "Rock Festival" is not evidence of rock MUSIC.
