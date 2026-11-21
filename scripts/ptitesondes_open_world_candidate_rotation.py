@@ -107,6 +107,9 @@ def _blank(status, checkpoint=None):
         # The verified bootstrap status is a non-identifying PRIVATE reason
         # code; never replace it with an exception message or source URL.
         "bootstrap_reason_code": None,
+        "private_unverified_oa_web_leads": [],
+        "oa_source_web_leads_found": 0,
+        "oa_link_partition_required": False,
         "private_checkpoint": checkpoint,
         "private_research_reviews": [],
         "municipal_page_batches_checked": 0,
@@ -169,8 +172,22 @@ def rotate_private_open_world_lead(
         # investigation, instead of erasing all failures into one label.
         # Status comes from the closed bootstrap contract, not a domain list.
         held["bootstrap_reason_code"] = boot["status"]
+        # Even without a DILA municipality, retain shape-safe OA source
+        # URLs for independent future research (no automatic authority).
+        raw_leads = boot.get("private_unverified_oa_web_leads", [])
+        if isinstance(raw_leads, list):
+            held["private_unverified_oa_web_leads"] = raw_leads
+            held["oa_source_web_leads_found"] = len(raw_leads)
+        held["oa_link_partition_required"] = (
+            boot.get("oa_link_partition_required") is True)
         return held
     result = _blank("private_rotation_in_progress", checkpoint)
+    raw_leads = boot.get("private_unverified_oa_web_leads", [])
+    if isinstance(raw_leads, list):
+        result["private_unverified_oa_web_leads"] = raw_leads
+        result["oa_source_web_leads_found"] = len(raw_leads)
+    result["oa_link_partition_required"] = (
+        boot.get("oa_link_partition_required") is True)
     crawl = crawl_private_municipal_sources(
         lead["city_unverified"], checkpoint["crawl_checkpoint"],
         directory_reader=directory_reader, html_reader=html_reader,
