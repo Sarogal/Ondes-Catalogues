@@ -185,7 +185,7 @@ def inspect_open_world_candidate(
         result["oa_attribution_display"] = rights["attribution_display"]
 
     title = _french_text(event, "title")
-    description = (_french_text(event, "description") + " "
+    description = (_french_text(event, "description") + " " +
                    _french_text(event, "longDescription")).strip()
     body = norm(title + " " + description)
     result["source_claimed_adults_only"] = bool(ADULT_ONLY.search(body))
