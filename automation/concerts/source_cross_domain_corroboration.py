@@ -117,10 +117,10 @@ def build(registry, catalogue, today):
         # Incompatible places never become mutually corroborating evidence.
         if len(rooms) > 1:
             status = "conflicting_venue_identity"
-        elif sum(len({
+        elif len({
                 r["independentDomainHint"] for r in entries
                 if r["stableOnDistinctDays"]
-            }) >= 2 for _ in (0,)):
+            }) >= 2:
             status = "cross_domain_stable_observation_needs_live_proof"
         else:
             status = "cross_domain_observation_needs_second_day"
