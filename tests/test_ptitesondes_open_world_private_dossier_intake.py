@@ -1,6 +1,6 @@
 """Offline and private-only research dossier selection for actual publisher."""
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 import sys
@@ -93,19 +93,90 @@ class NationalPrivateDossierTests(unittest.TestCase):
         refreshed = attach_research_dossiers(out, [], TODAY)
         self.assertEqual(refreshed["open_world_research"], [])
 
-    def test_unrelated_website_is_not_paired_or_approved(self):
+    def test_unpaired_canonical_url_is_research_only_not_autoapproval(self):
+        # Any unknown publisher-supplied source is untrusted. It can be
+        # presented for independent DILA verification, but cannot approve.
         for source, linked in (
             ("https://other.example/spectacle", EXTERNAL),
             (SOURCE, "https://nouvelle-salle.example.evil.test/spectacle"),
-            ("http://nouvelle-salle.example/spectacle", EXTERNAL),
-            ("https://openagenda.com/agenda/dummy", EXTERNAL),
-            ("https://nouvelle-salle.example/", EXTERNAL),
         ):
-            with self.subTest(source=source, linked=linked):
+            with self.subTest(source=source):
                 self.write(report(source=source, linked=linked))
+                rows, counts = self.load()
+                self.assertEqual(counts["queued"], 1)
+                self.assertEqual(rows[0]["official_event_url"], source)
+                self.assertEqual(rows[0]["official_venue_url"], source)
+                self.assertNotIn("municipal_source_reference_url", rows[0])
+                ref = {"updated_at": "unused", "events": []}
+                queued = attach_research_dossiers(
+                    private_patch(ref, queue=[]), rows, TODAY)
+                self.assertFalse(queued["safe_to_publish"])
+                self.assertEqual(queued["additions"], [])
+
+    def test_unsafe_or_noncanonical_url_never_enters_direct_lane(self):
+        for source in (
+            "http://nouvelle-salle.example/spectacle",
+            "https://openagenda.com/agenda/dummy",
+            "https://nouvelle-salle.example/",
+            "https://nouvelle-salle.example@evil.test/event",
+        ):
+            with self.subTest(source=source):
+                self.write(report(source=source, linked=EXTERNAL))
                 rows, counts = self.load()
                 self.assertEqual(rows, [])
                 self.assertEqual(counts["queued"], 0)
+        other = report()
+        other["review"]["private_unverified_oa_web_leads"][0][
+            "source_field"] = "registration"
+        other["review"]["private_research_reviews"] = []
+        self.write(other)
+        self.assertEqual(self.load()[0], [])
+
+    def test_stale_rotation_clues_remain_eligible_for_live_recheck(self):
+        # A link discovered yesterday still deserves an independent live
+        # Publisher check today. It never becomes a cached "verified" flag.
+        prior_day = TODAY - timedelta(days=1)
+        data = report()
+        data["day"] = prior_day.isoformat()
+        old = self.research / "reports" / prior_day.isoformat()
+        old.mkdir(parents=True)
+        (old / (data["ref"] + ".json")).write_text(
+            json.dumps(data), encoding="utf8")
+        rows, counts = self.load()
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(counts["reports"], 1)
+        self.assertEqual(rows[0]["official_event_url"], SOURCE)
+
+    def test_sources_and_municipal_links_found_on_different_days_can_pair(self):
+        previous = TODAY - timedelta(days=2)
+        old = report()
+        old["day"] = previous.isoformat()
+        old["review"]["private_research_reviews"] = []
+        day_dir = self.research / "reports" / previous.isoformat()
+        day_dir.mkdir(parents=True)
+        (day_dir / (old["ref"] + ".json")).write_text(
+            json.dumps(old), encoding="utf8")
+        new = report()
+        new["review"]["private_unverified_oa_web_leads"] = []
+        self.write(new)
+        rows, counts = self.load()
+        self.assertEqual(counts["reports"], 2)
+        self.assertEqual(counts["pairs"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["official_venue_url"], MUNICIPAL)
+        self.assertEqual(rows[0]["municipal_source_reference_url"], MUNICIPAL)
+
+    def test_old_research_does_not_become_permanent_authority(self):
+        old = report()
+        distant = TODAY - timedelta(days=15)
+        old["day"] = distant.isoformat()
+        old_dir = self.research / "reports" / distant.isoformat()
+        old_dir.mkdir(parents=True)
+        (old_dir / (old["ref"] + ".json")).write_text(
+            json.dumps(old), encoding="utf8")
+        rows, stats = self.load()
+        self.assertEqual(rows, [])
+        self.assertEqual(stats["reports"], 0)
 
     def test_untrusted_approval_flag_is_not_forwarded(self):
         value = report()
