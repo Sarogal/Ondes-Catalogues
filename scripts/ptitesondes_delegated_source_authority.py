@@ -167,18 +167,19 @@ def mint_delegated_venue_source_proof(
     except (TypeError, ValueError, RecursionError, OverflowError):
         return None
     venue_norm = norm(venue)
-    host_norm = norm(host)
     for block in parser.blocks:
         body = norm(block)
-        # Accept a named venue followed by its published website, or vice
-        # versa, only within a single municipal article/main block and near
-        # each other. A related venue in another article is NOT an attestation.
+        # A hostile "organizer.example.evil" must NEVER attest
+        # "organizer.example" merely because punctuation is normalized.
+        # Domain matching is therefore performed in the original text.
         a = re.search(r"(?<![a-z0-9])" + re.escape(venue_norm) +
                       r"(?![a-z0-9])", body)
         if not a:
             continue
-        b = re.search(r"(?<![a-z0-9])(?:www )?" +
-                      re.escape(host_norm) + r"(?![a-z0-9])", body)
+        root = host.removeprefix("www.")
+        b = re.search(r"(?<![a-z0-9.-])(?:www\.)?" +
+                      re.escape(root) + r"(?![a-z0-9.-])",
+                      block.lower())
         if b is None or min(abs(a.end()-b.start()),
                             abs(b.end()-a.start())) > 450:
             continue
