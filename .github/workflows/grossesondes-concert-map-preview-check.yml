@@ -1,0 +1,32 @@
+name: Grosses Ondes — carte Concerts publique (prévisualisation)
+on:
+  pull_request:
+    paths:
+      - 'docs/grossesondes/carte-concerts.html'
+      - 'docs/grossesondes/concerts.json'
+      - 'docs/index.html'
+      - 'tests/test_grossesondes_concert_map_preview.py'
+      - '.github/workflows/grossesondes-concert-map-preview-check.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'docs/grossesondes/carte-concerts.html'
+      - 'docs/grossesondes/concerts.json'
+      - 'docs/index.html'
+      - 'tests/test_grossesondes_concert_map_preview.py'
+      - '.github/workflows/grossesondes-concert-map-preview-check.yml'
+permissions:
+  contents: read
+jobs:
+  concert-map-static:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check the public concert map and JavaScript syntax
+        run: python -m unittest discover -s tests -p 'test_grossesondes_concert_map_preview.py' -v
