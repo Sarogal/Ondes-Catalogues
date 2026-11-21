@@ -159,12 +159,14 @@ def collect_research_dossiers(observation_root, research_root, today,
         x["date_start"], x["lead"]["agenda_uid"],
         x["lead"]["event_uid"], x["official_event_url"],
         x["official_venue_url"]))
-    # Four independent reviews per day can cover successive partitions. A
-    # bounded time budget is NOT a permanent semantic denylist.
-    first = (batch_index * MAX_DOSSIERS) % len(proposals) if proposals else 0
-    count = min(MAX_DOSSIERS, len(proposals))
-    chosen = (proposals[first:first+count]
-              + proposals[:max(0, first+count-len(proposals))])
+    # The four daily review slots are disjoint. If the queue is larger
+    # than four slots, rotate through further waves on following days;
+    # discovery limits are work budgets, not candidate denylist rules.
+    daily_capacity = 4 * MAX_DOSSIERS
+    waves = (len(proposals) + daily_capacity - 1) // daily_capacity
+    wave = today.toordinal() % waves if waves else 0
+    first = wave * daily_capacity + batch_index * MAX_DOSSIERS
+    chosen = proposals[first:first + MAX_DOSSIERS]
     return chosen, {
         "reports": len(reports), "pairs": pair_count,
         "candidate_dossiers": len(proposals), "queued": len(chosen),
