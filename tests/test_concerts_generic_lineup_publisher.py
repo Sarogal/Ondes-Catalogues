@@ -134,6 +134,24 @@ class GenericPublishedLineupPublisherTests(unittest.TestCase):
                         sync.merge(BASE, current, signed, TODAY)
                 self.assertEqual(initial, current)
 
+    def test_private_preview_accepts_only_append_only_lineup_corrections(self):
+        from scripts import concerts_private_approval_preview as preview
+        current, proposed = fixture()
+        previous = copy.deepcopy(proposed)
+        previous.pop("lineupCorrections")
+        with mock.patch.object(contract, "network_fetch",
+                               side_effect=safe_fixture_fetch):
+            self.assertEqual(
+                preview.audit(previous, proposed, BASE, current, TODAY), 2)
+        tampered = copy.deepcopy(proposed)
+        tampered["approvals"][0]["event"]["title"] = "Forged artist"
+        with self.assertRaises(ValueError):
+            preview.audit(previous, tampered, BASE, current, TODAY)
+        tampered = copy.deepcopy(proposed)
+        tampered["lineupCorrections"][0]["artistIds"].append("fake-artist")
+        with self.assertRaises(ValueError):
+            preview.audit(previous, tampered, BASE, current, TODAY)
+
     def test_signature_and_identity_tampering_are_refused(self):
         for bad in ("reviewer", "evidenceUrl", "proofDay", "date",
                     "venue", "support", "artistList", "oldIds"):
