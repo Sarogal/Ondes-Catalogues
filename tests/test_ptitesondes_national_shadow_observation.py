@@ -267,6 +267,14 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(visited, [880001, 880002, 880003])
         self.assertEqual(first["agenda_attempts"], 3)
         self.assertEqual(first["agenda_held_for_research"], 1)
+        from ptitesondes_national_shadow_observation import AGENDA_DIAGNOSTIC_SCHEMA
+        diagnostic = next((self.root / "campaigns").rglob("agenda-0000-diagnostic.json"))
+        first_hold = json.loads(diagnostic.read_text(encoding="utf-8"))
+        self.assertEqual(first_hold["schema"], AGENDA_DIAGNOSTIC_SCHEMA)
+        self.assertEqual(first_hold["last_status"], "held_for_research")
+        self.assertEqual(first_hold["reason_code"], "upstream_or_private_io_error")
+        self.assertEqual(first_hold["attempts"], 1)
+        self.assertFalse(first_hold["publication_ready"])
         self.assertEqual(first["index_agendas_observed_in_batch_sample"], 4)
         self.assertEqual(first["public_writes"], 0)
         scanned.assert_called_once()
@@ -275,9 +283,24 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(visited[3:], [880004, 880001, 880002])
         self.assertEqual(second["agenda_attempts"], 3)
         self.assertEqual(second["agenda_held_for_research"], 1)
+        self.assertEqual(json.loads(diagnostic.read_text())["attempts"], 2)
         # Bad source remains retryable, never removed from the index.
         self.assertEqual(len(available_index_reports(
             self.root / "index" / "reports")), 1)
+
+    def test_private_diagnostic_excludes_external_error_details(self):
+        from ptitesondes_national_shadow_observation import _safe_failure_reason
+        message = "https://private.invalid/credential?key=SECRET"
+        self.assertEqual(_safe_failure_reason(OSError(message)),
+                         "upstream_or_private_io_error")
+        self.assertEqual(_safe_failure_reason(TimeoutError(message)),
+                         "source_timeout")
+        self.assertEqual(_safe_failure_reason(ValueError(message)),
+                         "invalid_or_conflicting_source_evidence")
+        result, _ = self.invoke()
+        private = next((self.root / "campaigns").rglob("agenda-0000-diagnostic.json"))
+        self.assertNotIn("SECRET", private.read_text())
+        self.assertEqual(result["public_writes"], 0)
 
     def test_national_index_does_not_use_historical_sources_json(self):
         """Known and unknown OA agenda IDs must all enter discovery."""
