@@ -29,6 +29,7 @@ on:
       - 'festival-automation/national_admission_handoff.py'
       - 'festival-automation/national_institutional_linked_primary_preflight.py'
       - 'scripts/grossesondes_institutional_linked_edition.py'
+      - 'scripts/grossesondes_generic_directory_edition.py'
   workflow_dispatch:
     inputs:
       phase:
