@@ -32,16 +32,35 @@ import source_admission_intake as intake
 SCHEMA = "grossesondes.concert.source-evidence-probe.v1"
 MAX_BYTES = 400_000
 AGENT = discover.AGENT
+# Same restricted IPv6 transition policy as Festivals' dns_pinned_https:
+# IPv6 addresses embedding an arbitrary IPv4 target must never enable SSRF.
+EMBEDDED_IPV4_NETWORKS = tuple(ipaddress.ip_network(prefix) for prefix in (
+    "64:ff9b::/96", "64:ff9b:1::/48", "2002::/16", "2001::/32",
+))
 
 
 def public_ip_addresses(host):
-    """Reject mixed public/private DNS; no fallback to an unvalidated IP."""
+    """Fail closed for ALL DNS answers, including IPv4-mapped/NAT64 IPs."""
+    if intake.valid_https("https://" + str(host) + "/") != host:
+        raise ValueError("Untrusted DNS hostname")
     infos = socket.getaddrinfo(
         host, 443, type=socket.SOCK_STREAM, proto=socket.IPPROTO_TCP)
-    ips = sorted({entry[4][0] for entry in infos})
-    if not ips or any(not ipaddress.ip_address(ip).is_global for ip in ips):
+    if not infos or len(infos) > 32:
         raise ValueError("DNS origin has unsafe or missing address")
-    return ips
+    ips = []
+    for family, socktype, protocol, _canonical, address in infos:
+        if family not in (socket.AF_INET, socket.AF_INET6) or socktype != socket.SOCK_STREAM:
+            raise ValueError("Unexpected DNS family")
+        ip = ipaddress.ip_address(address[0])
+        if (not ip.is_global or ip.is_reserved or ip.is_multicast
+                or getattr(ip, "ipv4_mapped", None) is not None
+                or (ip.version == 6 and any(
+                    ip in prefix for prefix in EMBEDDED_IPV4_NETWORKS))):
+            raise ValueError("DNS origin has unsafe or missing address")
+        exact = str(ip)
+        if exact not in ips:
+            ips.append(exact)
+    return sorted(ips)
 
 
 class PinnedHTTPS(http.client.HTTPSConnection):
