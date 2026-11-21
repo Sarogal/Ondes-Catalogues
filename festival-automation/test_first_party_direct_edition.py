@@ -16,6 +16,7 @@ for item in (str(ROOT / "scripts"), str(ROOT / "tests")):
 
 from grossesondes_first_party_direct_edition import (
     PROOF_MODE, branded_official_site, verify_first_party_edition,
+    verify_first_party_claims, official_city_on_current_date,
     private_proposal, validate_private_proposal,
     independently_verify, validate_verified_row,
 )
@@ -62,6 +63,13 @@ class FirstPartyDirectTests(TestCase):
         self.assertTrue(branded_official_site(SITE, TITLE, HOME))
         self.assertEqual(verify_first_party_edition(
             SITE, TITLE, DAY1, fetch=lambda _: HOME), DATES)
+        self.assertEqual(
+            official_city_on_current_date(HOME, TITLE, DATES),
+            "Aix-en-Provence")
+        self.assertEqual(
+            verify_first_party_claims(
+                SITE, TITLE, DAY1, fetch=lambda _: HOME),
+            (DATES, "Aix-en-Provence"))
         proposal = private_proposal(TITLE, SITE, DATES, DAY1)
         self.assertEqual(proposal["proofMode"], PROOF_MODE)
         self.assertEqual(proposal["evidence"], [SITE])
@@ -85,6 +93,20 @@ class FirstPartyDirectTests(TestCase):
             "Unexpected secondary source " + str(url))
         self.assertEqual(verify_first_party_edition(
             SITE, TITLE, DAY1, fetch=read), DATES)
+
+    def test_city_only_from_same_official_edition_dates(self):
+        bogus = HOME.replace(
+            "à Aix-en-Provence", "dans notre village.")
+        bogus = bogus.replace(
+            "</main>",
+            "<footer>Festival historique du 23 &amp; 24 avril 2026 "
+            "à Marseille.</footer></main>")
+        self.assertIsNone(official_city_on_current_date(
+            bogus, TITLE, DATES))
+        two = HOME.replace(
+            "à Aix-en-Provence", "à Aix-en-Provence et à Marseille")
+        self.assertIsNone(official_city_on_current_date(
+            two, TITLE, DATES))
 
     def test_impostor_wrong_brand_or_vague_date_is_rejected(self):
         other_site = "https://other-festival.fr/"
@@ -126,6 +148,7 @@ class FirstPartyDirectTests(TestCase):
             state, queue(DAY2), cat, second, DAY2, fetch=reader)
         self.assertEqual(len(proposed), 1)
         self.assertEqual(proposed[0]["officialSite"], SITE)
+        self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
         self.assertFalse(second["publication_authorized"])
 
     def test_missed_day_does_not_borrow_stale_observation(self):
@@ -155,6 +178,11 @@ class FirstPartyDirectTests(TestCase):
                 forged = deepcopy(proposal)
                 forged[key] = value
                 self.assertIsNone(validate_private_proposal(forged, DAY2))
+        forged_city = private_proposal(
+            TITLE, SITE, DATES, DAY1, city="Marseille")
+        self.assertIsNotNone(forged_city)
+        self.assertIsNone(independently_verify(
+            forged_city, DAY2, fetch=lambda _: HOME))
         fake_date = private_proposal(
             TITLE, SITE, ("2027-04-22", "2027-04-24"), DAY1)
         self.assertIsNotNone(fake_date)
@@ -163,7 +191,8 @@ class FirstPartyDirectTests(TestCase):
 
     def test_real_publisher_adds_only_verified_current_edition(self):
         cal, history, patch = fixtures()
-        proposed = private_proposal(TITLE, SITE, DATES, DAY2)
+        proposed = private_proposal(
+            TITLE, SITE, DATES, DAY2, city="Aix-en-Provence")
         patch.update(generated_at=DAY2, additions=[proposed],
                      updates=[], history_additions=[], history_updates=[])
         seen = []
@@ -184,6 +213,9 @@ class FirstPartyDirectTests(TestCase):
         self.assertIn(proposed["slug"], report["accepted_additions"])
         self.assertEqual(cal["festivals"], fixtures()[0]["festivals"])
         self.assertFalse(published["festivals"][-1]["showOnMap"])
+        self.assertEqual(published["festivals"][-1]["city"],
+                         "Aix-en-Provence")
+        self.assertIsNone(published["festivals"][-1]["lat"])
         # An inaccessible or changed official announcement is never
         # rescued by a venue article with unrelated or historic dates.
         rejected = collect_registered_direct_first_party_sources(
