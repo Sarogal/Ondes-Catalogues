@@ -16,6 +16,8 @@ on:
       - 'scripts/grossesondes_structured_edition.py'
       - 'festival-automation/regional_festival_discovery.py'
       - 'festival-automation/national_openagenda_research.py'
+      - 'festival-automation/national_openagenda_linked_primary_preflight.py'
+      - 'scripts/grossesondes_openagenda_linked_edition.py'
       - 'festival-automation/regional_source_diagnostics.py'
       - 'festival-automation/regional_festival_indexes.json'
       - 'festival-automation/national_discovery_queue.py'
@@ -224,6 +226,9 @@ jobs:
           # unknown organizer host must be attributed on the live directory.
           # Two-day private observations; publisher independently refetches.
           run_private national_directory_first_party python "$ENGINE/national_directory_edition_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          # Independent provenance: OpenAgenda event -> linked first-party site
+          # -> J/J+1 dates. New organizers require no pre-approved registry.
+          run_private openagenda_linked_first_party python "$ENGINE/national_openagenda_linked_primary_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
           run_private yield_diagnostics python "$ENGINE/national_yield_diagnostics.py" --intake "$INTAKE" --report "$REPORT" --previous-review "$PREVIOUS"
           # Official archived pages: TWO consecutive days, private patch only.
           # No private scheduled Actions, no proposed row goes to a public log.
@@ -272,6 +277,7 @@ jobs:
             automation-intake/grossesondes/national-institutional-organizer-domain-review.json \
             automation-intake/grossesondes/national-generic-primary-date-review.json \
             automation-intake/grossesondes/national-directory-edition-review.json \
+            automation-intake/grossesondes/national-openagenda-linked-edition-review.json \
             automation-intake/grossesondes/national-festival-editorial-review.json \
             automation-intake/grossesondes/national-festival-candidate-review.json \
             automation-intake/grossesondes/national-festival-publisher-handoff.json \
