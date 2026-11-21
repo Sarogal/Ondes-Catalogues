@@ -113,7 +113,11 @@ class CrossHostEvidenceTests(unittest.TestCase):
         self.assertEqual(out["futureCrossDomainLeadGroups"], 1)
         self.assertFalse(out["publicationAllowed"])
         self.assertFalse(out["automaticTrustGranted"])
-        self.assertTrue(out["groups"][0]["publishedAlreadyKnown"])
+        self.assertEqual(out["possibleDuplicateCrossDomainGroups"], 1)
+        self.assertEqual(out["groups"][0]["reviewState"],
+                         "possible_duplicate_cross_domain")
+        self.assertFalse(out["groups"][0]["publishedAlreadyKnown"])
+        self.assertTrue(out["groups"][0]["markedPossibleDuplicate"])
         self.assertTrue(all(s["duplicateResearchLead"]
                             for s in out["groups"][0]["sources"]))
 
