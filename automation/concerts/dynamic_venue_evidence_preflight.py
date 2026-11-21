@@ -35,6 +35,38 @@ INTAKE = "grossesondes.concert.intake.v1"
 SOURCES = "grossesondes.concert.sourcelist.v1"
 APPROVALS = "grossesondes.concert.approvals.v1"
 
+def _diagnostic_stage(error):
+    """Classify a private proof failure without copying URLs or untrusted text.
+
+    Diagnostic labels are not verification decisions or publication authority.
+    The original fail-closed admission logic remains completely unchanged.
+    """
+    message = str(error).casefold()
+    if "one unambiguous individual official event/musicevent required" in message:
+        return "official_event_instance_missing_or_ambiguous"
+    if "complete official named bill missing" in message:
+        return "official_named_bill_missing"
+    if "lead artist not on fresh official bill" in message:
+        return "official_lead_artist_mismatch"
+    if "explicit relevant non-electronic event genre absent" in message:
+        return "official_event_genre_missing"
+    if "official event date mismatch or expired" in message:
+        return "official_event_date_mismatch"
+    if "official concert title changed" in message:
+        return "official_event_title_mismatch"
+    if "official named place missing" in message or "official place and municipality mismatch" in message:
+        return "official_named_place_mismatch"
+    if "official postal address" in message or "official postcode" in message or "official street address" in message:
+        return "official_postal_address_incomplete"
+    if "one exact government street address required" in message:
+        return "government_exact_address_not_found"
+    if "named osm" in message or "osm feature" in message or "osm site" in message:
+        return "independent_named_osm_unverified"
+    if "government address" in message or "french government" in message:
+        return "government_address_unavailable"
+    return "other_official_or_geographic_proof_failure"
+
+
 
 def _matching_venues(candidate, catalogue):
     """All EXACT catalogue site matches; zero is a discovery, not a rejection."""
@@ -407,8 +439,9 @@ def build(registry, sources, catalogue, approvals, today, *,
                                         result["status"] = (
                                             "independently_correlated_private_only")
                                         result["officialEventGenreProven"] = True
-            except (ValueError, TypeError, KeyError):
+            except (ValueError, TypeError, KeyError) as ex:
                 result["reason"] = "official_event_or_geography_unconfirmed"
+                result["verificationStage"] = _diagnostic_stage(ex)
             except Exception:
                 # Never expose transport exceptions, private candidate data or URLs.
                 result["reason"] = "external_verification_unavailable"
@@ -436,6 +469,9 @@ def build(registry, sources, catalogue, approvals, today, *,
             r["status"] == "new_site_independently_located_private_only"
             for r in results),
         "reasonCounts": dict(sorted(counts.items())),
+        "verificationStageCounts": dict(sorted(Counter(
+            r["verificationStage"] for r in results
+            if "verificationStage" in r).items())),
         "results": results,
         "approvalsProposed": 0, "publisherTrustGranted": False,
         "publicationAllowed": False,
