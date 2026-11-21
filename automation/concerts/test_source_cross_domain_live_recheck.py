@@ -85,6 +85,9 @@ class LiveCrossDomainTests(unittest.TestCase):
                          {"fresh_cross_domain_event_confirmed": 1})
         row = result["checks"][0]
         self.assertEqual(row["freshIndividualEventWitnesses"], 2)
+        self.assertEqual(
+            [w["host"] for w in row["verifiedWitnesses"]],
+            ["new-artist.fr", "new-venue.fr"])
         self.assertTrue(row["crossDomainEventVerified"])
         self.assertFalse(row["sourceOwnershipVerified"])
         self.assertFalse(row["publisherAuthorityGranted"])
