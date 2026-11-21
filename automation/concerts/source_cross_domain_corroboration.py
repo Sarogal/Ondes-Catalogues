@@ -78,9 +78,12 @@ def build(registry, catalogue, today):
         if day < today:
             reasons["expired"] += 1
             continue
-        if (c.get("date"), c.get("sourceUrl")) in published:
-            reasons["already_published"] += 1
-            continue
+        published_reference = (c.get("date"), c.get("sourceUrl")) in published
+        # Previously signed/published first-party pages are high-value
+        # historical corroboration anchors. Keep them for SOURCE research,
+        # but NEVER treat them as new concerts needing re-publication.
+        if published_reference:
+            reasons["published_reference_leads"] += 1
         host = intake.valid_https(c.get("sourceUrl"))
         if host is None:
             reasons["invalid_host"] += 1
@@ -95,6 +98,7 @@ def build(registry, catalogue, today):
             continue
         groups[key].append({
             "candidateId": c.get("candidateId"),
+            "publishedReference": published_reference,
             "eventUrl": c.get("eventDetailUrl") or c.get("sourceUrl"),
             "host": host, "independentDomainHint": domain(host),
             "sourceLabel": c.get("source"),
@@ -122,7 +126,9 @@ def build(registry, catalogue, today):
                 r["independentDomainHint"] for r in entries
                 if r["stableOnDistinctDays"]
             }) >= 2:
-            status = "cross_domain_stable_observation_needs_live_proof"
+            status = ("published_reference_cross_domain"
+                      if any(r["publishedReference"] for r in entries)
+                      else "cross_domain_stable_observation_needs_live_proof")
         else:
             status = "cross_domain_observation_needs_second_day"
         first_by_host = {}
@@ -136,6 +142,7 @@ def build(registry, catalogue, today):
             "date": date, "leadArtist": artist, "city": city,
             "normalizedVenue": (next(iter(rooms)) if len(rooms) == 1 else None),
             "reviewState": status,
+            "publishedAlreadyKnown": any(r["publishedReference"] for r in entries),
             "distinctDomainHints": len(domains),
             "sources": sorted(first_by_host.values(), key=lambda x: x["host"]),
             "independentOwnershipVerified": False,
@@ -149,6 +156,8 @@ def build(registry, catalogue, today):
         "futureCrossDomainLeadGroups": len(matches),
         "stableSameVenueCrossDomainGroups": counts[
             "cross_domain_stable_observation_needs_live_proof"],
+        "publishedReferenceCrossDomainGroups": counts[
+            "published_reference_cross_domain"],
         "conflictingVenueGroups": counts["conflicting_venue_identity"],
         "awaitingSecondDayGroups": counts[
             "cross_domain_observation_needs_second_day"],
