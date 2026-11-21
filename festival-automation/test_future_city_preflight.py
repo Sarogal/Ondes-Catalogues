@@ -120,6 +120,39 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertIsNone(exact_city_from_official_site(
             ROW, lambda url: home if url == SITE else wrong))
 
+    def test_news_index_is_not_starved_by_multiple_current_year_menu_links(self):
+        home = ('<main>'
+                '<a href="/programme-2027">Programme 2027</a>'
+                '<a href="/partenaires-2027">Partenaires 2027</a>'
+                '<a href="/benevoles-2027">Bénévoles 2027</a>'
+                '<a href="/actualites">Actualités</a>'
+                '<a href="https://evil.example/news">Actualités externes</a>'
+                '</main>')
+        index = ('<a href="/news/festival-edition-2027">'
+                 'La nouvelle édition 2027</a>'
+                 '<a href="/2026/retrospective">Ancienne édition 2026</a>')
+        pages = {
+            SITE: home,
+            SITE + "actualites": index,
+            SITE + "programme-2027": "<main>Programmation à venir</main>",
+            SITE + "news/festival-edition-2027": MESSAGE,
+        }
+        first = official_city_links(home, SITE)
+        self.assertEqual(len(first), 2)
+        self.assertIn(SITE + "actualites", first)
+        self.assertNotIn("evil.example", str(first))
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return pages[url]
+        proof = exact_city_from_official_site(ROW, fetch)
+        self.assertIsNotNone(proof)
+        self.assertEqual(proof["city"], "Colonne")
+        self.assertEqual(calls, [
+            SITE, SITE + "programme-2027", SITE + "actualites",
+            SITE + "news/festival-edition-2027"])
+        self.assertEqual(len(calls), 4)
+
     def test_official_current_year_article_discovered_through_news_index(self):
         home = ('<a href="/2027">Programme 2027</a>'
                 '<a href="/actualites">Actualités</a>')
