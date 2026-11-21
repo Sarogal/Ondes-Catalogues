@@ -183,23 +183,52 @@ def event_indicators(html, url, date):
             data = json.loads(source)
         except (ValueError, TypeError):
             continue
-        nodes = data if isinstance(data, list) else [data]
-        for node in nodes:
-            if not isinstance(node, dict):
-                continue
-            kind = node.get("@type", "")
-            types = kind if isinstance(kind, list) else [kind]
-            if not {"Event", "MusicEvent"}.intersection(types):
-                continue
-            if (not isinstance(node.get("name"), str)
-                    or not isinstance(node.get("startDate"), str)
-                    or node["startDate"][:10] != date):
-                continue
-            source_url = node.get("url")
-            if source_url is not None and source_url != url:
-                continue
-            seen = True
+        # Reuse the repository's established JSON-LD graph traversal:
+        # @graph, itemListElement and schema.org type URLs are common on
+        # genuine event pages. This is only a private diagnostic signal.
+        try:
+            for index, node in enumerate(discover.flatten_ld(data)):
+                if index >= 100:
+                    break
+                if (not isinstance(node.get("name"), str)
+                        or not isinstance(node.get("startDate"), str)
+                        or node["startDate"][:10] != date):
+                    continue
+                source_url = node.get("url")
+                if source_url is not None and source_url != url:
+                    continue
+                status = node.get("eventStatus")
+                if isinstance(status, dict):
+                    status = status.get("@id") or status.get("name")
+                if isinstance(status, str) and re.search(
+                        r"cancel|postpon|reschedul|report|annul", status, re.I):
+                    continue
+                seen = True
+        except (RecursionError, TypeError, ValueError):
+            continue
     return seen
+
+
+def rotating_example(entry, today, slot):
+    """Sample every first-party example over time, not always the first.
+
+    A single malformed first event must not permanently mask the other
+    announced concerts at an unknown source. One event detail per host/run
+    preserves the existing network budget and all publication quarantine.
+    """
+    examples = [
+        example for example in entry.get("examples", [])
+        if isinstance(example, dict)
+        and intake.valid_https(example.get("sourcePage")) == entry["host"]
+        and intake.valid_https(example.get("eventUrl")) == entry["host"]
+        and isinstance(example.get("date"), str)
+    ]
+    if not examples:
+        raise StopIteration("No same-host dated event example")
+    examples.sort(key=lambda x: (
+        str(x.get("eventUrl")), str(x.get("date")),
+        str(x.get("sourcePage"))))
+    return examples[(today.toordinal() + slot) % len(examples)]
 
 
 def choose(rows, today, slot, limit):
@@ -246,12 +275,7 @@ def build(intake_report, today, *, slot=0, limit=3, fetch=safe_fetch):
                   "automaticTrustGranted": False,
                   "publicationAllowed": False}
         try:
-            example = next(
-                e for e in entry.get("examples", [])
-                if isinstance(e, dict)
-                and intake.valid_https(e.get("sourcePage")) == entry["host"]
-                and intake.valid_https(e.get("eventUrl")) == entry["host"]
-                and isinstance(e.get("date"), str))
+            example = rotating_example(entry, today, slot)
             listing = fetch(example["sourcePage"], cache)
             if not isinstance(listing, str) or not listing:
                 raise ValueError("First-party page empty")
