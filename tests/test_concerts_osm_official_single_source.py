@@ -188,6 +188,98 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertTrue(report["candidateChecks"][0]["reason"].startswith(
             "osm_identity:"))
 
+
+    def test_existing_non_osm_map_room_admits_official_source_by_exact_ban_osm(self):
+        import json
+        cat = copy.deepcopy(BASE)
+        venue = next(v for v in cat["venues"] if v["id"] == fixture.VENUE_ID)
+        venue["geoSource"] = "Géolocalisation indicative par commune"
+        node = "380889428"
+        homepage = "https://nouveau-domaine-independant.fr"
+        ban = json.dumps({"features": [{
+            "geometry": {"type": "Point", "coordinates": [1.48568, 43.54795]},
+            "properties": {"postcode": "31520", "city": "Ramonville-Saint-Agne",
+                           "street": venue["address"], "type": "street",
+                           "score": 0.94,
+                           "context": "31, Haute-Garonne, Occitanie"},
+        }]})
+        def osm(*, website=homepage, name="Le Bikini"):
+            return ('<osm version="0.6"><node id="' + node +
+                    '" lat="43.54795" lon="1.48568">'
+                    '<tag k="name" v="' + name + '"/>'
+                    '<tag k="addr:city" v="Ramonville-Saint-Agne"/>'
+                    '<tag k="addr:postcode" v="31520"/>'
+                    '<tag k="addr:street" v="Rue Théodore Monod"/>'
+                    '<tag k="website" v="' + website + '"/>'
+                    '</node></osm>')
+        def fetcher(*, ban_result=ban, map_result=None, event_html=None):
+            seen = []
+            def fetch(url, cache):
+                seen.append(url)
+                if url.startswith("https://data.geopf.fr/geocodage/search/"):
+                    return ban_result
+                if url.startswith("https://api.openstreetmap.org/api/0.6/map?bbox="):
+                    return map_result if map_result is not None else osm()
+                if url == "https://api.openstreetmap.org/api/0.6/node/" + node:
+                    return map_result if map_result is not None else osm()
+                if url == URL:
+                    return event_html if event_html is not None else fixture.page(
+                        URL, music=False)
+                raise AssertionError("Unexpected independent endpoint " + url)
+            return fetch, seen
+
+        previous = {"schema": publisher.SCHEMA, "approvals": []}
+        fetch, seen = fetcher()
+        approved, report = pipeline.build(
+            registry(), cat, previous, TODAY, fetch=fetch)
+        self.assertEqual(report["stateCounts"],
+                         {"independently_verified_proposal": 1})
+        self.assertEqual(len(approved["approvals"]), 1)
+        proof = approved["approvals"][0]["officialEvidence"][0]
+        self.assertEqual(proof["proofType"], identity.OSM_ADDRESS_PROFILE)
+        self.assertEqual(proof["namedOsmUrl"],
+                         "https://www.openstreetmap.org/node/" + node)
+        self.assertEqual(proof["publishedVenueGeoSource"], venue["geoSource"])
+        self.assertEqual(proof["sourceWebsite"], homepage)
+        self.assertEqual(len(approved["approvals"][0]["newArtists"]), 8)
+        with mock.patch.object(identity, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                previous, approved, TODAY)), 1)
+            published, stats = publisher.merge(cat, cat, approved, TODAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(stats["newArtists"], 8)
+        self.assertEqual(stats["newVenues"], 0)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+        self.assertEqual(published["venues"], cat["venues"])
+        self.assertTrue(any("data.geopf.fr" in x for x in seen))
+        self.assertIn(URL, seen)
+
+        # The first-party page, government street, and named OSM website
+        # are three distinct identities. No single forged one may approve.
+        bad_ban = json.dumps({"features": [{
+            "geometry": {"type": "Point", "coordinates": [1.48568, 43.54795]},
+            "properties": {"postcode": "31520", "city": "Ramonville-Saint-Agne",
+                           "street": venue["address"], "type": "street",
+                           "score": 0.83},
+        }]})
+        for label, kwargs in (
+            ("ban_low_score", {"ban_result": bad_ban}),
+            ("wrong_osm_name", {"map_result": osm(name="Wrong Hall")}),
+            ("wrong_osm_site", {"map_result": osm(
+                website="https://forged.invalid")}),
+            ("not_music", {"event_html": fixture.page(
+                URL, music=False, genres=False)}),
+            ("cancelled", {"event_html": fixture.page(
+                URL, status="EventCancelled")}),
+        ):
+            with self.subTest(label=label):
+                invalid_fetch, _ = fetcher(**kwargs)
+                result, diagnostic = pipeline.build(
+                    registry(), cat, previous, TODAY, fetch=invalid_fetch)
+                self.assertEqual(result["approvals"], [])
+                self.assertEqual(diagnostic["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+
     def test_generic_event_or_html_microdata_reaches_real_publisher(self):
         # Some official venue sites emit schema.org Event, or HTML microdata,
         # rather than MusicEvent. Neither may borrow a genre or bill from
