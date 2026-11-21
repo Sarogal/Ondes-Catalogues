@@ -1,0 +1,23 @@
+name: Concerts — smoke test publisher CLI
+on:
+  pull_request:
+    paths:
+      - 'scripts/concerts_cloud_sync.py'
+      - 'tests/test_concerts_cli_import_path.py'
+      - '.github/workflows/grossesondes-concerts-cli-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cli-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reproduire l'entrée CLI du Publisher GitHub Actions
+        run: python -m unittest discover -s tests -p 'test_concerts_cli_import_path.py' -v
