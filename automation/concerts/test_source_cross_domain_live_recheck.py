@@ -101,6 +101,28 @@ class LiveCrossDomainTests(unittest.TestCase):
                 url, artist=ARTIST, band_count=41))
         self.assertTrue(result["checks"][0]["crossDomainEventVerified"])
 
+    def test_first_party_schema_microdata_is_generic_fallback(self):
+        q = report()
+        def microdata(url):
+            return ('<html><body><main>'
+                    '<section itemscope itemtype="https://schema.org/MusicEvent">'
+                    '<meta itemprop="url" content="' + url + '"/>'
+                    '<span itemprop="name">METAL NOUVEAU live</span>'
+                    '<time itemprop="startDate" datetime="2027-05-03T20:00:00+02:00">03 Mai</time>'
+                    '<div itemprop="performer" itemscope itemtype="https://schema.org/MusicGroup">'
+                    '<span itemprop="name">METAL NOUVEAU</span>'
+                    '<span itemprop="genre">Thrash Metal</span></div>'
+                    '<div itemprop="location" itemscope itemtype="https://schema.org/Place">'
+                    '<span itemprop="name">Le Club Inconnu</span>'
+                    '<div itemprop="address" itemscope itemtype="https://schema.org/PostalAddress">'
+                    '<span itemprop="addressLocality">Tours</span>'
+                    '<span itemprop="addressCountry">FR</span></div></div>'
+                    '</section></main></body></html>')
+        result = live.build(q, DAY, slot=2,
+                            fetch=lambda url, cache: microdata(url))
+        self.assertTrue(result["checks"][0]["crossDomainEventVerified"])
+        self.assertFalse(result["publicationAllowed"])
+
     def test_neither_fresh_page_may_borrow_a_second_events_bands(self):
         q = report()
         wrong_event = {"@type": "MusicEvent", "name": "Other",
