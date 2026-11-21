@@ -164,7 +164,7 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
                         lead_artist=row["leadArtist"], city=row["city"],
                         venue=row["normalizedVenue"])
                     signed.append({"host": host,
-                                   "domainHint": lead["independentDomainHint"],
+                                   "domainHint": cross.domain(host),
                                    "url": url, "genre": proof["qualifyingGenre"]})
                 except (ValueError, TypeError, OSError, TimeoutError,
                         StopIteration, KeyError, IndexError):
