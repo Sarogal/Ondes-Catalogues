@@ -33,7 +33,11 @@ SCHEMA = "grossesondes.national-municipal-pages-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
 MAX_WEBSITES = 2
 MAX_PAGES_PER_WEBSITE = 4  # homepage + three same-host pages
-MAX_ANCHORS_PER_PAGE = 180
+# The existing visible-anchor parser is hard-bounded at 500. Municipal
+# agendas with substantial navigation can have >350 links before/among events.
+# Inspect up to 450 *already downloaded* visible links; no extra HTTP,
+# no source/festival-name whitelist and no change to per-site page budgets.
+MAX_ANCHORS_PER_PAGE = 450
 MAX_DISCOVERED_URLS = 12
 MAX_PAGE_HTML = 650_000
 MAX_VISIBLE_CHARS = 45_000

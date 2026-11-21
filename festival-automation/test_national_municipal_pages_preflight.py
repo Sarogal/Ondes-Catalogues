@@ -353,6 +353,56 @@ class NationalMunicipalPagesTests(unittest.TestCase):
             [x["detail_url_review_only"] for x in b])
         self.assertTrue(all(x["publication_authorized"] is False for x in a+b))
 
+    def test_long_real_world_municipal_agenda_reaches_event_links(self):
+        """Real municipal agendas may have 350+ anchors, with events below 180."""
+        from national_municipal_pages_preflight import (
+            MAX_ANCHORS_PER_PAGE, _candidate_links,
+            unknown_municipal_music_links, untyped_municipal_event_links)
+        self.assertGreaterEqual(MAX_ANCHORS_PER_PAGE, 350)
+        self.assertLessEqual(MAX_ANCHORS_PER_PAGE, 500)
+        navigation = "".join(
+            '<a href="/actualites/lien-' + str(i) +
+            '">Vie associative et actualités</a>'
+            for i in range(225))
+        long_index = (
+            "<main><h1>Agenda</h1>" + navigation +
+            '<a href="/evenement/nom-inconnu/">Le Gros Tonneau 2027</a>' +
+            '<a href="/evenement/germirockn-co/">GermiRock\'n Co #2</a>' +
+            '<a href="/evenement/atelier/">Atelier de peinture</a></main>'
+        )
+        typed = unknown_municipal_music_links(
+            long_index, SITE+"agenda", SITE)
+        self.assertEqual([x["title_hint"] for x in typed],
+                         ["GermiRock'n Co #2"])
+        untyped = untyped_municipal_event_links(
+            long_index, SITE+"agenda", SITE, TODAY,
+            music_urls={x["detail_url_review_only"] for x in typed})
+        self.assertEqual({x["title_hint"] for x in untyped},
+                         {"Le Gros Tonneau 2027", "Atelier de peinture"})
+        for x in typed + untyped:
+            self.assertFalse(x["publication_authorized"])
+
+        # An agenda link AFTER a 225-link navigation menu must be found and
+        # prioritized without changing the 4-page HTTP budget.
+        home = (navigation +
+                '<a href="/agenda">Agenda</a>')
+        selected = _candidate_links(home, SITE, SITE, TITLE, 2027, TODAY)
+        self.assertEqual(selected[0], SITE+"agenda")
+        html = {SITE: home, SITE+"agenda": long_index}
+        visited = []
+        result = scan(
+            queue(), municipality(), TODAY,
+            fetch=lambda url: visited.append(url) or html.get(
+                url, "<h1>Page sans evenement</h1>"),
+            commune_lookup=geo, delegated_lookup=lambda _: None,
+            directory_fetch=dila)
+        self.assertEqual(visited[:2], [SITE, SITE+"agenda"])
+        self.assertLessEqual(len(visited), MAX_PAGES_PER_WEBSITE)
+        self.assertEqual(result["unknown_music_links_count"], 1)
+        self.assertEqual(result["untyped_event_links_count"], 2)
+        self.assertEqual(result["publications"], 0)
+        self.assertFalse(result["publication_authorized"])
+
     def test_security_challenge_is_unavailable_not_negative_evidence(self):
         # Real municipal administrations may use anti-bot gateways. They
         # cannot be bypassed and must not count as no festival scheduled.
