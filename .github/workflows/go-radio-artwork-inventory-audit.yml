@@ -9,6 +9,8 @@ on:
       - "grossesondes/radio-test-apk/artwork/**"
       - "radio-catalog-lab/tools/audit_open_radio_artwork_inventory.py"
       - "radio-catalog-lab/tools/test_audit_open_radio_artwork_inventory.py"
+      - "radio-catalog-lab/tools/summarize_open_radio_artwork_inventory.py"
+      - "radio-catalog-lab/tools/test_summarize_open_radio_artwork_inventory.py"
   workflow_dispatch:
 
 permissions:
@@ -53,3 +55,43 @@ jobs:
           git diff --exit-code
           git diff --cached --exit-code
           echo "GO_ARTWORK_INVENTORY_AUDIT_ONLY — never write active catalog/remote images"
+
+  combine-evidence:
+    name: "Reconcile all 310 station IDs; never auto-approve images"
+    needs: artwork-audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install decoder dependency for unit test imports
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+      - name: Verify full identity coverage and no accidental editorial approval
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_summarize_open_radio_artwork_inventory.py" -v
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: go-legacy-artwork-shard-*
+          path: logo-evidence-shards
+          merge-multiple: true
+      - name: Reconcile every historical radio and summarize quality evidence
+        run: |
+          python radio-catalog-lab/tools/summarize_open_radio_artwork_inventory.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --input-dir logo-evidence-shards \
+            --output go-historical-artwork-summary.json
+      - name: Upload review-only combined evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-artwork-full-inventory-review
+          path: go-historical-artwork-summary.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Confirm no signed catalog, no image distribution and no production writes
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_ARTWORK_FULL_AUDIT_ONLY — no logos accepted/published"
