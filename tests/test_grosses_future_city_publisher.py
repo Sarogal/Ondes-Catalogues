@@ -74,6 +74,74 @@ class CityPublisherTests(unittest.TestCase):
         self.assertIsNone(private_city_report("TOKEN",
                           lambda *_: {"encoding": "base64", "content": "badbase64"}))
 
+    def test_undated_future_edition_can_get_signed_town_centre_pin(self):
+        from grossesondes_cloud_sync import safe_target
+        undated = {
+            **ROW, "startDate": None, "endDate": None,
+            "status": "Dates à venir",
+        }
+        notice = "<p>Festival Exemple 2027 : rendez-vous en 2027 à Colonne.</p>"
+        official, government = [], []
+        def fetch(url):
+            official.append(url)
+            return notice
+        def admin(url):
+            government.append(url)
+            return api()
+        current = catalog(undated)
+        out, result = apply_independently_verified_city(
+            current, current, review(), "2026-11-21",
+            fetcher=fetch, admin_reader=admin)
+        self.assertEqual(result["accepted_city_updates"],
+                         ["festival-exemple-2027"])
+        self.assertEqual(official, [SITE])
+        self.assertEqual(len(government), 1)
+        item = out["festivals"][0]
+        self.assertEqual(item["status"], "Dates à venir")
+        self.assertIsNone(item["startDate"])
+        self.assertIsNone(item["endDate"])
+        self.assertEqual(item["geoPrecision"], "commune")
+        self.assertTrue(item["showOnMap"])
+        self.assertEqual(item["geoVerification"]["markerMeaning"],
+                         "centre_indicatif_de_commune")
+        self.assertIsNone(item["venue"])
+        baseline_rows = [
+            {"slug": "old-baseline-" + str(i),
+             "name": "Baseline unchanged " + str(i)}
+            for i in range(90)
+        ]
+        baseline = {"schema": 1, "festivals": baseline_rows}
+        signed = {"schema": 1,
+                  "festivals": deepcopy(baseline_rows) + [undated]}
+        candidate = {"schema": 1,
+                     "festivals": deepcopy(baseline_rows) + [item]}
+        self.assertTrue(safe_target(baseline, candidate, signed))
+        forged = deepcopy(candidate)
+        forged["festivals"][-1]["venue"] = "Ancien site confirmé"
+        with self.assertRaises(ValueError):
+            safe_target(baseline, forged, signed)
+        forged = deepcopy(candidate)
+        forged["festivals"][-1]["geoVerification"]["proofMode"] = "self-approved"
+        with self.assertRaises(ValueError):
+            safe_target(baseline, forged, signed)
+
+    def test_undated_city_not_inferred_from_old_edition(self):
+        undated = {**ROW, "startDate": None, "endDate": None,
+                   "status": "Dates à venir"}
+        notice = ("<p>Festival Exemple 2026 à Colonne.</p>"
+                  "<p>Édition 2027 : bientôt annoncée.</p>")
+        official_calls, government_calls = [], []
+        out, report = apply_independently_verified_city(
+            catalog(undated), catalog(undated), review(),
+            "2026-11-21",
+            fetcher=lambda u: official_calls.append(u) or notice,
+            admin_reader=lambda u: government_calls.append(u) or api())
+        self.assertEqual(report["accepted_city_updates"], [])
+        self.assertEqual(report["held_city"], 1)
+        self.assertEqual(out, catalog(undated))
+        self.assertEqual(official_calls, [SITE])
+        self.assertEqual(government_calls, [])
+
     def test_real_city_marker_is_not_precise_festival_venue(self):
         first_party = []
         national = []
