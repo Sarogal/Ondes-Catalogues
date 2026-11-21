@@ -341,9 +341,9 @@ def unique_current_edition_visible_dates(html, title, year, today):
         # The older adjacent-heading proof already applies this exact veto;
         # the new paragraph fallback must not bypass it.
         explicit_tour = re.search(
-            r"\\b(?:tournee itinerante|tournee de [0-9]+ concerts?|"
+            r"\b(?:tournee itinerante|tournee de [0-9]+ concerts?|"
             r"concerts? de la tournee|date de la tournee|"
-            r"concert tour|tour de concerts?)\\b", visible)
+            r"concert tour|tour de concerts?)\b", visible)
         if (explicit_tour or start < checked or start.year != year
                 or end.year != year
                 or not visible_official_edition(html, title, start, end)
