@@ -104,6 +104,90 @@ class UnnumberedOfficialGeoTests(unittest.TestCase):
     def test_osm_city_tag_is_optional_if_official_geo_proves_city(self):
         self.assertIsNotNone(mint(osm_response=osm(city=None)))
 
+    def test_municipal_h2_place_without_number_has_reusable_private_proof(self):
+        # Carvin-style official directory: no street number, no JSON-LD geo.
+        # The coordinates and names below are *synthetic fixture data*.
+        group = {**GROUP, "venue": "Médiathèque des contes",
+                 "key": ["ville les bois", "mediatheque des contes"]}
+        page = (
+            "<html><h1>Annuaire municipal</h1>"
+            "<h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare</p><p>12345 Ville-les-Bois France</p>"
+            "<h2>Horaires</h2><p>Du lundi au samedi</p></html>"
+        )
+        named = osm(venue="Médiathèque des contes", city=CITY)
+        named["elements"][0]["tags"].update(
+            {"addr:street": "Place de la Gare",
+             "addr:postcode": "12345"})
+        proof = mint(group=group, official_html=page, osm_response=named)
+        self.assertIsInstance(proof, VenueLocationProof)
+        self.assertEqual(proof.method,
+                         "dila_official_street_plus_named_osm")
+        loc = location_from_proof(
+            proof, CITY, "Médiathèque des contes", DAY, POINT)
+        self.assertEqual((loc["lat"], loc["lng"]), POINT)
+        self.assertIn("named street", loc["geo_source"])
+        self.assertIsNone(location_from_proof(
+            proof, CITY, "Autre médiathèque", DAY, POINT))
+
+    def test_unnumbered_official_address_does_not_override_conflicting_osm(self):
+        group = {**GROUP, "venue": "Médiathèque des contes",
+                 "key": ["ville les bois", "mediatheque des contes"]}
+        page = ("<html><h2>Médiathèque des contes</h2>"
+                "<p>Place de la Gare</p><p>12345 Ville-les-Bois</p></html>")
+        named = osm(venue=group["venue"], city=CITY)
+        named["elements"][0]["tags"].update(
+            {"addr:street": "Place de la Gare",
+             "addr:postcode": "12345"})
+        from copy import deepcopy
+        for mutated in (
+            {"addr:street": "Rue de la Gare"},
+            {"addr:postcode": "54321"},
+            {"addr:city": "Autre ville"},
+            {"addr:street": None},
+        ):
+            with self.subTest(mutated=mutated):
+                wrong = deepcopy(named)
+                wrong["elements"][0]["tags"].update(mutated)
+                self.assertIsNone(mint(
+                    group=group, official_html=page, osm_response=wrong))
+        self.assertIsNone(mint(
+            group=group, official_html=page,
+            osm_response=osm(venue=group["venue"], duplicate=True)))
+        self.assertIsNone(mint(
+            group=group, official_html=page, osm_response=named,
+            source_center=(44.51, 2.25)))
+
+    def test_unnumbered_official_address_requires_dedicated_visible_identity(self):
+        group = {**GROUP, "venue": "Médiathèque des contes",
+                 "key": ["ville les bois", "mediatheque des contes"]}
+        named = osm(venue=group["venue"], city=CITY)
+        named["elements"][0]["tags"].update(
+            {"addr:street": "Place de la Gare", "addr:postcode": "12345"})
+        for page in (
+            "<html><h1>Annuaire</h1><p>Place de la Gare 12345 "
+            "Ville-les-Bois</p></html>",
+            "<html><h2>Autre médiathèque</h2><p>Place de la Gare "
+            "12345 Ville-les-Bois</p></html>",
+            "<html><footer><h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare 12345 Ville-les-Bois</p></footer></html>",
+            "<html><h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare 54321 Ville-les-Bois</p></html>",
+            "<html><h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare 12345 Autre-ville</p></html>",
+            "<html><h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare 12345 Ville-les-Bois</p>"
+            "<h2>Médiathèque des contes</h2>"
+            "<p>Rue des Lilas 12345 Ville-les-Bois</p></html>",
+            "<html><script type='application/ld+json'>"
+            '{"@type":"Place","name":"Lieu différent"}'
+            "</script><h2>Médiathèque des contes</h2>"
+            "<p>Place de la Gare 12345 Ville-les-Bois</p></html>",
+        ):
+            with self.subTest(page=page[:85]):
+                self.assertIsNone(mint(
+                    group=group, official_html=page, osm_response=named))
+
     def test_no_official_coords_means_hint_only_not_location_proof(self):
         self.assertIsNone(mint(official_html=html(include_geo=False)))
 
