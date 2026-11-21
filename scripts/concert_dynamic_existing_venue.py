@@ -34,11 +34,16 @@ import triage
 from independent_named_site_geo import _distance_meters
 
 PROFILE = "dynamic-existing-venue-first-party-v1"
+# A verified OSM node is independent location+website authority. A concert
+# on that attributed HTTPS domain can stand on its own after a fresh exact
+# MusicEvent recheck by the publisher; a second event domain is optional.
+OSM_SINGLE_PROFILE = "dynamic-existing-venue-osm-official-v1"
 PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "namedOsmUrl",
     "corroboratingEventUrl",
 })
+OSM_SINGLE_PROOF_FIELDS = PROOF_FIELDS - {"corroboratingEventUrl"}
 CHECKED = ["artists", "date", "venue", "genre", "sourceWebsite"]
 # Publicly signed venue coordinates may reference either the human-friendly
 # node page or the canonical API node path. Both encode the SAME immutable
@@ -223,21 +228,25 @@ def validate(approval, venues, artists, today, *, fetch=None):
             "event physical venue is not published")
     proofset = approval.get("officialEvidence")
     require(isinstance(proofset, list) and len(proofset) == 1
-            and isinstance(proofset[0], dict)
-            and set(proofset[0]) == PROOF_FIELDS,
+            and isinstance(proofset[0], dict),
             "exact source-identity proof required")
     proof = proofset[0]
+    is_single_osm = proof.get("proofType") == OSM_SINGLE_PROFILE
+    require(set(proof) == (
+                OSM_SINGLE_PROOF_FIELDS if is_single_osm else PROOF_FIELDS),
+            "wrong first-party source evidence fields")
     require(proof["url"] == event.get("officialUrl")
-            and proof["proofType"] == PROFILE
+            and proof["proofType"] in {PROFILE, OSM_SINGLE_PROFILE}
             and proof["checkedAt"] == approval.get("reviewedAt")
             and proof["checkedFields"] == CHECKED
             and proof["namedOsmUrl"] == venue.get("geoSource"),
             "first-party source evidence differs")
     origin = url_host(event["officialUrl"])
     witness = proof.get("corroboratingEventUrl")
-    witness_host = url_host(witness)
-    require(cross.domain(witness_host) != cross.domain(origin),
-            "cross-domain witness is controlled by the same source apex")
+    if not is_single_osm:
+        witness_host = url_host(witness)
+        require(cross.domain(witness_host) != cross.domain(origin),
+                "cross-domain witness is controlled by the same source apex")
     cache = {}
     # Verify named public OSM feature AND its website attribution on each
     # prospective publication. This also detects later ownership changes.
@@ -260,12 +269,16 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
             "independent live event differs from signed first-party proof")
-    # Cross-domain witness must be a fresh individual named event. A second
-    # link or source label from the venue's own page is not corroboration.
-    corroboration = fetch(witness, cache)
-    matched = cross_live.event_page_witness(
-        corroboration, url=witness, date=event["date"],
-        lead_artist=names[0], city=venue["city"], venue=venue["name"])
-    require(normal(names[0]) in {normal(x) for x in matched["names"]},
-            "independent event witness does not include named lead artist")
+    if not is_single_osm:
+        # The legacy two-domain proof still requires its fresh witness.
+        corroboration = fetch(witness, cache)
+        matched = cross_live.event_page_witness(
+            corroboration, url=witness, date=event["date"],
+            lead_artist=names[0], city=venue["city"], venue=venue["name"])
+        require(normal(names[0]) in {normal(x) for x in matched["names"]},
+                "independent event witness does not include named lead artist")
+    # For OSM_SINGLE_PROFILE, trust comes from the freshly re-fetched,
+    # independently named OSM feature AND this exact attributed venue-origin
+    # MusicEvent. Neither a registry claim nor an OSM hostname by itself is
+    # an event-level or artist-genre proof.
     return True

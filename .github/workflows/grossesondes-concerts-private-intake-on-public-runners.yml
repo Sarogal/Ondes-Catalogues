@@ -41,6 +41,7 @@ on:
       - 'automation/concerts/independent_named_site_geo.py'
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
+      - 'automation/concerts/dynamic_osm_official_proposals.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'
       - 'automation/concerts/source_cross_domain_live_recheck.py'
@@ -633,6 +634,34 @@ jobs:
             fi
           fi
 
+      - name: Approuver les concerts OSM officiels à source unique après relecture indépendante
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Source claims are NEVER trust. The producer independently fetches
+          # a named published-venue OSM node, verifies website attribution
+          # and the exact complete first-party MusicEvent. The next step
+          # replays the actual Publisher, which repeats those network checks.
+          # No fixed venue/artist/domain manifest and no second domain needed.
+          OUTPUT="$RUNNER_TEMP/concerts-single-osm-approval-preview.json"
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          if python public/automation/concerts/dynamic_osm_official_proposals.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+              --output "$OUTPUT" \
+              --report confidential/automation/concerts/intake/single-official-osm-proposals.json \
+              --scan-slot "$SCAN_SLOT" --limit 8 \
+              > "$RUNNER_TEMP/concerts-private-logs/single-official-osm-proposals.log" 2>&1; then
+            mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
+            echo "Concerts officiels OSM : propositions privées transmises au Publisher."
+          else
+            rm -f "$OUTPUT"
+            echo "::warning::Preuves OSM ou événements non vérifiables ; approbations inchangées."
+          fi
+
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
         id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
@@ -959,6 +988,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/dynamic-first-party-venue-admission.json ]; then
             git add --sparse -- automation/concerts/intake/dynamic-first-party-venue-admission.json
+          fi
+          if [ -f automation/concerts/intake/single-official-osm-proposals.json ]; then
+            git add --sparse -- automation/concerts/intake/single-official-osm-proposals.json
           fi
           if [ -f automation/concerts/intake/dynamic-new-site-approval-proposals.json ]; then
             git add --sparse -- automation/concerts/intake/dynamic-new-site-approval-proposals.json
