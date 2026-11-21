@@ -176,7 +176,7 @@ def venue_detail_matches(html, title, site):
     if not isinstance(html, str) or not 0 < len(html) <= 650000:
         return False
     try:
-        base = normalized(re.sub(r"\\s+20[2-4][0-9]$", "", title))
+        base = normalized(re.sub(r"\s+20[2-4][0-9]$", "", title))
         headings = Heading()
         headings.feed(html)
         headings.close()
@@ -186,7 +186,7 @@ def venue_detail_matches(html, title, site):
         # may establish identity. A footer or another concert cannot.
         named_heading = re.compile(
             r"^" + re.escape(base) +
-            r"(?:\\s+20[2-4][0-9])?(?:\\s+(?:jour|day)\\s+[1-7])?$")
+            r"(?:\s+20[2-4][0-9])?(?:\s+(?:jour|day)\s+[1-7])?$")
         if sum(bool(named_heading.fullmatch(h)) for h in headings.headings) != 1:
             return False
         for href, label, _prefix in anchor_rows(html):
