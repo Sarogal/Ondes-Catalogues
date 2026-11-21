@@ -27,6 +27,7 @@ if str(SOURCE_DIR) not in sys.path:
     sys.path.insert(0, str(SOURCE_DIR))
 
 import event_site_pair_recheck as sites
+import discover
 import source_cross_domain_corroboration as cross
 import source_cross_domain_live_recheck as witnesses
 import source_admission_intake as intake
@@ -93,8 +94,9 @@ def verify(event_approval, site_approval, published_venues, published_artists,
             and show_day >= today
             and event.get("status") == "confirmed"
             and event.get("time") is None
-            and event.get("sourceType") == "organisateur",
-            "stale or mismatched confirmed concert")
+            and event.get("sourceType") == "organisateur"
+            and not discover.reject_listing(event.get("title")),
+            "stale, excluded or mismatched confirmed concert")
     url = event.get("officialUrl")
     require(isinstance(url, str) and intake.valid_https(url) is not None
             and urlsplit(url).path.strip("/") and not urlsplit(url).query
@@ -126,7 +128,7 @@ def verify(event_approval, site_approval, published_venues, published_artists,
             and proof.get("checkedAt") == checked.isoformat()
             and proof.get("checkedFields") == CHECKED
             and isinstance(proof.get("officialArtistNames"), list)
-            and 1 <= len(proof["officialArtistNames"]) <= 100
+            and len(proof["officialArtistNames"]) >= 1
             and all(isinstance(n, str) and n.strip()
                     for n in proof["officialArtistNames"])
             and isinstance(proof.get("officialGenreLabels"), list)
