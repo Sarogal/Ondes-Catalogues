@@ -434,6 +434,102 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         third = examine(state, q3, catalog, DAY3, fetch=pages)
         self.assertEqual(third["two_day_dates_count"], 1)
 
+
+    def test_same_domain_homepage_reconciles_weekend_and_unrelated_single_day(self):
+        """Official /programmation/ contains an unrelated day, not an event."""
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        base = "https://foudre-metal.fr/"
+        deep = (
+            "<main><h1>Festival Foudre du Nord 2027 - programmation</h1>"
+            "<p>Le Festival Foudre du Nord 2027 aura lieu "
+            "les 13 et 14 août 2027, scène metal et rock.</p>"
+            "<p>Notre association se réunira le 26 mars 2027.</p>"
+            "<p>Samedi 14 août 2027 : programmation du festival.</p>"
+            "</main>")
+        home = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Le Festival Foudre du Nord 2027 revient les "
+            "13 et 14 août 2027. Rock et metal.</p></main>")
+        read_urls = []
+        def fetch(url):
+            read_urls.append(url)
+            if url == URL_A:
+                return deep
+            if url == base:
+                return home
+            self.fail("Never consult external source: " + url)
+        one = examine(state, queue, published, DAY1, fetch=fetch)
+        self.assertEqual(read_urls, [URL_A, base])
+        self.assertEqual(one["rows"][0]["date_source_mode"],
+                         "SAME_HOST_WEEKEND_RECONCILED")
+        self.assertEqual(one["rows"][0]["start_date_hint"], "2027-08-13")
+        self.assertEqual(one["rows"][0]["end_date_hint"], "2027-08-14")
+        self.assertFalse(one["rows"][0]["two_day_dates"])
+        next_state, next_queue, _ = fixture(DAY2)
+        next_state.update(state)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        two = examine(
+            next_state, next_queue, published, DAY2, fetch=fetch)
+        self.assertEqual(two["two_day_dates_count"], 1)
+        self.assertFalse(two["publication_authorized"])
+
+    def test_same_domain_weekend_cannot_hide_a_second_festival_day(self):
+        state, queue, published = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        deep = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Le Festival Foudre du Nord 2027 aura lieu "
+            "les 13 et 14 août 2027.</p>"
+            "<p>Festival Foudre du Nord 2027 : une autre date le "
+            "26 mars 2027.</p></main>")
+        root = "https://foudre-metal.fr/"
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return (deep if url == URL_A else (
+                "<main><h1>Festival Foudre du Nord 2027</h1>"
+                "<p>Les 13 et 14 août 2027.</p></main>"))
+        result = examine(state, queue, published, DAY1, fetch=fetch)
+        self.assertEqual(result["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        # Stronger safety: the same-edition conflicting day is rejected on
+        # the source page, BEFORE any additional homepage HTTP fetch.
+        self.assertEqual(visited, [URL_A])
+        self.assertEqual(result["publications"], 0)
+
+    def test_same_domain_reconciliation_rejects_conflicting_home_or_jsonld(self):
+        from pprint import pformat
+        source = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Festival Foudre du Nord 2027 : "
+            "13 et 14 août 2027.</p>"
+            "<p>Réunion du comité le 26 mars 2027.</p></main>")
+        good_home = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                     "<p>Les 13 et 14 août 2027, rock et metal.</p></main>")
+        cases = (
+            good_home.replace("13 et 14 août", "20 et 21 août"),
+            good_home.replace("13 et 14 août", "13 et 15 août"),
+            good_home.replace(
+                "</main>",
+                "<script type=\"application/ld+json\">"
+                "{\"@type\":\"MusicEvent\","
+                "\"name\":\"Festival Foudre du Nord 2027\","
+                "\"startDate\":\"2027-09-13\","
+                "\"endDate\":\"2027-09-14\"}</script></main>"),
+        )
+        for homepage in cases:
+            with self.subTest(homepage=homepage[:100]):
+                state, queue, pub = fixture(DAY1)
+                queue["dossiers"] = queue["dossiers"][:1]
+                result = examine(
+                    state, queue, pub, DAY1,
+                    fetch=lambda url: source if url == URL_A else homepage)
+                self.assertIsNone(result["rows"][0]["start_date_hint"])
+                self.assertEqual(result["rows"][0]["status"],
+                                 "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+                self.assertFalse(result["publication_authorized"])
+
     def test_contradictory_source_dates_forbid_discovering_convenient_article(self):
         state, queue, catalog = fixture(DAY1)
         queue["dossiers"] = queue["dossiers"][:1]
