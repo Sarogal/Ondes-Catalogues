@@ -153,7 +153,9 @@ class NationalDirectoryAutonomyTests(TestCase):
                          organizer_fetch=lambda u: self.fail(
                              "Unknown organizer domain must never be fetched"),
                          limit=1)
-        self.assertEqual(calls, [DURL])
+        self.assertEqual(calls, [
+            DURL, DURL.replace("/festival/festivalfoudreimaginaire",
+                               "/festival/festival-foudre-imaginaire")])
         self.assertEqual(result["rows"][0]["status"],
                          "DIRECTORY_OFFICIAL_LINK_UNPROVEN")
         self.assertNotIn("digest", s[STATE_KEY][
@@ -179,6 +181,7 @@ class NationalDirectoryAutonomyTests(TestCase):
             "firstSeen": FIRST, "lastSeen": SECOND,
             "lastChecked": SECOND, "stable": True,
             "digest": proof_digest(base, SITE, DATES),
+            "directoryRef": DURL,
         }}
         review = {
             "schema": SCHEMA, "as_of": SECOND, "review_only": True,
@@ -189,6 +192,7 @@ class NationalDirectoryAutonomyTests(TestCase):
                 "status": "TWO_DAY_DIRECTORY_FIRST_PARTY_PRIVATE",
                 "publication_authorized": False,
                 "two_day_observation": True,
+                "directory_ref_review_only": DURL,
                 "site_review_only": SITE, "start_date_hint": DATES[0],
                 "end_date_hint": DATES[1],
             }],
