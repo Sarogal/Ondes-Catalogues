@@ -96,8 +96,8 @@ def visible_future_edition_without_dates(html, parent, year):
                 continue
             between = visible[first:last]
             if re.search(
-                    r"\\b(?:tournee|tour|concert|spectacle|soiree|"
-                    r"artiste|20(?:2[0-6]|[0-1][0-9]))\\b",
+                    r"\b(?:tournee|tour|concert|spectacle|soiree|"
+                    r"artiste|20(?:2[0-6]|[0-1][0-9]))\b",
                     between):
                 continue
             return True
