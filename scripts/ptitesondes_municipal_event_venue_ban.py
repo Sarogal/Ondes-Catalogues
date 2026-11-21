@@ -10,6 +10,7 @@ from datetime import date
 from html.parser import HTMLParser
 import math
 import re
+from urllib.parse import urlsplit
 
 from proof import meters, norm
 from ptitesondes_dila_municipal_domains import approved_municipal_page_host
@@ -149,6 +150,13 @@ def mint_municipal_event_location_proof(
             or approved_municipal_page_host(
                 municipal_url, group.get("city"), directory) is None
             or _coordinates(source_center) is None):
+        return None
+    # A city homepage is not an independent, dedicated venue/event record.
+    try:
+        url = urlsplit(municipal_url)
+        if url.path in ("", "/") or url.query or url.fragment:
+            return None
+    except (TypeError, ValueError):
         return None
     address = _visible_venue_street(group, official_html)
     if address is None:
