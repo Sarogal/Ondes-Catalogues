@@ -457,7 +457,7 @@ def run_observation(root, day, batch_id, *,
 
 def main():
     parser = argparse.ArgumentParser()
-     parser.add_argument("--private-observation-root", required=True, type=Path)
+    parser.add_argument("--private-observation-root", required=True, type=Path)
     parser.add_argument("--day", required=True, type=date.fromisoformat)
     parser.add_argument("--batch-id", required=True)
     parser.add_argument("--execute-live", action="store_true")
