@@ -10,6 +10,7 @@ from datetime import datetime, date
 from math import isfinite
 from hashlib import sha1, sha256
 import json
+import re
 import os
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -20,7 +21,7 @@ from zoneinfo import ZoneInfo
 from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
-from grossesondes_stage import official_text, stage, PROOF_MODE
+from grossesondes_stage import official_text, stage, PROOF_MODE, norm
 from grossesondes_future_geo_publisher import (
     apply_independently_verified_geo, private_geo_report,
 )
@@ -142,6 +143,63 @@ def load_production(reference_manifest, reader=None):
         data[filename]=obj
     return data
 
+def _certified_new_commune_delta(old, new):
+    """Safely retain independent town-centre pins on post-baseline editions.
+
+    Non-baseline rows were previously required byte-identical, which prevented
+    the already-validated independent city Publisher from ever geocoding a
+    newly published future edition, including one with dates unknown.
+    """
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    geo = {
+        "city", "lat", "lon", "showOnMap", "geoCity",
+        "geoPrecision", "geoInsee", "geoSource", "geoVerification",
+    }
+    if any(old.get(k) != new.get(k)
+           for k in set(old) | set(new) if k not in geo):
+        return False
+    proof = new.get("geoVerification")
+    if (not isinstance(proof, dict)
+            or set(proof) != {
+                "proofMode", "firstObserved", "verifiedAt",
+                "officialSite", "markerMeaning",
+            }
+            or proof.get("proofMode") != "current-edition-commune-two-day.v1"
+            or proof.get("markerMeaning") != "centre_indicatif_de_commune"
+            or proof.get("officialSite") != old.get("officialSite")
+            or not isinstance(proof.get("firstObserved"), str)
+            or not isinstance(proof.get("verifiedAt"), str)
+            or proof["firstObserved"] >= proof["verifiedAt"]
+            or old.get("showOnMap") is True
+            or old.get("lat") is not None or old.get("lon") is not None
+            or old.get("geoVerification") is not None
+            or old.get("futureVenueConfirmed") is True
+            or new.get("showOnMap") is not True
+            or new.get("geoPrecision") != "commune"
+            or new.get("geoCity") != new.get("city")
+            or not isinstance(new.get("city"), str)
+            or not 2 <= len(new["city"]) <= 160
+            or (old.get("city") is not None
+                and norm(old["city"]) != norm(new["city"]))
+            or not isinstance(new.get("geoSource"), str)
+            or not new["geoSource"].startswith(
+                "https://geo.api.gouv.fr/communes?")
+            or not isinstance(new.get("geoInsee"), str)
+            or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
+        return False
+    for key, lower, upper in (("lat", -90, 90), ("lon", -180, 180)):
+        value = new.get(key)
+        if type(value) not in (int, float) or not isfinite(value):
+            return False
+        if not lower <= value <= upper:
+            return False
+    # No direct assertion of the exact festival entrance.
+    if old.get("venue") != new.get("venue"):
+        return False
+    return True
+
+
 def safe_target(baseline, candidate, currently_published):
     """Le catalogue cloud courant doit être exactement la base ou une version
     précédemment validée de la nouvelle cible; jamais une variante imprévue.
@@ -173,8 +231,11 @@ def safe_target(baseline, candidate, currently_published):
                     "champ public modifié hors du périmètre autorisé : "+slug+"."+k
                 )
     for slug in set(live)-set(original):
-        require(live[slug]==target[slug],
-                "ancienne édition ajoutée devenue incohérente : "+slug)
+        require(
+            live[slug] == target[slug] or
+            _certified_new_commune_delta(live[slug], target[slug]),
+            "ancienne édition ajoutée devenue incohérente : " + slug
+        )
     # On n'accepte pas un glissement silencieux de métadonnées de schéma.
     require(baseline.get("schema")==currently_published.get("schema")==candidate.get("schema")==1,
             "version de schéma différente")
