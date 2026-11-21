@@ -222,6 +222,48 @@ class DynamicAgendaDiscoveryTests(unittest.TestCase):
         self.assertEqual(result["public_writes"], 0)
         self.assertNotIn("additions", result)
 
+    def test_missing_city_or_venue_keys_are_not_false_location_claims(self):
+        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+        source = dict(
+            collector="openagenda-v2", external_id="919191",
+            date_start="2026-12-12", date_end="2026-12-12",
+            title="Spectacle sonore enfants",
+            source_url="https://openagenda.com/new-agenda/events/919191_sound",
+        )
+        # A true absence must not turn into norm(None) == "none".
+        rows, count, conflicts = candidate_batches(
+            [source], [], DAY, include_openagenda_v2=True)
+        self.assertEqual((len(rows), count, conflicts), (1, 1, 0))
+        self.assertTrue(_direct_location_agrees(
+            source, event("919191", city="Ville inconnue",
+                          venue="Scène nouvelle"),
+            allow_missing_lead_place=True))
+        self.assertFalse(_direct_location_agrees(
+            source, event("919191", city="Ville inconnue",
+                          venue="Scène nouvelle")))
+        lookup = {
+            "schema": LOOKUP_SCHEMA, "uid": 777888, "slug": "new-agenda",
+            "status": "public_uid_slug_only_independent_ownership_pending",
+            "independent_ownership_verified": False,
+            "organizer_verified": False, "rights_reviewed": False,
+            "publication_ready": False, "approval_granted": False,
+            "publisher_connected": False, "public_writes": 0,
+        }
+        result = discover_unconfigured_sources(
+            rows, [], KEY,
+            ods_get=lambda *args: (_ for _ in ()).throw(
+                AssertionError("ODS forbidden")),
+            agenda_get=lambda uid, key: {"uid": uid, "slug": "new-agenda"},
+            event_get=lambda uid, event_uid, key: event(
+                event_uid, city="Ville inconnue", venue="Scène nouvelle"),
+            slug_lookup=lambda slug, key: lookup)
+        self.assertEqual(len(result["new_agenda_candidates"]), 1)
+        self.assertFalse(result["new_agenda_candidates"][0]["publisher_enabled"])
+        self.assertEqual(result["public_writes"], 0)
+        # Legacy ODS research still requires an actual city AND venue claim.
+        ods_lead = dict(source, collector="opendatasoft-index")
+        self.assertEqual(candidate_batches([ods_lead], [], DAY)[0], [])
+
     def test_oa_source_strict_uid_and_agenda_no_untrusted_api_permissions(self):
         from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
         source = dict(
