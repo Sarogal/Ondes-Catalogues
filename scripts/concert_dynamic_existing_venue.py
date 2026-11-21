@@ -38,13 +38,20 @@ PROFILE = "dynamic-existing-venue-first-party-v1"
 # on that attributed HTTPS domain can stand on its own after a fresh exact
 # MusicEvent recheck by the publisher; a second event domain is optional.
 OSM_SINGLE_PROFILE = "dynamic-existing-venue-osm-official-v1"
+# Existing published venues with historical non-OSM geoSource may be
+# independently checked via their EXACT French street + named OSM feature.
+# A city centroid or venue name alone never creates source authority.
+OSM_ADDRESS_PROFILE = "dynamic-existing-venue-address-official-v1"
 PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "namedOsmUrl",
     "corroboratingEventUrl",
 })
 OSM_SINGLE_PROOF_FIELDS = PROOF_FIELDS - {"corroboratingEventUrl"}
+OSM_ADDRESS_PROOF_FIELDS = OSM_SINGLE_PROOF_FIELDS | {
+    "publishedVenueGeoSource", "sourceWebsite"}
 CHECKED = ["artists", "date", "venue", "genre", "sourceWebsite"]
+ADDRESS_CHECKED = CHECKED + ["independentLocation"]
 # Publicly signed venue coordinates may reference either the human-friendly
 # node page or the canonical API node path. Both encode the SAME immutable
 # numeric OSM object ID; neither provides a network destination.
@@ -147,6 +154,50 @@ def osm_identity(venue, event_url, fetch, cache):
             all(origin_match(event_url, value) for value in websites),
             "OSM does not independently attribute event domain to this venue")
     return raw
+
+
+
+def address_identity(venue, event_url, fetch, cache):
+    """Authenticate existing published venue by exact BAN/OSM + HTTPS website.
+
+    All external geography requests use fixed government/OSM origins.
+    Neither a discovery claim nor the venue's historical geoSource hostname
+    is trusted as proof of the currently attributed official event website.
+    """
+    import independent_named_site_geo as named_geo
+    import venue_address_osm_source as address_osm
+    require(address_osm.eligible_address(venue),
+            "published venue has no exact geocodable street address")
+
+    def bounded(url, limit):
+        response = fetch(url, cache)
+        require(isinstance(response, str) and
+                0 < len(response) <= min(limit, probe.MAX_BYTES),
+                "independent French address or OSM proof unavailable")
+        return response, url
+
+    # The publisher enforces government score >= 0.89 and exact street,
+    # municipality and postcode, then a single matching named OSM point/way.
+    feature, lat, lon, precision = named_geo.verify(venue, bounded)
+    require(precision in {"named-site-point", "named-site-area"},
+            "independent OSM feature is not a physical named location")
+    try:
+        distance = _distance_meters(
+            lat, lon, float(venue["latitude"]), float(venue["longitude"]))
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        raise ValueError(
+            "Unlisted official source: published venue has no map coordinates") from exc
+    require(distance <= MAX_DISTANCE,
+            "published venue map pin differs from independently named site")
+
+    # Re-fetch the exact named OSM feature and its own website tags.
+    homepage, independently_named = address_osm.website_from_address(
+        venue, fetch=fetch, cache=cache)
+    require(independently_named == feature,
+            "independent named OSM feature changed across fresh checks")
+    require(origin_match(event_url, homepage),
+            "named OSM site does not attribute the event's HTTPS domain")
+    return feature, homepage
 
 
 def individual_event_nodes(html, *, accept_generic=False):
@@ -267,35 +318,50 @@ def validate(approval, venues, artists, today, *, fetch=None):
             "exact source-identity proof required")
     proof = proofset[0]
     is_single_osm = proof.get("proofType") == OSM_SINGLE_PROFILE
-    require(set(proof) == (
-                OSM_SINGLE_PROOF_FIELDS if is_single_osm else PROOF_FIELDS),
+    is_address = proof.get("proofType") == OSM_ADDRESS_PROFILE
+    required_fields = (OSM_ADDRESS_PROOF_FIELDS if is_address else
+                       OSM_SINGLE_PROOF_FIELDS if is_single_osm else
+                       PROOF_FIELDS)
+    require(set(proof) == required_fields,
             "wrong first-party source evidence fields")
     require(proof["url"] == event.get("officialUrl")
-            and proof["proofType"] in {PROFILE, OSM_SINGLE_PROFILE}
+            and proof["proofType"] in {
+                PROFILE, OSM_SINGLE_PROFILE, OSM_ADDRESS_PROFILE}
             and proof["checkedAt"] == approval.get("reviewedAt")
-            and proof["checkedFields"] == CHECKED
-            and proof["namedOsmUrl"] == venue.get("geoSource"),
+            and proof["checkedFields"] == (
+                ADDRESS_CHECKED if is_address else CHECKED)
+            and (proof["publishedVenueGeoSource"] == venue.get("geoSource")
+                 if is_address else
+                 proof["namedOsmUrl"] == venue.get("geoSource")),
             "first-party source evidence differs")
     origin = url_host(event["officialUrl"])
     witness = proof.get("corroboratingEventUrl")
-    if not is_single_osm:
+    if not (is_single_osm or is_address):
         witness_host = url_host(witness)
         require(cross.domain(witness_host) != cross.domain(origin),
                 "cross-domain witness is controlled by the same source apex")
     cache = {}
     # Verify named public OSM feature AND its website attribution on each
     # prospective publication. This also detects later ownership changes.
-    osm_identity(venue, event["officialUrl"], fetch, cache)
+    if is_address:
+        feature, homepage = address_identity(
+            venue, event["officialUrl"], fetch, cache)
+        require(feature == proof["namedOsmUrl"]
+                and homepage == proof["sourceWebsite"],
+                "fresh named-site OSM identity or official website changed")
+    else:
+        osm_identity(venue, event["officialUrl"], fetch, cache)
     html = fetch(event["officialUrl"], cache)
     require(isinstance(html, str) and
             100 <= len(html) <= probe.MAX_BYTES,
             "individual first-party HTML missing")
-    events = individual_event_nodes(html, accept_generic=is_single_osm)
+    events = individual_event_nodes(
+        html, accept_generic=(is_single_osm or is_address))
     valid = []
     for raw in events:
         try:
             valid.append(_event(raw, event, venue, resolved,
-                                accept_generic=is_single_osm))
+                                accept_generic=(is_single_osm or is_address)))
         except (ValueError, KeyError, TypeError):
             continue
     require(len(valid) == 1, "no unique exact first-party MusicEvent")
@@ -303,7 +369,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
             "independent live event differs from signed first-party proof")
-    if not is_single_osm:
+    if not (is_single_osm or is_address):
         # The legacy two-domain proof still requires its fresh witness.
         corroboration = fetch(witness, cache)
         matched = cross_live.event_page_witness(
