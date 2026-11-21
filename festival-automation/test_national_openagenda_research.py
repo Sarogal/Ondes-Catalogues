@@ -15,7 +15,8 @@ EVENT = {
     "lastdate_begin": "2027-04-24T20:00:00+02:00",
     "description_fr": "Festival métal et rock avec concerts.",
     "keywords_fr": ["metal", "rock"],
-    "location_region": "Occitanie", "location_countrycode": "FR",
+    "location_region": "Occitanie", "location_city": "Montpellier",
+    "location_countrycode": "FR",
     "status": "Programmée",
 }
 
@@ -62,6 +63,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertTrue(all("select=" in x and "where=" in x for x in urls))
         self.assertTrue(all("lastdate_begin" in x and "firstdate_begin" in x
                             for x in urls))
+        self.assertTrue(all("location_city" in x for x in urls))
         self.assertTrue(all("2026-11-20" in x and "2029-01-01" in x
                             for x in urls))
         self.assertNotEqual(urls, fixed_query_urls("2026-11-21"))
@@ -97,6 +99,7 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["edition_year_hint"], 2027)
         self.assertEqual(row["region_hint"], "Occitanie")
+        self.assertEqual(row["city_hint_review_only"], "Montpellier")
         self.assertEqual(row["year_source_review_only"], "TITLE")
         self.assertEqual(row["kind"], "OPENAGENDA_PUBLIC_RESEARCH_ONLY")
         self.assertEqual(row["source_url"], EVENT["canonicalurl"])
@@ -109,10 +112,53 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("artists", row)
         self.assertNotIn("date_hints", row)
 
+    def test_city_hint_is_not_geocoding_or_municipal_authority(self):
+        from national_discovery_queue import build_queue
+        current = state()
+        proposal = scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        self.assertEqual(proposal["leads"][0]["city_hint_review_only"],
+                         "Montpellier")
+        discovered = build_queue(current, {
+            "schema": "grossesondes.source-watch-report.v1", "date": DAY,
+            "source_reference_leads_review_only": [],
+        }, [], DAY)
+        self.assertEqual(discovered["candidate_dossiers_count"], 1)
+        dossier = discovered["dossiers"][0]
+        self.assertEqual(dossier["city_hint"], "Montpellier")
+        self.assertFalse(dossier["publication_authorized"])
+        self.assertFalse(dossier["safe_to_publish"])
+        self.assertFalse(dossier["source_independence_verified"])
+        self.assertFalse(dossier["edition_dates_verified"])
+        self.assertEqual(dossier["date_hints"], [])
+        self.assertIn("place_and_department", dossier["missing_checks"])
+
+    def test_provider_city_metadata_cannot_add_unsafe_geo_fetch(self):
+        for city in (
+            None, 123, [], "<script>Paris</script>",
+            "Paris/../localhost", "Paris?admin=1", "Paris\nLyon",
+            "A" * 81, " https://evil.example", "Paris ",
+        ):
+            with self.subTest(city=city):
+                guess = candidate(dict(EVENT, location_city=city), DAY)
+                self.assertIsNotNone(guess)
+                self.assertIsNone(guess["city_hint_review_only"])
+                self.assertFalse(guess["publication_authorized"])
+        # Optional location hints remain unavailable for many records;
+        # absence must not prevent discovery of the festival name.
+        old = dict(EVENT)
+        old.pop("location_city")
+        self.assertIsNone(candidate(old, DAY)["city_hint_review_only"])
+        # Do not allow a changed private state to inject query punctuation.
+        current = state()
+        scan(current, DAY, fetch=lambda _: payload([EVENT]))
+        current[STATE_KEY]["leads"][0]["city_hint_review_only"] = (
+            "Paris/../localhost")
+        self.assertEqual(validated_leads(current, DAY), [])
+
     def test_compound_festival_names_and_fixed_subgenres_remain_private(self):
         from urllib.parse import parse_qs, urlsplit
         from national_openagenda_research import RESEARCH_RULESET
-        self.assertTrue(RESEARCH_RULESET.endswith(".v3"))
+        self.assertTrue(RESEARCH_RULESET.endswith(".v4"))
         where = [parse_qs(urlsplit(url).query)["where"][0]
                  for url in fixed_query_urls(DAY)]
         for keyword in (
