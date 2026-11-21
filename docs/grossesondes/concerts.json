@@ -2381,6 +2381,11 @@
       "id": "fragile",
       "name": "FRAGILE",
       "aliases": []
+    },
+    {
+      "id": "deryck-whibley",
+      "name": "DERYCK WHIBLEY",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15080,6 +15085,64 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "L’Astrolabe",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-21",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-21",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270402-strasbourg-peter-hook-and-the-light",
+      "title": "Peter Hook and The Light",
+      "date": "2027-04-02",
+      "artistIds": [
+        "peter-hook-and-the-light"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Post Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/peter-hook-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-21",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-21",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270421-strasbourg-deryck-whibley",
+      "title": "DERYCK WHIBLEY",
+      "date": "2027-04-21",
+      "artistIds": [
+        "deryck-whibley"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/deryck-whibley-sum-41-frontman/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
       "ticketUrl": null,
       "lastVerified": "2026-11-21",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
