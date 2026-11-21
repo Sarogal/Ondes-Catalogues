@@ -251,6 +251,66 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(len(venues), 1)
         self.assertEqual(codes, {"FR"})
 
+    def test_unknown_agenda_failure_does_not_starve_its_following_sources(self):
+        batch = index_doc(uid=880001)
+        batch["new_agenda_candidates"] = [
+            dict(batch["new_agenda_candidates"][0],
+                 agenda_uid=880001 + i, agenda_slug=f"unlisted-{i}")
+            for i in range(4)
+        ]
+        scanned = Mock(return_value=batch)
+        visited = []
+        def campaign(plan, **kwargs):
+            uid = plan["index_doc"]["new_agenda_candidates"][0]["agenda_uid"]
+            visited.append(uid)
+            if uid == 880001:
+                raise OSError("unreachable agenda: must not starve others")
+            return campaign_summary()
+        self.campaign.side_effect = campaign
+
+        first, _ = self.invoke(index=scanned)
+        self.assertEqual(visited, [880001, 880002, 880003])
+        self.assertEqual(first["agenda_attempts"], 3)
+        self.assertEqual(first["agenda_held_for_research"], 1)
+        self.assertEqual(first["index_agendas_observed_in_batch_sample"], 4)
+        self.assertEqual(first["public_writes"], 0)
+        scanned.assert_called_once()
+
+        second, _ = self.invoke(batch_id="another", index=Mock())
+        self.assertEqual(visited[3:], [880004, 880001, 880002])
+        self.assertEqual(second["agenda_attempts"], 3)
+        self.assertEqual(second["agenda_held_for_research"], 1)
+        # Bad source remains retryable, never removed from the index.
+        self.assertEqual(len(available_index_reports(
+            self.root / "index" / "reports")), 1)
+
+    def test_single_agenda_selector_survives_crash_and_validates_state(self):
+        batch = index_doc(uid=990001)
+        batch["new_agenda_candidates"] = [
+            dict(batch["new_agenda_candidates"][0],
+                 agenda_uid=990001 + i, agenda_slug=f"new-{i}")
+            for i in range(5)
+        ]
+        self.invoke(index=Mock(return_value=batch))
+        selector = next((self.root / "campaigns").rglob("agenda-selector.json"))
+        progress = json.loads(selector.read_text())
+        self.assertEqual(progress["next_index"], 3)
+        self.invoke(batch_id="retry", index=Mock())
+        progress = json.loads(selector.read_text())
+        self.assertEqual(progress["next_index"], 1)
+        progress["next_index"] = -1
+        selector.write_text(json.dumps(progress), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError,
+                                    "invalid_private_agenda_selector"):
+            from ptitesondes_national_shadow_observation import rotate_agendas_independently
+            index_doc_local = batch
+            rotate_agendas_independently(
+                index_doc_local,
+                next((self.root / "campaigns").iterdir()).name + "0" * 40,
+                DAY, selector.parent,
+                next((self.root / "rotations").iterdir()),
+                KEY, self.campaign, self.segments)
+
     def test_rejects_invalid_or_unsafe_parameters(self):
         self.assertIsNone(REPORT_RE.fullmatch("index-2026-11-21-segment.json.bak"))
         self.assertIsNone(BATCH_RE.fullmatch("bad/segment"))
