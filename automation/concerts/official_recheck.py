@@ -610,6 +610,9 @@ def main():
     p.add_argument("--report", required=True)
     p.add_argument("--scan-slot", type=int, choices=(0, 1, 2), default=0,
                    help="Different independent cohorts on the 3 daily UTC slots")
+    p.add_argument("--review-limit", type=int, choices=range(1, 41), default=16,
+                   metavar="1..40",
+                   help="Bounded official rechecks per trusted run (never grants approval)")
     p.add_argument("--apply", action="store_true",
                    help="Write approved.json only after explicit CI feature gate")
     args = p.parse_args()
@@ -620,7 +623,7 @@ def main():
         return json.loads(Path(value).read_text(encoding="utf-8"))
     original = load(args.approvals)
     reviewed, report = process(load(args.registry), load(args.catalogue), original,
-                               discover.today_fr(), scan_slot=args.scan_slot)
+                               discover.today_fr(), limit=args.review_limit, scan_slot=args.scan_slot)
     Path(args.out).write_text(json.dumps(reviewed, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     Path(args.report).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     if args.apply and report["newApprovals"]:
