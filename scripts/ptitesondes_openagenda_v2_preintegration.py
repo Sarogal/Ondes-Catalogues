@@ -285,7 +285,8 @@ def review_missing_mirror_source(
         lead, curated_agenda, registered_venue, today, public_read_key,
         published_events, *, ods_probe=None, agenda_reader=None,
         event_reader=None, institutional_page=None,
-        organizer_registry=None, organizer_page=None):
+        organizer_registry=None, organizer_page=None,
+        _source_sink=None):
     """Route a proven ODS-missing UID into the EXISTING direct OA verifiers.
 
     Deliberately read-only: neither a claim in private intake nor a cached
@@ -368,4 +369,13 @@ def review_missing_mirror_source(
         historic_uid_exists=False, independently_linked=linked,
         first_party_session_evidence=first_party,
     )
+    # A separately trusted, private in-memory candidate builder may reuse the
+    # exact source read by this call. Never serialize this source into the
+    # public report and never invoke it on an ODS mismatch, cancellation,
+    # invalid place, failed organizer/source proof or duplicate.
+    if (route["route"] == "direct_source_candidate_for_remaining_gates"
+            and _source_sink is not None):
+        if not callable(_source_sink):
+            return dict(hold, reason="invalid_source_sink")
+        _source_sink(event, direct, first_party, identity)
     return dict(route, mode="private_direct_source_followup_only")
