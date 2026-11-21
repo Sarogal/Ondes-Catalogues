@@ -87,8 +87,8 @@ class TourItineraryEvidenceTests(unittest.TestCase):
 
     def test_latest_visible_year_before_itinerary_must_match(self):
         misleading = SITE_HTML.replace(
-            "1/20 🇩🇪 Aschaffenburg",
-            "2026 world tour. 1/20 🇩🇪 Aschaffenburg")
+            "<p>\n1/20 🇩🇪 Aschaffenburg",
+            "<p>2026 world tour.</p><p>\n1/20 🇩🇪 Aschaffenburg")
         self.assertFalse(probe.matching_tour_stop(
             misleading, "2027-02-04", "Montpellier", "Victoire 2"))
 
