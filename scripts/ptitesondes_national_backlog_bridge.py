@@ -26,7 +26,7 @@ from ptitesondes_openagenda_v2_direct_evidence import _valid_public_read_key
 SCHEMA = "ptitesondes.private_national_backlog_bridge.v1"
 REPORT_RE = re.compile(r"index-(20\d\d-\d\d-\d\d)-[a-zA-Z0-9_-]{1,70}\.json\Z")
 SEGMENT_RE = re.compile(r"agenda-\d{4}-segment-\d{4}\.json\Z")
-MAX_EVENTS_PER_RUN = 8
+MAX_EVENTS_PER_RUN = 24
 MAX_BACKLOG = 4000
 MAX_INDEX_REPORTS = 100
 MAX_SEGMENTS = 10000
@@ -110,6 +110,19 @@ def _identity(lead):
     return (str(lead.get("external_id")), lead.get("date_start"))
 
 
+def _inventory_key(entry):
+    # Stable identity survives append-only discovery of new index pages.
+    # It is an opaque private cursor key, never a source approval.
+    doc, digest, segment, scan_day, offset = entry
+    lead = segment["event_leads"][offset]
+    meta = segment.get("campaign_meta", {})
+    encoded = json.dumps([
+        scan_day.isoformat(), digest, str(doc["new_agenda_candidates"][0]["agenda_uid"]),
+        meta.get("segment"), offset, str(lead["event_uid"]),
+    ], ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return sha256(encoded).hexdigest()
+
+
 def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
            operator=handoff):
     if (type(today) is not date or not _valid_public_read_key(key)
@@ -128,11 +141,26 @@ def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
     if cursor and (cursor.get("schema") != SCHEMA
                    or type(cursor.get("next_index")) is not int
                    or cursor["next_index"] < 0
-                   or not isinstance(cursor.get("inventory_sha256"), str)):
+                   or not isinstance(cursor.get("inventory_sha256"), str)
+                   or not isinstance(cursor.get("last_completed_ref"), (str, type(None)))
+                   or (isinstance(cursor.get("last_completed_ref"), str)
+                       and not re.fullmatch(r"[a-f0-9]{64}",
+                                            cursor["last_completed_ref"]))):
         raise ValueError("invalid_private_bridge_cursor")
-    start = (cursor.get("next_index", 0) % len(inventory)
-             if inventory and cursor.get("inventory_sha256") == fingerprint
-             else 0)
+    if inventory and cursor.get("inventory_sha256") == fingerprint:
+        start = cursor.get("next_index", 0) % len(inventory)
+    elif inventory and cursor.get("last_completed_ref"):
+        # An appended national index must never reset the rotation to zero
+        # and starve previously queued discoveries indefinitely.
+        keys = [_inventory_key(entry) for entry in inventory]
+        try:
+            start = (keys.index(cursor["last_completed_ref"]) + 1) % len(keys)
+        except ValueError:
+            # If the last observed item was deleted, resume close to its
+            # previous position; the next complete pass eventually covers all.
+            start = cursor.get("next_index", 0) % len(inventory)
+    else:
+        start = 0
     result = list(backlog)
     known = {}
     for row in result:
@@ -171,8 +199,11 @@ def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
             accepted_as_leads += 1
         holds += len(outcome["research_holds"])
     next_index = (start + examined) % len(inventory) if inventory else 0
+    last_completed = (_inventory_key(inventory[
+        (start + examined - 1) % len(inventory)])
+        if inventory and examined else cursor.get("last_completed_ref"))
     state = {"schema": SCHEMA, "inventory_sha256": fingerprint,
-             "next_index": next_index}
+             "next_index": next_index, "last_completed_ref": last_completed}
     summary = {"mode": "private_leads_not_approved",
                "events_rechecked": examined, "new_unverified_leads": accepted_as_leads,
                "existing_leads_skipped": duplicates, "research_holds": holds,
