@@ -14,6 +14,7 @@ from datetime import date
 from urllib.parse import urlsplit
 
 from merge_policy import merge
+from proof import norm
 from proof_text import verify_event as legacy_verify_event
 from ptitesondes_dila_municipal_domains import (
     approved_municipal_page_host, fetch_dila,
@@ -144,7 +145,9 @@ def prepare_open_world_patch(
             if _coordinates(source_point) is None:
                 held("live_oa_gps_missing")
                 continue
-            group = {"city": city, "venue": venue}
+            group = {"city": city, "venue": venue,
+                     "key": [norm(city), norm(venue)],
+                     "uids": [str(lead["event_uid"])]}
             official_venue_html = official_reader(venue_url)
             proof = mint_private_location_proof(
                 group, directory, venue_url, official_venue_html,
