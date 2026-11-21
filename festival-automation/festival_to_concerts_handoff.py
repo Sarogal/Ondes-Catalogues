@@ -14,7 +14,12 @@ from hashlib import sha256
 import json
 from pathlib import Path
 import re
+import sys
 from zoneinfo import ZoneInfo
+
+SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
+if SCRIPTS not in sys.path:
+    sys.path.insert(0, SCRIPTS)
 
 from national_detail_qualification import _eligible_sources
 from national_live_index_recheck import live_index_for_exact_link
