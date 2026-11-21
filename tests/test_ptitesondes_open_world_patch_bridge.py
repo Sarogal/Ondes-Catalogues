@@ -164,6 +164,57 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
         self.assertEqual(audit["ajoutes"], 0)
         self.assertEqual(result["held"], 1)
 
+    def test_dila_municipal_event_page_proves_venue_without_postcode(self):
+        # A city event page can document "L'Etage ... Adresse 1 esplanade"
+        # without a JSON-LD Place or postal code. A real BAN street address
+        # and OA point must still match. All fixture names are synthetic.
+        ref = base()
+        outsider = "https://nouvel-organisateur.example/spectacles/conte-musical"
+        source_reference = "https://www.ville-les-bois.fr/culture/lieu"
+        venue_reference = "https://www.ville-les-bois.fr/agenda/autre-spectacle"
+        domain_page = (
+            "<html><main><article><h2>Place du village</h2>"
+            "<p>Voir la programmation sur nouvel-organisateur.example</p>"
+            "</article></main></html>"
+        )
+        venue_page = (
+            "<html><main><article><h1>Un ancien événement</h1>"
+            "<div>Place du village</div>"
+            "<h2>Adresse</h2><p>1 esplanade des Rêves</p>"
+            "</article></main></html>")
+        fixtures = readers()
+        old = fixtures["official_reader"]
+        fixtures["official_reader"] = lambda url: (
+            official_page() if url == outsider else
+            domain_page if url == source_reference else
+            venue_page if url == venue_reference else old(url))
+        fixtures["ign_reader"] = lambda c: {
+            "type": "FeatureCollection", "features": [{
+                "type": "Feature",
+                "properties": {
+                    "type": "housenumber", "score": 0.99,
+                    "city": c["city"], "street": "Esplanade des rêves",
+                    "postcode": "12345", "housenumber": "1",
+                },
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [2.25, 44.5],
+                },
+            }]}
+        # If the BAN check succeeds, the OSM fallback must not be called.
+        fixtures["osm_reader"] = Mock(
+            side_effect=AssertionError("BAN should suffice"))
+        patched, audit, report = merge_verified_open_world(
+            ref, ref, private_patch(ref, [dossier(
+                official_event_url=outsider,
+                official_venue_url=venue_reference,
+                municipal_source_reference_url=source_reference,
+            )]), TODAY, KEY, **fixtures)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(report["held"], 0)
+        self.assertEqual(patched["events"][-1]["source_url"], outsider)
+        fixtures["osm_reader"].assert_not_called()
+
     def test_unknown_nonmunicipal_host_cannot_borrow_unrelated_city_link(self):
         ref = base()
         outsider = "https://nouvel-organisateur.example/spectacles/conte"
