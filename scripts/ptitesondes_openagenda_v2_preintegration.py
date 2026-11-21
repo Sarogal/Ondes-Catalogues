@@ -8,10 +8,11 @@ from datetime import date, datetime, timedelta
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
-TRUSTED_TZ = frozenset((
-    "Europe/Paris", "America/Guadeloupe", "America/Martinique",
-    "America/Cayenne", "Indian/Reunion", "Indian/Mayotte",
-))
+from ptitesondes_openagenda_v2_direct_evidence import FR_TZ
+
+# Stay in sync with the independent direct evidence verifier (#573).
+# Regional geographic evidence must still be independently checked.
+TRUSTED_TZ = FR_TZ
 SCHEMA = "ptitesondes.oa2.preintegration.v1"
 MAX_SLOTS = 800
 
@@ -278,3 +279,103 @@ def ods_fallback_preflight(ods_state, direct_result, agenda_identity,
         return dict(report, reason="multi_day_requires_grouping")
     return dict(report, route="direct_source_candidate_for_remaining_gates",
                 reason="organiser_rights_access_category_and_dedup_still_required")
+
+
+def review_missing_mirror_source(
+        lead, curated_agenda, registered_venue, today, public_read_key,
+        published_events, *, ods_probe=None, agenda_reader=None,
+        event_reader=None, institutional_page=None,
+        organizer_registry=None, organizer_page=None,
+        _source_sink=None):
+    """Route a proven ODS-missing UID into the EXISTING direct OA verifiers.
+
+    Deliberately read-only: neither a claim in private intake nor a cached
+    "approved" flag may grant publication. The caller supplies separately
+    reviewed agenda/venue registries, a fresh public catalogue, and optionally
+    independently fetched institutional/organizer HTML. Production adapters
+    can invoke the default bounded network readers; tests inject offline readers.
+    The result is only a route to remaining rights, access, editorial and
+    independent organizer gates, never an event or a publisher patch.
+    """
+    hold = {
+        "schema": SCHEMA, "route": "hold",
+        "reason": "invalid_or_unreviewed_inputs",
+        "publisher_connected": False, "approval_granted": False,
+        "public_writes": 0,
+    }
+    from ptitesondes_openagenda_v2_direct_evidence import (
+        _source_parts, read_direct_v2, read_direct_agenda_v2, review_direct_v2,
+    )
+    from ptitesondes_qualification_rootcause import probe_uid_in_index
+    from ptitesondes_candidate_promotion import covered_by_published_range
+
+    if (not isinstance(lead, dict)
+            or lead.get("collector") != "openagenda-v2"
+            or not isinstance(lead.get("external_id"), str)
+            or not _uid(lead["external_id"])
+            or type(today) is not date
+            or not isinstance(curated_agenda, dict)
+            or not isinstance(published_events, list)
+            or len(published_events) > 10000
+            or any(not isinstance(ev, dict) for ev in published_events)):
+        return hold
+    uid = lead["external_id"]
+    part = _source_parts(lead.get("source_url"))
+    if (part is None or part[1] != uid
+            or part[0] != curated_agenda.get("agenda_slug")):
+        return dict(hold, reason="source_uid_or_agenda_mismatch")
+    event_id = "openagenda-" + uid + "-" + str(lead.get("date_start"))
+    if (any(ev.get("id") == event_id for ev in published_events)
+            or covered_by_published_range(lead, published_events)):
+        return dict(hold, reason="already_published")
+
+    # A transport error, nonunique UID or any nonempty ODS result is a HOLD.
+    # Only the existing exact-UID zero-result probe may open the route.
+    probe = ods_probe if ods_probe is not None else probe_uid_in_index
+    try:
+        ods_state = probe(uid)
+    except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+        ods_state = "probe_unavailable"
+    if ods_state != "uid_absent":
+        return dict(hold, reason="ods_unavailable_present_or_conflicting")
+
+    read_agenda = agenda_reader if agenda_reader is not None else read_direct_agenda_v2
+    read_event = event_reader if event_reader is not None else read_direct_v2
+    try:
+        agenda_uid = curated_agenda["agenda_uid"]
+        agenda = read_agenda(agenda_uid, public_read_key)
+        event = read_event(agenda_uid, uid, public_read_key)
+    except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+        return dict(hold, reason="direct_api_unavailable")
+    identity = agenda_identity_for_review(agenda, curated_agenda)
+    reviewed = {
+        "agenda_uid": curated_agenda.get("agenda_uid"),
+        "agenda_slug": curated_agenda.get("agenda_slug"),
+        "timezone": curated_agenda.get("timezone"),
+    }
+    direct = review_direct_v2(lead, event, reviewed, registered_venue, today)
+    grouping = group_multi_day(event)
+    linked = independently_linked_agenda(
+        identity, curated_agenda, institutional_page)
+    first_party = None
+    if organizer_registry is not None or organizer_page is not None:
+        from ptitesondes_openagenda_v2_organizer_bridge import (
+            check_independent_session,
+        )
+        first_party = check_independent_session(
+            lead, event, direct, organizer_registry, organizer_page)
+    route = ods_fallback_preflight(
+        ods_state, direct, identity, grouping,
+        historic_uid_exists=False, independently_linked=linked,
+        first_party_session_evidence=first_party,
+    )
+    # A separately trusted, private in-memory candidate builder may reuse the
+    # exact source read by this call. Never serialize this source into the
+    # public report and never invoke it on an ODS mismatch, cancellation,
+    # invalid place, failed organizer/source proof or duplicate.
+    if (route["route"] == "direct_source_candidate_for_remaining_gates"
+            and _source_sink is not None):
+        if not callable(_source_sink):
+            return dict(hold, reason="invalid_source_sink")
+        _source_sink(event, direct, first_party, identity)
+    return dict(route, mode="private_direct_source_followup_only")

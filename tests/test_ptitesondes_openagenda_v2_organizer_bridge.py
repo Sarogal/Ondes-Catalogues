@@ -151,6 +151,39 @@ class OrganizerEvidenceContract(unittest.TestCase):
         self.assertEqual(r["confirmed_local_start_times_count"], 2)
         self.assertFalse(r["approval_granted"])
 
+    def test_twenty_one_real_sessions_all_need_independent_confirmation(self):
+        """A resource budget may not censor the 21st official performance."""
+        event = deepcopy(EVENT)
+        sessions, items = [], []
+        for n in range(21):
+            begin_minutes = 8 * 60 + 25 * n
+            finish_minutes = begin_minutes + 20
+            begin = f"{begin_minutes // 60:02d}:{begin_minutes % 60:02d}"
+            finish = f"{finish_minutes // 60:02d}:{finish_minutes % 60:02d}"
+            sessions.append({
+                "begin": "2026-12-05T" + begin + ":00+0100",
+                "end": "2026-12-05T" + finish + ":00+0100",
+            })
+            items.append(
+                f"<li>5 décembre 2026 à {begin} : séance jeunesse</li>"
+            )
+        event["timings"] = sessions
+        header = (
+            "<html><body><h1>Lecture pour enfants</h1>"
+            "<section>Bibliothèque fictive — Villeurbanne. "
+            "Pour les enfants et familles.</section><ul>"
+        )
+        source = header + "".join(items) + "</ul></body></html>"
+        proven = check(event=event, html=source)
+        self.assertTrue(proven["official_session_evidence_consistent"])
+        self.assertEqual(proven["confirmed_local_start_times_count"], 21)
+        self.assertFalse(proven["approval_granted"])
+        # Every individual time must appear beside the correct official day.
+        incomplete = header + "".join(items[:-1]) + "</ul></body></html>"
+        self.assertFalse(
+            check(event=event, html=incomplete)["official_session_evidence_consistent"]
+        )
+
     def test_age_range_not_automatically_claimed_from_oa(self):
         # '6 à 8 ans' is not converted to an exact official age attestation.
         event = deepcopy(EVENT)
