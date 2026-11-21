@@ -133,6 +133,7 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         row=report["candidates"][0]
         self.assertTrue(row["venueOutsideSource"])
         self.assertTrue(row["newVenueToReview"])
+        self.assertIsNone(row["venueCatalogueId"])
         self.assertEqual(row["venue"],"Une autre salle")
         self.assertFalse(row["publicationAllowed"])
         self.assertTrue(row["reviewRequired"])
