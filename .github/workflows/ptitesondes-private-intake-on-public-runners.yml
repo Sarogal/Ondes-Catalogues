@@ -82,6 +82,8 @@ jobs:
           assert ("deploy" + "-pages") not in s and "docs/ptitesondes/sorties.json" in s
           assert ("git push origin HEAD" + ":main") not in s
           assert "ptitesondes_schedule_catchup.py" in s
+          assert "ptitesondes_national_openworld_research_cycle.py" in s
+          assert 'automation-intake/ptitesondes/national-observation/research' in s
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
@@ -101,6 +103,7 @@ jobs:
           PY
           python -m unittest discover -s tests -p 'test_ptitesondes_schedule_catchup.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_national_backlog_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_openworld_research_cycle.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_ultramarine_bridge_contract.py' -v
           node --test tests/test_ptitesondes_external_rescue_worker.mjs
 
@@ -284,6 +287,18 @@ jobs:
             fi
             mv "$OUT/backlog-with-national.json" "$OUT/backlog.json"
           fi
+          # Investigate newly discovered unknown organizers and places with
+          # existing SSRF-safe OA / DILA / municipal / independent HTML
+          # readers. Strictly private: these claims NEVER become a patch or
+          # trusted venue. A research outage cannot block proven old events.
+          if [[ -d "$STATE/national-observation" && -n "$OPENAGENDA_READ_KEY" ]]; then
+            if ! python public/scripts/ptitesondes_national_openworld_research_cycle.py \
+              --private-observation-root "$STATE/national-observation" \
+              --private-research-root "$STATE/national-observation/research" \
+              --day "$DAY" --execute-live > "$LOG/national-openworld-research.log" 2>&1; then
+              echo "::warning::Enquête nationale privée incomplète ; aucun candidat admis par cette voie."
+            fi
+          fi
           cp "$OUT/backlog.json" "$STATE/backlog.json"
           cp "$OUT/patch-$DAY.json" "$STATE/patch-$DAY.json"
           mkdir -p "$STATE/reports"
@@ -292,6 +307,9 @@ jobs:
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
             if [[ -f "$STATE/national-observation/backlog-bridge-cursor.json" ]]; then
               git -C state add -- "automation-intake/ptitesondes/national-observation/backlog-bridge-cursor.json"
+            fi
+            if [[ -d "$STATE/national-observation/research" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/national-observation/research"
             fi
             push_private 'data(ptitesondes): collecter sur runner public, pistes privées'
           fi
