@@ -53,6 +53,11 @@ from grossesondes_generic_directory_edition import (
     independently_verify as independently_verify_directory,
     validate_private_proposal as validate_private_directory,
 )
+from grossesondes_openagenda_linked_edition import (
+    PROOF_MODE as OPENAGENDA_LINKED_PROOF_MODE,
+    independently_verify as independently_verify_openagenda_linked,
+    validate_private_proposal as validate_private_openagenda_linked,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -675,6 +680,54 @@ def collect_registered_directory_sources(
     return sources
 
 
+
+def collect_registered_openagenda_sources(
+        patch, published_slugs, today, event_fetch=None,
+        organizer_fetch=None):
+    """Re-fetch public OpenAgenda attribution BEFORE any proposed website.
+
+    An untrusted private event URL must be a canonical openagenda.com event;
+    the independent LIVE page alone chooses the eligible first-party site.
+    Website/date/genre proofs are independently recovered on this runner.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed published identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual publisher date required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == OPENAGENDA_LINKED_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_openagenda_linked(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not candidates:
+        return {}
+    start = (ordinal * 2) % len(candidates)
+    selected = [candidates[(start + n) % len(candidates)]
+                for n in range(min(2, len(candidates)))]
+    sources = {}
+    for row in selected:
+        try:
+            opts = {}
+            if event_fetch is not None:
+                opts["event_fetch"] = event_fetch
+            if organizer_fetch is not None:
+                opts["organizer_fetch"] = organizer_fetch
+            proven = independently_verify_openagenda_linked(
+                row, today, **opts)
+            if proven is None:
+                continue
+            slug = row["slug"]
+            sources["registered-openagenda:" + slug] = proven
+            sources["registered-openagenda-verified:" + slug] = True
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            print("OpenAgenda/organizer festival evidence not re-confirmed.")
+    return sources
+
+
 def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep):
     """Fetch only pinned organizer/municipal URLs; retry transient server errors.
 
@@ -807,6 +860,8 @@ def main():
     sources.update(collect_registered_linked_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_directory_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_openagenda_sources(
         patch, signed_published_slugs, today.isoformat()))
     geo_review = private_geo_report(token)
     city_review = private_city_report(token)
