@@ -39,6 +39,9 @@ class _MainParagraphs(HTMLParser):
         self.in_main = False
         self.paragraph = None
         self.blocks = []
+        # Official headers can be plain div text while performer styles live
+        # in paragraphs. Only text inside the unique <main> is inspected.
+        self.main_text_nodes = []
         self.skip_tag = None
 
     def handle_starttag(self, tag, attrs):
@@ -53,8 +56,11 @@ class _MainParagraphs(HTMLParser):
             self.paragraph = []
 
     def handle_data(self, text):
-        if self.in_main and not self.skip_tag and self.paragraph is not None:
-            self.paragraph.append(text)
+        if self.in_main and not self.skip_tag:
+            if text.strip():
+                self.main_text_nodes.append(text)
+            if self.paragraph is not None:
+                self.paragraph.append(text)
 
     def handle_endtag(self, tag):
         if tag == self.skip_tag:
@@ -70,7 +76,50 @@ class _MainParagraphs(HTMLParser):
             self.in_main = False
 
 
-def _read_bill(html, today):
+# The event date/hall is still a unique, full, first-party witness.
+# Some official venues render their title/date/category as div elements and
+# reserve <p> for individual BAND (GENRE / COUNTRY) credits.
+DIV_DATE = re.compile(
+    r"(?<!\d)([0-3]\d)\.([01]\d)\.(20\d{2})\s*[-–—]\s*"
+    r"\d{1,2}H[0-5]\d\s*[-–—]\s*(LE CLUB|GRANDE SALLE)\b", re.I)
+
+
+def _div_event_header(text_nodes, expected_title, today):
+    if not isinstance(expected_title, str) or not 3 <= len(expected_title) <= 800:
+        raise ValueError("Ambiguous official dated concert headline")
+    page = " ".join(" ".join(node.split()) for node in text_nodes)
+    if not 100 <= len(page) <= 250_000:
+        raise ValueError("Ambiguous official dated concert headline")
+    title_pattern = (r"(?<!\w)" +
+                     r"\s+".join(re.escape(word) for word in expected_title.split())
+                     + r"(?!\w)")
+    titles = list(re.finditer(title_pattern, page, re.I))
+    dates = list(DIV_DATE.finditer(page))
+    witnesses = []
+    for title in titles:
+        for date in dates:
+            if not 0 <= date.start() - title.end() <= 180:
+                continue
+            try:
+                when = dt.date(int(date[3]), int(date[2]), int(date[1]))
+            except ValueError:
+                continue
+            if when < today or triage.words(date[4]) not in HALLS:
+                continue
+            # Visible category, heading and exact dated hall must form one
+            # compact first-party header; a biography/tour list cannot stand in.
+            preceding = page[max(0, title.start() - 180):title.start()].strip()
+            if not preceding:
+                continue
+            witnesses.append((expected_title, when.isoformat(),
+                              page[title.start():min(len(page), date.end() + 400)]))
+    # Repeated/mismatching headlines are ambiguous, not a permission to pick.
+    if len(witnesses) != 1:
+        raise ValueError("Ambiguous official dated concert headline")
+    return witnesses[0]
+
+
+def _read_bill(html, today, expected_title=None):
     if not isinstance(html, str) or not 100 <= len(html) <= 1_000_000:
         raise ValueError("Official first-party event page invalid")
     parser = _MainParagraphs()
@@ -99,10 +148,19 @@ def _read_bill(html, today):
         if not preceding or len(preceding) > 200:
             continue
         headers.append((n, title, day.isoformat()))
-    if len(headers) != 1:
+    if len(headers) == 1:
+        index, title, when = headers[0]
+        artist_paragraphs = paragraphs[index + 2:index + 120]
+        status_context = " ".join(paragraphs[max(0, index - 1):index + 4])
+    elif not headers:
+        # No paragraph header: verify the unique title/date/hall rendered in
+        # the main element's ordinary div text, never in a site menu or footer.
+        title, when, status_context = _div_event_header(
+            parser.main_text_nodes, expected_title, today)
+        artist_paragraphs = paragraphs[:120]
+    else:
         raise ValueError("Ambiguous official dated concert headline")
-    index, title, when = headers[0]
-    if CANCEL.search(triage.words(" ".join(paragraphs[max(0,index-1):index+4]))):
+    if CANCEL.search(triage.words(status_context)):
         raise ValueError("Cancelled or postponed concert")
 
     pieces = [part.strip() for part in re.split(r"\s+\+\s+", title)]
@@ -119,7 +177,7 @@ def _read_bill(html, today):
     # In particular, a genre keyword in a descriptive biography cannot
     # identify a new performer or make a non-metal headliner eligible.
     found = []
-    for block in paragraphs[index + 2:index + 120]:
+    for block in artist_paragraphs:
         m = ARTIST_STYLE.fullmatch(block)
         if m is None:
             continue
@@ -177,7 +235,7 @@ def verify(candidate, html_text, catalogue, today):
             or generic.norm(venues[0].get("city")) != generic.norm(spec["city"])
             or str(venues[0].get("department")) != spec["department"]):
         raise ValueError("Official first-party venue identity changed")
-    exact = _read_bill(html_text, today)
+    exact = _read_bill(html_text, today, candidate.get("name"))
     if (exact["date"] != candidate.get("date")
             or generic.norm(exact["title"]) != generic.norm(candidate.get("name"))
             or generic.norm(exact["artists"][0]) != generic.norm(
