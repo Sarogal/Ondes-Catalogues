@@ -32,7 +32,7 @@ from grossesondes_structured_edition import no_same_edition_jsonld_contradiction
 from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_generic_directory_edition import (
     private_proposal as directory_private_proposal,
-    trusted_linked_site, directory_url,
+    discover_directory_website, directory_url,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 
@@ -421,17 +421,23 @@ def stable_directory_proposals(state, queue, catalog, report, today,
         if len(candidates) != 1:
             continue
         proposal = candidates[0]
-        try:
-            # The directory URL is derived from an edition name, never from
-            # the private queue or HTML. A website link is only nomination.
-            html = directory_fetch(directory_url(proposal["name"]))
-            site = trusted_linked_site(html, proposal["name"])
-        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
-            continue
+        # Neither the private candidate URL nor its proposed domain can
+        # choose the directory destination. Two bounded NAME-derived path
+        # shapes are supported, including common hyphenated aliases.
+        directory_ref, site = discover_directory_website(
+            proposal["name"], directory_fetch)
         if site != proposal["officialSite"]:
             continue
-        proposals.append(proposal)
-        seen.add(proposal["officialSite"])
+        # Carry exactly the independently rederived directory origin so that
+        # the Publisher checks the same page again on its own runner.
+        proven = directory_private_proposal(
+            proposal["name"], proposal["officialSite"],
+            (proposal["startDate"], proposal["endDate"]), today,
+            directory_ref=directory_ref)
+        if proven is None:
+            continue
+        proposals.append(proven)
+        seen.add(proven["officialSite"])
     return proposals
 
 
