@@ -163,7 +163,8 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     body = fetch(url, cache)
     require(isinstance(body, str) and 100 <= len(body) <= 400_000,
             "missing individual official event page")
-    names, genres = official._individual_event(body, url, date, venue)
+    names, genres = official._individual_event(
+        body, url, date, venue, accept_generic=True)
     lead = candidate.get("leadArtist")
     require(isinstance(lead, str) and bool(lead.strip()),
             "missing named lead in original observation")
