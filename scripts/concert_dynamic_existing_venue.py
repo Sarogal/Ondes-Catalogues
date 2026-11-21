@@ -38,13 +38,20 @@ PROFILE = "dynamic-existing-venue-first-party-v1"
 # on that attributed HTTPS domain can stand on its own after a fresh exact
 # MusicEvent recheck by the publisher; a second event domain is optional.
 OSM_SINGLE_PROFILE = "dynamic-existing-venue-osm-official-v1"
+# Existing published venues with historical non-OSM geoSource may be
+# independently checked via their EXACT French street + named OSM feature.
+# A city centroid or venue name alone never creates source authority.
+OSM_ADDRESS_PROFILE = "dynamic-existing-venue-address-official-v1"
 PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "namedOsmUrl",
     "corroboratingEventUrl",
 })
 OSM_SINGLE_PROOF_FIELDS = PROOF_FIELDS - {"corroboratingEventUrl"}
+OSM_ADDRESS_PROOF_FIELDS = OSM_SINGLE_PROOF_FIELDS | {
+    "publishedVenueGeoSource", "sourceWebsite"}
 CHECKED = ["artists", "date", "venue", "genre", "sourceWebsite"]
+ADDRESS_CHECKED = CHECKED + ["independentLocation"]
 # Publicly signed venue coordinates may reference either the human-friendly
 # node page or the canonical API node path. Both encode the SAME immutable
 # numeric OSM object ID; neither provides a network destination.
@@ -147,6 +154,50 @@ def osm_identity(venue, event_url, fetch, cache):
             all(origin_match(event_url, value) for value in websites),
             "OSM does not independently attribute event domain to this venue")
     return raw
+
+
+
+def address_identity(venue, event_url, fetch, cache):
+    """Authenticate existing published venue by exact BAN/OSM + HTTPS website.
+
+    All external geography requests use fixed government/OSM origins.
+    Neither a discovery claim nor the venue's historical geoSource hostname
+    is trusted as proof of the currently attributed official event website.
+    """
+    import independent_named_site_geo as named_geo
+    import venue_address_osm_source as address_osm
+    require(address_osm.eligible_address(venue),
+            "published venue has no exact geocodable street address")
+
+    def bounded(url, limit):
+        response = fetch(url, cache)
+        require(isinstance(response, str) and
+                0 < len(response) <= min(limit, probe.MAX_BYTES),
+                "independent French address or OSM proof unavailable")
+        return response, url
+
+    # The publisher enforces government score >= 0.89 and exact street,
+    # municipality and postcode, then a single matching named OSM point/way.
+    feature, lat, lon, precision = named_geo.verify(venue, bounded)
+    require(precision in {"named-site-point", "named-site-area"},
+            "independent OSM feature is not a physical named location")
+    try:
+        distance = _distance_meters(
+            lat, lon, float(venue["latitude"]), float(venue["longitude"]))
+    except (ValueError, TypeError, KeyError, OverflowError) as exc:
+        raise ValueError(
+            "Unlisted official source: published venue has no map coordinates") from exc
+    require(distance <= MAX_DISTANCE,
+            "published venue map pin differs from independently named site")
+
+    # Re-fetch the exact named OSM feature and its own website tags.
+    homepage, independently_named = address_osm.website_from_address(
+        venue, fetch=fetch, cache=cache)
+    require(independently_named == feature,
+            "independent named OSM feature changed across fresh checks")
+    require(origin_match(event_url, homepage),
+            "named OSM site does not attribute the event's HTTPS domain")
+    return feature, homepage
 
 
 def individual_event_nodes(html, *, accept_generic=False):
