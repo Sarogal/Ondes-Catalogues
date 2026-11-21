@@ -67,9 +67,14 @@ def build(registry, catalogue, today):
                 or c.get("reviewRequired") is not True):
             reasons["inactive_or_unsafe"] += 1
             continue
-        if c.get("reviewBucket") in BANNED_BUCKETS or c.get("possibleExistingConcert") is True:
-            reasons["excluded_or_duplicate"] += 1
+        if c.get("reviewBucket") in BANNED_BUCKETS:
+            reasons["excluded_or_nonconcert"] += 1
             continue
+        # Published or possibly duplicate leads can still corroborate a
+        # SOURCE during research. They must never become new concerts.
+        duplicate_reference = c.get("possibleExistingConcert") is True
+        if duplicate_reference:
+            reasons["duplicate_reference_leads"] += 1
         try:
             day = dt.date.fromisoformat(c.get("date"))
         except (ValueError, TypeError):
@@ -99,6 +104,7 @@ def build(registry, catalogue, today):
         groups[key].append({
             "candidateId": c.get("candidateId"),
             "publishedReference": published_reference,
+            "duplicateResearchLead": duplicate_reference,
             "eventUrl": c.get("eventDetailUrl") or c.get("sourceUrl"),
             "host": host, "independentDomainHint": domain(host),
             "sourceLabel": c.get("source"),
@@ -127,7 +133,8 @@ def build(registry, catalogue, today):
                 if r["stableOnDistinctDays"]
             }) >= 2:
             status = ("published_reference_cross_domain"
-                      if any(r["publishedReference"] for r in entries)
+                      if any(r["publishedReference"] or r["duplicateResearchLead"]
+                             for r in entries)
                       else "cross_domain_stable_observation_needs_live_proof")
         else:
             status = "cross_domain_observation_needs_second_day"
@@ -142,7 +149,9 @@ def build(registry, catalogue, today):
             "date": date, "leadArtist": artist, "city": city,
             "normalizedVenue": (next(iter(rooms)) if len(rooms) == 1 else None),
             "reviewState": status,
-            "publishedAlreadyKnown": any(r["publishedReference"] for r in entries),
+            "publishedAlreadyKnown": any(
+                r["publishedReference"] or r["duplicateResearchLead"]
+                for r in entries),
             "distinctDomainHints": len(domains),
             "sources": sorted(first_by_host.values(), key=lambda x: x["host"]),
             "independentOwnershipVerified": False,
