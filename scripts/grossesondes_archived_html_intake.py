@@ -34,6 +34,12 @@ from grossesondes_structured_edition import (
     pinned_parent_identity, validate_archived_structured_edition,
     conflicts_with_existing,
 )
+from grossesondes_undated_edition import (
+    PROOF_MODE as ARCHIVED_UNDATED_PROOF_MODE,
+    private_proposal as undated_private_proposal,
+    visible_future_edition_without_dates,
+    validate_verified_row as validate_undated_verified_row,
+)
 
 # Never derive a destination from private candidates, discovered links or a
 # previous year's arbitrary site. Both first-party locations have been checked.
@@ -422,7 +428,18 @@ def candidate(parent, source, html, today):
     mode = (ARCHIVED_HTML_PROOF_MODE
             if visible_observed is not None else ARCHIVED_PROOF_MODE)
     if observed is None:
-        return None
+        # Dates unknown is NOT an absent festival: accept only an explicitly
+        # announced next edition on the independently signed organizer origin.
+        # Never borrow the archived year, address, lineup or map coordinates.
+        if (not visible_future_edition_without_dates(
+                html, parent, source["year"])
+                or has_jsonld_claim):
+            return None
+        proposal = undated_private_proposal(parent, source["year"], today)
+        if (proposal is None or validate_undated_verified_row(
+                proposal, parent, html, today.isoformat()) is None):
+            return None
+        return proposal
     start, end = observed
     if not today <= start:
         return None
