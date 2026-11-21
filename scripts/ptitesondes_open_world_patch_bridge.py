@@ -19,6 +19,9 @@ from proof_text import verify_event as legacy_verify_event
 from ptitesondes_dila_municipal_domains import (
     approved_municipal_page_host, fetch_dila,
 )
+from ptitesondes_delegated_source_authority import (
+    mint_delegated_venue_source_proof,
+)
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 from ptitesondes_generic_venue_osm_preflight import fetch_overpass
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
@@ -40,10 +43,13 @@ MAX_DOSSIERS = 30
 DOSSIER_KEYS = frozenset({
     "lead", "date_start", "official_event_url", "official_venue_url",
 })
+SOURCE_REFERENCE_FIELD = "municipal_source_reference_url"
 
 
 def _safe_dossier(dossier, today):
-    if (type(dossier) is not dict or set(dossier) != DOSSIER_KEYS
+    if (type(dossier) is not dict
+            or set(dossier) not in (DOSSIER_KEYS,
+                                   DOSSIER_KEYS | {SOURCE_REFERENCE_FIELD})
             or not _safe_research_lead(dossier["lead"], today)
             or not isinstance(dossier["date_start"], str)):
         return False
@@ -53,7 +59,10 @@ def _safe_dossier(dossier, today):
         return False
     if not today <= day <= today.fromordinal(today.toordinal() + 184):
         return False
-    for field in ("official_event_url", "official_venue_url"):
+    for field in ("official_event_url", "official_venue_url",
+                  SOURCE_REFERENCE_FIELD):
+        if field not in dossier:
+            continue
         value = dossier[field]
         if not isinstance(value, str) or len(value) > 1800:
             return False
@@ -131,11 +140,26 @@ def prepare_open_world_patch(
         try:
             # Authenticated municipal origin BEFORE reading unknown HTML.
             directory = directory_reader(city)
-            if (approved_municipal_page_host(event_url, city, directory) is None
-                    or approved_municipal_page_host(
-                        venue_url, city, directory) is None):
+            if approved_municipal_page_host(
+                    venue_url, city, directory) is None:
                 held("independent_municipal_domain_unverified")
                 continue
+            source_proof = None
+            if approved_municipal_page_host(
+                    event_url, city, directory) is None:
+                reference_url = dossier.get(SOURCE_REFERENCE_FIELD)
+                if (reference_url is None
+                        or approved_municipal_page_host(
+                            reference_url, city, directory) is None):
+                    held("independent_municipal_source_delegation_missing")
+                    continue
+                reference_html = official_reader(reference_url)
+                source_proof = mint_delegated_venue_source_proof(
+                    city, venue, event_url, directory,
+                    reference_url, reference_html, today)
+                if source_proof is None:
+                    held("independent_municipal_source_delegation_unconfirmed")
+                    continue
             api_event = event_reader(
                 lead["agenda_uid"], lead["event_uid"], public_key)
             loc = api_event.get("location") if isinstance(api_event, dict) else None
@@ -168,6 +192,7 @@ def prepare_open_world_patch(
                 event_reader=event_reader,
                 directory_reader=directory_reader,
                 municipal_reader=official_reader,
+                source_host_proof=source_proof,
             )
         except (OSError, TimeoutError, ValueError, TypeError, KeyError,
                 OverflowError, UnicodeError):
