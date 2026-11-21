@@ -4,7 +4,9 @@ from pathlib import Path
 import json
 import unittest
 
-from national_generic_primary_domain_preflight import examine, SCHEMA
+from national_generic_primary_domain_preflight import (
+    examine, _safe_same_host_edition_links, SCHEMA,
+)
 
 DAY1, DAY2, DAY3 = "2026-11-06", "2026-11-07", "2026-11-08"
 URL_A = "https://foudre-metal.fr/programmation"
@@ -193,6 +195,145 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(second["two_day_dates_count"], 1)
         self.assertEqual(second["rows"][0]["date_source_mode"], "SAME_HOST_HOME")
         self.assertEqual(second["publications"], 0)
+
+    def test_unknown_organizer_page_finds_current_edition_via_same_host_link(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        homepage = ("<main><h1>Festival Foudre du Nord</h1>"
+                    '<a href="/edition-2027">Nouvelle édition 2027</a>'
+                    '<a href="/actualites">Actualités</a>'
+                    '<a href="https://evil.example/edition-2027">Autre site</a>'
+                    '<a href="/%2e%2e/admin/edition-2027">Lien privé</a>'
+                    '<a href="/edition-2027?key=abc">Query toxique</a>'
+                    "</main>")
+        detail = ("<main><h1>Festival Foudre du Nord 2027</h1>"
+                  "<p>Les 4 et 5 juin 2027, festival metal.</p></main>")
+        pages = {
+            URL_A: "<main>Programmation bientôt annoncée</main>",
+            "https://foudre-metal.fr/": homepage,
+            "https://foudre-metal.fr/edition-2027": detail,
+            "https://foudre-metal.fr/actualites": "<h1>Actualités</h1>",
+        }
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return pages[url]
+        first = examine(state, queue, catalog, DAY1, fetch=fetch)
+        row = first["rows"][0]
+        self.assertEqual(row["status"], "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY")
+        self.assertEqual(row["start_date_hint"], "2027-06-04")
+        self.assertEqual(row["end_date_hint"], "2027-06-05")
+        self.assertTrue(row["date_source_mode"].startswith(
+            "SAME_HOST_EDITION_ARTICLE:"))
+        self.assertEqual(len(visited), 4)
+        self.assertEqual(len(visited), len(set(visited)))
+        self.assertNotIn("evil.example", str(visited))
+        self.assertNotIn("/admin/", str(visited))
+        self.assertFalse(row["official_site_authorized"])
+        self.assertFalse(row["publication_authorized"])
+        self.assertEqual(first["publications"], 0)
+
+        _, next_queue, _ = fixture(DAY2)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        second = examine(state, next_queue, catalog, DAY2, fetch=fetch)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        self.assertEqual(second["rows"][0]["date_source_mode"],
+                         row["date_source_mode"])
+        self.assertFalse(second["publication_authorized"])
+
+    def test_edition_link_rotation_is_unbounded_and_preserves_next_day(self):
+        home = "https://festival-inedit.fr/"
+        page = "<main>" + "".join(
+            '<a href="/programmation-2027-' + str(n) +
+            '">Édition 2027 piste ' + str(n) + '</a>'
+            for n in range(7)) + (
+            '<a href="/actualites">Actualités</a>'
+            '<a href="https://evil.example/edition-2027">faux lien</a>'
+            '</main>')
+        first = _safe_same_host_edition_links(
+            page, home, 2027, today=DAY1)
+        second = _safe_same_host_edition_links(
+            page, home, 2027, today=DAY2)
+        self.assertEqual(first, second)
+        self.assertEqual(len(first), 3)
+        self.assertEqual(first[-1], home + "actualites")
+        self.assertNotIn("evil.example", str(first))
+        discovered = set()
+        from datetime import date, timedelta
+        for step in range(0, 10 * 7, 7):
+            day = (date.fromisoformat(DAY1) +
+                   timedelta(days=step)).isoformat()
+            found = _safe_same_host_edition_links(
+                page, home, 2027, today=day)
+            self.assertLessEqual(len(found), 3)
+            discovered.update(found)
+        self.assertEqual(
+            len([u for u in discovered if "programmation-2027-" in u]),
+            7)
+
+    def test_unknown_homepage_can_follow_news_index_without_fixed_path(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][1:]
+        homepage = ('<main><a href="/actualites">Actualités</a>'
+                    '<a href="https://evil.example/2027">Faux 2027</a></main>')
+        news = ('<h1>Actualités</h1><a href="/nouvelle-edition-2027">'
+                'Notre nouvelle édition 2027</a>')
+        article = ("<main><h1>Festival Nuit d Acier 2027</h1>"
+                   "<p>Les 4 et 5 juin 2027, festival metal.</p></main>")
+        pages = {
+            URL_B: homepage,
+            "https://nuit-acier.fr/actualites": news,
+            "https://nuit-acier.fr/nouvelle-edition-2027": article,
+        }
+        visits = []
+        report = examine(state, queue, catalog, DAY1,
+                         fetch=lambda url: visits.append(url) or pages[url])
+        self.assertEqual(visits, list(pages))
+        self.assertEqual(report["rows"][0]["start_date_hint"], "2027-06-04")
+        self.assertEqual(report["rows"][0]["end_date_hint"], "2027-06-05")
+        self.assertFalse(report["official_site_authorized"])
+        self.assertFalse(report["publication_authorized"])
+
+    def test_article_url_change_resets_j_plus_one_even_with_same_dates(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][1:]
+        current = ["/edition-2027-alpha"]
+        announcement = ("<h1>Festival Nuit d Acier 2027</h1>"
+                        "<p>Les 4 et 5 juin 2027, festival metal.</p>")
+        def pages(url):
+            if url == URL_B:
+                return '<a href="' + current[0] + '">Édition 2027</a>'
+            self.assertEqual(url, "https://nuit-acier.fr" + current[0])
+            return announcement
+        first = examine(state, queue, catalog, DAY1, fetch=pages)
+        self.assertEqual(first["two_day_dates_count"], 0)
+        current[0] = "/edition-2027-beta"
+        _, q2, _ = fixture(DAY2)
+        q2["dossiers"] = q2["dossiers"][1:]
+        second = examine(state, q2, catalog, DAY2, fetch=pages)
+        self.assertEqual(second["two_day_dates_count"], 0)
+        self.assertNotEqual(first["rows"][0]["date_source_mode"],
+                            second["rows"][0]["date_source_mode"])
+        _, q3, _ = fixture(DAY3)
+        q3["dossiers"] = q3["dossiers"][1:]
+        third = examine(state, q3, catalog, DAY3, fetch=pages)
+        self.assertEqual(third["two_day_dates_count"], 1)
+
+    def test_contradictory_source_dates_forbid_discovering_convenient_article(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        primary = ("<h1>Festival Foudre du Nord 2027</h1>"
+                   "<p>Les 4 et 5 juin 2027</p>"
+                   "<p>Les 11 et 12 juillet 2027</p>")
+        calls = []
+        result = examine(
+            state, queue, catalog, DAY1,
+            fetch=lambda url: calls.append(url) or primary)
+        self.assertEqual(calls, [URL_A])
+        self.assertEqual(result["two_day_dates_count"], 0)
+        self.assertEqual(result["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        self.assertEqual(result["publications"], 0)
 
     def test_homepage_fallback_never_overrides_visible_date_or_jsonld_conflict(self):
         deep = "<main><h1>Festival Foudre du Nord 2027</h1><p>Programmation</p></main>"

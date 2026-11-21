@@ -16,10 +16,10 @@ from pathlib import Path
 import re
 import sys
 from zoneinfo import ZoneInfo
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urljoin, urlsplit
 
 from dns_pinned_https import safe_public_url, fetch_public_html
-from source_qualification import normalized
+from source_qualification import Anchors, normalized
 
 SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
@@ -33,6 +33,7 @@ from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_generic_directory_edition import (
     private_proposal as directory_private_proposal,
     discover_directory_website, directory_url,
+    visible_adjacent_edition_dates,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 
@@ -190,30 +191,160 @@ def _bounded_same_host_home(source_url):
     return home if safe_public_url(home) == home else None
 
 
-def _recheck_current_dates(source, primary_html, fetch):
-    """Try one extra same-host homepage only if the detail has NO dates.
+MAX_LINKED_EDITION_READS = 3
 
-    Private research only. Both pages must be non-contradictory; neither
-    certifies official site ownership or publisher approval.
+
+def _safe_same_host_edition_links(
+        html, home, year, *, allow_index=True, today=None):
+    """Only visible links from a fetched first-party page; no closed URL list.
+
+    Names/year select RESEARCH surfaces, never authorize publisher traffic.
+    The DNS-pinned client independently validates every requested hostname.
+    """
+    if (safe_public_url(home) != home or not isinstance(html, str)
+            or not 0 < len(html) <= 650_000 or type(year) is not int):
+        return []
+    parser = Anchors()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (TypeError, ValueError, UnicodeError):
+        return []
+    host = urlsplit(home).hostname
+    selected = {}
+    for href, label, _prefix in parser.anchors[:250]:
+        if not isinstance(href, str) or not 0 < len(href) <= 900:
+            continue
+        try:
+            raw = urljoin(home, href)
+            parts = urlsplit(raw)
+            path = unquote(parts.path)
+            if (parts.scheme != "https" or parts.hostname != host
+                    or parts.query or parts.fragment or parts.port
+                    or parts.username or parts.password
+                    or path in ("", "/")
+                    or any(p in (".", "..") for p in path.split("/"))
+                    or re.search(r"%(?:2e|2f|5c|00)", parts.path, re.I)
+                    or safe_public_url(raw) != raw):
+                continue
+            label_text = normalized(str(label))
+            destination = normalized(path.replace("-", " ").replace("_", " "))
+            markers = re.findall(r"(?<![0-9])20[2-4][0-9](?![0-9])",
+                                 label_text + " " + destination)
+            if markers and set(markers) != {str(year)}:
+                continue
+            year_link = str(year) in markers
+            news_index = bool(re.search(
+                r"(?:/|^)(?:actualites?|actu|news|articles?|nouvelles?)(?:/|$)",
+                path.casefold()))
+            if not year_link and (not allow_index or not news_index):
+                continue
+            # Explicit edition year first; retain one index for dated news
+            # when an organizer homepage is only a marketing landing page.
+            selected[raw] = 0 if year_link else 1
+        except (TypeError, ValueError, UnicodeError):
+            continue
+    ranked = sorted(selected, key=lambda url: (selected[url], len(url), url))
+    years = [url for url in ranked if selected[url] == 0]
+    indexes = [url for url in ranked if selected[url] == 1]
+    # A fixed first-two-page rule would create another CLOSED inventory:
+    # rotate every week so any number of year-specific links can be checked
+    # over successive runs while the selection stays stable long enough
+    # for the mandatory next-day recheck.
+    if len(years) > 2 and today is not None:
+        week = date.fromisoformat(today).toordinal() // 7
+        offset = (week * 2) % len(years)
+        years = years[offset:] + years[:offset]
+    return years[:2] + (indexes[:1] if allow_index else [])
+
+
+def _recheck_current_dates(source, primary_html, fetch, today):
+    """Bounded same-host edition research when source page lacks explicit dates.
+
+    No private candidate URL other than its already DNS-pinned same host is
+    promoted. Missing/contradictory visible year dates forbid any fallback.
+    A changed article path creates a NEW proof digest and resets J+1 evidence.
     """
     title, year = source["title"], source["year"]
     dates = institutional_date(primary_html, title, year)
     if dates is not None:
         return dates, "SOURCE_PAGE", None, "SOURCE_PAGE"
     primary_code = _private_date_rejection_code(primary_html, title, year)
-    home = _bounded_same_host_home(source["url"])
-    if home is None or _visible_date_ranges(primary_html, year):
+    if _visible_date_ranges(primary_html, year):
         return None, None, primary_code, "SOURCE_PAGE"
-    homepage_html = fetch(home)
-    dates = institutional_date(homepage_html, title, year)
-    if dates is None:
-        return (None, None,
-                _private_date_rejection_code(homepage_html, title, year),
-                "SAME_HOST_HOME")
-    if not no_same_edition_jsonld_contradiction(
-            primary_html, title, *dates):
-        return None, None, "SOURCE_STRUCTURED_CONTRADICTION", "SOURCE_PAGE"
-    return dates, "SAME_HOST_HOME", None, "SAME_HOST_HOME"
+    from urllib.parse import urlsplit
+    origin = source["url"]
+    parts = urlsplit(origin)
+    home = "https://" + parts.hostname + "/"
+    if safe_public_url(home) != home:
+        return None, None, primary_code, "SOURCE_PAGE"
+    if parts.path in ("", "/"):
+        homepage_html = primary_html
+    else:
+        homepage_html = fetch(home)
+    homepage_dates = institutional_date(homepage_html, title, year)
+    if homepage_dates is None:
+        homepage_dates = visible_adjacent_edition_dates(
+            homepage_html, title, year, today)
+    if homepage_dates is not None:
+        if not no_same_edition_jsonld_contradiction(
+                primary_html, title, *homepage_dates):
+            return None, None, "SOURCE_STRUCTURED_CONTRADICTION", "SOURCE_PAGE"
+        return homepage_dates, "SAME_HOST_HOME", None, "SAME_HOST_HOME"
+    home_code = _private_date_rejection_code(homepage_html, title, year)
+    if _visible_date_ranges(homepage_html, year):
+        return None, None, home_code, "SAME_HOST_HOME"
+    # Read no more than three additional same-domain links, with ONE
+    # possible second-level news article. All candidate URLs are rederived
+    # from fetched first-party anchors and independently DNS-pinned.
+    selected = _safe_same_host_edition_links(
+        homepage_html, home, year, allow_index=True, today=today)
+    remaining = MAX_LINKED_EDITION_READS
+    accepted = []
+    visited = {origin, home}
+    pending = selected[:]
+    while pending and remaining:
+        link = pending.pop(0)
+        if link in visited:
+            continue
+        visited.add(link)
+        remaining -= 1
+        page = fetch(link)
+        interval = institutional_date(page, title, year)
+        if interval is None:
+            interval = visible_adjacent_edition_dates(page, title, year, today)
+        if interval is not None:
+            if (not no_same_edition_jsonld_contradiction(
+                    primary_html, title, *interval)
+                    or not no_same_edition_jsonld_contradiction(
+                        homepage_html, title, *interval)):
+                return None, None, "SOURCE_STRUCTURED_CONTRADICTION", "SOURCE_PAGE"
+            accepted.append((interval, link))
+        elif _visible_date_ranges(page, year):
+            # An explicit contradictory date in visited first-party material
+            # cannot be silently replaced by a convenient later article.
+            return (None, None,
+                    _private_date_rejection_code(page, title, year),
+                    "SAME_HOST_EDITION_ARTICLE")
+        else:
+            # The top-level news index can introduce a dated 2027 article,
+            # without a hardcoded article path or organizer list.
+            if remaining and not re.search(r"(?<![0-9])" + str(year) +
+                                           r"(?![0-9])", link):
+                pending.extend(
+                    u for u in _safe_same_host_edition_links(
+                        page, home, year, allow_index=False, today=today)
+                    if u not in visited and u not in pending)
+    unique = {tuple(d) for d, _url in accepted}
+    if len(unique) != 1:
+        return None, None, home_code, "SAME_HOST_HOME"
+    dates = next(iter(unique))
+    chosen_url = next(u for d, u in accepted if tuple(d) == dates)
+    # A stable digest must bind the exact independently fetched path,
+    # so a different article cannot borrow a previous day's observation.
+    mode = "SAME_HOST_EDITION_ARTICLE:" + sha256(
+        chosen_url.encode("utf-8")).hexdigest()[:16]
+    return dates, mode, None, "SAME_HOST_EDITION_ARTICLE"
 
 
 def examine(state, queue, published, today, fetch=None):
@@ -276,7 +407,7 @@ def examine(state, queue, published, today, fetch=None):
         try:
             html = read(url)
             dates, proof_mode, rejection_code, rejection_surface = (
-                _recheck_current_dates(source, html, read))
+                _recheck_current_dates(source, html, read, today))
             if dates is None:
                 row["status"] = "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND"
                 row["diagnostic_code"] = rejection_code
