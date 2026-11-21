@@ -22,7 +22,10 @@ from ptitesondes_open_world_candidate_rotation import (
 from ptitesondes_openagenda_v2_direct_evidence import _valid_public_read_key
 
 SCHEMA = "ptitesondes.private_national_openworld_research_cycle.v1"
-MAX_EVENTS_PER_CYCLE = 3
+# Increase the daily national scan throughput while staying inside the
+# 45-minute private runner. This is a bounded work budget, not a source list.
+# Repeated cycles use the persisted opaque cursor to reach later candidates.
+MAX_EVENTS_PER_CYCLE = 8
 MAX_STORED_CHECKPOINTS = 10000
 MAX_REPORT_BYTES = 1_500_000
 
@@ -159,6 +162,8 @@ def main():
     ap.add_argument("--private-observation-root", required=True, type=Path)
     ap.add_argument("--private-research-root", required=True, type=Path)
     ap.add_argument("--day", type=date.fromisoformat, required=True)
+    ap.add_argument("--max-events-per-cycle", type=int,
+                    default=MAX_EVENTS_PER_CYCLE)
     ap.add_argument("--execute-live", action="store_true")
     args = ap.parse_args()
     # Explicit dry run has no network, private I/O or writes.
@@ -177,7 +182,8 @@ def main():
     cursor_path = root / "cursor.json"
     previous = _read(cursor_path, 12_000_000)[0] if cursor_path.exists() else None
     reports, state, summary = research_cycle(
-        args.private_observation_root, args.day, key, cursor=previous)
+        args.private_observation_root, args.day, key, cursor=previous,
+        max_events=args.max_events_per_cycle)
     day_dir = root / "reports" / args.day.isoformat()
     for report in reports:
         target = day_dir / (report["ref"] + ".json")
