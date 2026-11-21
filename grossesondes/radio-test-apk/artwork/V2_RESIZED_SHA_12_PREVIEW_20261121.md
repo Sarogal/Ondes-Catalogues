@@ -41,3 +41,13 @@ Les tests Python refusent les suppressions, substitutions de SHA, changements de
 5. Activer le pointeur artwork TEST seulement après recette. Garder `grossesondes/radio-test-apk/current.json` sur **génération 4** et `artwork/current.json` absent jusque-là.
 
 Aucun flux, station, UUID historique, favori, catalogue en production, `main` ou Play Store n'est modifié par cette PR.
+
+## Vérification des autres correspondances aux métadonnées officielles
+
+Sur les cinq candidats dont la référence de l'image coïncide avec `og:image` ou les métadonnées de leur page historique, seuls **Radio Beat** et **Hard Rock Radio FM** ont un visuel distinctif de chaîne approuvé pour le pilote TEST.
+
+- **ISKС Extreme Metal** : dimensions 180 × 180 ; ne passe pas la taille minimale de 192 px.
+- **Almost Hell Radio** : 192 × 192, mais l'aperçu représente une simple note de musique générique sans nom de station. Un site officiel avec un pictogramme générique ne suffit pas à identifier le logo.
+- **Manowar Радио** : 250 × 250, mais l'image représente le groupe, pas une identité suffisamment explicite de la radio.
+
+Ces trois stations restent conservées, sans effacer leurs anciens visuels. Le rapprochement technique et le statut `HOMEPAGE_METADATA_ASSET_PATH_MATCH` ne valent jamais validation éditoriale. La recherche de meilleures images reste ouverte, indépendamment du fournisseur, du genre ou de l'identifiant.
