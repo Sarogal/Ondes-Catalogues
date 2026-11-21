@@ -94,8 +94,22 @@ def osm_identity(venue, event_url, fetch, cache):
     require(isinstance(raw, str), "venue has no independent OSM feature")
     matched = OSM_NODE.fullmatch(raw)
     require(bool(matched), "named OSM node (web/API) required for this admission route")
-    api = "https://api.openstreetmap.org/api/0.6/node/" + matched.group(1)
-    body = fetch(api, cache)
+    # Both hosts are official OpenStreetMap API origins. Some public runners
+    # cannot reach one origin reliably. Retry ONLY a network failure, never
+    # a successfully fetched but contradictory/malformed OSM identity.
+    # The numeric node is still taken solely from the published venue ref.
+    api_paths = (
+        "https://api.openstreetmap.org/api/0.6/node/",
+        "https://www.openstreetmap.org/api/0.6/node/",
+    )
+    body = None
+    for prefix in api_paths:
+        try:
+            body = fetch(prefix + matched.group(1), cache)
+            break
+        except (ValueError, OSError, TimeoutError):
+            continue
+    require(body is not None, "both official OSM API endpoints unavailable")
     require(isinstance(body, str) and len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
             and "<!ENTITY" not in body.upper(), "OSM answer invalid")
