@@ -6,7 +6,9 @@ on:
       - 'automation/concerts/**'
       - 'scripts/concerts_cloud_sync.py'
       - 'scripts/concert_event_site_contract.py'
+      - 'scripts/concert_dynamic_new_site_source.py'
       - 'tests/test_concerts_event_site_publisher.py'
+      - 'tests/test_concerts_dynamic_new_site_source.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   push:
@@ -15,7 +17,9 @@ on:
       - 'automation/concerts/**'
       - 'scripts/concerts_cloud_sync.py'
       - 'scripts/concert_event_site_contract.py'
+      - 'scripts/concert_dynamic_new_site_source.py'
       - 'tests/test_concerts_event_site_publisher.py'
+      - 'tests/test_concerts_dynamic_new_site_source.py'
       - '.github/workflows/grossesondes-concerts-public-engine-tests.yml'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
@@ -47,7 +51,7 @@ jobs:
             exit 1
           fi
       - name: Vérifier la syntaxe de tous les modules et tests Concerts
-        run: python -m compileall -q automation/concerts
+        run: python -m compileall -q automation/concerts scripts/concert_dynamic_new_site_source.py
       - name: Exécuter tous les tests qui n'exigent pas approved.json privé
         run: python scripts/grossesondes_concerts_public_parity.py
       - name: Vérifier le contrat de publication avec les tests indépendants du synchroniseur
