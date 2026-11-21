@@ -144,14 +144,8 @@ def bridge(root, backlog, today, key, *, cursor=None, limit=MAX_EVENTS_PER_RUN,
     for step in range(min(limit, len(inventory))):
         doc, digest, segment, scan_day, offset = inventory[
             (start + step) % len(inventory)]
-        source = segment["event_leads"][offset]
-        uid = str(source["event_uid"])
-        future_days = [s for s in source["explicit_source_session_days"]
-                       if s >= today.isoformat()]
-        if future_days and all((uid, day) in known for day in future_days):
-            duplicates += 1
-            examined += 1
-            continue
+        # Even a previously indexed UID must be rechecked for changed
+        # identity, sessions or cancellation; never trust a cached lead.
         outcome = operator(
             doc, digest, segment, today, key,
             offset=offset, max_fetch=1, source_scan_day=scan_day)
