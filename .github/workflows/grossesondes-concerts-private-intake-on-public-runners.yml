@@ -593,6 +593,46 @@ jobs:
             fi
           fi
 
+      - name: Retrouver les anciennes preuves indépendantes des domaines inconnus (privé)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A domain used by two independently signed AND published past
+          # concerts may carry reusable provenance. This does NOT certify
+          # current domain ownership or issue a new authority/approval.
+          if [ -s confidential/automation/concerts/intake/source-admission-intake.json ]; then
+            if ! python public/automation/concerts/source_historical_provenance.py \
+                --intake confidential/automation/concerts/intake/source-admission-intake.json \
+                --approvals confidential/automation/concerts/approved.json \
+                --catalogue public/docs/grossesondes/concerts.json \
+                --sources public/automation/concerts/sources.json \
+                --output confidential/automation/concerts/intake/source-historical-provenance.json \
+                > "$RUNNER_TEMP/concerts-private-logs/source-historical-provenance.log" 2>&1; then
+              echo "::warning::Provenance historique non corroborée ; aucune autorité nouvelle."
+            else
+              echo "Preuves historiques privées rapprochées ; admission interdite sans preuve fraîche."
+            fi
+          fi
+
+      - name: Croiser les annonces officielles de domaines différents (privé seul)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Same date + lead artist + municipality across distinct domains
+          # yields a RESEARCH LEAD, never an independently signed concert.
+          # Venue name conflicts stay explicit blockers, not silent aliases.
+          if ! python public/automation/concerts/source_cross_domain_corroboration.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/source-cross-domain-corroboration.json \
+              > "$RUNNER_TEMP/concerts-private-logs/source-cross-domain-corroboration.log" 2>&1; then
+            echo "::warning::Rapprochement multi-source indisponible : aucune admission."
+          else
+            echo "Rapprochements inter-domaines enregistrés en privé sans autorisation de publication."
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -635,6 +675,12 @@ jobs:
           fi
           if [ -f automation/concerts/intake/source-evidence-probe.json ]; then
             git add --sparse -- automation/concerts/intake/source-evidence-probe.json
+          fi
+          if [ -f automation/concerts/intake/source-historical-provenance.json ]; then
+            git add --sparse -- automation/concerts/intake/source-historical-provenance.json
+          fi
+          if [ -f automation/concerts/intake/source-cross-domain-corroboration.json ]; then
+            git add --sparse -- automation/concerts/intake/source-cross-domain-corroboration.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
