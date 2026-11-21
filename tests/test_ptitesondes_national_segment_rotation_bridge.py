@@ -188,7 +188,7 @@ class NationalSegmentBridgeTests(unittest.TestCase):
             lambda d: d.update(no_publisher_bridge=False),
             lambda d: d["event_leads"][0].update(publication_ready=True),
             lambda d: d["campaign_meta"].update(
-                start_cursor=["not", "real"]),
+                start_cursor=["cursor with invalid whitespace", 42]),
             lambda d: d.update(agenda_uid=999),
         ):
             bad = deepcopy(doc)
