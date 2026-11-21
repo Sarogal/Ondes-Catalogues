@@ -23,6 +23,7 @@ from ptitesondes_family_activity_classification import (
 from ptitesondes_independent_municipal_event_research import (
     corroborate_municipal_event_claims, SCHEMA as TRIPLE_SCHEMA,
 )
+from ptitesondes_unlisted_exact_session_research import _interval
 from ptitesondes_openagenda_v2_direct_evidence import (
     read_direct_v2,
 )
@@ -91,7 +92,7 @@ def _possible_duplicates(lead, intervals, published_snapshot):
     dates = {datetime.fromisoformat(item["begin"]).date()
              for item in intervals}
     possible = set()
-    for idx, record in enumerate(published_snapshot):
+    for record in published_snapshot:
         if not isinstance(record, dict):
             continue
         record_identity = (
@@ -104,8 +105,8 @@ def _possible_duplicates(lead, intervals, published_snapshot):
             last = date.fromisoformat(record.get("date_end", record["date_start"]))
         except (TypeError, KeyError, ValueError):
             continue
-        if first <= last and any(first <= d <= last for d in dates):
-            possible.add(idx)
+        if first <= last:
+            possible.update(d for d in dates if first <= d <= last)
     return possible
 
 
@@ -128,6 +129,12 @@ def inspect_open_world_candidate(
                 (not isinstance(public_catalogue_snapshot, list)
                  or len(public_catalogue_snapshot) > MAX_CATALOGUE_ROWS))):
         return _blank("invalid_private_candidate")
+    intervals = lead["explicit_source_session_intervals"]
+    pairs = [(item["begin"], item["end"]) for item in intervals]
+    if (len(pairs) > MAX_SESSIONS
+            or len(set(pairs)) != len(pairs)
+            or any(_interval(slot) is None for slot in intervals)):
+        return _blank("invalid_private_candidate_sessions")
     captured = []
 
     def read_live_event(uid, eid, key):
@@ -198,7 +205,6 @@ def inspect_open_world_candidate(
             if loc is not None else
             "location_proof_missing_stale_or_conflicting")
 
-    intervals = lead["explicit_source_session_intervals"]
     triples = {(item["begin"], item["end"]) for item in
                claims.get("triple_corresponding_sessions_private", [])
                if (isinstance(item, dict)
@@ -226,7 +232,7 @@ def inspect_open_world_candidate(
             blockers.append("editorial_activity_requires_review")
         if result["source_claimed_adults_only"]:
             blockers.append("source_explicitly_adult_only")
-        if possible:
+        if datetime.fromisoformat(slot["begin"]).date() in possible:
             blockers.append("potential_public_duplicate_requires_recheck")
         result["private_session_diagnostics"].append({
             "begin": key[0], "end": key[1],
@@ -257,6 +263,7 @@ def public_redacted_admission_summary(results):
                 or item.get("final_editorial_admission_authorized") is not False
                 or item.get("status") not in {
                     "invalid_private_candidate",
+                    "invalid_private_candidate_sessions",
                     "invalid_private_cross_source_evidence",
                     "private_cross_source_admission_diagnostic_only",
                     "live_oa_event_not_verified"}):
