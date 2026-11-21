@@ -48,15 +48,17 @@ class DelegatedSourceHostProof:
 
 
 class _VisibleSections(HTMLParser):
-    """Collect bounded semantic main/article sections, never hidden chrome."""
+    """Only independent visible article blocks, or content outside articles."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.nodes = 0
         self.stack = []
-        self.parts = []
+        self.main_depth = 0
+        self.article_depth = 0
+        self.main_parts = []
+        self.article_parts = []
         self.blocks = []
-        self.active = 0
 
     def handle_starttag(self, tag, attrs):
         self.nodes += 1
@@ -71,23 +73,38 @@ class _VisibleSections(HTMLParser):
                 r"display\s*:\s*none|visibility\s*:\s*hidden",
                 str(data.get("style") or "").lower()) is not None)
         self.stack.append((tag, hidden))
-        if not hidden and tag in ("article", "main"):
-            if self.active == 0:
-                self.parts = []
-            self.active += 1
+        if not hidden and tag == "main":
+            self.main_depth += 1
+        if not hidden and tag == "article":
+            if not self.article_depth:
+                self.article_parts = []
+            self.article_depth += 1
 
     def handle_data(self, data):
-        if self.active and self.stack and not self.stack[-1][1]:
-            clean = " ".join(data.split())
-            if clean and sum(map(len, self.parts)) < 22000:
-                self.parts.append(clean)
+        if not self.stack or self.stack[-1][1]:
+            return
+        clean = " ".join(data.split())
+        if not clean:
+            return
+        if self.article_depth:
+            if sum(map(len, self.article_parts)) < 22000:
+                self.article_parts.append(clean)
+        elif self.main_depth:
+            if sum(map(len, self.main_parts)) < 22000:
+                self.main_parts.append(clean)
 
     def handle_endtag(self, tag):
-        if self.active and tag in ("article", "main"):
-            self.active -= 1
-            if self.active == 0:
-                self.blocks.append(" ".join(self.parts))
-                self.parts = []
+        if self.stack and not self.stack[-1][1]:
+            if tag == "article" and self.article_depth:
+                self.article_depth -= 1
+                if self.article_depth == 0:
+                    self.blocks.append(" ".join(self.article_parts))
+                    self.article_parts = []
+            elif tag == "main" and self.main_depth:
+                self.main_depth -= 1
+                if self.main_depth == 0:
+                    self.blocks.append(" ".join(self.main_parts))
+                    self.main_parts = []
         for pos in range(len(self.stack) - 1, -1, -1):
             if self.stack[pos][0] == tag:
                 del self.stack[pos:]
