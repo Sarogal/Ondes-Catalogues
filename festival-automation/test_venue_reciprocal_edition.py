@@ -100,6 +100,31 @@ class DynamicVenueBacklinkProofs(TestCase):
                       visited)
         self.assertNotIn("festivalenfrance.com", " ".join(visited))
 
+    def test_realistic_event_hero_name_in_footer_requires_venue_backlink(self):
+        # La Sainte's current home uses a slogan heading, a dated hero
+        # and a separate footer containing the complete event identity.
+        home = (
+            '<main><h1>Ça va faire du bruit</h1>'
+            '<p>4e édition · 23 &amp; 24 avril 2027 · Aix-en-Provence</p>'
+            '<p>Pour l’amour du rock, deux scènes et deux soirs.</p>'
+            '<a href="/infos-pratiques">Infos pratiques</a>'
+            '<footer>La Sainte Rock Festival · Wild &amp; Civilized</footer>'
+            '</main>'
+        )
+        fetch, _visited = http({SITE: home})
+        self.assertEqual(verified_venue_reciprocity(
+            SITE, TITLE, DATES, DAY1, fetch=fetch), VENUE)
+        # The same first-party homepage is INSUFFICIENT without the actual
+        # separately named, dated venue show with its backlink.
+        bad = VENUE_DAY.replace(SITE, "https://fake-festival.fr/")
+        denied, _ = http({
+            SITE: home,
+            VENUE + "evenements/la-sainte-rock-festival-jour-1/": bad,
+            VENUE + "evenements/la-sainte-rock-festival-jour-2/": bad,
+        })
+        self.assertIsNone(verified_venue_reciprocity(
+            SITE, TITLE, DATES, DAY1, fetch=denied))
+
     def test_reject_hidden_footer_event_wrong_dates_or_wrong_backlink(self):
         for label, venue_detail in {
             "wrong date": VENUE_DAY.replace("23 Avril 2027", "22 Avril 2027"),
