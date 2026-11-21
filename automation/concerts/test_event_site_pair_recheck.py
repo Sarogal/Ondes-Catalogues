@@ -131,6 +131,77 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
         self.assertEqual(report["publishableEvents"], 1)
         self.assertEqual(report["newApprovals"], 1)
 
+    def test_one_official_event_can_supply_own_visible_per_artist_genres(self):
+        lead, raw, cat, osm = fixture()
+        raw.pop("performer")
+        raw.pop("genre")
+        # The event itself still supplies the date, title, place and
+        # postcode; only its visibly labelled artist bill is supplementary.
+        def event_html(visible_genres=("Heavy Metal", "Metalcore"),
+                       second_h1=False, headline=None, cancelled=False):
+            title = headline or raw["name"]
+            text = (
+                "<main><h1>" + title + "</h1>"
+                + ("<p>Concert annulé</p>" if cancelled else
+                   "<p>Billetterie et accès</p>")
+                + "<p><strong>7WEEKS — " + visible_genres[0]
+                + " | France</strong></p>"
+                + "<p><strong>NEW METAL SUPPORT — " + visible_genres[1]
+                + " | France</strong></p></main>"
+                + ("<h1>Related concerts</h1>" if second_h1 else "")
+                + '<script type="application/ld+json">'
+                + json.dumps(raw, ensure_ascii=False) + "</script>")
+            return text
+        _raw, names, _unnamed, genres, site = reviewer._official_event(
+            lead, event_html(), EVENT, DAY)
+        self.assertEqual(names, ["7WEEKS", "NEW METAL SUPPORT"])
+        self.assertEqual(genres, ["Heavy Metal", "Metalcore"])
+        self.assertEqual(site["city"], "Paris")
+        for bad_html in (
+            event_html(visible_genres=("Hardcore Techno", "Hardtek")),
+            event_html(second_h1=True),
+            event_html(headline="Unrelated other show"),
+            event_html(cancelled=True),
+            event_html().replace("</main>",
+                "<p><strong>EXTRA OPENING ACT — Jazz | France</strong></p></main>"),
+            '<main><h1>' + raw["name"] +
+            '</h1><p><strong>7WEEKS — Metalcore</strong></p></main>'
+            + '<script type="application/ld+json">'
+            + json.dumps(raw) + "</script>",
+        ):
+            with self.subTest(html=bad_html[:80]), self.assertRaises(ValueError):
+                reviewer._official_event(lead, bad_html, EVENT, DAY)
+        # A nonempty malformed structured bill cannot be overwritten by text.
+        conflicting = dict(raw, performer=[
+            {"@type": "MusicGroup", "name": "Unrelated Performer"}])
+        with self.assertRaises(ValueError):
+            reviewer._official_event(
+                lead, event_html().replace(json.dumps(raw, ensure_ascii=False),
+                    json.dumps(conflicting, ensure_ascii=False)), EVENT, DAY)
+
+    def test_typographic_apostrophe_does_not_rename_a_verified_artist(self):
+        lead, raw, _cat, _osm = fixture()
+        raw["name"] = "MAZE’D + SECOND ACT"
+        raw["performer"] = [
+            {"@type": "MusicGroup", "name": "MAZE’D", "genre": "Metalcore"},
+            {"@type": "MusicGroup", "name": "SECOND ACT", "genre": "Punk"},
+        ]
+        lead["name"] = "MAZE'D + SECOND ACT"
+        lead["leadArtist"] = "MAZE'D"
+        body = '<script type="application/ld+json">' + json.dumps(
+            raw, ensure_ascii=False) + "</script>"
+        self.assertEqual(reviewer._name("MAZE’D"),
+                         reviewer._name("MAZE'D"))
+        self.assertNotEqual(reviewer._name("MAZED"),
+                            reviewer._name("MAZE'D"))
+        _event, names, _, genres, _site = reviewer._official_event(
+            lead, body, EVENT, DAY)
+        self.assertEqual(names, ["MAZE’D", "SECOND ACT"])
+        self.assertIn("Metalcore", genres)
+        wrong = dict(lead, name="MAZE'D + DIFFERENT ACT")
+        with self.assertRaises(ValueError):
+            reviewer._official_event(wrong, body, EVENT, DAY)
+
     def test_many_unknown_bands_not_capped(self):
         names = ("7WEEKS",) + tuple(f"NEW BAND {i:02d}" for i in range(9))
         lead, raw, cat, osm = fixture(names=names)
