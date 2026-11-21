@@ -16,6 +16,7 @@ import argparse
 import datetime as dt
 import json
 import re
+import unicodedata
 from collections import Counter
 from html.parser import HTMLParser
 from pathlib import Path
@@ -98,7 +99,8 @@ class _FirstPartyMain(HTMLParser):
 
 def _date_matches(visible):
     date_ids = set()
-    text = normal(visible)
+    text = unicodedata.normalize("NFKD", str(visible).casefold())
+    text = text.encode("ascii", "ignore").decode("ascii")
     for match in MONTH.finditer(text):
         try:
             date_ids.add(dt.date(int(match[3]), MONTHS[match[2]], int(match[1])))
@@ -114,7 +116,7 @@ def _date_matches(visible):
 
 
 def _headline_names(value):
-    if not isinstance(value, str) or not 2 <= len(value) <= 1200:
+    if not isinstance(value, str) or not 2 <= len(value) <= 16000:
         raise ValueError("Official event title absent or excessive")
     parts = [v.strip() for v in re.split(r"\s+\+\s+", value)]
     if not parts or any(not 2 <= len(p) <= 120 for p in parts):
@@ -157,9 +159,10 @@ def bill_from_page(html, event, venue, artists):
     names = _headline_names(heading)
     before = max(0, first - 25)
     near = " ".join(parser.parts[before:first + 25])
+    dates = _date_matches(near)
     if (not isinstance(event.get("date"), str)
-            or len(_date_matches(near)) != 1
-            or next(iter(_date_matches(near))).isoformat() != event["date"]):
+            or len(dates) != 1
+            or next(iter(dates)).isoformat() != event["date"]):
         raise ValueError("Exact event date absent or contradictory")
     if (not isinstance(venue, dict)
             or normal(venue.get("name")) not in normal(near)):
