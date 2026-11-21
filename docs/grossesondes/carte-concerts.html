@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Carte publique de contrôle des concerts métal, rock et punk publiés par Grosses Ondes.">
+<title>Carte Concerts — Grosses Ondes</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoK0TnOoHgI3c4d8=" crossorigin="">
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;color:#f5f5f7;background:#111217}
+*{box-sizing:border-box}body{margin:0}header{padding:22px max(14px,4vw);background:#1b1c24;border-bottom:1px solid #42434c}
+h1{font-size:clamp(1.5rem,3vw,2.4rem);margin:5px 0}header p{max-width:940px;color:#c3c4cc;line-height:1.5;margin:4px 0}
+small.kicker{color:#f4a4a6;letter-spacing:.05em;text-transform:uppercase;font-weight:800}
+main{margin:auto;padding:15px;max-width:1600px}.filters{display:flex;flex-wrap:wrap;gap:13px;align-items:end;margin-bottom:14px}
+label{display:flex;flex-direction:column;gap:5px;font-size:.84rem;color:#ddd}
+input,select{font:inherit;background:#292b36;color:#fff;border:1px solid #696a72;padding:9px;border-radius:8px}
+input{width:min(330px,78vw)}button{cursor:pointer;background:#52252e;color:#fff;border:1px solid #c06c70;border-radius:8px;padding:10px 12px;font-weight:750}
+#count{font-weight:700;margin-left:auto;color:#e5c3c5}.panes{display:grid;grid-template-columns:minmax(0,2fr) minmax(270px,.85fr);gap:14px}
+#map{height:73vh;min-height:450px;border:1px solid #5c5b67;border-radius:12px;background:#272833}
+aside{height:73vh;min-height:450px;overflow:auto;background:#1e2027;border:1px solid #4a4b54;border-radius:12px;padding:12px}
+aside h2{font-size:1rem;margin:0 0 10px}.event{display:block;text-align:left;width:100%;margin:0 0 8px;padding:10px;border:1px solid #484953;border-radius:8px;background:#2a2c36;color:#fff}
+.event strong,.event span{display:block;margin:3px 0}.event span{font-size:.84rem;color:#d3d4dc}
+.note,footer{font-size:.83rem;line-height:1.5;color:#b8b8c1}footer{margin:0 auto;padding:8px 16px 20px;max-width:1600px}a{color:#ffc4c5}
+.popup-show{padding:6px 0;border-top:1px solid #ddd}.popup-show strong{display:block}
+@media(max-width:850px){.panes{grid-template-columns:1fr}#map{height:53vh;min-height:365px}aside{height:330px;min-height:200px}#count{margin-left:0;width:100%}}
+</style>
+</head>
+<body>
+<header><small class="kicker">Grosses Ondes · Prévisualisation publique</small><h1>Carte des concerts à venir</h1>
+<p>Cette carte se met à jour depuis le catalogue Concerts réellement publié sur GitHub Pages. Les lieux inconnus ne sont pas inventés : seules les coordonnées présentes dans le catalogue apparaissent. L'intégration dans l'application Android est prévue séparément.</p></header>
+<main>
+<div class="filters">
+<label>Artiste, ville ou salle<input id="q" type="search" placeholder="Chercher un concert"></label>
+<label>Période<select id="period"><option value="all">Toutes dates futures</option><option value="30">30 jours</option><option value="90">90 jours</option><option value="365">12 mois</option></select></label>
+<label>Territoire<select id="area"><option value="all">Toute la France</option><option value="metro">Métropole + Corse</option><option value="overseas">Outre-mer</option></select></label>
+<button id="reset" type="button">Réinitialiser</button>
+<span id="count" aria-live="polite">Chargement du catalogue…</span>
+</div>
+<div class="panes"><div id="map" role="application" aria-label="Carte interactive des concerts de Grosses Ondes"></div>
+<aside aria-label="Liste des concerts"><h2 id="heading">Concerts</h2><div id="results"></div></aside></div>
+<p class="note">Chaque point représente un lieu et regroupe les concerts qui y sont annoncés. Les points peuvent être approximatifs lorsque la géolocalisation de la salle l'est. Vérifiez les horaires, reports et annulations sur les liens officiels avant tout déplacement.</p>
+</main>
+<footer>Grosses Ondes · Données issues de concerts.json · Cartographie © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors. Cette page ne publie ni n'approuve aucun concert : elle visualise uniquement le catalogue public validé.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function(){
+"use strict";
+const q=document.getElementById("q"),period=document.getElementById("period"),
+area=document.getElementById("area"),count=document.getElementById("count"),
+results=document.getElementById("results"),heading=document.getElementById("heading");
+const map=L.map("map",{scrollWheelZoom:false,preferCanvas:true}).setView([46.6,2.5],6);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+const layer=L.layerGroup().addTo(map);
+let entries=[];
+function add(parent,tag,text,cls){const n=document.createElement(tag);if(text!=null)n.textContent=String(text);if(cls)n.className=cls;parent.appendChild(n);return n;}
+function safeLink(parent,text){try{const url=new URL(String(text));if(url.protocol!=="https:"||url.username||url.password)return;const a=add(parent,"a","Annonce officielle");a.href=url.href;a.target="_blank";a.rel="noopener noreferrer";}catch(_){}}
+function norm(text){return String(text||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();}
+function today(){return new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Paris"});}
+function after(date,days){const d=new Date(date+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);}
+function displayDay(s){return new Intl.DateTimeFormat("fr-FR",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(s+"T12:00:00Z"));}
+function isOverseas(v){return /^(97|98)/.test(String(v.department||""))||v.latitude<40||v.latitude>52||v.longitude< -6||v.longitude>11;}
+function validPoint(v){return v&&Number.isFinite(v.latitude)&&Number.isFinite(v.longitude)&&Math.abs(v.latitude)<=90&&Math.abs(v.longitude)<=180&&(v.latitude!==0||v.longitude!==0);}
+function popup(v,shows){
+const box=document.createElement("div");add(box,"strong",v.name+" · "+v.city);
+if(v.address)add(box,"div",v.address);if(v.geoPrecision)add(box,"small","Localisation : "+v.geoPrecision);
+shows.slice(0,12).forEach(function(s){const item=add(box,"div",null,"popup-show");add(item,"strong",s.title);add(item,"div",displayDay(s.date));safeLink(item,s.url);});
+if(shows.length>12)add(box,"div","+"+(shows.length-12)+" autres dates");return box;}
+function draw(){
+const start=today(),end=period.value==="all"?null:after(start,Number(period.value)),query=norm(q.value.trim());
+const list=entries.filter(function(s){if(s.date<start||(end&&s.date>end))return false;
+if(area.value==="metro"&&isOverseas(s.venue))return false;
+if(area.value==="overseas"&&!isOverseas(s.venue))return false;
+return !query||norm([s.title,s.venue.name,s.venue.city,s.artists.join(" "),s.genres.join(" ")].join(" ")).includes(query);})
+.sort((a,b)=>a.date.localeCompare(b.date)||a.title.localeCompare(b.title,"fr"));
+const groups=new Map();list.forEach(function(s){if(!groups.has(s.venue.id))groups.set(s.venue.id,{venue:s.venue,shows:[]});groups.get(s.venue.id).shows.push(s);});
+layer.clearLayers();results.replaceChildren();const markers=new Map(),points=[];
+groups.forEach(function(g,id){const v=g.venue;
+const m=L.circleMarker([v.latitude,v.longitude],{radius:Math.min(13,7+Math.log2(g.shows.length+1)),color:"#fff1f1",weight:1.2,fillColor:"#cc3046",fillOpacity:.9})
+.bindPopup(popup(v,g.shows),{maxWidth:310}).addTo(layer);
+markers.set(id,m);points.push([v.latitude,v.longitude]);});
+list.slice(0,50).forEach(function(s){const b=add(results,"button",null,"event");b.type="button";
+add(b,"strong",s.title);add(b,"span",displayDay(s.date)+" · "+s.venue.name+" · "+s.venue.city);
+b.addEventListener("click",function(){const m=markers.get(s.venue.id);if(m){map.setView(m.getLatLng(),Math.max(map.getZoom(),9));m.openPopup();document.getElementById("map").scrollIntoView({behavior:"smooth",block:"nearest"});}});});
+if(list.length>50)add(results,"p","50 premières dates affichées. Affinez la recherche pour trouver d'autres concerts.");
+if(!list.length)add(results,"p","Aucun concert correspondant. Essayez une autre période ou ville.");
+heading.textContent="Concerts filtrés ("+list.length+")";count.textContent=list.length+" concert(s) · "+groups.size+" lieu(x)";
+if(area.value!=="all"&&points.length){if(points.length===1)map.setView(points[0],9);else map.fitBounds(points,{maxZoom:10,padding:[20,20]});}
+}
+[q,period,area].forEach(n=>n.addEventListener(n===q?"input":"change",draw));
+document.getElementById("reset").addEventListener("click",function(){q.value="";area.value="all";period.value="all";map.setView([46.6,2.5],6);draw();});
+fetch("./concerts.json",{cache:"no-store"}).then(function(r){if(!r.ok)throw Error("Catalogue indisponible");return r.json();}).then(function(data){
+if(data.schemaVersion!==1||!Array.isArray(data.events)||!Array.isArray(data.venues)||!Array.isArray(data.artists))throw Error("Catalogue inattendu");
+const venues=new Map(data.venues.filter(validPoint).map(v=>[v.id,v])),artists=new Map(data.artists.map(a=>[a.id,a.name])),seen=new Set();
+entries=data.events.filter(function(e){if(!e||typeof e.id!=="string"||seen.has(e.id))return false;seen.add(e.id);
+return /^\d{4}-\d{2}-\d{2}$/.test(e.date)&&venues.has(e.venueId)&&!["cancelled","annule","annulé"].includes(e.status);})
+.map(e=>({id:e.id,title:String(e.title||"Concert"),date:e.date,url:e.officialUrl,venue:venues.get(e.venueId),
+artists:(Array.isArray(e.artistIds)?e.artistIds:[]).map(id=>artists.get(id)||id),
+genres:Array.isArray(e.genres)?e.genres:[]}));
+draw();}).catch(function(err){count.textContent="Erreur : "+err.message;add(results,"p","Impossible de charger le catalogue publié.");});
+}());
+</script>
+</body></html>
