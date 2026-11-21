@@ -180,9 +180,14 @@ def prepare_open_world_patch(
             source_point = (
                 (loc.get("latitude"), loc.get("longitude"))
                 if isinstance(loc, dict) else None)
+            # Missing OA coordinates are not a reason to reject an exact
+            # municipality-address + independent BAN venue proof. Partially
+            # specified or malformed coordinates remain invalid.
             if _coordinates(source_point) is None:
-                held("live_oa_gps_missing")
-                continue
+                if source_point != (None, None):
+                    held("live_oa_gps_invalid_or_partial")
+                    continue
+                source_point = None
             group = {"city": city, "venue": venue,
                      "key": [norm(city), norm(venue)],
                      "uids": [str(lead["event_uid"])]}

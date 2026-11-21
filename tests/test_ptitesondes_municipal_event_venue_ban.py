@@ -41,7 +41,7 @@ def ban(number="1", street="Esplanade Charles de Gaulle",
         {"type": "Feature",
          "properties": {"type": typ, "housenumber": number,
                         "street": street, "city": city,
-                        "postcode": "12345", "score": score},
+                        "postcode": "12345", "citycode": "12345", "score": score},
          "geometry": {"type": "Point",
                       "coordinates": [coords[1], coords[0]]}},
     ]}
@@ -65,6 +65,19 @@ class MunicipalEventVenueBANTests(unittest.TestCase):
             proof, CITY, VENUE, DAY, source_point=POINT)
         self.assertEqual((place["lat"], place["lng"]), POINT)
         self.assertIn("Municipal event venue", place["geo_source"])
+
+    def test_missing_oa_centre_requires_exact_dila_citycode_and_unique_ban(self):
+        proof = mint(source=None)
+        self.assertIsInstance(proof, VenueLocationProof)
+        self.assertEqual(
+            (location_from_proof(proof, CITY, VENUE, DAY)["lat"],
+             location_from_proof(proof, CITY, VENUE, DAY)["lng"]), POINT)
+        bad = ban()
+        bad["features"][0]["properties"]["citycode"] = "99999"
+        self.assertIsNone(mint(source=None, response=bad))
+        no_code = ban()
+        del no_code["features"][0]["properties"]["citycode"]
+        self.assertIsNone(mint(source=None, response=no_code))
 
     def test_city_venue_and_ban_cannot_be_inferred_from_untrusted_index(self):
         for change in (

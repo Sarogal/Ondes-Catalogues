@@ -235,6 +235,75 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
         self.assertEqual(result["held_reason_counts"],
                          {"independent_municipal_source_delegation_unconfirmed": 1})
 
+    def test_missing_oa_gps_is_rescued_only_by_named_municipal_ban_address(self):
+        # OpenAgenda supplies the precise event identity, title and sessions
+        # but does NOT have coordinates. An exact named municipal venue and
+        # independently unique BAN housenumber can still geolocate it.
+        from test_ptitesondes_municipal_event_venue_ban import ban
+        ref = base()
+        live = oa_event()
+        live["location"] = {
+            k: v for k, v in live["location"].items()
+            if k not in ("latitude", "longitude")}
+        html = official_page().replace(
+            "</article>", "<h2>Adresse</h2>"
+            "<p>1 esplanade Charles-de-Gaulle</p></article>")
+        fixtures = readers(event=live)
+        old = fixtures["official_reader"]
+        fixtures["official_reader"] = lambda url: (
+            html if url == SOURCE else old(url))
+        fixtures["ign_reader"] = lambda query: ban()
+        fixtures["osm_reader"] = Mock(
+            side_effect=AssertionError("exact BAN should suffice"))
+        final, audit, counts = merge_verified_open_world(
+            ref, ref, private_patch(ref, [dossier(
+                official_event_url=SOURCE, official_venue_url=SOURCE)]),
+            TODAY, KEY, **fixtures)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(counts["held"], 0)
+        self.assertEqual(final["events"][:100], ref["events"])
+        new = final["events"][-1]
+        self.assertEqual((new["lat"], new["lng"]), (44.5, 2.25))
+        self.assertEqual(new["geo_precision"], "venue")
+        fixtures["osm_reader"].assert_not_called()
+
+    def test_missing_or_partial_oa_gps_can_never_justify_approximation(self):
+        from test_ptitesondes_municipal_event_venue_ban import ban
+        ref = base()
+        html = official_page().replace(
+            "</article>", "<h2>Adresse</h2>"
+            "<p>1 esplanade Charles-de-Gaulle</p></article>")
+        for kind, location, geo in (
+            ("partial", {"latitude": 44.5}, ban()),
+            ("contradiction", {}, ban(street="Rue des Roses")),
+            ("wrong_citycode", {}, dict(ban(),
+                              features=[dict(ban()["features"][0],
+                                  properties={**ban()["features"][0]["properties"],
+                                              "citycode": "99999"})])),
+            ("ambiguous", {}, {"type": "FeatureCollection",
+                               "features": ban()["features"] * 2}),
+            ("no_municipal_address", {}, ban()),
+        ):
+            with self.subTest(kind=kind):
+                live = oa_event()
+                live["location"] = {
+                    k: v for k, v in live["location"].items()
+                    if k not in ("latitude", "longitude")}
+                live["location"].update(location)
+                fixtures = readers(event=live)
+                old = fixtures["official_reader"]
+                fixtures["official_reader"] = lambda url: (
+                    (official_page() if kind == "no_municipal_address" else html)
+                    if url == SOURCE else old(url))
+                fixtures["ign_reader"] = lambda query: geo
+                result, report, counts = merge_verified_open_world(
+                    ref, ref, private_patch(ref, [dossier(
+                        official_event_url=SOURCE, official_venue_url=SOURCE)]),
+                    TODAY, KEY, **fixtures)
+                self.assertEqual(result, ref)
+                self.assertEqual(report["ajoutes"], 0)
+                self.assertEqual(counts["held"], 1)
+
     def test_changed_oa_schedule_cancellation_source_or_geo_are_not_admitted(self):
         ref = base()
         for kind, args in (

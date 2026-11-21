@@ -149,7 +149,8 @@ def mint_municipal_event_location_proof(
             or not callable(ign_fetch)
             or approved_municipal_page_host(
                 municipal_url, group.get("city"), directory) is None
-            or _coordinates(source_center) is None):
+            or (source_center is not None
+                and _coordinates(source_center) is None)):
         return None
     # A city homepage is not an independent, dedicated venue/event record.
     try:
@@ -158,6 +159,24 @@ def mint_municipal_event_location_proof(
             return None
     except (TypeError, ValueError):
         return None
+    # Without an OA centre, refuse a BAN coordinate unless its INSEE city
+    # code also matches the independently authenticated DILA municipality.
+    # This prevents a same-name town or neighboring commune being mistaken
+    # for the address, even when the source itself has no GPS hint.
+    citycode = None
+    if source_center is None:
+        rows = directory.get("results") if isinstance(directory, dict) else None
+        if not isinstance(rows, list):
+            return None
+        codes = set(
+            row.get("code_insee_commune") for row in rows
+            if isinstance(row, dict)
+            and norm(row.get("nom")) == norm("Mairie - " + group["city"])
+            and isinstance(row.get("code_insee_commune"), str)
+            and re.fullmatch(r"[0-9]{5}", row["code_insee_commune"]))
+        if len(codes) != 1:
+            return None
+        citycode = next(iter(codes))
     address = _visible_venue_street(group, official_html)
     if address is None:
         return None
@@ -180,6 +199,7 @@ def mint_municipal_event_location_proof(
         score = props.get("score")
         if (props.get("type") != "housenumber"
                 or norm(props.get("city")) != norm(group["city"])
+                or (citycode is not None and props.get("citycode") != citycode)
                 or norm(props.get("street")) != norm(address["street"])
                 or norm(props.get("housenumber"))
                 != norm(address["housenumber"])
@@ -195,7 +215,8 @@ def mint_municipal_event_location_proof(
             and isinstance(raw, list) and len(raw) == 2) else None
         if point is None or _coordinates(point) is None:
             continue
-        if meters(point, source_center) > MAX_DISTANCE_M:
+        if (source_center is not None
+                and meters(point, source_center) > MAX_DISTANCE_M):
             continue
         matches.append(point)
     if len(matches) != 1:
