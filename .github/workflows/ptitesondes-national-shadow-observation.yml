@@ -1,0 +1,165 @@
+name: "P'tites Ondes — observation nationale isolée (non activée)"
+
+# Separate from ptitesondes-private-intake-on-public-runners.yml.
+# A draft PR can run offline tests but cannot start a live private campaign.
+# Manual live dispatch is only possible on approved main AFTER a later merge.
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/ptitesondes-national-shadow-observation.yml"
+      - "scripts/ptitesondes_national_shadow_observation.py"
+      - "tests/test_ptitesondes_national_shadow_observation.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Reuse the existing private-state writer mutex, never race its push.
+concurrency:
+  group: ptitesondes-public-private-intake
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  offline-contract:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier la continuité privée sans accès réseau ni secrets
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_shadow_observation.py' -v
+
+  observe-private:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - name: Charger le code validé (jamais une branche de PR)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Charger la branche privée de checkpoints
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: automation/ptitesondes-intake
+          path: state
+          fetch-depth: 0
+          sparse-checkout: |
+            automation-intake/ptitesondes/national-observation
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Restaurer les fichiers privés hors checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          OBS="$RUNNER_TEMP/ptitesondes-national-observation"
+          install -d -m 700 "$OBS"
+          STORED="state/automation-intake/ptitesondes/national-observation"
+          if [[ -d "$STORED" ]]; then
+            cp -a "$STORED/." "$OBS/"
+          fi
+          find "$OBS" -type d -exec chmod 700 {} +
+          find "$OBS" -type f -exec chmod 600 {} +
+
+      - name: Exécuter la campagne réseau en observation strictement privée
+        id: observe
+        shell: bash
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+        run: |
+          set -euo pipefail
+          OBS="$RUNNER_TEMP/ptitesondes-national-observation"
+          if [[ -z "${OPENAGENDA_READ_KEY:-}" ]]; then
+            echo "::error::Clé de lecture OA absente ; observation suspendue."
+            exit 1
+          fi
+          DAY="$(TZ=Europe/Paris date +%F)"
+          if ! python scripts/ptitesondes_national_shadow_observation.py \
+             --private-observation-root "$OBS" \
+            --day "$DAY" --batch-id "${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --execute-live > "$RUNNER_TEMP/national-observation-summary.json" \
+            2> "$RUNNER_TEMP/national-observation-errors.private.log"; then
+            echo "::error::Observation incomplète ; les traces restent privées."
+            exit 1
+          fi
+          # Publish only known numeric totals; never disclose source identities.
+          python - "$RUNNER_TEMP/national-observation-summary.json" <<'PY'
+          import json, sys
+          r = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert r["mode"] == "private_observation_readonly"
+          assert r["public_writes"] == 0
+          assert r["publication_ready"] is False
+          keys = ("stored_index_batches", "new_index_census",
+                  "index_batches_examined", "segments_examined",
+                  "event_slots_examined", "held_for_research",
+                  "agenda_attempts", "agenda_held_for_research",
+                  "agendas_completed_in_examined_slots",
+                  "index_agendas_observed_in_batch_sample",
+                  "distinct_event_uids_in_saved_segments",
+                  "distinct_exact_session_hints_in_saved_segments",
+                  "distinct_city_venue_name_hints_unverified",
+                  "distinct_territory_country_claims_unverified",
+                  "unreadable_segments_for_metric_review")
+          assert all(type(r[k]) is int and r[k] >= 0 for k in keys)
+          with open(__import__("os").environ["GITHUB_STEP_SUMMARY"], "a",
+                    encoding="utf-8") as out:
+              out.write("Observation nationale privée, aucune publication.\n\n")
+              for key in keys:
+                  out.write(f"- {key}: {r[key]}\n")
+          PY
+
+      - name: Conserver uniquement les checkpoints sur la branche privée
+        if: always()
+        shell: bash
+        env:
+          PRIVATE_WRITE_TOKEN: ${{ secrets.PTITESONDES_INTAKE_WRITE_TOKEN }}
+        run: |
+          set -euo pipefail
+          OBS="$RUNNER_TEMP/ptitesondes-national-observation"
+          if [[ ! -d "$OBS" ]]; then exit 0; fi
+          if [[ -z "${PRIVATE_WRITE_TOKEN:-}" ]]; then
+            echo "::error::Token privé d'écriture absent ; conservation impossible."
+            exit 1
+          fi
+          DEST="state/automation-intake/ptitesondes/national-observation"
+          mkdir -p "$DEST"
+          for dirname in index campaigns rotations; do
+            if [[ -d "$OBS/$dirname" ]]; then
+              mkdir -p "$DEST/$dirname"
+              cp -a "$OBS/$dirname/." "$DEST/$dirname/"
+            fi
+          done
+          if [[ -f "$OBS/controller.json" ]]; then
+            cp "$OBS/controller.json" "$DEST/controller.json"
+          fi
+          git -C state add -- automation-intake/ptitesondes/national-observation
+          if git -C state diff --cached --quiet; then exit 0; fi
+          git -C state config user.name 'github-actions[bot]'
+          git -C state config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git -C state commit -m 'data(ptitesondes): private national observation checkpoints' \
+            > "$RUNNER_TEMP/national-observation-commit.private.log" 2>&1
+          AUTH="$(printf 'x-access-token:%s' "$PRIVATE_WRITE_TOKEN" | base64 -w0)"
+          if ! git -C state \
+            -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $AUTH" \
+            push origin HEAD:automation/ptitesondes-intake \
+            > "$RUNNER_TEMP/national-observation-push.private.log" 2>&1; then
+            echo "::error::Persistance de l'observation privée impossible."
+            exit 1
+          fi
+          echo "Checkpoints d'observation sauvegardés exclusivement sur la branche privée." >> "$GITHUB_STEP_SUMMARY"

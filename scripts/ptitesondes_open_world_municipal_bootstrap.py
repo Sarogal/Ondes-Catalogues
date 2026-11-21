@@ -17,7 +17,7 @@ from ptitesondes_dila_municipal_domains import (
     fetch_dila, municipal_site_hosts,
 )
 from ptitesondes_dynamic_municipal_source_links import (
-    scan_municipal_page,
+    scan_municipal_page, _safe_url,
 )
 from ptitesondes_openagenda_national_event_research import (
     _french_text, _time_sessions, MAX_TIMINGS,
@@ -30,6 +30,7 @@ from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 
 SCHEMA = "ptitesondes.open_world_municipal_bootstrap.v1"
 MAX_REFERENCE_URLS = 5  # DILA itself permits up to five verified municipal homes
+MAX_OA_UNVERIFIED_URLS = 500  # finite storage budget, NOT a source allowlist
 
 
 def _blank(status):
@@ -41,6 +42,8 @@ def _blank(status):
         "municipal_homepages_unavailable": 0,
         "source_links_found_in_pages": 0,
         "private_link_reports": [],
+        "private_unverified_oa_web_leads": [],
+        "oa_link_partition_required": False,
         "organizer_domain_attested": False,
         "source_rights_reviewed": False,
         "events_independently_attested": False,
@@ -48,6 +51,60 @@ def _blank(status):
         "publisher_connected": False, "publication_ready": False,
         "approval_granted": False, "public_writes": 0,
     }
+
+
+def _candidate_links_from_openagenda(event):
+    """Collect HTTPS research links from public OA metadata, never attest them.
+
+    No domain/organizer/venue/city vocabulary is used. These are documented
+    structural OA fields, and the same unlisted HTTPS rules apply to ALL
+    destinations. No destination is fetched or treated as official here.
+    """
+    found, seen = [], set()
+
+    def collect(url, field):
+        candidate = _safe_url(url)
+        if not candidate or candidate in seen:
+            return
+        seen.add(candidate)
+        found.append({
+            "url": candidate, "source_field": field,
+            "candidate_only": True, "owner_verified": False,
+            "source_rights_reviewed": False,
+            "publication_ready": False,
+        })
+
+    if isinstance(event, dict):
+        collect(event.get("canonicalUrl"), "canonicalUrl")
+        location = event.get("location")
+        if isinstance(location, dict):
+            collect(location.get("website"), "location.website")
+            loc_links = location.get("links")
+            if isinstance(loc_links, list):
+                if len(loc_links) > MAX_OA_UNVERIFIED_URLS:
+                    return [], True
+                for item in loc_links:
+                    if isinstance(item, dict):
+                        collect(item.get("url") or item.get("value"),
+                                "location.links")
+                    else:
+                        collect(item, "location.links")
+        for field in ("registration", "links"):
+            links = event.get(field)
+            if not isinstance(links, list):
+                continue
+            if len(links) > MAX_OA_UNVERIFIED_URLS:
+                return [], True
+            for item in links:
+                if isinstance(item, dict):
+                    if field == "registration" and item.get("type") != "link":
+                        continue
+                    collect(item.get("value") or item.get("url"), field)
+                else:
+                    collect(item, field)
+        if len(found) > MAX_OA_UNVERIFIED_URLS:
+            return [], True
+    return found, False
 
 
 def _safe_research_lead(lead, today):
@@ -104,15 +161,24 @@ def bootstrap_municipal_sources(
     except (OSError, ValueError, TypeError, KeyError, TimeoutError):
         return _blank("oa_live_metadata_unavailable")
     if (not isinstance(event, dict)
-            or type(event.get("uid")) is not int or event["uid"] != eid
-            or type(event.get("state")) is not int or event["state"] != 2
+            or type(event.get("uid")) is not int or event["uid"] != eid):
+        return _blank("live_oa_event_uid_conflict")
+    # The OA v2 detail API can express the same published/rescheduled status
+    # either as an integer or as {"id": integer, "label": ...}. The original
+    # national reader already accepts both. Never accept a missing, cancelled,
+    # symbolic or otherwise untrusted status.
+    status = event.get("status")
+    if isinstance(status, dict):
+        status = status.get("id")
+    if (type(event.get("state")) is not int or event["state"] != 2
             or event.get("removed") is True
-            or type(event.get("status")) is not int
-            or event["status"] not in (1, 2)
-            or not isinstance(event.get("location"), dict)
-            or not _french_location(event["location"])
-            or norm(_french_text(event, "title")) != norm(lead["title"])):
-        return _blank("live_oa_event_identity_or_location_conflict")
+            or type(status) is not int or status not in (1, 2)):
+        return _blank("live_oa_event_unpublished_or_cancelled")
+    if (not isinstance(event.get("location"), dict)
+            or not _french_location(event["location"])):
+        return _blank("live_oa_location_not_french_or_missing")
+    if norm(_french_text(event, "title")) != norm(lead["title"]):
+        return _blank("live_oa_event_title_changed")
     loc = event["location"]
     city = loc.get("adminLevel4")
     venue = loc.get("name")
@@ -133,19 +199,28 @@ def bootstrap_municipal_sources(
             lead["explicit_source_session_intervals"]):
         return _blank("live_oa_explicit_session_changed")
 
+    source_leads, needs_partition = _candidate_links_from_openagenda(event)
+    # A structurally valid OA website is a research lead only. Neither OA
+    # nor its canonical link can certify ownership or the right to reuse.
+    def held_with_leads(status):
+        held = _blank(status)
+        held["private_unverified_oa_web_leads"] = source_leads
+        held["oa_link_partition_required"] = needs_partition
+        return held
+
     # This is a **query**, not a whitelist. Any new place name is eligible
     # for an independent authority lookup, including overseas municipalities.
     try:
         directory = directory_reader(city)
     except (OSError, ValueError, TypeError, KeyError, TimeoutError):
-        return _blank("dila_municipal_directory_unavailable")
+        return held_with_leads("dila_municipal_directory_unavailable")
     hosts = municipal_site_hosts(city, directory)
     if not hosts:
-        return _blank("dila_municipal_domain_not_verified")
+        return held_with_leads("dila_municipal_domain_not_verified")
     if len(hosts) > MAX_REFERENCE_URLS:
-        return _blank("dila_municipal_hosts_ambiguous")
+        return held_with_leads("dila_municipal_hosts_ambiguous")
 
-    out = _blank("municipal_homepage_source_research_only")
+    out = held_with_leads("municipal_homepage_source_research_only")
     out["municipality_from_live_oa_not_registry"] = True
     out["municipal_origins_verified_by_dila"] = len(hosts)
     for host in sorted(hosts):
@@ -181,6 +256,10 @@ def public_redacted_municipal_bootstrap(result):
         "invalid_private_oa_lead", "live_oa_agenda_identity_conflict",
         "oa_live_metadata_unavailable",
         "live_oa_event_identity_or_location_conflict",
+        "live_oa_event_uid_conflict",
+        "live_oa_event_unpublished_or_cancelled",
+        "live_oa_location_not_french_or_missing",
+        "live_oa_event_title_changed",
         "live_oa_city_or_venue_changed",
         "live_oa_explicit_session_changed",
         "dila_municipal_directory_unavailable",

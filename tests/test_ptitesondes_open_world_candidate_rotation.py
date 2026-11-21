@@ -34,7 +34,8 @@ def menu(*urls):
 
 def cycle(item=None, previous=None, *, map_pages=None,
           page_budget=1, source_budget=1,
-          event=None, directory=None, html_reader=None, location_proof=None):
+          event=None, directory=None, html_reader=None, location_proof=None,
+          oa_source_reader=None):
     item = item or lead()
     pages = map_pages or {
         HOME: menu("agenda/sorties"),
@@ -52,7 +53,9 @@ def cycle(item=None, previous=None, *, map_pages=None,
             "uid": item["agenda_uid"], "slug": item["agenda_slug"]},
         oa_event_reader=lambda uid, eid, key: (
             event if event is not None else source_event(item)),
-        location_proof=location_proof)
+        location_proof=location_proof,
+        **({"oa_source_reader": oa_source_reader}
+           if oa_source_reader is not None else {}))
 
 
 class OpenWorldRotationTests(unittest.TestCase):
@@ -176,6 +179,8 @@ class OpenWorldRotationTests(unittest.TestCase):
         stopped = cycle(item, first["private_checkpoint"], event=changed)
         self.assertEqual(stopped["status"],
                          "live_source_bootstrap_not_confirmed")
+        self.assertEqual(stopped["bootstrap_reason_code"],
+                         "live_oa_explicit_session_changed")
         self.assertEqual(stopped["private_checkpoint"],
                          first["private_checkpoint"])
         self.assertEqual(stopped["source_candidates_examined"], 0)
@@ -184,7 +189,126 @@ class OpenWorldRotationTests(unittest.TestCase):
         result = cycle(directory={"total_count": 0, "results": []})
         self.assertEqual(result["status"],
                          "live_source_bootstrap_not_confirmed")
+        self.assertEqual(result["bootstrap_reason_code"],
+                         "dila_municipal_domain_not_verified")
         self.assertFalse(result["organizer_identity_verified"])
+
+    def test_private_bootstrap_diagnostic_does_not_expose_source_metadata(self):
+        item = lead()
+        found = cycle(item, directory={"total_count": 0, "results": []})
+        self.assertIn(found["bootstrap_reason_code"],
+                      {"dila_municipal_domain_not_verified",
+                       "dila_municipal_directory_unavailable"})
+        public = public_redacted_rotation_summary(found)
+        self.assertNotIn("bootstrap_reason_code", public)
+        self.assertNotIn("source_url", json.dumps(public))
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_no_dila_keeps_private_oa_leads_without_approving_source(self):
+        item = lead()
+        oa = source_event(item)
+        oa["canonicalUrl"] = "https://nouvel-organisateur.fr/spectacle"
+        oa["registration"] = [{"type": "link",
+                              "value": "https://nouveau-billet.fr/place"}]
+        result = cycle(item, event=oa,
+                       directory={"total_count": 0, "results": []})
+        self.assertEqual(result["status"],
+                         "live_source_bootstrap_not_confirmed")
+        self.assertEqual(result["bootstrap_reason_code"],
+                         "dila_municipal_domain_not_verified")
+        self.assertEqual(result["oa_source_web_leads_found"], 2)
+        self.assertEqual(len(result["private_unverified_oa_web_leads"]), 2)
+        self.assertTrue(all(x["candidate_only"] for x in
+                            result["private_unverified_oa_web_leads"]))
+        self.assertEqual(result["source_candidates_examined"], 0)
+        self.assertFalse(result["organizer_identity_verified"])
+        self.assertFalse(result["publication_ready"])
+        public = public_redacted_rotation_summary(result)
+        self.assertNotIn("nouvel-organisateur", json.dumps(public))
+        self.assertNotIn("bootstrap_reason_code", public)
+        self.assertEqual(public["public_writes"], 0)
+
+    def test_oa_unknown_links_can_expose_exact_sessions_without_dila(self):
+        item = lead(9, 10, 11, 14, 15, 17)
+        oa = source_event(item)
+        first_url = "https://unlisted-a.fr/spectacle"
+        second_url = "https://unlisted-b.fr/spectacle"
+        third_url = "https://unlisted-c.fr/spectacle"
+        oa["canonicalUrl"] = first_url
+        oa["registration"] = [
+            {"type": "link", "value": second_url},
+            {"type": "link", "value": third_url},
+        ]
+        html = "<html><script type='application/ld+json'>" + json.dumps({
+            "@graph": [{
+                "@type": "ChildrensEvent", "name": item["title"],
+                "startDate": slot["begin"], "endDate": slot["end"],
+                "location": {
+                    "name": item["venue_unverified"],
+                    "address": {"addressLocality":
+                                item["city_unverified"]}},
+            } for slot in item["explicit_source_session_intervals"]]
+        }, ensure_ascii=False) + "</script></html>"
+        checked = []
+        def read(url):
+            checked.append(url)
+            return html
+
+        absent = {"total_count": 0, "results": []}
+        first = cycle(item, event=oa, directory=absent, oa_source_reader=read)
+        self.assertEqual(first["bootstrap_reason_code"],
+                         "dila_municipal_domain_not_verified")
+        self.assertEqual(first["oa_urls_rechecked"], 2)
+        self.assertEqual(first["oa_exact_session_claims_unverified"], 12)
+        self.assertEqual([x["status"]
+                          for x in first["private_oa_url_reviews"]],
+                         ["all_exact_sessions_visible_unverified"] * 2)
+        self.assertTrue(all(x["origin_independently_attested"] is False
+                            and x["organizer_verified"] is False
+                            and x["rights_reviewed"] is False
+                            and x["publication_ready"] is False
+                            for x in first["private_oa_url_reviews"]))
+        second = cycle(item, first["private_checkpoint"],
+                       event=oa, directory=absent, oa_source_reader=read)
+        self.assertEqual(second["oa_urls_rechecked"], 1)
+        self.assertEqual(second["oa_exact_session_claims_unverified"], 6)
+        third = cycle(item, second["private_checkpoint"],
+                      event=oa, directory=absent, oa_source_reader=read)
+        self.assertEqual(third["oa_urls_rechecked"], 0)
+        self.assertEqual(checked, [first_url, second_url, third_url])
+        summary = public_redacted_rotation_summary(first)
+        self.assertNotIn(first_url, json.dumps(summary))
+        self.assertEqual(summary["public_writes"], 0)
+
+    def test_failed_oa_url_is_held_and_does_not_starve_other_unknown_urls(self):
+        item = lead()
+        oa = source_event(item)
+        url_bad = "https://unlisted-failed.fr/show"
+        url_good = "https://unlisted-good.fr/show"
+        url_next = "https://unlisted-next.fr/show"
+        oa["canonicalUrl"] = url_bad
+        oa["registration"] = [{"type": "link", "value": url_good},
+                              {"type": "link", "value": url_next}]
+        called = []
+        def read(url):
+            called.append(url)
+            if url == url_bad:
+                raise ValueError("private error?secret=test")
+            return "<html><body>Non structured source</body></html>"
+        dila_empty = {"total_count": 0, "results": []}
+        first = cycle(item, event=oa, directory=dila_empty,
+                      oa_source_reader=read)
+        self.assertEqual(first["oa_urls_rechecked"], 2)
+        self.assertEqual([x["status"] for x in
+                          first["private_oa_url_reviews"]],
+                         ["oa_url_unavailable",
+                          "no_exact_structured_session_match"])
+        second = cycle(item, first["private_checkpoint"], event=oa,
+                       directory=dila_empty, oa_source_reader=read)
+        self.assertEqual(second["oa_urls_rechecked"], 1)
+        self.assertEqual(called, [url_bad, url_good, url_next])
+        self.assertNotIn("secret", json.dumps(second))
+        self.assertEqual(second["public_writes"], 0)
 
     def test_original_event_vocabulary_never_filters_source_discovery(self):
         item = lead(title="Création sonore hors catégories")

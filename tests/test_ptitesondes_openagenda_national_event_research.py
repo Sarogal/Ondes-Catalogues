@@ -286,6 +286,8 @@ class NationalOAEventResearchTests(unittest.TestCase):
         item = report["unclassified_editorial_research_only"][0]
         self.assertEqual(item["title"], "Voyage sonore aux mille murmures")
         self.assertEqual(item["venue_unverified"], "Parvis sans adresse")
+        self.assertEqual(item["country_code_unverified"], "FR")
+        self.assertTrue(item["french_territory_claim_present"])
         self.assertEqual(item["explicit_source_session_days"], ["2026-12-12"])
         self.assertIsNone(item["editorial_category_proposal"])
         self.assertFalse(item["source_organizer_independently_verified"])
@@ -294,6 +296,29 @@ class NationalOAEventResearchTests(unittest.TestCase):
         self.assertFalse(item["publication_ready"])
         self.assertEqual(item["public_writes"], 0)
         self.assertNotIn("additions", report)
+
+    def test_unclassified_overseas_and_unknown_geography_are_retained(self):
+        for code, expected in (("GP", True), ("PF", True), ("ZZ", False)):
+            with self.subTest(country=code):
+                lead = event(
+                    uid=97800, country=code,
+                    title="Voyage sonore aux mille murmures",
+                    desc="Expérience d'écoute immersive et racontée pour les familles",
+                    city="Village sans liste de lieux", venue="Parvis du village")
+                report = scan_agenda(
+                    AGENDA, KEY, DAY, read_agenda=api_agenda,
+                    read_page=lambda *args, **kwargs: {
+                        "events": [lead], "after": None})
+                self.assertEqual(report["event_leads"], [])
+                self.assertEqual(len(
+                    report["unclassified_editorial_research_only"]), 1)
+                item = report["unclassified_editorial_research_only"][0]
+                self.assertEqual(item["country_code_unverified"], code)
+                self.assertIs(item["french_territory_claim_present"], expected)
+                self.assertEqual(len(item[
+                    "explicit_source_session_intervals"]), 6)
+                self.assertFalse(item["publication_ready"])
+                self.assertEqual(item["public_writes"], 0)
 
     def test_generic_gouter_stays_outside_admission_even_if_research_keeps_it(self):
         irrelevant = event(uid=97112, title="Goûter au parc pour enfants",

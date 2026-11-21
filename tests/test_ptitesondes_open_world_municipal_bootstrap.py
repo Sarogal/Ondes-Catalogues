@@ -136,6 +136,48 @@ class MunicipalBootstrapTests(unittest.TestCase):
                   html_reader=reading)
         self.assertEqual(out["status"], "dila_municipal_directory_unavailable")
 
+    def test_unknown_organizer_urls_are_kept_even_without_dila(self):
+        source = event()
+        source["canonicalUrl"] = "https://organisateur-nouveau.fr/spectacle"
+        source["registration"] = [
+            {"type": "link", "value": "https://billetterie-nouvelle.fr/123"},
+            {"type": "email", "value": "contact@example.org"},
+            {"type": "link", "value": "http://insecure.example.org/123"},
+        ]
+        source["location"]["website"] = "https://lieu-nouveau.fr/"
+        source["location"]["links"] = [
+            {"url": "https://lieu-nouveau.fr/agenda"},
+            {"url": "https://localhost/admin"},
+        ]
+        reading = Mock(side_effect=AssertionError("must never fetch new URL"))
+        out = run(oa_event=source, dila={"total_count": 0, "results": []},
+                  html_reader=reading)
+        self.assertEqual(out["status"], "dila_municipal_domain_not_verified")
+        links = out["private_unverified_oa_web_leads"]
+        self.assertEqual([l["url"] for l in links], [
+            "https://organisateur-nouveau.fr/spectacle",
+            "https://lieu-nouveau.fr/",
+            "https://lieu-nouveau.fr/agenda",
+            "https://billetterie-nouvelle.fr/123",
+        ])
+        self.assertTrue(all(l["candidate_only"] and
+                            not l["owner_verified"] and
+                            not l["publication_ready"] for l in links))
+        reading.assert_not_called()
+        self.assertFalse(out["events_independently_attested"])
+        self.assertEqual(out["public_writes"], 0)
+
+    def test_oa_links_over_capacity_hold_without_silent_truncation(self):
+        from ptitesondes_open_world_municipal_bootstrap import MAX_OA_UNVERIFIED_URLS
+        src = event()
+        src["registration"] = [
+            {"type": "link", "value": f"https://new-{i}.fr/show"}
+            for i in range(MAX_OA_UNVERIFIED_URLS + 1)]
+        out = run(oa_event=src, dila={"total_count": 0, "results": []})
+        self.assertTrue(out["oa_link_partition_required"])
+        self.assertEqual(out["private_unverified_oa_web_leads"], [])
+        self.assertFalse(out["publication_ready"])
+
     def test_different_agenda_uid_slug_or_event_uid_stops_before_dila(self):
         directory_reader = Mock(
             side_effect=AssertionError("should not call DILA"))
@@ -152,9 +194,37 @@ class MunicipalBootstrapTests(unittest.TestCase):
                           directory_reader=directory_reader)
                 self.assertIn(out["status"], {
                     "live_oa_agenda_identity_conflict",
-                    "live_oa_event_identity_or_location_conflict",
+                    "live_oa_event_uid_conflict",
+                    "live_oa_event_unpublished_or_cancelled",
                 })
         directory_reader.assert_not_called()
+
+    def test_live_oa_status_object_is_validated_like_first_scan(self):
+        for acceptable in ({"id": 1, "label": "Publié"},
+                           {"id": 2, "label": "Reporté"}):
+            with self.subTest(status=acceptable):
+                out = run(oa_event=event(status=acceptable))
+                self.assertEqual(out["status"],
+                                 "municipal_homepage_source_research_only")
+                self.assertFalse(out["events_independently_attested"])
+                self.assertFalse(out["publication_ready"])
+        denied = ({"id": 3, "label": "Annulé"},
+                  {"id": "1", "label": "Publié"},
+                  {}, {"label": "Publié"}, True)
+        blocked = Mock(side_effect=AssertionError(
+            "must not consult municipality for invalid status"))
+        for invalid in denied:
+            with self.subTest(status=invalid):
+                out = run(oa_event=event(status=invalid),
+                          directory_reader=blocked)
+                self.assertEqual(out["status"],
+                                 "live_oa_event_unpublished_or_cancelled")
+        blocked.assert_not_called()
+
+    def test_live_oa_title_change_has_specific_private_hold_reason(self):
+        out = run(oa_event=event(title={"fr": "Another event"}))
+        self.assertEqual(out["status"], "live_oa_event_title_changed")
+        self.assertFalse(out["publication_ready"])
 
     def test_missing_or_changed_local_session_stops_before_directory(self):
         original = lead()
@@ -183,7 +253,7 @@ class MunicipalBootstrapTests(unittest.TestCase):
         out = run(oa_event=event(location={
             "name": VENUE, "adminLevel4": CITY, "countryCode": "US"}))
         self.assertEqual(out["status"],
-                         "live_oa_event_identity_or_location_conflict")
+                         "live_oa_location_not_french_or_missing")
 
     def test_two_dila_verified_municipal_roots_do_not_depend_on_curated_sources(self):
         data = directory()
