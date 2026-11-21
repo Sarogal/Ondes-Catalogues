@@ -66,15 +66,22 @@ def live_tour_card(source, today, fetch):
     # A previously reviewed, canonical index_page may point directly to
     # page=4 today. No requested URL from an external or private candidate is
     # fetched without first passing the committed trusted_source contract.
+    cached = {}
     try:
         direct = fetch(source["index_page"])
+        cached[source["index_page"]] = direct
         if exact_event_card_day(direct, source) is not None:
             return direct
     except (OSError, ValueError, TypeError, UnicodeError, KeyError):
         pass
     # Preserve the original source-wide exact visible-link reproof as a
     # fallback for plain anchors or municipal sites without dated cards.
-    return live_index_for_exact_link(source, fetch)
+    # Do not download the same private-safe index page twice per candidate.
+    def read(url):
+        if url in cached:
+            return cached[url]
+        return fetch(url)
+    return live_index_for_exact_link(source, read)
 
 
 def _tour_day(html, source, today, index_html=None):
