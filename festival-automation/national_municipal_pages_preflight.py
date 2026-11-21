@@ -209,7 +209,11 @@ MUSIC_WORDS = re.compile(
 # Artistic event names often embed their genre in one token:
 # e.g. "GermiRock'n Co". This only authorizes private research.
 EMBEDDED_MUSIC_NAME = re.compile(
-    r"\b[a-z0-9]*(?:rock|metal|punk|hardcore|fest)[a-z0-9]*\b"
+    r"\b[a-z0-9]*(?:rock|metal|punk|hardcore)[a-z0-9]*\b"
+    # Named festivals may end in -fest (Hellfest, an unknown XXfest).
+    # Never use an arbitrary interior 'fest' substring: the word
+    # "manifestation" is administrative, not a music event.
+    r"|\b[a-z0-9]{3,}fest\b"
 )
 GENERIC_LABEL = re.compile(
     r"^(?:agenda|actualites?|evenements?|manifestations?|"
