@@ -67,9 +67,14 @@ def build(registry, catalogue, today):
                 or c.get("reviewRequired") is not True):
             reasons["inactive_or_unsafe"] += 1
             continue
-        if c.get("reviewBucket") in BANNED_BUCKETS or c.get("possibleExistingConcert") is True:
-            reasons["excluded_or_duplicate"] += 1
+        if c.get("reviewBucket") in BANNED_BUCKETS:
+            reasons["excluded_or_nonconcert"] += 1
             continue
+        # Published or possibly duplicate leads can still corroborate a
+        # SOURCE during research. They must never become new concerts.
+        duplicate_reference = c.get("possibleExistingConcert") is True
+        if duplicate_reference:
+            reasons["duplicate_reference_leads"] += 1
         try:
             day = dt.date.fromisoformat(c.get("date"))
         except (ValueError, TypeError):
@@ -78,9 +83,12 @@ def build(registry, catalogue, today):
         if day < today:
             reasons["expired"] += 1
             continue
-        if (c.get("date"), c.get("sourceUrl")) in published:
-            reasons["already_published"] += 1
-            continue
+        published_reference = (c.get("date"), c.get("sourceUrl")) in published
+        # Previously signed/published first-party pages are high-value
+        # historical corroboration anchors. Keep them for SOURCE research,
+        # but NEVER treat them as new concerts needing re-publication.
+        if published_reference:
+            reasons["published_reference_leads"] += 1
         host = intake.valid_https(c.get("sourceUrl"))
         if host is None:
             reasons["invalid_host"] += 1
@@ -95,6 +103,9 @@ def build(registry, catalogue, today):
             continue
         groups[key].append({
             "candidateId": c.get("candidateId"),
+            "publishedReference": published_reference,
+            "duplicateResearchLead": duplicate_reference,
+            "eventUrl": c.get("eventDetailUrl") or c.get("sourceUrl"),
             "host": host, "independentDomainHint": domain(host),
             "sourceLabel": c.get("source"),
             "date": c.get("date"), "leadArtist": c.get("leadArtist"),
@@ -121,7 +132,13 @@ def build(registry, catalogue, today):
                 r["independentDomainHint"] for r in entries
                 if r["stableOnDistinctDays"]
             }) >= 2:
-            status = "cross_domain_stable_observation_needs_live_proof"
+            status = (
+                "published_reference_cross_domain"
+                if any(r["publishedReference"] for r in entries)
+                else ("possible_duplicate_cross_domain"
+                      if any(r["duplicateResearchLead"] for r in entries)
+                      else "cross_domain_stable_observation_needs_live_proof")
+            )
         else:
             status = "cross_domain_observation_needs_second_day"
         first_by_host = {}
@@ -135,6 +152,10 @@ def build(registry, catalogue, today):
             "date": date, "leadArtist": artist, "city": city,
             "normalizedVenue": (next(iter(rooms)) if len(rooms) == 1 else None),
             "reviewState": status,
+            "publishedAlreadyKnown": any(
+                r["publishedReference"] for r in entries),
+            "markedPossibleDuplicate": any(
+                r["duplicateResearchLead"] for r in entries),
             "distinctDomainHints": len(domains),
             "sources": sorted(first_by_host.values(), key=lambda x: x["host"]),
             "independentOwnershipVerified": False,
@@ -148,6 +169,10 @@ def build(registry, catalogue, today):
         "futureCrossDomainLeadGroups": len(matches),
         "stableSameVenueCrossDomainGroups": counts[
             "cross_domain_stable_observation_needs_live_proof"],
+        "publishedReferenceCrossDomainGroups": counts[
+            "published_reference_cross_domain"],
+        "possibleDuplicateCrossDomainGroups": counts[
+            "possible_duplicate_cross_domain"],
         "conflictingVenueGroups": counts["conflicting_venue_identity"],
         "awaitingSecondDayGroups": counts[
             "cross_domain_observation_needs_second_day"],

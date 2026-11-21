@@ -103,7 +103,25 @@ class CrossHostEvidenceTests(unittest.TestCase):
         self.assertEqual(out["futureCrossDomainLeadGroups"], 0)
         self.assertFalse(out["automaticTrustGranted"])
 
-    def test_already_published_exactly_matched_lead_is_not_recorroborated(self):
+    def test_duplicate_leads_are_research_only_even_when_all_marked_already_catalogued(self):
+        one = lead()
+        other = lead("new-venue.fr", venue="Salle Nouvelle")
+        for entry in (one, other):
+            entry["candidate"]["possibleExistingConcert"] = True
+            entry["candidate"]["reviewBucket"] = "already_catalogued"
+        out = cross.build(registry(one, other), CATALOGUE, DAY)
+        self.assertEqual(out["futureCrossDomainLeadGroups"], 1)
+        self.assertFalse(out["publicationAllowed"])
+        self.assertFalse(out["automaticTrustGranted"])
+        self.assertEqual(out["possibleDuplicateCrossDomainGroups"], 1)
+        self.assertEqual(out["groups"][0]["reviewState"],
+                         "possible_duplicate_cross_domain")
+        self.assertFalse(out["groups"][0]["publishedAlreadyKnown"])
+        self.assertTrue(out["groups"][0]["markedPossibleDuplicate"])
+        self.assertTrue(all(s["duplicateResearchLead"]
+                            for s in out["groups"][0]["sources"]))
+
+    def test_published_reference_is_retained_for_source_research_not_new_publication(self):
         first = lead()
         catalogue = {"schemaVersion": 1, "events": [{
             "date": first["candidate"]["date"],
@@ -111,7 +129,14 @@ class CrossHostEvidenceTests(unittest.TestCase):
         }]}
         out = cross.build(registry(first, lead("new-venue.fr")),
                           catalogue, DAY)
-        self.assertEqual(out["futureCrossDomainLeadGroups"], 0)
+        self.assertEqual(out["futureCrossDomainLeadGroups"], 1)
+        self.assertEqual(out["publishedReferenceCrossDomainGroups"], 1)
+        self.assertEqual(out["stableSameVenueCrossDomainGroups"], 0)
+        group = out["groups"][0]
+        self.assertEqual(group["reviewState"], "published_reference_cross_domain")
+        self.assertTrue(group["publishedAlreadyKnown"])
+        self.assertFalse(group["publicationAllowed"])
+        self.assertFalse(out["automaticTrustGranted"])
 
     def test_malformed_private_registry_fails_closed(self):
         for bad in ({}, {"schema": "wrong", "items": {}},

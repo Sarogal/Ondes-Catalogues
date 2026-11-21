@@ -189,6 +189,11 @@ class SourceProbeTests(unittest.TestCase):
             ["8.8.8.8", "10.0.0.1"],
             ["8.8.8.8", "::1"],
             ["192.168.0.4"],
+            ["::ffff:8.8.8.8"],
+            ["64:ff9b::c0a8:0101"],
+            ["64:ff9b:1::c0a8:0101"],
+            ["2002:c0a8:0101::1"],
+            ["2001:0000:4136:e378:8000:63bf:3fff:fdd2"],
             [],
         ):
             with self.subTest(ips=ips), patch.object(
@@ -198,6 +203,20 @@ class SourceProbeTests(unittest.TestCase):
         with patch.object(probe.socket, "getaddrinfo",
                           return_value=[entry("8.8.8.8")]):
             self.assertEqual(probe.public_ip_addresses("newbar.fr"), ["8.8.8.8"])
+
+    def test_dns_rejects_excessive_or_unexpected_address_families(self):
+        answers = [
+            (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP,
+             "", ("8.8.8.8", 443))
+        ] * 33
+        with patch.object(probe.socket, "getaddrinfo", return_value=answers), \
+             self.assertRaises(ValueError):
+            probe.public_ip_addresses("newbar.fr")
+        wrong_family = [(socket.AF_UNIX, socket.SOCK_STREAM, 0,
+                         "", ("8.8.8.8", 443))]
+        with patch.object(probe.socket, "getaddrinfo",
+                          return_value=wrong_family), self.assertRaises(ValueError):
+            probe.public_ip_addresses("newbar.fr")
 
     def test_safe_fetch_keeps_pinned_ip_and_robots_policy(self):
         calls = []
