@@ -41,7 +41,7 @@ def norm(value):
 class VisibleLines(HTMLParser):
     """Text divided by actual visible semantic line boundaries, never JS."""
 
-    VOID = frozenset({"br", "hr", "img", "meta", "link", "input", "source", "wbr"})
+    VOID = frozenset({"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"})
     BREAKS = frozenset({"br", "p", "li", "tr", "article", "div", "section"})
     HIDDEN_TAGS = frozenset({"script", "style", "noscript", "svg", "template"})
 
@@ -134,18 +134,21 @@ def matching_tour_stop(html, expected_day, candidate_city, candidate_venue):
         raw = "".join(page.parts)
         if len(raw) < 100:
             return False
-        lines = [" ".join(line.split()) for line in raw.split("\n")]
-        lines = [line for line in lines if line and len(line) <= 400]
         matched = []
-        for line in lines:
-            result = SHOW_LINE.fullmatch(line)
-            if result is None:
-                continue
-            m, d = int(result["first"]), int(result["second"])
-            if not 1 <= m <= 31 or not 1 <= d <= 31:
-                return False
-            matched.append((m, d, result["country"],
-                            result["city"], result["venue"]))
+        itinerary_start = None
+        offset = 0
+        for raw_line in raw.splitlines(keepends=True):
+            line = " ".join(raw_line.split())
+            result = SHOW_LINE.fullmatch(line) if len(line) <= 400 else None
+            if result is not None:
+                if itinerary_start is None:
+                    itinerary_start = offset
+                m, d = int(result["first"]), int(result["second"])
+                if not 1 <= m <= 31 or not 1 <= d <= 31:
+                    return False
+                matched.append((m, d, result["country"],
+                                result["city"], result["venue"]))
+            offset += len(raw_line)
         if not 2 <= len(matched) <= MAX_ENTRIES:
             return False
         # Ignore ambiguous 2/4 unless a different stop makes the order
@@ -154,8 +157,8 @@ def matching_tour_stop(html, expected_day, candidate_city, candidate_venue):
         day_first = any(m > 12 for m, d, _, _, _ in matched)
         if month_first == day_first:
             return False
-        itinerary_start = min(raw.find(line) for line in lines
-                              if SHOW_LINE.fullmatch(line))
+        if itinerary_start is None:
+            return False
         before = norm(raw[:itinerary_start][-3000:])
         # The year must be carried by the tour itself, not by a page footer.
         if not _same_phrase(before, str(target.year)):
