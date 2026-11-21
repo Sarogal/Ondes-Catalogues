@@ -45,8 +45,8 @@ MAX_VENUE_ROOTS = 4     # bounded candidate third-party domains
 MAX_VENUE_INDEXES = 3   # root + two visible agenda links
 MAX_EVENT_PAGES = 3     # at most 3 venue event details
 STYLE_WITHOUT_BRAND = re.compile(
-    r"\\b(?:metal|rock|punk|metalcore|deathcore|grindcore|"
-    r"stoner|doom|sludge|thrash)\\b")
+    r"\b(?:metal|rock|punk|metalcore|deathcore|grindcore|"
+    r"stoner|doom|sludge|thrash)\b")
 
 MAX_ANCHORS = 500
 
@@ -248,7 +248,7 @@ def verified_venue_reciprocity(site, title, dates, today,
         visible_words = normalized(visible_content(homepage))
         independent_genre = re.sub(
             r"(?<![a-z0-9])" + re.escape(label) +
-            r"(?:\\s+20[2-4][0-9])?(?![a-z0-9])",
+            r"(?:\s+20[2-4][0-9])?(?![a-z0-9])",
             " ", visible_words)
         if STYLE_WITHOUT_BRAND.search(independent_genre) is None:
             return None
