@@ -21,6 +21,7 @@ from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 
 import discover
+import event_site_microdata
 import generic_music_event
 import official_rss_jsonld_bridge as bridge
 import source_admission_intake as intake
@@ -41,6 +42,11 @@ def event_page_witness(html, *, url, date, lead_artist, city, venue):
     events = [v for v in discover.read_ld(html)
               if isinstance(v, dict)
               and bridge._event_types(v.get("@type")) & {"Event", "MusicEvent"}]
+    # Same generic structured fallback already used by the independent
+    # event-site verifier: actual HTML microdata may carry the event while
+    # JSON-LD is absent. Never use it to hide contradictory JSON-LD nodes.
+    if not events:
+        events = event_site_microdata.read_microdata_events(html)
     witnesses = []
     for raw in events:
         canonical = raw.get("url")
