@@ -1,15 +1,14 @@
-"""Two independent public websites prove an unknown festival and an edition.
+"""The OFFICIAL festival website is the sole source for dates and place.
 
-A national private candidate may nominate a SAFE HTTPS site. Its claim is
-not authoritative. The Publisher independently checks the first-party site,
-derives a venue website from a visibly linked first-party practical-info page,
-and fetches that venue's PUBLIC event index and event detail. A venue detail
-must contain the exact festival name, an edition day inside the claimed
-weekend and a direct backlink to the same festival domain. No registered
-festival, venue or organizer list; every fetch is DNS-pinned, host-bounded,
-limited and independently repeated.
+The independent venue site is ONLY evidence that a website belongs to the
+named festival: its own dates/places are neither required nor reused. The
+Publisher independently downloads the HTTPS festival website again and checks
+its current-edition dates and editorial genre. It also recovers the reciprocal
+official website link from a venue's historical or current event page. No
+festival, venue, organizer or domain whitelist.
 
-This is append-only and produces no inferred city, venue, artists or map pin.
+Never copy the external venue page's date into the festival catalogue.
+This path stays append-only and does not invent geocoordinates or a lineup.
 """
 from __future__ import annotations
 
@@ -32,15 +31,15 @@ from grossesondes_structured_edition import ROW_KEYS, PRIVATE_KEYS
 from source_qualification import Anchors, normalized, classify
 
 PROOF_MODE = "generic-venue-reciprocal-edition.v1"
-PRIVATE_NOTES = ("Site du festival et annonce de salle réciproque à revalider. "
-                 "Aucun lieu, artiste ni repère GPS déduit de la source.")
-PUBLISHED_NOTES = ("Festival et dates revérifiés sur son site ; événement "
-                   "et lien retour indépendamment confirmés par une salle. "
-                   "Adresse exacte, artistes et coordonnées à confirmer.")
-PRIVATE_STATUS = "Recoupement salle/site en attente du Publisher"
-PUBLISHED_STATUS = "Recoupement salle/site revérifié indépendamment"
-PRIVATE_CONFIDENCE = "Organisateur + salle liée (observation privée)"
-PUBLISHED_CONFIDENCE = "Organisateur + salle (annonce et lien réciproques)"
+PRIVATE_NOTES = ("Provenance du site à revalider ; dates et lieu annoncés "
+                 "par le seul site officiel. Artistes et GPS non déduits.")
+PUBLISHED_NOTES = ("Domaine du festival corroboré par le lien réciproque "
+                   "d'une salle ; dates contrôlées uniquement sur le site "
+                   "officiel. Coordonnées et artistes à confirmer.")
+PRIVATE_STATUS = "Domaine officiel à recouper, édition à relire"
+PUBLISHED_STATUS = "Site officiel et édition revérifiés par le Publisher"
+PRIVATE_CONFIDENCE = "Site officiel à attribuer, annonce primaire J/J+1"
+PUBLISHED_CONFIDENCE = "Domaine attribué, dates vérifiées à la source officielle)"
 BLOCKED_FAMILIES = frozenset(("google.com", "google.fr", "facebook.com",
                              "instagram.com", "twitter.com", "x.com",
                              "youtube.com", "linktr.ee", "weezevent.com",
@@ -48,7 +47,7 @@ BLOCKED_FAMILIES = frozenset(("google.com", "google.fr", "facebook.com",
 MAX_PRIMARY_PAGES = 3   # homepage and two primary same-host info links
 MAX_VENUE_ROOTS = 4     # bounded candidate third-party domains
 MAX_VENUE_INDEXES = 3   # root + two visible agenda links
-MAX_EVENT_PAGES = 3     # at most 3 venue event details
+MAX_EVENT_PAGES = 3     # at most 3 venue details; NO edition dates needed
 STYLE_WITHOUT_BRAND = re.compile(
     r"\b(?:metal|rock|punk|metalcore|deathcore|grindcore|"
     r"stoner|doom|sludge|thrash)\b")
@@ -167,50 +166,40 @@ def candidate_venue_roots(site, homepage_html, fetch=fetch_public_html):
     return sorted(candidates)[:MAX_VENUE_ROOTS]
 
 
-def venue_detail_matches(html, title, day_start, day_end, site):
-    """A separate venue detail: named festival + matching date + direct link.
+def venue_detail_matches(html, title, site):
+    """Independent venue identity/backlink ONLY, NEVER date corroboration.
 
-    One exact announced day within the first-party weekend is a legitimate
-    independent corroboration; the primary site proves the complete range.
+    A venue may describe the festival's PAST edition; it still establishes
+    which domain belongs to it. Dates/location are exclusively retrieved
+    from the CURRENT-EDITION official festival website, not from this page.
     """
     if not isinstance(html, str) or not 0 < len(html) <= 650000:
         return False
     try:
-        visible = normalized(visible_content(html))
-        base = normalized(re.sub(r"\s+20[2-4][0-9]$", "", title))
+        base = normalized(re.sub(r"\\s+20[2-4][0-9]$", "", title))
         headings = Heading()
         headings.feed(html)
         headings.close()
-        # A footer mention of the festival beside an unrelated event is
-        # insufficient: the VENUE event H1 must identify this festival.
+        if len(base) < 7:
+            return False
+        # An exact festival or programme heading, with or without year,
+        # may establish identity. A footer or another concert cannot.
         named_heading = re.compile(
             r"^" + re.escape(base) +
-            r"(?:\s+20[2-4][0-9])?(?:\s+(?:jour|day)\s+[1-7])?$")
-        if (len(base) < 7 or
-                sum(bool(named_heading.fullmatch(h))
-                    for h in headings.headings) != 1 or
-                re.search(r"\b(?:festival|edition)\s+20[2-4][0-9]\s+"
-                          r"(?:annulee?|reporte[e]?|cancelled)\b",
-                          visible)):
+            r"(?:\\s+20[2-4][0-9])?(?:\\s+(?:jour|day)\\s+[1-7])?$")
+        if sum(bool(named_heading.fullmatch(h)) for h in headings.headings) != 1:
             return False
-        year = day_start.year
-        dates = {(a, b) for _x, _y, a, b in explicit_ranges(
-            visible_content(html), year)}
-        if not any(day_start <= a <= b <= day_end for a, b in dates):
-            return False
-        links = anchor_rows(html)
-        back = []
-        for href, label, _prefix in links:
+        for href, label, _prefix in anchor_rows(html):
             if safe_public_url(href) != href:
                 continue
-            parsed = urlsplit(href)
-            if parsed.hostname != urlsplit(site).hostname:
+            if urlsplit(href).hostname != urlsplit(site).hostname:
                 continue
-            label = normalized(str(label))
-            if any(x in label for x in ("infos", "programmation",
-                                        "site officiel", "site du festival")):
-                back.append(href)
-        return bool(back)
+            role = normalized(str(label))
+            if any(x in role for x in (
+                    "infos", "programmation", "site officiel",
+                    "site du festival")):
+                return True
+        return False
     except (TypeError, ValueError, UnicodeError, KeyError):
         return False
 
@@ -277,7 +266,7 @@ def first_party_hero_hint(html, title, today):
 
 def verified_venue_reciprocity(site, title, dates, today,
                                 fetch=fetch_public_html):
-    """Return a unique independent venue host or fail closed."""
+    """Verify current festival dates ONLY at its site; venue attests domain."""
     if (safe_root(site) is None or not isinstance(title, str)
             or not re.fullmatch(r".{7,150} 20[2-4][0-9]", title)):
         return None
@@ -291,8 +280,8 @@ def verified_venue_reciprocity(site, title, dates, today,
         primary_dates = verify_official_site_pages(
             site, homepage, title, year, today, fetch=fetch)
         if primary_dates is None:
-            # Brand/date separation is not a standalone publication proof.
-            # The venue detail below MUST independently corroborate it.
+            # Separate hero blocks are acceptable only if the venue later
+            # confirms the festival's DOMAIN -- not the same edition dates.
             primary_dates = first_party_hero_hint(homepage, title, today)
         if primary_dates != tuple(dates):
             return None
@@ -313,7 +302,8 @@ def verified_venue_reciprocity(site, title, dates, today,
         for venue in venues:
             try:
                 index = fetch(venue)
-                # A real venue's public index must lead to event content.
+                # A genuine venue's event may concern an OLDER edition;
+                # it establishes ownership of the linked festival domain.
                 agenda = [venue]
                 for href, label, prefix in anchor_rows(index):
                     if "agenda" in normalized(label):
@@ -329,8 +319,7 @@ def verified_venue_reciprocity(site, title, dates, today,
                             continue
                         found.add(target)
                         detail = fetch(target)
-                        if venue_detail_matches(
-                                detail, title, first, last, site):
+                        if venue_detail_matches(detail, title, site):
                             proven.append(venue)
                             break
                     if venue in proven:
@@ -404,7 +393,7 @@ def validate_verified_row(proposal, verified, today):
 
 
 def independently_verify(proposal, today, fetch=fetch_public_html):
-    """Cloud Publisher rebuilds both sites and their mutual event linkage."""
+    """Publisher re-fetches primary dates; venue checks DOMAIN only."""
     if validate_private_proposal(proposal, today) is None:
         return None
     try:
