@@ -42,6 +42,9 @@ class DynamicMunicipalResearchTests(unittest.TestCase):
         u = mairie_records_url(INSEE)
         self.assertEqual(urlparse(u).hostname, HOST)
         self.assertIn("08188", u)
+        from urllib.parse import parse_qs
+        self.assertEqual(parse_qs(urlparse(u).query)["where"][0],
+                         'code_insee_commune LIKE "08188" AND search(nom, "Mairie")')
         self.assertTrue(_expected_request_path(u).startswith(
             "/api/explore/v2.1/catalog/datasets/"))
         for bad in (
