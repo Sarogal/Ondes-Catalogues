@@ -201,6 +201,30 @@ class OpenWorldRotationTests(unittest.TestCase):
         self.assertNotIn("source_url", json.dumps(public))
         self.assertEqual(public["public_writes"], 0)
 
+    def test_no_dila_keeps_private_oa_leads_without_approving_source(self):
+        item = lead()
+        oa = source_event(item)
+        oa["canonicalUrl"] = "https://nouvel-organisateur.fr/spectacle"
+        oa["registration"] = [{"type": "link",
+                              "value": "https://nouveau-billet.fr/place"}]
+        result = cycle(item, event=oa,
+                       directory={"total_count": 0, "results": []})
+        self.assertEqual(result["status"],
+                         "live_source_bootstrap_not_confirmed")
+        self.assertEqual(result["bootstrap_reason_code"],
+                         "dila_municipal_domain_not_verified")
+        self.assertEqual(result["oa_source_web_leads_found"], 2)
+        self.assertEqual(len(result["private_unverified_oa_web_leads"]), 2)
+        self.assertTrue(all(x["candidate_only"] for x in
+                            result["private_unverified_oa_web_leads"]))
+        self.assertEqual(result["source_candidates_examined"], 0)
+        self.assertFalse(result["organizer_identity_verified"])
+        self.assertFalse(result["publication_ready"])
+        public = public_redacted_rotation_summary(result)
+        self.assertNotIn("nouvel-organisateur", json.dumps(public))
+        self.assertNotIn("bootstrap_reason_code", public)
+        self.assertEqual(public["public_writes"], 0)
+
     def test_original_event_vocabulary_never_filters_source_discovery(self):
         item = lead(title="Création sonore hors catégories")
         unknown_format = source_event(
