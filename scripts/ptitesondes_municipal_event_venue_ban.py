@@ -149,7 +149,8 @@ def mint_municipal_event_location_proof(
             or not callable(ign_fetch)
             or approved_municipal_page_host(
                 municipal_url, group.get("city"), directory) is None
-            or _coordinates(source_center) is None):
+            or (source_center is not None
+                and _coordinates(source_center) is None)):
         return None
     # A city homepage is not an independent, dedicated venue/event record.
     try:
@@ -195,7 +196,8 @@ def mint_municipal_event_location_proof(
             and isinstance(raw, list) and len(raw) == 2) else None
         if point is None or _coordinates(point) is None:
             continue
-        if meters(point, source_center) > MAX_DISTANCE_M:
+        if (source_center is not None
+                and meters(point, source_center) > MAX_DISTANCE_M):
             continue
         matches.append(point)
     if len(matches) != 1:
