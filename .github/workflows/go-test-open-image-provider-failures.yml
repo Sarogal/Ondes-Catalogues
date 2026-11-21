@@ -54,7 +54,9 @@ jobs:
           assert s["with_public_manifest_association"]==257
           assert s["without_public_manifest_association"]==53
           assert s["failed_historical_associations"]==87
-          assert s["failed_distinct_urls"]==79
+          # 79 URLs failed globally; 78 belong to historical UUIDs.
+          # One failure belongs exclusively to an unmatched public UUID.
+          assert s["failed_distinct_urls"]==78
           assert d["publication_allowed"] is False
           assert d["signed_catalog_created"] is False
           assert all(not g["remove_any_radio"] for g in d["failed_source_groups"])
