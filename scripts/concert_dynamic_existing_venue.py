@@ -17,7 +17,7 @@ import re
 import sys
 import unicodedata
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlencode
 from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -116,7 +116,23 @@ def osm_identity(venue, event_url, fetch, cache):
             break
         except (ValueError, OSError, TimeoutError):
             continue
-    require(body is not None, "both official OSM API endpoints unavailable")
+    if body is None:
+        # OpenStreetMap's Editing API is not a dependable READ-ONLY data
+        # source for national concert research. Use a dedicated Overpass
+        # read-only provider with a FIXED bounded, single-node query.
+        # No candidate-controlled URL, user-supplied query or redirect.
+        # This still uses the robots-aware, DNS-pinned HTTPS fetcher.
+        overpass_url = (
+            "https://overpass.private.coffee/api/interpreter?" +
+            urlencode({"data": "[out:xml][timeout:12];node(" +
+                       matched.group(1) + ");out body;"}))
+        try:
+            body = fetch(overpass_url, cache)
+        except (ValueError, OSError, TimeoutError) as exc:
+            raise ValueError(
+                "Unlisted official source: OSM and read-only Overpass unavailable"
+            ) from exc
+    require(body is not None, "OSM feature not independently fetched")
     require(isinstance(body, str) and len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
             and "<!ENTITY" not in body.upper(), "OSM answer invalid")
