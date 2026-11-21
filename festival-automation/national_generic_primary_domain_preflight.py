@@ -194,7 +194,8 @@ def _bounded_same_host_home(source_url):
 MAX_LINKED_EDITION_READS = 3
 
 
-def _safe_same_host_edition_links(html, home, year, *, allow_index=True):
+def _safe_same_host_edition_links(
+        html, home, year, *, allow_index=True, today=None):
     """Only visible links from a fetched first-party page; no closed URL list.
 
     Names/year select RESEARCH surfaces, never authorize publisher traffic.
@@ -246,7 +247,14 @@ def _safe_same_host_edition_links(html, home, year, *, allow_index=True):
     ranked = sorted(selected, key=lambda url: (selected[url], len(url), url))
     years = [url for url in ranked if selected[url] == 0]
     indexes = [url for url in ranked if selected[url] == 1]
-    # No more than two explicit-year pages and one general news index.
+    # A fixed first-two-page rule would create another CLOSED inventory:
+    # rotate every week so any number of year-specific links can be checked
+    # over successive runs while the selection stays stable long enough
+    # for the mandatory next-day recheck.
+    if len(years) > 2 and today is not None:
+        week = date.fromisoformat(today).toordinal() // 7
+        offset = (week * 2) % len(years)
+        years = years[offset:] + years[:offset]
     return years[:2] + (indexes[:1] if allow_index else [])
 
 
@@ -290,7 +298,7 @@ def _recheck_current_dates(source, primary_html, fetch, today):
     # possible second-level news article. All candidate URLs are rederived
     # from fetched first-party anchors and independently DNS-pinned.
     selected = _safe_same_host_edition_links(
-        homepage_html, home, year, allow_index=True)
+        homepage_html, home, year, allow_index=True, today=today)
     remaining = MAX_LINKED_EDITION_READS
     accepted = []
     visited = {origin, home}
@@ -325,7 +333,7 @@ def _recheck_current_dates(source, primary_html, fetch, today):
                                            r"(?![0-9])", link):
                 pending.extend(
                     u for u in _safe_same_host_edition_links(
-                        page, home, year, allow_index=False)
+                        page, home, year, allow_index=False, today=today)
                     if u not in visited and u not in pending)
     unique = {tuple(d) for d, _url in accepted}
     if len(unique) != 1:
