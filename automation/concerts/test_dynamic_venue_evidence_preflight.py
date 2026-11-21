@@ -337,6 +337,62 @@ class NationwideVenueAdmissionPreviewTests(unittest.TestCase):
                     xs, TODAY + dt.timedelta(days=later), slot, 8))
         self.assertEqual(len(union), 49)
 
+    def test_new_unknown_sites_and_origins_receive_fast_but_fair_rotation(self):
+        """No fixed source list or starvation of the older private queue."""
+        urgent = [candidate(
+            candidateId=f"unlisted-site-{i:03d}",
+            newVenueToReview=True if i % 2 else False,
+            newlyDiscoveredFirstPartySource=True if i % 2 == 0 else False,
+            venue=f"Open Site {i}") for i in range(40)]
+        older = [candidate(
+            candidateId=f"older-venue-{i:03d}",
+            newVenueToReview=False,
+            newlyDiscoveredFirstPartySource=False,
+            venue=f"Old Site {i}") for i in range(40)]
+        rows = urgent + older
+        day = TODAY
+        first = []
+        for slot in (0, 1, 2):
+            sample = module._select(rows, day, slot, 8)
+            self.assertEqual(len(sample), 8)
+            self.assertEqual(
+                sum(module._is_new_origin_or_location(c) for c in sample), 4)
+            first.extend(c["candidateId"] for c in sample)
+        self.assertEqual(len(set(first)), 24)
+        observed = set(first)
+        for days in (1, 2, 3):
+            for slot in (0, 1, 2):
+                observed.update(
+                    c["candidateId"] for c in module._select(
+                        rows, day + dt.timedelta(days=days), slot, 8))
+        self.assertEqual(observed, {c["candidateId"] for c in rows})
+
+    def test_small_priority_queue_cannot_waste_budget_or_block_older_leads(self):
+        first = candidate(candidateId="one-new-site", newVenueToReview=True)
+        older = [candidate(candidateId=f"ordinary-{i:03d}") for i in range(50)]
+        for slot in (0, 1, 2):
+            selected = module._select([first] + older, TODAY, slot, 8)
+            self.assertEqual(len(selected), 8)
+            self.assertEqual(len({c["candidateId"] for c in selected}), 8)
+            self.assertTrue(any(c["candidateId"].startswith("ordinary-")
+                                for c in selected))
+
+    def test_budget_one_alternates_source_and_ordinary_class(self):
+        rows = [candidate(candidateId=f"n-{i}", newVenueToReview=True)
+                for i in range(9)] + [
+                    candidate(candidateId=f"o-{i}")
+                    for i in range(9)]
+        classes = []
+        for days in range(4):
+            for slot in range(3):
+                sample = module._select(
+                    rows, TODAY + dt.timedelta(days=days), slot, 1)
+                self.assertLessEqual(len(sample), 1)
+                if sample:
+                    classes.append(module._is_new_origin_or_location(sample[0]))
+        self.assertIn(True, classes)
+        self.assertIn(False, classes)
+
     def test_unsupported_budget_and_slot_fail_closed(self):
         for val in (-1, 0, 13, True, "8"):
             with self.subTest(budget=val), self.assertRaises(ValueError):
