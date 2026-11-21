@@ -100,9 +100,11 @@ def _direct_location_agrees(lead, record, *, allow_missing_lead_place=False):
         return False
     if str(record.get("uid")) != lead["external_id"]:
         return False
-    if (record.get("state") != 2 or record.get("status") != 1
+    # Status 2 is a REPROGRAMMED public event, not a cancellation.
+    # We only discover its source; any dates/venue require fresh proof.
+    if (record.get("state") != 2 or record.get("status") not in (1, 2)
             or record.get("removed") is True
-            or record.get("attendanceMode") == 2):
+            or record.get("attendanceMode") not in (1, 3)):
         return False
     place = record.get("location")
     if not isinstance(place, dict):
