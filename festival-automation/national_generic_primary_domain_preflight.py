@@ -36,6 +36,12 @@ from grossesondes_generic_directory_edition import (
     visible_adjacent_edition_dates, unique_current_edition_visible_dates,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
+from grossesondes_venue_reciprocal_edition import (
+    verified_venue_reciprocity,
+    private_proposal as venue_private_proposal,
+    validate_private_proposal as validate_venue_private_proposal,
+    safe_root as safe_venue_root,
+)
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -633,6 +639,108 @@ def append_directory_proposals(folder, catalog, history, state, queue,
     return added
 
 
+
+def stable_reciprocal_venue_proposals(state, queue, catalog, report, today,
+                                       fetch=fetch_public_html, limit=2):
+    """Rescue primary editions whose first-party domain lacks a directory.
+
+    The J+1 national primary observation is only eligibility, not authority.
+    We independently fetch the official site AND an unregistered venue
+    website (discovered only from official practical info), verify a dated
+    venue event with an actual backlink to the festival, and emit PRIVATE
+    additions. The Publisher repeats every remote proof on its own runner.
+    """
+    if (not isinstance(report, dict) or report.get("schema") != SCHEMA
+            or report.get("as_of") != today
+            or report.get("review_only") is not True
+            or report.get("safe_to_publish") is not False
+            or report.get("publication_authorized") is not False
+            or report.get("publications") != 0
+            or not isinstance(report.get("rows"), list)
+            or len(report["rows"]) > MAX_CHECKS
+            or type(limit) is not int or not 0 <= limit <= 2):
+        raise ValueError("Unsafe generic venue proposal research")
+    records = state.get(STATE_KEY, {})
+    if not isinstance(records, dict):
+        raise ValueError("Untrusted date observation state")
+    options = _eligible(queue, catalog, today)
+    proposals, seen, consumed = [], set(), 0
+    for row in report["rows"]:
+        if consumed >= limit:
+            break
+        if (not isinstance(row, dict)
+                or row.get("status") !=
+                    "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
+                or row.get("two_day_dates") is not True
+                or row.get("publication_authorized") is not False
+                or row.get("ownership_proven") is not False):
+            continue
+        dates = row.get("start_date_hint"), row.get("end_date_hint")
+        for source in options:
+            if source["dossier_id"] != row.get("dossier_id"):
+                continue
+            old = records.get(source["url"])
+            if (not isinstance(old, dict)
+                    or old.get("stable") is not True
+                    or old.get("lastSeen") != today
+                    or old.get("digest") != _digest(
+                        source, *dates, row.get("date_source_mode"))):
+                continue
+            try:
+                if not date.fromisoformat(old["firstSeen"]) < date.fromisoformat(today):
+                    continue
+            except (ValueError, TypeError, KeyError):
+                continue
+            host = urlsplit(source["url"]).hostname
+            site = "https://" + host + "/" if host else None
+            if site is None or safe_venue_root(site) is None or site in seen:
+                continue
+            consumed += 1
+            try:
+                venue = verified_venue_reciprocity(
+                    site, source["title"], dates, today, fetch=fetch)
+                if venue is None:
+                    continue
+                proposal = venue_private_proposal(
+                    source["title"], site, dates, today, venue_root=venue)
+                if (proposal is None or
+                        validate_venue_private_proposal(proposal, today) is None):
+                    continue
+                proposals.append(proposal)
+                seen.add(site)
+            except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                continue
+            break
+    return proposals
+
+
+def append_venue_proposals(folder, catalog, history, state, queue,
+                            report, today, fetch=fetch_public_html):
+    if (not isinstance(history, dict) or history.get("schema") != 2
+            or not isinstance(history.get("knownFestivals"), list)):
+        raise ValueError("Unsafe historical reference")
+    additions = stable_reciprocal_venue_proposals(
+        state, queue, catalog, report, today, fetch=fetch)
+    if not additions:
+        return 0
+    patch = latest_patch(folder, date.fromisoformat(today))
+    used = {row.get("slug") for row in patch["additions"]
+            if isinstance(row, dict)}
+    n = 0
+    for row in additions:
+        if (len(patch["additions"]) >= 100 or row["slug"] in used
+                or conflicts_with_signed_catalogue(
+                    row, catalog["festivals"], history["knownFestivals"])):
+            continue
+        patch["additions"].append(row)
+        used.add(row["slug"])
+        n += 1
+    if n:
+        patch["generated_at"] = today
+        atomic_json(folder / ("patch-" + today + ".json"), patch)
+    return n
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--intake", type=Path, required=True)
@@ -647,11 +755,13 @@ def main():
     queue = read(folder / "national-festival-discovery-review.json")
     catalog = read(args.catalog)
     report = examine(state, queue, catalog, today)
+    history = (read(folder / "festival-history.json")
+               if (folder / "festival-history.json").exists()
+               else read(args.catalog.parent / "festival-history.json"))
     added = append_directory_proposals(
-        folder, catalog, read(folder / "festival-history.json")
-        if (folder / "festival-history.json").exists()
-        else read(args.catalog.parent / "festival-history.json"),
-        state, queue, report, today)
+        folder, catalog, history, state, queue, report, today)
+    venue_added = append_venue_proposals(
+        folder, catalog, history, state, queue, report, today)
     state_path.write_text(
         json.dumps(state, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (folder / "national-generic-primary-date-review.json").write_text(
@@ -660,7 +770,9 @@ def main():
     print("Generic national first-party date research: eligible="
           + str(report["eligible_source_count"]) + ", checked="
           + str(report["checked_count"]) + ", two-day="
-          + str(report["two_day_dates_count"]) + ", directory_private_additions=" + str(added) + ", publications=0")
+          + str(report["two_day_dates_count"]) + ", directory_private_additions=" + str(added)
+          + ", venue_reciprocal_private_additions=" + str(venue_added)
+          + ", publications=0")
 
 
 if __name__ == "__main__":
