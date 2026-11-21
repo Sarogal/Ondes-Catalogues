@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from ptitesondes_national_shadow_observation import (
     CONTROLLER_SCHEMA, REPORT_RE, BATCH_RE, available_index_reports,
     controller_read, run_observation, recover_pending_index,
+    summarize_private_segment_hints,
 )
 from ptitesondes_private_national_rotation_runner import _write_atomic_private
 from ptitesondes_openagenda_public_agenda_index import SCHEMA as INDEX_SCHEMA
@@ -205,6 +206,50 @@ class NationalShadowObservationTests(unittest.TestCase):
             recover_pending_index(self.root / "index",
                                   self.root / "index" / "reports")
         self.assertFalse((self.root / "index" / "cursor.json").exists())
+
+    def test_metrics_count_distinct_exact_sessions_and_unknown_categories(self):
+        campaign = self.root / "test-campaign"
+        campaign.mkdir(mode=0o700)
+        uid, digest = 19191, "b" * 64
+        lead = {
+            "agenda_uid": uid, "event_uid": 45678,
+            "publication_ready": False, "public_writes": 0,
+            "city_unverified": "Village sans rues numérotées",
+            "venue_unverified": "Place publique",
+            "country_code_unverified": "FR",
+            "explicit_source_session_intervals": [
+                {"begin": "2026-11-23T09:00:00+01:00",
+                 "end": "2026-11-23T10:00:00+01:00"},
+                {"begin": "2026-11-23T14:00:00+01:00",
+                 "end": "2026-11-23T15:00:00+01:00"},
+            ],
+        }
+        unknown = dict(lead, event_uid=45679,
+                       editorial_category_proposal=None)
+        unknown["explicit_source_session_intervals"] = []
+        good = {
+            "schema": "ptitesondes.private_oa_agenda_event_exploration.v1",
+            "campaign_meta": {"source_sha256": digest, "scan_day": str(DAY)},
+            "event_leads": [lead], "unclassified_editorial_research_only": [unknown],
+            "publication_ready": False, "public_writes": 0,
+        }
+        goodpath = campaign / "agenda-0000-segment-0000.json"
+        goodpath.write_text(json.dumps(good), encoding="utf-8")
+        goodpath.chmod(0o600)
+        # A malformed second report cannot partially inflate the census.
+        malformed = dict(good, event_leads=[
+            lead, dict(lead, publication_ready=True)])
+        badpath = campaign / "agenda-0000-segment-0001.json"
+        badpath.write_text(json.dumps(malformed), encoding="utf-8")
+        badpath.chmod(0o600)
+        events, sessions, venues, codes = set(), set(), set(), set()
+        invalid = summarize_private_segment_hints(
+            campaign, digest, DAY, events, sessions, venues, codes)
+        self.assertEqual(invalid, 1)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(len(sessions), 2)
+        self.assertEqual(len(venues), 1)
+        self.assertEqual(codes, {"FR"})
 
     def test_rejects_invalid_or_unsafe_parameters(self):
         self.assertIsNone(REPORT_RE.fullmatch("index-2026-11-21-segment.json.bak"))
