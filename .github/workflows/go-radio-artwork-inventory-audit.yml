@@ -1,0 +1,55 @@
+name: "Grosses Ondes — historical radio-logo inventory audit (TEST)"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-radio-artwork-inventory-audit.yml"
+      - "grossesondes/radio-test-apk/artwork/**"
+      - "radio-catalog-lab/tools/audit_open_radio_artwork_inventory.py"
+      - "radio-catalog-lab/tools/test_audit_open_radio_artwork_inventory.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  artwork-audit:
+    name: "Read-only evidence, shard ${{ matrix.shard }} / 8"
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow decoder only
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+      - name: Check identity preservation, safety limits and open discovery offline
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_audit_open_radio_artwork_inventory.py" -v
+      - name: Audit historical image sources and discover official-page candidates
+        run: |
+          python radio-catalog-lab/tools/audit_open_radio_artwork_inventory.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --shard-index ${{ matrix.shard }} --shard-count 8 \
+            --output artwork-inventory-evidence-${{ matrix.shard }}.json \
+            --network
+      - name: Archive read-only evidence; no images or credentials
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-legacy-artwork-shard-${{ matrix.shard }}
+          path: artwork-inventory-evidence-${{ matrix.shard }}.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Assert no source writes, no signing and no publication
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "GO_ARTWORK_INVENTORY_AUDIT_ONLY — never write active catalog/remote images"
