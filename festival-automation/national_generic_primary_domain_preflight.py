@@ -43,7 +43,7 @@ from grossesondes_venue_reciprocal_edition import (
     safe_root as safe_venue_root, first_party_hero_hint,
 )
 from grossesondes_first_party_direct_edition import (
-    verify_first_party_edition,
+    verify_first_party_claims,
     private_proposal as direct_private_proposal,
     validate_private_proposal as validate_direct_private_proposal,
 )
@@ -713,12 +713,16 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
                 continue
             checked += 1
             try:
-                proven_dates = verify_first_party_edition(
+                primary_claim = verify_first_party_claims(
                     site, source["title"], today, fetch=fetch)
-                if proven_dates != tuple(dates):
+                if primary_claim is None or primary_claim[0] != tuple(dates):
                     continue
+                # A city on the official current-edition date block is
+                # sufficient editorial evidence; map coordinates are not
+                # invented. No second date or place source is required.
                 proposal = direct_private_proposal(
-                    source["title"], site, dates, today)
+                    source["title"], site, dates, today,
+                    city=primary_claim[1])
                 if (proposal is None
                         or validate_direct_private_proposal(
                             proposal, today) is None):
