@@ -69,10 +69,16 @@ def segment(idx=0, seq=0, size=15):
 def operator(document, digest, record, day, key, *, offset):
     count = len(record["event_leads"])
     end = min(count, offset + 12)
+    remaining = record["event_leads"][offset:end]
     return {
         "schema": "ptitesondes.private_national_oa_intake_handoff.v1",
         "mode": "private_intake_research_only", "backlog_leads": [],
-        "research_holds": [], "counts": {},
+        "research_holds": [{
+            "event_uid": lead["event_uid"],
+            "reason": "direct_event_read_unavailable",
+        } for lead in remaining],
+        "counts": ({"direct_event_read_unavailable": len(remaining)}
+                   if remaining else {}),
         "events_examined": end - offset,
         "next_offset": end, "finished_segment": end == count,
         "publisher_connected": False, "publication_ready": False,
@@ -171,6 +177,41 @@ class RotationTests(unittest.TestCase):
                              public_key=KEY, operator=network)
             network.assert_not_called()
             self.assertFalse((output / STATE_NAME).exists())
+
+    def test_forged_recovered_lead_cannot_swap_uid_or_session_date(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source, output = private_dirs(tmp)
+            filename = write_segment(source, segment(size=1))
+            document = segment(size=1)
+            digest = sha256(filename.read_bytes()).hexdigest()
+            for altered in ("uid", "date", "rights"):
+                report = operator(index(), DIGEST, document, DAY, KEY, offset=0)
+                if altered == "uid":
+                    report["research_holds"][0]["event_uid"] = 999999
+                elif altered == "date":
+                    report["backlog_leads"] = [{
+                        "title": document["event_leads"][0]["title"],
+                        "source_url": "https://openagenda.com/agenda-demo/events/10000_example",
+                        "date_start": "2026-12-14", "date_end": "2026-12-14",
+                        "city": "Montpellier", "venue": "Place de la Comédie",
+                        "reason": "Découverte OpenAgenda nationale à vérifier : organisateur, catégorie, séances, accès public, lieu, géolocalisation, droits et doublons",
+                        "collector": "openagenda-v2", "external_id": "10000",
+                    }]
+                else:
+                    report["publication_ready"] = True
+                report["rotation_meta"] = {
+                    "source_sha256": DIGEST, "scan_day": DAY.isoformat(),
+                    "segment_filename": filename.name,
+                    "segment_sha256": digest, "start_offset": 0,
+                }
+                location = output / "handoff-0000-000.json"
+                location.write_text(json.dumps(report), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    run_rotation(index(), DIGEST, DAY, source, output,
+                                 public_key=KEY, operator=Mock(
+                                     side_effect=AssertionError("No fetch")))
+                self.assertFalse((output / STATE_NAME).exists())
+                location.unlink()
 
     def test_gapped_segment_sequence_is_not_silently_skipped(self):
         with tempfile.TemporaryDirectory() as tmp:
