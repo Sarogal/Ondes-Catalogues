@@ -212,18 +212,11 @@ def _visible_artist_genres_from_this_event(html, title):
             continue
         band = _name(match.group(1))
         genre = match.group(2).split("|", 1)[0].strip()
-        if not contract.relevant_genres([genre]):
-            # An explicit non-metal style on a listed artist is permitted,
-            # but not used to certify their relevance.
-            if band in normalized and band in found:
-                return None
-            if band in normalized:
-                found[band] = (match.group(1).strip(), genre)
-            continue
         if band not in normalized or band in found:
-            # Extra genre-labelled acts or a repeated same-artist heading
-            # mean the title is not a complete unambiguous roster.
+            # Any extra labelled performer, including a non-metal opening
+            # act, means the title is not a complete unambiguous roster.
             return None
+        # Mixed-genre bills are valid: do not assign one band's style to all.
         found[band] = (match.group(1).strip(), genre)
     if set(found) != set(normalized):
         return None
