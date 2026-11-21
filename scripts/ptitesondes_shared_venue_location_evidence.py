@@ -29,7 +29,8 @@ class VenueLocationProof:
         if (seal is not _SEAL or method not in (
                 "dila_official_page_plus_exact_ban",
                 "dila_official_geo_plus_named_osm",
-                "dila_official_street_plus_named_osm")):
+                "dila_official_street_plus_named_osm",
+                "dila_municipal_event_address_plus_ban")):
             raise ValueError("venue_proof_must_be_minted_by_verifier")
         self.city, self.venue = city, venue
         self.lat, self.lng = lat, lng
@@ -153,6 +154,8 @@ def location_from_proof(proof, city, venue, checked_on, source_point=None):
                 if proof.method == "dila_official_geo_plus_named_osm"
                 else "Municipal named street + exact OSM venue"
                 if proof.method == "dila_official_street_plus_named_osm"
+                else "Municipal event venue address + independent BAN"
+                if proof.method == "dila_municipal_event_address_plus_ban"
                 else "IGN/BAN verified exact housenumber")}
 
 
