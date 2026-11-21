@@ -83,6 +83,21 @@ class UndatedFutureEditionTests(unittest.TestCase):
         self.assertIsNone(validate_verified_row(
             self.proposal, ARCHIVED, html, TODAY.isoformat()))
 
+    def test_mordorfest_style_fundraising_is_not_a_confirmed_return(self):
+        parent = deepcopy(ARCHIVED)
+        parent.update(slug="mordorfest", name="MordorFest",
+                      officialSite="https://mordorfest.fr/")
+        cautious = (
+            "<article><h2>Pour préparer le MordorFest 2027</h2>"
+            "<p>On a besoin de votre soutien et d'une cagnotte pour "
+            "l'édition 2027 du festival après le déficit.</p></article>"
+        )
+        proposal = private_proposal(parent, 2027, TODAY)
+        self.assertFalse(visible_future_edition_without_dates(
+            cautious, parent, 2027))
+        self.assertIsNone(validate_verified_row(
+            proposal, parent, cautious, TODAY.isoformat()))
+
     def test_no_guess_from_old_year_or_footer_and_unrelated_tour(self):
         for html in (
             "<p>Xtreme Fest 2026</p><p>© 2027</p>",
