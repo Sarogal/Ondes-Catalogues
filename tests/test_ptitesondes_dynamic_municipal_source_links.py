@@ -60,7 +60,7 @@ class DynamicMunicipalSourceLinksTests(unittest.TestCase):
         self.assertFalse(report["publication_ready"])
         self.assertFalse(report["publisher_connected"])
         self.assertEqual(report["public_writes"], 0)
-        self.assertEqual(report["external_network_requests"], 0)
+        self.assertEqual(report["discovered_destination_fetches"], 0)
 
     def test_any_host_and_any_wording_including_unnamed_venue(self):
         urls = [
@@ -162,7 +162,7 @@ class DynamicMunicipalSourceLinksTests(unittest.TestCase):
         safe = "https://brand-new-organizer.fr/event"
         result = scan_municipal_page(CITY, directory(), page(*urls, safe))
         self.assertEqual([x["url"] for x in result["source_candidates"]], [safe])
-        self.assertEqual(result["external_network_requests"], 0)
+        self.assertEqual(result["discovered_destination_fetches"], 0)
 
     def test_identical_urls_deduplicated_but_different_paths_kept(self):
         first = "https://unknown-venue.fr/show1"
