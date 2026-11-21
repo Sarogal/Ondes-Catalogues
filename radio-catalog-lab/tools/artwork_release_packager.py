@@ -82,6 +82,27 @@ def public_https(u:str)->bool:
     except (ValueError,TypeError):return False
 
 
+def official_laut_fm_artwork_url(url:str,width:int,height:int)->bool:
+    """Validate exact official image path and one optional size modifier.
+
+    Only ?t=_WIDTHxHEIGHT is admitted, with dimensions matching the signed
+    decoded pixels. SHA-256 and exact byte length remain mandatory after fetch.
+    No generic URL-query allowlist for other domains/stations is imposed.
+    """
+    if not public_https(url) or type(width) is not int or type(height) is not int:
+        return False
+    p=urlsplit(url)
+    if (p.hostname!="assets.laut.fm" or p.port not in (None,443)
+            or not re.fullmatch(r"/[a-f0-9]{24,80}",p.path)):
+        return False
+    if not p.query:
+        return True
+    size=re.fullmatch(r"t=_(\d{3,4})x(\d{3,4})",p.query)
+    return bool(size and int(size.group(1))==width
+                and int(size.group(2))==height
+                and 192<=width<=4096 and 192<=height<=4096)
+
+
 def validate_body(raw:bytes,previous:dict|None=None)->dict:
     d=strict_json(raw,MAX_BODY)
     if set(d)!={
@@ -156,8 +177,8 @@ def validate_body(raw:bytes,previous:dict|None=None)->dict:
         # fixtures; the general path is not a bypass of their trusted mapping.
         if provider=="laut.fm" and (
                 page!="https://laut.fm/"+slug or
-                not re.fullmatch(r"https://assets\.laut\.fm/[a-f0-9]{24,80}",
-                                 logo["url"])):
+                not official_laut_fm_artwork_url(
+                    logo["url"],logo["width"],logo["height"])):
             raise ArtworkBundleError("Unverified laut.fm station-image relation")
     if [r["legacy_media_id"] for r in arr]!=sorted(seen):
         raise ArtworkBundleError("Assignments must be sorted by historical UUID")
