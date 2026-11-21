@@ -83,10 +83,25 @@ def visible_future_edition_without_dates(html, parent, year):
     names = list(event_name.finditer(visible))
     if not positives or not names:
         return False
-    return any(
-        abs(phrase.start() - found.start()) <= 1400
-        for phrase in positives for found in names[:80]
-    )
+    # A festival homepage may place its event name just before a large
+    # "Rendez-vous en 2027" banner; a concert tour mentioned elsewhere on
+    # that page must NOT lend its year to the festival. Bind positive language
+    # to an adjacent festival identity without another event boundary or
+    # a 2026-era caption in between.
+    for phrase in positives:
+        for name in names[:80]:
+            first = min(phrase.start(), name.start())
+            last = max(phrase.end(), name.end())
+            if last - first > 350:
+                continue
+            between = visible[first:last]
+            if re.search(
+                    r"\\b(?:tournee|tour|concert|spectacle|soiree|"
+                    r"artiste|20(?:2[0-6]|[0-1][0-9]))\\b",
+                    between):
+                continue
+            return True
+    return False
 
 
 def private_proposal(parent, year, today):
