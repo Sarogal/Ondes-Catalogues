@@ -30,6 +30,11 @@ from zoneinfo import ZoneInfo
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+# The legacy Concerts adapters import their peers as top-level modules.
+# Keep the standalone CLI and ordinary tests using the same module paths.
+SOURCE_DIR = ROOT / "automation" / "concerts"
+if str(SOURCE_DIR) not in sys.path:
+    sys.path.insert(0, str(SOURCE_DIR))
 from automation.concerts import discover
 from automation.concerts import event_site_pair_recheck as pairs
 from automation.concerts import independent_named_site_geo as named_geo
