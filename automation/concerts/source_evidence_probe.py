@@ -28,6 +28,7 @@ from zoneinfo import ZoneInfo
 
 import discover
 import source_admission_intake as intake
+import tour_itinerary_evidence
 
 SCHEMA = "grossesondes.concert.source-evidence-probe.v1"
 MAX_BYTES = 400_000
@@ -221,6 +222,7 @@ def build(intake_report, today, *, slot=0, limit=3, fetch=safe_fetch):
                   "firstPartyPageFetched": False,
                   "exactEventDetailFetched": False,
                   "matchingStructuredDate": False,
+                  "matchingVisibleTourDatePlace": False,
                   "independentCorroborationVerified": False,
                   "automaticTrustGranted": False,
                   "publicationAllowed": False}
@@ -239,8 +241,19 @@ def build(intake_report, today, *, slot=0, limit=3, fetch=safe_fetch):
             result["exactEventDetailFetched"] = True
             result["matchingStructuredDate"] = event_indicators(
                 detail, example["eventUrl"], example["date"])
+            # One organizer may publish a single 30-show calendar without
+            # per-stop JSON-LD: require a multi-stop cohort and an EXACT
+            # visible date + named city + named venue on the first-party
+            # page. Both are research hints ONLY, never automatic authority.
+            if (entry.get("sameHostEventLeads", 0) >= 2
+                    and entry.get("eventLeads", 0) >= 2):
+                result["matchingVisibleTourDatePlace"] = (
+                    tour_itinerary_evidence.matching_tour_stop(
+                        detail, example["date"], example.get("city"),
+                        example.get("venue")))
             result["status"] = ("needs_independent_official_corroboration"
-                                if result["matchingStructuredDate"]
+                                if (result["matchingStructuredDate"]
+                                    or result["matchingVisibleTourDatePlace"])
                                 else "needs_individual_event_evidence")
         except (ValueError, TypeError, StopIteration, OSError,
                 TimeoutError, ssl.SSLError) as exc:

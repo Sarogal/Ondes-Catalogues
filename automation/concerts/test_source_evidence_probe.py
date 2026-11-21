@@ -61,6 +61,47 @@ class SourceProbeTests(unittest.TestCase):
         self.assertFalse(data["independentCorroborationVerified"])
         self.assertFalse(data["publicationAllowed"])
 
+    def test_unknown_tour_organizer_calendar_gets_private_evidence(self):
+        row = queue("unlisted-tour.fr", date="2027-02-04", stable=3)
+        row["sameHostEventLeads"] = 7
+        row["eventLeads"] = 7
+        row["examples"][0].update({
+            "sourcePage": "https://unlisted-tour.fr/",
+            "eventUrl": "https://unlisted-tour.fr/",
+            "city": "Saint-Jean-de-Védas (Montpellier)",
+            "venue": "Victoire 2, 2 rue Théophraste-Renaudot",
+        })
+        document = (
+            "<html><p>European touring metal 2027, 39 shows.</p><p>"
+            "1/20 🇩🇪 Aschaffenburg – Colos-Saal<br/>"
+            "2/3 🇫🇷 Grenoble – L’Ilyade<br/>"
+            "2/4 🇫🇷 Montpellier – Victoire 2<br/>"
+            "2/11 🇫🇷 Toulouse – Le Rex</p></html>")
+        reads = []
+        result = probe.build(
+            report([row]), TODAY, slot=2,
+            fetch=lambda url, cache: reads.append(url) or document)
+        self.assertEqual(len(reads), 2)
+        self.assertEqual(result["checkedHosts"], 1)
+        check = result["sourceChecks"][0]
+        self.assertTrue(check["matchingVisibleTourDatePlace"])
+        self.assertFalse(check["matchingStructuredDate"])
+        self.assertEqual(check["status"],
+                         "needs_independent_official_corroboration")
+        self.assertFalse(check["independentCorroborationVerified"])
+        self.assertFalse(check["automaticTrustGranted"])
+        self.assertFalse(check["publicationAllowed"])
+        self.assertFalse(result["publicationAllowed"])
+        # One show is not a reviewed multi-stop tour. No special-case domain.
+        row["eventLeads"] = row["sameHostEventLeads"] = 1
+        result = probe.build(
+            report([row]), TODAY, slot=2,
+            fetch=lambda url, cache: document)
+        self.assertFalse(
+            result["sourceChecks"][0]["matchingVisibleTourDatePlace"])
+        self.assertEqual(result["sourceChecks"][0]["status"],
+                         "needs_individual_event_evidence")
+
     def test_page_claim_cannot_grant_trust_or_event_approval(self):
         before = report([queue()])
         untouched = copy.deepcopy(before)
