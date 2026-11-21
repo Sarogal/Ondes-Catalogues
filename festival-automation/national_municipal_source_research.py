@@ -46,7 +46,7 @@ def mairie_records_url(code):
     if not isinstance(code, str) or INSEE.fullmatch(code) is None:
         raise ValueError("Invalid official INSEE commune identifier")
     query = urlencode({
-        "where": "code_insee_commune = '" + code +
+        "where": "code_insee_commune LIKE '" + code +
                  "' AND search(nom, 'Mairie')",
         "limit": str(MAX_RESULTS),
         "select": "nom,code_insee_commune,site_internet,pivot,statut_de_diffusion",
@@ -67,7 +67,7 @@ def _expected_request_path(url):
         if any(len(v) != 1 for v in query.values()):
             raise ValueError("Ambiguous DILA query")
         match = re.fullmatch(
-            r"code_insee_commune = '([0-9A-B]{5})' AND search\(nom, 'Mairie'\)",
+            r"code_insee_commune LIKE '([0-9A-B]{5})' AND search\(nom, 'Mairie'\)",
             query["where"][0])
         if match is None or url != mairie_records_url(match.group(1)):
             raise ValueError("Unapproved DILA query")
