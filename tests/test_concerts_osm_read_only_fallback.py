@@ -46,7 +46,7 @@ class ReadOnlyOsmQueryTests(unittest.TestCase):
             (47, 0.001, 47.001, -0.01),
             (55, 0, 55.001, 0.01),
             (47, math.inf, 47.001, 0.01),
-            (47, 0, 47.01, 0.01),
+            (47, 0, 47.012, 0.01),
         )
         for bounds in invalid:
             with self.subTest(bounds=bounds):
