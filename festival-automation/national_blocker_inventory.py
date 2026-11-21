@@ -6,9 +6,10 @@ private intake branch. This report never authorizes a publication or web fetch.
 import argparse
 import json
 import re
+import subprocess
 import unicodedata
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -107,7 +108,56 @@ def _patch_only_leads(patch, catalogue, today):
     return sorted(extra.values(), key=lambda row: row["slug"])
 
 
-def build_inventory(reports, catalogue, today, patch=None):
+MUNICIPAL_HISTORY_PATH = "automation-intake/grossesondes/national-municipal-pages-review.json"
+MAX_HISTORIC_STATES = 24
+MAX_MUNICIPAL_AGE_DAYS = 45
+
+
+def municipal_git_history(intake, today):
+    """Read bounded private git history locally; never access the network.
+
+    The public runner already checks out the private intake branch with
+    fetch-depth=0. Source rotations MUST NOT erase candidates encountered in
+    a previous pass. Prior JSON is research only, never publisher proof.
+    """
+    root = intake.parents[1]
+    try:
+        listing = subprocess.run(
+            ["git", "-C", str(root), "log", "-n", str(MAX_HISTORIC_STATES),
+             "--format=%H", "--", MUNICIPAL_HISTORY_PATH],
+            capture_output=True, text=True, timeout=8, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("Private municipal history unavailable") from exc
+    if listing.returncode != 0:
+        raise ValueError("Cannot inspect private municipal history")
+    out = []
+    for sha in listing.stdout.splitlines()[:MAX_HISTORIC_STATES]:
+        if not re.fullmatch(r"[a-f0-9]{40}", sha):
+            raise ValueError("Invalid private git history SHA")
+        try:
+            item = subprocess.run(
+                ["git", "-C", str(root), "show",
+                 sha + ":" + MUNICIPAL_HISTORY_PATH],
+                capture_output=True, text=True, timeout=8, check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise ValueError("Private municipal historical snapshot unavailable") from exc
+        if item.returncode != 0 or len(item.stdout) > 1500000:
+            raise ValueError("Private municipal snapshot unreadable")
+        try:
+            report = json.loads(item.stdout)
+            as_of = date.fromisoformat(report.get("as_of", ""))
+        except (ValueError, TypeError, AttributeError) as exc:
+            raise ValueError("Invalid archived municipal source report") from exc
+        if (as_of <= date.fromisoformat(today)
+                and (date.fromisoformat(today) - as_of).days
+                <= MAX_MUNICIPAL_AGE_DAYS):
+            out.append(report)
+    return out
+
+
+def build_inventory(reports, catalogue, today, patch=None, municipal_history=()):
     if (not isinstance(catalogue, dict) or catalogue.get("schema") != 1
             or not isinstance(catalogue.get("festivals"), list)):
         raise ValueError("Signed public catalogue required")
@@ -199,25 +249,45 @@ def build_inventory(reports, catalogue, today, patch=None):
         })
     names = {(_name(d["name"]), d["edition_year"]) for d in output}
     extra, seen = [], set()
-    for site in reports["municipal"].get("rows", []):
-        for field in ("unknown_music_links_review_only", "untyped_event_links_review_only"):
-            for item in site.get(field, []):
-                title, url = item.get("title_hint"), item.get("detail_url_review_only")
-                if not isinstance(title, str) or not isinstance(url, str):
-                    raise ValueError("Invalid intermediate municipal lead")
-                key = (_name(title), url)
-                if key in seen or (_name(title), int(
-                        re.search(r"20[2-4][0-9]", title).group())
-                        if re.search(r"20[2-4][0-9]", title) else -1) in names:
-                    continue
-                seen.add(key)
-                extra.append({
-                    "name": title, "source_url_review_only": url,
-                    "index_url_review_only": item.get("index_url_review_only"),
-                    "parent_dossier_id": site.get("dossier_id"),
-                    "qualification": item.get("classification"),
+    current_municipal = 0
+    if len(municipal_history) > MAX_HISTORIC_STATES:
+        raise ValueError("Unbounded municipal history")
+    for report_idx, municipal_report in enumerate(
+            (reports["municipal"], *municipal_history)):
+        if (not isinstance(municipal_report, dict)
+                or municipal_report.get("schema")
+                   != "grossesondes.national-municipal-pages-private.v1"
+                or municipal_report.get("review_only") is not True
+                or municipal_report.get("publication_authorized") is not False
+                or not isinstance(municipal_report.get("rows"), list)):
+            raise ValueError("Unsafe private historical municipal report")
+        as_of = date.fromisoformat(municipal_report.get("as_of", ""))
+        delta = (date.fromisoformat(today) - as_of).days
+        if delta < 0 or delta > MAX_MUNICIPAL_AGE_DAYS:
+            continue
+        for site in municipal_report["rows"]:
+            for field in ("unknown_music_links_review_only",
+                          "untyped_event_links_review_only"):
+                for item in site.get(field, []):
+                    title, url = item.get("title_hint"), item.get("detail_url_review_only")
+                    if not isinstance(title, str) or not isinstance(url, str):
+                        raise ValueError("Invalid intermediate municipal lead")
+                    key = (_name(title), url)
+                    if key in seen or (_name(title), int(
+                            re.search(r"20[2-4][0-9]", title).group())
+                            if re.search(r"20[2-4][0-9]", title) else -1) in names:
+                        continue
+                    seen.add(key)
+                    extra.append({
+                        "name": title, "source_url_review_only": url,
+                        "index_url_review_only": item.get("index_url_review_only"),
+                        "parent_dossier_id": site.get("dossier_id"),
+                        "qualification": item.get("classification"),
+                        "source_snapshot_as_of": municipal_report["as_of"],
                     "publication_authorized": False,
-                })
+                    })                    if report_idx == 0:
+                        current_municipal += 1
+
     patch_leads = _patch_only_leads(patch, catalogue, today)
     counts = Counter(r["publisher_funnel_status"] for r in output)
     return {
@@ -230,6 +300,8 @@ def build_inventory(reports, catalogue, today, patch=None):
         "dossiers_with_first_party_dates_without_proposal": sum(
             r["first_party_dates_without_generic_proposal"] for r in output),
         "municipal_intermediate_leads_count": len(extra),
+        "municipal_current_cycle_leads_count": current_municipal,
+        "municipal_historical_carryover_count": len(extra) - current_municipal,
         "patch_only_unpublished_references_count": len(patch_leads),
         "total_named_leads": len(output) + len(extra) + len(patch_leads),
         "dossiers": output, "municipal_intermediate_leads": extra,
@@ -248,13 +320,16 @@ def main():
     catalogue = json.loads(args.catalog.read_text(encoding="utf-8"))
     private_patch = json.loads((args.intake / f"patch-{today}.json").read_text(
         encoding="utf-8"))
-    inventory = build_inventory(reports, catalogue, today, patch=private_patch)
+    municipal_history = municipal_git_history(args.intake, today)
+    inventory = build_inventory(reports, catalogue, today, patch=private_patch,
+                                municipal_history=municipal_history)
     output = args.intake / "national-festival-blocker-inventory.json"
     output.write_text(json.dumps(inventory, ensure_ascii=False, indent=2) + "\n",
                       encoding="utf-8")
     print("Private inventory: named national=" + str(inventory["dossiers_count"])
           + ", unpublished=" + str(inventory["dossiers_without_generic_proposal"])
-          + ", municipal extra=" + str(inventory["municipal_intermediate_leads_count"])
+          + ", municipal total=" + str(inventory["municipal_intermediate_leads_count"])
+          + ", municipal carried=" + str(inventory["municipal_historical_carryover_count"])
           + ", patch-only references=" + str(inventory["patch_only_unpublished_references_count"])
           + ", publications=0")
 
