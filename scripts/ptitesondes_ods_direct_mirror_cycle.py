@@ -86,11 +86,14 @@ def _stage(root, private_rows):
 
 
 def run_private_direct_cycle(root, now, *, mode="preview", max_work=12,
-                             public_key=None, evaluator=audit_missing_ods_direct):
+                             public_key=None, evaluator=audit_missing_ods_direct,
+                             discover_unconfigured=False):
     if (type(now) is not datetime or now.tzinfo is None
             or now.utcoffset() is None
             or mode not in ("preview", "stage")
-            or type(max_work) is not int or not 1 <= max_work <= 25):
+            or type(max_work) is not int or not 1 <= max_work <= 25
+            or type(discover_unconfigured) is not bool
+            or (discover_unconfigured and mode != "preview")):
         raise ValueError("private_direct_cycle_invalid")
     root = _valid_root(root)
     leads = _json(root / BACKLOG, 2_000_000)
@@ -105,10 +108,16 @@ def run_private_direct_cycle(root, now, *, mode="preview", max_work=12,
     key = public_key if public_key is not None else os.environ.get("OPENAGENDA_READ_KEY", "")
     if not key:
         raise ValueError("public_read_only_key_missing")
+    research_options = {}
+    if discover_unconfigured:
+        # Explicit preview opt-in only. No staged private write or production
+        # workflow has been enabled. Unknown slugs remain untrusted sources.
+        from ptitesondes_openagenda_slug_discovery import lookup_agenda_by_slug
+        research_options["agenda_discovery"] = lookup_agenda_by_slug
     result = evaluator(
         leads, previous, source_cfg["openagenda_agendas"], key, day,
         offset=now.toordinal() * 4 + now.hour // 6,
-        max_work=max_work)
+        max_work=max_work, **research_options)
     if (type(result) is not dict
             or type(result.get("private_rows")) is not list
             or type(result.get("report")) is not dict
@@ -132,11 +141,14 @@ def main():
     args.add_argument("--state-checkout", type=Path, required=True)
     args.add_argument("--mode", choices=("preview", "stage"), default="preview")
     args.add_argument("--max-work", type=int, default=12)
+    args.add_argument("--discover-unconfigured", action="store_true",
+                      help="read-only research, preview mode only; never publish")
     a = args.parse_args()
     try:
         report = run_private_direct_cycle(
             a.state_checkout, datetime.now(ZoneInfo("Europe/Paris")),
-            mode=a.mode, max_work=a.max_work)
+            mode=a.mode, max_work=a.max_work,
+            discover_unconfigured=a.discover_unconfigured)
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     except (ValueError, TypeError, KeyError, OSError, UnicodeError):
         raise SystemExit("PRIVATE_ODS_DIRECT_AUDIT_FAILED_CLOSED") from None
