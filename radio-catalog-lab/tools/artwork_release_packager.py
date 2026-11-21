@@ -138,13 +138,27 @@ def validate_body(raw:bytes,previous:dict|None=None)->dict:
             "provider","official_station_page","station_slug",
             "visual_identity_evidence","review_scope",
         }:raise ArtworkBundleError("Malformed first-party source evidence")
-        if (source["provider"]!="laut.fm" or
+        # A signed publisher may certify any official radio/CDN, not only
+        # laut.fm. Manual station-identity/visual review is still mandatory.
+        # Do NOT treat the unsigned public v5 manifest as that approval.
+        provider=source["provider"]
+        page=source["official_station_page"]
+        slug=source["station_slug"]
+        visual=source["visual_identity_evidence"]
+        if (not isinstance(provider,str) or not 1<=len(provider.strip())<=128 or
+                not isinstance(page,str) or not public_https(page) or
+                not isinstance(slug,str) or not 1<=len(slug.strip())<=160 or
+                any(ord(c)<32 for c in slug) or
                 source["review_scope"]!="test_only" or
-                source["official_station_page"]!="https://laut.fm/"+source["station_slug"] or
-                not logo["url"].startswith("https://assets.laut.fm/") or
-                not isinstance(source["visual_identity_evidence"],str) or
-                len(source["visual_identity_evidence"])<15):
+                not isinstance(visual,str) or len(visual.strip())<15):
             raise ArtworkBundleError("Source/visual-identity review missing")
+        # Retain the exact historic first-party constraints for all laut.fm
+        # fixtures; the general path is not a bypass of their trusted mapping.
+        if provider=="laut.fm" and (
+                page!="https://laut.fm/"+slug or
+                not re.fullmatch(r"https://assets\.laut\.fm/[a-f0-9]{24,80}",
+                                 logo["url"])):
+            raise ArtworkBundleError("Unverified laut.fm station-image relation")
     if [r["legacy_media_id"] for r in arr]!=sorted(seen):
         raise ArtworkBundleError("Assignments must be sorted by historical UUID")
     return d
