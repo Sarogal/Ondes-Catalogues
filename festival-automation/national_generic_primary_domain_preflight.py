@@ -271,6 +271,46 @@ def _safe_same_host_edition_links(
 
 
 
+
+def _named_weekend_statement(html, title, year, target):
+    """Exact festival-name/weekend in one visible block, with no other named day.
+
+    This is a narrowly scoped same-domain corroboration for sites carrying
+    unrelated calendar dates elsewhere. It cannot infer a date from metadata
+    or one separated title/date block, and cannot override a contradiction
+    explicitly associated with the named edition.
+    """
+    parser = VisibleParagraphs()
+    parser.feed(html)
+    parser.close()
+    tokens = re.findall(
+        r"[a-z0-9]+", re.sub(r"\b20[2-4][0-9]\b", "", fold(title)))
+    if not tokens:
+        return False
+    exact = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, tokens)) +
+        r"(?![a-z0-9])")
+    proven = False
+    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        block = " ".join(fold(raw).split())
+        if (not 0 < len(block) <= 1600 or not exact.search(block)
+                or str(year) not in block):
+            continue
+        if CANCEL.search(block):
+            return False
+        dates = {(first, last) for _a, _b, first, last
+                 in explicit_ranges(block, year)}
+        if any((interval != target and not
+                (interval[0] == interval[1] and
+                 target[0] <= interval[0] <= target[1]))
+               for interval in dates):
+            return False
+        if target in dates:
+            proven = True
+    return proven
+
+
+
 def _recover_official_weekend_amid_isolated_days(source, primary_html,
                                                   fetch, today):
     """Distinguish an actual weekend from isolated dates on the SAME site.
@@ -340,11 +380,19 @@ def _recover_official_weekend_amid_isolated_days(source, primary_html,
         if homepage_dates is not None:
             homepage_dates = tuple(date.fromisoformat(x)
                                    for x in homepage_dates)
+    # A homepage may also mention an unrelated SINGLE calendar date.
+    # Accept the exact current weekend only when one visible paragraph
+    # explicitly names this festival and dates, and no same-name paragraph
+    # contains a different edition date. No external source is involved.
+    named_statement = _named_weekend_statement(
+        homepage, title, year, target)
+    if homepage_dates is None and named_statement:
+        homepage_dates = target
     if (homepage_dates != target
             or not no_same_edition_jsonld_contradiction(
                 homepage, title, *target)
-            or not visible_official_edition(
-                homepage, title, *target)):
+            or not (visible_official_edition(
+                    homepage, title, *target) or named_statement)):
         return None
     return target
 

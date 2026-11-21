@@ -474,6 +474,57 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         self.assertEqual(two["two_day_dates_count"], 1)
         self.assertFalse(two["publication_authorized"])
 
+    def test_named_official_weekend_survives_unrelated_homepage_calendar_day(self):
+        """A same-domain homepage can carry an unrelated dated announcement."""
+        state, queue, public = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        deep = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Le Festival Foudre du Nord 2027 aura lieu "
+            "les 13 et 14 août 2027. Concerts de rock et métal.</p>"
+            "<p>Réunion des bénévoles le 26 mars 2027.</p></main>")
+        home = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>La prochaine édition du Festival Foudre du Nord aura lieu "
+            "les 13 et 14 août 2027, musique rock.</p>"
+            "<p>L'assemblée générale de l'association aura lieu "
+            "le 26 mars 2027.</p></main>")
+        base = "https://foudre-metal.fr/"
+        urls = []
+        def fetch(url):
+            urls.append(url)
+            return deep if url == URL_A else home
+        review = examine(state, queue, public, DAY1, fetch=fetch)
+        self.assertEqual(urls, [URL_A, base])
+        row = review["rows"][0]
+        self.assertEqual(row["date_source_mode"], "SAME_HOST_WEEKEND_RECONCILED")
+        self.assertEqual(row["start_date_hint"], "2027-08-13")
+        self.assertEqual(row["end_date_hint"], "2027-08-14")
+        self.assertFalse(row["publication_authorized"])
+        self.assertFalse(row["two_day_dates"])
+
+    def test_named_official_weekend_does_not_hide_named_homepage_conflict(self):
+        """Another same-festival date is never a harmless calendar aside."""
+        state, queue, public = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        deep = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Festival Foudre du Nord 2027 : "
+            "les 13 et 14 août 2027.</p>"
+            "<p>Réunion des bénévoles le 26 mars 2027.</p></main>")
+        home = (
+            "<main><h1>Festival Foudre du Nord 2027</h1>"
+            "<p>Festival Foudre du Nord 2027 : 13 et 14 août 2027.</p>"
+            "<p>Festival Foudre du Nord 2027 : autre date le "
+            "26 mars 2027.</p></main>")
+        review = examine(
+            state, queue, public, DAY1,
+            fetch=lambda url: deep if url == URL_A else home)
+        self.assertEqual(review["rows"][0]["status"],
+                         "EXPLICIT_CURRENT_EDITION_DATES_NOT_FOUND")
+        self.assertFalse(review["rows"][0]["two_day_dates"])
+        self.assertFalse(review["publication_authorized"])
+
     def test_same_domain_weekend_cannot_hide_a_second_festival_day(self):
         state, queue, published = fixture(DAY1)
         queue["dossiers"] = queue["dossiers"][:1]
