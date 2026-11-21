@@ -226,6 +226,40 @@ class MunicipalBootstrapTests(unittest.TestCase):
         self.assertEqual(out["status"], "live_oa_event_title_changed")
         self.assertFalse(out["publication_ready"])
 
+    def test_live_identity_conflict_keeps_safe_unverified_web_leads(self):
+        # A changed OA city, title or timing cannot authorize publication,
+        # but must not erase independently investigable organizer links.
+        research_url = "https://leliberte.fr/spectacles/unknown-young-show/"
+        src = event(canonicalUrl=research_url)
+        conflicting = [
+            dict(src, title={"fr": "New official title"}),
+            dict(src, location={
+                "name": "Renamed venue", "adminLevel4": CITY,
+                "countryCode": "FR"}),
+            dict(src, timings=[]),
+        ]
+        no_municipal = Mock(side_effect=AssertionError(
+            "identity mismatch must not query DILA"))
+        for item in conflicting:
+            with self.subTest(item=item):
+                out = run(oa_event=item, directory_reader=no_municipal)
+                self.assertIn(out["status"], {
+                    "live_oa_event_title_changed",
+                    "live_oa_city_or_venue_changed",
+                    "live_oa_explicit_session_changed"})
+                self.assertEqual(
+                    [x["url"] for x in out["private_unverified_oa_web_leads"]],
+                    [research_url])
+                self.assertTrue(all(
+                    lead["candidate_only"] and
+                    lead["owner_verified"] is False and
+                    lead["publication_ready"] is False
+                    for lead in out["private_unverified_oa_web_leads"]))
+                self.assertFalse(out["publisher_connected"])
+                self.assertFalse(out["publication_ready"])
+                self.assertEqual(out["public_writes"], 0)
+        no_municipal.assert_not_called()
+
     def test_missing_or_changed_local_session_stops_before_directory(self):
         original = lead()
         changed = deepcopy(original["explicit_source_session_intervals"])
