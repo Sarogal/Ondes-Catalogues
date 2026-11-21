@@ -58,6 +58,12 @@ def safe_same_host_article(href, base, root):
             or urlsplit(root).path != "/"):
         return None
     try:
+        # urljoin() normalizes dot segments, so reject them in the ORIGINAL
+        # untrusted href before normalizing a potentially dangerous path.
+        raw = urlsplit(href)
+        if (INVALID_PATH.search(raw.path) or "//" in raw.path
+                or raw.scheme not in ("", "https")):
+            return None
         value = urljoin(base, href)
         parts = urlsplit(value)
         if (safe_public_url(value) != value
