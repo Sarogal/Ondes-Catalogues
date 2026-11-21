@@ -162,6 +162,8 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
             event_html(second_h1=True),
             event_html(headline="Unrelated other show"),
             event_html(cancelled=True),
+            event_html().replace("</main>",
+                "<p><strong>EXTRA OPENING ACT — Jazz | France</strong></p></main>"),
             '<main><h1>' + raw["name"] +
             '</h1><p><strong>7WEEKS — Metalcore</strong></p></main>'
             + '<script type="application/ld+json">'
