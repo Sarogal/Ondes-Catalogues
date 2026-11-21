@@ -22,6 +22,7 @@ from scripts import concert_event_site_contract as contract
 
 import discover
 import independent_named_site_geo
+import osm_read_only_fallback as readonly
 import organizer_source_contract
 import official_rss_jsonld_bridge as bridge
 import triage
@@ -135,7 +136,13 @@ def _read_osm_node(node_url, expected, fetch):
     require(hit is not None, "named OSM node URL absent")
     number = int(hit[1])
     api_url = f"https://api.openstreetmap.org/api/0.6/node/{number}.json"
-    data, final = fetch(api_url, 120_000)
+    try:
+        data, final = fetch(api_url, 120_000)
+    except (ValueError, OSError, TimeoutError):
+        # A bounded read-only query is a separate OSM data transport, not
+        # an event witness or a publisher-approved domain.
+        api_url = readonly.element("node", str(number), fmt="json")
+        data, final = fetch(api_url, 120_000)
     require(final == api_url and isinstance(data, str)
             and len(data) <= 120_000, "OSM object not independently fetched")
     object_ = json.loads(data)
