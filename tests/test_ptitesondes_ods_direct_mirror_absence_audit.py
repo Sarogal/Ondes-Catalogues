@@ -221,10 +221,11 @@ class MirrorAbsencePrivateEvidenceTests(unittest.TestCase):
                 "autre-ville" if uid == 552 else "new-unlisted-city")}
         out = audit_missing_ods_direct(
             [lead(slug="new-unlisted-city")], [],
-            [551, 552], "oa_pk_publictestkey123", TODAY,
+            [], "oa_pk_publictestkey123", TODAY,
             agenda_reader=read, event_reader=event,
             ods_probe=lambda uid: "uid_absent",
             agenda_discovery=lookup)
+        # A truly empty configured agenda list must not suppress research.
         self.assertEqual(out["report"]["unregistered_agendas_resolved_for_research"], 1)
         self.assertEqual(out["report"]["unregistered_agenda_lookups_failed"], 0)
         self.assertEqual(out["report"]["direct_api_matched_day_and_title"], 1)
