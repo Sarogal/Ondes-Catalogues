@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime
 from hashlib import sha256
+from html.parser import HTMLParser
 import json
 from pathlib import Path
 import re
@@ -26,7 +27,7 @@ from national_municipal_source_research import (
     verified_commune, delegated_municipal_commune,
     mairie_records_url, fetch_dila_records, verified_mairie_site,
 )
-from source_qualification import Anchors, normalized, VisibleContent
+from source_qualification import Anchors, normalized
 
 SCHEMA = "grossesondes.national-municipal-pages-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -79,10 +80,55 @@ def safe_same_host_article(href, base, root):
         return None
 
 
+
+class VisibleResearchText(HTMLParser):
+    """Visible HTML text only; hidden ancestor content is not evidence.
+
+    A hidden DOM subtree may include fabricated event dates or names. Unlike
+    a generic text stripper, this parser refuses those elements, including
+    aria-hidden, templates, scripts, SVG, CSS-hidden blocks, and descendants.
+    """
+    HIDDEN_TAGS = {"script", "style", "template", "noscript", "svg", "iframe"}
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
+            "link", "meta", "param", "source", "track", "wbr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.skip_depth = 0
+        self.parts = []
+        self.characters = 0
+
+    def handle_starttag(self, tag, attrs):
+        if self.skip_depth:
+            if tag not in self.VOID:
+                self.skip_depth += 1
+            return
+        attributes = dict(attrs)
+        style = (attributes.get("style") or "").lower().replace(" ", "")
+        concealed = (
+            tag in self.HIDDEN_TAGS or
+            "hidden" in attributes or
+            str(attributes.get("aria-hidden", "")).lower() == "true" or
+            "display:none" in style or "visibility:hidden" in style
+        )
+        if concealed and tag not in self.VOID:
+            self.skip_depth = 1
+
+    def handle_endtag(self, tag):
+        if self.skip_depth:
+            self.skip_depth -= 1
+
+    def handle_data(self, data):
+        if not self.skip_depth and self.characters < MAX_VISIBLE_CHARS:
+            snippet = data[:MAX_VISIBLE_CHARS - self.characters]
+            self.parts.append(snippet)
+            self.characters += len(snippet)
+
+
 def _visible(html):
     if not isinstance(html, str) or not 0 < len(html) <= MAX_PAGE_HTML:
         raise ValueError("Unsafe or oversized municipal HTML")
-    parser = VisibleContent()
+    parser = VisibleResearchText()
     parser.feed(html)
     parser.close()
     raw = " ".join(parser.parts)
