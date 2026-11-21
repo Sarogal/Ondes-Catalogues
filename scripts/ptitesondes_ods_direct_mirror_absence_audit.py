@@ -149,9 +149,9 @@ def _exact_event_claim(event, event_uid, title, day, city, venue):
     return False
 
 
-def _checked_agendas(configured_uids, public_key, reader):
+def _checked_agendas(configured_uids, public_key, reader, *, allow_empty=False):
     if (type(configured_uids) is not list
-            or not 1 <= len(configured_uids) <= MAX_AGENDAS
+            or not (0 if allow_empty else 1) <= len(configured_uids) <= MAX_AGENDAS
             or len(configured_uids) != len(set(configured_uids))
             or any(type(uid) is not int or not 0 < uid < 10**13
                    for uid in configured_uids)):
@@ -196,7 +196,8 @@ def audit_missing_ods_direct(
             raise ValueError("duplicate_private_ods_audit")
         stored[row["audit_id"]] = dict(row)
     mapping, failed_agendas = _checked_agendas(
-        configured_agenda_uids, public_read_key, agenda_reader)
+        configured_agenda_uids, public_read_key, agenda_reader,
+        allow_empty=agenda_discovery is not None)
     # No private UID, URL, title, municipality, address or participant detail
     # in public report. Even a failure exception is reduced to a fixed count.
     counts = dict.fromkeys(COUNTS, 0)
