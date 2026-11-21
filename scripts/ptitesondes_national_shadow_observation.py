@@ -36,7 +36,9 @@ CONTROLLER_SCHEMA = "ptitesondes.private_national_observation_control.v1"
 INDEX_JOURNAL_SCHEMA = "ptitesondes.private_national_index_transaction.v1"
 REPORT_RE = re.compile(r"index-(20[0-9]{2}-[0-9]{2}-[0-9]{2})-([a-zA-Z0-9_-]{1,70})\.json\Z")
 BATCH_RE = re.compile(r"[a-zA-Z0-9_-]{1,70}\Z")
-INDEX_EVERY_N_INVOCATIONS = 12
+# Two scheduled observations per day: census is rerun once per day.
+# This is a frequency limit, never a predefined source or agenda shortlist.
+INDEX_EVERY_N_INVOCATIONS = 2
 MAX_BATCHES_PER_RUN = 2
 MAX_AGENDAS_PER_BATCH = 20
 MAX_AGENDA_ROTATION_SECONDS = 600
