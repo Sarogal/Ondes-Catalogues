@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install image audit import dependency (no images downloaded here)
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
       - name: Test open-provider reconciliation and fail-closed review labels
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
