@@ -32,7 +32,7 @@ MAX_HTML = 256 * 1024
 MAX_DIM = 4096
 MIN_DIM = 64
 MAX_INVENTORY = 20000
-MAX_DISCOVERED = 4
+MAX_DISCOVERED = 8
 ALLOWED_FORMATS = {"JPEG": "image/jpeg", "PNG": "image/png", "WEBP": "image/webp"}
 REJECT_SUFFIXES = (".localhost", ".local", ".internal", ".onion", ".test")
 UA = "GrossesOndes/central-artwork-inventory-audit-test (read-only)"
@@ -155,26 +155,50 @@ class MetadataImages(HTMLParser):
         self.urls: list[tuple[str, str]] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str|None]]):
-        if tag != "meta":
-            return
         fields = dict(attrs)
-        kind = fields.get("property") or fields.get("name") or ""
-        if kind.lower() in {
-            "og:image", "og:image:url", "twitter:image", "twitter:image:src",
-        } and fields.get("content"):
-            self.urls.append((kind.lower(), fields["content"]))
+        if tag == "meta":
+            kind = fields.get("property") or fields.get("name") or ""
+            if kind.lower() in {
+                "og:image", "og:image:url", "twitter:image", "twitter:image:src",
+            } and fields.get("content"):
+                self.urls.append((kind.lower(), fields["content"]))
+        elif tag == "link":
+            rel = (fields.get("rel") or "").lower().split()
+            href = fields.get("href")
+            if href and any(x in rel for x in {
+                "icon", "apple-touch-icon", "apple-touch-icon-precomposed",
+                "image_src",
+            }):
+                self.urls.append(("html:link-icon-unreviewed", href))
+
+
+def upgraded_https_homepage(raw_url: str) -> str | None:
+    """Never fetch a plaintext homepage, not even as a fallback.
+
+    Historical HTTP links may be used only as hints for an independent
+    HTTPS request to the identical hostname/path, with the final HTTPS
+    origin revalidated by the shared safe URL and DNS checks.
+    """
+    if not isinstance(raw_url, str) or len(raw_url) > 2048:
+        return None
+    candidate = raw_url.strip()
+    if candidate.startswith("http://"):
+        candidate = "https://" + candidate[len("http://"):]
+    return candidate if public_https(candidate) else None
 
 
 def discover_official_page(url: str) -> dict:
     report = {"homepage": url, "discovery_state": "unverified",
               "logo_approved": False, "publication_allowed": False,
               "image_candidates": []}
-    # Only origin homepage metadata; never assume an image is the radio logo.
-    if not public_https(url):
+    # Only HTTPS is requested, never HTTP and never a guessed identity.
+    chosen = upgraded_https_homepage(url)
+    if chosen is None:
         report["reason"] = "homepage_not_safe_https"
         return report
+    report["attempted_https_homepage"] = chosen
     try:
-        body, mime, final = _request(url, max_bytes=MAX_HTML, accept="text/html")
+        body, mime, final = _request(chosen, max_bytes=MAX_HTML, accept="text/html")
         if mime not in {"text/html", "application/xhtml+xml", ""}:
             raise InventoryError("Homepage not HTML")
         parser = MetadataImages()
