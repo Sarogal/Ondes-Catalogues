@@ -40,7 +40,13 @@ PROOF_FIELDS = frozenset({
     "corroboratingEventUrl",
 })
 CHECKED = ["artists", "date", "venue", "genre", "sourceWebsite"]
-OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]*)\Z")
+# Publicly signed venue coordinates may reference either the human-friendly
+# node page or the canonical API node path. Both encode the SAME immutable
+# numeric OSM object ID; neither provides a network destination.
+OSM_NODE = re.compile(
+    r"https://(?:www[.]openstreetmap[.]org/(?:api/0[.]6/)?node/|"
+    r"api[.]openstreetmap[.]org/api/0[.]6/node/)([1-9][0-9]*)\\Z"
+)
 MAX_DISTANCE = 125
 MAX_ARTIST_NAME = 120
 
@@ -82,7 +88,7 @@ def osm_identity(venue, event_url, fetch, cache):
     raw = venue.get("geoSource")
     require(isinstance(raw, str), "venue has no independent OSM feature")
     matched = OSM_NODE.fullmatch(raw)
-    require(bool(matched), "named OSM node required for this admission route")
+    require(bool(matched), "named OSM node (web/API) required for this admission route")
     api = "https://api.openstreetmap.org/api/0.6/node/" + matched.group(1)
     body = fetch(api, cache)
     require(isinstance(body, str) and len(body) <= probe.MAX_BYTES
