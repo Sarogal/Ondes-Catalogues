@@ -201,7 +201,8 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         for phase in ("osm_identity", "official_event_fetch"):
             def fail_one(url, cache):
                 if phase == "osm_identity" and (
-                    "openstreetmap.org" in url):
+                    "openstreetmap.org" in url or
+                    "overpass.private.coffee" in url):
                     raise ValueError("Source returned non-success HTTP status")
                 if phase == "official_event_fetch" and url == URL:
                     raise ValueError("Source returned non-success HTTP status")
