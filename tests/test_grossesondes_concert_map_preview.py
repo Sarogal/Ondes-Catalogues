@@ -54,6 +54,17 @@ class ConcertMapTests(unittest.TestCase):
         }
         self.assertGreater(len(venues), 1)
         self.assertGreater(sum(e["venueId"] in venues for e in catalogue["events"]), 1)
+    def test_pins_use_dom_not_canvas_and_can_be_opened_from_list(self):
+        # Visual browser regression: Canvas circleMarkers were invisible even
+        # though the data and search worked (21 November 2026).
+        self.assertIn('L.marker([v.latitude,v.longitude]', self.html)
+        self.assertIn('L.divIcon({className:"go-pin"', self.html)
+        self.assertIn('go-pin-dot', self.html)
+        self.assertNotIn('L.circleMarker(', self.html)
+        self.assertNotIn('preferCanvas:true', self.html)
+        self.assertIn('m.openPopup()', self.html)
+        self.assertIn('marker', self.html.lower())
+
     def test_inline_javascript_parses_with_node(self):
         parser = Scripts()
         parser.feed(self.html)
