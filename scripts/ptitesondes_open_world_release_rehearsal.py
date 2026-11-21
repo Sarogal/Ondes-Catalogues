@@ -20,6 +20,7 @@ from ptitesondes_candidate_promotion import category_for
 from ptitesondes_dila_municipal_domains import (
     approved_municipal_page_host, fetch_dila,
 )
+from ptitesondes_delegated_source_authority import verified_delegated_source
 from ptitesondes_openagenda_national_event_research import _french_text
 from ptitesondes_openagenda_reuse_rights import review_event_rights
 from ptitesondes_openagenda_v2_direct_evidence import (
@@ -79,7 +80,7 @@ def rehearse_open_world_municipal_event(
         lead, date_start, official_url, venue_proof, baseline, published,
         today, public_key, *, agenda_reader=read_direct_agenda_v2,
         event_reader=read_direct_v2, directory_reader=fetch_dila,
-        municipal_reader=read_unknown_https):
+        municipal_reader=read_unknown_https, source_host_proof=None):
     """Read everything live, validate, return a *non-publishable* mock card.
 
     Passing a trusted geo object to this function never overrides a
@@ -175,7 +176,10 @@ def rehearse_open_world_municipal_event(
         directory = directory_reader(city)
     except (OSError, TimeoutError, ValueError, TypeError, KeyError):
         return _blank("dila_municipality_unavailable")
-    if approved_municipal_page_host(official_url, city, directory) is None:
+    if (approved_municipal_page_host(official_url, city, directory) is None
+            and not verified_delegated_source(
+                source_host_proof, city, lead["venue_unverified"],
+                official_url, today)):
         return _blank("unknown_municipal_official_source")
     # Official source is authenticated BEFORE reading content; never
     # trust an arbitrary OA or organizer URL to mint a host authority.
