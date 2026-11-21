@@ -534,6 +534,28 @@ jobs:
             echo "File privée de qualification de sources constituée ; aucune confiance attribuée."
           fi
 
+      - name: Examiner sans agrément les sources HTTPS inconnues (privé uniquement)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Fresh HTTPS fetch on DNS-pinned public IPs, TLS SNI, robots,
+          # NO redirects, host budget/rotation. Only private proof hints;
+          # no dynamic authority registration or publisher/approvals write.
+          if [ -s confidential/automation/concerts/intake/source-admission-intake.json ]; then
+            UTC_HOUR="$(date -u +%H)"
+            SCAN_SLOT=$((10#$UTC_HOUR / 8))
+            if ! python public/automation/concerts/source_evidence_probe.py \
+                --intake confidential/automation/concerts/intake/source-admission-intake.json \
+                --output confidential/automation/concerts/intake/source-evidence-probe.json \
+                --scan-slot "$SCAN_SLOT" --max-hosts 3 \
+                > "$RUNNER_TEMP/concerts-private-logs/source-evidence-probe.log" 2>&1; then
+              echo "::warning::Sondage sécurisé des nouveaux domaines indisponible : aucune admission."
+            else
+              echo "Preuves HTTPS privées collectées ; aucune autorité ni date de concert approuvée."
+            fi
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -573,6 +595,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/source-admission-intake.json ]; then
             git add --sparse -- automation/concerts/intake/source-admission-intake.json
+          fi
+          if [ -f automation/concerts/intake/source-evidence-probe.json ]; then
+            git add --sparse -- automation/concerts/intake/source-evidence-probe.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
