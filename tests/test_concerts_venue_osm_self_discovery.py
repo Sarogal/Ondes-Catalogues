@@ -139,6 +139,31 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         self.assertTrue(row["reviewRequired"])
         self.assertFalse(row["sourceAuthorityVerified"])
 
+    def test_discovery_enters_private_registry_without_domain_approval(self):
+        from automation.concerts import intake_archive
+        from automation.concerts import source_admission_intake as admission
+        catalog=catalogue()
+        report=discover_osm.scan(catalog,TODAY,max_venues=1,
+                                 max_details=2,fetch=fake_fetch())
+        first,stats=intake_archive.merge(
+            None,report,"2026-11-21T10:00:00Z")
+        self.assertEqual(stats["added"],1)
+        self.assertEqual(first["total"],1)
+        queued=admission.build(
+            first,catalog,TODAY,organizer_sources=[],reviewed_venues={})
+        self.assertEqual(queued["candidateSourceHosts"],1)
+        self.assertEqual(queued["previouslyUnreviewedHosts"],1)
+        self.assertFalse(queued["automaticTrustGranted"])
+        self.assertFalse(queued["publicationAllowed"])
+        self.assertFalse(queued["reviewQueue"][0]["alreadyReviewedAuthority"])
+        second,stats2=intake_archive.merge(
+            first,report,"2026-11-22T09:00:00Z")
+        self.assertEqual(stats2["stableReobservedOnNewDay"],1)
+        followup=admission.build(
+            second,catalog,TODAY,organizer_sources=[],reviewed_venues={})
+        self.assertEqual(followup["stableUnreviewedSourceHosts"],1)
+        self.assertFalse(followup["automaticTrustGranted"])
+
     def test_rotation_covers_venues_without_fixed_list(self):
         sites=[{"id":f"place-{n}"} for n in range(23)]
         visited=set()
