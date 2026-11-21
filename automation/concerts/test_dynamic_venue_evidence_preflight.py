@@ -114,6 +114,114 @@ def run(reg=None, src=None, cat=None, approved=None, event=None,
 
 
 class NationwideVenueAdmissionPreviewTests(unittest.TestCase):
+
+    def test_unknown_osm_source_rechecks_new_venue_and_eight_unknown_bands_privately(self):
+        """An unlisted announcing domain may research an entirely new venue."""
+        source_home = "https://nouvelle-origine.fr/"
+        event_url = "https://nouvelle-origine.fr/agenda/nuit-metal-2027/"
+        new_place_osm = "https://www.openstreetmap.org/node/901234567"
+        bands = ["Groupe Inventé " + str(i) for i in range(1, 9)]
+        old_source = copy.deepcopy(VENUE)
+        old_source["geoSource"] = OSM
+        old_source["postalCode"] = "30000"
+        catalogue = dict(copy.deepcopy(CAT), venues=[old_source])
+        event = copy.deepcopy(EVENT_OBJ)
+        event.update({
+            "url": event_url, "name": "Nuit métal indépendante",
+            "performer": [{"@type": "MusicGroup", "name": n} for n in bands],
+            "location": {
+                "@type": "Place", "name": "Place Libre",
+                "sameAs": new_place_osm,
+                "address": {
+                    "@type": "PostalAddress", "streetAddress": "Place Libre",
+                    "postalCode": "37000", "addressLocality": "Tours",
+                    "addressRegion": "Centre-Val de Loire",
+                    "addressCountry": "FR",
+                },
+            },
+        })
+        lead = candidate(
+            candidateId="unlisted-offsite-eight-bands",
+            sourceUrl=event_url, sourcePage=event_url,
+            eventDetailUrl=event_url, name=event["name"],
+            leadArtist=bands[0], officialArtistNames=bands,
+            venue="Place Libre", city="Tours", department="37",
+            newlyDiscoveredFirstPartySource=True,
+            sourceAuthorityVerified=False,
+            sourceVenueName=old_source["name"],
+            sourceVenueCity=old_source["city"],
+            sourceVenueDepartment=old_source["department"],
+            venueOutsideSource=True, venueCatalogueId=None,
+        )
+        osm_origin = (
+            '<osm><node id="812345671" lat="43.835" lon="4.361">'
+            '<tag k="name" v="Espace Imaginaire"/>'
+            '<tag k="addr:city" v="Nîmes"/>'
+            '<tag k="addr:postcode" v="30000"/>'
+            '<tag k="website" v="' + source_home + '"/>'
+            '</node></osm>'
+        )
+        new_osm_data = {"elements": [{
+            "id": 901234567, "type": "node",
+            "lat": 47.395, "lon": 0.688,
+            "tags": {
+                "name": "Place Libre", "addr:city": "Tours",
+                "addr:postcode": "37000", "addr:country": "FR",
+            },
+        }]}
+        origin_url = "https://api.openstreetmap.org/api/0.6/node/812345671"
+        new_site_api = "https://api.openstreetmap.org/api/0.6/node/901234567.json"
+        calls = []
+        def secure_fetch(url, cache):
+            calls.append(url)
+            if url == origin_url:
+                return osm_origin
+            if url == event_url:
+                return page(event)
+            if url == new_site_api:
+                return json.dumps(new_osm_data)
+            raise AssertionError("Unexpected external request: " + url)
+        def no_insecure_fetch(*_args, **_kwargs):
+            raise AssertionError("An unknown source cannot use the legacy fetch")
+        def check(lead_row=lead, safe=secure_fetch):
+            return module.build(
+                registry([lead_row]),
+                {"schema": module.SOURCES, "venues": []},
+                catalogue, APPROVED, TODAY,
+                fetch=no_insecure_fetch, robots=no_insecure_fetch,
+                origin_fetch=safe, scan_slot=2, limit=8)
+        output = check()
+        self.assertEqual(output["newVenueCandidates"], 1)
+        self.assertEqual(output["newSitesIndependentlyLocatedPrivateOnly"], 1)
+        self.assertEqual(output["independentNamedGeoVerified"], 1)
+        self.assertTrue(output["results"][0]["newSourceResearchedWithoutManifest"])
+        self.assertEqual(
+            output["results"][0]["proposedSite"]["name"], "Place Libre")
+        self.assertFalse(output["results"][0]["proposedSite"]["publicationAllowed"])
+        self.assertFalse(output["publisherTrustGranted"])
+        self.assertEqual(output["approvalsProposed"], 0)
+        self.assertEqual(calls, [origin_url, event_url, new_site_api])
+
+        # Unknown source label alone is never sufficient. Provenance from OSM
+        # is fresh, individually checked and its same-host link is mandatory.
+        for change in (
+            {"sourceUrl": "https://faux-domaine.fr/concert/",
+             "sourcePage": "https://faux-domaine.fr/concert/",
+             "eventDetailUrl": "https://faux-domaine.fr/concert/"},
+            {"venueCatalogueId": old_source["id"]},
+            {"sourceVenueCity": "Paris"},
+            {"officialArtistNames": bands[:-1]},
+            {"newlyDiscoveredFirstPartySource": False},
+        ):
+            with self.subTest(change=change):
+                calls.clear()
+                changed = dict(lead, **change)
+                result = check(changed)
+                self.assertEqual(
+                    result["newSitesIndependentlyLocatedPrivateOnly"], 0)
+                self.assertEqual(result["approvalsProposed"], 0)
+                self.assertFalse(result["publisherTrustGranted"])
+
     def test_unknown_to_fixed_spec_venue_verified_but_not_promoted(self):
         before = copy.deepcopy((registry(), SOURCES, CAT, APPROVED))
         out, calls = run()
