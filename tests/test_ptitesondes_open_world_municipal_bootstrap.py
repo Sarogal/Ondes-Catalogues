@@ -245,7 +245,7 @@ class MunicipalBootstrapTests(unittest.TestCase):
                 out = run(oa_event=item, directory_reader=no_municipal)
                 self.assertIn(out["status"], {
                     "live_oa_event_title_changed",
-                    "live_oa_city_or_venue_changed",
+                    "live_oa_venue_changed",
                     "live_oa_explicit_session_changed"})
                 self.assertEqual(
                     [x["url"] for x in out["private_unverified_oa_web_leads"]],
@@ -276,12 +276,78 @@ class MunicipalBootstrapTests(unittest.TestCase):
             "name": "Autre salle", "adminLevel4": CITY,
             "countryCode": "FR"})
         out = run(oa_event=changed)
-        self.assertEqual(out["status"], "live_oa_city_or_venue_changed")
+        self.assertEqual(out["status"], "live_oa_venue_changed")
         changed = event(location={
             "name": VENUE, "adminLevel4": "Autre ville",
             "countryCode": "FR"})
         out = run(oa_event=changed)
-        self.assertEqual(out["status"], "live_oa_city_or_venue_changed")
+        self.assertEqual(out["status"], "live_oa_city_changed")
+
+    def test_reordered_exact_sessions_are_still_the_same_events(self):
+        live = event(timings=list(reversed(slots())))
+        out = run(oa_event=live)
+        self.assertEqual(
+            out["status"], "municipal_homepage_source_research_only")
+        self.assertFalse(out["publication_ready"])
+        changed = list(reversed(slots()))
+        changed[0] = {**changed[0],
+                      "end": "2026-12-05T21:00:00+01:00"}
+        out = run(oa_event=event(timings=changed))
+        self.assertEqual(out["status"], "live_oa_explicit_session_changed")
+
+    def test_extended_venue_name_triggers_research_not_venue_approval(self):
+        # No named venue/domain allowlist: a longer OA venue label can
+        # remain under investigation without certifying the same building.
+        extended = event(location={
+            "name": "Grand Centre / " + VENUE,
+            "adminLevel4": CITY, "countryCode": "FR"})
+        out = run(oa_event=extended)
+        self.assertEqual(
+            out["status"], "municipal_homepage_source_research_only")
+        self.assertTrue(out["venue_alias_requires_independent_recheck"])
+        self.assertTrue(out["municipality_from_live_oa_not_registry"])
+        self.assertFalse(out["venue_geography_verified"])
+        self.assertFalse(out["events_independently_attested"])
+        self.assertFalse(out["publication_ready"])
+        self.assertEqual(out["public_writes"], 0)
+        public = public_redacted_municipal_bootstrap(out)
+        self.assertNotIn("Grand Centre", str(public))
+        # Same substring as an unrelated town is NOT venue identity.
+        unrelated = event(location={
+            "name": "Autre lieu " + VENUE + " autrement",
+            "adminLevel4": "Autre ville", "countryCode": "FR"})
+        self.assertEqual(run(oa_event=unrelated)["status"],
+                         "live_oa_city_changed")
+        wrong = event(location={
+            "name": "Autre salle", "adminLevel4": CITY,
+            "countryCode": "FR"})
+        self.assertEqual(run(oa_event=wrong)["status"],
+                         "live_oa_venue_changed")
+
+    def test_private_status_separates_city_venue_country_and_format(self):
+        reasons = {
+            "live_oa_city_or_venue_missing": event(location={
+                "name": "", "adminLevel4": CITY, "countryCode": "FR"}),
+            "live_oa_city_changed": event(location={
+                "name": VENUE, "adminLevel4": "Autre ville",
+                "countryCode": "FR"}),
+            "live_oa_venue_changed": event(location={
+                "name": "Un lieu inconnu", "adminLevel4": CITY,
+                "countryCode": "FR"}),
+        }
+        for expected, live in reasons.items():
+            with self.subTest(expected=expected):
+                out = run(oa_event=live)
+                self.assertEqual(out["status"], expected)
+                self.assertFalse(out["publication_ready"])
+                self.assertEqual(
+                    public_redacted_municipal_bootstrap(out)["status"],
+                    expected)
+        original = lead()
+        original["country_code_unverified"] = "GF"
+        mismatch = run(item=original, oa_event=event(original))
+        self.assertEqual(mismatch["status"], "live_oa_country_changed")
+        self.assertFalse(mismatch["publication_ready"])
 
     def test_untrusted_international_event_is_not_a_municipal_french_claim(self):
         out = run(oa_event=event(location={
