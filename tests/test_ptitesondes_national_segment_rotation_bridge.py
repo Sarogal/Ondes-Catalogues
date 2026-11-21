@@ -234,6 +234,10 @@ class NationalSegmentBridgeTests(unittest.TestCase):
         document = segment(known=(), unknown=(item["event_uid"],))
         unknown = document["unclassified_editorial_research_only"][0]
         unknown.update(item)
+        # The national segment is bound to the exact new agenda discovered
+        # by OA; it must never be cross-linked to a different agenda.
+        document["agenda_uid"] = item["agenda_uid"]
+        document["agenda_slug"] = item["agenda_slug"]
         unknown["editorial_category_proposal"] = None
         unknown["review_state"] = (
             "unknown_activity_requires_official_editorial_evidence")
