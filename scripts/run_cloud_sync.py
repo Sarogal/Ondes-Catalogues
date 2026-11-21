@@ -18,7 +18,10 @@ def public_summary(report):
         f"- Catalogue avant : {report['initial']}\n"
         f"- Catalogue simulé : {report['final']}\n"
         f"- Nouvelles fiches conformes : {report['ajoutes']}\n"
-        f"- Propositions différées : {len(report['attente'])}\n"
+        f"- Propositions différées : {len(report['attente'])} (après contrôle du Publisher)\n"
+        f"- Candidats transmis au Publisher : {report.get('private_patch_counts', {}).get('additions', 'inconnu')}\n"
+        f"- Pistes différées dans le patch privé : {report.get('private_patch_counts', {}).get('deferred', 'inconnu')}\n"
+        "- Ces pistes différées ne sont PAS les refus du Publisher ni tout le backlog privé.\n"
         "- Le déploiement est décidé séparément par le workflow.\n"
     )
 
@@ -36,6 +39,12 @@ def main():
     current=json.loads(CATALOGUE.read_text(encoding="utf-8"))
     patch,path=latest(secret,today)
     candidate,report=merge(reference,current,patch,today)
+    # Counts only. Keep all candidate titles, URLs and refusal reasons private.
+    # A zero-size publisher input is NOT a verified rejection of all backlog leads.
+    report["private_patch_counts"]={
+        "additions":len(patch["additions"]),
+        "deferred":len(patch["deferred"]),
+    }
     report["patch"]=path
     REPORT.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     changed=bool(report["ajoutes"])
