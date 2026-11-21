@@ -219,6 +219,95 @@ class OA2DirectEvidenceTests(unittest.TestCase):
                                 venue=geo)["reason"],
                          "geography_not_independently_verified")
 
+    def test_further_french_overseas_collectivities_exact_local_offsets(self):
+        # Synthetic venues only; source evidence remains non-publishable.
+        cases = (
+            ("PF", "Polynésie française", "Papeete",
+             "Pacific/Tahiti", "-1000", -17.54, -149.57),
+            ("PF", "Polynésie française", "Nuku Hiva",
+             "Pacific/Marquesas", "-0930", -8.91, -140.1),
+            ("PF", "Polynésie française", "Rikitea",
+             "Pacific/Gambier", "-0900", -23.12, -134.97),
+            ("NC", "Nouvelle-Calédonie", "Nouméa",
+             "Pacific/Noumea", "+1100", -22.27, 166.45),
+            ("WF", "Wallis-et-Futuna", "Mata-Utu",
+             "Pacific/Wallis", "+1200", -13.28, -176.18),
+            ("PM", "Saint-Pierre-et-Miquelon", "Saint-Pierre",
+             "America/Miquelon", "-0300", 46.78, -56.17),
+            ("BL", "Saint-Barthélemy", "Gustavia",
+             "America/St_Barthelemy", "-0400", 17.90, -62.85),
+            ("MF", "Saint-Martin", "Marigot",
+             "America/Marigot", "-0400", 18.07, -63.08),
+        )
+        for country, territory, city, timezone, offset, lat, lng in cases:
+            with self.subTest(country=country, tz=timezone):
+                location = "Place publique sans numéro"
+                lead = dict(LEAD, city=city, venue=location)
+                agenda = dict(AGENDA, timezone=timezone)
+                geo = {"city": city, "aliases": [location],
+                       "lat": lat, "lng": lng}
+                event = deepcopy(EVENT)
+                event["timezone"] = timezone
+                event["location"].update({
+                    "name": location, "adminLevel4": city,
+                    "adminLevel1": territory, "adminLevel2": "Secteur fictif",
+                    "countryCode": country, "latitude": lat,
+                    "longitude": lng,
+                })
+                event["timings"] = [{
+                    "begin": f"2026-12-05T14:30:00{offset}",
+                    "end": f"2026-12-05T16:00:00{offset}",
+                }]
+                result = review(lead=lead, event=event, agenda=agenda,
+                                venue=geo)
+                self.assertTrue(result["source_evidence_structurally_valid"],
+                                result["reason"])
+                self.assertEqual(
+                    result["explicit_local_times_for_candidate_day"], ["14:30"])
+                self.assertFalse(result["approval_granted"])
+                self.assertFalse(result["publisher_connected"])
+                self.assertEqual(result["public_writes"], 0)
+                event["location"]["adminLevel1"] = "Pays étranger"
+                denied = review(lead=lead, event=event, agenda=agenda,
+                                venue=geo)
+                self.assertEqual(denied["reason"],
+                                 "geography_not_independently_verified")
+
+    def test_extra_overseas_timezone_country_mismatch_and_clock_forgery(self):
+        lead = dict(LEAD, city="Papeete", venue="Place sans numéro")
+        agenda = dict(AGENDA, timezone="Pacific/Tahiti")
+        venue = {"city": "Papeete", "aliases": ["Place sans numéro"],
+                 "lat": -17.54, "lng": -149.57}
+        event = deepcopy(EVENT)
+        event["timezone"] = "Pacific/Tahiti"
+        event["location"].update({
+            "name": "Place sans numéro", "adminLevel4": "Papeete",
+            "adminLevel1": "Polynésie française", "adminLevel2": "Îles du Vent",
+            "countryCode": "PF", "latitude": -17.54,
+            "longitude": -149.57,
+        })
+        event["timings"] = [{
+            "begin": "2026-12-05T14:30:00-1000",
+            "end": "2026-12-05T16:00:00-1000",
+        }]
+        self.assertTrue(review(lead=lead, event=event, agenda=agenda,
+                               venue=venue)["source_evidence_structurally_valid"])
+        # Correct region and coordinates do not rescue a mismatched local time.
+        event["timings"][0]["begin"] = "2026-12-05T14:30:00-0900"
+        self.assertEqual(review(lead=lead, event=event, agenda=agenda,
+                                venue=venue)["reason"],
+                         "time_offset_not_matching_reviewed_timezone")
+        event["timings"][0]["begin"] = "2026-12-05T14:30:00-1000"
+        agenda["timezone"] = event["timezone"] = "Pacific/Noumea"
+        self.assertEqual(review(lead=lead, event=event, agenda=agenda,
+                                venue=venue)["reason"],
+                         "unreviewed_territory_timezone")
+        agenda["timezone"] = event["timezone"] = "Pacific/Tahiti"
+        event["location"]["countryCode"] = "BE"
+        self.assertEqual(review(lead=lead, event=event, agenda=agenda,
+                                venue=venue)["reason"],
+                         "geography_not_independently_verified")
+
     def test_public_aggregate_refuses_arbitrary_reason_text(self):
         forged = review()
         forged["reason"] = "private city and source url disguised as failure"

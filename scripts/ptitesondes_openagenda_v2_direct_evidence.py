@@ -28,7 +28,32 @@ MAX_DAYS_AHEAD = 184
 FR_TZ = frozenset({
     "Europe/Paris", "America/Guadeloupe", "America/Martinique",
     "America/Cayenne", "Indian/Reunion", "Indian/Mayotte",
+    # Independent IANA/CLDR territory zones, without inventing local dates.
+    "Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier",
+    "Pacific/Noumea", "Pacific/Wallis", "America/Miquelon",
+    "America/St_Barthelemy", "America/Marigot",
 })
+# The API's ISO country code and the reviewed timezone must be compatible.
+# This check is structural only, NOT geographical or organiser proof.
+ADDITIONAL_TERRITORY_ZONES = {
+    "PF": frozenset({"Pacific/Tahiti", "Pacific/Marquesas", "Pacific/Gambier"}),
+    "NC": frozenset({"Pacific/Noumea"}),
+    "WF": frozenset({"Pacific/Wallis"}),
+    "PM": frozenset({"America/Miquelon"}),
+    "BL": frozenset({"America/St_Barthelemy"}),
+    "MF": frozenset({"America/Marigot"}),
+}
+# OpenAgenda's French-region / department labels vary across collectivities;
+# require an explicit matching territorial label but not a street number or a
+# pre-approved town. Independent latitude/longitude confirmation is mandatory.
+ADDITIONAL_TERRITORY_NAMES = {
+    "PF": frozenset({"polynesie francaise"}),
+    "NC": frozenset({"nouvelle caledonie"}),
+    "WF": frozenset({"wallis et futuna"}),
+    "PM": frozenset({"saint pierre et miquelon"}),
+    "BL": frozenset({"saint barthelemy"}),
+    "MF": frozenset({"saint martin"}),
+}
 # Some source feeds represent French overseas departments by ISO territory
 # codes. Require both independently declared administrative names rather than
 # accepting any non-FR country that happens to be near a reviewed venue.
@@ -166,8 +191,18 @@ def _french_location(location):
     if code == "FR":
         return True
     names = OVERSEAS_ADMIN.get(code)
-    return bool(names and _norm(location.get("adminLevel1")) in names
-                and _norm(location.get("adminLevel2")) in names)
+    if names:
+        return bool(_norm(location.get("adminLevel1")) in names
+                    and _norm(location.get("adminLevel2")) in names)
+    names = ADDITIONAL_TERRITORY_NAMES.get(code)
+    if not names:
+        return False
+    # A collectivity may contain different islands/provinces/departments:
+    # requiring adminLevel1 == adminLevel2 would reject valid new places.
+    return bool(_norm(location.get("adminLevel4")) and (
+        _norm(location.get("adminLevel1")) in names
+        or _norm(location.get("adminLevel2")) in names
+    ))
 
 
 def _venue(ev, approved):
@@ -282,6 +317,12 @@ def review_direct_v2(lead, api_event, reviewed_agenda, registered_venue, today):
     if api_event.get("attendanceMode") not in (1, 3):
         return fail("not_physical_family_event")
     if api_event.get("timezone") != reviewed_agenda["timezone"]:
+        return fail("unreviewed_territory_timezone")
+    loc = api_event.get("location")
+    code = loc.get("countryCode") if isinstance(loc, dict) else None
+    if (code in ADDITIONAL_TERRITORY_ZONES
+            and reviewed_agenda["timezone"] not in
+            ADDITIONAL_TERRITORY_ZONES[code]):
         return fail("unreviewed_territory_timezone")
     try:
         target_day = date.fromisoformat(lead["date_start"])
