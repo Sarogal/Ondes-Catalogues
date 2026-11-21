@@ -227,6 +227,31 @@ class UnlistedExactSessionsTests(unittest.TestCase):
         self.assertEqual(out["source_exact_session_count"], 0)
         self.assertEqual(out["source_changed_or_cancelled_count"], 1)
 
+    def test_schema_org_cancellation_object_is_not_a_positive_showtime(self):
+        span = plan([instant(5, 10)])
+        item = lead(span)
+        cancelled = event_jsonld(
+            item["title"], span[0]["begin"], span[0]["end"],
+            eventStatus={"@id": "https://schema.org/EventCancelled"})
+        out = check(item, site(cancelled))
+        self.assertEqual(out["source_exact_session_count"], 0)
+        self.assertEqual(out["source_changed_or_cancelled_count"], 1)
+
+    def test_conflicting_second_location_vetoes_matching_first_location(self):
+        span = plan([instant(5, 10)])
+        item = lead(span)
+        ambiguous = event_jsonld(
+            item["title"], span[0]["begin"], span[0]["end"])
+        ambiguous["location"] = [
+            {"name": "Salle jamais enregistrée",
+             "address": {"addressLocality": "Ville inconnue"}},
+            {"name": "Autre salle",
+             "address": {"addressLocality": "Autre commune"}},
+        ]
+        out = check(item, site(ambiguous))
+        self.assertEqual(out["source_exact_session_count"], 0)
+        self.assertEqual(out["source_venue_conflict_count"], 1)
+
     def test_live_openagenda_mismatch_in_agenda_title_and_time_fail_closed(self):
         span = plan([instant(5, 10)])
         item = lead(span)
