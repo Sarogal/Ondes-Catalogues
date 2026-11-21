@@ -116,11 +116,15 @@ def plan(row, signed_original, current, today):
                 and isinstance(artist["id"], str)
                 and ID.fullmatch(artist["id"])
                 and artist["id"] in new_ids
-                and artist["id"] not in existing and artist["id"] not in fresh
+                and artist["id"] not in fresh
                 and isinstance(artist["name"], str)
                 and 2 <= len(artist["name"].strip()) <= 120
                 and artist["aliases"] == [],
                 "new artist identity is not independently bound")
+        if artist["id"] in existing:
+            require(existing[artist["id"]] == artist,
+                    "persisted new artist changed after publication")
+            continue
         require(not any(normal(artist["name"]) in
                         {normal(a.get("name"))}
                         | {normal(x) for x in (a.get("aliases") or [])}
