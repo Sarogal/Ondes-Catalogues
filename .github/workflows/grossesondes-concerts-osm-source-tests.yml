@@ -1,0 +1,23 @@
+name: Concerts — découverte OSM sans manifeste fixe
+on:
+  pull_request:
+    paths:
+      - 'automation/concerts/venue_osm_self_discovery.py'
+      - 'tests/test_concerts_venue_osm_self_discovery.py'
+      - '.github/workflows/grossesondes-concerts-osm-source-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-discovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Tests de découverte et quarantaine des domaines inconnus
+        run: python -m unittest discover -s tests -p 'test_concerts_venue_osm_self_discovery.py' -v

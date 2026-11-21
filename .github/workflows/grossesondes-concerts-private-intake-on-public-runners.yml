@@ -213,6 +213,52 @@ jobs:
           print("Découverte organisateurs vérifiée : quarantaine privée uniquement.")
           PY
 
+      - name: Découvrir des concerts sur les sites officiels des lieux OSM non listés
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/concerts-osm-venues"
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          # Source URL is independently read from each CURRENT named venue's
+          # OSM node, not supplied by an approval file or trusted host list.
+          # All network fetches are TLS-pinned, robots-aware, redirect-free.
+          # The output is ONLY untrusted event research for private intake.
+          if ! python public/automation/concerts/venue_osm_self_discovery.py \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output "$RUNNER_TEMP/concerts-osm-venues/candidates.json" \
+              --scan-slot "$SCAN_SLOT" --max-venues 5 \
+              > "$RUNNER_TEMP/concerts-private-logs/osm-venue-discovery.log" 2>&1; then
+            echo "::warning::Veille OSM indisponible : aucune nouvelle source n'est admise."
+            python - <<'PY'
+          import json,os
+          from pathlib import Path
+          target=Path(os.environ["RUNNER_TEMP"])/"concerts-osm-venues/candidates.json"
+          target.write_text(json.dumps({
+              "schema":"grossesondes.concert.discovery.v1",
+              "publicationAllowed":False,"automaticPublication":False,
+              "triageCounts":{},"candidates":[],
+          },ensure_ascii=False)+"\n",encoding="utf-8")
+          PY
+          fi
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          path=Path(os.environ["RUNNER_TEMP"])/"concerts-osm-venues/candidates.json"
+          result=json.loads(path.read_text(encoding="utf-8"))
+          assert result["schema"]=="grossesondes.concert.discovery.v1"
+          assert result["publicationAllowed"] is False
+          assert result["automaticPublication"] is False
+          assert sum(result["triageCounts"].values())==len(result["candidates"])
+          assert all(c.get("publicationAllowed") is False and
+                     c.get("reviewRequired") is True and
+                     c.get("newlyDiscoveredFirstPartySource") is True and
+                     c.get("sourceAuthorityVerified") is False
+                     for c in result["candidates"])
+          print("Sources physiques inédites : candidats privés seulement, aucun droit de publication.")
+          PY
+
       - name: Requalifier les tournées Festivals en pistes Concerts vérifiées
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -288,7 +334,7 @@ jobs:
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours concerts-organizers concerts-festival-referrals concerts-festival-published; do
+          for channel in concerts-discovery concerts-tours concerts-organizers concerts-osm-venues concerts-festival-referrals concerts-festival-published; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \
