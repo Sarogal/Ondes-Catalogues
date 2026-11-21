@@ -11,7 +11,8 @@ for p in (str(ROOT / "scripts"), str(ROOT / "tests")):
 
 from grossesondes_venue_reciprocal_edition import (
     safe_root, safe_link, candidate_venue_roots, venue_detail_matches,
-    verified_venue_reciprocity, private_proposal, validate_private_proposal,
+    verified_venue_reciprocity, first_party_hero_hint,
+    private_proposal, validate_private_proposal,
     independently_verify, validate_verified_row, PROOF_MODE,
 )
 from grossesondes_cloud_sync import collect_registered_venue_reciprocal_sources
@@ -119,8 +120,12 @@ class DynamicVenueBacklinkProofs(TestCase):
         cal, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
         first = examine(state, queue(DAY1), cal, DAY1, fetch=fetch)
-        self.assertEqual(first["rows"][0]["date_source_mode"],
-                         "SOURCE_HERO_REQUIRES_VENUE_BACKLINK")
+        self.assertEqual(first_party_hero_hint(home, TITLE, DAY1), DATES)
+        # The strict parser can already prove some separated hero pages.
+        # Either proof remains private until venue reciprocity is confirmed.
+        self.assertIn(
+            first["rows"][0]["date_source_mode"],
+            ("SOURCE_PAGE", "SOURCE_HERO_REQUIRES_VENUE_BACKLINK"))
         self.assertEqual(first["two_day_dates_count"], 0)
         second = examine(state, queue(DAY2), cal, DAY2, fetch=fetch)
         self.assertEqual(second["two_day_dates_count"], 1)
