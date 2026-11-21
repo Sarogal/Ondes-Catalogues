@@ -1,0 +1,49 @@
+name: "Grosses Ondes — official laut.fm artwork intake (TEST)"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-official-lautfm-artwork-intake.yml"
+      - "grossesondes/radio-test-apk/artwork/**"
+      - "radio-catalog-lab/tools/audit_open_radio_artwork_inventory.py"
+      - "radio-catalog-lab/tools/discover_official_laut_fm_logos.py"
+      - "radio-catalog-lab/tools/test_discover_official_laut_fm_logos.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  laut-fm-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install image decoder for exact SHA inspection
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+      - name: Verify official station slug, image source, no whitelist or publication
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_discover_official_laut_fm_logos.py" -v
+      - name: Collect read-only laut.fm metadata and logo byte evidence
+        run: |
+          python radio-catalog-lab/tools/discover_official_laut_fm_logos.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --output go-lautfm-image-candidates.json \
+            --network
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-official-lautfm-artwork-candidates
+          path: go-lautfm-image-candidates.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: Assert no catalog mutation or public deployment
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_OFFICIAL_LAUT_FM_ARTWORK_CANDIDATES_ONLY — no station logo approved"
