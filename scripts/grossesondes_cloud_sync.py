@@ -65,6 +65,7 @@ from grossesondes_noel_2026 import (
     PROOF_MODE as NOEL_PROOF_MODE, PROOF_SOURCES as NOEL_PROOF_SOURCES,
     SLUG as NOEL_SLUG,
 )
+from grossesondes_undated_edition import PROOF_MODE as ARCHIVED_UNDATED_PROOF_MODE
 from grossesondes_calendar_approval import approved_calendar, merge_staged_with_approved
 from grossesondes_cernunnos_running_order import (
     RUNNING_ORDER_URL, GROUPS_URL, FIELDS as CERNUNNOS_LIVE_FIELDS,
@@ -454,7 +455,7 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
                 and addition.get("proofMode") in (
                     EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
                     HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
-                    ARCHIVED_BROWSER_PROOF_MODE)):
+                    ARCHIVED_BROWSER_PROOF_MODE, ARCHIVED_UNDATED_PROOF_MODE)):
             ready.append(addition)
         if len(ready) == 10:
             break
@@ -462,12 +463,12 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
         mode=proposed.get("proofMode")
         if mode not in (EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
                         HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
-                        ARCHIVED_BROWSER_PROOF_MODE):
+                        ARCHIVED_BROWSER_PROOF_MODE, ARCHIVED_UNDATED_PROOF_MODE):
             continue
         slug=proposed.get("slug")
         registered = (archived if mode in (
             ARCHIVED_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
-            ARCHIVED_BROWSER_PROOF_MODE) else original)
+            ARCHIVED_BROWSER_PROOF_MODE, ARCHIVED_UNDATED_PROOF_MODE) else original)
         if not isinstance(registered, dict):
             continue
         parent=registered.get(proposed.get("originSlug"),{})
@@ -721,7 +722,8 @@ def browser_needed_for_pending_patch(patch, published_slugs):
         if (isinstance(row, dict) and row.get("slug") not in published_slugs
                 and row.get("proofMode") in (
                     EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE, HTML_PROOF_MODE,
-                    ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE)):
+                    ARCHIVED_HTML_PROOF_MODE, ARCHIVED_BROWSER_PROOF_MODE,
+                     ARCHIVED_UNDATED_PROOF_MODE)):
             eligible.append(row)
         if len(eligible) >= 10:
             break
