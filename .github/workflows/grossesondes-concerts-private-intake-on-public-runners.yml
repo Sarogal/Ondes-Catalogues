@@ -516,6 +516,24 @@ jobs:
             echo "::warning::Audit d'agrément des salles indisponible ; aucune autorisation accordée."
           fi
 
+      - name: Découvrir les domaines officiels inconnus dans le registre privé
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Open-ended source leads from the WHOLE private backlog, not a
+          # static list of known venues/organizers. OFFLINE and private only.
+          # A candidate domain never gets publisher authority from this step.
+          if ! python public/automation/concerts/source_admission_intake.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/source-admission-intake.json \
+              > "$RUNNER_TEMP/concerts-private-logs/source-admission-intake.log" 2>&1; then
+            echo "::warning::File de découverte des sources non générée ; aucun domaine agréé."
+          else
+            echo "File privée de qualification de sources constituée ; aucune confiance attribuée."
+          fi
+
       - name: Conserver uniquement le registre et les revues dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         working-directory: confidential
@@ -552,6 +570,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/venue-admission-audit.json ]; then
             git add --sparse -- automation/concerts/intake/venue-admission-audit.json
+          fi
+          if [ -f automation/concerts/intake/source-admission-intake.json ]; then
+            git add --sparse -- automation/concerts/intake/source-admission-intake.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
