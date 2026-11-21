@@ -55,12 +55,26 @@ def _unique_site(catalogue, row):
     return matches[0]
 
 
-def _individual_event(html, url, when, venue):
-    """Extract exactly ONE MusicEvent with its OWN performers and genre."""
+def _individual_event(html, url, when, venue, *, accept_generic=False):
+    """Extract exactly one official concert, not genres from unrelated cards.
+
+    Generic Event and HTML microdata are accepted only when a separate
+    caller has authenticated the first-party source against named OSM.
+    Every alternative still needs named performers and a relevant genre
+    on its own individual record. Bad JSON-LD cannot be hidden by microdata.
+    """
     matches = []
-    for node in discover.read_ld(html):
-        if not isinstance(node, dict) or (
-                "MusicEvent" not in bridge._event_types(node.get("@type"))):
+    for node in dynamic.individual_event_nodes(
+            html, accept_generic=accept_generic):
+        if not isinstance(node, dict):
+            continue
+        types = bridge._event_types(node.get("@type"))
+        if not ("MusicEvent" in types or
+                (accept_generic and "Event" in types)):
+            continue
+        status = str(node.get("eventStatus") or "").casefold()
+        if any(part in status for part in
+               ("cancel", "postpon", "resched", "report", "annul")):
             continue
         # A MusicEvent can still represent a festival. This route must never
         # misclassify a festival edition as a single concert.
