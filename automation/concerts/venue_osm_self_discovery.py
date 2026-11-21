@@ -222,21 +222,44 @@ def scan(catalogue,today,*,slot=0,max_venues=MAX_VENUES,
             diagnostics["namedOsmWebsitesVerified"]+=1
             text=fetch(homepage,cache)
             require(isinstance(text,str),"official homepage missing")
-            links=detail_links(text,homepage,today,slot,max_details)
-            diagnostics["individualDetailsQueued"]+=len(links)
+            pending=detail_links(text,homepage,today,slot,max_details)
+            diagnostics["individualDetailsQueued"]+=len(pending)
             source={
                 "id":venue["id"],"name":venue["name"],
                 "city":venue["city"],"department":venue["department"],
                 "url":homepage,
             }
-            for link in links:
+            visited={homepage}
+            read=0
+            # A homepage often links to an agenda which THEN links to
+            # individual event detail pages. Explore these two steps on the
+            # same independently attributed HTTPS origin, never more than
+            # max_details fetched pages in total per venue per cycle.
+            while pending and read < max_details:
+                link=pending.pop(0)
+                if link in visited:
+                    continue
+                visited.add(link)
+                read+=1
                 try:
                     detail=fetch(link,cache)
-                    for row in event_leads(detail,link,dict(source),catalogue,today):
+                    leads=event_leads(detail,link,dict(source),catalogue,today)
+                    for row in leads:
                         # Do not use a finite artist or room directory. A
                         # stable ID is a candidate identity, never authority.
                         candidates[row["candidateId"]]=row
                     diagnostics["detailPagesRead"]+=1
+                    if not leads:
+                        extra=detail_links(detail,link,today,slot,max_details)
+                        unseen=[next_url for next_url in extra
+                                if next_url not in visited
+                                and next_url not in pending
+                                and intake.valid_https(next_url) ==
+                                    intake.valid_https(homepage)]
+                        # Prefer event cards discovered on a currently opened
+                        # agenda over another menu from the homepage.
+                        pending=unseen+pending
+                        diagnostics["individualDetailsQueued"]+=len(unseen)
                 except (ValueError,TypeError,KeyError,OSError,TimeoutError):
                     diagnostics["detailPagesHeld"]+=1
         except (ValueError,TypeError,KeyError,OSError,TimeoutError,
