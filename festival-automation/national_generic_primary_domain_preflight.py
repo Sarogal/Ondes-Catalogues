@@ -42,6 +42,11 @@ from grossesondes_venue_reciprocal_edition import (
     validate_private_proposal as validate_venue_private_proposal,
     safe_root as safe_venue_root, first_party_hero_hint,
 )
+from grossesondes_first_party_direct_edition import (
+    verify_first_party_edition,
+    private_proposal as direct_private_proposal,
+    validate_private_proposal as validate_direct_private_proposal,
+)
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -653,6 +658,108 @@ def append_directory_proposals(folder, catalog, history, state, queue,
 
 
 
+
+def stable_first_party_direct_proposals(state, queue, catalog, report, today,
+                                         fetch=fetch_public_html, limit=2):
+    """Direct pathway: re-fetch the official site, not a second date source.
+
+    J/J+1 is a PRIVATE stability observation of the SAME first-party website,
+    not third-party confirmation. The Publisher independently re-downloads
+    and compares current-edition dates before any append-only publication.
+    """
+    if (not isinstance(report, dict) or report.get("schema") != SCHEMA
+            or report.get("as_of") != today
+            or report.get("review_only") is not True
+            or report.get("safe_to_publish") is not False
+            or report.get("publication_authorized") is not False
+            or report.get("publications") != 0
+            or not isinstance(report.get("rows"), list)
+            or len(report["rows"]) > MAX_CHECKS
+            or type(limit) is not int or not 0 <= limit <= 2):
+        raise ValueError("Unsafe primary-only proposal research")
+    records = state.get(STATE_KEY, {})
+    if not isinstance(records, dict):
+        raise ValueError("Untrusted primary proof registry")
+    options = _eligible(queue, catalog, today)
+    proposals, seen, checked = [], set(), 0
+    for row in report["rows"]:
+        if checked >= limit:
+            break
+        if (not isinstance(row, dict)
+                or row.get("status") !=
+                    "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
+                or row.get("two_day_dates") is not True
+                or row.get("publication_authorized") is not False
+                or row.get("ownership_proven") is not False):
+            continue
+        dates = row.get("start_date_hint"), row.get("end_date_hint")
+        for source in options:
+            if source["dossier_id"] != row.get("dossier_id"):
+                continue
+            old = records.get(source["url"])
+            if (not isinstance(old, dict) or old.get("stable") is not True
+                    or old.get("lastSeen") != today
+                    or old.get("digest") != _digest(
+                        source, *dates, row.get("date_source_mode"))):
+                continue
+            try:
+                if not date.fromisoformat(old["firstSeen"]) < date.fromisoformat(today):
+                    continue
+            except (ValueError, TypeError, KeyError):
+                continue
+            host = urlsplit(source["url"]).hostname
+            site = "https://" + host + "/" if host else None
+            if site is None or safe_venue_root(site) is None or site in seen:
+                continue
+            checked += 1
+            try:
+                proven_dates = verify_first_party_edition(
+                    site, source["title"], today, fetch=fetch)
+                if proven_dates != tuple(dates):
+                    continue
+                proposal = direct_private_proposal(
+                    source["title"], site, dates, today)
+                if (proposal is None
+                        or validate_direct_private_proposal(
+                            proposal, today) is None):
+                    continue
+                proposals.append(proposal)
+                seen.add(site)
+            except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                continue
+            break
+    return proposals
+
+
+def append_direct_first_party_proposals(
+        folder, catalog, history, state, queue, report, today,
+        fetch=fetch_public_html):
+    if (not isinstance(history, dict) or history.get("schema") != 2
+            or not isinstance(history.get("knownFestivals"), list)):
+        raise ValueError("Unsafe historical reference")
+    additions = stable_first_party_direct_proposals(
+        state, queue, catalog, report, today, fetch=fetch)
+    if not additions:
+        return 0
+    patch = latest_patch(folder, date.fromisoformat(today))
+    used = {row.get("slug") for row in patch["additions"]
+            if isinstance(row, dict)}
+    n = 0
+    for row in additions:
+        if (len(patch["additions"]) >= 100 or row["slug"] in used
+                or conflicts_with_signed_catalogue(
+                    row, catalog["festivals"], history["knownFestivals"])):
+            continue
+        patch["additions"].append(row)
+        used.add(row["slug"])
+        n += 1
+    if n:
+        patch["generated_at"] = today
+        atomic_json(folder / ("patch-" + today + ".json"), patch)
+    return n
+
+
+
 def stable_reciprocal_venue_proposals(state, queue, catalog, report, today,
                                        fetch=fetch_public_html, limit=2):
     """Rescue primary editions whose first-party domain lacks a directory.
@@ -773,6 +880,8 @@ def main():
                else read(args.catalog.parent / "festival-history.json"))
     added = append_directory_proposals(
         folder, catalog, history, state, queue, report, today)
+    direct_added = append_direct_first_party_proposals(
+        folder, catalog, history, state, queue, report, today)
     venue_added = append_venue_proposals(
         folder, catalog, history, state, queue, report, today)
     state_path.write_text(
@@ -784,6 +893,7 @@ def main():
           + str(report["eligible_source_count"]) + ", checked="
           + str(report["checked_count"]) + ", two-day="
           + str(report["two_day_dates_count"]) + ", directory_private_additions=" + str(added)
+          + ", direct_first_party_private_additions=" + str(direct_added)
           + ", venue_reciprocal_private_additions=" + str(venue_added)
           + ", publications=0")
 
