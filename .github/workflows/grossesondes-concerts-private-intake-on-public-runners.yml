@@ -31,6 +31,7 @@ on:
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/festival_tour_handoff.py'
+      - 'automation/concerts/published_festival_tour_research.py'
       - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
@@ -242,13 +243,49 @@ jobs:
           print("Transfert Festivals -> Concerts vérifié : revue privée uniquement.")
           PY
 
+      - name: Recouper les étapes de tournées déjà publiées par Festivals
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Existing signed Festival rows may nominate concert research:
+          # same official festival website, recurring named bill, distinct
+          # future single-day dates/cities and EXPLICIT touring language.
+          # No network, new publisher authority, or event reclassification.
+          if ! python public/automation/concerts/published_festival_tour_research.py \
+              --festivals public/docs/grossesondes/festivals.json \
+              --output "$RUNNER_TEMP/concerts-festival-published/candidates.json" \
+              > "$RUNNER_TEMP/concerts-private-logs/published-festival-tour-research.log" 2>&1; then
+            echo "::error::Rattrapage des concerts déjà classés Festivals impossible"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-festival-published/candidates.json"
+          doc = json.loads(p.read_text(encoding="utf-8"))
+          assert doc.get("schema") == "grossesondes.concert.discovery.v1"
+          assert doc.get("publicationAllowed") is False
+          assert doc.get("automaticPublication") is False
+          assert doc.get("triageCounts", {}).get("tour_source_research") == len(doc["candidates"])
+          assert all(c.get("publicationAllowed") is False
+                     and c.get("reviewRequired") is True
+                     and c.get("festivalCatalogueHintsOnly") is True
+                     and c.get("requiresArtistAndVenueReproof") is True
+                     and c.get("officialDetailFound") is False
+                     and c.get("source") == "festival_published_tour_research"
+                     and c.get("reviewBucket") == "tour_source_research"
+                     for c in doc["candidates"])
+          print("Anciennes étapes de tournées Festivals nommées pour revue Concerts privée.")
+          PY
+
       - name: Archiver les découvertes et les tournées Festivals dans le registre privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours concerts-organizers concerts-festival-referrals; do
+          for channel in concerts-discovery concerts-tours concerts-organizers concerts-festival-referrals concerts-festival-published; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \
