@@ -93,6 +93,24 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual((r1["events_rechecked"], r2["events_rechecked"]), (2, 1))
         self.assertEqual(after["next_index"], 0)
 
+    def test_new_index_does_not_reset_rotation_and_starve_pending_events(self):
+        old = [fixture(uid=100 + i) for i in range(4)]
+        with patch("ptitesondes_national_backlog_bridge._inventory",
+                   return_value=old):
+            _, cursor, first = bridge(
+                Path("/unused"), [], TODAY, KEY, limit=2, operator=operator)
+        self.assertEqual(first["events_rechecked"], 2)
+        self.assertEqual(cursor["next_index"], 2)
+        # An additional national index batch appears before the next slot.
+        with patch("ptitesondes_national_backlog_bridge._inventory",
+                   return_value=old + [fixture(uid=104)]):
+            added, next_cursor, second = bridge(
+                Path("/unused"), [], TODAY, KEY, limit=1,
+                cursor=cursor, operator=operator)
+        self.assertEqual(second["events_rechecked"], 1)
+        self.assertEqual(added[0]["external_id"], "102")
+        self.assertEqual(next_cursor["next_index"], 3)
+
     def test_untrusted_operator_cannot_claim_publication(self):
         def forged(*args, **kwargs):
             value = operator(*args, **kwargs)
