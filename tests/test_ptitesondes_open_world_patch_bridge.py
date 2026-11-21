@@ -275,7 +275,11 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             "<p>1 esplanade Charles-de-Gaulle</p></article>")
         for kind, location, geo in (
             ("partial", {"latitude": 44.5}, ban()),
-            ("contradiction", {}, ban(coords=(48.0, 2.25))),
+            ("contradiction", {}, ban(street="Rue des Roses")),
+            ("wrong_citycode", {}, dict(ban(),
+                              features=[dict(ban()["features"][0],
+                                  properties={**ban()["features"][0]["properties"],
+                                              "citycode": "99999"})])),
             ("ambiguous", {}, {"type": "FeatureCollection",
                                "features": ban()["features"] * 2}),
             ("no_municipal_address", {}, ban()),
