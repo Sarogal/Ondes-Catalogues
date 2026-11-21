@@ -61,7 +61,12 @@ def _geo(valid):
             and -180 <= valid[0] <= 180 and -56 <= valid[1] <= 52)
 
 
-def _ban_result(site, fetch, *, include_region=False):
+def _ban_result(site, fetch, *, include_region=False, min_score=0.89):
+    # A lower bound is permissible only to RESEARCH a government-matched
+    # exact address; the publisher continues to call the 0.89 default.
+    require(type(min_score) in (int, float) and math.isfinite(min_score)
+            and 0.75 <= min_score <= 0.99,
+            "invalid French address confidence policy")
     postcode = site["postalCode"]
     city = site["city"]
     house, street = _street_parts(site["address"])
@@ -96,7 +101,7 @@ def _ban_result(site, fetch, *, include_region=False):
                 or props.get("type") not in ("housenumber", "street")
                 or type(props.get("score")) not in (int, float)
                 or not math.isfinite(props["score"])
-                or props["score"] < 0.89):
+                or props["score"] < min_score):
             continue
         if house:
             if props["type"] != "housenumber" or clean(
@@ -210,7 +215,7 @@ def _osm_map(site, center, fetch):
     return matches[0]
 
 
-def verify(site, fetch):
+def verify(site, fetch, *, min_score=0.89):
     """The caller must have verified a single dated first-party Event beforehand.
 
     fetch(url, byte_cap) -> (body, final_url); the production fetch honours
@@ -221,5 +226,5 @@ def verify(site, fetch):
         isinstance(site.get(field), str) and site[field].strip()
         for field in ("name", "city", "address", "postalCode", "region")),
         "official event site identity absent")
-    center = _ban_result(site, fetch)
+    center = _ban_result(site, fetch, min_score=min_score)
     return _osm_map(site, center, fetch)
