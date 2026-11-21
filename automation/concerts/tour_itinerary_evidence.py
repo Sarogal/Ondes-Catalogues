@@ -55,8 +55,12 @@ class VisibleLines(HTMLParser):
     def handle_starttag(self, tag, attrs):
         tag = tag.lower()
         props = dict(attrs)
+        class_names = set((props.get("class") or "").lower().split())
         blocked = (tag in self.HIDDEN_TAGS
                    or "hidden" in props or props.get("aria-hidden") == "true"
+                   or bool(class_names.intersection({
+                       "hidden", "d-none", "sr-only", "visually-hidden",
+                       "screen-reader-text", "u-hidden"}))
                    or "display:none" in (props.get("style") or "").replace(
                        " ", "").lower())
         if tag in self.BREAKS and self.hidden == 0 and not blocked:
@@ -161,7 +165,10 @@ def matching_tour_stop(html, expected_day, candidate_city, candidate_venue):
             return False
         before = norm(raw[:itinerary_start][-3000:])
         # The year must be carried by the tour itself, not by a page footer.
-        if not _same_phrase(before, str(target.year)):
+        # The last explicit calendar year BEFORE the listing must match,
+        # even if an earlier page heading mentions a future tour.
+        years = re.findall(r"(?<![0-9])20[2-4][0-9](?![0-9])", before)
+        if not years or years[-1] != str(target.year):
             return False
         if not TOUR_WORD.search(before) or not SHOW_WORD.search(before):
             return False
