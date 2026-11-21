@@ -22,6 +22,9 @@ from ptitesondes_dila_municipal_domains import (
 from ptitesondes_delegated_source_authority import (
     mint_delegated_venue_source_proof,
 )
+from ptitesondes_secondary_municipal_site_proof import (
+    mint_secondary_municipal_host_proof,
+)
 from ptitesondes_generic_venue_ign_corroboration import fetch_ign
 from ptitesondes_generic_venue_osm_preflight import fetch_overpass
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
@@ -160,6 +163,14 @@ def prepare_open_world_patch(
                 source_proof = mint_delegated_venue_source_proof(
                     city, venue, event_url, directory,
                     reference_url, reference_html, today)
+                if source_proof is None:
+                    # Municipality-run secondary sites (e.g. culture calendars)
+                    # need a DILA-site link PLUS their own legal declaration.
+                    # A mere backlink or self-declared organizer is not enough.
+                    source_proof = mint_secondary_municipal_host_proof(
+                        city, event_url, directory,
+                        reference_url, reference_html, today,
+                        reader=official_reader)
                 if source_proof is None:
                     held("independent_municipal_source_delegation_unconfirmed")
                     continue
