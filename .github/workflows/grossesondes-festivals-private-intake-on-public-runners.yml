@@ -18,6 +18,7 @@ on:
       - 'festival-automation/regional_source_diagnostics.py'
       - 'festival-automation/regional_festival_indexes.json'
       - 'festival-automation/national_discovery_queue.py'
+      - 'festival-automation/national_municipal_source_research.py'
       - 'festival-automation/national_openagenda_research.py'
       - 'festival-automation/national_generic_primary_domain_preflight.py'
       - 'festival-automation/national_directory_edition_preflight.py'
@@ -174,6 +175,9 @@ jobs:
           # Public OPEN-DATA source: bounded, HTTPS pinned, only PRIVATE research.
           # An unavailable API never becomes a publication or blocks other sources.
           run_private queue python "$ENGINE/national_discovery_queue.py" --intake "$INTAKE" --report "$REPORT"
+          # Geo + DILA verified dynamic commune/homepage hints, private only.
+          # No new private cron, no site fetch, no publication authorization.
+          run_private municipal_research python "$ENGINE/national_municipal_source_research.py" --intake "$INTAKE" --limit 3
           run_private details python "$ENGINE/national_detail_qualification.py" --intake "$INTAKE" --report "$REPORT" --limit 2
           # Newly found municipal agenda editions: strict visible dates and
           # two-day provenance review only, never a public patch or approval.
@@ -249,6 +253,7 @@ jobs:
             automation-intake/grossesondes/curated-multi-source-review.json \
             automation-intake/grossesondes/curated-secondary-sources-review.json \
             automation-intake/grossesondes/national-festival-discovery-review.json \
+            automation-intake/grossesondes/national-municipal-source-research.json \
             automation-intake/grossesondes/national-openagenda-research-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
