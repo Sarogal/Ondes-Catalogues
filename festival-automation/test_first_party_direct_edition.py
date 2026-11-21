@@ -92,13 +92,13 @@ class FirstPartyDirectTests(TestCase):
         for body in (
             HOME.replace("2027", "2026"),
             HOME.replace("23 &amp; 24 avril 2027", "dates à venir"),
-            HOME.replace("festival de rock et punk",
+            HOME.replace("Festival de rock et punk",
                          "festival de gastronomie"),
             HOME.replace("La Sainte Rock Festival 2027",
                          "Festival complètement différent 2027"),
             HOME.replace("23 &amp; 24 avril 2027",
                          "24 &amp; 25 avril 2027"),
-            HOME.replace("festival de rock et punk",
+            HOME.replace("Festival de rock et punk",
                          "festival hardcore techno / hardstyle / EDM"),
         ):
             with self.subTest(body=body[:100]):
