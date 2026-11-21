@@ -8,6 +8,7 @@ on:
       - ".github/workflows/radio-apk-quarantine-fixture-ci.yml"
       - "grossesondes/radio-test-apk/**"
       - "radio-catalog-lab/tools/test_radio_apk_quarantine_fixture.py"
+      - "radio-catalog-lab/tools/test_radio_apk_pending_punk_v4.py"
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,9 @@ jobs:
       - name: Verify signed test releases + quarantine-only admission
         run: |
           python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_apk_quarantine_fixture.py" -v
+      - name: Verify pending REAL Punk v4 remains signed and inactive
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_radio_apk_pending_punk_v4.py" -v
       - name: Assert test-only no mutation
         run: |
           git diff --quiet
