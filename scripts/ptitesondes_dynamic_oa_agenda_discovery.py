@@ -66,7 +66,9 @@ def candidate_batches(backlog, configured_agendas, today, batch_index=0,
         if slug is None:
             continue
         if (lead["collector"] == "opendatasoft-index"
-                and (not norm(lead.get("city")) or not norm(lead.get("venue")))):
+                and (not isinstance(lead.get("city"), str)
+                     or not isinstance(lead.get("venue"), str)
+                     or not norm(lead["city"]) or not norm(lead["venue"]))):
             continue
         try:
             d = date.fromisoformat(lead.get("date_start"))
@@ -112,7 +114,10 @@ def _direct_location_agrees(lead, record, *, allow_missing_lead_place=False):
             or not norm(place.get("adminLevel4"))):
         return False
     for key, field in (("venue", "name"), ("city", "adminLevel4")):
-        claimed = norm(lead.get(key))
+        # norm(None) would become the literal word "none", falsely treating
+        # an unreported place as an asserted conflicting location.
+        raw_claim = lead.get(key)
+        claimed = norm(raw_claim) if isinstance(raw_claim, str) else ""
         if claimed and claimed != norm(place.get(field)):
             return False
         if not claimed and not allow_missing_lead_place:
