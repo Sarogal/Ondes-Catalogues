@@ -134,6 +134,71 @@ class GenericPublishedLineupPublisherTests(unittest.TestCase):
                         sync.merge(BASE, current, signed, TODAY)
                 self.assertEqual(initial, current)
 
+    def test_national_patch_proposal_to_independent_publisher_end_to_end(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from automation.concerts import published_lineup_audit as audit
+        current, signed = fixture()
+        report = {
+            "schema": audit.SCHEMA, "publicationAllowed": False,
+            "checks": [
+                {"eventId": eid, "officialUrl": next(
+                    e["officialUrl"] for e in current["events"] if e["id"] == eid),
+                 "state": "published_lineup_incomplete",
+                 "officialBillRechecked": True}
+                for eid, lead, support in TARGETS
+            ],
+        }
+        suggestions = builder.build(
+            current, report, TODAY,
+            fetch=lambda url, cache: safe_fixture_fetch(url))
+        self.assertEqual(len(suggestions["proposals"]), 2)
+        self.assertFalse(suggestions["publicationAllowed"])
+        self.assertFalse(suggestions["publisherAuthorityGranted"])
+        self.assertEqual(suggestions["held"], [])
+        signed["lineupCorrections"] = suggestions["proposals"]
+        from scripts import concerts_private_approval_preview as preview
+        previous = copy.deepcopy(signed)
+        previous.pop("lineupCorrections")
+        with mock.patch.object(contract, "network_fetch",
+                               side_effect=safe_fixture_fetch):
+            self.assertEqual(
+                preview.audit(previous, signed, BASE, current, TODAY), 2)
+            merged, counts = sync.merge(BASE, current, signed, TODAY)
+        self.assertEqual(counts["correctedEvents"], 2)
+        self.assertEqual(counts["newEvents"], 0)
+        self.assertEqual(len(merged["events"]), len(current["events"]))
+
+    def test_patch_builder_rechecks_and_rejects_dishonest_audit(self):
+        from automation.concerts import published_lineup_patch_builder as builder
+        from automation.concerts import published_lineup_audit as audit
+        current, signed = fixture()
+        event = next(e for e in current["events"]
+                     if e["id"] == TARGETS[0][0])
+        record = {"eventId": event["id"], "officialUrl": event["officialUrl"],
+                  "state": "published_lineup_incomplete",
+                  "officialBillRechecked": True}
+        report = {"schema": audit.SCHEMA, "publicationAllowed": False,
+                  "checks": [record]}
+        for mutation in ("false-state", "wrong-url", "fake-date",
+                         "extra-event", "already-complete"):
+            with self.subTest(mutation=mutation):
+                damaged = copy.deepcopy(report)
+                if mutation == "false-state":
+                    damaged["checks"][0]["officialBillRechecked"] = False
+                if mutation == "wrong-url":
+                    damaged["checks"][0]["officialUrl"] = "https://evil.example/event"
+                def fake(url, cache):
+                    html = safe_fixture_fetch(url)
+                    if mutation == "fake-date":
+                        return html.replace("25 novembre", "26 novembre")
+                    if mutation == "extra-event":
+                        return html.replace("</main>", "<h1>Un autre événement</h1></main>")
+                    if mutation == "already-complete":
+                        return html.replace("Marillion + Lazuli", "Marillion")
+                    return html
+                result = builder.build(current, damaged, TODAY, fetch=fake)
+                self.assertEqual(result["proposals"], [])
+
     def test_private_preview_accepts_only_append_only_lineup_corrections(self):
         from scripts import concerts_private_approval_preview as preview
         current, proposed = fixture()
