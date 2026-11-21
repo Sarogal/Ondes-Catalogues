@@ -57,7 +57,13 @@ def website_from_address(site, *, fetch=probe.safe_fetch, cache=None):
                 "government/OSM evidence unavailable or oversized")
         return response,url
 
-    feature_url, lat, lon, precision=geo.verify(site,bounded)
+    # The governmental search score is a ranking signal, NOT location proof.
+    # Precise postcode, municipality, street and house-number still have
+    # exact equality checks in geo._ban_result; a SECOND named OSM feature
+    # must also agree, and OSM must independently attribute the HTTPS site.
+    # Never pass this relaxed research score to Publisher site approval.
+    feature_url, lat, lon, precision=geo.verify(
+        site,bounded,min_score=0.78)
     require(precision in {"named-site-point","named-site-area"},
             "named physical site not independently confirmed")
     feature=OSM_FEATURE.fullmatch(feature_url)
