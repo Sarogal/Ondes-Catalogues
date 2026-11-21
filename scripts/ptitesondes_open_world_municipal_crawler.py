@@ -195,7 +195,13 @@ def crawl_private_municipal_sources(
             elif found not in external_seen:
                 external_seen.add(found)
                 result["private_external_source_links"].append({
-                    "url": found, "candidate_only": True,
+                    "url": found,
+                    # Preserve the EXACT DILA-verified municipal page that
+                    # contains the visible hyperlink. The later verifier must
+                    # re-fetch THIS page; a mere municipal home domain cannot
+                    # establish the event citation.
+                    "discovered_on_municipal_url": url,
+                    "candidate_only": True,
                     "organizer_verified": False,
                     "rights_reviewed": False,
                     "publication_ready": False,
