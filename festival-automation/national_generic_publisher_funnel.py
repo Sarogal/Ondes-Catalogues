@@ -3,7 +3,7 @@
 The older national_admission_handoff only diagnoses a named legacy source.
 It is not the gateway for the separately connected, independently reverified
 generic directory and institutional proof modes. This report correlates the
-national discovery queue, signed public catalog and the cumulative PRIVATE
+national discovery queue, public versioned catalog and the cumulative PRIVATE
 patch without approving either the sources or any publication.
 
 All route validation is structural. Only the separate cloud Publisher may
@@ -86,13 +86,13 @@ def build_report(discovery, patch, published, today):
             or not isinstance(published.get("festivals"), list)):
         raise ValueError("Unsafe, stale or inconsistent Festival funnel input")
 
-    signed = set()
+    public_snapshot = set()
     for row in published["festivals"]:
         if not isinstance(row, dict):
             raise ValueError("Malformed signed festival")
         key = _identity(row.get("name"), _year(row.get("startDate")))
         if key is not None:
-            signed.add(key)
+            public_snapshot.add(key)
 
     # These are *untrusted private structures*, not certified source proofs.
     # Each contract may rederive only its own independently reviewed origin.
@@ -142,8 +142,8 @@ def build_report(discovery, patch, published, today):
             "publication_authorized": False,
             "safe_to_publish": False,
         }
-        if key is not None and key in signed:
-            row["status"] = "EXACT_EDITION_ALREADY_SIGNED"
+        if key is not None and key in public_snapshot:
+            row["status"] = "EXACT_EDITION_IN_PUBLIC_SNAPSHOT"
         elif len(proposals) > 1:
             row["status"] = "AMBIGUOUS_PRIVATE_GENERIC_PROPOSALS"
             row["private_contracts_valid"] = len(proposals)
@@ -161,11 +161,12 @@ def build_report(discovery, patch, published, today):
         "review_only": True, "safe_to_publish": False,
         "publication_authorized": False, "publications": 0,
         "publisher_recheck_is_independent": True,
+        "production_signature_checked_by_this_report": False,
         "publisher_recheck_executed_by_this_report": False,
         "legacy_named_entity_registry_required": False,
         "dossiers_total": len(result),
-        "already_signed_count": sum(
-            r["status"] == "EXACT_EDITION_ALREADY_SIGNED" for r in result),
+        "already_in_public_snapshot_count": sum(
+            r["status"] == "EXACT_EDITION_IN_PUBLIC_SNAPSHOT" for r in result),
         "generic_publisher_recheck_pending_count": sum(
             r["status"] == "GENERIC_PUBLISHER_RECHECK_PENDING" for r in result),
         "ambiguous_generic_proposals_count": sum(
@@ -200,8 +201,8 @@ def main():
         encoding="utf-8",
     )
     print("Generic publisher funnel: national=" +
-          str(report["dossiers_total"]) + ", signed=" +
-          str(report["already_signed_count"]) + ", awaiting_reproof=" +
+          str(report["dossiers_total"]) + ", present_in_public_snapshot=" +
+          str(report["already_in_public_snapshot_count"]) + ", awaiting_reproof=" +
           str(report["generic_publisher_recheck_pending_count"]) +
           ", PUBLICATIONS=0")
 
