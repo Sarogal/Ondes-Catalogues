@@ -23,7 +23,7 @@ from ptitesondes_open_world_municipal_crawler import (
     crawl_private_municipal_sources,
 )
 from ptitesondes_open_world_admission_diagnostics import (
-    inspect_open_world_candidate,
+    inspect_open_world_candidate, SCHEMA as ADMISSION_SCHEMA,
 )
 from ptitesondes_openagenda_v2_direct_evidence import (
     _valid_public_read_key, read_direct_agenda_v2, read_direct_v2,
@@ -203,7 +203,12 @@ def rotate_private_open_world_lead(
     result["municipal_page_batches_checked"] = crawl["page_batches_examined"]
     result["municipal_pages_remaining"] = crawl["pages_remaining_incomplete"]
     result["source_candidates_discovered"] = len(new_sources)
-    for _ in range(min(sources_per_cycle, len(checkpoint["pending_source_pairs"]))):
+    to_review = min(sources_per_cycle, len(checkpoint["pending_source_pairs"]))
+    if len(checkpoint["seen_source_sha256"]) + to_review > MAX_SEEN:
+        # Keep all discoveries pending in a VALID checkpoint. Source identity
+        # history must be partitioned explicitly, never truncated silently.
+        return _blank("private_seen_capacity_requires_replay", checkpoint)
+    for _ in range(to_review):
         source = checkpoint["pending_source_pairs"].pop(0)
         review = inspect_open_world_candidate(
             lead, source["municipal_url"], source["source_url"],
@@ -213,9 +218,13 @@ def rotate_private_open_world_lead(
             municipal_html_reader=html_reader,
             organizer_html_reader=html_reader)
         if (not isinstance(review, dict)
+                or review.get("schema") != ADMISSION_SCHEMA
                 or review.get("publication_ready") is not False
                 or review.get("public_writes") != 0
-                or review.get("publisher_connected") is not False):
+                or review.get("publisher_connected") is not False
+                or review.get("organizer_authorship_proven") is not False
+                or review.get("source_reuse_rights_verified") is not False
+                or review.get("final_editorial_admission_authorized") is not False):
             return _blank("untrusted_private_candidate_review", checkpoint)
         # A lead may be unrelated to the event: keep the negative report as
         # private evidence, not a permanent domain exclusion.
