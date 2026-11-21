@@ -114,6 +114,18 @@ class DynamicVenueBacklinkProofs(TestCase):
         fetch, _visited = http({SITE: home})
         self.assertEqual(verified_venue_reciprocity(
             SITE, TITLE, DATES, DAY1, fetch=fetch), VENUE)
+        # The weak hero hint can be observed for two civil days, but can
+        # never be treated as organizer proof on its own.
+        cal, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = examine(state, queue(DAY1), cal, DAY1, fetch=fetch)
+        self.assertEqual(first["rows"][0]["date_source_mode"],
+                         "SOURCE_HERO_REQUIRES_VENUE_BACKLINK")
+        self.assertEqual(first["two_day_dates_count"], 0)
+        second = examine(state, queue(DAY2), cal, DAY2, fetch=fetch)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        self.assertEqual(len(stable_reciprocal_venue_proposals(
+            state, queue(DAY2), cal, second, DAY2, fetch=fetch)), 1)
         # The same first-party homepage is INSUFFICIENT without the actual
         # separately named, dated venue show with its backlink.
         bad = VENUE_DAY.replace(SITE, "https://fake-festival.fr/")
