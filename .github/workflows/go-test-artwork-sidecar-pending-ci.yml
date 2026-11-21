@@ -1,0 +1,49 @@
+name: "GO TEST — signed artwork sidecar pending v1 (no activation)"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-test-artwork-sidecar-pending-ci.yml"
+      - "grossesondes/radio-test-apk/artwork/pending/**"
+      - "grossesondes/radio-test-apk/artwork/releases/**"
+      - "radio-catalog-lab/tools/artwork_release_packager.py"
+      - "radio-catalog-lab/tools/test_artwork_release_packager.py"
+      - "radio-catalog-lab/tools/test_artwork_signed_pending_v1.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-test-sidecar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install offline public-key verifier only
+        run: python -m pip install --disable-pip-version-check "cryptography==44.0.2"
+      - name: Exercise protocol signature SHA source safety and antirollback
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_release_packager.py" -v
+      - name: Assert pending artwork pointer matches immutable bytes and test key
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_signed_pending_v1.py" -v
+      - name: Verify signed pending release directly
+        run: |
+          python radio-catalog-lab/tools/artwork_release_packager.py \
+            --pointer grossesondes/radio-test-apk/artwork/pending/test-current-v1.json \
+            --body grossesondes/radio-test-apk/artwork/releases/b85a4ddc27783e2a242747924f28a5438f1fb8d5adb6500c28126a90e588235d.json \
+            --trusted-public-key grossesondes/radio-test-apk/TEST_PUBLIC_KEY.b64
+      - name: No production / active pointer writes
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_ARTWORK_PENDING_SIDE_CAR_VERIFIED — no activated pointer, no production"
