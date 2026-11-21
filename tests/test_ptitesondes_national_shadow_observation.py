@@ -148,9 +148,12 @@ class NationalShadowObservationTests(unittest.TestCase):
             path.write_bytes(raw)
             path.chmod(0o600)
         self.campaign.reset_mock()
-        out, _ = self.invoke(batch_id="fresh")
-        self.assertEqual(out["stored_index_batches"], 4)
-        self.assertGreaterEqual(out["held_for_research"], 1)
+        first, _ = self.invoke(batch_id="fresh")
+        second, _ = self.invoke(batch_id="fresher")
+        self.assertEqual(first["stored_index_batches"], 4)
+        self.assertGreaterEqual(first["held_for_research"], 1)
+        self.assertEqual(second["stored_index_batches"], 4)
+        # Two bounded fair rotations, not one unbounded catch-up.
         self.assertEqual(self.campaign.call_count, 1)
 
     def test_crash_after_report_before_cursor_is_recovered_without_requery(self):
