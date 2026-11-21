@@ -51,6 +51,41 @@ DOSSIER_KEYS = frozenset({
 })
 SOURCE_REFERENCE_FIELD = "municipal_source_reference_url"
 
+# Only fixed internal stage names may leave the private runner, aggregated.
+# A title, location, URL or arbitrary exception string cannot become a
+# diagnostic label. No dossier content enters GitHub's public summaries.
+PUBLIC_REHEARSAL_REASONS = frozenset({
+    "invalid_or_untrusted_research_input",
+    "invalid_session_day",
+    "out_of_future_window",
+    "no_immutable_exact_session_on_day",
+    "historical_catalogue_changed",
+    "invalid_catalogue_snapshot",
+    "live_oa_unavailable",
+    "live_oa_agenda_or_event_identity_changed",
+    "live_oa_location_missing",
+    "invalid_or_partial_oa_coordinates",
+    "independent_venue_evidence_missing_or_changed",
+    "factual_reuse_license_or_attribution_missing",
+    "untrusted_canonical_openagenda_slug",
+    "live_oa_occurrence_or_geometry_not_confirmed",
+    "source_exact_sessions_changed",
+    "dila_municipality_unavailable",
+    "unknown_municipal_official_source",
+    "first_party_municipal_page_unavailable",
+    "municipal_exact_session_title_venue_or_family_unproved",
+    "not_confirmed_public_family_access",
+    "radio_family_editorial_scope_not_confirmed",
+    "missing_live_admin_boundaries",
+    "legacy_public_contract_rejected_candidate",
+    "already_published_event_uid_day",
+    "invalid_catalogue_record",
+    "published_semantic_or_date_range_duplicate",
+    "published_date_range_invalid",
+    "existing_append_only_publisher_policy_rejected",
+    "existing_publisher_rehearsal_not_single_append",
+})
+
 
 def _safe_dossier(dossier, today):
     if (type(dossier) is not dict
@@ -229,7 +264,11 @@ def prepare_open_world_patch(
                 or validation.get("publisher_policy_rehearsal_accepted") is not True
                 or validation.get("preview_additions") != 1
                 or not isinstance(validation.get("candidate"), dict)):
-            held("live_publisher_evidence_not_confirmed")
+            status = (validation.get("status")
+                      if isinstance(validation, dict) else None)
+            held("rehearsal_" + status
+                 if status in PUBLIC_REHEARSAL_REASONS
+                 else "live_publisher_evidence_not_confirmed")
             continue
         candidate = validation["candidate"]
         if candidate.get("id") in checked or candidate.get("id") in reserved_ids:
