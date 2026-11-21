@@ -13,7 +13,7 @@ from copy import deepcopy
 from datetime import date
 from urllib.parse import urlsplit
 
-from merge_policy import merge
+from merge_policy import merge, PUBLISHABLE_CHILD_ARTS
 from proof import norm
 from proof_text import verify_event as legacy_verify_event
 from ptitesondes_dila_municipal_domains import (
@@ -258,8 +258,17 @@ def merge_verified_open_world(
     """One connected in-memory Publisher transaction; no filesystem writes."""
     patched, checker, report = prepare_open_world_patch(
         reference, published, private_patch, today, public_key, **readers)
+    # Scope comes only from candidates reconstructed by the same live
+    # verifier invocation. Neither the private patch nor a category claim
+    # from OpenAgenda can authorize this extension.
+    child_scopes = frozenset(
+        candidate["category"] for candidate in patched["additions"]
+        if (isinstance(candidate, dict)
+            and candidate.get("id") in getattr(checker, "_verified_child_ids", ())
+            and candidate.get("category") in PUBLISHABLE_CHILD_ARTS))
     result, audit = merge(
-        reference, published, patched, today, checker=checker)
+        reference, published, patched, today, checker=checker,
+        verified_child_arts=child_scopes)
     # Even in a green workflow this does NOT claim Pages was deployed.
     report["publisher_accepted_new"] = audit["ajoutes"]
     report["publisher_deferred_new"] = len(audit["attente"])
