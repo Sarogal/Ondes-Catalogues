@@ -5,14 +5,14 @@ from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from ptitesondes_national_shadow_observation import (
     CONTROLLER_SCHEMA, REPORT_RE, BATCH_RE, available_index_reports,
-    controller_read, run_observation,
+    controller_read, run_observation, recover_pending_index,
 )
 from ptitesondes_private_national_rotation_runner import _write_atomic_private
 from ptitesondes_openagenda_public_agenda_index import SCHEMA as INDEX_SCHEMA
@@ -135,6 +135,73 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertGreaterEqual(out["held_for_research"], 1)
         self.assertTrue(invalid.exists())
         self.assertGreaterEqual(self.campaign.call_count, 1)
+
+    def test_empty_oversized_and_invalid_date_index_reports_do_not_starve_others(self):
+        self.invoke()
+        report_dir = self.root / "index" / "reports"
+        for name, raw in (
+            ("index-2026-11-19-empty.json", b""),
+            ("index-2026-11-18-too_big.json", b" " * 800001),
+            ("index-2026-99-99-bad_date.json", b"{}"),
+        ):
+            path = report_dir / name
+            path.write_bytes(raw)
+            path.chmod(0o600)
+        self.campaign.reset_mock()
+        out, _ = self.invoke(batch_id="fresh")
+        self.assertEqual(out["stored_index_batches"], 4)
+        self.assertGreaterEqual(out["held_for_research"], 1)
+        self.assertEqual(self.campaign.call_count, 1)
+
+    def test_crash_after_report_before_cursor_is_recovered_without_requery(self):
+        index = Mock(return_value=index_doc())
+        with patch("ptitesondes_national_shadow_observation._write_state_atomic",
+                   side_effect=OSError("injected power loss")):
+            with self.assertRaises(OSError):
+                self.invoke(index=index)
+        pending = self.root / "index" / "pending-index-transaction.json"
+        self.assertTrue(pending.exists())
+        self.assertEqual(len(available_index_reports(
+            self.root / "index" / "reports")), 1)
+        self.assertFalse((self.root / "index" / "cursor.json").exists())
+        resumed, reader = self.invoke(batch_id="after_restart",
+                                      index=Mock(return_value=index_doc(99)))
+        reader.assert_not_called()
+        self.assertEqual(resumed["stored_index_batches"], 1)
+        self.assertEqual(resumed["new_index_census"], 0)
+        self.assertFalse(pending.exists())
+        self.assertEqual(json.loads((self.root / "index" / "cursor.json")
+                                    .read_text())["after"], [1, 778899])
+
+    def test_crash_before_report_retries_original_cursor(self):
+        index = Mock(return_value=index_doc())
+        with patch("ptitesondes_national_shadow_observation._write_new_report",
+                   side_effect=OSError("disk failure")):
+            with self.assertRaises(OSError):
+                self.invoke(index=index)
+        pending = self.root / "index" / "pending-index-transaction.json"
+        self.assertTrue(pending.exists())
+        self.assertEqual(len(available_index_reports(
+            self.root / "index" / "reports")), 0)
+        retried, reader = self.invoke(batch_id="recovery",
+                                      index=Mock(return_value=index_doc()))
+        reader.assert_called_once()
+        self.assertEqual(retried["new_index_census"], 1)
+        self.assertFalse(pending.exists())
+
+    def test_tampered_index_transaction_refuses_cursor_advance(self):
+        index = Mock(return_value=index_doc())
+        with patch("ptitesondes_national_shadow_observation._write_state_atomic",
+                   side_effect=OSError("interruption")):
+            with self.assertRaises(OSError):
+                self.invoke(index=index)
+        stored = next((self.root / "index" / "reports").iterdir())
+        stored.write_text('{"altered":true}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError,
+                                    "index_transaction_report_digest_mismatch"):
+            recover_pending_index(self.root / "index",
+                                  self.root / "index" / "reports")
+        self.assertFalse((self.root / "index" / "cursor.json").exists())
 
     def test_rejects_invalid_or_unsafe_parameters(self):
         self.assertIsNone(REPORT_RE.fullmatch("index-2026-11-21-segment.json.bak"))
