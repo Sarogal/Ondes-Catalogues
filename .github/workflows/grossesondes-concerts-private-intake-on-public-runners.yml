@@ -32,6 +32,8 @@ on:
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/festival_tour_handoff.py'
       - 'automation/concerts/published_festival_tour_research.py'
+      - 'automation/concerts/source_evidence_probe.py'
+      - 'automation/concerts/tour_itinerary_evidence.py'
       - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
