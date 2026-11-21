@@ -48,6 +48,12 @@ AGENDA_ROLE = re.compile(
 INVALID_PATH = re.compile(r"(?:^|/)\.\.?(?:/|$)")
 HTML_EXT = re.compile(r"\.(?:pdf|json|xml|csv|ics|docx?|xlsx?|zip|rar|7z|"
                       r"jpe?g|png|gif|svg|webp|mp[34]|avi|exe|php5)$", re.I)
+# A security gateway is not an absence of a festival. Do not bypass it.
+ACCESS_CHALLENGE = re.compile(
+    r"\b(?:secure handler for intelligent enforcement|"
+    r"verification de securite|verifie que votre navigateur est legitime|"
+    r"checking your browser|just a moment cloudflare|captcha required)\b"
+)
 
 
 def safe_same_host_article(href, base, root):
@@ -283,6 +289,7 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
             "pages_checked": 0,
             "named_visible_pages": [],
             "site_rederived": False,
+            "access_challenge_pages": 0,
             "publication_authorized": False,
         }
         try:
@@ -308,6 +315,12 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                 except (OSError, ValueError, TypeError, UnicodeError, KeyError):
                     continue
                 result["pages_checked"] += 1
+                if ACCESS_CHALLENGE.search(content):
+                    result["access_challenge_pages"] += 1
+                    # A page returned by an anti-bot intermediary is NOT a
+                    # negative festival observation and must not be parsed as
+                    # a genuine institutional announcement.
+                    continue
                 if _visible_named_festival(html, dossier["name_hint"]):
                     result["named_visible_pages"].append({
                         "url": url,
@@ -325,6 +338,8 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                             pending.append(link)
             if result["named_visible_pages"]:
                 result["status"] = "NAMED_MUNICIPAL_MENTION_RESEARCH_ONLY"
+            elif result["access_challenge_pages"]:
+                result["status"] = "MUNICIPAL_ACCESS_CHALLENGE_RESEARCH_UNAVAILABLE"
             elif result["pages_checked"]:
                 result["status"] = "NO_NAMED_MUNICIPAL_MENTION"
             else:
