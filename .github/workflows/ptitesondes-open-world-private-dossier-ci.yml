@@ -1,0 +1,34 @@
+name: "P'tites Ondes — dossiers nationaux privés vers Publisher"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_open_world_private_dossier_intake.py'
+      - 'tests/test_ptitesondes_open_world_private_dossier_intake.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
+      - '.github/workflows/ptitesondes-open-world-private-dossier-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  private-dossier-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: No-approval private intake dossier tests
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_private_dossier_intake.py' -v
+      - name: Publisher bridge contract regression
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_patch_bridge.py' -v
