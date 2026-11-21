@@ -530,7 +530,11 @@ def stable_directory_proposals(state, queue, catalog, report, today,
         candidates = []
         for source in sources:
             if (source["dossier_id"] != row.get("dossier_id")
-                    or source.get("kind") != "CURATED_PRIMARY_CANDIDATE"
+                    # Both kinds have already passed _eligible's strict
+                    # origin and HTTPS checks. Historical homepages are ONLY
+                    # observations; the independent directory, dates and
+                    # Publisher recheck still decide any authority.
+                    or source.get("kind") not in TRUSTED_RESEARCH_KINDS
                     or directory_url(source["title"]) is None):
                 continue
             old = records.get(source["url"])
