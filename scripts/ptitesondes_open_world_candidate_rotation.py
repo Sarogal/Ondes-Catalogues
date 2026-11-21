@@ -33,6 +33,9 @@ from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
 from ptitesondes_unlisted_exact_session_research import (
     _structured_source_sessions, MAX_HTML as MAX_OA_SOURCE_HTML,
 )
+from ptitesondes_unlisted_visible_session_research import (
+    visible_unlisted_sessions,
+)
 
 SCHEMA = "ptitesondes.private_open_world_candidate_rotation.v1"
 MAX_PAGES_PER_CYCLE = 5
@@ -78,6 +81,7 @@ def _research_unverified_oa_urls(lead, boot, checkpoint, reader):
     review = {"private_oa_url_reviews": [],
               "oa_urls_rechecked": 0,
               "oa_exact_session_claims_unverified": 0,
+              "oa_visible_exact_session_claims_unverified": 0,
               "oa_url_recheck_capacity_held": False}
     candidates = boot.get("private_unverified_oa_web_leads", [])
     if not isinstance(candidates, list):
@@ -108,6 +112,7 @@ def _research_unverified_oa_urls(lead, boot, checkpoint, reader):
                   "source_field": item.get("source_field"),
                   "status": "oa_url_unavailable",
                   "exact_session_claims_unverified": 0,
+                  "visible_exact_session_claims_unverified": 0,
                   "location_conflicts": 0,
                   "changed_or_cancelled_claims": 0,
                   "origin_independently_attested": False,
@@ -135,6 +140,19 @@ def _research_unverified_oa_urls(lead, boot, checkpoint, reader):
                 detail["status"] = "some_exact_sessions_visible_unverified"
             else:
                 detail["status"] = "no_exact_structured_session_match"
+            # Some genuine venue pages give a clear h1/date/hour/young-audience
+            # program but no Event JSON-LD. Recover exact visible research
+            # clues without upgrading organizer identity or approval.
+            if not (detail["location_conflicts"]
+                    or detail["changed_or_cancelled_claims"]) and n < len(pairs):
+                visible = visible_unlisted_sessions(
+                    html, lead, lead["explicit_source_session_intervals"])
+                detail["visible_exact_session_claims_unverified"] = (
+                    visible["exact_visible_session_claims_unverified"])
+                review["oa_visible_exact_session_claims_unverified"] += (
+                    detail["visible_exact_session_claims_unverified"])
+                if n == 0 and detail["visible_exact_session_claims_unverified"]:
+                    detail["status"] = "oa_url_visible_session_claims_unverified"
             review["oa_exact_session_claims_unverified"] += n
         except (OSError, ValueError, TypeError, KeyError,
                 TimeoutError, UnicodeError):
@@ -202,6 +220,7 @@ def _blank(status, checkpoint=None):
         "private_oa_url_reviews": [],
         "oa_urls_rechecked": 0,
         "oa_exact_session_claims_unverified": 0,
+        "oa_visible_exact_session_claims_unverified": 0,
         "oa_url_recheck_capacity_held": False,
         "private_checkpoint": checkpoint,
         "private_research_reviews": [],
