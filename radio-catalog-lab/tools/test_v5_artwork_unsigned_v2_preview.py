@@ -83,7 +83,10 @@ class PreviewTests(unittest.TestCase):
         self.assertEqual(json.loads(RADIO.read_text())["release_sequence"],4)
         self.assertFalse((ART/"current.json").exists())
         self.assertFalse((ART/"pending"/"test-current-v2.json").exists())
-        self.assertEqual(len(list((ART/"previews").glob("*"))),1)
+        self.assertEqual(
+            {p.name for p in (ART/"previews").glob("*.json")},
+            {"unsigned-v2-11-logos-20261121.json",
+             "unsigned-v2-12-logos-20261121.json"})
         self.assertEqual(self.new["selection_mode"],
                          "manual_visual_review_of_open_discovery_candidates")
 
