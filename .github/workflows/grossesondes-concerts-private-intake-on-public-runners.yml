@@ -33,6 +33,18 @@ on:
       - 'automation/concerts/festival_tour_handoff.py'
       - 'automation/concerts/published_festival_tour_research.py'
       - 'automation/concerts/source_evidence_probe.py'
+      # Any open-ended OSM/BAN discovery or evidence policy change must run
+      # ONE post-merge private-intake cycle; scheduled scans remain active.
+      - 'automation/concerts/venue_osm_self_discovery.py'
+      - 'automation/concerts/venue_address_osm_source.py'
+      - 'automation/concerts/independent_named_site_geo.py'
+      - 'automation/concerts/intake_metrics.py'
+      - 'automation/concerts/dynamic_first_party_venue_proposals.py'
+      - 'automation/concerts/source_cross_domain_corroboration.py'
+      - 'automation/concerts/source_cross_domain_live_recheck.py'
+      - 'scripts/concert_dynamic_existing_venue.py'
+      - 'scripts/concert_dynamic_new_site_source.py'
+      - 'scripts/concert_event_site_contract.py'
       - 'automation/concerts/tour_itinerary_evidence.py'
       - 'automation/concerts/festival_tour_stage_reconciliation.py'
       - 'automation/concerts/verifier_contract.py'
