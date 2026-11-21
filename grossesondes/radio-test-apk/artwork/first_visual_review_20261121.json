@@ -1,0 +1,164 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-11-21",
+  "scope": "GROSSES_ONDES_TEST_VISUAL_REVIEW_ONLY",
+  "official_evidence_run": "44898576539",
+  "approved_for_test": 9,
+  "held": 10,
+  "open_discovery_not_allowlist": true,
+  "publication_allowed": false,
+  "records": [
+    {
+      "station_slug": "dark-metal-radio",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit Dark Metal Radio wordmark in official image",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "ad_infinitum",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit Ad Infinitum station wordmark on official image",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "bizarre-radio",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit Bizarre Radio station wordmark and receiver icon",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "up_the_irons",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit UP THE IRONS station wordmark",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "beatdownx",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit BEATDOWNX RADIO on image",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "bang",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit BANG! Radio wordmark",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "dark-sound-united",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit Radio Dark Sound United wording",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "progressivemusic",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit Radio Progressive Music wording",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "stone-prog",
+      "decision": "test_visual_approved",
+      "visual_evidence": "Explicit STONE PROG station wordmark",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "altrockmetal-radiogirls",
+      "decision": "hold",
+      "visual_evidence": "Low-resolution 120x80 image; verify better original",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "lagerfeuermetal",
+      "decision": "hold",
+      "visual_evidence": "Generic city photograph; station identity wording too small",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "endzeitfm",
+      "decision": "hold",
+      "visual_evidence": "Scenic winter photograph, no visible station identity",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "progalley",
+      "decision": "hold",
+      "visual_evidence": "Microphone drawing with ambiguous wordmark, requires identity review",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "odinsmetalrockclub",
+      "decision": "hold",
+      "visual_evidence": "Only 120x120 image; seek better resolution",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "shamanic_tunes",
+      "decision": "hold",
+      "visual_evidence": "Symbol only, no station wording; verify visual identity",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "dj666geordieblackcore",
+      "decision": "hold",
+      "visual_evidence": "Generic headphone icon; verify branding",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "radioeuro",
+      "decision": "hold",
+      "visual_evidence": "Historical station already has logo; comparative visual review required before replacement",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "todamax",
+      "decision": "hold",
+      "visual_evidence": "Single stylized M; station attribution not visually distinct",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    },
+    {
+      "station_slug": "core-mix",
+      "decision": "hold",
+      "visual_evidence": "Dark graphic with no readable CORE-MIX wordmark",
+      "scope": "test_only",
+      "publication_allowed": false,
+      "replace_existing_logo": false
+    }
+  ]
+}
