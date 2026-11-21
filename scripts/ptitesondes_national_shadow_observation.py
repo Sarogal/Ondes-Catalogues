@@ -240,6 +240,62 @@ def summarize_private_segment_hints(campaign, digest, scan_day,
     return invalid
 
 
+AGENDA_DIAGNOSTIC_SCHEMA = "ptitesondes.private_agenda_research_diagnostic.v1"
+
+
+def write_private_agenda_diagnostic(campaign_dir, idx, agenda_uid, digest,
+                                    day, *, status, stage, reason):
+    """Per-agenda private retry evidence. Never store raw exception messages."""
+    path = campaign_dir / f"agenda-{idx:04d}-diagnostic.json"
+    previous_count = 0
+    if path.exists() or path.is_symlink():
+        previous = json.loads(_safe_existing_file(path, MAX_CONTROL_BYTES))
+        if (not isinstance(previous, dict)
+                or set(previous) != {
+                    "schema", "source_sha256", "agenda_uid", "scan_day",
+                    "attempts", "last_status", "stage", "reason_code",
+                    "publication_ready", "public_writes"}
+                or previous["schema"] != AGENDA_DIAGNOSTIC_SCHEMA
+                or previous["source_sha256"] != digest
+                or previous["agenda_uid"] != agenda_uid
+                or previous["scan_day"] != day.isoformat()
+                or previous["publication_ready"] is not False
+                or previous["public_writes"] != 0
+                or type(previous["attempts"]) is not int
+                or not 1 <= previous["attempts"] < 10**9):
+            raise ValueError("untrusted_private_agenda_diagnostic")
+        previous_count = previous["attempts"]
+    record = {
+        "schema": AGENDA_DIAGNOSTIC_SCHEMA,
+        "source_sha256": digest,
+        "agenda_uid": agenda_uid,
+        "scan_day": day.isoformat(),
+        "attempts": previous_count + 1,
+        "last_status": status,
+        "stage": stage,
+        "reason_code": reason,
+        "publication_ready": False, "public_writes": 0,
+    }
+    _write_atomic_private(path, (json.dumps(
+        record, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":")) + "\n").encode("utf-8"))
+
+
+def _safe_failure_reason(exc):
+    # No exception.message: external errors may contain URLs or credentials.
+    if isinstance(exc, TimeoutError):
+        return "source_timeout"
+    if isinstance(exc, OSError):
+        return "upstream_or_private_io_error"
+    if isinstance(exc, KeyError):
+        return "required_input_field_missing"
+    if isinstance(exc, UnicodeError):
+        return "source_encoding_invalid"
+    if isinstance(exc, TypeError):
+        return "invalid_input_type"
+    return "invalid_or_conflicting_source_evidence"
+
+
 def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                                  rotation_dir, key, campaign_runner,
                                  segment_runner):
@@ -277,6 +333,8 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
     segment_holds = 0
     for step in range(min(total, MAX_AGENDAS_PER_BATCH)):
         idx = (start + step) % total
+        stage, failure = "campaign", None
+        observed_hold = False
         try:
             agenda_dir = private_subdir(campaign_dir / f"agenda-{idx:04d}")
             rotation_state = private_subdir(rotation_dir / f"agenda-{idx:04d}")
@@ -291,6 +349,7 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
                 raise ValueError("unsafe_private_individual_campaign")
             started += 1
             completed += int(result["finished_index_batch"])
+            stage = "segment_rotation"
             rotated = segment_runner(
                 agenda_dir, rotation_state, scan_day,
                 execute_live=True, key=key,
@@ -301,10 +360,21 @@ def rotate_agendas_independently(index_doc, digest, scan_day, campaign_dir,
             examined_segments += rotated["segment_reports_examined"]
             examined_events += rotated["event_slots_examined"]
             segment_holds += rotated["segment_reports_held"]
+            observed_hold = rotated["segment_reports_held"] > 0
         except (OSError, ValueError, TypeError, KeyError, TimeoutError,
-                UnicodeError):
+                UnicodeError) as exc:
             # Preserve existing per-agenda state for a subsequent retry.
             held += 1
+            failure = _safe_failure_reason(exc)
+        # Store private reason codes before advancing the selector.
+        write_private_agenda_diagnostic(
+            campaign_dir, idx, candidates[idx]["agenda_uid"], digest,
+            scan_day, status=("held_for_research" if failure else
+                              "partial_research" if observed_hold else
+                              "research_cycle_completed"),
+            stage=stage, reason=(failure or
+                "segment_requires_research_review" if observed_hold else
+                failure or "no_error"))
         # Persist AFTER each attempt to survive power loss and avoid allowing
         # the same failed source to starve other candidates after restart.
         _write_atomic_private(selector, (json.dumps({
