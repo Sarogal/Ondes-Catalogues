@@ -38,6 +38,11 @@ from grossesondes_institutional_linked_edition import (
     PROOF_MODE as INSTITUTIONAL_LINKED_PROOF_MODE,
     validate_verified_row as validate_institutional_linked_row,
 )
+from grossesondes_undated_edition import (
+    PROOF_MODE as ARCHIVED_UNDATED_PROOF_MODE,
+    validate_verified_row as validate_archived_undated_row,
+    conflicting_undated_edition,
+)
 from grossesondes_generic_directory_edition import (
     PROOF_MODE as DIRECTORY_PROOF_MODE,
     validate_verified_row as validate_directory_verified_row,
@@ -336,6 +341,32 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             report["source_proofs"].append(
                 sources.get("registered-institutional-proof-url:"+slug,
                             proposed["source"]))
+        elif e.get("proofMode") == ARCHIVED_UNDATED_PROOF_MODE:
+            origin = e.get("originSlug")
+            parent = next(
+                (h for h in history["knownFestivals"]
+                 if h.get("slug") == origin), None)
+            known_rows = rows + (
+                published_calendar.get("festivals", [])
+                if published_calendar else [])
+            known_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", [])
+                if published_history else [])
+            if (parent is None or conflicting_undated_edition(
+                    e, known_rows, known_history)):
+                report["held"].append({
+                    "slug": slug, "reason": "édition future sans date déjà connue ou parente absente"})
+                continue
+            proven = validate_archived_undated_row(
+                e, parent, sources.get("registered-edition:" + slug, ""),
+                today)
+            if proven is None:
+                report["held"].append({
+                    "slug": slug, "reason": "annonce future sans dates non revérifiée par l'organisateur"})
+                continue
+            rows.append(proven)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].append(parent["officialSite"])
         elif e.get("proofMode") in (
                 EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
                 HTML_PROOF_MODE, ARCHIVED_HTML_PROOF_MODE,
