@@ -30,9 +30,12 @@ on:
       - 'automation/concerts/artist_genre_preflight.py'
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
+      - 'automation/concerts/festival_tour_handoff.py'
       - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
+      - 'festival-automation/institutional_event_card.py'
+      - 'festival-automation/festival_to_concerts_handoff.py'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
     inputs:
@@ -96,6 +99,20 @@ jobs:
           sparse-checkout: |
             automation/concerts/approved.json
             automation/concerts/intake/
+          sparse-checkout-cone-mode: false
+
+      # Read only the private festival intake branch. No new private schedule.
+      - name: Lire les pistes de tournées transmises par Festivals
+        if: steps.access.outputs.ready == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/GrossesOndes
+          ref: automation/grossesondes-intake
+          path: festival-intake
+          token: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
+          persist-credentials: false
+          sparse-checkout: |
+            automation-intake/grossesondes/concert-tour-referrals.json
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v5
@@ -192,13 +209,46 @@ jobs:
           print("Découverte organisateurs vérifiée : quarantaine privée uniquement.")
           PY
 
-      - name: Archiver les trois découvertes dans le registre du dépôt privé
+      - name: Requalifier les tournées Festivals en pistes Concerts vérifiées
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # No authority flows from the private JSON: exact institutional
+          # index -> event link -> detail must be re-fetched independently.
+          if ! python public/automation/concerts/festival_tour_handoff.py \
+              --input festival-intake/automation-intake/grossesondes/concert-tour-referrals.json \
+              --output "$RUNNER_TEMP/concerts-festival-referrals/candidates.json" \
+              --limit 5 \
+              > "$RUNNER_TEMP/concerts-private-logs/festival-tour-handoff.log" 2>&1; then
+            echo "::error::Transfert privé Festivals vers Concerts non vérifié"
+            exit 1
+          fi
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "concerts-festival-referrals/candidates.json"
+          data = json.loads(p.read_text(encoding="utf-8"))
+          assert data.get("schema") == "grossesondes.concert.discovery.v1"
+          assert data.get("publicationAllowed") is False
+          assert data.get("automaticPublication") is False
+          assert all(c.get("publicationAllowed") is False
+                     and c.get("reviewRequired") is True
+                     and c.get("source") == "festival_to_concerts_handoff"
+                     and c.get("reviewBucket") == "tour_source_research"
+                     and c.get("leadArtist") is None
+                     and c.get("venue") is None
+                     for c in data["candidates"])
+          print("Transfert Festivals -> Concerts vérifié : revue privée uniquement.")
+          PY
+
+      - name: Archiver les découvertes et les tournées Festivals dans le registre privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours concerts-organizers; do
+          for channel in concerts-discovery concerts-tours concerts-organizers concerts-festival-referrals; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \

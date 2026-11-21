@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'festival-automation/institutional_event_card.py'
+      - 'festival-automation/national_live_index_recheck.py'
       - '.github/workflows/grossesondes-festivals-private-intake-on-public-runners.yml'
       - 'scripts/grossesondes_archived_html_intake.py'
       - 'scripts/grossesondes_official_html_edition.py'
@@ -20,6 +22,7 @@ on:
       - 'festival-automation/national_generic_primary_domain_preflight.py'
       - 'festival-automation/national_directory_edition_preflight.py'
       - 'festival-automation/national_institutional_edition_preflight.py'
+      - 'festival-automation/festival_to_concerts_handoff.py'
       - 'festival-automation/national_institutional_organizer_preflight.py'
       - 'festival-automation/national_organizer_domain_qualification.py'
       - 'festival-automation/dns_pinned_https.py'
@@ -174,6 +177,8 @@ jobs:
           # Newly found municipal agenda editions: strict visible dates and
           # two-day provenance review only, never a public patch or approval.
           run_private institutional_dates python "$ENGINE/national_institutional_edition_preflight.py" --intake "$INTAKE" --catalog application/docs/grossesondes/festivals.json --history application/docs/grossesondes/festival-history.json
+          # A touring concert stop remains a private Concerts research lead.
+          run_private concerts_handoff python "$ENGINE/festival_to_concerts_handoff.py" --intake "$INTAKE" --limit 2
           # NEW festivals without signed archive: only a verified institutional
           # index->detail->visible festival site link may select the HTTPS target.
           # Two days of evidence; private patch; independent publisher recheck.
@@ -241,6 +246,7 @@ jobs:
             automation-intake/grossesondes/national-openagenda-research-review.json \
             automation-intake/grossesondes/national-festival-detail-review.json \
             automation-intake/grossesondes/national-institutional-edition-preflight.json \
+            automation-intake/grossesondes/concert-tour-referrals.json \
             automation-intake/grossesondes/national-institutional-linked-dates.json \
             automation-intake/grossesondes/national-institutional-organizer-links.json \
             automation-intake/grossesondes/national-institutional-organizer-domain-review.json \

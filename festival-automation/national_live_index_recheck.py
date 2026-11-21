@@ -2,18 +2,57 @@
 
 Private leads identify what to look for, never which new pages may be fetched.
 Re-fetch a fixed approved regional index; follow only visibly linked canonical
-pagination on that same approved HTTPS path (maximum three index requests).
+pagination on that same approved HTTPS path (maximum six index requests).
 Each publisher and preflight run must independently rediscover the exact
 visible titled link before requesting the event detail.
 """
 from collections import deque
+from urllib.parse import urljoin, urlsplit, parse_qs
 
 from national_detail_qualification import _seen_again
 from official_watch import permitted_url
-from regional_agenda_pagination import canonical_page_url, discover_pagination
+from regional_agenda_pagination import canonical_page_url
 from regional_festival_discovery import APPROVED, RegionalEventAnchors
 
-MAX_INDEX_FETCHES = 3
+MAX_INDEX_FETCHES = 6
+MAX_ANCHORS = 500
+PAGINATION_LABELS = frozenset({
+    "1", "2", "3", "4", "5", "6",
+    "suivant", "page suivante", "next",
+})
+
+
+def visible_canonical_pages(html, source_page, origin):
+    """Follow only visible pagination links, never private paths or redirects.
+
+    The regional discovery scan intentionally queues at most two pages.
+    Reproof of an EXACT already-discovered event must cover deeper pages
+    (e.g. page 4) without changing the broad crawler or its trust scope.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        raise ValueError("Unusable approved institutional index HTML")
+    parser = RegionalEventAnchors()
+    parser.feed(html)
+    parser.close()
+    pages = set()
+    for href, label, _prefix in parser.anchors[:MAX_ANCHORS]:
+        if not isinstance(href, str) or not isinstance(label, str):
+            continue
+        label = " ".join(label.lower().split()).strip(" >»❯→")
+        if label not in PAGINATION_LABELS:
+            continue
+        target = canonical_page_url(
+            urljoin(source_page, href), origin, permitted_url)
+        if target is not None:
+            pages.add(target)
+    # Exact canonical numbered pages only, from the already approved root.
+    # Never trust a URL carried by a report, or page=0 / page=999.
+    return sorted(
+        pages,
+        key=lambda page: int(parse_qs(urlsplit(page).query)["page"][0]),
+    )
+
+
 
 
 def live_index_for_exact_link(source, fetch):
@@ -45,8 +84,7 @@ def live_index_for_exact_link(source, fetch):
         html = fetch(current)
         if _seen_again(html, {**source, "index_page": current}):
             return html
-        pages = discover_pagination(
-            html, current, origin, RegionalEventAnchors, permitted_url)
+        pages = visible_canonical_pages(html, current, origin)
         for page in pages:
             if (page not in visited and page not in pending
                     and len(visited) + len(pending) < MAX_INDEX_FETCHES):
