@@ -14,11 +14,15 @@ import argparse
 import datetime as dt
 import json
 import math
+from urllib.parse import urlsplit
 from collections import Counter
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import discover
+import source_admission_intake as intake
+import source_evidence_probe as probe
+import venue_osm_self_discovery as osm_discovery
 import event_site_pair_recheck as site_review
 import independent_named_site_geo as independent_geo
 import generic_music_event
@@ -71,6 +75,64 @@ def _first_party_source(candidate, sources):
     return matches[0] if len(matches) == 1 else None
 
 
+
+def _newly_discovered_osm_source(candidate, catalogue, origin_fetch, cache):
+    """Research an unknown origin from a FRESH physical OSM identity.
+
+    Provenance labels from the private registry are never authority.
+    Identify the announcing venue from the published catalogue, independently
+    read its OSM/BAN feature through pinned HTTPS, and compare its attributed
+    website with the individual event page. This remains PRIVATE research;
+    only the publisher can later approve a new venue and event together.
+    """
+    if (not isinstance(candidate, dict)
+            or candidate.get("newlyDiscoveredFirstPartySource") is not True
+            or candidate.get("sourceAuthorityVerified") is not False
+            or candidate.get("source") != "agenda_officiel_structuré"
+            or candidate.get("publicationAllowed") is not False
+            or candidate.get("reviewRequired") is not True):
+        return None
+    offsite = candidate.get("venueOutsideSource") is True
+    if offsite:
+        if candidate.get("venueCatalogueId") is not None:
+            return None
+        name, city, dept = (
+            candidate.get("sourceVenueName"),
+            candidate.get("sourceVenueCity"),
+            candidate.get("sourceVenueDepartment"),
+        )
+    else:
+        name, city, dept = (
+            candidate.get("venue"), candidate.get("city"),
+            candidate.get("department"),
+        )
+    matches = [v for v in catalogue.get("venues", [])
+               if isinstance(v, dict)
+               and triage.words(v.get("name")) == triage.words(name)
+               and triage.words(v.get("city")) == triage.words(city)
+               and str(v.get("department")) == str(dept)]
+    if len(matches) != 1:
+        return None
+    venue = matches[0]
+    if not offsite and candidate.get("venueCatalogueId") != venue.get("id"):
+        return None
+    url = candidate.get("sourceUrl")
+    # New-source observations must point at their own specific same-origin
+    # detail, never a third-party ticket page or borrowed external agenda.
+    if (not isinstance(url, str)
+            or candidate.get("eventDetailUrl") != url
+            or candidate.get("sourcePage") != url
+            or intake.valid_https(url) is None
+            or not urlsplit(url).path.strip("/")):
+        return None
+    homepage = osm_discovery.official_source(venue, origin_fetch, cache)
+    if (not isinstance(homepage, str)
+            or not bridge.official_event_url(url, homepage)
+            or not discover.same_host(url, homepage)):
+        return None
+    return {"url": homepage, "_osmFirstPartyResearchOnly": True}
+
+
 def _select(rows, today, scan_slot, limit):
     """Disjoint slots, daily rotating windows, without an arbitrary venue list."""
     if (type(scan_slot) is not int or scan_slot not in (0, 1, 2)
@@ -119,7 +181,8 @@ def _public_geo_consistent(venue, lat, lon):
 
 def build(registry, sources, catalogue, approvals, today, *,
           fetch=discover.download, robots=discover.robots_allow,
-          geo_fetch=None, limit=8, scan_slot=0):
+          geo_fetch=None, limit=8, scan_slot=0,
+          origin_fetch=probe.safe_fetch):
     if (not isinstance(registry, dict) or registry.get("schema") != INTAKE
             or not isinstance(registry.get("items"), dict)
             or not isinstance(sources, dict) or sources.get("schema") != SOURCES
@@ -182,7 +245,18 @@ def build(registry, sources, catalogue, approvals, today, *,
             "publisherTrustGranted": False,
             "publicationAllowed": False,
         }
+        origin_cache = {}
         source = _first_party_source(candidate, sources)
+        if source is None and candidate.get("newlyDiscoveredFirstPartySource") is True:
+            try:
+                source = _newly_discovered_osm_source(
+                    candidate, catalogue, origin_fetch, origin_cache)
+            except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+                # A forged, stale or unreachable source NEVER inherits a
+                # committed domain's approval or escapes to public logs.
+                source = None
+        dynamic = isinstance(source, dict) and (
+            source.get("_osmFirstPartyResearchOnly") is True)
         known = _matching_venues(candidate, catalogue)
         venue = known[0] if len(known) == 1 else None
         if source is None:
@@ -198,10 +272,16 @@ def build(registry, sources, catalogue, approvals, today, *,
             else:
                 result["newVenueCandidate"] = True
             try:
-                if not robots(url, robots_cache):
+                if not dynamic and not robots(url, robots_cache):
                     result["reason"] = "official_page_robots_disallowed"
                 else:
-                    html, actual = fetch(url, timeout=12, cap=900_000)
+                    # The dynamic route MUST use the pinned, robots-aware
+                    # client for source ownership, event and site geometry.
+                    # The legacy reviewed-origin route is not changed.
+                    if dynamic:
+                        html, actual = origin_fetch(url, origin_cache), url
+                    else:
+                        html, actual = fetch(url, timeout=12, cap=900_000)
                     if not bridge.official_event_url(url, source["url"]) or actual != url:
                         result["reason"] = "official_event_url_redirect_or_mismatch"
                     else:
@@ -227,6 +307,11 @@ def build(registry, sources, catalogue, approvals, today, *,
                         else:
                             if geo_fetch is None:
                                 def guarded_geo_fetch(geo_url, cap):
+                                    if dynamic:
+                                        body = origin_fetch(geo_url, origin_cache)
+                                        if not isinstance(body, str) or len(body) > cap:
+                                            raise ValueError("Unsafe geo evidence size")
+                                        return body, geo_url
                                     return site_review.fetch_verified(
                                         geo_url, cap, robots_cache)
                                 reader = guarded_geo_fetch
@@ -240,6 +325,8 @@ def build(registry, sources, catalogue, approvals, today, *,
                                 result["reason"] = "official_department_mismatch"
                             else:
                                 result["independentNamedGeoVerified"] = True
+                                if dynamic:
+                                    result["newSourceResearchedWithoutManifest"] = True
                                 result["geoPrecision"] = kind
                                 if venue is None:
                                     # Private location PROPOSAL, not a signed
