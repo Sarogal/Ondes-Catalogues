@@ -143,7 +143,13 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
         cat["venues"][0]["geoSource"]="https://mapcarta.com/fr/N"+NODE_ID
         cat["venues"][0]["geoPrecision"]="OpenStreetMap node 12345678 (contradictory)"
         self.assertIsNone(discover_osm.osm_node_id(cat["venues"][0]))
-        self.assertFalse(discover_osm.eligible(cat))
+        # Conflicting historical OSM hints are NOT followed. The newly
+        # available BAN address path may still research the location afresh,
+        # independently and without trusting either conflicting OSM ID.
+        self.assertEqual(len(discover_osm.eligible(cat)),1)
+        with self.assertRaises((AssertionError,ValueError)):
+            discover_osm.official_source(
+                cat["venues"][0],fake_fetch(),{})
 
     def test_false_source_owner_and_venue_provenance_are_not_used(self):
         cases={
