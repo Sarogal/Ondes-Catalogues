@@ -316,7 +316,7 @@ def verified_mairie_site(payload, insee, city):
     return next(iter(websites))
 
 
-def select_dossiers(queue, today, limit=MAX_CHECKS):
+def select_dossiers(queue, today, limit=MAX_CHECKS, previous=None):
     """Rotate all eligible city hints; no region, city or festival allowlist."""
     if (not isinstance(queue, dict)
             or queue.get("schema") != "grossesondes.national-festival-discovery-private.v1"
@@ -341,16 +341,35 @@ def select_dossiers(queue, today, limit=MAX_CHECKS):
     eligible.sort(key=lambda x: x["id"])
     if not eligible:
         return [], 0
-    # Daily rotation; all dossiers are visited, not just first known towns.
+    # Each public-runner execution must advance beyond the last checked city.
+    # A DATE-only offset checked the same three cities on every same-day push,
+    # catchup and scheduled run. Private history chooses only a cursor INDEX
+    # in a fresh, fully validated public queue; no URL/domain in it is fetched.
     offset = (current.toordinal() * max(1, limit)) % len(eligible)
+    if (isinstance(previous, dict)
+            and previous.get("schema") == SCHEMA
+            and previous.get("as_of") == today
+            and previous.get("review_only") is True
+            and previous.get("publication_authorized") is False
+            and previous.get("publications") == 0
+            and isinstance(previous.get("rows"), list)
+            and 0 < len(previous["rows"]) <= MAX_CHECKS
+            and previous.get("checked_count") == len(previous["rows"])):
+        last = previous["rows"][-1]
+        known_ids = [row["id"] for row in eligible]
+        if (isinstance(last, dict)
+                and isinstance(last.get("dossier_id"), str)
+                and last["dossier_id"] in known_ids):
+            offset = (known_ids.index(last["dossier_id"]) + 1) % len(eligible)
     return [eligible[(offset + i) % len(eligible)]
             for i in range(min(limit, len(eligible)))], len(eligible)
 
 
 def research(queue, today, commune_lookup=verified_commune,
              directory_fetch=fetch_dila_records, limit=MAX_CHECKS,
-             delegated_lookup=delegated_municipal_commune):
-    chosen, eligible = select_dossiers(queue, today, limit=limit)
+             delegated_lookup=delegated_municipal_commune, previous=None):
+    chosen, eligible = select_dossiers(
+        queue, today, limit=limit, previous=previous)
     rows = []
     for item in chosen:
         ident, city = item["id"], item["city_hint"]
@@ -414,8 +433,16 @@ def main():
         (folder / "national-festival-discovery-review.json")
         .read_text(encoding="utf-8"))
     today = datetime.now(ZoneInfo("Europe/Paris")).date().isoformat()
-    result = research(queue, today, limit=args.limit)
-    (folder / "national-municipal-source-research.json").write_text(
+    previous_path = folder / "national-municipal-source-research.json"
+    try:
+        previous = (json.loads(previous_path.read_text(encoding="utf-8"))
+                    if previous_path.is_file() else None)
+    except (OSError, UnicodeError, ValueError, TypeError):
+        # A malformed private cursor never controls network targets and
+        # must never break the main intake run.
+        previous = None
+    result = research(queue, today, limit=args.limit, previous=previous)
+    previous_path.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8")
     print("Dynamic municipal research: eligible="

@@ -119,6 +119,65 @@ class DynamicMunicipalResearchTests(unittest.TestCase):
             ids.update(row["id"] for row in selected)
         self.assertEqual(len(ids), 6)
 
+    def test_sequential_same_day_public_runs_cover_different_municipalities(self):
+        """6 unknown cities should be covered over 3 runs, not 3 days."""
+        q = queue()
+        previous, observed = None, []
+        for run in range(3):
+            report = research(
+                q, DAY, limit=2, previous=previous,
+                commune_lookup=lambda _: None,
+                delegated_lookup=lambda _: None,
+                directory_fetch=lambda _: self.fail(
+                    "No official commune match means no DILA requests"))
+            ids = [row["dossier_id"] for row in report["rows"]]
+            self.assertEqual(len(ids), 2)
+            self.assertEqual(report["publication_authorized"], False)
+            self.assertEqual(report["publications"], 0)
+            self.assertFalse(set(ids).intersection(observed))
+            observed.extend(ids)
+            previous = report
+        self.assertEqual(set(observed),
+                         {row["id"] for row in q["dossiers"]})
+
+    def test_untrusted_prior_cursor_never_adds_or_fetches_a_city(self):
+        q = queue()
+        fresh = select_dossiers(q, DAY, limit=2)
+        for cursor in (
+            {"schema": "evil", "as_of": DAY,
+             "rows": [{"dossier_id": q["dossiers"][0]["id"]}]},
+            {"schema": SCHEMA, "as_of": "2026-11-20", "review_only": True,
+             "publication_authorized": False, "publications": 0,
+             "checked_count": 1,
+             "rows": [{"dossier_id": q["dossiers"][0]["id"]}]},
+            {"schema": SCHEMA, "as_of": DAY, "review_only": True,
+             "publication_authorized": False, "publications": 0,
+             "checked_count": 1,
+             "rows": [{"dossier_id": "national-" + "f"*20}]},
+            {"schema": SCHEMA, "as_of": DAY, "review_only": True,
+             "publication_authorized": True, "publications": 1,
+             "checked_count": 1,
+             "rows": [{"dossier_id": q["dossiers"][0]["id"]}]},
+            {"schema": SCHEMA, "as_of": DAY, "review_only": True,
+             "publication_authorized": False, "publications": 0,
+             "checked_count": 1, "rows": []},
+        ):
+            with self.subTest(cursor=cursor):
+                self.assertEqual(
+                    select_dossiers(q, DAY, limit=2, previous=cursor),
+                    fresh)
+        prior = research(
+            q, DAY, limit=2, commune_lookup=lambda _: None,
+            delegated_lookup=lambda _: None)
+        second = research(
+            q, DAY, limit=2, previous=prior,
+            commune_lookup=lambda _: None,
+            delegated_lookup=lambda _: None)
+        allowed = {row["id"] for row in q["dossiers"]}
+        self.assertTrue(all(row["dossier_id"] in allowed
+                            for row in second["rows"]))
+        self.assertEqual(second["publications"], 0)
+
     def test_private_only_even_if_both_government_apis_identify_municipality(self):
         dossier = {
             "id": "national-" + "a" * 20,
