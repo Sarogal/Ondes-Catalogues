@@ -135,7 +135,7 @@ class DynamicMunicipalSourceLinksTests(unittest.TestCase):
         self.assertFalse(out["candidate_domains_officially_approved"])
         self.assertFalse(out["reuse_rights_verified"])
 
-    def test_hidden_navigation_and_script_links_are_not_discoveries(self):
+    def test_hidden_and_script_links_are_ignored_but_navigation_is_discovered(self):
         raw = (
             "<html><head><a href='https://head.evil.fr/a'>a</a></head>"
             "<body><nav><a href='https://nav.fr/x'>x</a></nav>"
@@ -148,7 +148,20 @@ class DynamicMunicipalSourceLinksTests(unittest.TestCase):
         )
         result = scan_municipal_page(CITY, directory(), {"url": PAGE, "html": raw})
         self.assertEqual([x["url"] for x in result["source_candidates"]],
-                         ["https://real-new-scene.fr/event"])
+                         ["https://nav.fr/x",
+                          "https://real-new-scene.fr/event"])
+
+    def test_old_municipal_site_without_main_or_article_is_not_silenced(self):
+        html = (
+            "<html><body><div class='central-1978'>"
+            "<a href='https://nouveau-conteur.fr/scene'>Sortie</a>"
+            "</div></body></html>"
+        )
+        result = scan_municipal_page(
+            CITY, directory(), {"url": PAGE, "html": html})
+        self.assertEqual([x["url"] for x in result["source_candidates"]],
+                         ["https://nouveau-conteur.fr/scene"])
+        self.assertFalse(result["publication_ready"])
 
     def test_unsafe_urls_are_not_fetched_or_transferred(self):
         urls = [
