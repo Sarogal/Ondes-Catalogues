@@ -126,42 +126,92 @@ def _direct_location_agrees(lead, record, *, allow_missing_lead_place=False):
 def discover_unconfigured_sources(
         leads, configured_agendas, public_read_key,
         ods_get=api_record, agenda_get=read_direct_agenda_v2,
-        event_get=read_direct_v2):
+        event_get=read_direct_v2, *, slug_lookup=None):
     """Return PRIVATE candidate seeds, not admitted events or agendas."""
     if (not isinstance(leads, list) or len(leads) > MAX_PER_BATCH
             or not isinstance(configured_agendas, (tuple, list))
             or not all(callable(x) for x in (ods_get, agenda_get, event_get))
+            or (slug_lookup is not None and not callable(slug_lookup))
             or not _valid_public_read_key(public_read_key)):
         raise ValueError("invalid_private_dynamic_agenda_scan")
     counters = Counter()
     seen_agendas = {}
     configured = set(configured_agendas)
+    slug_reads = {}
     for lead in leads:
         counters["candidate_event_uids_examined"] += 1
-        group = {"city": lead["city"], "venue": lead["venue"]}
-        uid, source_url = lead["external_id"], lead["source_url"]
-        slug = ods_source_parts(source_url)
+        if not isinstance(lead, dict):
+            counters["invalid_source_uid_or_slug"] += 1
+            continue
+        group = {"city": lead.get("city"), "venue": lead.get("venue")}
+        uid, source_url = lead.get("external_id"), lead.get("source_url")
+        collector = lead.get("collector")
+        if collector == "openagenda-v2":
+            parts = _source_parts(source_url)
+            slug = parts[0] if parts and parts[1] == uid else None
+        else:
+            slug = ods_source_parts(source_url)
+        if not slug or not isinstance(uid, str) or not VALID_UID.fullmatch(uid):
+            counters["invalid_source_uid_or_slug"] += 1
+            continue
         try:
-            row = ods_get(uid)
-            if not ods_immutable_source_match(group, uid, source_url, row):
-                counters["ods_uid_or_location_conflict"] += 1
-                continue
-            agenda_uid = ods_origin_agenda_uid(row)
-            if agenda_uid is None:
-                counters["no_immutable_origin_agenda_uid"] += 1
-                continue
+            if collector == "openagenda-v2":
+                if slug_lookup is None:
+                    counters["openagenda_requires_opt_in_discovery"] += 1
+                    continue
+                # An API slug match is NOT permission from an organizer.
+                if slug not in slug_reads:
+                    candidate = slug_lookup(slug, public_read_key)
+                    if (type(candidate) is not dict
+                            or candidate.get("schema") != SLUG_LOOKUP_SCHEMA
+                            or candidate.get("slug") != slug
+                            or type(candidate.get("uid")) is not int
+                            or not 0 < candidate["uid"] < 10**12
+                            or candidate.get("status") !=
+                            "public_uid_slug_only_independent_ownership_pending"
+                            or any(candidate.get(k) is not False for k in (
+                                "independent_ownership_verified", "organizer_verified",
+                                "rights_reviewed", "publication_ready",
+                                "approval_granted", "publisher_connected"))
+                            or type(candidate.get("public_writes")) is not int
+                            or candidate["public_writes"] != 0):
+                        counters["untrusted_openagenda_slug_result"] += 1
+                        continue
+                    # Mandatory second, independent UID-addressed API read.
+                    agenda = agenda_get(candidate["uid"], public_read_key)
+                    if (type(agenda) is not dict
+                            or str(agenda.get("uid")) != str(candidate["uid"])
+                            or agenda.get("slug") != slug):
+                        counters["oa_agenda_uid_or_slug_disagrees"] += 1
+                        continue
+                    slug_reads[slug] = candidate["uid"]
+                agenda_uid = slug_reads[slug]
+            else:
+                if collector != "opendatasoft-index":
+                    counters["unknown_collector_research_pending"] += 1
+                    continue
+                row = ods_get(uid)
+                if not ods_immutable_source_match(group, uid, source_url, row):
+                    counters["ods_uid_or_location_conflict"] += 1
+                    continue
+                agenda_uid = ods_origin_agenda_uid(row)
+                if agenda_uid is None:
+                    counters["no_immutable_origin_agenda_uid"] += 1
+                    continue
+                verified = independently_confirm_ods_agenda(
+                    row, slug, agenda_get, public_read_key)
+                if verified != agenda_uid:
+                    counters["oa_agenda_uid_or_slug_disagrees"] += 1
+                    continue
             if agenda_uid in configured:
                 counters["already_configured_agenda"] += 1
                 continue
-            verified = independently_confirm_ods_agenda(
-                row, slug, agenda_get, public_read_key)
-            if verified != agenda_uid:
-                counters["oa_agenda_uid_or_slug_disagrees"] += 1
-                continue
-            # Consult a PUBLIC event of the newly discovered agenda, not just
-            # its metadata, without ever adding it to an admission allowlist.
+            # Review an exact public event, even when its venue or city
+            # was not yet known to the source collector.
             event = event_get(agenda_uid, uid, public_read_key)
-            if not _direct_location_agrees(lead, event):
+            if not _direct_location_agrees(
+                    lead, event,
+                    allow_missing_lead_place=collector == "openagenda-v2"):
                 counters["oa_direct_event_location_mismatch"] += 1
                 continue
         except (OSError, ValueError, TypeError, KeyError, TimeoutError):
@@ -207,6 +257,8 @@ def main():
     parser.add_argument("--day", required=True, type=date.fromisoformat)
     parser.add_argument("--batch-index", type=int, default=0)
     parser.add_argument("--live-probe", action="store_true")
+    parser.add_argument("--research-openagenda", action="store_true",
+                        help="explicit private research only; no ODS required")
     args = parser.parse_args()
     for path in (args.backlog, args.private_source_config):
         _private_file(path)
@@ -223,11 +275,14 @@ def main():
             or not isinstance(config.get("openagenda_agendas"), list)):
         raise ValueError("private_source_config_invalid")
     candidates, batches, conflicts = candidate_batches(
-        backlog, config["openagenda_agendas"], args.day, args.batch_index)
+        backlog, config["openagenda_agendas"], args.day, args.batch_index,
+        include_openagenda_v2=args.research_openagenda)
     if args.live_probe:
         key = os.environ.get("OPENAGENDA_READ_KEY", "")
         result = discover_unconfigured_sources(
-            candidates, config["openagenda_agendas"], key)
+            candidates, config["openagenda_agendas"], key,
+            slug_lookup=(lookup_agenda_by_slug if args.research_openagenda
+                         else None))
     else:
         result = {"schema": SCHEMA, "mode": "dry_run_no_network",
                   "counts": {}, "new_agenda_candidates": [],
