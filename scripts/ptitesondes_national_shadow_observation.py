@@ -187,6 +187,8 @@ def summarize_private_segment_hints(campaign, digest, scan_day,
     for path in sorted(campaign.iterdir()):
         if SEGMENT_REPORT_RE.fullmatch(path.name) is None:
             continue
+        local_events, local_sessions = set(), set()
+        local_venues, local_claims = set(), set()
         try:
             obj = json.loads(_private_input(path, MAX_SEGMENT_BYTES))
             meta = obj.get("campaign_meta")
@@ -210,21 +212,26 @@ def summarize_private_segment_hints(campaign, digest, scan_day,
                         or item.get("public_writes") != 0):
                     raise ValueError("invalid_private_candidate_identity")
                 identity = (item["agenda_uid"], item["event_uid"])
-                event_keys.add(identity)
+                local_events.add(identity)
                 for timing in item.get("explicit_source_session_intervals") or []:
                     if (isinstance(timing, dict)
                             and isinstance(timing.get("begin"), str)
                             and isinstance(timing.get("end"), str)):
-                        session_keys.add(identity + (
+                        local_sessions.add(identity + (
                             timing["begin"], timing["end"]))
                 city, venue = item.get("city_unverified"), item.get("venue_unverified")
                 if (isinstance(city, str) and city.strip()
                         and isinstance(venue, str) and venue.strip()):
-                    venue_keys.add((city.strip().casefold(),
+                    local_venues.add((city.strip().casefold(),
                                     venue.strip().casefold()))
                 country = item.get("country_code_unverified")
                 if isinstance(country, str) and len(country) == 2:
-                    territory_claims.add(country.upper())
+                    local_claims.add(country.upper())
+            # Count only a FULLY trusted segment, never partial malformed data.
+            event_keys.update(local_events)
+            session_keys.update(local_sessions)
+            venue_keys.update(local_venues)
+            territory_claims.update(local_claims)
         except (OSError, ValueError, TypeError, AttributeError,
                 UnicodeError):
             invalid += 1
@@ -352,7 +359,7 @@ def run_observation(source_config, root, day, batch_id, *,
             "index_agendas_observed_in_batch_sample": len(agenda_keys),
             "distinct_event_uids_in_saved_segments": len(event_keys),
             "distinct_exact_session_hints_in_saved_segments": len(session_keys),
-            "unnumbered_or_other_venue_name_hints": len(venue_keys),
+            "distinct_city_venue_name_hints_unverified": len(venue_keys),
             "distinct_territory_country_claims_unverified": len(territory_claims),
             "unreadable_segments_for_metric_review": invalid_metric_segments,
             "publisher_connected": False,
