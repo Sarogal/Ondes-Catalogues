@@ -170,17 +170,28 @@ class UndatedFutureEditionTests(unittest.TestCase):
     def test_actual_stage_admits_only_independently_rechecked_row(self):
         from grossesondes_preview import CAL_URL, HIS_URL
         from grossesondes_stage import stage
-        original = {"schema": 1, "generatedAt": "2026-10-25", "festivals": []}
+        baseline_rows = [
+            {"slug": "unrelated-calendar-" + str(n),
+             "name": "Unrelated festival " + str(n)}
+            for n in range(90)
+        ]
+        archive_rows = [
+            {"slug": "unrelated-history-" + str(n),
+             "name": "Unrelated historical festival " + str(n)}
+            for n in range(90)
+        ] + [ARCHIVED]
+        original = {"schema": 1, "generatedAt": "2026-10-25",
+                    "festivals": baseline_rows}
         history = {"schema": 2, "updatedAt": "2026-10-25",
-                   "knownFestivals": [ARCHIVED]}
+                   "knownFestivals": archive_rows}
         patch_data = {
             "schema": "grossesondes.patch.v1",
             "safe_to_publish": False,
             "source": {
                 "festivals": {"url": CAL_URL,
-                              "generatedAt": "2026-10-25", "count": 0},
+                              "generatedAt": "2026-10-25", "count": 90},
                 "history": {"url": HIS_URL,
-                            "updatedAt": "2026-10-25", "count": 1},
+                            "updatedAt": "2026-10-25", "count": 91},
             },
             "additions": [self.proposal], "updates": [],
             "history_additions": [], "history_updates": [], "deferred": [],
@@ -189,7 +200,7 @@ class UndatedFutureEditionTests(unittest.TestCase):
         target, report = stage(
             original, history, patch_data, sources, TODAY.isoformat())
         self.assertEqual(report["accepted_additions"], ["xtreme-fest-2027"])
-        self.assertEqual(target["festivals"][0]["status"], "Dates à venir")
+        self.assertEqual(target["festivals"][-1]["status"], "Dates à venir")
         self.assertIsNone(target["festivals"][0]["startDate"])
         self.assertFalse(target["festivals"][0]["showOnMap"])
         rejected, fail = stage(
@@ -197,17 +208,14 @@ class UndatedFutureEditionTests(unittest.TestCase):
             {"registered-edition:xtreme-fest-2027":
              "<h2>Festival 2027 possible sous réserve</h2>"},
             TODAY.isoformat())
-        self.assertEqual(len(rejected["festivals"]), 0)
+        self.assertEqual(len(rejected["festivals"]), 90)
         self.assertEqual(fail["accepted_additions"], [])
         # Signed duplicate must not generate another edition.
-        original_with_signed = deepcopy(original)
-        original_with_signed["festivals"] = list(target["festivals"])
+        signed = deepcopy(target)
         duplicated, blocked = stage(
-            original_with_signed, history, patch_data, sources,
-            TODAY.isoformat(),
-            production_calendar=original_with_signed,
-            published_calendar=original_with_signed)
-        self.assertEqual(len(duplicated["festivals"]), 1)
+            original, history, patch_data, sources,
+            TODAY.isoformat(), published_calendar=signed)
+        self.assertEqual(len(duplicated["festivals"]), 90)
         self.assertEqual(blocked["already_published"], ["xtreme-fest-2027"])
 
     def test_two_days_required_even_if_same_page_is_repeated_today(self):
