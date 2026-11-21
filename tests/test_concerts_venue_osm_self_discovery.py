@@ -122,6 +122,29 @@ class OpenEndedOSMDiscoveryTests(unittest.TestCase):
                    HOME,agenda,DETAIL])
         self.assertFalse(report["candidates"][0]["publicationAllowed"])
 
+    def test_same_osm_node_can_be_found_in_multiple_provenance_formats(self):
+        variants=[
+            "https://www.openstreetmap.org/node/"+NODE_ID,
+            "https://www.openstreetmap.org/api/0.6/node/"+NODE_ID,
+            "https://mapcarta.com/fr/N"+NODE_ID,
+            "https://mapcarta.com/N"+NODE_ID,
+            "Adresse officielle https://fake.fr/contact ; point de la salle OpenStreetMap node "+NODE_ID,
+        ]
+        for value in variants:
+            with self.subTest(source=value):
+                cat=catalogue()
+                cat["venues"][0]["geoSource"]=value
+                self.assertEqual(discover_osm.osm_node_id(cat["venues"][0]),NODE_ID)
+                self.assertEqual(len(discover_osm.eligible(cat)),1)
+                found=discover_osm.scan(cat,TODAY,max_venues=1,
+                                        max_details=2,fetch=fake_fetch())
+                self.assertEqual(len(found["candidates"]),1)
+        cat=catalogue()
+        cat["venues"][0]["geoSource"]="https://mapcarta.com/fr/N"+NODE_ID
+        cat["venues"][0]["geoPrecision"]="OpenStreetMap node 12345678 (contradictory)"
+        self.assertIsNone(discover_osm.osm_node_id(cat["venues"][0]))
+        self.assertFalse(discover_osm.eligible(cat))
+
     def test_false_source_owner_and_venue_provenance_are_not_used(self):
         cases={
             "missing-website":osm(website="http://evil.fr"),
