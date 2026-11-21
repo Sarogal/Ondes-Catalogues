@@ -1,0 +1,73 @@
+name: "GO TEST — reconcile live logo manifest without publication"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-legacy-logo-manifest-reconciliation.yml"
+      - "radio-catalog-lab/tools/reconcile_legacy_logo_manifests.py"
+      - "radio-catalog-lab/tools/test_reconcile_legacy_logo_manifests.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical-logo-reconciliation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test open-provider reconciliation and fail-closed review labels
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_reconcile_legacy_logo_manifests.py" -v
+      - name: Read the LIVE public v5+ logo manifest (not a release publisher)
+        run: |
+          curl -fSL --retry 2 --connect-timeout 8 --max-time 30 \
+            --max-filesize 1048576 \
+            -H "Accept: application/json" \
+            -o "$RUNNER_TEMP/current-public-logo-manifest.json" \
+            "https://grosses-ondes.fr/logo-manifest.json"
+      - name: Join every historical UUID against public source references
+        run: |
+          python radio-catalog-lab/tools/reconcile_legacy_logo_manifests.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --current-manifest "$RUNNER_TEMP/current-public-logo-manifest.json" \
+            --output "$RUNNER_TEMP/legacy-logo-reconciliation-review-only.json"
+      - name: Assert output cannot be treated as signed/approved artwork
+        run: |
+          python - <<'PY'
+          import json, os
+          path=os.path.join(os.environ["RUNNER_TEMP"],
+                            "legacy-logo-reconciliation-review-only.json")
+          d=json.load(open(path, encoding="utf-8"))
+          assert d["publication_allowed"] is False
+          assert d["signed_catalog_created"] is False
+          assert d["discovery_is_open"] is True
+          assert d["summary"]["historical_station_count"] == 310
+          assert len(d["historical_stations"]) == 310
+          assert all(x["publication_allowed"] is False and
+                     x["immutable_sha_verified"] is False
+                     for x in d["historical_stations"])
+          assert all(x["publication_allowed"] is False
+                     for x in d["unmatched_public_manifest_ids"])
+          print("GO_LEGACY_LOGO_RECONCILIATION_REVIEW_ONLY")
+          print(json.dumps(d["summary"],sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-live-logo-reconciliation-review-only
+          path: /home/runner/work/_temp/legacy-logo-reconciliation-review-only.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: No signed pointer, no station catalog changes and no production
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          git diff --exit-code
+          git diff --cached --exit-code
+          echo "GO_RECONCILIATION_ONLY_NO_PUBLICATION"
