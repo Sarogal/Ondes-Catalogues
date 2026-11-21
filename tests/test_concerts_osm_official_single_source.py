@@ -119,6 +119,75 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertEqual(again["newEvents"], 0)
         self.assertEqual(same, merged)
 
+    def test_unavailable_osm_api_host_uses_second_official_api(self):
+        # A failed API hostname cannot discard an authentic concert when
+        # another official OSM API endpoint returns the SAME named node.
+        observed = []
+        normal = fixture.fake_fetch()
+        def fail_first(url, cache):
+            observed.append(url)
+            if url.startswith("https://api.openstreetmap.org/"):
+                raise ValueError("Source returned non-success HTTP status")
+            if url.startswith("https://www.openstreetmap.org/api/0.6/node/"):
+                return fixture.osm()
+            return normal(url, cache)
+        proposed, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=fail_first)
+        self.assertEqual(report["stateCounts"],
+                         {"independently_verified_proposal": 1})
+        with mock.patch.object(identity, "safe_fetch",
+                               side_effect=fail_first):
+            output, stats = publisher.merge(BASE, BASE, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertIn(URL, observed)
+        self.assertTrue(any(x.startswith(
+            "https://www.openstreetmap.org/api/0.6/node/")
+            for x in observed))
+        self.assertEqual(output["events"][-1]["officialUrl"], URL)
+
+    def test_network_failures_are_reported_by_proof_phase(self):
+        original = fixture.fake_fetch()
+        for phase in ("osm_identity", "official_event_fetch"):
+            def fail_one(url, cache):
+                if phase == "osm_identity" and (
+                    "openstreetmap.org" in url):
+                    raise ValueError("Source returned non-success HTTP status")
+                if phase == "official_event_fetch" and url == URL:
+                    raise ValueError("Source returned non-success HTTP status")
+                return original(url, cache)
+            with self.subTest(phase=phase):
+                result, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, fetch=fail_one)
+                self.assertEqual(result["approvals"], [])
+                self.assertEqual(report["examined"], 1)
+                self.assertTrue(
+                    report["candidateChecks"][0]["reason"].startswith(
+                        phase + ":"))
+                self.assertEqual(report["stateCounts"],
+                    {"held_event_or_source_not_verified": 1})
+
+    def test_osm_fallback_never_accepts_forged_node(self):
+        normal = fixture.fake_fetch()
+        def corrupt(url, cache):
+            if url.startswith("https://api.openstreetmap.org/"):
+                raise ValueError("Source returned non-success HTTP status")
+            if url.startswith("https://www.openstreetmap.org/api/0.6/node/"):
+                return fixture.osm(website="https://forged.invalid")
+            return normal(url, cache)
+        result, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=corrupt)
+        self.assertEqual(result["approvals"], [])
+        self.assertEqual(report["stateCounts"],
+                         {"held_event_or_source_not_verified": 1})
+        self.assertTrue(report["candidateChecks"][0]["reason"].startswith(
+            "osm_identity:"))
+
     def test_generic_event_or_html_microdata_reaches_real_publisher(self):
         # Some official venue sites emit schema.org Event, or HTML microdata,
         # rather than MusicEvent. Neither may borrow a genre or bill from

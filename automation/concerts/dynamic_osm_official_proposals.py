@@ -159,12 +159,21 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     cache = {}
     # The OSM claim is independent of the event page; do not read a domain
     # from a candidate as publisher authority.
-    verified.osm_identity(venue, url, fetch, cache)
-    body = fetch(url, cache)
+    try:
+        verified.osm_identity(venue, url, fetch, cache)
+    except (ValueError, OSError, TimeoutError) as exc:
+        raise ValueError("osm_identity: " + str(exc)) from exc
+    try:
+        body = fetch(url, cache)
+    except (ValueError, OSError, TimeoutError) as exc:
+        raise ValueError("official_event_fetch: " + str(exc)) from exc
     require(isinstance(body, str) and 100 <= len(body) <= 400_000,
             "missing individual official event page")
-    names, genres = official._individual_event(
-        body, url, date, venue, accept_generic=True)
+    try:
+        names, genres = official._individual_event(
+            body, url, date, venue, accept_generic=True)
+    except (ValueError, TypeError, KeyError) as exc:
+        raise ValueError("official_event_content: " + str(exc)) from exc
     lead = candidate.get("leadArtist")
     require(isinstance(lead, str) and bool(lead.strip()),
             "missing named lead in original observation")
@@ -211,9 +220,12 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     }
     # A second full replay here plus a third one inside approval_preflight
     # prevent discovery claims or a stale source from becoming a signature.
-    verified.validate(
-        approval, {v["id"]: v for v in catalogue["venues"]},
-        {a["id"]: a for a in catalogue["artists"]}, today, fetch=fetch)
+    try:
+        verified.validate(
+            approval, {v["id"]: v for v in catalogue["venues"]},
+            {a["id"]: a for a in catalogue["artists"]}, today, fetch=fetch)
+    except (ValueError, OSError, TimeoutError, KeyError, TypeError) as exc:
+        raise ValueError("publisher_recheck: " + str(exc)) from exc
     return approval
 
 
