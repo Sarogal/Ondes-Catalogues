@@ -7,6 +7,7 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
@@ -65,6 +66,7 @@ on:
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
@@ -76,6 +78,7 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
@@ -134,6 +137,7 @@ on:
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
@@ -163,6 +167,8 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_direct_evidence.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_preintegration.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_direct_missing_mirror_publication_preview.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_dryrun_e2e.py' -v
           python -m unittest discover -s tests \
@@ -238,6 +244,9 @@ jobs:
           preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
           assert "publisher_connected" in preflight and "public_writes" in preflight
           assert not any(x in preflight for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          proposal = Path("scripts/ptitesondes_direct_missing_mirror_publication_preview.py").read_text()
+          assert "publisher_connected" in proposal and "public_writes" in proposal
+          assert not any(x in proposal for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           smoke = Path("scripts/ptitesondes_openagenda_v2_live_smoke.py").read_text()
           assert "public_writes" in smoke and "approval_granted" in smoke
           assert not any(x in smoke for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
