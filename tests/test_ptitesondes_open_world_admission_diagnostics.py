@@ -122,6 +122,33 @@ class OpenWorldDiagnosticsTests(unittest.TestCase):
         self.assertFalse(result["publisher_connected"])
         self.assertEqual(result["public_writes"], 0)
 
+    def test_per_event_open_licence_removes_only_factual_rights_hold(self):
+        item = lead()
+        original = source_event(item)
+        original["rights"] = {
+            "license": {"id": "etalab-2.0"},
+            "licensor": {"name": "La Scène sans registre"},
+            "publisher": {"name": "Agenda fédérateur distinct"},
+        }
+        original["updatedAt"] = "2026-11-20T19:00:00+01:00"
+        result = inspect(item, event=original,
+                         location_proof=mint_unnumbered())
+        self.assertTrue(result["oa_factual_reuse_open_license"])
+        self.assertEqual(result["oa_licensor_attribution"],
+                         "La Scène sans registre")
+        self.assertIn("20/11/2026", result["oa_attribution_display"])
+        self.assertFalse(result["source_reuse_rights_verified"])
+        self.assertFalse(any(
+            "source_reuse_rights_unreviewed" in x["publication_blockers"]
+            for x in result["private_session_diagnostics"]))
+        self.assertTrue(all(
+            "organizer_identity_and_authorship_unproven"
+            in x["publication_blockers"]
+            and "no_publisher_bridge" in x["publication_blockers"]
+            for x in result["private_session_diagnostics"]))
+        self.assertFalse(result["publication_ready"])
+        self.assertEqual(result["public_writes"], 0)
+
     def test_unknown_venue_is_not_a_discovery_block_but_geo_remains_pending(self):
         result = inspect()
         self.assertEqual(len(result["private_session_diagnostics"]), 2)

@@ -32,6 +32,7 @@ from ptitesondes_shared_venue_location_evidence import (
     location_from_proof,
 )
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
+from ptitesondes_openagenda_reuse_rights import review_event_rights
 
 SCHEMA = "ptitesondes.open_world_admission_diagnostics.v1"
 MAX_CATALOGUE_ROWS = 100000
@@ -51,6 +52,12 @@ def _blank(reason):
         "organizer_independently_identified": False,
         "organizer_authorship_proven": False,
         "source_reuse_rights_verified": False,
+        # OA's per-event Etalab license is actionable only for factual fields,
+        # not for unknown author / image / descriptive text permissions.
+        "oa_factual_reuse_open_license": False,
+        "oa_licensor_attribution": None,
+        "oa_source_updated_at": None,
+        "oa_attribution_display": None,
         "public_attendance_verified": False,
         "independent_cancellation_watch_active": False,
         "historical_duplicate_check_authoritative": False,
@@ -170,6 +177,13 @@ def inspect_open_world_candidate(
             or event["uid"] != lead["event_uid"]):
         return dict(result, status="live_oa_event_not_verified")
 
+    rights = review_event_rights(event, today)
+    if rights["licensed_factual_reuse_confirmed"]:
+        result["oa_factual_reuse_open_license"] = True
+        result["oa_licensor_attribution"] = rights["licensor_attribution"]
+        result["oa_source_updated_at"] = rights["source_updated_at"]
+        result["oa_attribution_display"] = rights["attribution_display"]
+
     title = _french_text(event, "title")
     description = (_french_text(event, "description") + " " +
                    _french_text(event, "longDescription")).strip()
@@ -218,12 +232,16 @@ def inspect_open_world_candidate(
         matches = key in triples
         blockers = [
             "organizer_identity_and_authorship_unproven",
-            "source_reuse_rights_unreviewed",
             "family_access_and_age_not_independently_verified",
             "no_authoritative_public_deduplication",
             "final_editorial_admission_not_granted",
             "no_publisher_bridge",
         ]
+        # OpenAgenda's per-event Etalab-2.0 license permits factual-data
+        # reuse with licensor + updatedAt attribution; images/descriptions
+        # remain out of scope and no organizer authority is inferred.
+        if not result["oa_factual_reuse_open_license"]:
+            blockers.append("source_reuse_rights_unreviewed")
         if not matches:
             blockers.append("exact_cross_source_session_not_confirmed")
         if result["geography_status"] != "independent_named_location_correlated":

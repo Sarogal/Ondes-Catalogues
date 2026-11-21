@@ -64,6 +64,44 @@ def base():
 
 
 class CandidatePromotionTests(unittest.TestCase):
+    def test_open_license_attribution_is_bound_to_same_oa_event(self):
+        item = lead()
+        row = record()
+        official = {
+            "uid": 77081258,
+            "state": 2, "status": 1, "removed": False,
+            "title": {"fr": item["title"]},
+            "location": {"name": item["venue"], "adminLevel4": item["city"]},
+            "updatedAt": "2026-11-03T12:00:00+01:00",
+            "rights": {
+                "license": {"id": "etalab-2.0"},
+                "licensor": {"name": "Théâtre de Jeanne"},
+                "publisher": {"name": "Nantes Métropole"},
+            },
+        }
+        e = make_event(item, row, registry_location(item), TODAY,
+                       oa_rights_event=official)
+        self.assertIn("Théâtre de Jeanne", e["source_label"])
+        self.assertIn("Licence Ouverte 2.0", e["source_label"])
+        self.assertIn("03/11/2026", e["source_label"])
+        self.assertNotIn("Nantes Métropole", e["source_label"])
+        self.assertEqual(e["source_url"], URL)
+        for change in (
+            {"uid": 999},
+            {"title": {"fr": "Another show"}},
+            {"location": {"name": "Autre lieu", "adminLevel4": item["city"]}},
+            {"rights": {"license": {"id": "proprietary"},
+                        "licensor": {"name": "Théâtre de Jeanne"}}},
+        ):
+            altered = dict(official, **change)
+            with self.subTest(change=change):
+                with self.assertRaises(ValueError):
+                    make_event(item, row, registry_location(item), TODAY,
+                               oa_rights_event=altered)
+        # No opt-in keeps the historical output untouched.
+        old = make_event(item, row, registry_location(item), TODAY)
+        self.assertEqual(old["source_label"], "Nantes Métropole")
+
     def test_cli_can_consume_only_local_private_files_without_github_token(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)
