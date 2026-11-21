@@ -17,11 +17,18 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import unicodedata
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+# GitHub Actions invokes this file as `python scripts/concerts_cloud_sync.py`.
+# In that mode only scripts/ is initially importable, so the package-qualified
+# contracts `from scripts import ...` otherwise fail before any publication.
+# Add ONLY this trusted checkout's absolute root; never use a remote path.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 CATALOGUE = ROOT / "docs/grossesondes/concerts.json"
 REFERENCE = ROOT / "docs/grossesondes/concerts-reference.json"
 APPROVAL_URL = (
