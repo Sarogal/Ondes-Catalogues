@@ -95,6 +95,7 @@ def build(registry, catalogue, today):
             continue
         groups[key].append({
             "candidateId": c.get("candidateId"),
+            "eventUrl": c.get("eventDetailUrl") or c.get("sourceUrl"),
             "host": host, "independentDomainHint": domain(host),
             "sourceLabel": c.get("source"),
             "date": c.get("date"), "leadArtist": c.get("leadArtist"),
