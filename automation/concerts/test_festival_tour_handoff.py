@@ -91,6 +91,26 @@ class PrivateTourConcertsHandoffTests(unittest.TestCase):
         self.assertEqual(list(archive["items"].values())[0]["status"],
                          "pending_review")
 
+    def test_concerts_independently_checks_index_date_without_article_date(self):
+        card = ('<article><time>12 Fév 2027</time><h2>'
+                '<a href="/agenda/shred-fest-2027">Shred Fest 2027</a>'
+                '</h2></article>')
+        no_article_date = (
+            "<main><h1>Shred Fest 2027</h1><p>"
+            "Festival itinérant annuel avec 39 concerts metal.</p></main>")
+        calls = []
+        def read(url):
+            calls.append(url)
+            return {INDEX: card, DETAIL: no_article_date}[url]
+        with patch("festival_to_concerts_handoff.official_date",
+                   return_value=None):
+            report = bridge.reverify(
+                envelope(valid_row()), TODAY, fetch=read)
+        self.assertEqual(calls, [INDEX, DETAIL])
+        self.assertEqual(len(report["candidates"]), 1)
+        self.assertEqual(report["candidates"][0]["date"], "2027-02-12")
+        self.assertIs(report["candidates"][0]["publicationAllowed"], False)
+
     def test_removed_live_link_never_fetches_suggested_detail(self):
         calls = []
         with patch("festival_to_concerts_handoff.official_date",
