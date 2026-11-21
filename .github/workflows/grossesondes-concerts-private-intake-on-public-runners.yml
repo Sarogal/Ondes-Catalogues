@@ -233,14 +233,6 @@ jobs:
           mkdir -p "$RUNNER_TEMP/concerts-osm-venues"
           UTC_HOUR="$(date -u +%H)"
           SCAN_SLOT=$((10#$UTC_HOUR / 8))
-          # A trusted main push gets one complete bounded review of the
-          # currently small eligible queue (22 on 2026-11-21). Regular crons
-          # retain the rotating 16-per-slot budget; no candidate gets trust
-          # merely by being selected for verification.
-          REVIEW_LIMIT=16
-          if [ "${{ github.event_name }}" = "push" ]; then
-            REVIEW_LIMIT=24
-          fi
           # Source URL is independently read from each CURRENT named venue's
           # OSM node, not supplied by an approval file or trusted host list.
           # All network fetches are TLS-pinned, robots-aware, redirect-free.
@@ -465,6 +457,14 @@ jobs:
           # exactly the same 10 registry rows.
           UTC_HOUR="$(date -u +%H)"
           SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          # A trusted main push gets one complete bounded review of the
+          # currently small eligible queue (22 on 2026-11-21). Regular crons
+          # retain the rotating 16-per-slot budget; no candidate gets trust
+          # merely by being selected for verification.
+          REVIEW_LIMIT=16
+          if [ "${{ github.event_name }}" = "push" ]; then
+            REVIEW_LIMIT=24
+          fi
           # Generate proposal only; persistent writes require publisher preflight.
           if ! python public/automation/concerts/official_recheck.py \
               --scan-slot "$SCAN_SLOT" \
