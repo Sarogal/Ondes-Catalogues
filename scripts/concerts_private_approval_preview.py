@@ -42,9 +42,13 @@ def read_json(path):
 def approved_delta(previous, proposed, published):
     """Inspect a single append-only change. The trusted publisher is the authority."""
     require(isinstance(previous, dict) and isinstance(proposed, dict))
-    require(previous.keys() == proposed.keys(),
+    old_keys, new_keys = set(previous), set(proposed)
+    require(new_keys == old_keys or
+            (new_keys == old_keys | {"lineupCorrections"}
+             and "lineupCorrections" not in old_keys),
             "Structure d'approbations altérée")
-    permitted = {"approvals", "referenceEventStatusCorrections"}
+    permitted = {"approvals", "referenceEventStatusCorrections",
+                 "lineupCorrections"}
     require(all(previous[k] == proposed[k] for k in previous if k not in permitted),
             "Données historiques ou validations de salle modifiées")
 
@@ -62,7 +66,15 @@ def approved_delta(previous, proposed, published):
             and new_status[:len(old_status)] == old_status,
             "Historique des corrections de statut modifié")
     added_status = new_status[len(old_status):]
-    require(len(added_status) <= 1 and bool(fresh) != bool(added_status),
+    old_lineup = previous.get("lineupCorrections", [])
+    new_lineup = proposed.get("lineupCorrections", [])
+    require(isinstance(old_lineup, list) and isinstance(new_lineup, list)
+            and new_lineup[:len(old_lineup)] == old_lineup,
+            "Historique des corrections de programmation modifié")
+    added_lineup = new_lineup[len(old_lineup):]
+    require(len(added_status) <= 1 and len(added_lineup) <= 8
+            and sum(bool(part) for part in
+                    (fresh, added_status, added_lineup)) == 1,
             "Une seule catégorie de modification, non vide, est autorisée")
     all_ids = [r.get("event", {}).get("id") if isinstance(r, dict) else None
                for r in new]
@@ -94,8 +106,22 @@ def approved_delta(previous, proposed, published):
         and bool(r["officialEvidence"])
         for r in added_status
     ), "Correction de statut sans signature indépendante")
-    # No other correction is authorized here; the real sync.merge() verifies
-    # the exact signed event, provenance and permitted immutable-state change.
+    require(all(
+        isinstance(row, dict)
+        and row.get("eventId") in current_ids
+        and row.get("reviewDecision") == "approved"
+        and row.get("reviewedBy") in (
+            "independent-official-verifier", "automated-official-recheck")
+        and isinstance(row.get("officialEvidence"), list)
+        and bool(row["officialEvidence"])
+        and isinstance(row.get("artistIds"), list)
+        and isinstance(row.get("newArtists"), list)
+        for row in added_lineup
+    ), "Correctif de programmation sans signature indépendante")
+    require(len({row["eventId"] for row in new_lineup}) == len(new_lineup),
+            "Correctif de programmation dupliqué")
+    # sync.merge independently validates the full named bill, exact event,
+    # physical venue and source URL, then re-fetches on first application.
     return [r["event"]["id"] for r in fresh], added_status
 
 
@@ -106,7 +132,7 @@ def append_only(previous, proposed, published):
 
 
 def audit_backlog(previous, proposed, reference, published, today,
-                  fresh_ids, added_status):
+                  fresh_ids, added_status, added_lineup=()):
     """Read-only replay of signed FIFO batches when earlier approvals await publication.
 
     The simulation uses the *real* publisher for every batch. It never
@@ -115,6 +141,10 @@ def audit_backlog(previous, proposed, reference, published, today,
     expected_artists = [
         a.get("id") if isinstance(a, dict) else None
         for row in proposed["approvals"][len(previous["approvals"]):]
+        for a in row.get("newArtists", [])
+    ] + [
+        a.get("id") if isinstance(a, dict) else None
+        for row in added_lineup
         for a in row.get("newArtists", [])
     ]
     require(all(isinstance(a, str) and a for a in expected_artists)
@@ -178,22 +208,23 @@ def audit_backlog(previous, proposed, reference, published, today,
         current = updated
         complete = all(fid in {e["id"] for e in current["events"]}
                        for fid in fresh_ids)
-        if complete and corrected == len(added_status):
+        if complete and corrected == len(added_status) + len(added_lineup):
             old_events = published["events"]
             new_events = current["events"]
-            if added_status:
-                target = added_status[0]["eventId"]
+            if added_status or added_lineup:
+                wanted = {r["eventId"] for r in list(added_status) + list(added_lineup)}
                 changed = [(old, new) for old, new
                            in zip(old_events, new_events) if old != new]
-                require(len(changed) == 1
-                        and changed[0][0]["id"] == changed[0][1]["id"] == target,
-                        "Correction historique non signée")
-                old, new = changed[0]
-                allowed = {"status", "lastVerified", "cancellationSourceUrl",
-                           "history"}
-                require(all(old.get(k) == new.get(k)
-                            for k in set(old) | set(new) if k not in allowed),
-                        "Correction historique non autorisée")
+                require({old["id"] for old, _ in changed} == wanted
+                        and len(changed) == len(wanted),
+                        "Correction de concert hors signature")
+                for old, new in changed:
+                    allowed = ({"status", "lastVerified", "cancellationSourceUrl",
+                                "history"} if added_status else
+                               {"title", "artistIds", "lastVerified", "history"})
+                    require(all(old.get(k) == new.get(k)
+                                for k in set(old) | set(new) if k not in allowed),
+                            "Correction de concert modifiant des champs protégés")
             else:
                 require(new_events[:len(old_events)] == old_events,
                         "Concert historique ou publié altéré")
@@ -207,7 +238,7 @@ def audit_backlog(previous, proposed, reference, published, today,
                     "Artistes nouveaux différents des signatures")
             sync.protect_reference(reference, current)
             sync.validate_catalogue(current)
-            return len(fresh_ids) + len(added_status)
+            return len(fresh_ids) + len(added_status) + len(added_lineup)
         require(updated["events"] != published["events"] or corrected,
                 "Aucune progression possible du lot privé")
         # A valid older approval must make incremental progress each pass.
@@ -218,6 +249,8 @@ def audit_backlog(previous, proposed, reference, published, today,
 
 def audit(previous, proposed, reference, published, today):
     fresh_ids, added_status = approved_delta(previous, proposed, published)
+    added_lineup = proposed.get("lineupCorrections", [])[
+        len(previous.get("lineupCorrections", [])):]
     existing_ids = {e.get("id") for e in published.get("events", [])}
     backlog = any(
         isinstance(row, dict) and row.get("reviewDecision") == "approved"
@@ -227,11 +260,15 @@ def audit(previous, proposed, reference, published, today):
     )
     if backlog:
         return audit_backlog(previous, proposed, reference, published, today,
-                             fresh_ids, added_status)
+                             fresh_ids, added_status, added_lineup)
     merged, counts = sync.merge(reference, published, proposed, today)
     expected_artists = [
         a.get("id") if isinstance(a, dict) else None
         for row in proposed["approvals"][len(previous["approvals"]):]
+        for a in row.get("newArtists", [])
+    ] + [
+        a.get("id") if isinstance(a, dict) else None
+        for row in added_lineup
         for a in row.get("newArtists", [])
     ]
     require(all(isinstance(a, str) and a for a in expected_artists)
@@ -240,7 +277,7 @@ def audit(previous, proposed, reference, published, today):
     require(counts.get("newEvents") == len(fresh_ids)
             and counts.get("newArtists") == len(expected_artists)
             and counts.get("newVenues") == 0
-            and counts.get("correctedEvents") == len(added_status)
+            and counts.get("correctedEvents") == len(added_status) + len(added_lineup)
             and counts.get("correctedVenues") == 0
             and not counts.get("held"),
             "Simulation de publication différente du lot approuvé")
@@ -249,18 +286,20 @@ def audit(previous, proposed, reference, published, today):
     require(len(new_events) == len(old_events) + len(fresh_ids)
             and [e["id"] for e in new_events[len(old_events):]] == fresh_ids,
             "Ordre, identifiants ou nombre d'événements modifiés")
-    if added_status:
-        target = added_status[0]["eventId"]
+    if added_status or added_lineup:
+        wanted = {r["eventId"] for r in added_status + added_lineup}
         changed = [(old, new) for old, new in zip(old_events, new_events)
                    if old != new]
-        require(len(changed) == 1
-                and changed[0][0]["id"] == changed[0][1]["id"] == target,
+        require(len(changed) == len(wanted)
+                and {old["id"] for old, _ in changed} == wanted,
                 "Correction d'un événement non signé")
-        old, new = changed[0]
-        allowed = {"status", "lastVerified", "cancellationSourceUrl", "history"}
-        require(all(old.get(k) == new.get(k)
-                    for k in set(old) | set(new) if k not in allowed),
-                "Correction de statut modifiant des données immuables")
+        for old, new in changed:
+            allowed = ({"status", "lastVerified", "cancellationSourceUrl",
+                        "history"} if added_status else
+                       {"title", "artistIds", "lastVerified", "history"})
+            require(all(old.get(k) == new.get(k)
+                        for k in set(old) | set(new) if k not in allowed),
+                    "Correction de concert modifiant des données immuables")
     else:
         require(new_events[:len(old_events)] == old_events,
                 "Concert historique ou publié altéré")
@@ -274,7 +313,7 @@ def audit(previous, proposed, reference, published, today):
             "Géolocalisation ou salle modifiée")
     sync.protect_reference(reference, merged)
     sync.validate_catalogue(merged)
-    return len(fresh_ids) + len(added_status)
+    return len(fresh_ids) + len(added_status) + len(added_lineup)
 
 
 def github_json(path, token):
