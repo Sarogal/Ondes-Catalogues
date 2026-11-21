@@ -213,9 +213,37 @@ def attach_research_dossiers(patch, dossiers, today):
                 and (not isinstance(patch["open_world_research"], list)
                      or len(patch["open_world_research"]) > MAX_DOSSIERS))):
         raise ValueError("invalid_private_dossier_patch")
-    # Never merge untrusted research into additions. Publisher recomputes all
-    # evidence and rejects any dossier whose origin/GPS/clock/rights disagree.
-    return {**patch, "open_world_research": dossiers}
+    # Private collection has four daily slots, but the cloud Publisher may
+    # read the patch only after several slots have been processed. Replacing
+    # this field with the *last* slot (often empty) silently deleted earlier
+    # valid research requests before the Publisher could inspect them.
+    #
+    # Keep the oldest outstanding requests in this bounded daily patch until
+    # its next refresh. Remaining discoveries remain in the private research
+    # reports for deterministic future-day rotation. No cached approval is
+    # created: each request is independently rechecked at publication time.
+    pending = []
+    keys = set()
+    for item in [*patch.get("open_world_research", []), *dossiers]:
+        if type(item) is not dict or type(item.get("lead")) is not dict:
+            raise ValueError("invalid_private_dossier_queue_entry")
+        lead = item["lead"]
+        values = (
+            lead.get("agenda_uid"), lead.get("event_uid"),
+            item.get("date_start"), item.get("official_event_url"),
+            item.get("official_venue_url"),
+            item.get("municipal_source_reference_url"),
+        )
+        if (type(values[0]) is not int or type(values[1]) is not int
+                or any(not isinstance(v, str) for v in values[2:5])
+                or values[5] is not None and not isinstance(values[5], str)):
+            raise ValueError("invalid_private_dossier_queue_identity")
+        if values in keys:
+            continue
+        keys.add(values)
+        if len(pending) < MAX_DOSSIERS:
+            pending.append(item)
+    return {**patch, "open_world_research": pending}
 
 
 def main():
@@ -238,9 +266,14 @@ def main():
     rows, report = collect_research_dossiers(
         args.observation_root, args.research_root, args.day,
         batch_index=args.batch_index)
-    _atomic_json(args.output_file,
-                 attach_research_dossiers(patch, rows, args.day))
+    combined = attach_research_dossiers(patch, rows, args.day)
+    _atomic_json(args.output_file, combined)
     # Do not print URLs, names, place or event IDs to public Actions.
+    # A candidate held in a private report is never counted as published.
+    report["queued_for_publisher"] = len(combined["open_world_research"])
+    report["pending_queue_capacity_deferred"] = max(
+        0, len(patch.get("open_world_research", [])) + len(rows)
+        - report["queued_for_publisher"])
     print(json.dumps({"schema": SCHEMA, **report}, sort_keys=True))
 
 
