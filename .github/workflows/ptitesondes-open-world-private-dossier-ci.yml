@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_open_world_private_dossier_intake.py'
+      - 'scripts/ptitesondes_private_research_carry_forward.py'
       - 'tests/test_ptitesondes_open_world_private_dossier_intake.py'
       - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - '.github/workflows/ptitesondes-open-world-private-dossier-ci.yml'
