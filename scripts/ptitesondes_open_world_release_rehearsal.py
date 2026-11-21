@@ -13,7 +13,7 @@ from datetime import date, datetime, timedelta
 import re
 from urllib.parse import urlsplit
 
-from merge_policy import ORIGIN, byid, valid, historical_event_unchanged
+from merge_policy import ORIGIN, byid, valid, historical_event_unchanged, merge
 from official_organizer_proof import canonical_event_title
 from proof import norm, meters
 from ptitesondes_candidate_promotion import category_for
@@ -48,7 +48,9 @@ def _blank(reason):
             "independent_venue_correlated": False,
             "municipal_program_exact_sessions": 0,
             "published_duplicate_checked": False,
-            "private_rehearsal_positive": False, **PRIVATE_ONLY}
+            "private_rehearsal_positive": False,
+            "publisher_policy_rehearsal_accepted": False,
+            "preview_additions": 0, **PRIVATE_ONLY}
 
 
 def _sessions_for_day(lead, day):
@@ -237,8 +239,42 @@ def rehearse_open_world_municipal_event(
                 return _blank("published_semantic_or_date_range_duplicate")
         except (KeyError, ValueError, TypeError):
             return _blank("published_date_range_invalid")
-    # Never interpret the preview card as pre-accepted: the existing
-    # publisher has its own independent checker, not connected here.
+    # Rehearse the *actual existing* append-only merge in memory, with a
+    # checker tied to this very invocation's fresh independent evidence.
+    # A serialized candidate or a user-provided boolean can NEVER supply
+    # this transient verification closure. No patch is persisted.
+    patch = {
+        "schema": "ptitesondes.patch.v1", "generated_at": today.isoformat(),
+        "safe_to_publish": False,
+        "source": {"url": ORIGIN, "version": 3,
+                   "updated_at": baseline["updated_at"],
+                   "events_count": len(baseline["events"])},
+        "checks": {"ids_unique": True,
+                   "official_sources_verified": True,
+                   "no_production_changes": True},
+        "additions": [event], "updates": [], "deferred": [],
+    }
+    def witness_checked(candidate, originals):
+        from ptitesondes_shared_venue_location_evidence import (
+            location_from_proof,
+        )
+        exact_location = location_from_proof(
+            venue_proof, candidate.get("city"), candidate.get("venue"),
+            today, (candidate.get("lat"), candidate.get("lng")))
+        ok = candidate == event and exact_location is not None
+        return ok, ("source municipale DILA + séances exactes + GPS "
+                    "indépendant + licence Etalab vérifiés en mémoire"
+                    if ok else "candidate différent des preuves indépendantes")
+    try:
+        merged, audit = merge(
+            baseline, published, patch, today, checker=witness_checked)
+    except (ValueError, KeyError, TypeError):
+        return _blank("existing_append_only_publisher_policy_rejected")
+    if (audit.get("ajoutes") != 1
+            or len(merged["events"]) != len(published["events"]) + 1
+            or merged["events"][-1]["id"] != event["id"]):
+        return _blank("existing_publisher_rehearsal_not_single_append")
+    # Never return or write the merged public catalogue.
     return {
         **_blank("full_openworld_municipal_rehearsal_only"),
         "candidate": event,
@@ -247,4 +283,6 @@ def rehearse_open_world_municipal_event(
         "municipal_program_exact_sessions": len(selected),
         "published_duplicate_checked": True,
         "private_rehearsal_positive": True,
+        "publisher_policy_rehearsal_accepted": True,
+        "preview_additions": 1,
     }
