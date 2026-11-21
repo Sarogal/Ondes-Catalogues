@@ -296,6 +296,30 @@ class NationwideVenueAdmissionPreviewTests(unittest.TestCase):
                 self.assertEqual(out["fullyCorrelatedPrivateOnly"], 0)
                 self.assertEqual(calls, [("official", EVENT)])
 
+    def test_private_diagnostics_distinguish_event_proofs_without_leaking_urls(self):
+        no_bill = copy.deepcopy(EVENT_OBJ)
+        no_bill.pop("performer")
+        missing, _ = run(event=no_bill)
+        self.assertEqual(missing["results"][0]["verificationStage"],
+                         "official_named_bill_missing")
+        for edit, expected in (
+            ({"genre": ["Hardcore Techno"]}, "official_event_genre_missing"),
+            ({"startDate": "2027-02-14"}, "official_event_date_mismatch"),
+            ({"performer": [{"@type": "MusicGroup", "name": "Other Band"}]},
+             "official_lead_artist_mismatch"),
+        ):
+            with self.subTest(expected=expected):
+                data = copy.deepcopy(EVENT_OBJ)
+                data.update(edit)
+                output, _ = run(event=data)
+                self.assertEqual(output["results"][0]["verificationStage"], expected)
+                self.assertEqual(output["verificationStageCounts"], {expected: 1})
+                self.assertEqual(output["reasonCounts"],
+                                 {"official_event_or_geography_unconfirmed": 1})
+                self.assertFalse(output["publisherTrustGranted"])
+                self.assertFalse(output["publicationAllowed"])
+                self.assertNotIn(EVENT, str(output))
+
     def test_robots_denial_sends_no_requests(self):
         out, calls = run(robots=lambda url, cache: False)
         self.assertEqual(calls, [])
