@@ -167,6 +167,49 @@ class UndatedFutureEditionTests(unittest.TestCase):
             published_slugs={"xtreme-fest-2027"}), {})
         self.assertEqual(len(visits), 1)
 
+    def test_actual_stage_admits_only_independently_rechecked_row(self):
+        from grossesondes_preview import CAL_URL, HIS_URL
+        from grossesondes_stage import stage
+        original = {"schema": 1, "generatedAt": "2026-10-25", "festivals": []}
+        history = {"schema": 2, "updatedAt": "2026-10-25",
+                   "knownFestivals": [ARCHIVED]}
+        patch_data = {
+            "schema": "grossesondes.patch.v1",
+            "safe_to_publish": False,
+            "source": {
+                "festivals": {"url": CAL_URL,
+                              "generatedAt": "2026-10-25", "count": 0},
+                "history": {"url": HIS_URL,
+                            "updatedAt": "2026-10-25", "count": 1},
+            },
+            "additions": [self.proposal], "updates": [],
+            "history_additions": [], "history_updates": [], "deferred": [],
+        }
+        sources = {"registered-edition:xtreme-fest-2027": OFFICIAL}
+        target, report = stage(
+            original, history, patch_data, sources, TODAY.isoformat())
+        self.assertEqual(report["accepted_additions"], ["xtreme-fest-2027"])
+        self.assertEqual(target["festivals"][0]["status"], "Dates à venir")
+        self.assertIsNone(target["festivals"][0]["startDate"])
+        self.assertFalse(target["festivals"][0]["showOnMap"])
+        rejected, fail = stage(
+            original, history, patch_data,
+            {"registered-edition:xtreme-fest-2027":
+             "<h2>Festival 2027 possible sous réserve</h2>"},
+            TODAY.isoformat())
+        self.assertEqual(len(rejected["festivals"]), 0)
+        self.assertEqual(fail["accepted_additions"], [])
+        # Signed duplicate must not generate another edition.
+        original_with_signed = deepcopy(original)
+        original_with_signed["festivals"] = list(target["festivals"])
+        duplicated, blocked = stage(
+            original_with_signed, history, patch_data, sources,
+            TODAY.isoformat(),
+            production_calendar=original_with_signed,
+            published_calendar=original_with_signed)
+        self.assertEqual(len(duplicated["festivals"]), 1)
+        self.assertEqual(blocked["already_published"], ["xtreme-fest-2027"])
+
     def test_two_days_required_even_if_same_page_is_repeated_today(self):
         import grossesondes_archived_html_intake as intake
         state = {}
