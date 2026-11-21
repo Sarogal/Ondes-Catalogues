@@ -36,7 +36,26 @@ import triage
 from independent_named_site_geo import _distance_meters
 
 SCHEMA = "grossesondes.concert.discovery.v1"
-OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]*)\Z")
+# OSM node identities already appear in several canonical provenance formats.
+# None is a trust grant: the independent OSM API must confirm site+location.
+OSM_NODE = re.compile(r"https://www[.]openstreetmap[.]org/node/([1-9][0-9]*)\\Z")
+OSM_API_NODE = re.compile(r"https://www[.]openstreetmap[.]org/api/0[.]6/node/([1-9][0-9]*)\\Z")
+MAPCARTA_NODE = re.compile(r"https://mapcarta[.]com/(?:fr/)?N([1-9][0-9]*)\\Z")
+TEXT_OSM_NODE = re.compile(r"\\b(?:OpenStreetMap\\s+)?node\\s+([1-9][0-9]*)\\b",re.I)
+
+
+def osm_node_id(venue):
+    values=set()
+    for value in (venue.get("geoSource"),venue.get("geoPrecision")):
+        if not isinstance(value,str):
+            continue
+        for pattern in (OSM_NODE, OSM_API_NODE, MAPCARTA_NODE):
+            m=pattern.fullmatch(value.strip())
+            if m:
+                values.add(m.group(1))
+        for m in TEXT_OSM_NODE.finditer(value):
+            values.add(m.group(1))
+    return next(iter(values)) if len(values)==1 else None
 TERRITORY_DISTANCE_METERS = 125
 MAX_VENUES = 5
 MAX_DETAILS = 3
@@ -57,7 +76,7 @@ def eligible(catalogue):
         v for v in catalogue["venues"]
         if isinstance(v, dict) and isinstance(v.get("id"), str)
         and isinstance(v.get("geoSource"), str)
-        and OSM_NODE.fullmatch(v["geoSource"])
+        and osm_node_id(v) is not None
         and isinstance(v.get("name"), str)
         and isinstance(v.get("city"), str)
         and isinstance(v.get("postalCode"), str)
@@ -82,9 +101,9 @@ def select(venues, day, slot, limit):
 
 def official_source(venue, fetch, cache):
     """OSM website is not authority alone; output is only an exploration seed."""
-    m = OSM_NODE.fullmatch(venue["geoSource"])
-    require(bool(m), "not a named OSM node")
-    url = "https://api.openstreetmap.org/api/0.6/node/" + m.group(1)
+    node_id=osm_node_id(venue)
+    require(bool(node_id),"not an unambiguous named OSM node")
+    url="https://api.openstreetmap.org/api/0.6/node/"+node_id
     body = fetch(url, cache)
     require(isinstance(body, str) and 0 < len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
@@ -93,7 +112,7 @@ def official_source(venue, fetch, cache):
     root = ElementTree.fromstring(body)
     require(root.tag == "osm", "wrong OSM XML")
     nodes = root.findall("node")
-    require(len(nodes) == 1 and nodes[0].get("id") == m.group(1),
+    require(len(nodes) == 1 and nodes[0].get("id") == node_id,
             "OSM node identity changed")
     node = nodes[0]
     tags = {t.get("k"):t.get("v") for t in node.findall("tag")
