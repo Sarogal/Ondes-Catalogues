@@ -75,6 +75,28 @@ class FestivalTourHandoffTests(TestCase):
             self.assertIsNone(_tour_day(
                 TOUR_HTML, {"title": TITLE, "year": 2027}, DAY))
 
+    def test_municipal_card_day_is_retained_when_article_omits_date(self):
+        card = ('<article><time>12 Fév 2027</time><h2>'
+                '<a href="/agenda/shred-fest-2027">Shred Fest 2027</a>'
+                '</h2></article>')
+        article = ("<main><h1>Shred Fest 2027</h1><p>"
+                   "Concept de festival itinérant annuel de metal, "
+                   "39 concerts sans aucun jour de repos.</p></main>")
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return {INDEX: card, DETAIL: article}[url]
+        with patch("festival_to_concerts_handoff._eligible_sources",
+                   return_value=[SPEC]), patch(
+                   "festival_to_concerts_handoff.official_date",
+                   return_value=None):
+            result = discover(
+                {"schema": "grossesondes.source-watch.v1"}, {},
+                DAY, fetch=fetch)
+        self.assertEqual(calls, [INDEX, DETAIL])
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["dateHint"], "2027-02-12")
+
     def test_missing_official_index_blocks_source_detail_request(self):
         state = {"schema": "grossesondes.source-watch.v1"}
         calls = []
