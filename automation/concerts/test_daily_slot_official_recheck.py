@@ -164,6 +164,22 @@ class MultiSlotRecheckTests(unittest.TestCase):
                 entries, TODAY, slot, 16)
             self.assertEqual(selected, entries)
 
+    def test_trusted_push_full_bounded_cohort_preserves_independent_checks(self):
+        # A trusted push can recheck today's 22 eligible leads in one run,
+        # without creating any event approval from discovery metadata alone.
+        rows = {f"case-{i:03d}": indexed_row(i) for i in range(22)}
+        before = copy.deepcopy(rows)
+        for slot in (0, 1, 2):
+            proposed, report = self.process(rows, slot, limit=24)
+            self.assertEqual(report["totalEligible"], 22)
+            self.assertEqual(report["dailyReviewCapacity"], 22)
+            self.assertEqual(report["dailyReviewLimitPerSlot"], 24)
+            self.assertEqual(report["evaluated"], 22)
+            self.assertEqual(report["newApprovals"], [])
+            self.assertEqual(report["newSiteApprovals"], [])
+            self.assertEqual(proposed, APPROVALS)
+        self.assertEqual(rows, before)
+
     def test_capacity_and_slot_cannot_be_unbounded(self):
         for bad in (-1, 0, 41, True, "16"):
             with self.subTest(limit=bad), self.assertRaises(ValueError):
