@@ -18,7 +18,9 @@ from copy import deepcopy
 from datetime import date
 from hashlib import sha256
 import json
+import re
 
+from ptitesondes_openagenda_national_event_research import valid_after
 from ptitesondes_private_national_event_campaign import _validate_segment
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
 from ptitesondes_open_world_candidate_rotation import (
@@ -74,12 +76,14 @@ def _segment_items(report, today):
             or set(meta) != {"source_sha256", "scan_day",
                              "agenda_index", "segment", "start_cursor"}
             or not isinstance(meta["source_sha256"], str)
-            or len(meta["source_sha256"]) != 64
+            or re.fullmatch(r"[a-f0-9]{64}", meta["source_sha256"]) is None
             or meta["scan_day"] != today.isoformat()
             or type(meta["agenda_index"]) is not int
             or type(meta["segment"]) is not int
             or not 0 <= meta["agenda_index"] < 160
-            or not 0 <= meta["segment"] <= 10000):
+            or not 0 <= meta["segment"] <= 10000
+            or (meta["start_cursor"] is not None
+                and not valid_after(meta["start_cursor"]))):
         return None
     agenda = {
         "agenda_uid": report.get("agenda_uid"),
