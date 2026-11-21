@@ -291,7 +291,8 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
         state, queue, catalog = fixture(DAY1)
         queue["dossiers"] = queue["dossiers"][:1]
         primary = ("<h1>Festival Foudre du Nord 2027</h1>"
-                   "<p>Les 4 et 6 juin 2027</p>")
+                   "<p>Les 4 et 5 juin 2027</p>"
+                   "<p>Les 11 et 12 juillet 2027</p>")
         calls = []
         result = examine(
             state, queue, catalog, DAY1,
