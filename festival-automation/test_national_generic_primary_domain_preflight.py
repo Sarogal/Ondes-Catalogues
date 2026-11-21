@@ -253,6 +253,64 @@ class GenericNationalFirstPartyTests(unittest.TestCase):
                 organizer_fetch=lambda _: self.fail("wrong domain fetched"))
         self.assertEqual(rejected, [])
 
+    def test_article_only_is_offline_eligible_for_independent_publisher_recheck(self):
+        state, queue, catalog = fixture(DAY1)
+        queue["dossiers"] = queue["dossiers"][:1]
+        root = "https://foudre-metal.fr/"
+        article_url = root + "edition-2027"
+        homepage = ('<main><h1>Festival Foudre du Nord</h1>'
+                    '<p>Festival de metal et rock, annonce à venir.</p>'
+                    '<a href="/edition-2027">Édition 2027</a></main>')
+        pages = {
+            URL_A: '<main><p>Page de programmation en préparation</p></main>',
+            root: homepage,
+            article_url: ('<main><h1>Festival Foudre du Nord 2027</h1>'
+                          '<p>4 et 5 juin 2027, festival rock metal.</p></main>'),
+        }
+        first = examine(state, queue, catalog, DAY1, fetch=pages.__getitem__)
+        self.assertEqual(first["two_day_dates_count"], 0)
+        self.assertEqual(first["rows"][0]["start_date_hint"], "2027-06-04")
+        self.assertTrue(first["rows"][0]["date_source_mode"].startswith(
+            "SAME_HOST_EDITION_ARTICLE:"))
+        _, next_queue, _ = fixture(DAY2)
+        next_queue["dossiers"] = next_queue["dossiers"][:1]
+        second = examine(
+            state, next_queue, catalog, DAY2, fetch=pages.__getitem__)
+        self.assertEqual(second["two_day_dates_count"], 1)
+
+        directory = directory_urls(NAMES[0] + " 2027")[0]
+        accessed = []
+        def independent_fetch(url):
+            accessed.append(url)
+            self.assertIn(url, (root, article_url))
+            return pages[url]
+        with patch("national_generic_primary_domain_preflight."
+                   "discover_directory_website",
+                   return_value=(directory, root)):
+            proposals = stable_directory_proposals(
+                state, next_queue, catalog, second, DAY2,
+                directory_fetch=lambda _: self.fail("directory fixture injected"),
+                organizer_fetch=independent_fetch)
+        self.assertEqual(accessed, [root, article_url])
+        self.assertEqual(len(proposals), 1)
+        self.assertEqual(proposals[0]["officialSite"], root)
+        self.assertEqual(proposals[0]["proofMode"], PROOF_MODE)
+        self.assertFalse(proposals[0]["showOnMap"])
+        self.assertFalse(second["publication_authorized"])
+
+        # A different date on the publisher's fresh article breaks the chain,
+        # even though the J+1 private observation is still stable.
+        pages[article_url] = pages[article_url].replace(
+            "4 et 5 juin 2027", "11 et 12 juillet 2027")
+        with patch("national_generic_primary_domain_preflight."
+                   "discover_directory_website",
+                   return_value=(directory, root)):
+            refused = stable_directory_proposals(
+                state, next_queue, catalog, second, DAY2,
+                directory_fetch=lambda _: self.fail("directory fixture injected"),
+                organizer_fetch=pages.__getitem__)
+        self.assertEqual(refused, [])
+
     def test_unknown_organizer_page_finds_current_edition_via_same_host_link(self):
         state, queue, catalog = fixture(DAY1)
         queue["dossiers"] = queue["dossiers"][:1]
