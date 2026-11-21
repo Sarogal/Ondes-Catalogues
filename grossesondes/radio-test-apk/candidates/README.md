@@ -24,7 +24,7 @@ The workflow `.github/workflows/radio-open-candidates-evidence-ci.yml` is scoped
 
 ## Artwork identity
 
-The two referenced images are official **network-brand** artwork candidates, **not confirmed Punk-channel-specific logos**. They are intentionally marked `state=unreviewed` and `scope=network_brand_not_punk_specific`. The eventual central logo store must ingest only images that pass a real byte hash, file format, dimension and editorial identity review, then use SHA content addressing for both Flutter and Android Auto. Never replace a legitimate existing radio logo with an unverified generic image.
+The RADIO BOB image is an official **network-brand** artwork candidate, not a Punk-specific logo. The ROCK ANTENNE image is taken directly from its official **Punk Rock stream page** and is a stronger channel-specific candidate. Both remain `state=unreviewed` until their actual bytes and visual identity are reviewed. The eventual central logo store must ingest only images that pass a real byte hash, file format, dimension and editorial identity review, then use SHA content addressing for both Flutter and Android Auto. Never replace a legitimate existing radio logo with an unverified generic image.
 
 ## Next gate
 
