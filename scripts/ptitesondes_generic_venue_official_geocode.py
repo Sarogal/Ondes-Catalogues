@@ -219,9 +219,6 @@ def extract_official_address(group, html):
         p.close()
     except (TypeError, ValueError, RecursionError):
         return None
-    if (len(p.headings) != 1 or len(p.addresses) != 1
-            or norm(p.headings[0]) != norm(group.get("venue"))):
-        return None
     if (len(p.headings) == 1 and len(p.addresses) == 1
             and norm(p.headings[0]) == norm(group.get("venue"))):
         m = VISIBLE_ADDRESS.fullmatch(p.addresses[0])
