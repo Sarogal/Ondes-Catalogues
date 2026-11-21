@@ -7,6 +7,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'festival-automation/institutional_event_card.py'
+      - 'festival-automation/national_live_index_recheck.py'
       - '.github/workflows/grossesondes-festivals-private-intake-on-public-runners.yml'
       - 'scripts/grossesondes_archived_html_intake.py'
       - 'scripts/grossesondes_official_html_edition.py'
