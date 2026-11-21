@@ -131,7 +131,6 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         mutations = (
             ("officialSite", "https://evil.example/"),
             ("source", "https://evil.example/"),
-            ("startDate", "2027-06-11"),
             ("showOnMap", True),
             ("lineup", ["Faux artiste"]),
             ("originSlug", "https://evil.example/events/ferrailles"),
@@ -141,6 +140,14 @@ class OpenAgendaLinkedPublisherTests(TestCase):
                 altered = deepcopy(original)
                 altered[field] = value
                 self.assertIsNone(validate_private_proposal(altered, D2))
+        shifted = deepcopy(original)
+        shifted["startDate"] = "2027-06-11"
+        # Claimed dates are untrusted hints, not a structural contradiction.
+        # The publisher MUST recheck the actual printed dates independently.
+        self.assertIsNotNone(validate_private_proposal(shifted, D2))
+        self.assertIsNone(independently_verify(
+            shifted, D2, event_fetch=lambda _: OA,
+            organizer_fetch=lambda _: PRIMARY))
         mismatched = private_proposal(
             TITLE, SITE, ("2027-06-11", "2027-06-12"), D1,
             event_ref=EVENT)
@@ -150,7 +157,8 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         self.assertIsNone(independently_verify(
             original, D2, event_fetch=lambda _: OA,
             organizer_fetch=lambda _: PRIMARY.replace(
-                "festival metal", "festival culinaire")))
+                "festival metal, punk et hard rock",
+                "festival de cuisine traditionnelle")))
 
     def test_first_day_does_not_publish_second_day_can_be_prepared(self):
         cal, _, _ = fixtures()
