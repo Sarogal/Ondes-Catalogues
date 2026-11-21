@@ -56,7 +56,7 @@ def lead(*, name=None, venue="Place Libre", url=URL, observations=3):
     }
 
 
-def ban(*, score=0.95, city="Tours", street="Place Libre"):
+def ban(*, score=0.81, city="Tours", street="Place Libre"):
     return json.dumps({"features": [{
         "geometry": {"type": "Point", "coordinates": [0.688, 47.395]},
         "properties": {
@@ -256,7 +256,7 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
             ("unconfirmed_genre", {"raw": no_genre}),
             ("cancelled", {"raw": cancelled}),
             ("wrong_venue", {"raw": wrong_venue}),
-            ("government_ambiguous", {"government": ban(score=0.82)}),
+            ("government_low_score", {"government": ban(score=0.70)}),
             ("wrong_government_city", {"government": ban(city="Orléans")}),
             ("forged_osm_site", {"osm": osm_xml(name="Other Hall")}),
             ("forged_event_host", {"osm": osm_xml(
