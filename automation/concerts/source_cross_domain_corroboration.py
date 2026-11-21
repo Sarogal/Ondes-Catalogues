@@ -28,7 +28,7 @@ BANNED_BUCKETS = frozenset({
 def clean_venue(name):
     value = intake.normalized(name)
     chunks = value.split()
-    if chunks and chunks[0] in {"le", "la", "les", "l", "salle"}:
+    if chunks and chunks[0] in {"le", "la", "les", "l"}:
         chunks = chunks[1:]
     return " ".join(chunks)
 
