@@ -132,11 +132,29 @@ def osm_identity(venue, event_url, fetch, cache):
     return raw
 
 
-def _event(raw, event, venue, artists):
-    """Parse this individual MusicEvent alone, no artist/venue master list."""
-    require(isinstance(raw, dict)
-            and "MusicEvent" in bridge._event_types(raw.get("@type")),
-            "first-party MusicEvent schema required")
+def individual_event_nodes(html, *, accept_generic=False):
+    """Read isolated official event facts; never borrow fields from other cards.
+
+    Only the independently OSM-attributed source-unique profile may use
+    generic schema.org Event or visible HTML microdata. If JSON-LD already
+    declares an Event, bad or contradictory structured claims must not be
+    masked by falling back to another HTML representation.
+    """
+    types = {"MusicEvent", "Event"} if accept_generic else {"MusicEvent"}
+    nodes = [n for n in discover.read_ld(html)
+             if isinstance(n, dict)
+             and bridge._event_types(n.get("@type")) & types]
+    if accept_generic and not nodes:
+        import event_site_microdata
+        nodes = event_site_microdata.read_microdata_events(html)
+    return nodes
+
+
+def _event(raw, event, venue, artists, *, accept_generic=False):
+    """Verify one complete first-party concert event; never join evidence."""
+    types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
+    require("MusicEvent" in types or (accept_generic and "Event" in types),
+            "first-party music event schema required")
     require(not discover.reject_listing(raw.get("name")),
             "festival, cancelled or non-concert title is not a concert")
     canonical = raw.get("url")
@@ -255,13 +273,12 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(isinstance(html, str) and
             100 <= len(html) <= probe.MAX_BYTES,
             "individual first-party HTML missing")
-    events = [item for item in discover.read_ld(html)
-              if isinstance(item, dict)
-              and "MusicEvent" in bridge._event_types(item.get("@type"))]
+    events = individual_event_nodes(html, accept_generic=is_single_osm)
     valid = []
     for raw in events:
         try:
-            valid.append(_event(raw, event, venue, resolved))
+            valid.append(_event(raw, event, venue, resolved,
+                                accept_generic=is_single_osm))
         except (ValueError, KeyError, TypeError):
             continue
     require(len(valid) == 1, "no unique exact first-party MusicEvent")
