@@ -1,0 +1,88 @@
+name: "GO TEST — assemble recovered v5 logo SHA review (no publish)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-editorial-triage-20261121
+    paths:
+      - ".github/workflows/go-artwork-v5-review-evidence.yml"
+      - "radio-catalog-lab/tools/assemble_v5_artwork_editorial_queue.py"
+  workflow_dispatch:
+    inputs:
+      reconciliation_run:
+        description: "Successful reconciliation workflow run ID"
+        required: true
+        default: "44921337192"
+      bytes_run:
+        description: "Successful 8-shard SHA evidence run ID"
+        required: true
+        default: "44921656445"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  assemble:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RECON_RUN: ${{ inputs.reconciliation_run || '44921337192' }}
+      BYTES_RUN: ${{ inputs.bytes_run || '44921656445' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate the offline assembler
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools -p "test_assemble_v5_artwork_editorial_queue.py" -v
+      - name: Download historical reconciliation and image SHA evidence
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/reconciliation" "$RUNNER_TEMP/probes"
+          gh run download "$RECON_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "go-live-logo-reconciliation-review-only" \
+            --dir "$RUNNER_TEMP/reconciliation"
+          gh run download "$BYTES_RUN" --repo "$GITHUB_REPOSITORY" \
+            --pattern "go-v5-image-sha-evidence-*" \
+            --dir "$RUNNER_TEMP/probes"
+          test -f "$RUNNER_TEMP/reconciliation/legacy-logo-reconciliation-review-only.json"
+      - name: Assemble exact-UUID v5 editorial review, never signed
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t shard_files < <(find "$RUNNER_TEMP/probes" \
+            -type f -name 'go-public-logo-shard-*.json' -print0 | sort -z)
+          test "${#shard_files[@]}" -eq 8
+          python radio-catalog-lab/tools/assemble_v5_artwork_editorial_queue.py \
+            --reconciliation "$RUNNER_TEMP/reconciliation/legacy-logo-reconciliation-review-only.json" \
+            --shard "${shard_files[@]}" \
+            --pilot-sidecar grossesondes/radio-test-apk/artwork/releases/b85a4ddc27783e2a242747924f28a5438f1fb8d5adb6500c28126a90e588235d.json \
+            --output "$RUNNER_TEMP/go-v5-editorial-review.json" \
+            --priority-csv "$RUNNER_TEMP/go-v5-priority-visual-review.csv"
+      - name: Enforce zero publication or pointer modification
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          radio = json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())
+          assert radio["release_sequence"] == 4
+          queue = json.loads((Path(os.environ["RUNNER_TEMP"]) / "go-v5-editorial-review.json").read_text())
+          assert queue["publication_allowed"] is False
+          assert queue["signed_catalog_created"] is False
+          assert all(not r["publication_allowed"] for r in queue["historical_associations"])
+          print("GO_V5_SHA_EDITORIAL_EVIDENCE_ONLY_NO_PUBLISH")
+          PY
+          git diff --exit-code
+      - name: Archive unsigned editorial queue
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-editorial-queue-review-only
+          path: |
+            ${{ runner.temp }}/go-v5-editorial-review.json
+            ${{ runner.temp }}/go-v5-priority-visual-review.csv
+          retention-days: 14
+          if-no-files-found: error
