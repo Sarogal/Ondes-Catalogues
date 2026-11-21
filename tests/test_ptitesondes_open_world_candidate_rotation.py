@@ -176,6 +176,8 @@ class OpenWorldRotationTests(unittest.TestCase):
         stopped = cycle(item, first["private_checkpoint"], event=changed)
         self.assertEqual(stopped["status"],
                          "live_source_bootstrap_not_confirmed")
+        self.assertEqual(stopped["bootstrap_reason_code"],
+                         "live_oa_explicit_session_changed")
         self.assertEqual(stopped["private_checkpoint"],
                          first["private_checkpoint"])
         self.assertEqual(stopped["source_candidates_examined"], 0)
@@ -184,7 +186,20 @@ class OpenWorldRotationTests(unittest.TestCase):
         result = cycle(directory={"total_count": 0, "results": []})
         self.assertEqual(result["status"],
                          "live_source_bootstrap_not_confirmed")
+        self.assertEqual(result["bootstrap_reason_code"],
+                         "dila_municipal_domain_not_verified")
         self.assertFalse(result["organizer_identity_verified"])
+
+    def test_private_bootstrap_diagnostic_does_not_expose_source_metadata(self):
+        item = lead()
+        found = cycle(item, directory={"total_count": 0, "results": []})
+        self.assertIn(found["bootstrap_reason_code"],
+                      {"dila_municipal_domain_not_verified",
+                       "dila_municipal_directory_unavailable"})
+        public = public_redacted_rotation_summary(found)
+        self.assertNotIn("bootstrap_reason_code", public)
+        self.assertNotIn("source_url", json.dumps(public))
+        self.assertEqual(public["public_writes"], 0)
 
     def test_original_event_vocabulary_never_filters_source_discovery(self):
         item = lead(title="Création sonore hors catégories")
