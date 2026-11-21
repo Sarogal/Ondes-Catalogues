@@ -38,7 +38,7 @@ class ConcertMapTests(unittest.TestCase):
         self.assertNotIn("registry.json", self.html)
         self.assertIn("data.schemaVersion!==1", self.html)
         self.assertIn("cache:\"no-store\"", self.html)
-        self.assertIn('e.date<start', self.html)
+        self.assertIn('s.date<start', self.html)
         self.assertIn("isOverseas", self.html)
         self.assertIn("geoPrecision", self.html)
         self.assertIn("safeLink", self.html)
