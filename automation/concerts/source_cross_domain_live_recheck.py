@@ -131,6 +131,7 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
             "date": row["date"], "leadArtist": row["leadArtist"],
             "city": row["city"], "venue": row["normalizedVenue"],
             "state": "held", "freshIndividualEventWitnesses": 0,
+            "verifiedWitnesses": [],
             "crossDomainEventVerified": False,
             "sourceOwnershipVerified": False,
             "publisherAuthorityGranted": False, "publicationAllowed": False,
@@ -178,6 +179,13 @@ def build(source_report, today, *, slot=0, limit=3, fetch=probe.safe_fetch):
             else:
                 result["state"] = "needs_second_fresh_event_witness"
             result["freshIndividualEventWitnesses"] = len(signed)
+            # Witness URLs are PRIVATE evidence for subsequent source
+            # identity review; the claimed domain label itself is never
+            # a publisher authority.
+            result["verifiedWitnesses"] = [
+                {"host": x["host"], "url": x["url"]}
+                for x in sorted(signed, key=lambda x: (x["host"], x["url"]))
+            ]
         except (ValueError, TypeError, OSError, TimeoutError,
                 StopIteration, KeyError):
             result["state"] = "held_unverifiable_cross_domain_event"
