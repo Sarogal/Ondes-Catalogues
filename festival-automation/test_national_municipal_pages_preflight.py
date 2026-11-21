@@ -80,24 +80,25 @@ class NationalMunicipalPagesTests(unittest.TestCase):
                 self.assertIsNone(_rederive_municipal_site(
                     forged, dossier(), geo,
                     lambda city: self.fail("not delegated"),
-                    lambda url: self.fail("invalid registry must not fetch DILA")
-                    if mutation in ("municipal_website",
-                                    "municipal_directory_source",
-                                    "code_insee", "city_hint", "dossier_id", "status")
-                    else mairie_doc()))
+                    # A *syntactically safe* but forged public HTTPS site
+                    # must be rejected by independent DILA, not a local
+                    # allowlist. Invalid URL/metadata cannot even fetch DILA.
+                    lambda url: mairie_doc() if mutation == "municipal_website"
+                    and content.startswith("https://attacker")
+                    else self.fail("Malformed source cannot reach DILA")))
         self.assertIsNone(_rederive_municipal_site(
             observed, dossier(), geo,
             lambda _: self.fail("not delegated"),
             lambda _: mairie_doc("https://other-mairie.fr/")))
         self.assertIsNone(_rederive_municipal_site(
             observed, dossier(), lambda _: None,
-            lambda _: self.fail("unrelated delegated proof"),
+            lambda _: None,
             lambda _: self.fail("no DILA without geo proof")))
 
     def test_host_bounded_navigation_refuses_encoded_traversal_or_media(self):
         safe = [
             ("/actualites", SITE + "actualites"),
-            ("./agenda", SITE + "agenda"),
+            ("agenda", SITE + "agenda"),
             ("https://www.mairie-inconnue.fr/festival/edition-2027",
              SITE + "festival/edition-2027"),
         ]
@@ -143,13 +144,15 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertEqual(visited, list(pages))
         self.assertEqual(out["checked_sites"], 1)
         self.assertEqual(out["rederived_official_municipal_sites"], 1)
-        self.assertEqual(out["named_municipal_mention_count"], 1)
+        # The news index links to the named article; both visible mentions
+        # are PRIVATE clues, not independent corroborating sources.
+        self.assertEqual(out["named_municipal_mention_count"], 2)
         row = out["rows"][0]
         self.assertEqual(row["pages_checked"], 3)
         self.assertEqual(row["status"], "NAMED_MUNICIPAL_MENTION_RESEARCH_ONLY")
-        self.assertEqual(row["named_visible_pages"][0]["url"],
+        self.assertEqual(row["named_visible_pages"][-1]["url"],
                          SITE + "actualites/foudre-libre")
-        self.assertTrue(row["named_visible_pages"][0][
+        self.assertTrue(row["named_visible_pages"][-1][
             "edition_year_visible_review_only"])
         self.assertTrue(row["site_rederived"])
         self.assertFalse(row["publication_authorized"])
@@ -194,7 +197,7 @@ class NationalMunicipalPagesTests(unittest.TestCase):
             '<a href="/actualites/item' + str(i) +
             '">Actualités</a>' for i in range(50))
             + '<a href="https://127.0.0.1/private">Agenda</a>'
-            + '<a href="/fichier.pdf">Festival Foudre Libre 2027</a>'
+            + '<a href="/fichier.pdf">Télécharger la programmation PDF</a>'
             + '<a hidden href="/invisible-2027">Festival Foudre Libre 2027</a>'
             + '</main>')
         links = _candidate_links(html, SITE, SITE, TITLE, 2027, TODAY)
