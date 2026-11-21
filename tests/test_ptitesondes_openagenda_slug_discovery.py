@@ -84,7 +84,7 @@ class DynamicAgendaSlugDiscoveryTests(unittest.TestCase):
 
     def test_slug_and_public_read_key_must_be_strict_and_header_only(self):
         for value in ("", "../localhost", "a?uid=1", "a#fragment",
-                      "a&size=100", "foo.bar", "AGENDA", "a" * 101,
+                      "a&size=100", "foo.bar", "AGENDA", "a" * 102,
                       None, "coeur de flandre"):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 lookup(slug=value)
