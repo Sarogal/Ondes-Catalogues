@@ -17,11 +17,17 @@ import json
 import os
 from pathlib import Path
 import re
+import sys
 import unicodedata
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
+# GitHub Actions invokes this file directly as python scripts/concerts_cloud_sync.py:
+# sys.path[0] is then scripts/, NOT the project root. Publisher helpers live
+# under scripts.* and must be importable in BOTH CLI and unittest execution.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 CATALOGUE = ROOT / "docs/grossesondes/concerts.json"
 REFERENCE = ROOT / "docs/grossesondes/concerts-reference.json"
 APPROVAL_URL = (
