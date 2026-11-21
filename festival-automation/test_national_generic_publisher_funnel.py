@@ -75,10 +75,10 @@ class GenericPublisherFunnelTests(TestCase):
             "endDate": DATES[1],
         })
         result = build_report(discovery, source, signed, DAY)
-        self.assertEqual(result["already_signed_count"], 1)
+        self.assertEqual(result["already_in_public_snapshot_count"], 1)
         self.assertEqual(result["generic_publisher_recheck_pending_count"], 0)
         self.assertEqual(result["dossiers"][0]["status"],
-                         "EXACT_EDITION_ALREADY_SIGNED")
+                         "EXACT_EDITION_IN_PUBLIC_SNAPSHOT")
         self.assertEqual(
             result["valid_generic_additions_not_linked_to_unpublished_national_dossier"], 1)
 
