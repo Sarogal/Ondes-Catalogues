@@ -58,6 +58,11 @@ from grossesondes_venue_reciprocal_edition import (
     independently_verify as independently_verify_venue_reciprocal,
     validate_private_proposal as validate_private_venue_reciprocal,
 )
+from grossesondes_first_party_direct_edition import (
+    PROOF_MODE as DIRECT_FIRST_PARTY_PROOF_MODE,
+    independently_verify as independently_verify_direct_first_party,
+    validate_private_proposal as validate_private_direct_first_party,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -681,6 +686,49 @@ def collect_registered_directory_sources(
 
 
 
+
+def collect_registered_direct_first_party_sources(
+        patch, published_slugs, today, fetch=None):
+    """Current official edition facts, reread exclusively at official domain.
+
+    A private proposal may nominate any canonical branded festival domain.
+    Its date/location claim remains untrusted; no third-party event source,
+    fixed festival registry or external repetition of dates is required.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed catalogue identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual Publisher day required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == DIRECT_FIRST_PARTY_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_direct_first_party(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not candidates:
+        return {}
+    offset = (ordinal * 2) % len(candidates)
+    selected = [candidates[(offset + i) % len(candidates)]
+                for i in range(min(2, len(candidates)))]
+    sources = {}
+    for row in selected:
+        try:
+            opts = {"fetch": fetch} if fetch is not None else {}
+            proven = independently_verify_direct_first_party(
+                row, today, **opts)
+            if proven is None:
+                continue
+            slug = row["slug"]
+            sources["registered-direct-first-party:" + slug] = proven
+            sources["registered-direct-first-party-verified:" + slug] = True
+        except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+            print("Festival first-party edition not reconfirmed by Publisher.")
+    return sources
+
+
 def collect_registered_venue_reciprocal_sources(
         patch, published_slugs, today, fetch=None):
     """Independently recheck two-site reciprocal festival proof on Publisher.
@@ -856,6 +904,8 @@ def main():
     sources.update(collect_registered_linked_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_directory_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_direct_first_party_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_venue_reciprocal_sources(
         patch, signed_published_slugs, today.isoformat()))
