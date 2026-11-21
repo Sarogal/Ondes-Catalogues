@@ -155,5 +155,53 @@ class PrivateDirectMirrorCycleTests(unittest.TestCase):
                                          evaluator=evaluator)
 
 
+    def test_empty_manifest_still_allows_opt_in_private_research(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            checkout(root)
+            (root / "automation/sources.json").write_text(
+                json.dumps({"schema": "ptitesondes.sources.v1",
+                            "openagenda_agendas": []}), encoding="utf-8")
+            seen = []
+            def inspect(leads, previous, agendas, key, today, **kwargs):
+                self.assertEqual(agendas, [])
+                self.assertTrue(callable(kwargs["agenda_discovery"]))
+                seen.append(True)
+                return evaluator(leads, previous, [551], key, today)
+            report = run_private_direct_cycle(
+                root, NOW, mode="preview", public_key="oa_pk_private",
+                evaluator=inspect, discover_unconfigured=True)
+            self.assertEqual(seen, [True])
+            self.assertFalse(report["publication_ready"])
+            self.assertFalse((root / RELATIVE).exists())
+
+
+    def test_unconfigured_slug_research_is_opt_in_preview_only(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve()
+            checkout(root)
+            received = []
+            def inspect(leads, previous, agendas, key, today, **kwargs):
+                received.append(kwargs)
+                assert callable(kwargs["agenda_discovery"])
+                return evaluator(leads, previous, agendas, key, today)
+            report = run_private_direct_cycle(
+                root, NOW, mode="preview", public_key="oa_pk_private",
+                evaluator=inspect, discover_unconfigured=True)
+            self.assertEqual(len(received), 1)
+            self.assertIs(report["publication_ready"], False)
+            self.assertEqual(report["public_writes"], 0)
+            self.assertFalse((root / RELATIVE).exists())
+            with self.assertRaises(ValueError):
+                run_private_direct_cycle(
+                    root, NOW, mode="stage", public_key="oa_pk_private",
+                    evaluator=inspect, discover_unconfigured=True)
+            with self.assertRaises(ValueError):
+                run_private_direct_cycle(
+                    root, NOW, mode="preview", public_key="oa_pk_private",
+                    evaluator=inspect, discover_unconfigured="true")
+            self.assertFalse((root / RELATIVE).exists())
+
+
 if __name__ == "__main__":
     unittest.main()

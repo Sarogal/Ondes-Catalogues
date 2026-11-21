@@ -36,7 +36,8 @@ STATES = frozenset((
 COUNTS = (
     "input_leads", "eligible_unique_leads", "selected_leads",
     "conflicting_uid_day_sources_held",
-    "unregistered_agendas_held", "non_uid_pinned_links_held",
+    "unregistered_agendas_held", "unregistered_agendas_resolved_for_research",
+    "unregistered_agenda_lookups_failed", "non_uid_pinned_links_held",
     "mirror_uid_present_or_nonzero_held",
     "mirror_uid_nonunique_held", "mirror_probe_unavailable_held",
     "mirror_uid_absent", "direct_api_matched_day_and_title",
@@ -148,9 +149,9 @@ def _exact_event_claim(event, event_uid, title, day, city, venue):
     return False
 
 
-def _checked_agendas(configured_uids, public_key, reader):
+def _checked_agendas(configured_uids, public_key, reader, *, allow_empty=False):
     if (type(configured_uids) is not list
-            or not 1 <= len(configured_uids) <= MAX_AGENDAS
+            or not (0 if allow_empty else 1) <= len(configured_uids) <= MAX_AGENDAS
             or len(configured_uids) != len(set(configured_uids))
             or any(type(uid) is not int or not 0 < uid < 10**13
                    for uid in configured_uids)):
@@ -179,12 +180,14 @@ def audit_missing_ods_direct(
         *, offset=0, max_work=12,
         ods_probe=probe_uid_in_index,
         agenda_reader=read_direct_agenda_v2,
-        event_reader=read_direct_v2):
+        event_reader=read_direct_v2,
+        agenda_discovery=None):
     if (type(private_leads) is not list or len(private_leads) > MAX_LEADS
             or type(existing) is not list or len(existing) > MAX_RECORDS
             or type(today) is not date or type(offset) is not int or offset < 0
             or type(max_work) is not int or not 1 <= max_work <= MAX_WORK
-            or not isinstance(public_read_key, str) or not public_read_key):
+            or not isinstance(public_read_key, str) or not public_read_key
+            or (agenda_discovery is not None and not callable(agenda_discovery))):
         raise ValueError("invalid_ods_audit_arguments")
     stored = {}
     for row in existing:
@@ -193,7 +196,8 @@ def audit_missing_ods_direct(
             raise ValueError("duplicate_private_ods_audit")
         stored[row["audit_id"]] = dict(row)
     mapping, failed_agendas = _checked_agendas(
-        configured_agenda_uids, public_read_key, agenda_reader)
+        configured_agenda_uids, public_read_key, agenda_reader,
+        allow_empty=agenda_discovery is not None)
     # No private UID, URL, title, municipality, address or participant detail
     # in public report. Even a failure exception is reduced to a fixed count.
     counts = dict.fromkeys(COUNTS, 0)
@@ -230,12 +234,51 @@ def audit_missing_ods_direct(
     counts["selected_leads"] = len(selected)
     checked_uid = {}
     checked_event = {}
+    # Discovery is optional and PREVIEW-ONLY: no configured agenda list is
+    # necessary to *research* a new slug. The OA API owns only the UID/slug
+    # association; independent organizer ownership remains unverified.
+    new_slugs = {}
     for (_, _), (key, lead, _) in selected:
         slug, event_uid, day = key
-        if slug not in mapping:
-            counts["unregistered_agendas_held"] += 1
-            continue
-        agenda_uid = mapping[slug]
+        agenda_uid = mapping.get(slug)
+        if agenda_uid is None:
+            if slug not in new_slugs:
+                discovered_uid = None
+                if agenda_discovery is not None:
+                    try:
+                        candidate = agenda_discovery(slug, public_read_key)
+                        from ptitesondes_openagenda_slug_discovery import SCHEMA as LOOKUP_SCHEMA
+                        if (type(candidate) is dict
+                                and candidate.get("schema") == LOOKUP_SCHEMA
+                                and candidate.get("slug") == slug
+                                and type(candidate.get("uid")) is int
+                                and 0 < candidate["uid"] < 10**13
+                                and candidate.get("status") ==
+                                "public_uid_slug_only_independent_ownership_pending"
+                                and all(candidate.get(k) is False for k in (
+                                    "independent_ownership_verified", "organizer_verified",
+                                    "rights_reviewed", "publication_ready",
+                                    "approval_granted", "publisher_connected"))
+                                and type(candidate.get("public_writes")) is int
+                                and candidate["public_writes"] == 0):
+                            # Do not trust the lookup list alone. Re-read the
+                            # selected exact UID with the existing bounded API
+                            # reader before any event research.
+                            confirmation = agenda_reader(candidate["uid"], public_read_key)
+                            if (type(confirmation) is dict
+                                    and str(confirmation.get("uid")) == str(candidate["uid"])
+                                    and confirmation.get("slug") == slug):
+                                discovered_uid = candidate["uid"]
+                    except (OSError, ValueError, TypeError, KeyError, TimeoutError):
+                        pass
+                new_slugs[slug] = discovered_uid
+                if discovered_uid is None:
+                    counts["unregistered_agenda_lookups_failed"] += 1
+            agenda_uid = new_slugs[slug]
+            if agenda_uid is None:
+                counts["unregistered_agendas_held"] += 1
+                continue
+            counts["unregistered_agendas_resolved_for_research"] += 1
         try:
             state = checked_uid.setdefault(event_uid, None)
             if state is None:
