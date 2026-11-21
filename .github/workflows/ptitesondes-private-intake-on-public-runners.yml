@@ -509,7 +509,10 @@ jobs:
             # The public Publisher must independently re-read every source,
             # exact OA session and venue GPS; nothing here grants APPROVED.
             # The private patch is the only place the research URLs go.
-            if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then
+            # The producer rechecks up to 14 previous days of private
+            # research reports; requiring today's folder alone discarded
+            # still-usable discoveries after a delayed or missed run.
+            if [[ -d "$STATE/national-observation/research/reports" ]]; then
               if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
                 --observation-root "$STATE/national-observation" \
                 --research-root "$STATE/national-observation/research" \
