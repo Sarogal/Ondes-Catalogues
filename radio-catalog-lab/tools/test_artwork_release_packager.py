@@ -63,15 +63,14 @@ class SignedSidecarTests(unittest.TestCase):
             verify(self.ptr,self.content,Ed25519PrivateKey.generate().public_key())
 
     def test_signature_context_is_not_radio_catalog_context(self):
-        from radio_catalog_release_packager import signing_message as radio_context
         p=json.loads(self.ptr)
         from artwork_release_packager import sign_message
-        self.assertNotEqual(sign_message(p)[:35],radio_context({
-            "schema_version":1,"catalog_id":"grosses-ondes-radio",
-            "release_sequence":1,"published_at":PUBLISHED,
-            "content_sha256":"a"*64,"content_length":100,"content_path":"releases/"+"a"*64+".json",
-            "signature":{"key_id":KEY_ID}
-        })[:35])
+        self.assertTrue(
+            sign_message(p).startswith(b"GO-RADIO-ARTWORK-POINTER-V1\\n")
+        )
+        self.assertFalse(
+            sign_message(p).startswith(b"GO-RADIO-CATALOG-POINTER-V1\\n")
+        )
 
     def test_replacement_and_duplicate_uuid_forbidden(self):
         d=deepcopy(self.doc)
