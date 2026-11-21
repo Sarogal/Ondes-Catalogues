@@ -310,6 +310,30 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertEqual(clues[0]["title_hint"], "Punk Rock Electrique inédit")
         self.assertFalse(out["publication_authorized"])
 
+    def test_administrative_manifestations_never_become_music_leads(self):
+        """Real live discovery regression: manifesto != indie music *Fest*."""
+        from national_municipal_pages_preflight import unknown_municipal_music_links
+        html = """<main><h1>Vie associative</h1>
+          <a href="/demarches/demande-manifestation">
+            Demande d'organisation de manifestation pour les associations
+          </a>
+          <a href="/associations/manifestations">
+            Associations : manifestations et subventions
+          </a>
+          <a href="/evenement/festival-foudre">Festival Foudre 2027</a>
+          <a href="/evenement/helixfest">HelixFest 2027</a>
+          <a href="/evenement/germirockn-co">GermiRock'n Co #2</a>
+          </main>"""
+        clues = unknown_municipal_music_links(html, SITE, SITE)
+        self.assertEqual(
+            [x["title_hint"] for x in clues],
+            ["Festival Foudre 2027", "HelixFest 2027",
+             "GermiRock'n Co #2"])
+        self.assertTrue(all("manifestation" not in x["title_hint"].lower()
+                            for x in clues))
+        self.assertTrue(all(x["publication_authorized"] is False
+                            for x in clues))
+
     def test_unknown_music_refs_fail_closed_to_bad_links_overbudget_and_hidden(self):
         from national_municipal_pages_preflight import (
             unknown_municipal_music_links, MAX_UNKNOWN_MUSIC_LINKS)
