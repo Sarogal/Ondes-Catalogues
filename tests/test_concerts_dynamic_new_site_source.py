@@ -217,7 +217,7 @@ class OpenOriginNewSiteProofTests(unittest.TestCase):
     def test_no_forged_witness_or_cross_domain_reuse(self):
         review, location, venue, raw, witness, node, origin = fixture()
         modifications = [
-            {"date": "2027-05-14"},
+            {"startDate": "2027-05-14T21:00:00+02:00"},
             {"location": {
                 "@type": "Place", "name": "Autre Endroit",
                 "address": {"addressLocality": "Tours",
