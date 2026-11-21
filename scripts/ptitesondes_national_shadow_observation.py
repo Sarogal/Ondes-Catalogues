@@ -376,8 +376,8 @@ def run_observation(source_config, root, day, batch_id, *,
 
     reports = available_index_reports(reports_dir)
     n = len(reports)
-    started = held = completed = examined_segments = examined_events = 0
-    agenda_attempts = agenda_held = 0
+    started = held = examined_segments = examined_events = 0
+    agenda_attempts = agenda_held = agenda_finished = 0
     agenda_keys, event_keys, session_keys = set(), set(), set()
     venue_keys, territory_claims = set(), set()
     invalid_metric_segments = 0
@@ -399,7 +399,7 @@ def run_observation(source_config, root, day, batch_id, *,
                 plan["index_doc"], digest, scan_day, campaign, rotation,
                 key, campaign_runner, segment_runner)
             started += int(result["agenda_advanced"] > 0)
-            completed += int(result["agenda_finished"] > 0)
+            agenda_finished += result["agenda_finished"]
             agenda_attempts += result["agenda_attempts"]
             agenda_held += result["agenda_held"]
             examined_segments += result["segments_examined"]
@@ -442,7 +442,8 @@ def run_observation(source_config, root, day, batch_id, *,
             "stored_index_batches": n, "new_index_census": int(index_scanned),
             "index_batches_examined": len(selected),
             "index_batches_advanced": started,
-            "index_batches_finished_this_pass": completed,
+            # A completed agenda is not proof the whole index batch finished.
+            "agendas_completed_in_examined_slots": agenda_finished,
             "agenda_attempts": agenda_attempts,
             "agenda_held_for_research": agenda_held,
             "segments_examined": examined_segments,
