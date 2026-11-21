@@ -45,7 +45,7 @@ CHECKED = ["artists", "date", "venue", "genre", "sourceWebsite"]
 # numeric OSM object ID; neither provides a network destination.
 OSM_NODE = re.compile(
     r"https://(?:www[.]openstreetmap[.]org/(?:api/0[.]6/)?node/|"
-    r"api[.]openstreetmap[.]org/api/0[.]6/node/)([1-9][0-9]*)\\Z"
+    r"api[.]openstreetmap[.]org/api/0[.]6/node/)([1-9][0-9]*)\Z"
 )
 MAX_DISTANCE = 125
 MAX_ARTIST_NAME = 120
