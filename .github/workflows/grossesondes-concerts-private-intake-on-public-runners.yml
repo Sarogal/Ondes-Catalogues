@@ -34,6 +34,8 @@ on:
       - 'automation/concerts/verifier_contract.py'
       - 'automation/concerts/approval_preflight.py'
       - 'automation/concerts/backstage_recheck.py'
+      - 'festival-automation/institutional_event_card.py'
+      - 'festival-automation/festival_to_concerts_handoff.py'
       - '.github/workflows/grossesondes-concerts-private-intake-on-public-runners.yml'
   workflow_dispatch:
     inputs:
