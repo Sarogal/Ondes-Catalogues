@@ -263,7 +263,8 @@ class NationalShadowObservationTests(unittest.TestCase):
             return campaign_summary()
         self.campaign.side_effect = campaign
 
-        first, _ = self.invoke(index=scanned)
+        with patch("ptitesondes_national_shadow_observation.MAX_AGENDAS_PER_BATCH", 3):
+            first, _ = self.invoke(index=scanned)
         self.assertEqual(visited, [880001, 880002, 880003])
         self.assertEqual(first["agenda_attempts"], 3)
         self.assertEqual(first["agenda_held_for_research"], 1)
@@ -279,7 +280,8 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(first["public_writes"], 0)
         scanned.assert_called_once()
 
-        second, _ = self.invoke(batch_id="another", index=Mock())
+        with patch("ptitesondes_national_shadow_observation.MAX_AGENDAS_PER_BATCH", 3):
+            second, _ = self.invoke(batch_id="another", index=Mock())
         self.assertEqual(visited[3:], [880004, 880001, 880002])
         self.assertEqual(second["agenda_attempts"], 3)
         self.assertEqual(second["agenda_held_for_research"], 1)
@@ -325,11 +327,13 @@ class NationalShadowObservationTests(unittest.TestCase):
                  agenda_uid=990001 + i, agenda_slug=f"new-{i}")
             for i in range(5)
         ]
-        self.invoke(index=Mock(return_value=batch))
+        with patch("ptitesondes_national_shadow_observation.MAX_AGENDAS_PER_BATCH", 3):
+            self.invoke(index=Mock(return_value=batch))
         selector = next((self.root / "campaigns").rglob("agenda-selector.json"))
         progress = json.loads(selector.read_text())
         self.assertEqual(progress["next_index"], 3)
-        self.invoke(batch_id="retry", index=Mock())
+        with patch("ptitesondes_national_shadow_observation.MAX_AGENDAS_PER_BATCH", 3):
+            self.invoke(batch_id="retry", index=Mock())
         progress = json.loads(selector.read_text())
         self.assertEqual(progress["next_index"], 1)
         progress["next_index"] = -1
@@ -344,6 +348,68 @@ class NationalShadowObservationTests(unittest.TestCase):
                 DAY, selector.parent,
                 next((self.root / "rotations").iterdir()),
                 KEY, self.campaign, self.segments)
+
+    def test_real_160_agenda_backlog_is_drained_in_eight_bounded_passes(self):
+        """Discovery of 160 agendas must not cause an ever-growing backlog."""
+        batch = index_doc(uid=900001)
+        batch["new_agenda_candidates"] = [
+            {**batch["new_agenda_candidates"][0],
+             "agenda_uid": 900001 + i, "agenda_slug": f"open-world-{i}"}
+            for i in range(160)
+        ]
+        first_index = Mock(return_value=batch)
+        first, _ = self.invoke(index=first_index)
+        self.assertEqual(first["agenda_attempts"], 20)
+        self.assertEqual(first["index_agendas_observed_in_batch_sample"], 160)
+        for idx in range(1, 8):
+            later, reader = self.invoke(
+                batch_id=f"continuation-{idx}", index=Mock())
+            self.assertEqual(later["agenda_attempts"], 20)
+            reader.assert_not_called()
+        self.assertEqual(self.campaign.call_count, 160)
+        observed = [
+            call.args[0]["index_doc"]["new_agenda_candidates"][0]["agenda_uid"]
+            for call in self.campaign.call_args_list
+        ]
+        self.assertEqual(observed, list(range(900001, 900161)))
+        selector = next((self.root / "campaigns").rglob("agenda-selector.json"))
+        self.assertEqual(json.loads(selector.read_text())["next_index"], 0)
+        self.assertEqual(controller_read(
+            self.root / "controller.json")["invocations"], 8)
+        self.assertEqual(later["public_writes"], 0)
+        first_index.assert_called_once()
+
+    def test_time_budget_preserves_next_agenda_after_partial_rotation(self):
+        from ptitesondes_national_shadow_observation import (
+            MAX_AGENDAS_PER_BATCH, MAX_AGENDA_ROTATION_SECONDS,
+            rotate_agendas_independently,
+        )
+        self.assertGreaterEqual(MAX_AGENDAS_PER_BATCH, 14)
+        self.assertLess(MAX_AGENDA_ROTATION_SECONDS, 1800)
+        doc = index_doc(uid=80001)
+        doc["new_agenda_candidates"] = [
+            {**doc["new_agenda_candidates"][0],
+             "agenda_uid": 80001 + i, "agenda_slug": f"unlisted-{i}"}
+            for i in range(6)
+        ]
+        campaign = self.root / "campaign"
+        rotations = self.root / "rotation"
+        campaign.mkdir(mode=0o700)
+        rotations.mkdir(mode=0o700)
+        truncated = rotate_agendas_independently(
+            doc, "a" * 64, DAY, campaign, rotations, KEY,
+            self.campaign, self.segments,
+            clock=Mock(side_effect=[100, 100, 100 +
+                                    MAX_AGENDA_ROTATION_SECONDS + 1]))
+        self.assertEqual(truncated["agenda_attempts"], 2)
+        self.assertEqual(json.loads((campaign / "agenda-selector.json")
+                                    .read_text())["next_index"], 2)
+        resumed = rotate_agendas_independently(
+            doc, "a" * 64, DAY, campaign, rotations, KEY,
+            self.campaign, self.segments, clock=lambda: 100)
+        self.assertEqual(resumed["agenda_attempts"], 6)
+        self.assertEqual(self.campaign.call_args_list[2].args[0][
+            "index_doc"]["new_agenda_candidates"][0]["agenda_uid"], 80003)
 
     def test_rejects_invalid_or_unsafe_parameters(self):
         self.assertIsNone(REPORT_RE.fullmatch("index-2026-11-21-segment.json.bak"))
