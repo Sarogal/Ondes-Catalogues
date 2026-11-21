@@ -21,7 +21,7 @@ class SignedApkQuarantineFixtureTests(unittest.TestCase):
         seen_ids = set()
         for n in (1, 2, 3):
             pointer_path = (
-                LAB / "current.json" if n == 1 else
+                LAB / "pending" / "test-current-v1.json" if n == 1 else
                 LAB / "pending" / f"test-current-v{n}.json"
             )
             raw_pointer = pointer_path.read_bytes()
@@ -48,12 +48,16 @@ class SignedApkQuarantineFixtureTests(unittest.TestCase):
 
             previous = doc
 
-    def test_pointer_one_remains_active_until_manual_test_promote(self):
-        pointer = json.loads((LAB / "current.json").read_text(encoding="utf-8"))
-        self.assertEqual(pointer["release_sequence"], 1)
+    def test_v1_archived_and_active_pointer_is_signed_known_test_generation(self):
+        archived = json.loads((LAB / "pending/test-current-v1.json").read_text(encoding="utf-8"))
+        self.assertEqual(archived["release_sequence"], 1)
+        active = json.loads((LAB / "current.json").read_text(encoding="utf-8"))
+        self.assertIn(active["release_sequence"], (1, 4))
+        expected = (LAB / "pending" / ("test-current-v1.json" if active["release_sequence"] == 1 else "test-current-v4.json")).read_bytes()
+        self.assertEqual((LAB / "current.json").read_bytes(), expected)
 
     def test_pending_versions_mean_candidate_url_change_not_playback(self):
-        p1 = json.loads((LAB / "current.json").read_text(encoding="utf-8"))
+        p1 = json.loads((LAB / "pending/test-current-v1.json").read_text(encoding="utf-8"))
         p2 = json.loads((LAB / "pending/test-current-v2.json").read_text())
         c1 = json.loads((LAB / p1["content_path"]).read_text())
         c2 = json.loads((LAB / p2["content_path"]).read_text())
