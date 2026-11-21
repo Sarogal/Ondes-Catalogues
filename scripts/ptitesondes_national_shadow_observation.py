@@ -24,7 +24,7 @@ from ptitesondes_openagenda_national_event_research import (
 )
 from ptitesondes_openagenda_v2_direct_evidence import _valid_public_read_key
 from ptitesondes_private_national_event_campaign import (
-    plan_campaign, run_campaign,
+    MAX_SEGMENT_BYTES, plan_campaign, run_campaign,
 )
 from ptitesondes_private_national_rotation_runner import (
     MAX_SEGMENTS_PER_RUN, run_all_discovered_segments,
@@ -38,6 +38,7 @@ BATCH_RE = re.compile(r"[a-zA-Z0-9_-]{1,70}\Z")
 INDEX_EVERY_N_INVOCATIONS = 12
 MAX_BATCHES_PER_RUN = 2
 MAX_CONTROL_BYTES = 4096
+SEGMENT_REPORT_RE = re.compile(r"agenda-[0-9]{1,8}-segment-[0-9]{1,8}\.json\Z")
 
 
 def private_subdir(path):
@@ -174,6 +175,62 @@ def store_index_batch(index_dir, reports_dir, report_path, report, state):
     pending.unlink()
 
 
+def summarize_private_segment_hints(campaign, digest, scan_day,
+                                    event_keys, session_keys, venue_keys,
+                                    territory_claims):
+    """Measure discovery hints only; none proves admission or geography.
+
+    A corrupt segment is held and cannot prevent other segments or batches
+    from being counted. Dedupe by OpenAgenda agenda + event + EXACT interval.
+    """
+    invalid = 0
+    for path in sorted(campaign.iterdir()):
+        if SEGMENT_REPORT_RE.fullmatch(path.name) is None:
+            continue
+        try:
+            obj = json.loads(_private_input(path, MAX_SEGMENT_BYTES))
+            meta = obj.get("campaign_meta")
+            if (not isinstance(meta, dict)
+                    or meta.get("source_sha256") != digest
+                    or meta.get("scan_day") != scan_day.isoformat()
+                    or obj.get("schema") !=
+                    "ptitesondes.private_oa_agenda_event_exploration.v1"
+                    or obj.get("publication_ready") is not False
+                    or obj.get("public_writes") != 0):
+                raise ValueError("untrusted_national_segment_metrics")
+            categorized = obj.get("event_leads")
+            uncategorized = obj.get("unclassified_editorial_research_only")
+            if not isinstance(categorized, list) or not isinstance(uncategorized, list):
+                raise ValueError("invalid_candidate_lists")
+            for item in categorized + uncategorized:
+                if (not isinstance(item, dict)
+                        or type(item.get("agenda_uid")) is not int
+                        or type(item.get("event_uid")) is not int
+                        or item.get("publication_ready") is not False
+                        or item.get("public_writes") != 0):
+                    raise ValueError("invalid_private_candidate_identity")
+                identity = (item["agenda_uid"], item["event_uid"])
+                event_keys.add(identity)
+                for timing in item.get("explicit_source_session_intervals") or []:
+                    if (isinstance(timing, dict)
+                            and isinstance(timing.get("begin"), str)
+                            and isinstance(timing.get("end"), str)):
+                        session_keys.add(identity + (
+                            timing["begin"], timing["end"]))
+                city, venue = item.get("city_unverified"), item.get("venue_unverified")
+                if (isinstance(city, str) and city.strip()
+                        and isinstance(venue, str) and venue.strip()):
+                    venue_keys.add((city.strip().casefold(),
+                                    venue.strip().casefold()))
+                country = item.get("country_code_unverified")
+                if isinstance(country, str) and len(country) == 2:
+                    territory_claims.add(country.upper())
+        except (OSError, ValueError, TypeError, AttributeError,
+                UnicodeError):
+            invalid += 1
+    return invalid
+
+
 def run_observation(source_config, root, day, batch_id, *,
                     execute_live=False, key="", index_reader=scan_index_pages,
                     campaign_runner=run_campaign,
@@ -234,6 +291,9 @@ def run_observation(source_config, root, day, batch_id, *,
     reports = available_index_reports(reports_dir)
     n = len(reports)
     started = held = completed = examined_segments = examined_events = 0
+    agenda_keys, event_keys, session_keys = set(), set(), set()
+    venue_keys, territory_claims = set(), set()
+    invalid_metric_segments = 0
     # Round robin across ALL saved batches; old batches are never replaced by
     # today's index. New reports enter the same queue on subsequent passes.
     start = controller["next_batch_index"] % n if n else 0
@@ -262,6 +322,12 @@ def run_observation(source_config, root, day, batch_id, *,
             examined_segments += rotation_result["segment_reports_examined"]
             examined_events += rotation_result["event_slots_examined"]
             held += rotation_result["segment_reports_held"]
+            for candidate in plan["index_doc"]["new_agenda_candidates"]:
+                if type(candidate.get("agenda_uid")) is int:
+                    agenda_keys.add(candidate["agenda_uid"])
+            invalid_metric_segments += summarize_private_segment_hints(
+                campaign, digest, scan_day, event_keys, session_keys,
+                venue_keys, territory_claims)
         except (OSError, ValueError, TypeError, KeyError, TimeoutError,
                 UnicodeError):
             # This report stays on disk and remains in the next rotation.
@@ -283,6 +349,12 @@ def run_observation(source_config, root, day, batch_id, *,
             "segments_examined": examined_segments,
             "event_slots_examined": examined_events,
             "held_for_research": held,
+            "index_agendas_observed_in_batch_sample": len(agenda_keys),
+            "distinct_event_uids_in_saved_segments": len(event_keys),
+            "distinct_exact_session_hints_in_saved_segments": len(session_keys),
+            "unnumbered_or_other_venue_name_hints": len(venue_keys),
+            "distinct_territory_country_claims_unverified": len(territory_claims),
+            "unreadable_segments_for_metric_review": invalid_metric_segments,
             "publisher_connected": False,
             "publication_ready": False, "public_writes": 0}
 
