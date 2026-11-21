@@ -68,6 +68,48 @@ class FirstPartyFetchHostTests(unittest.TestCase):
                             ValueError, "Redirection générique"):
                         self.fetch(original, final)
 
+    def test_every_committed_reviewed_venue_host_is_fetchable(self):
+        import generic_music_event
+        # Regression: Astrolabe passed the verifier and publisher contracts,
+        # but the network boundary omitted its reviewed host.
+        self.assertIn("www.lastrolabe.org", generic_music_event.ALLOWED_HOSTS)
+        for venue_id, spec in generic_music_event.SPECS.items():
+            url = (spec["base"] + spec["eventPathPrefix"].lstrip("/")
+                   + "verified-metal/")
+            with self.subTest(venue=venue_id, url=url):
+                self.assertIn("official event", self.fetch(url, url))
+
+    def test_each_reviewed_host_requires_the_same_exact_event_url(self):
+        import generic_music_event
+        for venue_id, spec in generic_music_event.SPECS.items():
+            url = (spec["base"] + spec["eventPathPrefix"].lstrip("/")
+                   + "verified-metal/")
+            for target in (
+                "https://rockstore.fr/other-event/",
+                "https://evil.example/other-event/",
+                url.replace("verified-metal/", "different-show/"),
+                url.replace("https://", "http://"),
+            ):
+                with self.subTest(venue=venue_id, redirect=target):
+                    with self.assertRaisesRegex(ValueError,
+                                                "Redirection générique"):
+                        self.fetch(url, target)
+
+    def test_unreviewed_hosts_and_insecure_origins_are_rejected_before_network(self):
+        for url in (
+            "https://unreviewed-venue.example/concert/test/",
+            "https://www.lastrolabe.org.evil.example/agenda/knives/",
+            "http://www.lastrolabe.org/agenda/knives/",
+            "https://www.lastrolabe.org:8080/agenda/knives/",
+        ):
+            with self.subTest(url=url), \
+                 patch.object(engine.discover, "robots_allow") as robots, \
+                 patch.object(engine, "urlopen") as opened:
+                with self.assertRaisesRegex(ValueError, "non agréé"):
+                    engine.download_official(url, {})
+                robots.assert_not_called()
+                opened.assert_not_called()
+
     def test_robots_denial_never_opens_url(self):
         with patch.object(engine.discover, "robots_allow", return_value=False), \
              patch.object(engine, "urlopen") as opened:
