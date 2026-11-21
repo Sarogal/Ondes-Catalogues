@@ -16,6 +16,8 @@ on:
       - "grossesondes/radio-test-apk/artwork/first_visual_review_20261121.json"
       - "radio-catalog-lab/tools/compose_reviewed_artwork_test_manifest.py"
       - "radio-catalog-lab/tools/test_compose_reviewed_artwork_test_manifest.py"
+      - "radio-catalog-lab/tools/artwork_release_packager.py"
+      - "radio-catalog-lab/tools/test_artwork_release_packager.py"
   workflow_dispatch:
 
 permissions:
@@ -31,7 +33,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install image decoder for exact SHA inspection
-        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1" "cryptography==44.0.2"
       - name: Verify official station slug, image source, no whitelist or publication
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
@@ -44,6 +46,10 @@ jobs:
         run: |
           python -m unittest discover -s radio-catalog-lab/tools \
             -p "test_compose_reviewed_artwork_test_manifest.py" -v
+      - name: Verify isolated Ed25519 sidecar protocol (OFFLINE)
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_release_packager.py" -v
       - name: Collect read-only laut.fm metadata and logo byte evidence
         run: |
           python radio-catalog-lab/tools/discover_official_laut_fm_logos.py \
