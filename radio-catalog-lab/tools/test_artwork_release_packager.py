@@ -139,4 +139,57 @@ class SignedSidecarTests(unittest.TestCase):
             validate_body(wire(d))
 
 
+    def test_laut_fm_exact_resized_url_matches_signed_dimensions(self):
+        d=deepcopy(self.doc)
+        logo=d["assets"][0]["logo"]
+        logo["url"]="https://assets.laut.fm/"+"a"*32+"?t=_640x640"
+        logo["width"]=640
+        logo["height"]=640
+        signed=wire(d)
+        p=sign_pending(signed,self.secret,KEY_ID,PUBLISHED)
+        checked=verify(p,signed,self.secret.public_key())
+        self.assertEqual(checked["assets"][0]["logo"]["url"],logo["url"])
+
+    def test_laut_fm_resizing_rejects_other_queries_or_dimensions(self):
+        bad_suffixes=(
+            "?t=_640x640&debug=1",
+            "?debug=1&t=_640x640",
+            "?t=_640x600",
+            "?t=_640x641",
+            "?t=_640x640&t=_640x640",
+            "?t=_9999x9999",
+            "?t=640x640",
+            "?t=_%36640x640",
+            "?t=_640x640#fragment",
+            "?",
+            "?t=_640x640%26debug=1",
+        )
+        for suffix in bad_suffixes:
+            with self.subTest(suffix=suffix):
+                d=deepcopy(self.doc)
+                logo=d["assets"][0]["logo"]
+                logo["url"]="https://assets.laut.fm/"+"a"*32+suffix
+                logo["width"]=640
+                logo["height"]=640
+                with self.assertRaises(ArtworkBundleError):
+                    validate_body(wire(d))
+
+    def test_laut_fm_resize_rejects_different_host_and_port(self):
+        d=deepcopy(self.doc)
+        logo=d["assets"][0]["logo"]
+        logo["width"]=640
+        logo["height"]=640
+        for url in (
+            "https://unrelated.example.net/"+"a"*32+"?t=_640x640",
+            "https://assets.laut.fm:8443/"+"a"*32+"?t=_640x640",
+            "https://assets.laut.fm/"+"a"*31+"g?t=_640x640",
+            "http://assets.laut.fm/"+"a"*32+"?t=_640x640",
+        ):
+            with self.subTest(url=url):
+                logo["url"]=url
+                with self.assertRaises(ArtworkBundleError):
+                    validate_body(wire(d))
+
+
+
 if __name__=="__main__":unittest.main()
