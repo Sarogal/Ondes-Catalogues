@@ -33,7 +33,7 @@ from grossesondes_archived_html_intake import latest_patch, atomic_json
 from grossesondes_generic_directory_edition import (
     private_proposal as directory_private_proposal,
     discover_directory_website, directory_url, verify_official_site_pages,
-    visible_adjacent_edition_dates,
+    visible_adjacent_edition_dates, unique_current_edition_visible_dates,
 )
 from grossesondes_institutional_edition import conflicts_with_signed_catalogue
 
@@ -267,6 +267,9 @@ def _recheck_current_dates(source, primary_html, fetch, today):
     """
     title, year = source["title"], source["year"]
     dates = institutional_date(primary_html, title, year)
+    if dates is None:
+        dates = unique_current_edition_visible_dates(
+            primary_html, title, year, today)
     if dates is not None:
         return dates, "SOURCE_PAGE", None, "SOURCE_PAGE"
     primary_code = _private_date_rejection_code(primary_html, title, year)
@@ -283,6 +286,9 @@ def _recheck_current_dates(source, primary_html, fetch, today):
     else:
         homepage_html = fetch(home)
     homepage_dates = institutional_date(homepage_html, title, year)
+    if homepage_dates is None:
+        homepage_dates = unique_current_edition_visible_dates(
+            homepage_html, title, year, today)
     if homepage_dates is None:
         homepage_dates = visible_adjacent_edition_dates(
             homepage_html, title, year, today)
@@ -311,6 +317,9 @@ def _recheck_current_dates(source, primary_html, fetch, today):
         remaining -= 1
         page = fetch(link)
         interval = institutional_date(page, title, year)
+        if interval is None:
+            interval = unique_current_edition_visible_dates(
+                page, title, year, today)
         if interval is None:
             interval = visible_adjacent_edition_dates(page, title, year, today)
         if interval is not None:
