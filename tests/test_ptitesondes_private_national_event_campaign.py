@@ -53,6 +53,70 @@ def segment(agenda, *, after=None, done=True):
 
 
 class PrivateNationalEventCampaignTests(unittest.TestCase):
+    def test_unknown_editorial_hints_are_private_and_cannot_forge_admission(self):
+        from ptitesondes_private_national_event_campaign import _validate_segment
+        agenda = index(n=1)["new_agenda_candidates"][0]
+        base = segment(agenda)
+        base["campaign_meta"] = {
+            "source_sha256": DIGEST, "scan_day": str(DAY),
+            "agenda_index": 0, "segment": 0, "start_cursor": None,
+        }
+        hint = {
+            "agenda_uid": agenda["agenda_uid"],
+            "agenda_slug": agenda["agenda_slug"],
+            "event_uid": 9002, "title": "Nouvelle forme sonore jeunesse",
+            "editorial_category_proposal": None,
+            "review_state": "unknown_activity_requires_official_editorial_evidence",
+            "source_organizer_independently_verified": False,
+            "rights_reviewed": False, "venue_verified": False,
+            "publisher_connected": False, "publication_ready": False,
+            "public_writes": 0,
+        }
+        base["unclassified_editorial_research_only"] = [hint]
+        self.assertIsNone(_validate_segment(base, agenda, base["campaign_meta"]))
+        for modified in (
+            dict(hint, rights_reviewed=True),
+            dict(hint, publication_ready=True),
+            dict(hint, publisher_connected=True),
+            dict(hint, source_organizer_independently_verified=True),
+            dict(hint, editorial_category_proposal="concert"),
+            dict(hint, public_writes=False),
+            dict(hint, agenda_uid=1),
+            dict(hint, event_uid=9001),
+        ):
+            with self.subTest(modified=modified), self.assertRaises(ValueError):
+                forged = dict(base, unclassified_editorial_research_only=[modified])
+                _validate_segment(forged, agenda, forged["campaign_meta"])
+
+    def test_unclassified_research_is_not_a_new_publisher_addition(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            plan = plan_campaign(index(n=1), DIGEST, DAY, root, steps=1)
+            def explorer(agenda, key, today, *, after):
+                report = segment(agenda)
+                report["unclassified_editorial_research_only"] = [{
+                    "agenda_uid": agenda["agenda_uid"],
+                    "agenda_slug": agenda["agenda_slug"],
+                    "event_uid": 91234, "title": "Inédit jeunesse",
+                    "editorial_category_proposal": None,
+                    "review_state": "unknown_activity_requires_official_editorial_evidence",
+                    "source_organizer_independently_verified": False,
+                    "rights_reviewed": False, "venue_verified": False,
+                    "publisher_connected": False,
+                    "publication_ready": False, "public_writes": 0,
+                }]
+                return report
+            report = run_campaign(plan, public_key=KEY, explorer=explorer)
+            self.assertEqual(report["segments_examined"], 1)
+            files = list(root.glob("agenda-*-segment-*.json"))
+            self.assertEqual(len(files), 1)
+            stored = json.loads(files[0].read_text(encoding="utf-8"))
+            self.assertEqual(len(stored["unclassified_editorial_research_only"]), 1)
+            self.assertFalse(stored["unclassified_editorial_research_only"][0]["publication_ready"])
+            self.assertEqual(len(stored["event_leads"]), 1)
+            self.assertNotIn("additions", stored)
+            self.assertEqual(report["public_writes"], 0)
+
     def test_three_segments_two_agendas_progress_and_finish(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

@@ -199,6 +199,45 @@ def propose_event(row, agenda, today):
     return result, "editorial_candidate"
 
 
+def _unclassified_source_research_hint(row, agenda, today):
+    """Keep unrecognised formats in PRIVATE research, not publisher leads.
+
+    The editorial vocabulary is an inference aid, NEVER a closed discovery
+    list. A plausible OA publication can still be examined for new children
+    listening, performance or storytelling formats even when no pattern
+    recognises its title. Unknown does NOT mean admissible, however: this
+    queue has no category, no provenance proof and no publisher interface.
+    """
+    if not isinstance(row, dict) or type(row.get("uid")) is not int:
+        return None
+    title = _french_text(row, "title")
+    if not title or len(title) > 300:
+        return None
+    location = row.get("location")
+    if not isinstance(location, dict):
+        location = {}
+    day_list, _ = _time_days(row.get("timings"), today)
+    return {
+        "agenda_uid": agenda["agenda_uid"],
+        "agenda_slug": agenda["agenda_slug"],
+        "event_uid": row["uid"],
+        "title": title,
+        "city_unverified": (
+            location.get("adminLevel4")
+            if isinstance(location.get("adminLevel4"), str) else None),
+        "venue_unverified": (
+            location.get("name")
+            if isinstance(location.get("name"), str) else None),
+        "explicit_source_session_days": day_list,
+        "editorial_category_proposal": None,
+        "review_state": "unknown_activity_requires_official_editorial_evidence",
+        "source_organizer_independently_verified": False,
+        "rights_reviewed": False, "venue_verified": False,
+        "publisher_connected": False,
+        "publication_ready": False, "public_writes": 0,
+    }
+
+
 def read_events_page(agenda_uid, public_read_key, after=None, *,
                      size=MAX_PAGE_EVENTS, opener=None):
     """GET public future events, no keyword or known-venue filtering."""
@@ -277,6 +316,7 @@ def scan_agenda(agenda, public_key, today, *, after=None, pages=MAX_PAGES,
     seen_uid = set()
     counters = Counter()
     leads = []
+    unknown_review = []
     done = False
     for _ in range(pages):
         page = read_page(uid, public_key, cursor, size=MAX_PAGE_EVENTS)
@@ -291,6 +331,13 @@ def scan_agenda(agenda, public_key, today, *, after=None, pages=MAX_PAGES,
             counters[reason] += 1
             if proposed is not None:
                 leads.append(proposed)
+            elif reason == "editorial_evidence_not_yet_recognised":
+                # Unknown wording may indicate a new relevant form of
+                # storytelling / performance. Never silently throw it away;
+                # also never pass it through the qualified event_leads path.
+                hint = _unclassified_source_research_hint(row, agenda, today)
+                if hint is not None:
+                    unknown_review.append(hint)
         cursor = result["after"]
         if cursor is None:
             done = True
@@ -303,6 +350,7 @@ def scan_agenda(agenda, public_key, today, *, after=None, pages=MAX_PAGES,
         "agenda_uid": uid, "agenda_slug": agenda["agenda_slug"],
         "counts": dict(sorted(counters.items())),
         "event_leads": leads,
+        "unclassified_editorial_research_only": unknown_review,
         "next_cursor": cursor, "agenda_scan_complete": done,
         "no_publisher_bridge": True, "publication_ready": False,
         "public_writes": 0,

@@ -149,6 +149,39 @@ def _validate_segment(report, agenda, expected_meta):
         raise ValueError("invalid_private_agenda_segment")
 
 
+    # Editorial discovery must remain open, but UNKNOWN is never trusted.
+    # Optional on older reports, with strict caps and zero approval authority.
+    review = report.get("unclassified_editorial_research_only", [])
+    if (not isinstance(review, list)
+            or len(review) > counts["public_event_uids_seen"]
+            or len(review) > 60):
+        raise ValueError("unsafe_unclassified_editorial_research")
+    seen_research = set()
+    admitted = {x.get("event_uid") for x in leads
+                if isinstance(x, dict)}
+    for item in review:
+        if (not isinstance(item, dict)
+                or type(item.get("event_uid")) is not int
+                or not 0 < item["event_uid"] < 10**12
+                or item["event_uid"] in seen_research
+                or item["event_uid"] in admitted
+                or item.get("agenda_uid") != agenda["agenda_uid"]
+                or item.get("agenda_slug") != agenda["agenda_slug"]
+                or not isinstance(item.get("title"), str)
+                or not 0 < len(item["title"]) <= 300
+                or item.get("editorial_category_proposal") is not None
+                or item.get("review_state") !=
+                "unknown_activity_requires_official_editorial_evidence"
+                or any(item.get(k) is not False for k in (
+                    "source_organizer_independently_verified",
+                    "rights_reviewed", "venue_verified",
+                    "publisher_connected", "publication_ready"))
+                or type(item.get("public_writes")) is not int
+                or item["public_writes"] != 0):
+            raise ValueError("unsafe_unclassified_editorial_research")
+        seen_research.add(item["event_uid"])
+
+
 def _advance(state, report):
     updated = dict(state)
     if report["agenda_scan_complete"]:
