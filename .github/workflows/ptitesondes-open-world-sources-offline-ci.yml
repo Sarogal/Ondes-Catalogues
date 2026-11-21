@@ -16,6 +16,8 @@ on:
       - 'tests/test_ptitesondes_open_world_municipal_crawler.py'
       - 'scripts/ptitesondes_independent_municipal_event_research.py'
       - 'tests/test_ptitesondes_independent_municipal_event_research.py'
+      - 'scripts/ptitesondes_open_world_admission_diagnostics.py'
+      - 'tests/test_ptitesondes_open_world_admission_diagnostics.py'
       - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
 
 permissions:
@@ -62,3 +64,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_independent_municipal_event_research.py' -v
+      - name: Verify open-world admission research and unnumbered geographic proofs
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_admission_diagnostics.py' -v
