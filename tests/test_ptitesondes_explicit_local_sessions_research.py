@@ -123,5 +123,47 @@ class ExactOpenAgendaLocalSessionsTests(unittest.TestCase):
         self.assertEqual(status, "cancelled_or_unconfirmed_event")
 
 
+    def test_private_campaign_rejects_forged_session_hints(self):
+        from ptitesondes_private_national_event_campaign import _validate_segment
+        good = [{"begin": "2026-12-12T09:00:00+01:00",
+                 "end": "2026-12-12T09:45:00+01:00"}]
+        meta = {"source_sha256": "a" * 64, "scan_day": str(DAY),
+                "agenda_index": 0, "segment": 0, "start_cursor": None}
+        base = {
+            "schema": "ptitesondes.private_oa_agenda_event_exploration.v1",
+            "mode": "private_research_event_leads_only",
+            "agenda_uid": AGENDA["agenda_uid"],
+            "agenda_slug": AGENDA["agenda_slug"],
+            "counts": {"pages_read": 1, "public_event_uids_seen": 1},
+            "event_leads": [
+                {"event_uid": 98123, "publication_ready": False,
+                 "public_writes": 0,
+                 "explicit_source_session_intervals": good}],
+            "no_publisher_bridge": True, "next_cursor": None,
+            "agenda_scan_complete": True, "campaign_meta": meta,
+            "publication_ready": False, "public_writes": 0,
+        }
+        self.assertIsNone(_validate_segment(base, AGENDA, meta))
+        invalid_cases = [
+            good + good,
+            [{"begin": "2026-12-12T09:00:00",
+              "end": "2026-12-12T09:45:00"}],
+            [{"begin": "2026-12-12T09:00:00+01:00",
+              "end": "2026-12-12T08:45:00+01:00"}],
+            [{"begin": "2026-12-12T09:00:00+01:00",
+              "end": "2026-12-12T09:45:00+01:00", "approved": True}],
+            good * (MAX_TIMINGS + 1),
+        ]
+        for invalid in invalid_cases:
+            with self.subTest(size=len(invalid)), self.assertRaisesRegex(
+                    ValueError, "invalid_private_agenda_segment"):
+                forged = dict(base)
+                forged["event_leads"] = [
+                    dict(base["event_leads"][0],
+                         explicit_source_session_intervals=invalid)]
+                _validate_segment(forged, AGENDA, meta)
+
+
+
 if __name__ == "__main__":
     unittest.main()
