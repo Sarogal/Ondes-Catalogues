@@ -22,14 +22,14 @@ from regional_festival_discovery import APPROVED
 from source_qualification import normalized
 
 SCHEMA = "grossesondes.national-openagenda-research-private.v1"
-RESEARCH_RULESET = "event-title-and-published-edition-dedup.v3"
+RESEARCH_RULESET = "event-title-and-published-edition-dedup.v4"
 STATE_KEY = "national_openagenda_research_private"
 SOURCE = "https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 HOST = "public.opendatasoft.com"
 ENDPOINT = "/api/explore/v2.1/catalog/datasets/evenements-publics-openagenda/records"
 SELECT = ("uid,canonicalurl,title_fr,description_fr,keywords_fr,"
           "firstdate_begin,lastdate_begin,updatedat,location_region,"
-          "location_countrycode,status")
+          "location_city,location_countrycode,status")
 QUERIES = (
     'search(title_fr,"festival")',
     'search(title_fr,"metal")',
@@ -198,6 +198,19 @@ def known_published_editions(catalog):
     return keys
 
 
+
+def _safe_city_hint(value):
+    """A provider city is only a *search term*, never a venue or geo proof.
+
+    The official geo API will independently reject ambiguous/nonexistent
+    communes before any DILA lookup. No user text becomes a URL or host.
+    """
+    if (not isinstance(value, str) or not 2 <= len(value) <= 80
+            or value != value.strip() or FORBIDDEN.search(value)
+            or re.fullmatch(r"[\wÀ-ÿ .'()\-]+", value, re.UNICODE) is None):
+        return None
+    return value
+
 def candidate(row, today):
     """Untrusted metadata can become only an unverified discovery lead."""
     if not isinstance(row, dict) or len(row) > 80:
@@ -247,6 +260,7 @@ def candidate(row, today):
     return {
         "id": "oa-" + digest, "name_hint": title,
         "edition_year_hint": year, "region_hint": region,
+        "city_hint_review_only": _safe_city_hint(row.get("location_city")),
         "year_source_review_only": ("TITLE" if years
                                     else "UNVERIFIED_PROVIDER_START_DATE"),
         "source_url": url, "observed_at": today,
@@ -285,6 +299,9 @@ def validated_leads(state, today):
                 or not 7 <= len(row["name_hint"]) <= 150
                 or not isinstance(row.get("region_hint"), str)
                 or row.get("region_hint") not in REGIONS
+                or (row.get("city_hint_review_only") is not None
+                    and _safe_city_hint(row.get("city_hint_review_only"))
+                        != row.get("city_hint_review_only"))
                 or type(row.get("edition_year_hint")) is not int):
             continue
         title, year = row["name_hint"], row["edition_year_hint"]
