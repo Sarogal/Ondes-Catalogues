@@ -52,11 +52,19 @@ class SignedRealPunkPendingTests(unittest.TestCase):
         self.assertEqual((rock_logo["width"], rock_logo["height"]), (2000,2000))
         self.assertEqual(rock_logo["mime_type"], "image/jpeg")
 
-    def test_public_test_endpoint_remains_on_nonplayable_generation_one(self):
-        # Both pending v2/v3 and v4 MUST stay inactive until user-directed test.
+    def test_active_pointer_is_only_authorized_v1_or_v4(self):
+        # Explicit owner approval 21/11: allow activation of pending v4 ONLY on
+        # the isolated diagnostic branch; never a production/main release.
         active = json.loads((LAB / "current.json").read_text(encoding="utf-8"))
-        self.assertEqual(active["release_sequence"], 1)
-        self.assertNotEqual(active["content_sha256"], DIGEST4)
+        self.assertIn(active["release_sequence"], (1, 4))
+        if active["release_sequence"] == 4:
+            self.assertEqual(active["content_sha256"], DIGEST4)
+            self.assertEqual(
+                (LAB / "current.json").read_bytes(),
+                (LAB / "pending/test-current-v4.json").read_bytes(),
+            )
+        else:
+            self.assertNotEqual(active["content_sha256"], DIGEST4)
 
 
 if __name__ == "__main__":
