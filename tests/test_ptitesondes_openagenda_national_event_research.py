@@ -258,10 +258,53 @@ class NationalOAEventResearchTests(unittest.TestCase):
         self.assertEqual(report["counts"]["public_event_uids_seen"], 3)
         self.assertEqual(report["counts"]["editorial_candidate"], 2)
         self.assertEqual(len(report["event_leads"]), 2)
+        self.assertEqual(len(report["unclassified_editorial_research_only"]), 1)
+        hint = report["unclassified_editorial_research_only"][0]
+        self.assertEqual(hint["event_uid"], 2)
+        self.assertIsNone(hint["editorial_category_proposal"])
+        self.assertFalse(hint["publication_ready"])
+        self.assertFalse(hint["publisher_connected"])
+        self.assertEqual(hint["public_writes"], 0)
         self.assertTrue(report["agenda_scan_complete"])
         self.assertEqual(report["public_writes"], 0)
         self.assertFalse(report["publication_ready"])
         self.assertNotIn("additions", report)
+
+    def test_new_artistic_format_is_preserved_for_review_but_never_handoff(self):
+        # A new expression must not disappear simply because no regex knows
+        # how to map it into the historic six musical categories.
+        unknown = event(
+            uid=97111, title="Voyage sonore aux mille murmures",
+            desc="Expérience d'écoute immersive et racontée pour les familles",
+            city="Nouvelle commune", venue="Parvis sans adresse")
+        report = scan_agenda(
+            AGENDA, KEY, DAY, read_agenda=api_agenda,
+            read_page=lambda *args, **kwargs: {
+                "events": [unknown], "after": None})
+        self.assertEqual(report["event_leads"], [])
+        self.assertEqual(len(report["unclassified_editorial_research_only"]), 1)
+        item = report["unclassified_editorial_research_only"][0]
+        self.assertEqual(item["title"], "Voyage sonore aux mille murmures")
+        self.assertEqual(item["venue_unverified"], "Parvis sans adresse")
+        self.assertEqual(item["explicit_source_session_days"], ["2026-12-12"])
+        self.assertIsNone(item["editorial_category_proposal"])
+        self.assertFalse(item["source_organizer_independently_verified"])
+        self.assertFalse(item["venue_verified"])
+        self.assertFalse(item["rights_reviewed"])
+        self.assertFalse(item["publication_ready"])
+        self.assertEqual(item["public_writes"], 0)
+        self.assertNotIn("additions", report)
+
+    def test_generic_gouter_stays_outside_admission_even_if_research_keeps_it(self):
+        irrelevant = event(uid=97112, title="Goûter au parc pour enfants",
+                           desc="Un goûter familial au parc")
+        report = scan_agenda(
+            AGENDA, KEY, DAY, read_agenda=api_agenda,
+            read_page=lambda *args, **kwargs: {
+                "events": [irrelevant], "after": None})
+        self.assertEqual(report["event_leads"], [])
+        self.assertEqual(len(report["unclassified_editorial_research_only"]), 1)
+        self.assertFalse(report["unclassified_editorial_research_only"][0]["publication_ready"])
 
     def test_ambiguous_or_repeated_cursor_and_uid_fail(self):
         with self.assertRaisesRegex(ValueError, "invalid_event_page_cursor"):
