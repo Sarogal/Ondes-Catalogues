@@ -490,6 +490,26 @@ jobs:
           print("Contrôle des concerts publiés effectué ; modifications automatiques interdites.")
           PY
 
+      - name: Relever les premières parties manquantes des concerts déjà publiés
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This scans FUTURE published concerts regardless of venue host.
+          # HTTPS network is DNS-pinned/robots-aware; exact official bill,
+          # date and named site must match. No automatic catalogue mutation.
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          if ! python public/automation/concerts/published_lineup_audit.py \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --output confidential/automation/concerts/intake/published-lineup-audit.json \
+              --slot "$SCAN_SLOT" --max 6 \
+              > "$RUNNER_TEMP/concerts-private-logs/published-lineup-audit.log" 2>&1; then
+            echo "::warning::Audit de complétude des plateaux indisponible ; aucune correction."
+          else
+            echo "Audit privé de complétude effectué sans modification des concerts."
+          fi
+
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -656,6 +676,9 @@ jobs:
           git add --sparse -- automation/concerts/intake/registry.json automation/concerts/intake/official-review.json automation/concerts/intake/approval-preflight.json automation/concerts/intake/published-watch.json
           if [ -f automation/concerts/intake/daily-metrics.json ]; then
             git add --sparse -- automation/concerts/intake/daily-metrics.json
+          fi
+          if [ -f automation/concerts/intake/published-lineup-audit.json ]; then
+            git add --sparse -- automation/concerts/intake/published-lineup-audit.json
           fi
           if [ -f automation/concerts/intake/registry-funnel.json ]; then
             git add --sparse -- automation/concerts/intake/registry-funnel.json
