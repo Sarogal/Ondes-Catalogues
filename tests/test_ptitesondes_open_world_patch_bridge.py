@@ -20,7 +20,7 @@ from test_ptitesondes_candidate_promotion import base
 from ptitesondes_open_world_patch_bridge import (
     prepare_open_world_patch, merge_verified_open_world,
 )
-from run_cloud_sync import public_summary
+from run_cloud_sync import public_summary, redacted_blocker_counts
 from merge_policy import ORIGIN
 
 
@@ -469,6 +469,43 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
         self.assertEqual(diag["dossiers"], 0)
         self.assertEqual(audit["ajoutes"], 0)
         calls.assert_not_called()
+
+    def test_public_blocker_report_redacts_untrusted_reason_keys(self):
+        private_url = "https://secret-candidate.example/unknown-event"
+        grouped = redacted_blocker_counts({
+            "rehearsal_source_exact_sessions_changed": 2,
+            "fresh_independent_venue_proof_missing": 1,
+            private_url: 3,
+            "venue_à_une_adresse_secrète": 1,
+        })
+        self.assertEqual(grouped, {
+            "fresh_independent_venue_proof_missing": 1,
+            "other_private_reason": 4,
+            "rehearsal_source_exact_sessions_changed": 2,
+        })
+        report = {
+            "initial": 549, "final": 549, "ajoutes": 0, "attente": [],
+            "open_world_counts": {
+                "research_dossiers": 7, "reviewed_for_merge": 0,
+                "held_for_independent_review": 7,
+                "reason_counts": grouped,
+            }}
+        visible = public_summary(report)
+        self.assertIn("rehearsal_source_exact_sessions_changed : 2", visible)
+        self.assertIn("other_private_reason : 4", visible)
+        self.assertNotIn(private_url, visible)
+        self.assertNotIn("venue_à_une_adresse_secrète", visible)
+
+    def test_live_rehearsal_reject_records_exact_safe_stage(self):
+        original = base()
+        rejected, audit, bridge = merge_verified_open_world(
+            original, original, private_patch(original), TODAY, KEY,
+            **readers(municipal_page=official_page((10,))))
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(rejected, original)
+        self.assertEqual(
+            bridge["held_reason_counts"],
+            {"rehearsal_municipal_exact_session_title_venue_or_family_unproved": 1})
 
     def test_summary_counts_never_expose_private_research_or_url(self):
         report = {"initial": 549, "final": 550, "ajoutes": 1,
