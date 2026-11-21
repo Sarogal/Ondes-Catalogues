@@ -34,6 +34,7 @@ import source_admission_intake as intake
 import source_evidence_probe as probe
 import triage
 import venue_address_osm_source as address_source
+import osm_read_only_fallback as readonly
 from independent_named_site_geo import _distance_meters
 
 SCHEMA = "grossesondes.concert.discovery.v1"
@@ -112,7 +113,11 @@ def official_source(venue, fetch, cache):
             venue,fetch=fetch,cache=cache)
         return website
     url="https://api.openstreetmap.org/api/0.6/node/"+node_id
-    body = fetch(url, cache)
+    try:
+        body = fetch(url, cache)
+    except (ValueError,OSError,TimeoutError):
+        url=readonly.element("node",node_id)
+        body=fetch(url,cache)
     require(isinstance(body, str) and 0 < len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
             and "<!ENTITY" not in body.upper(),
