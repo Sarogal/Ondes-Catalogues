@@ -47,9 +47,9 @@ MAX_OFFICIAL_HTML = 650_000
 # Only an explicitly printed town beside the current festival date can be
 # copied. It is NOT a geocoder or a second-source date confirmation.
 CITY_AFTER_DATE = re.compile(
-    r"(?:\\b(?:à|au|in|at)\\s+|[·•]\\s*)"
+    r"(?:\b(?:à|au|in|at)\s+|[·•]\s*)"
     r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,55}"
-    r"(?:\\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})")
+    r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]{1,40}){0,2})")
 CITY_FORBIDDEN = frozenset(("Festival", "France", "Programmation",
                              "Billetterie", "Musique", "Concert",
                              "Rock", "Metal", "Punk"))
@@ -121,20 +121,24 @@ def official_city_on_current_date(html, title, dates):
         for block in " ".join(parser.parts).split(VisibleParagraphs.SEP):
             if not 0 < len(block) <= 900:
                 continue
-            visible_ranges = {
-                (a, b) for _start, _end, a, b
+            printed = [
+                (offset, finish)
+                for offset, finish, a, b
                 in explicit_ranges(block, start.year)
-            }
-            if (start, end) not in visible_ranges:
+                if (a, b) == (start, end)
+            ]
+            if not printed:
                 continue
-            # Keep the text after the actual printed date, so unrelated
-            # festival names/mentions elsewhere cannot supply the city.
-            for matched in CITY_AFTER_DATE.finditer(block):
-                city = matched.group(1).strip()
-                if (len(city) >= 3
-                        and city not in CITY_FORBIDDEN
-                        and re.search(r"[0-9<>]", city) is None):
-                    locations.add(city)
+            # Only use town names immediately AFTER current official dates,
+            # not a previous edition, contact footer, or an unrelated venue.
+            for _offset, finish in printed:
+                for matched in CITY_AFTER_DATE.finditer(
+                        block, finish, min(len(block), finish + 85)):
+                    city = matched.group(1).strip()
+                    if (len(city) >= 3
+                            and city not in CITY_FORBIDDEN
+                            and re.search(r"[0-9<>]", city) is None):
+                        locations.add(city)
         return next(iter(locations)) if len(locations) == 1 else None
     except (ValueError, TypeError, UnicodeError, KeyError):
         return None
@@ -188,7 +192,7 @@ def private_proposal(title, site, dates, today, *, city=None):
     if (city is not None
             and (not isinstance(city, str)
                  or not 3 <= len(city) <= 110
-                 or re.search(r"[<>\\x00-\\x1f0-9]", city))):
+                 or re.search(r"[<>\x00-\x1f0-9]", city))):
         return None
     return {
         "slug": slug_for(title), "name": title,
