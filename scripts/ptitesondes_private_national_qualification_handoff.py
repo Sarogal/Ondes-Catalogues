@@ -162,13 +162,18 @@ def _research_item(original, api_event, agenda, today):
 
 
 def handoff(index_doc, digest, report, today, public_key, *,
-            offset=0, max_fetch=MAX_FETCH, fetcher=read_direct_v2):
+            offset=0, max_fetch=MAX_FETCH, fetcher=read_direct_v2,
+            source_scan_day=None):
     """Bounded read-only handoff to the legacy backlog shape.
 
     Never approves events; the returned rows must still pass the existing
     private intake, independent verification and historical duplicate gates.
     """
-    agenda = verified_report(index_doc, digest, report, today)
+    # Persisted observation reports are bound to their ORIGINAL scan day,
+    # but every API event and its future sessions are re-read against today.
+    # Old reports never carry a reusable admission decision.
+    scan_day = source_scan_day if source_scan_day is not None else today
+    agenda = verified_report(index_doc, digest, report, scan_day)
     if (not _valid_public_read_key(public_key)
             or type(offset) is not int or not 0 <= offset <= len(report["event_leads"])
             or type(max_fetch) is not int or not 1 <= max_fetch <= MAX_FETCH
