@@ -110,8 +110,9 @@ class ValidatedCentralCatalog {
     this.stations,
     this.aliasOwners,
     this.goIds,
-    this.activeIds,
-  ) : _pointerBytes = Uint8List.fromList(pointerBytes),
+    this.activeIds, {
+    this.goRedirects = const <String, String>{},
+  }) : _pointerBytes = Uint8List.fromList(pointerBytes),
       _catalogBytes = Uint8List.fromList(catalogBytes);
 
   final CentralCatalogPointer pointer;
@@ -127,6 +128,8 @@ class ValidatedCentralCatalog {
   final Map<String, String> aliasOwners;
   final Set<String> goIds;
   final Set<String> activeIds;
+  /// Immutable signed tombstone GO ID -> active surviving GO ID.
+  final Map<String, String> goRedirects;
 }
 
 class CentralCatalogVerifier {
@@ -201,6 +204,7 @@ class CentralCatalogVerifier {
     final aliases = <String, String>{};
     final goIds = <String>{};
     final active = <String>{};
+    final redirects = <String, String>{};
     final stations = <Map<String, dynamic>>[];
     final logoContentMetadata = <String, String>{};
     for (final raw in records) {
@@ -246,7 +250,7 @@ class CentralCatalogVerifier {
         throw const CentralCatalogException('Invalid station identity');
       }
       if (item['homepage'] != null &&
-          !_safePublicUrl(item['homepage'], allowHttp: true)) {
+          !_safePublicUrl(item['homepage'], allowHttp: true, allowFragment: true)) {
         throw const CentralCatalogException('Invalid station homepage');
       }
       if (item.containsKey('tags')) {
@@ -266,10 +270,37 @@ class CentralCatalogVerifier {
         throw const CentralCatalogException('Invalid station status');
       }
       final editorial = _object(item['editorial'], 'editorial');
-      if (editorial['admission_state'] != 'approved' ||
-          editorial['reviewed_at'] is! String ||
-          DateTime.tryParse(editorial['reviewed_at'] as String) == null) {
-        throw const CentralCatalogException('Unreviewed catalog entry');
+      final admission = editorial['admission_state'];
+      final reviewed = editorial['reviewed_at'];
+      final proofs = editorial['evidence_refs'];
+      if (proofs is! List || proofs.any((proof) =>
+          proof is! String || proof.trim().isEmpty)) {
+        throw const CentralCatalogException('Malformed signed editorial proofs');
+      }
+      if (admission == 'approved') {
+        if (reviewed is! String || DateTime.tryParse(reviewed) == null) {
+          throw const CentralCatalogException('Unreviewed approved station');
+        }
+      } else if (admission == 'legacy_preserved') {
+        // An offline-verified Ed25519 signature can carry a preexisting
+        // installed station without inventing a human review timestamp.
+        // Every such station must still name an exact historical UUID it owns
+        // and a traceable migration baseline; otherwise fail closed.
+        final marker = RegExp(
+            r'^(?:v64-bootstrap:[0-9a-f]{40}:|prior-admission:[0-9]{8}:)([A-Za-z0-9-]+)');
+        final historic = proofs.any((proof) {
+          if (proof is! String) return false;
+          final match = marker.firstMatch(proof);
+          return match != null && match.group(0) == proof &&
+              legacy.contains(match.group(1));
+        });
+        if (!historic || (reviewed != null &&
+            (reviewed is! String || DateTime.tryParse(reviewed) == null))) {
+          throw const CentralCatalogException(
+              'Missing signed historic UUID admission evidence');
+        }
+      } else {
+        throw const CentralCatalogException('Unknown admission state');
       }
       if (state != 'active' &&
           (status['reason_code'] is! String ||
@@ -345,6 +376,29 @@ class CentralCatalogVerifier {
           DateTime.tryParse(item['retired_at'] as String) == null) {
         throw const CentralCatalogException('Missing retirement reason or date');
       }
+      const knownTombstoneFields = {
+        'go_station_id', 'legacy_aliases', 'retired_at', 'reason_code',
+        'redirect_to',
+      };
+      if (item.keys.any((key) => !knownTombstoneFields.contains(key))) {
+        throw const CentralCatalogException('Unknown tombstone field');
+      }
+      if (item.containsKey('redirect_to')) {
+        final destination = item['redirect_to'];
+        if (item['reason_code'] != 'merged_into_station' ||
+            destination is! String || !_goId.hasMatch(destination) ||
+            destination == id || redirects.containsKey(id)) {
+          throw const CentralCatalogException('Invalid signed station redirect');
+        }
+        redirects[id] = destination;
+      }
+    }
+    // A signed redirect never points to another tombstone. Chains are flattened
+    // by the publisher so old favorites resolve in one step and cannot cycle.
+    for (final destination in redirects.values) {
+      if (!active.contains(destination)) {
+        throw const CentralCatalogException('Redirect target must be active');
+      }
     }
 
     // Permanent GO IDs are first-class identities, not ordinary aliases.
@@ -378,6 +432,13 @@ class CentralCatalogVerifier {
       if (!goIds.containsAll(previous.goIds)) {
         throw const CentralCatalogException('Historical GO identity lost');
       }
+      for (final old in previous.goRedirects.entries) {
+        final next = redirects[old.key];
+        if (next == null ||
+            (next != old.value && redirects[old.value] != next)) {
+          throw const CentralCatalogException('Historical redirect lost or hijacked');
+        }
+      }
       for (final entry in previous.aliasOwners.entries) {
         if (aliases[entry.key] != entry.value) {
           throw const CentralCatalogException('Historical alias lost or reassigned');
@@ -396,7 +457,8 @@ class CentralCatalogVerifier {
         List<Map<String, dynamic>>.unmodifiable(stations),
         Map<String, String>.unmodifiable(aliases),
         Set<String>.unmodifiable(goIds),
-        Set<String>.unmodifiable(active));
+        Set<String>.unmodifiable(active),
+        goRedirects: Map<String, String>.unmodifiable(redirects));
   }
 
   static Map<String, dynamic> _object(dynamic value, String label) {
@@ -442,27 +504,55 @@ class CentralCatalogVerifier {
     }
   }
 
-  static bool _safePublicUrl(dynamic raw, {required bool allowHttp}) {
+  static bool _safePublicUrl(dynamic raw, {required bool allowHttp, bool allowFragment = false}) {
     if (raw is! String) return false;
     final uri = Uri.tryParse(raw);
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty ||
-        uri.userInfo.isNotEmpty || uri.hasFragment ||
+        uri.userInfo.isNotEmpty || (uri.hasFragment && !allowFragment) ||
         !(uri.scheme == 'https' || (allowHttp && uri.scheme == 'http'))) {
       return false;
     }
-    final h = uri.host.toLowerCase().replaceAll(RegExp(r'\.$'), '');
+    final originalHost = uri.host.toLowerCase();
+    final h = originalHost.endsWith('.')
+        ? originalHost.substring(0, originalHost.length - 1)
+        : originalHost;
     if (h == 'localhost' || h.endsWith('.local') ||
         h.endsWith('.internal') || !h.contains('.') ||
-        h.contains(':') ||
-        RegExp(r'^[0-9.]+$').hasMatch(h)) {
+        h.contains(':')) {
       return false;
     }
+    final numericHost = h.runes.every((c) => c == 46 || (c >= 48 && c <= 57));
+    if (numericHost) return _safePublicIpv4(h);
+    return true;
+  }
+
+  /// Public numeric IPs used by historical stations are allowed.
+  /// Local, private, carrier NAT, link-local and reserved ranges are not.
+  static bool _safePublicIpv4(String host) {
+    final parts = host.split('.');
+    if (parts.length != 4) return false;
+    final octets = <int>[];
+    for (final part in parts) {
+      if (part.isEmpty || part.length > 3 ||
+          (part.length > 1 && part.startsWith('0')) ||
+          !part.runes.every((c) => c >= 48 && c <= 57)) return false;
+      final number = int.tryParse(part);
+      if (number == null || number > 255) return false;
+      octets.add(number);
+    }
+    final a = octets[0], b = octets[1], c = octets[2];
+    if (a == 0 || a == 10 || a == 127 || a >= 224) return false;
+    if (a == 100 && b >= 64 && b <= 127) return false;
+    if (a == 169 && b == 254) return false;
+    if (a == 172 && b >= 16 && b <= 31) return false;
+    if (a == 192 && (b == 168 || (b == 0 && c <= 2))) return false;
+    if (a == 198 && (b == 18 || b == 19 ||
+        (b == 51 && c == 100))) return false;
+    if (a == 203 && b == 0 && c == 113) return false;
     return true;
   }
 }
 
-// Signing and structural verification must never hand mutable JSON trees to
-// projections: changing a nested stream or status would bypass the signature.
 dynamic _freezeCentralJson(dynamic value) {
   if (value is Map<String, dynamic>) {
     return Map<String, dynamic>.unmodifiable(value.map(

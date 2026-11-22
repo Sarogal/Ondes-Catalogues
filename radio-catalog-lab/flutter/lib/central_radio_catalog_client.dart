@@ -16,26 +16,40 @@ class CentralCatalogDiskStore {
   static final _snapshotName =
       RegExp(r'^go-radio-v1-([1-9][0-9]*)-([0-9a-f]{64})\.json$');
 
-  Future<ValidatedCentralCatalog?> loadLatest(
-      CentralCatalogVerifier verifier) async {
-    if (!await directory.exists()) return null;
+  /// An intact signed snapshot is not necessarily compatible with every old
+  /// V64 installation. Keep older VERIFIED generations available so a later
+  /// product-level migration guard can recover without touching user data.
+  ///
+  /// Finite scan budget: no arbitrary file extensions/symlinks, max 24 files,
+  /// max 15 MiB of encoded snapshot JSON each, no unsigned fallback.
+  Future<List<ValidatedCentralCatalog>> loadVerifiedHistory(
+    CentralCatalogVerifier verifier, {int maxFiles = 24}) async {
+    if (maxFiles < 1 || maxFiles > 24) {
+      throw const CentralCatalogException('Invalid snapshot history limit');
+    }
+    if (!await directory.exists()) return const <ValidatedCentralCatalog>[];
     final candidates = await directory
         .list(followLinks: false)
         .where((entry) => entry is File)
         .cast<File>()
-        .where((file) => _snapshotName.hasMatch(
-            file.uri.pathSegments.last))
+        .where((file) =>
+            _snapshotName.hasMatch(file.uri.pathSegments.last))
         .toList();
     candidates.sort((a, b) {
       final am = _snapshotName.firstMatch(a.uri.pathSegments.last)!;
       final bm = _snapshotName.firstMatch(b.uri.pathSegments.last)!;
       final av = int.tryParse(am.group(1)!) ?? 0;
       final bv = int.tryParse(bm.group(1)!) ?? 0;
-      return bv.compareTo(av);
+      final order = bv.compareTo(av);
+      return order != 0 ? order : a.path.compareTo(b.path);
     });
+    final verified = <ValidatedCentralCatalog>[];
+    final seenSequences = <int>{};
+    var visited = 0;
     for (final file in candidates) {
+      if (visited >= maxFiles) break;
+      visited++;
       try {
-        // Do not read arbitrary-sized or symlinked files as catalog snapshots.
         if (await file.length() > 15 * 1024 * 1024) continue;
         final raw = jsonDecode(await file.readAsString());
         if (raw is! Map<String, dynamic> ||
@@ -45,18 +59,34 @@ class CentralCatalogDiskStore {
             base64.decode(raw['pointer_base64'] as String));
         final catalog = Uint8List.fromList(
             base64.decode(raw['catalog_base64'] as String));
-        final verified = await verifier.verify(
+        final snapshot = await verifier.verify(
             pointerBytes: pointer, catalogBytes: catalog);
         final expected =
-            'go-radio-v1-${verified.pointer.sequence}-${verified.pointer.sha256}.json';
+            'go-radio-v1-${snapshot.pointer.sequence}-${snapshot.pointer.sha256}.json';
         if (file.uri.pathSegments.last != expected) continue;
-        return verified;
+        // A conflicting signed generation is never chosen arbitrarily.
+        if (!seenSequences.add(snapshot.pointer.sequence)) {
+          throw const CentralCatalogException(
+              'Conflicting snapshots for the same release sequence');
+        }
+        verified.add(snapshot);
+      } on CentralCatalogException catch (error) {
+        if (error.reason == 'Conflicting snapshots for the same release sequence') {
+          rethrow;
+        }
+        // An isolated corrupt file must not destroy older snapshots.
+        continue;
       } catch (_) {
-        // A partial or corrupt newest snapshot must not erase older snapshots.
         continue;
       }
     }
-    return null;
+    return List<ValidatedCentralCatalog>.unmodifiable(verified);
+  }
+
+  Future<ValidatedCentralCatalog?> loadLatest(
+      CentralCatalogVerifier verifier) async {
+    final history = await loadVerifiedHistory(verifier);
+    return history.isEmpty ? null : history.first;
   }
 
   Future<void> persist(ValidatedCentralCatalog snapshot) async {

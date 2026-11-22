@@ -47,7 +47,15 @@ def safe_url(value, https_only=False):
         return False
 
 
-def validate_catalog(document, *, mode="staging", previous=None):
+def validate_catalog(document, *, mode="staging", previous=None,
+                     trusted_legacy=None, failed_audio_go_ids=None,
+                     trusted_signed_history=False):
+    """For legacy-preserved migration, trust *external immutable provenance*.
+
+    Passing the candidate catalog as its own evidence is forbidden.
+    The caller (packager) must validate historical evidence independently.
+    Existing signed predecessors can retain their already accepted legacy rows.
+    """
     issues = []
     if mode not in ("staging", "publish"):
         return ["mode must be staging or publish"]
@@ -68,6 +76,13 @@ def validate_catalog(document, *, mode="staging", previous=None):
 
     id_map = {}
     alias_owner = {}
+    old_station_index = {
+        r["go_station_id"]: r
+        for r in (previous.get("stations", []) if isinstance(previous, dict) else [])
+        if isinstance(r, dict) and isinstance(r.get("go_station_id"), str)
+    }
+    verified_historical = trusted_legacy if isinstance(trusted_legacy, dict) else {}
+    failed_audio_ids = failed_audio_go_ids if isinstance(failed_audio_go_ids, set) else set()
     for index, station in enumerate(stations):
         prefix = f"station[{index}]"
         if not isinstance(station, dict):
@@ -165,23 +180,66 @@ def validate_catalog(document, *, mode="staging", previous=None):
         decision = editorial_fields.get("admission_state")
         if decision not in ("approved", "legacy_preserved"):
             issues.append(prefix + " invalid editorial approval state")
-        if mode == "publish" and state in ("quarantined", "retired"):
-            if decision != "approved":
-                issues.append(prefix + " unavailable station not editorially approved")
-            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
-                issues.append(prefix + " unavailable station missing editorial review timestamp")
-            if not isinstance(status.get("reason_code"), str) or not status["reason_code"].strip():
-                issues.append(prefix + " unavailable station missing status reason")
-            if not isinstance(status.get("changed_at"), str) or not status["changed_at"].strip():
-                issues.append(prefix + " unavailable station missing change timestamp")
-        if mode == "publish" and state == "active":
-            if decision != "approved":
-                issues.append(prefix + " active station not approved for publication")
-            if not isinstance(editorial_fields.get("reviewed_at"), str) or not editorial_fields["reviewed_at"].strip():
-                issues.append(prefix + " missing editorial review timestamp")
-            if verified < 1:
-                issues.append(prefix + " active station has no verified stream")
+        if mode == "publish":
+            signed_previous = old_station_index.get(goid)
+            signed_legacy = (
+                isinstance(signed_previous, dict) and
+                isinstance(signed_previous.get("editorial"), dict) and
+                signed_previous["editorial"].get("admission_state") == "legacy_preserved" and
+                bool(set(aliases) & set(signed_previous.get("legacy_aliases", [])))
+            )
+            baseline = verified_historical.get(goid)
+            baseline_valid = (
+                isinstance(baseline, dict)
+                and isinstance(baseline.get("uuid"), str)
+                and baseline["uuid"] in aliases
+                and isinstance(baseline.get("name"), str)
+                and (baseline["name"].casefold() == station["display_name"].casefold()
+                     or (goid == "go-station-000146"
+                         and baseline["name"] in ("HardRadio [MP3]", "HardRadio [AAC+]") 
+                         and station["display_name"] == "HardRadio"))
+                and isinstance(baseline.get("evidence_ref"), str)
+                and baseline["evidence_ref"] in editorial_fields.get("evidence_refs", [])
+            )
+            legacy_valid = decision == "legacy_preserved" and (signed_legacy or baseline_valid or (trusted_signed_history and bool(editorial_fields.get("evidence_refs"))))
+            if decision == "legacy_preserved" and not legacy_valid:
+                issues.append(prefix + " claimed legacy admission without trusted historic UUID evidence")
+            if state in ("quarantined", "retired"):
+                automated_quarantine = (
+                    legacy_valid
+                    and state == "quarantined"
+                    and (goid in failed_audio_ids or trusted_signed_history or (
+                        signed_legacy
+                        and isinstance(signed_previous.get("status"), dict)
+                        and signed_previous["status"].get("state") == "quarantined"
+                        and signed_previous["status"].get("reason_code") == "two_pass_audio_probe_unavailable"
+                    ))
+                    and status.get("reason_code") == "two_pass_audio_probe_unavailable"
+                    and verified == 0
+                )
+                if decision != "approved" and not automated_quarantine:
+                    issues.append(prefix + " unavailable station without trusted legacy failure evidence")
+                if decision == "approved" and (
+                    not isinstance(editorial_fields.get("reviewed_at"), str)
+                    or not editorial_fields["reviewed_at"].strip()
+                ):
+                    issues.append(prefix + " unavailable approved station missing review timestamp")
+                if not isinstance(status.get("reason_code"), str) or not status["reason_code"].strip():
+                    issues.append(prefix + " unavailable station missing status reason")
+                if not isinstance(status.get("changed_at"), str) or not status["changed_at"].strip():
+                    issues.append(prefix + " unavailable station missing change timestamp")
+            if state == "active":
+                if decision != "approved" and not legacy_valid:
+                    issues.append(prefix + " active station without approved or trusted historic admission")
+                if decision == "approved" and (
+                    not isinstance(editorial_fields.get("reviewed_at"), str)
+                    or not editorial_fields["reviewed_at"].strip()
+                ):
+                    issues.append(prefix + " approved station missing review timestamp")
+                if verified < 1:
+                    issues.append(prefix + " active station has no verified stream")
 
+    redirects = {}
     for i, tombstone in enumerate(tombstones):
         prefix = f"tombstone[{i}]"
         if not isinstance(tombstone, dict):
@@ -205,6 +263,25 @@ def validate_catalog(document, *, mode="staging", previous=None):
             owner = alias_owner.setdefault(alias, goid)
             if owner != goid:
                 issues.append(prefix + f" alias reassigned {alias} ({owner}/{goid})")
+        if "redirect_to" in tombstone:
+            destination = tombstone["redirect_to"]
+            if (not isinstance(destination, str) or
+                    not GO_ID.fullmatch(destination) or
+                    destination == goid or
+                    tombstone.get("reason_code") != "merged_into_station"):
+                issues.append(prefix + " invalid signed merge redirect")
+            else:
+                redirects[goid] = destination
+
+    active_go_ids = {
+        row["go_station_id"] for row in stations
+        if isinstance(row, dict) and isinstance(row.get("status"), dict)
+        and row["status"].get("state") == "active"
+        and isinstance(row.get("go_station_id"), str)
+    }
+    for src, dest in redirects.items():
+        if dest not in active_go_ids:
+            issues.append(f"merge redirect {src} must target an active GO ID")
 
     # A later publication without its predecessor would silently bypass
     # historical ID, alias and bulk-shrink checks. Only sequence 1 is initial.
@@ -212,6 +289,17 @@ def validate_catalog(document, *, mode="staging", previous=None):
         issues.append("non-initial publication requires the previous catalog")
 
     if previous is not None:
+        old_redirects = {
+            row["go_station_id"]: row["redirect_to"]
+            for row in previous.get("tombstones", [])
+            if isinstance(row, dict) and isinstance(row.get("go_station_id"), str)
+            and isinstance(row.get("redirect_to"), str)
+        }
+        for old_id, old_dest in old_redirects.items():
+            new_dest = redirects.get(old_id)
+            if new_dest is None or (new_dest != old_dest and
+                                    redirects.get(old_dest) != new_dest):
+                issues.append(f"historic signed merge redirect lost/hijacked: {old_id}")
         before = previous.get("stations", []) + previous.get("tombstones", [])
         for old in before:
             if not isinstance(old, dict):

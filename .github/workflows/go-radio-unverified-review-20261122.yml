@@ -1,0 +1,37 @@
+name: GO radio — review 16 unverified station identities (no publication)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-unverified-review-20261122.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect-failures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve unsigned evidence artifact from complete 358-stream probe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/merged"
+          gh run download 45066024433 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/merged" --pattern go-radio-358-stream-verified-unsigned-20261122
+      - name: Display only the 16 station names and actionable stream reasons
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"merged"
+          f=next(root.rglob("decode-summary.json"))
+          j=json.loads(f.read_text())
+          for idx, r in enumerate(j["active_stations_without_a_verified_stream"], 1):
+              print(f"{idx:02d}. {r['go_station_id']} — {r['name']}: {', '.join(r['stream_reasons'])}")
+          assert len(j["active_stations_without_a_verified_stream"]) == 16
+          print("ALL 16 IDENTIFIED: no deletion or quarantine")
+          PY

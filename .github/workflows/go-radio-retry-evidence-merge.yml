@@ -1,0 +1,61 @@
+name: GO radio — merge 338 initial plus retry proofs (unsigned only)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-retry-evidence-merge.yml'
+      - 'radio-catalog-lab/tools/merge_full_staging_retry_evidence.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  merge-decoded:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve initial 358 and second-pass unsigned evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/previous" "$RUNNER_TEMP/retry"
+          gh run download 45066024433 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/previous" --pattern go-radio-358-stream-verified-unsigned-20261122
+          gh run download 45066693506 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/retry" --pattern go-radio-20-failed-retry-readonly
+      - name: Consolidate without mutation of original or current.json
+        run: |
+          FIRST=$(find "$RUNNER_TEMP/previous" -name qualified-candidate-unsigned.json -print -quit)
+          RETRY=$(find "$RUNNER_TEMP/retry" -name retry-20.json -print -quit)
+          test -n "$FIRST" && test -n "$RETRY"
+          python radio-catalog-lab/tools/merge_full_staging_retry_evidence.py \
+            --original radio-catalog-lab/full-staging/candidate-20261122.json \
+            --first "$FIRST" --retry "$RETRY" \
+            --out "$RUNNER_TEMP/qualified-unsigned-2passes.json" \
+            --summary "$RUNNER_TEMP/coverage-2passes.json"
+      - name: Verify all old stations kept and report exact remaining problem stations
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          summary=json.loads((root/"coverage-2passes.json").read_text())
+          assert summary["streams_decoded_cumulative"] == 345
+          assert summary["remaining_streams_not_decoded"] == 13
+          assert summary["stations_not_deleted"] is True
+          assert summary["no_signed_publication"] is True
+          print("ACTIVE_WITH_AUDIO:", summary["active_with_decoded_stream"], "/", summary["active"])
+          print("ACTIVE_WITHOUT_AUDIO:", len(summary["active_without_decoded_stream"]))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-345-decoded-unsigned-full-20261122
+          path: |
+            ${{ runner.temp }}/qualified-unsigned-2passes.json
+            ${{ runner.temp }}/coverage-2passes.json
+          retention-days: 14

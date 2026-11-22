@@ -1,0 +1,54 @@
+name: GO radio — retry 20 previously undecoded streams (TEST staging)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-failed-stream-retry.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retry-20:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated FFmpeg decoder for stream probe
+        run: python -m pip install 'imageio-ffmpeg>=0.5,<1'
+      - name: Retrieve all original 358-stream evidence (no production permissions)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/initial"
+          gh run download 45065427405 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/initial" --pattern 'go-radio-stream-evidence-*'
+          gh run download 45065588703 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/initial" --pattern 'go-audio-evidence-*'
+      - name: Retry only 20 previously failed URLs with bounded safe HLS segment parsing
+        run: |
+          python radio-catalog-lab/tools/retry_failed_full_staging_streams.py \
+            --catalog radio-catalog-lab/full-staging/candidate-20261122.json \
+            --evidence-dir "$RUNNER_TEMP/initial" \
+            --report "$RUNNER_TEMP/retry-20.json"
+      - name: Validate no public catalog, radio or override was modified
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          j=json.loads((Path(os.environ["RUNNER_TEMP"])/"retry-20.json").read_text())
+          assert j["attempts"] == 20
+          assert j["publication_authorized"] is False
+          assert j["signed"] is False and j["no_removal"] is True
+          print({"newly_decoded":j["newly_decoded_on_retry"],
+                 "remaining_unverified":len(j["still_unverified"])})
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-20-failed-retry-readonly
+          path: ${{ runner.temp }}/retry-20.json
+          retention-days: 14

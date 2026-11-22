@@ -1,0 +1,51 @@
+name: GO radio — identify three missing immutable logos (TEST-only audit)
+on:
+  push:
+    branches: [feature/go-radio-full-staging-validation-20261122]
+    paths:
+      - '.github/workflows/go-radio-missing-logo-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  missing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve immutable image manifest (no publish)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/logos" "$RUNNER_TEMP/catalog"
+          gh run download 45070029450 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/logos" --pattern go-radio-immutable-test-artwork-sha-objects-bundle
+          gh run download 45070247465 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/catalog" --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
+      - name: Map missing SHA blobs to affected known radio stations and bounded failure reasons
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          files=list((root/"catalog").rglob("full-test-v5-unsigned-preflight.json"))
+          manifests=list((root/"logos").rglob("manifest-preview.json"))
+          assert len(files)==len(manifests)==1
+          radio=json.loads(files[0].read_text())
+          logo=json.loads(manifests[0].read_text())
+          missing=[r for r in logo["objects"] if not r["ready_for_explicit_review"]]
+          assert logo["expected_unique_descriptors"]==89
+          assert logo["immutable_objects_verified"]==86
+          assert len(missing)==3
+          for r in missing:
+            owners=[{"go_station_id":s["go_station_id"],"station":s["display_name"],
+                      "source_host":s["logo"]["url"].split("/")[2]}
+                    for s in radio["stations"] if s.get("logo") and
+                    s["logo"]["sha256"]==r["sha256"]]
+            print(json.dumps({
+              "missing_sha256":r["sha256"],
+              "reason_code":r["reason_code"],
+              "affected_stations":owners,
+              "policy":"KEEP RADIO AND SHA DESCRIPTOR; NEVER SUBSTITUTE DIFFERENT IMAGE",
+              "test_pointer_modified":False
+            },ensure_ascii=False,sort_keys=True))
+          PY

@@ -1,0 +1,58 @@
+name: GO radio — reconcile 87 exact historical SHA logos (no publish)
+on:
+  push:
+    branches: [feature/go-radio-full-staging-validation-20261122]
+    paths:
+      - '.github/workflows/go-radio-recover-historical-sha-archive.yml'
+      - 'radio-catalog-lab/tools/reconcile_recovered_sha_archive.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'pillow>=10,<13'
+      - name: Download both prior proof artifacts and original v5 metadata
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/sha86" "$RUNNER_TEMP/retry" "$RUNNER_TEMP/v5"
+          gh run download 45070029450 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/sha86" --pattern go-radio-immutable-test-artwork-sha-objects-bundle
+          gh run download 45073854820 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/retry" --pattern go-radio-three-logo-new-sha-proposals-unsigned
+          gh run download 45070247465 --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/v5" --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
+      - name: Reconcile 86+1 exact original SHA objects without rotated substitutions
+        run: |
+          SOURCE=$(find "$RUNNER_TEMP/v5" -name full-test-v5-unsigned-preflight.json -print -quit)
+          OLD=$(find "$RUNNER_TEMP/sha86" -name manifest-preview.json -print -quit)
+          RECOVERED=$(find "$RUNNER_TEMP/retry" -name unsigned-proposals.json -print -quit)
+          test -n "$SOURCE" && test -n "$OLD" && test -n "$RECOVERED"
+          python radio-catalog-lab/tools/reconcile_recovered_sha_archive.py \
+            --catalog "$SOURCE" \
+            --original "$(dirname "$OLD")" \
+            --retry "$(dirname "$RECOVERED")" \
+            --output "$RUNNER_TEMP/sha87"
+      - name: Check exactly 87 objects and unchanged TEST release pointer
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          data=json.loads((Path(os.environ["RUNNER_TEMP"])/"sha87"/"manifest-reconciled.json").read_text())
+          assert data["expected_original_SHA_objects"]==89
+          assert data["original_SHA_objects_available"]==87
+          assert data["replacements_not_approved"]==2
+          assert data["pointer_updated"] is False
+          assert data["images_published"] is False
+          print("Original historical logo SHA recovery:", data["original_SHA_objects_available"], "/", data["expected_original_SHA_objects"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-87-original-sha-objects-test-unpublished
+          path: ${{ runner.temp }}/sha87/
+          retention-days: 14

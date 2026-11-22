@@ -87,5 +87,5 @@ class RadioStation {
 }
 
 class MetalGenreResolver {
-  static const displayGenres = ['Heavy', 'Punk', 'Metal', 'Hard Rock'];
+  static const displayGenres = ['Tous', 'Heavy', 'Hard Rock', 'Punk', 'Thrash', 'Death', 'Black', 'Doom', 'Power', 'Symphonic', 'Progressive', 'Folk', 'Industrial', 'Metalcore', 'Metal'];
 }

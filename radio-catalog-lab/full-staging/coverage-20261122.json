@@ -1,0 +1,241 @@
+{
+  "status": "STAGING_ONLY_NOT_SIGNED",
+  "based_on_signed_test_release_sequence": 4,
+  "source_v64_stations": 310,
+  "source_v64_streams": 345,
+  "source_v64_aliases": 346,
+  "known_old_go_id_not_published_and_consolidated": {
+    "from": "go-station-000147",
+    "to": "go-station-000146",
+    "historical_uuid_aliases_preserved": [
+      "9609c009-0601-11e8-ae97-52543be04c81",
+      "960b1fda-0601-11e8-ae97-52543be04c81"
+    ],
+    "streams_preserved": [
+      {
+        "codec": "MP3",
+        "bitrate_kbps": 128,
+        "url": "http://144.217.29.205/"
+      },
+      {
+        "codec": "AAC+",
+        "bitrate_kbps": 64,
+        "url": "http://3634.cloudrad.io/stream/3//hardradio4.aac"
+      }
+    ]
+  },
+  "signed_test_previous_ids_preserved": [
+    "go-station-900001",
+    "go-station-900002",
+    "go-station-900010",
+    "go-station-900011"
+  ],
+  "stations_in_candidate": 320,
+  "active_stations": 318,
+  "quarantined_stations": 2,
+  "candidate_streams": 358,
+  "verified_streams": 2,
+  "aliases_preserved_in_signed_candidate": 363,
+  "admissible_uuid_from_20261115_missing_original": 27,
+  "new_aliases_from_direct_stream_match": [
+    {
+      "uuid": "163d3e33-2bbf-497d-b1f5-e2cdb58efc40",
+      "go_station_id": "go-station-000179",
+      "classification": "same_stream_and_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "Radio Caprice"
+    },
+    {
+      "uuid": "1f6e36cc-de24-4750-b8c4-58a777b61c45",
+      "go_station_id": "go-station-000035",
+      "classification": "same_stream_and_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "METAL ONLY - http://www.metal-only.de,METAL ONLY - http://www.metal-only.de - 24h Black Death Heavy Metal Rock und mehr!"
+    },
+    {
+      "uuid": "25251b1e-ef6d-4cdb-89f4-513b16f8211b",
+      "go_station_id": "go-station-000003",
+      "classification": "same_stream_different_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "Radio Bob. Metalcore "
+    },
+    {
+      "uuid": "327f4b1f-c5c7-42bd-b69d-87bac85b8d7b",
+      "go_station_id": "go-station-000063",
+      "classification": "same_stream_different_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "DrGnu - Symphonic Metal "
+    },
+    {
+      "uuid": "a47c1037-d9d8-4904-adfd-0ebb69e9b80a",
+      "go_station_id": "go-station-000246",
+      "classification": "same_stream_different_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "RADIO BOB! Wacken Radio"
+    },
+    {
+      "uuid": "c91b66dd-0797-4662-a5d3-f406ffc32da8",
+      "go_station_id": "go-station-000184",
+      "classification": "same_stream_and_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "BurnFM - musik intensiv!"
+    },
+    {
+      "uuid": "ed801bb5-3c2c-48cb-8c9a-33e69e159d80",
+      "go_station_id": "go-station-000254",
+      "classification": "same_stream_and_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "METAL ONLY - https://www.metal-only.de,METAL ONLY - http://www.metal-only.de - 24h Black Death Heavy Metal Rock und mehr!"
+    },
+    {
+      "uuid": "f4fe720e-e72e-40c6-baf5-2a3f781c7ef5",
+      "go_station_id": "go-station-000004",
+      "classification": "same_stream_and_name_review",
+      "proof": "exact_stream_url_shared_with_baseline_20261115",
+      "directory_name": "RadCap - Black Doom Metal"
+    }
+  ],
+  "new_station_rows": [
+    {
+      "uuid": "24dada19-a000-492d-9ead-95e342e9efa7",
+      "go_station_id": "go-station-000311",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "Exclusively Ramones"
+    },
+    {
+      "uuid": "4435acb0-c5cb-4ed9-b8a3-9bb36123c707",
+      "go_station_id": "go-station-000312",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "RadCap - Symphonic Metal"
+    },
+    {
+      "uuid": "5446f9e0-25d9-4be1-824d-72fba2037554",
+      "go_station_id": "go-station-000313",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "REAL PUNK RADIO"
+    },
+    {
+      "uuid": "6c3a79d6-2315-44c8-81df-f8aa5a7458cd",
+      "go_station_id": "go-station-000314",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "PunkRockRadio.ca"
+    },
+    {
+      "uuid": "960c4c2a-0601-11e8-ae97-52543be04c81",
+      "go_station_id": "go-station-900011",
+      "source": "signed_test_generation_4",
+      "state": "verified_in_test_v4",
+      "name": "ROCK ANTENNE Punk Rock"
+    },
+    {
+      "uuid": "9618c802-0601-11e8-ae97-52543be04c81",
+      "go_station_id": "go-station-900010",
+      "source": "signed_test_generation_4",
+      "state": "verified_in_test_v4",
+      "name": "RADIO BOB! BOBs Punk"
+    },
+    {
+      "uuid": "d799ed01-e98b-47f5-9b4f-2307e07feede",
+      "go_station_id": "go-station-000315",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "PUNKRATZ"
+    },
+    {
+      "uuid": "e4ba6e9a-2b66-4230-a064-308d003e5011",
+      "go_station_id": "go-station-000316",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "RadCap - Viking Metal"
+    },
+    {
+      "uuid": "ec13ab55-e249-489d-8f64-657c766ac4f1",
+      "go_station_id": "go-station-000317",
+      "source": "admission_uuid_evidence_20261115",
+      "state": "requires_live_stream_check",
+      "name": "RadCap - Power Metal"
+    }
+  ],
+  "unresolved_uuids": [
+    {
+      "uuid": "1873ef36-f1d6-4610-aec7-c43bab20b3a5",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "52e930bc-09db-4beb-8e80-2c49d06cc26b",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "71859f45-72b1-44b4-a419-871ae1a05073",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "74b63d30-f3f1-4040-a09d-82a51196bc6c",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "92b51587-eab4-4417-8cad-b6018a46ef89",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "adb97933-68a3-46bd-ae16-3baea1aba880",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "e1dace79-20e8-47c8-a669-659ec1edbba4",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "e56c6943-73c8-4cc9-80fb-f528ff79dae2",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "eaa33085-ed50-4dce-88aa-a02846513452",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    },
+    {
+      "uuid": "f5ad6af1-f4f8-4bee-8620-c7c6accf1ae4",
+      "reason": "missing_from_radio_browser_20261115",
+      "last_probe": "2026-11-15",
+      "action": "recheck_current_directory_and_historical_sources_no_silent_removal"
+    }
+  ],
+  "same_stream_different_names_need_name_review": [
+    "25251b1e-ef6d-4cdb-89f4-513b16f8211b",
+    "327f4b1f-c5c7-42bd-b69d-87bac85b8d7b",
+    "a47c1037-d9d8-4904-adfd-0ebb69e9b80a"
+  ],
+  "known_legacy_logo_candidates": 288,
+  "sha_qualified_logos": 1,
+  "signed_replacement_generated": false,
+  "ready_to_publish": false,
+  "guardrails": [
+    "Candidate streams remain candidate until checked by live probes; do not equate directory_lastcheckok with decoded playback",
+    "10 unresolved UUID kept in separate actionable report, not misrepresented as verified streams",
+    "TEST v4 signed GO IDs and logo remain unchanged",
+    "HardRadio migrated as one station with two quality choices; both legacy UUIDs retained",
+    "No live endpoint, production file, signing key, or main branch changed"
+  ]
+}

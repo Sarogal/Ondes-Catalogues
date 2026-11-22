@@ -1,0 +1,58 @@
+name: GO radio — 309 audio stations plus 13 SHA logos (UNSIGNED staging)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-full-unsigned-artwork-merge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  compose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve decoded short-audio evidence from separate immutable artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/audio"
+          gh run download 45066820850 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/audio" --pattern go-radio-345-decoded-unsigned-full-20261122
+      - name: Attach prequalified historical TEST SHA descriptors by UUID only
+        run: |
+          INPUT=$(find "$RUNNER_TEMP/audio" -name qualified-unsigned-2passes.json -print -quit)
+          test -n "$INPUT"
+          python radio-catalog-lab/tools/attach_full_staging_artwork_20261122.py \
+            --catalog "$INPUT" \
+            --preview grossesondes/radio-test-apk/artwork/previews/unsigned-v2-12-logos-20261121.json \
+            --out "$RUNNER_TEMP/go-full-unsigned-audio-artwork.json" \
+            --report "$RUNNER_TEMP/go-full-artwork-coverage.json"
+      - name: Assert 320 identities, short audio verification, 13 historical logos, no signature
+        run: |
+          python radio-catalog-lab/tools/radio_catalog_guard.py "$RUNNER_TEMP/go-full-unsigned-audio-artwork.json" --mode staging
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])
+          c=json.loads((p/'go-full-unsigned-audio-artwork.json').read_text())
+          r=json.loads((p/'go-full-artwork-coverage.json').read_text())
+          assert len(c['stations'])==320
+          assert sum(s.get('logo') is not None for s in c['stations'])==13
+          assert sum(t['state']=='verified' for s in c['stations'] for t in s['streams'])==345
+          assert r['ready_to_sign'] is False and r['can_replace_test_current_json'] is False
+          print('STAGING: 320 stations, 345 short-audio decoded streams, 13 SHA logo descriptors, no signed publication')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-320-stations-345-audio-13-logos-unsigned
+          path: |
+            ${{ runner.temp }}/go-full-unsigned-audio-artwork.json
+            ${{ runner.temp }}/go-full-artwork-coverage.json
+          retention-days: 14

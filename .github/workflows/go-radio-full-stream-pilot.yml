@@ -1,0 +1,56 @@
+name: GO radio — bounded real stream pilot (TEST staging only)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - 'radio-catalog-lab/tools/probe_full_radio_streams_20261122.py'
+      - '.github/workflows/go-radio-full-stream-pilot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: go-full-stream-pilot-staging
+  cancel-in-progress: false
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bundled audio decoder for Linux runner
+        run: python -m pip install 'imageio-ffmpeg>=0.5,<1'
+      - name: Verify transport regressions and static staging integrity
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tests -p 'test_icy_stream_probe_20261122.py' -v
+          python - <<'PY'
+          import imageio_ffmpeg
+          print('FFmpeg available at:', imageio_ffmpeg.get_ffmpeg_exe())
+          PY
+          python radio-catalog-lab/tools/radio_catalog_guard.py \
+            radio-catalog-lab/full-staging/candidate-20261122.json --mode staging
+      - name: Probe first 48 streaming URLs with bounded network and 2 seconds decoded audio
+        run: |
+          python radio-catalog-lab/tools/probe_full_radio_streams_20261122.py \
+            radio-catalog-lab/full-staging/candidate-20261122.json \
+            --offset 0 --max-streams 48 --workers 8 \
+            --report "$RUNNER_TEMP/go-radio-live-probe-000-047.json"
+      - name: Summarize precise reasons without leaking full URLs to workflow logs
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'go-radio-live-probe-000-047.json').read_text())
+          assert r['publication_authorized'] is False
+          assert r['probed_streams'] == 48
+          print(json.dumps({'checked':r['probed_streams'],'audio_decoded':r['verified_this_run'],'failure_reason_counts':r['reason_counts']},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-stream-evidence-000-047
+          path: ${{ runner.temp }}/go-radio-live-probe-000-047.json
+          retention-days: 7

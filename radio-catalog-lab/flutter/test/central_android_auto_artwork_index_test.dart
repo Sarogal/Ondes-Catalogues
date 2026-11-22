@@ -44,7 +44,7 @@ Map<String, dynamic> record(
 
 // Synthetic typed projection solely for pure index logic. The real path
 // receives its ValidatedCentralCatalog from CentralCatalogVerifier.verify.
-ValidatedCentralCatalog fixture(List<Map<String, dynamic>> stations) {
+ValidatedCentralCatalog fixture(List<Map<String, dynamic>> stations, {Map<String, String> redirects = const {}, Map<String, String> aliases = const {}}) {
   final signature = base64.encode(List<int>.filled(64, 0));
   final digest = 'a' * 64;
   final pointerBytes = Uint8List.fromList(utf8.encode(jsonEncode({
@@ -66,12 +66,13 @@ ValidatedCentralCatalog fixture(List<Map<String, dynamic>> stations) {
     pointerBytes,
     Uint8List.fromList([123, 125]),
     stations,
-    const <String, String>{},
-    stations.map((station) => station['go_station_id'] as String).toSet(),
+    aliases,
+    <String>{...stations.map((station) => station['go_station_id'] as String), ...redirects.keys},
     stations
         .where((station) => station['status']['state'] == 'active')
         .map((station) => station['go_station_id'] as String)
         .toSet(),
+    goRedirects: redirects,
   );
 }
 
@@ -224,4 +225,38 @@ void main() {
       throwsA(isA<CentralCatalogException>()),
     );
   });
+  test('old Android Auto UUIDs use the survivor SHA after signed merge redirect',
+      () async {
+    final bytes = image(17);
+    final hash = crypto.sha256.convert(bytes).toString();
+    final descriptor = CentralLogoDescriptor.fromSignedStation(
+      record(1, logo: bytes),
+    )!;
+    final fetched = await store.ensure(
+      target: descriptor, fetch: (_, __) async => bytes,
+    );
+    expect(fetched.status, CentralLogoCacheStatus.downloaded);
+    final index = await CentralAndroidAutoArtworkIndexBuilder(
+      verifyLocalArtwork: ({required store, required descriptor}) async {
+        if (await store.findVerified(descriptor) == null) return null;
+        return AndroidAutoArtworkUris.forCentralSha256(descriptor.sha256);
+      },
+    ).prepare(
+      catalog: fixture(
+        [record(1, logo: bytes, aliases: ['existing-v64-uuid'])],
+        aliases: const {'retired-v64-uuid': 'go-station-000002'},
+        redirects: const {'go-station-000002': 'go-station-000001'},
+      ),
+      store: store,
+    );
+    final expected = AndroidAutoArtworkUris.forCentralSha256(hash);
+    expect(index.forMediaId('existing-v64-uuid'), expected);
+    expect(index.forMediaId('retired-v64-uuid'), expected);
+    expect(index.forMediaId('go-station-000002'), expected);
+    expect(index.verifiedCentralForStationId('retired-v64-uuid'), expected);
+    expect(index.verifiedCentralForStationId('go-station-000002'), expected);
+    expect(index.forMediaId('unknown-id'),
+        AndroidAutoArtworkUris.forGenre(''));
+  });
+
 }
