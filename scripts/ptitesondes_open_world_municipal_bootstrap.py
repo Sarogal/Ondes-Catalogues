@@ -191,6 +191,15 @@ def bootstrap_municipal_sources(
         event = event_reader(uid, eid, key)
     except (OSError, ValueError, TypeError, KeyError, TimeoutError):
         return _blank("oa_live_metadata_unavailable")
+    # The v2 API may return an event directly or inside {"event": {...}}.
+    # Unwrap only when no competing top-level UID is present, and only if
+    # the nested immutable UID exactly matches the requested event.
+    # A wrapper is not evidence of publication or organizer authority.
+    if (isinstance(event, dict) and "uid" not in event
+            and type(event.get("event")) is dict
+            and type(event["event"].get("uid")) is int
+            and event["event"]["uid"] == eid):
+        event = event["event"]
     if (not isinstance(event, dict)
             or type(event.get("uid")) is not int or event["uid"] != eid):
         return _blank("live_oa_event_uid_conflict")
