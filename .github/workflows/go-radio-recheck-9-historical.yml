@@ -1,0 +1,51 @@
+name: GO radio — investigate 9 failing historical stations (directory proposals only)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-recheck-9-historical.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  recheck-9:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Retrieve unsigned aggregate including 9 failed stations
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/final"
+          gh run download 45066820850 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/final" --pattern go-radio-345-decoded-unsigned-full-20261122
+      - name: Check current known UUIDs via two Radio Browser directory mirrors
+        run: |
+          SUMMARY=$(find "$RUNNER_TEMP/final" -name coverage-2passes.json -print -quit)
+          test -n "$SUMMARY"
+          python radio-catalog-lab/tools/recheck_failed_radio_browser_uuids.py \
+            --catalog radio-catalog-lab/full-staging/candidate-20261122.json \
+            --summary "$SUMMARY" \
+            --out "$RUNNER_TEMP/proposed-radio-url-repairs.json"
+      - name: Prove no automatic URL replacement or station removal
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          report=json.loads((Path(os.environ['RUNNER_TEMP'])/'proposed-radio-url-repairs.json').read_text())
+          assert report['stations_checked']==9
+          assert report['publication_allowed'] is False
+          assert report['canonical_stream_modified'] is False
+          print('Proposed alternatives:',report['candidate_alternative_streams'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-9-broken-uuid-directory-proposals
+          path: ${{ runner.temp }}/proposed-radio-url-repairs.json
+          retention-days: 14
