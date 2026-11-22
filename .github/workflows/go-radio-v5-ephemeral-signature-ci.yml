@@ -1,0 +1,75 @@
+name: GO radio — TEST v5 Ed25519 signing DRY-RUN (ephemeral RAM-only key)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-v5-ephemeral-signature-ci.yml'
+      - 'radio-catalog-lab/tools/radio_catalog_release_packager.py'
+      - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  immutable-signed-format-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Python signing/schema dependencies (no secret key)
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Retrieve already audited TEST v5 and provenance report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/v5"
+          gh run download 45069330690 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/v5" --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
+      - name: Verify v4 signed history and test v5/v6 in memory only, never export keys
+        run: |
+          python - <<'PY'
+          import hashlib,json,os,sys
+          from pathlib import Path
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+          sys.path.insert(0,"radio-catalog-lab/tools")
+          from radio_catalog_release_packager import (
+            load_verified_predecessor, read_public_key,
+            read_trusted_legacy_report, create_bundle, verify_bundle, wire_bytes)
+          root=Path("grossesondes/radio-test-apk")
+          prev=load_verified_predecessor(root,read_public_key(root/"TEST_PUBLIC_KEY.b64"))
+          files=list((Path(os.environ["RUNNER_TEMP"])/"v5").rglob("full-test-v5-unsigned-preflight.json"))
+          reports=list((Path(os.environ["RUNNER_TEMP"])/"v5").rglob("full-test-v5-provenance-report.json"))
+          assert len(files)==1 and len(reports)==1
+          trusted,failed=read_trusted_legacy_report(reports[0])
+          # This ephemeral private key is NEVER serialized, uploaded or committed.
+          ephemeral=Ed25519PrivateKey.generate()
+          source=json.loads(files[0].read_text(encoding="utf-8"))
+          v5=create_bundle(wire_bytes(source),ephemeral,key_id="ephemeral-ci-not-installable",
+            published_at="2026-11-22T20:58:00Z", previous=prev,
+            trusted_legacy=trusted, failed_audio_go_ids=failed)
+          checked=verify_bundle(v5.pointer_bytes,v5.catalog_bytes,ephemeral.public_key(),
+            previous=prev,trusted_legacy=trusted,failed_audio_go_ids=failed)
+          assert checked.sequence==5 and checked.station_count==320
+          # A signed v5 may subsequently become a verified previous snapshot,
+          # without retaining any unsigned historic CI provenance file.
+          immutable=verify_bundle(v5.pointer_bytes,v5.catalog_bytes,
+            ephemeral.public_key(),trusted_signed_history=True)
+          assert immutable.sequence==5
+          v6body=dict(source)
+          v6body["release_sequence"]=6
+          v6body["generated_at"]="2026-11-22T21:01:00Z"
+          v6=create_bundle(wire_bytes(v6body),ephemeral,key_id="ephemeral-ci-not-installable",
+            published_at="2026-11-22T21:02:00Z",previous=source)
+          assert verify_bundle(v6.pointer_bytes,v6.catalog_bytes,
+            ephemeral.public_key(),previous=source).sequence==6
+          print(json.dumps({"result":"EPHEMERAL_SIGN_AND_VERIFY_PASS",
+            "stations":v5.station_count,"v5_sequence":v5.sequence,
+            "v6_sequence":v6.sequence,"historic_legacy_sources":len(trusted),
+            "quarantined_retained":len(failed),"TEST_v4_key_unchanged":True,
+            "signature_publishable_to_existing_app":False,"secret_exported":False,
+            "new_release_written":False},sort_keys=True))
+          PY
