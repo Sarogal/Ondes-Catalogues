@@ -109,6 +109,7 @@ def prepare(catalog: dict, historical: dict, coverage: dict,
         failed[id_] = row["reason_codes"]
     cloned = copy.deepcopy(catalog)
     before = {s["go_station_id"]: s for s in catalog["stations"]}
+    primary_identity_repairs = []
     for station in cloned["stations"]:
         goid = station["go_station_id"]
         if goid in previous_stations:
@@ -133,6 +134,20 @@ def prepare(catalog: dict, historical: dict, coverage: dict,
             continue
         if station["editorial"]["admission_state"] != "legacy_preserved" or goid not in trusted:
             raise ValueError("unexpected non-legacy addition")
+        # Most V64 primary IDs were already the first central alias, but 16
+        # stations had a directory UUID prepended during historic reconciliation.
+        # Make the primary alias unambiguously the UUID actually shipped in V64.
+        # Alias membership, URL variants and genres remain byte-for-byte intact.
+        primary_id = trusted[goid]["uuid"]
+        if station["legacy_aliases"][0] != primary_id:
+            previous_first = station["legacy_aliases"][0]
+            station["legacy_aliases"] = [primary_id] + [
+                x for x in station["legacy_aliases"] if x != primary_id
+            ]
+            primary_identity_repairs.append({
+                "go_station_id": goid, "old_first_alias": previous_first,
+                "restored_v64_primary_id": primary_id,
+            })
         station["editorial"]["evidence_refs"].append(trusted[goid]["evidence_ref"])
         if goid in failed:
             if station["status"]["state"] != "active" or \
@@ -152,6 +167,8 @@ def prepare(catalog: dict, historical: dict, coverage: dict,
         raise ValueError("unexpected station removal/coverage")
     if sum(s["status"]["state"] == "active" for s in cloned["stations"]) != 309:
         raise ValueError("unexpected loss of playable stations")
+    if len(primary_identity_repairs) != 16:
+        raise ValueError("historic primary identity reconciliation unexpectedly changed")
     issues = validate_catalog(cloned, mode="publish", previous=signed_previous,
                               trusted_legacy=trusted, failed_audio_go_ids=set(failed))
     if issues:
@@ -159,13 +176,16 @@ def prepare(catalog: dict, historical: dict, coverage: dict,
     # All old immutable stream URLs and aliases must survive qualification.
     for station in cloned["stations"]:
         old = before[station["go_station_id"]]
-        if station["legacy_aliases"] != old["legacy_aliases"] or station["streams"] != old["streams"]:
+        if (set(station["legacy_aliases"]) != set(old["legacy_aliases"])
+            or len(station["legacy_aliases"]) != len(old["legacy_aliases"])
+            or station["streams"] != old["streams"]):
             raise ValueError("destructive migration")
     report = {
         "scope": "UNSIGNED_LEGACY_EVIDENCE_BACKED_PUBLISH_PREFLIGHT",
         "original_stations": 320, "playable_active_stations": 309,
         "quarantined_stations": 11,
         "legacy_approved_by_machine_evidence": 316,
+        "restored_v64_primary_media_ids": primary_identity_repairs,
         "initially_verified_decoder_streams": 345,
         "failed_radio_go_ids": sorted(failed),
         "failed_audio_reasons_by_goid": failed,
