@@ -283,7 +283,21 @@ class CentralCatalogVerifier {
         // Every such station must still name an exact historical UUID it owns
         // and a traceable migration baseline; otherwise fail closed.
         final marker = RegExp(
-            r'^(?:v64-bootstrap:[0-9a-f]{40}:|prior-admission:[0-9]{8}:)(.+)
+            r'^(?:v64-bootstrap:[0-9a-f]{40}:|prior-admission:[0-9]{8}:)([A-Za-z0-9-]+)');
+        final historic = proofs.any((proof) {
+          if (proof is! String) return false;
+          final match = marker.firstMatch(proof);
+          return match != null && match.group(0) == proof &&
+              legacy.contains(match.group(1));
+        });
+        if (!historic || (reviewed != null &&
+            (reviewed is! String || DateTime.tryParse(reviewed) == null))) {
+          throw const CentralCatalogException(
+              'Missing signed historic UUID admission evidence');
+        }
+      } else {
+        throw const CentralCatalogException('Unknown admission state');
+      }
       if (state != 'active' &&
           (status['reason_code'] is! String ||
               (status['reason_code'] as String).trim().isEmpty)) {
