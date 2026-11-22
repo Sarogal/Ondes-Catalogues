@@ -184,7 +184,11 @@ def linked_pages(site, parsed):
 
 
 def good_artist(value):
-    name = " ".join(str(value).strip().strip(" .:;").split())
+    name = " ".join(str(value).strip().strip(" :;").split())
+    # Preserve official acronyms ending in dot-separated initials
+    # (e.g. "Cavalera Chaos A.D.") while trimming sentence punctuation.
+    if not re.search(r"(?:\\b[A-Za-z]\\.){2,}$", name):
+        name = name.rstrip(".")
     if (not 2 <= len(key(name)) <= 90 or len(name) > 110 or
             not re.search(r"[A-Za-zÀ-ÿ]", name) or
             re.search(r"[\r\n<>@/\\]", name) or
