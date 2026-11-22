@@ -182,6 +182,7 @@ def validate_catalog(document, *, mode="staging", previous=None):
             if verified < 1:
                 issues.append(prefix + " active station has no verified stream")
 
+    redirects = {}
     for i, tombstone in enumerate(tombstones):
         prefix = f"tombstone[{i}]"
         if not isinstance(tombstone, dict):
@@ -205,6 +206,25 @@ def validate_catalog(document, *, mode="staging", previous=None):
             owner = alias_owner.setdefault(alias, goid)
             if owner != goid:
                 issues.append(prefix + f" alias reassigned {alias} ({owner}/{goid})")
+        if "redirect_to" in tombstone:
+            destination = tombstone["redirect_to"]
+            if (not isinstance(destination, str) or
+                    not GO_ID.fullmatch(destination) or
+                    destination == goid or
+                    tombstone.get("reason_code") != "merged_into_station"):
+                issues.append(prefix + " invalid signed merge redirect")
+            else:
+                redirects[goid] = destination
+
+    active_go_ids = {
+        row["go_station_id"] for row in stations
+        if isinstance(row, dict) and isinstance(row.get("status"), dict)
+        and row["status"].get("state") == "active"
+        and isinstance(row.get("go_station_id"), str)
+    }
+    for src, dest in redirects.items():
+        if dest not in active_go_ids:
+            issues.append(f"merge redirect {src} must target an active GO ID")
 
     # A later publication without its predecessor would silently bypass
     # historical ID, alias and bulk-shrink checks. Only sequence 1 is initial.
@@ -212,6 +232,17 @@ def validate_catalog(document, *, mode="staging", previous=None):
         issues.append("non-initial publication requires the previous catalog")
 
     if previous is not None:
+        old_redirects = {
+            row["go_station_id"]: row["redirect_to"]
+            for row in previous.get("tombstones", [])
+            if isinstance(row, dict) and isinstance(row.get("go_station_id"), str)
+            and isinstance(row.get("redirect_to"), str)
+        }
+        for old_id, old_dest in old_redirects.items():
+            new_dest = redirects.get(old_id)
+            if new_dest is None or (new_dest != old_dest and
+                                    redirects.get(old_dest) != new_dest):
+                issues.append(f"historic signed merge redirect lost/hijacked: {old_id}")
         before = previous.get("stations", []) + previous.get("tombstones", [])
         for old in before:
             if not isinstance(old, dict):
