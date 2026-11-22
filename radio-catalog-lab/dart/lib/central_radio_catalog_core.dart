@@ -250,7 +250,7 @@ class CentralCatalogVerifier {
         throw const CentralCatalogException('Invalid station identity');
       }
       if (item['homepage'] != null &&
-          !_safePublicUrl(item['homepage'], allowHttp: true)) {
+          !_safePublicUrl(item['homepage'], allowHttp: true, allowFragment: true)) {
         throw const CentralCatalogException('Invalid station homepage');
       }
       if (item.containsKey('tags')) {
@@ -504,11 +504,11 @@ class CentralCatalogVerifier {
     }
   }
 
-  static bool _safePublicUrl(dynamic raw, {required bool allowHttp}) {
+  static bool _safePublicUrl(dynamic raw, {required bool allowHttp, bool allowFragment = false}) {
     if (raw is! String) return false;
     final uri = Uri.tryParse(raw);
     if (uri == null || !uri.hasAuthority || uri.host.isEmpty ||
-        uri.userInfo.isNotEmpty || uri.hasFragment ||
+        uri.userInfo.isNotEmpty || (uri.hasFragment && !allowFragment) ||
         !(uri.scheme == 'https' || (allowHttp && uri.scheme == 'http'))) {
       return false;
     }
