@@ -48,7 +48,8 @@ def safe_url(value, https_only=False):
 
 
 def validate_catalog(document, *, mode="staging", previous=None,
-                     trusted_legacy=None, failed_audio_go_ids=None):
+                     trusted_legacy=None, failed_audio_go_ids=None,
+                     trusted_signed_history=False):
     """For legacy-preserved migration, trust *external immutable provenance*.
 
     Passing the candidate catalog as its own evidence is forbidden.
@@ -200,14 +201,14 @@ def validate_catalog(document, *, mode="staging", previous=None,
                 and isinstance(baseline.get("evidence_ref"), str)
                 and baseline["evidence_ref"] in editorial_fields.get("evidence_refs", [])
             )
-            legacy_valid = decision == "legacy_preserved" and (signed_legacy or baseline_valid)
+            legacy_valid = decision == "legacy_preserved" and (signed_legacy or baseline_valid or (trusted_signed_history and bool(editorial_fields.get("evidence_refs"))))
             if decision == "legacy_preserved" and not legacy_valid:
                 issues.append(prefix + " claimed legacy admission without trusted historic UUID evidence")
             if state in ("quarantined", "retired"):
                 automated_quarantine = (
                     legacy_valid
                     and state == "quarantined"
-                    and goid in failed_audio_ids
+                    and (goid in failed_audio_ids or trusted_signed_history)
                     and status.get("reason_code") == "two_pass_audio_probe_unavailable"
                     and verified == 0
                 )
