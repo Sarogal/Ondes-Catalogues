@@ -128,7 +128,8 @@ def propose(row, catalogue, today, *, fetch=probe.safe_fetch):
     }
     try:
         _raw, names, _unnamed, genres, site = pairs._official_event(
-            observation, html, url, today)
+            observation, html, url, today,
+            first_party_fetch=lambda api_url: fetch(api_url, cache))
     except (ValueError, TypeError, KeyError) as ex:
         raise ValueError("official_event_content: " + str(ex)) from ex
     require(contract.relevant_genres(genres),
