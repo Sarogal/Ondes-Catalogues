@@ -3918,7 +3918,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "dynamic-existing-venue-first-party-v1",
             "dynamic-existing-venue-osm-official-v1",
             "dynamic-existing-venue-address-official-v1",
-            "dynamic-existing-venue-official-single-source-v1"}
+            "dynamic-existing-venue-official-single-source-v1",
+            "dynamic-existing-venue-openagenda-single-source-v1"}
         for p in evidence)
     if dynamic_existing_source:
         from scripts import concert_dynamic_existing_venue
@@ -4367,7 +4368,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
             "dynamic-existing-venue-first-party-v1",
             "dynamic-existing-venue-osm-official-v1",
             "dynamic-existing-venue-address-official-v1",
-            "dynamic-existing-venue-official-single-source-v1")
+            "dynamic-existing-venue-official-single-source-v1",
+            "dynamic-existing-venue-openagenda-single-source-v1")
           or (event_id == "go-c-20270122-paris-7weeks"
              and item.get("proofType") == "official-artist-tour-calendar")) and
         isinstance(item.get("checkedAt"), str) and item["checkedAt"]
