@@ -82,7 +82,7 @@ def osm_xml(*, website=HOME, name="Place Libre",
 
 
 def fetch_for(*, government=None, osm=None, raw=None, page=None,
-              editing_unavailable=False):
+              tec_api=None, editing_unavailable=False):
     _, _, _, original, _, geo_node, _ = fixture.fixture()
     geo = copy.deepcopy(geo_node)
     if raw is not None:
@@ -98,6 +98,11 @@ def fetch_for(*, government=None, osm=None, raw=None, page=None,
         "https://api.openstreetmap.org/api/0.6/node/" + OSM_NODE_ID: (
             osm if osm is not None else osm_xml()),
     }
+    if tec_api is not None:
+        host = urlsplit(URL).hostname
+        pages["https://" + host +
+              "/wp-json/tribe/events/v1/events/71629"] = json.dumps(
+                  tec_api, ensure_ascii=False)
     def get(url, cache):
         seen.append(url)
         if url.startswith("https://data.geopf.fr/geocodage/search/"):
@@ -215,6 +220,70 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
                 self.assertEqual(withheld, before(), denied)
                 self.assertEqual(denied["stateCounts"],
                                  {"held_source_or_site_unverified": 1}, denied)
+
+    def test_tec_agenda_with_no_schema_org_event_reaches_real_publisher(self):
+        # A first-party WordPress event can lack schema.org Event performer,
+        # while the PUBLIC same-origin calendar API declares the exact date,
+        # page URL and full named per-artist program. Publisher independently
+        # fetches the page AND same-origin API again after OSM/BAN binding.
+        base = test_catalogue()
+        _, _, _, original, _, _, _ = fixture.fixture()
+        room = original["location"]
+        title = original["name"]
+        html = (
+            '<html><body class="single-tribe_events postid-71629"><main>'
+            '<h1>' + title + '</h1></main></body></html>'
+        )
+        tec = {
+            "id": 71629, "url": URL, "status": "publish",
+            "title": title, "start_date": fixture.DAY + " 20:00:00",
+            "timezone": "Europe/Paris",
+            "description": "".join(
+                "<p><strong>" + artist +
+                " — Metalcore | France</strong></p>"
+                for artist in fixture.BANDS),
+            "venue": {
+                "venue": room["name"],
+                "address": room["address"]["streetAddress"],
+                "city": room["address"]["addressLocality"],
+                "zip": room["address"]["postalCode"],
+                "country": "France",
+                "province": room["address"].get("addressRegion") or "",
+            },
+        }
+        official_fetch, reads = fetch_for(page=html, tec_api=tec)
+        proposed, report = producer.build(
+            lead(), base, before(), TODAY, fetch=official_fetch)
+        self.assertEqual(report["stateCounts"],
+                         {"publisher_bound_event_site_pair": 1}, report)
+        self.assertEqual(len(proposed["approvals"][0]["newArtists"]), 8)
+        self.assertTrue(any("/wp-json/tribe/events/v1/events/71629" in u
+                            for u in reads))
+        with mock.patch.object(signer.probe, "safe_fetch",
+                               side_effect=official_fetch):
+            self.assertEqual(
+                len(approval_preflight.check_append_only(
+                    before(), proposed, TODAY)), 1)
+            published, stats = publisher.merge(base, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats.get("held"))
+        self.assertEqual(stats["newVenues"], 1)
+        self.assertEqual(stats["newArtists"], 8)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+
+        for override in (
+            {"url": "https://different-event.example/"},
+            {"start_date": "2027-05-19 20:00:00"},
+            {"description": "<p><strong>UNRELATED — Metalcore</strong></p>"},
+            {"venue": dict(tec["venue"], city="Different City")},
+        ):
+            with self.subTest(change=list(override)):
+                hostile = dict(tec, **override)
+                fake, _ = fetch_for(page=html, tec_api=hostile)
+                rejected, diagnostic = producer.build(
+                    lead(), base, before(), TODAY, fetch=fake)
+                self.assertEqual(rejected, before(), diagnostic)
+                self.assertEqual(diagnostic["stateCounts"],
+                                 {"held_source_or_site_unverified": 1})
 
     def test_new_room_and_eight_new_bands_reach_publisher_when_osm_editing_api_fails(self):
         # This covers the actual public runner failure: direct OSM editing API
