@@ -26,7 +26,7 @@ from automation.concerts import source_evidence_probe as probe
 SCHEMA = "grossesondes.concert.discovery.v1"
 SOURCE = ("https://public.opendatasoft.com/api/explore/v2.1/catalog/"
           "datasets/evenements-publics-openagenda/records")
-SELECT = ("uid,canonicalurl,title_fr,description_fr,keywords_fr,"
+SELECT = ("uid,originagenda_uid,slug,canonicalurl,title_fr,description_fr,keywords_fr,"
           "firstdate_begin,lastdate_begin,location_name,location_city,"
           "location_postalcode,location_department,location_countrycode,status")
 # These are BROAD query seeds, not an exhaustive genre whitelist. Unfamiliar
@@ -96,6 +96,16 @@ def candidate(row, today, published):
     city = row.get("location_city")
     day = _day(row.get("firstdate_begin"))
     last = _day(row.get("lastdate_begin"))
+    # OpendataSoft supplies ONLY a locator. The official OpenAgenda JSON
+    # export independently rechecks both numeric IDs before publication.
+    event_uid = str(row.get("uid") or "")
+    agenda_uid = str(row.get("originagenda_uid") or "")
+    if not (event_uid.isascii() and event_uid.isdecimal()
+            and agenda_uid.isascii() and agenda_uid.isdecimal()
+            and 1 <= len(event_uid) <= 12
+            and 1 <= len(agenda_uid) <= 12
+            and int(event_uid) and int(agenda_uid)):
+        return None
     if (not oa.is_openagenda_event_url(url)
             or not all(isinstance(x, str) and 2 <= len(x.strip()) <= 250
                        for x in (title, venue, city))
@@ -117,6 +127,7 @@ def candidate(row, today, published):
         "candidateId": ident, "source": "agenda_officiel_openagenda",
         "sourceUrl": url, "sourcePage": url, "eventDetailUrl": url,
         "date": day.isoformat(), "name": title, "leadArtist": lead,
+        "openAgendaEventUid": event_uid, "openAgendaUid": agenda_uid,
         "venue": venue.strip(), "city": city.strip(),
         "reviewBucket": ("genre_tag_review" if genre_hint
                          else "genre_unknown"),
