@@ -49,7 +49,7 @@ from ptitesondes_independent_venue_site_proof import (
     mint_named_osm_venue_website_proof,
 )
 
-MAX_DOSSIERS = 30
+MAX_DOSSIERS = 80
 DOSSIER_KEYS = frozenset({
     "lead", "date_start", "official_event_url", "official_venue_url",
 })

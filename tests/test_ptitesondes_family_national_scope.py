@@ -264,8 +264,11 @@ class NationalFamilyScopeTests(unittest.TestCase):
         document = json.loads((ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
         original = deepcopy(document)
         known = {row["category"] for row in document["events"]}
-        self.assertEqual(known, LEGACY_MUSICAL)
-        self.assertFalse(known & set(FAMILY_TYPES))
+        # Real first-party OA publishing may now add youth categories.
+        # The taxonomy rehearsal must neither erase them nor mistake
+        # their presence for authority to publish its own proposals.
+        self.assertTrue(LEGACY_MUSICAL <= known)
+        self.assertTrue(known <= LEGACY_MUSICAL | set(FAMILY_TYPES))
         audit_family_scope([event()], TODAY)
         self.assertEqual(original, document)
 

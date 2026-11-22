@@ -158,6 +158,30 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertEqual(counts["new_dossiers"], 0)
         self.assertEqual(len(again["open_world_research"]), 1)
 
+    def test_four_daily_slots_rotate_up_to_eighty_private_dossiers(self):
+        # Existing 345+ future clues exceed 30/day. Four independently
+        # selected same-day slots must not starve behind a queue of 30,
+        # but the public Publisher still rechecks every untrusted record.
+        rows = [clue(uid=800000 + i) for i in range(120)]
+        def event(agenda_uid, uid, key):
+            return dict(oa_event(), uid=uid)
+        current = self.patch
+        expected_new = (24, 24, 24, 8)
+        expected_total = (24, 48, 72, 80)
+        for slot in range(4):
+            current, metrics = build_backlog_dossiers(
+                rows, current, self.catalogue, TODAY, self.key,
+                batch_index=slot,
+                agenda_reader=lambda *_: AGENDA,
+                event_reader=event)
+            self.assertEqual(metrics["new_dossiers"], expected_new[slot])
+            self.assertEqual(len(current["open_world_research"]), expected_total[slot])
+            self.assertFalse(current["safe_to_publish"])
+            self.assertEqual(current["additions"], [])
+        uids = [x["lead"]["event_uid"] for x in current["open_world_research"]]
+        self.assertEqual(len(set(uids)), 80)
+        self.assertEqual(len(uids), 80)
+
     def test_bounded_rotation_across_unnamed_sources(self):
         rows = [clue(uid=800000+i) for i in range(48)]
         def event(agenda_uid, uid, key):

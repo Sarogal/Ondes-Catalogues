@@ -26,7 +26,7 @@ from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
 from ptitesondes_delegated_source_authority import _url_host
 
 SCHEMA = "ptitesondes.private_open_world_dossier_intake.v1"
-MAX_DOSSIERS = 30
+MAX_DOSSIERS = 80
 MAX_PRIVATE_REPORTS = 10000
 # Recent PRIVATE research is a rotating hint cache, never a cached approval.
 # The Publisher always re-reads all official evidence before an addition.
