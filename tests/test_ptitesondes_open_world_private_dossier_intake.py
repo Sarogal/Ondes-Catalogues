@@ -127,6 +127,27 @@ class NationalPrivateDossierTests(unittest.TestCase):
                       encoding="utf-8")
         self.assertIn('review_batch_for_cron(os.getenv("REVIEW_CRON", "")', source)
         self.assertIn('batch-index "$NO_SLOT_BATCH"', source)
+        self.assertIn(
+            'if [[ -d "$STATE/national-observation/index/reports" ]]; then',
+            source)
+        self.assertIn(
+            'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/index/reports" ]]; then',
+            source)
+        self.assertNotIn(
+            'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
+            source)
+
+    def test_direct_openagenda_can_stage_without_research_root(self):
+        missing = self.parent / "never-collected-external-web-clues"
+        self.assertFalse(missing.exists())
+        rows, counts = collect_research_dossiers(
+            self.observation, missing, TODAY,
+            inventory_reader=lambda _: [self.record])
+        self.assertEqual(counts["reports"], 0)
+        self.assertEqual(counts["queued"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["official_event_url"].startswith(
+            "https://openagenda.com/"))
 
     def test_openagenda_uid_queues_without_municipal_or_external_link(self):
         rows, metrics = self.load(include_direct=True)
