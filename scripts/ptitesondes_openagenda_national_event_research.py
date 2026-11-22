@@ -21,6 +21,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, build_opener, HTTPRedirectHandler
 
 from proof import norm
+from ptitesondes_primary_editorial import primary_out_of_scope
 from ptitesondes_candidate_promotion import category_for
 from ptitesondes_family_activity_classification import (
     ADULT_ONLY, propose_family_activity,
@@ -167,6 +168,8 @@ def propose_event(row, agenda, today):
     editorial_text = (desc + " " + conditions).strip()
     if not title or len(title) > 300:
         return None, "no_french_title"
+    if primary_out_of_scope(title, editorial_text):
+        return None, "primary_activity_outside_editorial_scope"
     combined = norm(title + " " + editorial_text)
     if ADULT_ONLY.search(combined):
         return None, "explicit_adults_only"

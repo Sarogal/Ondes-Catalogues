@@ -22,6 +22,7 @@ from merge_policy import ORIGIN, byid, valid, safe_published_event, historical_e
 from private_intake import BRANCH, PATH, github
 from official_organizer_proof import canonical_event_title
 from proof import norm, meters
+from ptitesondes_primary_editorial import primary_out_of_scope
 from proof_text import verify_event
 from venue_registry import VENUES
 from ptitesondes_public_place_venues import lookup_public_venue
@@ -239,6 +240,8 @@ def api_record(uid, get=None):
 
 def category_for(title, description):
     """Explicit family-music categories only; reject adult events by default."""
+    if primary_out_of_scope(title, description):
+        return None
     name = norm(title)
     body = norm(title + " " + description)
     if "conte musical" in name or re.search(
