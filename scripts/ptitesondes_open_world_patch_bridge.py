@@ -200,6 +200,18 @@ def prepare_open_world_patch(
             # published, licensed factual record. Never trust a caller's
             # claimed URL: only the UID-bound live API may create a card.
             if urlsplit(event_url).hostname == "openagenda.com":
+                # A caller cannot substitute another OA event's URL for the
+                # UID-bound live API record. A short UID URL is permitted only
+                # for our private source-first queue; full URLs must carry
+                # the same UID and live slug.
+                canonical_prefix = ("https://openagenda.com/" +
+                                    lead["agenda_slug"] + "/events/" +
+                                    str(lead["event_uid"]))
+                canonical_full = canonical_prefix + "_" + str(
+                    api_event.get("slug", ""))
+                if event_url not in (canonical_prefix, canonical_full):
+                    held("oa_direct_url_uid_or_slug_mismatch")
+                    continue
                 agenda = agenda_reader(lead["agenda_uid"], public_key)
                 direct, reason = admit_live_openagenda(
                     lead, dossier["date_start"], agenda, api_event,
