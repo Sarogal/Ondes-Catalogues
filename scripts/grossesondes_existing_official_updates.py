@@ -17,10 +17,16 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
+from future_city_preflight import exact_edition_city, _normal as normal_city
+from official_admin_communes import verified_commune
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
-CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+COMMUNE_FIELDS = frozenset((
+    "city", "lat", "lon", "showOnMap", "geoCity", "geoPrecision",
+    "geoInsee", "geoSource", "geoVerification",
+))
+CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources")) | COMMUNE_FIELDS
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -289,8 +295,13 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
 
 
 def apply_independently_verified_updates(
-        target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS, tick=None):
-    """Only update changed artists/prices; never infer venue, dates or cancellations."""
+        target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
+        tick=None, commune_resolver=verified_commune):
+    """Recheck signed artists/prices and exact first-party city proof.
+
+    A commune marker is only an indicative administrative centre: no precise
+    festival entrance is inferred from a former venue or an organizer footer.
+    """
     result = deepcopy(target)
     positions = {r["slug"]: i for i, r in enumerate(result["festivals"])}
     report = {"checked_official_hosts": 0, "rechecked_pages": 0,
@@ -299,7 +310,8 @@ def apply_independently_verified_updates(
     for site, rows in signed_rotation(published, today, limit, tick):
         report["checked_official_hosts"] += 1
         try:
-            root = page(fetch(site))
+            root_html = fetch(site)
+            root = page(root_html)
             report["rechecked_pages"] += 1
         except (OSError, TimeoutError, ValueError, UnicodeError):
             report["unavailable"] += 1
@@ -352,6 +364,48 @@ def apply_independently_verified_updates(
                         old_price != summary):
                     new["price"] = summary
                     fields.append("price")
+            # The signed current-edition title may explicitly name the town.
+            # Publisher re-fetches the site itself, then independently resolves
+            # that exact commune through the fixed government geocoding API.
+            # Neither private leads nor a previously used venue are authority.
+            if (old.get("lat") is None and old.get("lon") is None
+                    and old.get("showOnMap") is not True
+                    and old.get("futureVenueConfirmed") is not True
+                    and old.get("geoVerification") is None
+                    and old.get("geoPrecision") is None
+                    and root_ok):
+                claim = exact_edition_city(root_html, old)
+                if (claim and claim.get("source") == site
+                        and claim.get("slug") == slug
+                        and (not old.get("city")
+                             or normal_city(old["city"]) == normal_city(claim["city"]))):
+                    try:
+                        commune = commune_resolver(claim["city"], old.get("department"))
+                    except (OSError, TimeoutError, ValueError, UnicodeError):
+                        commune = None
+                    if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
+                            and type(commune.get("lat")) in (float, int)
+                            and type(commune.get("lon")) in (float, int)
+                            and isinstance(commune.get("codeInsee"), str)
+                            and isinstance(commune.get("geoSource"), str)):
+                        new.update({
+                            "city": commune["city"],
+                            "lat": commune["lat"], "lon": commune["lon"],
+                            "geoCity": commune["city"],
+                            "geoPrecision": "commune",
+                            "geoInsee": commune["codeInsee"],
+                            "geoSource": commune["geoSource"],
+                            "showOnMap": True,
+                            "geoVerification": {
+                                "proofMode": "current-edition-commune-direct-official.v1",
+                                "firstObserved": today,
+                                "verifiedAt": today,
+                                "officialSite": site,
+                                "markerMeaning": "centre_indicatif_de_commune",
+                            },
+                        })
+                        fields.extend(sorted(COMMUNE_FIELDS))
+                        sources.append(site)
             if not fields:
                 continue
             if isinstance(old.get("lastVerified"), str):
