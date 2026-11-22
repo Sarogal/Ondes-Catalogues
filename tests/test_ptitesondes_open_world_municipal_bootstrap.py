@@ -124,6 +124,35 @@ class MunicipalBootstrapTests(unittest.TestCase):
         self.assertFalse(out["publisher_connected"])
         self.assertEqual(out["public_writes"], 0)
 
+    def test_exact_uid_openagenda_event_envelope_is_supported(self):
+        # API v2 wrappers are allowed only for the requested immutable UID.
+        # They do not mint any approval or public write.
+        out = run(oa_event={"event": event()})
+        self.assertEqual(out["status"],
+                         "municipal_homepage_source_research_only")
+        self.assertFalse(out["publication_ready"])
+        self.assertEqual(out["public_writes"], 0)
+
+    def test_conflicting_uid_envelope_cannot_be_unwrapped(self):
+        original_uid = lead()["event_uid"]
+        conflicting = [
+            {"event": event(uid=original_uid + 1)},
+            {"uid": original_uid + 1, "event": event()},
+            {"event": event(uid=str(original_uid))},
+            {"event": {"uid": original_uid}},
+            {"event": "not-an-event"},
+        ]
+        for response in conflicting:
+            with self.subTest(response=str(response)[:70]):
+                directory_reader = Mock(side_effect=AssertionError(
+                    "an invalid event identity cannot trigger source lookup"))
+                out = run(oa_event=response,
+                          directory_reader=directory_reader)
+                self.assertEqual(out["status"], "live_oa_event_uid_conflict")
+                self.assertFalse(out["publication_ready"])
+                self.assertEqual(out["public_writes"], 0)
+                directory_reader.assert_not_called()
+
     def test_uncharted_city_is_allowed_but_dila_unavailable_is_not_a_denial(self):
         reading = Mock(side_effect=AssertionError("never fetch unknown city"))
         out = run(directory_reader=lambda city:
