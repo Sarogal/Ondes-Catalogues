@@ -227,25 +227,33 @@ def _certified_new_commune_delta(old, new):
 
 
 def _verified_official_update_delta(old, new):
-    """Bounded differential for a signed new edition; never independent trust."""
+    """Authorize ONLY a Publisher-revalidated additive lineup or sale price."""
     if not isinstance(old, dict) or not isinstance(new, dict):
         return False
-    changed = {k for k in set(old) | set(new) if old.get(k) != new.get(k)}
-    if not changed or not changed <= OFFICIAL_UPDATE_FIELDS:
+    changed = {k for k in set(old) | set(new)
+               if (k not in old) != (k not in new) or old.get(k) != new.get(k)}
+    if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
+            not ({"lineup", "price"} & changed)):
         return False
     old_names, new_names = old.get("lineup"), new.get("lineup")
-    if (not isinstance(old_names, list) or not isinstance(new_names, list)
-            or new_names[:len(old_names)] != old_names
-            or not 0 <= len(new_names)-len(old_names) <= 45
-            or type(old.get("bands")) is not int
-            or new.get("bands") != len(new_names)):
+    if "lineup" in changed:
+        if (not isinstance(old_names, list) or not isinstance(new_names, list)
+                or new_names[:len(old_names)] != old_names
+                or not 1 <= len(new_names)-len(old_names) <= 45
+                or type(old.get("bands")) is not int
+                or old["bands"] != len(old_names)
+                or new.get("bands") != len(new_names)):
+            return False
+    elif "bands" in changed:
         return False
-    if "price" in changed and (not isinstance(new.get("price"), str)
-                               or len(new["price"]) > 350
-                               or "billetterie officielle ouverte" not in new["price"]):
+    if ("price" in changed and
+            (not isinstance(new.get("price"), str)
+             or len(new["price"]) > 350
+             or "billetterie officielle ouverte" not in new["price"])):
         return False
-    if "lastVerified" in changed and (not isinstance(new.get("lastVerified"), str)
-                                      or new["lastVerified"] < old.get("lastVerified", "")):
+    if "lastVerified" in changed and (
+            not isinstance(new.get("lastVerified"), str)
+            or new["lastVerified"] < old.get("lastVerified", "")):
         return False
     if "auditSources" in changed:
         before, after = old.get("auditSources") or [], new.get("auditSources")
@@ -258,7 +266,6 @@ def _verified_official_update_delta(old, new):
                for u in after[len(before):]):
             return False
     return True
-
 
 def safe_target(baseline, candidate, currently_published,
                 verified_official_updates=frozenset()):
@@ -277,6 +284,10 @@ def safe_target(baseline, candidate, currently_published,
     for slug, old in original.items():
         new=target[slug]
         current=live[slug]
+        if (slug in verified_official_updates and current != new):
+            require(_verified_official_update_delta(current, new),
+                    "mise a jour officielle non prouvee : "+slug)
+            continue
         keys=set(old)|set(new)|set(current)
         for k in keys:
             if old.get(k)==new.get(k):
