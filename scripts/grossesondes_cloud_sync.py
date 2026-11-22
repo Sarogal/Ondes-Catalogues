@@ -38,6 +38,7 @@ from grossesondes_future_city_publisher import (
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
+    clean_obsolete_date_notes, verified_artist_alias_cleanup,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -252,7 +253,7 @@ def _verified_official_update_delta(old, new):
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
             not ({"lineup", "price"} & changed)
             and not (COMMUNE_UPDATE_FIELDS & changed)
-            and not newly_dated):
+            and not newly_dated and "notes" not in changed):
         return False
     date_fields = {"startDate", "endDate", "days", "dateRangeIsContinuous",
                    "status", "verificationStatus"}
@@ -285,6 +286,16 @@ def _verified_official_update_delta(old, new):
             return False
     elif changed & date_fields:
         return False
+    if "notes" in changed:
+        # Editorial cleanup is deterministic and can only remove documented
+        # unknown-date statements from an already dated, signed edition.
+        # The caller must have freshly reverified its exact official range.
+        if (not isinstance(old.get("startDate"), str)
+                or not isinstance(old.get("endDate"), str)
+                or not isinstance(old.get("notes"), str)
+                or new.get("notes") != clean_obsolete_date_notes(old["notes"])
+                or new["notes"] == old["notes"]):
+            return False
     if COMMUNE_UPDATE_FIELDS & changed:
         # Verify the certified marker IN ISOLATION so a price/roster update
         # cannot mask an unproved venue, arbitrary coordinate or fake source.
@@ -298,9 +309,19 @@ def _verified_official_update_delta(old, new):
             return False
     old_names, new_names = old.get("lineup"), new.get("lineup")
     if "lineup" in changed:
-        if (not isinstance(old_names, list) or not isinstance(new_names, list)
-                or new_names[:len(old_names)] != old_names
-                or len(new_names) <= len(old_names)
+        if not isinstance(old_names, list) or not isinstance(new_names, list):
+            return False
+        # A Publisher-verified current-edition roster may collapse the same
+        # solo artist recorded twice, once with its "celebrating the songs
+        # of" performance description. No arbitrary deletion is allowed.
+        cleaned = verified_artist_alias_cleanup(old_names, old_names)
+        additive = (new_names[:len(old_names)] == old_names
+                    and len(new_names) > len(old_names))
+        cleaned_plus_additive = (
+            cleaned != old_names and
+            new_names[:len(cleaned)] == cleaned and
+            len(new_names) >= len(cleaned))
+        if (not (additive or cleaned_plus_additive)
                 or type(old.get("bands")) is not int
                 or old["bands"] != len(old_names)
                 or new.get("bands") != len(new_names)):

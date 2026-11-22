@@ -4876,8 +4876,8 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://www.festivaldelapoutre.fr/",
-      "lastVerified": "2026-10-10",
-      "notes": "4e édition officiellement annoncée les 11 et 12 juin 2027. La page « Infos pratiques » du site officiel indique « Rue des Acacias, 39800 Colonne », sans préciser pour quelle édition. L’adresse est donc conservée à titre INDICATIF, sans géolocalisation ni confirmation d’un site 2027. Association organisatrice On part en live ; artistes, billetterie, camping 2027 non identifiés.",
+      "lastVerified": "2026-11-22",
+      "notes": "4e édition officiellement annoncée les 11 et 12 juin 2027. La page « Infos pratiques » du site officiel indique « Rue des Acacias, 39800 Colonne », sans préciser pour quelle édition. L’adresse est donc conservée à titre INDICATIF, sans géolocalisation ni confirmation d’un site 2027. Association organisatrice On part en live; artistes, billetterie, camping 2027 non identifiés.",
       "lat": null,
       "lon": null,
       "geoPrecision": null,
@@ -4909,8 +4909,8 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://hellfest.fr/",
-      "lastVerified": "2026-10-10",
-      "notes": "Édition 2027 confirmée du 17 au 20 juin à Clisson. Le site officiel indique +300 artistes et 240 000 Hellbangers comme chiffres de présentation, mais ne publie pas encore le line-up individuel. Pass 4 jours à 389 € épuisés, revente officielle ouverte uniquement sur tickets.hellfest.fr ; pass 1 jour attendus au PREMIER TRIMESTRE 2027. Site permanent visitable toute l’année (hors fermetures d’exploitation). ATTENTION : « La Feuillée, 85610 Cugand » correspond à l’adresse de Hellfest Productions, ne pas l’utiliser comme entrée de festival.",
+      "lastVerified": "2026-11-22",
+      "notes": "Édition 2027 confirmée du 17 au 20 juin à Clisson. Le site officiel indique +300 artistes et 240 000 Hellbangers comme chiffres de présentation, mais ne publie pas encore le line-up individuel. Pass 4 jours à 389 € épuisés, revente officielle ouverte uniquement sur tickets.hellfest.fr; pass 1 jour attendus au PREMIER TRIMESTRE 2027. Site permanent visitable toute l’année (hors fermetures d’exploitation). ATTENTION : « La Feuillée, 85610 Cugand » correspond à l’adresse de Hellfest Productions, ne pas l’utiliser comme entrée de festival.",
       "lat": 47.0936,
       "lon": -1.2654,
       "geoPrecision": "commune",
@@ -5085,7 +5085,7 @@
       "department": "29",
       "region": "Bretagne",
       "styles": "Metal",
-      "bands": 58,
+      "bands": 57,
       "days": "4",
       "capacity": null,
       "price": "Pass 4 jours : 228 € (Early Bird 3)",
@@ -5095,7 +5095,7 @@
       "status": "Confirmé",
       "source": "https://feverup.com/m/706920?thm=16601",
       "lastVerified": "2026-11-22",
-      "notes": "Billetterie officielle 2027 : pass 4 jours Early Bird 1 à 198 € et Early Bird 2 à 218 € (épuisés) ; Early Bird 3 à 228 € proposé à la vente au 9 octobre 2026 ; palier régulier affiché à 239 € (non encore disponible à cette vérification). Prix et disponibilités susceptibles d’évoluer. Programmation partielle, par jour, publiée sur la billetterie 2027 : d’autres groupes sont annoncés à venir. Ne pas confondre avec les prix 2026 encore présents sur la page Infos pratiques du site officiel.",
+      "notes": "Billetterie officielle 2027 : pass 4 jours Early Bird 1 à 198 € et Early Bird 2 à 218 € (épuisés); Early Bird 3 à 228 € proposé à la vente au 9 octobre 2026; palier régulier affiché à 239 € (non encore disponible à cette vérification). Prix et disponibilités susceptibles d’évoluer. Programmation partielle, par jour, publiée sur la billetterie 2027 : d’autres groupes sont annoncés à venir. Ne pas confondre avec les prix 2026 encore présents sur la page Infos pratiques du site officiel.",
       "lat": 48.2708,
       "lon": -3.5654,
       "geoPrecision": "commune",
@@ -5117,7 +5117,6 @@
         "Igorrr",
         "Kanonenfieber",
         "Get the Shot",
-        "John Bush",
         "Kanine",
         "Mucky Pup",
         "Non Est Deus",
@@ -5299,7 +5298,7 @@
       "status": "Annoncé",
       "source": "https://www.fertoismetalfest.com/tremplin",
       "lastVerified": "2026-11-22",
-      "notes": "10e anniversaire : événement officiel annoncé au chemin des Deux Rivières le vendredi 27 août 2027, 11 h 30. La date de fin n'étant pas établie, conserver startDate/endDate vides et le statut Dates à venir. Pas de période continue inventée. | Audit carte 22/10/2026 : Site futur officiel chemin des Deux Rivières, point sur chemin ; aucune date de fin inventée.",
+      "notes": "10e anniversaire : événement officiel annoncé au chemin des Deux Rivières le vendredi 27 août 2027, 11 h 30. | Audit carte 22/10/2026 : Site futur officiel chemin des Deux Rivières, point sur chemin",
       "lat": 48.94537,
       "lon": 3.123559,
       "geoPrecision": "commune",
@@ -5879,7 +5878,7 @@
       "officialSite": "https://www.mozhell.fr/fr/",
       "endDate": "2027-07-25",
       "name": "MozHell Open Air 2027",
-      "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+      "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "region": null,
       "city": "Insming",
       "lat": 48.9562,
@@ -5902,7 +5901,8 @@
       "startDate": "2027-07-23",
       "auditSources": [
         "https://www.mozhell.fr/fr/3-groupes-annonces-et-billetterie-ouverte",
-        "https://www.mozhell.fr/fr/"
+        "https://www.mozhell.fr/fr/",
+        "https://www.mozhell.fr/fr/blind-pass-2027"
       ],
       "geoCity": "Insming",
       "geoPrecision": "commune",
@@ -5991,12 +5991,12 @@
     {
       "bands": 0,
       "endDate": "2027-04-24",
-      "lastVerified": "2026-11-20",
+      "lastVerified": "2026-11-22",
       "slug": "helixfest-2027",
       "lon": null,
       "officialSite": "https://helixfest.fr/",
       "venue": null,
-      "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+      "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "startDate": "2027-04-23",
       "price": null,
       "region": null,
@@ -6010,17 +6010,20 @@
       "lineup": [],
       "showOnMap": false,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null
+      "lat": null,
+      "auditSources": [
+        "https://helixfest.fr/"
+      ]
     },
     {
       "bands": 0,
       "endDate": "2027-05-08",
-      "lastVerified": "2026-11-20",
+      "lastVerified": "2026-11-22",
       "slug": "le-gros-tonneau-2027",
       "lon": null,
       "officialSite": "https://legrostonneau-festival.fr/",
       "venue": null,
-      "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+      "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "startDate": "2027-05-07",
       "price": null,
       "region": null,
@@ -6034,7 +6037,10 @@
       "lineup": [],
       "showOnMap": false,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null
+      "lat": null,
+      "auditSources": [
+        "https://legrostonneau-festival.fr/"
+      ]
     },
     {
       "bands": 0,
@@ -6061,9 +6067,9 @@
       "lat": null
     },
     {
-      "lastVerified": "2026-11-21",
+      "lastVerified": "2026-11-22",
       "price": null,
-      "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
+      "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "city": null,
       "dateRangeIsContinuous": false,
       "lat": null,
@@ -6082,7 +6088,10 @@
       "department": null,
       "status": "Annoncé",
       "lon": null,
-      "region": null
+      "region": null,
+      "auditSources": [
+        "https://laguerreduson.fr/"
+      ]
     },
     {
       "officialSite": "https://www.festibarockin.fr/",

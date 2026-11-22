@@ -307,6 +307,105 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["accepted"], [row["slug"]])
         self.assertTrue(_verified_official_update_delta(row, updated))
 
+    def test_motocultor_real_layout_header_outside_main_news_inside_main(self):
+        # Real signed homepage composition: the 2027 logo is in a header,
+        # ticket cards in main, and archival 2026 articles inside main.
+        # Exactly one John Bush act, despite two historical billings.
+        long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"
+        home = (
+            "<header><h1><img alt='Motocultor Festival 2027' "
+            "src='/current.webp'></h1>"
+            "<p>Du jeudi 19 au dimanche 22 août 2027</p></header>"
+            "<main><section><h2>Ils seront à Carhaix</h2><ul>"
+            "<li>Helloween</li><li>John Bush "
+            "celebrating the songs of Anthrax, 1993-2003</li></ul></section>"
+            "<section><h2>Billetterie</h2><ul><li><h3>Pass 4 jours</h3>"
+            "<p>Les quatre jours du festival</p><ol>"
+            "<li>Tarif normal 239 € En vente</li></ol></li>"
+            "<li><h3>Pass 1 jour</h3><ol>"
+            "<li>Journée au choix 82 € En vente</li></ol></li></ul></section>"
+            "<article><h3>Souvenirs 2026</h3>"
+            "<p>Ancienne édition 2026 en images</p></article></main>"
+        )
+        row = festival("motocultor-festival", MOTO,
+                       dates=("2027-08-19", "2027-08-22"),
+                       lineup=["Helloween", "John Bush", long_billing],
+                       price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"
+        signed = doc(row)
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch=lambda _: home)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["lineup"], ["Helloween", long_billing])
+        self.assertEqual(updated["bands"], 2)
+        self.assertIn("239 €", updated["price"])
+        self.assertIn("82 €", updated["price"])
+        self.assertEqual(report["accepted"], ["motocultor-festival"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        tampered = deepcopy(updated)
+        tampered["lineup"] = ["Helloween"]
+        tampered["bands"] = 1
+        self.assertFalse(_verified_official_update_delta(row, tampered))
+
+    def test_live_pass_card_ignores_sold_out_earlier_tier(self):
+        # The real festival site now advertises the regular 4-day pass at
+        # 239 euros, despite three older Early Bird tiers being sold out.
+        # A nested LI card can contain both words "épuisé" and "en vente".
+        home = (
+            "<header><h1>Motocultor Festival 2027</h1>"
+            "<p>19 au 22 août 2027</p></header>"
+            "<main><section><ul>"
+            "<li><h3>Pass 4 jours</h3>"
+            "<p>Early Bird 3 : 228 € Épuisé</p>"
+            "<p>Tarif normal 239 € En vente</p>"
+            "<p>Hors frais de location</p></li>"
+            "<li><h3>Pass 1 jour</h3>"
+            "<p>Journée au choix 82 € En vente</p></li>"
+            "</ul></section>"
+            "<article><h3>Pass 4 jours Early Birds SOLD OUT</h3>"
+            "<p>L'ancienne offre est épuisée</p></article></main>"
+        )
+        clean = page(home)
+        available = advertised_passes([
+            b for b in clean.blocks if b["scope"] == "main"])
+        self.assertEqual(available, {4: "239 €", 1: "82 €"})
+        row = festival(
+            "motocultor-festival", MOTO,
+            dates=("2027-08-19", "2027-08-22"),
+            lineup=["Helloween"],
+            price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"
+        updated, report = apply_independently_verified_updates(
+            doc(row), doc(row), DAY, limit=1, tick=0,
+            fetch=lambda _: home)
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertEqual(
+            updated["festivals"][0]["price"],
+            "Pass 4 jours : 239 € ; Pass 1 jour : 82 €"
+            " — billetterie officielle ouverte")
+        self.assertTrue(_verified_official_update_delta(
+            row, updated["festivals"][0]))
+
+        sold_out = (
+            "<main><h1>Motocultor Festival 2027</h1>"
+            "<li><h3>Pass 4 jours</h3>"
+            "<p>Tarif normal 239 € Épuisé</p></li></main>")
+        self.assertEqual(advertised_passes(page(sold_out).relevant()), {})
+
+    def test_artist_alias_cannot_collapse_without_current_official_roster(self):
+        from grossesondes_existing_official_updates import verified_artist_alias_cleanup
+        long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"
+        old = ["Helloween", "John Bush", long_billing]
+        self.assertEqual(verified_artist_alias_cleanup(old, []), old)
+        self.assertEqual(
+            verified_artist_alias_cleanup(old, [long_billing]),
+            ["Helloween", long_billing])
+        self.assertEqual(
+            verified_artist_alias_cleanup(
+                ["Foo", "Foo Fighters"], ["Foo Fighters"]),
+            ["Foo", "Foo Fighters"])
+
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
@@ -442,6 +541,81 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(len(seen), 53)
         self.assertEqual(len(set(seen)), 53)
         self.assertLessEqual(len(signed_rotation(signed, DAY, limit=24, tick=0)), 24)
+
+    def test_fresh_official_dates_clean_only_stale_historical_notes(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        site = "https://www.fertoismetalfest.com/"
+        row = festival(
+            "fertois-metal-fest-2027", site,
+            dates=("2027-08-27", "2027-08-29"))
+        row["name"] = "Fertois Metal Fest 2027"
+        row["notes"] = (
+            "10e anniversaire : événement officiel annoncé le vendredi 27 août 2027. "
+            "La date de fin n'étant pas établie, conserver startDate/endDate vides "
+            "et le statut Dates à venir. Pas de période continue inventée. "
+            "| Audit carte 22/10 : site officiel chemin des Deux Rivières, "
+            "point sur chemin ; aucune date de fin inventée.")
+        page_html = (
+            "<html><head><title>Accueil | Fertois Metal Fest</title></head>"
+            "<body><main><img alt='EDITION 2027 FERTOIS METAL FEST LOGO.png'>"
+            "<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027"
+            "</heading></main></body></html>")
+        before = doc(row)
+        after, report = apply_independently_verified_updates(
+            before, before, DAY, fetch=lambda _: page_html, limit=1, tick=0)
+        entry = after["festivals"][0]
+        self.assertEqual(report["accepted"], ["fertois-metal-fest-2027"])
+        self.assertNotIn("date de fin n'étant pas établie", entry["notes"])
+        self.assertNotIn("Dates à venir", entry["notes"])
+        self.assertNotIn("période continue inventée", entry["notes"])
+        self.assertNotIn("date de fin inventée", entry["notes"])
+        self.assertIn("10e anniversaire", entry["notes"])
+        self.assertIn("site officiel chemin des Deux Rivières", entry["notes"])
+        self.assertEqual(entry["startDate"], row["startDate"])
+        self.assertEqual(entry["endDate"], row["endDate"])
+        self.assertEqual(entry["notes"], clean_obsolete_date_notes(row["notes"]))
+        self.assertTrue(_verified_official_update_delta(row, entry))
+
+    def test_cleanup_never_rewrites_unrelated_verified_notes(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        untouched = (
+            "Billetterie officielle : Pass 4 jours à 239 € ; "
+            "Pass 1 jour à 82 € (hors frais). "
+            "| Site de Kerampuilh, Carhaix-Plouguer. "
+            "L'édition 2027 est datée et confirmée.")
+        self.assertEqual(clean_obsolete_date_notes(untouched), untouched)
+        # This is especially important for actual published archives, where
+        # semicolon spacing must never masquer a source-backed field change.
+        obsolete = (
+            "L'édition 2027 est annoncée. Date de fin inconnue. "
+            "Site officiel ; tarifs bientôt publiés.")
+        cleaned = clean_obsolete_date_notes(obsolete)
+        self.assertNotIn("Date de fin inconnue", cleaned)
+        self.assertIn("tarifs bientôt publiés", cleaned)
+
+    def test_notes_cleanup_requires_same_official_range_and_no_forgery(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        site = "https://www.fertoismetalfest.com/"
+        row = festival(
+            "fertois-metal-fest-2027", site,
+            dates=("2027-08-27", "2027-08-29"))
+        row["name"] = "Fertois Metal Fest 2027"
+        row["notes"] = "La date de fin reste inconnue. Adresse officielle maintenue."
+        signed = doc(row)
+        no_dates = "<main><h1>Fertois Metal Fest 2027</h1></main>"
+        after, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: no_dates, limit=1, tick=0)
+        self.assertEqual(after["festivals"][0], row)
+        self.assertEqual(report["accepted"], [])
+        forged = deepcopy(row)
+        forged["notes"] = "Texte non vérifié imposé par une proposition privée"
+        self.assertFalse(_verified_official_update_delta(row, forged))
+        with_proof_but_no_date = deepcopy(row)
+        with_proof_but_no_date["notes"] = clean_obsolete_date_notes(row["notes"])
+        self.assertTrue(_verified_official_update_delta(
+            row, with_proof_but_no_date))
+        # The deterministic delta guard is NOT a substitute for fresh proof:
+        # only apply_independently_verified_updates may add the slug.
 
     def test_rotation_covers_all_sites_without_closed_roster(self):
         rows = [festival(str(i), f"https://official{i}.example.fr/")

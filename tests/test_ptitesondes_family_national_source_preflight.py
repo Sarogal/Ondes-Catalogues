@@ -18,7 +18,7 @@ from ptitesondes_family_national_source_preflight import (
     SCHEMA, official_host, inspect_family_national_preflight,
     canonical_sha256,
 )
-from ptitesondes_family_national_scope import FAMILY_TYPES
+from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
 
 TODAY = date(2026, 11, 17)
 HOST = "agenda.commune.test"
@@ -350,10 +350,11 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
         original = deepcopy(current)
         run(catalog=current)
         self.assertEqual(current, original)
-        self.assertEqual(set(e["category"] for e in current["events"]), {
-            "concert", "conte-musical", "spectacle-musical",
-            "eveil-musical", "atelier-musical", "cine-concert", "festival",
-        })
+        actual_categories = {e["category"] for e in current["events"]}
+        self.assertTrue(LEGACY_MUSICAL <= actual_categories)
+        # Some real family categories are already public after an
+        # independently verified OpenAgenda release.
+        self.assertTrue(actual_categories <= LEGACY_MUSICAL | set(FAMILY_TYPES))
 
 
 if __name__ == "__main__":

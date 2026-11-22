@@ -159,12 +159,18 @@ def propose_event(row, agenda, today):
     title = _french_text(row, "title")
     desc = (_french_text(row, "description") + " " +
             _french_text(row, "longDescription")).strip()
+    # First-party OpenAgenda attendance/registration conditions are part
+    # of the live record. They can contain the only explicit child-age
+    # wording or an adult-only restriction. Discovery remains an untrusted
+    # PRIVATE hint; the Publisher independently re-fetches this evidence.
+    conditions = _french_text(row, "conditions")
+    editorial_text = (desc + " " + conditions).strip()
     if not title or len(title) > 300:
         return None, "no_french_title"
-    combined = norm(title + " " + desc)
+    combined = norm(title + " " + editorial_text)
     if ADULT_ONLY.search(combined):
         return None, "explicit_adults_only"
-    music = category_for(title, desc)
+    music = category_for(title, editorial_text)
     # Some radio-relevant forms have no literal "concert" or "musical"
     # in their title. Keep precise child-audience and activity cues.
     if not music and re.search(
@@ -176,7 +182,7 @@ def propose_event(row, agenda, today):
                 r"\b(?:atelier sonore|decouverte des instruments)\b",
                 combined):
             music = ("atelier-musical", "Atelier musical")
-    family = (propose_family_activity(title, desc)
+    family = (propose_family_activity(title, editorial_text)
               if not music else None)
     if music:
         category = music[0]

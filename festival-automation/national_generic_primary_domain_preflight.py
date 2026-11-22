@@ -813,9 +813,10 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
                                          diagnostics=None):
     """Direct pathway: re-fetch the official site, not a second date source.
 
-    J/J+1 is a PRIVATE stability observation of the SAME first-party website,
-    not third-party confirmation. The Publisher independently re-downloads
-    and compares current-edition dates before any append-only publication.
+    A current-edition announcement on a distinctive official festival domain
+    suffices for a PRIVATE proposal. This stage independently re-fetches the
+    same official site; the separate Publisher refetches it AGAIN before any
+    append-only publication. J/J+1 remains available for weaker proof routes.
     Optional PRIVATE diagnostic codes never grant authority, reveal HTML,
     or cause extra network requests.
     """
@@ -847,10 +848,15 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
     for row in report["rows"]:
         if checked >= limit:
             break
-        if (not isinstance(row, dict)
-                or row.get("status") !=
-                    "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
-                or row.get("two_day_dates") is not True
+        if not isinstance(row, dict):
+            continue
+        stable = (row.get("status") ==
+                  "TWO_DAY_GENERIC_PRIMARY_DATES_RECHECKED_PRIVATE"
+                  and row.get("two_day_dates") is True)
+        freshly_seen = (
+            row.get("status") == "FIRST_DAY_GENERIC_PRIMARY_DATES_REVIEW_ONLY"
+            and row.get("two_day_dates") is False)
+        if (not (stable or freshly_seen)
                 or row.get("publication_authorized") is not False
                 or row.get("ownership_proven") is not False):
             continue
@@ -859,15 +865,20 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
             if source["dossier_id"] != row.get("dossier_id"):
                 continue
             old = records.get(source["url"])
-            if (not isinstance(old, dict) or old.get("stable") is not True
+            if (not isinstance(old, dict)
                     or old.get("lastSeen") != today
                     or old.get("digest") != _digest(
-                        source, *dates, row.get("date_source_mode"))):
-                explain(source, "STABLE_OBSERVATION_NOT_MATCHED")
+                        source, *dates, row.get("date_source_mode"))
+                    or (stable and old.get("stable") is not True)
+                    or (freshly_seen and old.get("stable") is not False)):
+                explain(source, "CURRENT_FIRST_PARTY_OBSERVATION_NOT_MATCHED")
                 continue
             try:
-                if not date.fromisoformat(old["firstSeen"]) < date.fromisoformat(today):
-                    explain(source, "FIRST_OBSERVATION_NOT_OLDER_THAN_TODAY")
+                first = date.fromisoformat(old["firstSeen"])
+                now = date.fromisoformat(today)
+                if ((stable and first >= now)
+                        or (freshly_seen and first != now)):
+                    explain(source, "FIRST_PARTY_OBSERVATION_AGE_INVALID")
                     continue
             except (ValueError, TypeError, KeyError):
                 explain(source, "FIRST_OBSERVATION_INVALID")

@@ -532,7 +532,7 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             merge_verified_open_world(
                 ref, ref, private_patch(ref, [forged]),
                 TODAY, KEY, **readers())
-        too_many = [dossier() for _ in range(31)]
+        too_many = [dossier() for _ in range(81)]
         with self.assertRaises(ValueError):
             merge_verified_open_world(
                 ref, ref, private_patch(ref, too_many),

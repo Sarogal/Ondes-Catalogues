@@ -36,7 +36,7 @@ DATE_FIELDS = frozenset((
     "startDate", "endDate", "days", "dateRangeIsContinuous",
     "status", "verificationStatus",
 ))
-CHANGEABLE = (frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources"))
               | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
@@ -55,6 +55,67 @@ def fold(s):
 
 def key(s):
     return fold(s).replace(" ", "")
+
+
+def verified_artist_alias_cleanup(lineup, official_names):
+    """Collapse a billed soloist and its explicit performance description.
+
+    The long name must also appear in the freshly read official roster. This
+    cannot silently combine unrelated acts merely sharing a first word.
+    """
+    if not isinstance(lineup, list):
+        return lineup
+    confirmed = {key(x) for x in official_names if isinstance(x, str)}
+    kept = list(lineup)
+    for short in lineup:
+        if not isinstance(short, str):
+            continue
+        prefix = fold(short) + " celebrating the songs of "
+        if len(fold(short)) < 6:
+            continue
+        if any(isinstance(long, str) and long != short
+               and fold(long).startswith(prefix) and key(long) in confirmed
+               for long in lineup):
+            if short in kept:
+                kept.remove(short)
+    return kept
+
+
+def clean_obsolete_date_notes(notes):
+    """Retire seulement les assertions de dates manquantes devenues fausses.
+
+    Conserve les archives, indications de site, tarifs et faits historiques.
+    L'appelant doit revérifier la période exacte sur la source officielle.
+    """
+    if not isinstance(notes, str):
+        return notes
+    sections = []
+    removed_obsolete_claim = False
+    for section in re.split(r"\s+\|\s+", notes):
+        sentences = []
+        for sentence in re.split(r"(?<=\.)\s+", section):
+            clauses = []
+            for clause in sentence.split(";"):
+                normalized = fold(clause)
+                wrong_end = ("date de fin" in normalized and any(
+                    x in normalized for x in (
+                        "pas etablie", "inconnue", "pas connue", "non connue",
+                        "a confirmer", "inventee")))
+                wrong_empty = ("startdate enddate vides" in normalized or
+                               "statut dates a venir" in normalized)
+                wrong_range = ("periode continue inventee" in normalized)
+                if wrong_end or wrong_empty or wrong_range:
+                    removed_obsolete_claim = True
+                elif clause.strip():
+                    clauses.append(clause.strip())
+            if clauses:
+                sentences.append("; ".join(clauses))
+        if sentences:
+            sections.append(" ".join(sentences))
+    # Absolutely no editorial rewrite when nothing was obsolete.
+    # In particular preserve punctuation, whitespace and semicolon spacing
+    # in verified descriptions across successive scheduled rechecks.
+    return " | ".join(sections) if removed_obsolete_claim else notes
 
 
 class Page(HTMLParser):
@@ -250,9 +311,36 @@ def listed_artists(blocks):
 
 def advertised_passes(blocks):
     found = {}
+    # Explicit, visible ticket-card offers take precedence over generic
+    # article snippets. On live festival pages an old Early Bird tier can
+    # read "sold out" beside a CURRENT "tarif normal ... en vente" tier
+    # of that same 4-day category. Never veto the newer priced offer
+    # merely because a DIFFERENT tier is exhausted.
+    for card in blocks:
+        if card.get("tag") != "li" or not isinstance(card.get("text"), str):
+            continue
+        raw = card["text"]
+        categories = {int(x.group(1)) for x in PASS.finditer(fold(raw))}
+        if len(categories) != 1:
+            continue
+        prices = list(PRICE.finditer(raw))
+        for idx, match in reversed(list(enumerate(prices))):
+            following = raw[match.end():min(
+                match.end() + 115,
+                prices[idx + 1].start() if idx + 1 < len(prices)
+                else len(raw))]
+            status = fold(following)
+            if (re.search(r"\b(?:en vente|ouverte|ouvert|disponible)\b", status)
+                    and not re.search(r"\b(?:epuise|sold out|complet)\b", status)):
+                found[next(iter(categories))] = (
+                    match.group(1).replace(".", ",") + " €")
+                break
+
     text = [b["text"] for b in blocks]
     for i, block in enumerate(text):
         for category in PASS.finditer(fold(block)):
+            if int(category.group(1)) in found:
+                continue
             # The price and sale status may be in distinct consecutive
             # blocks. Stop BEFORE another pass category, never borrow its
             # price for a different pass.
@@ -560,6 +648,17 @@ def apply_independently_verified_updates(
         main_only.blocks = [b for b in root.blocks if b["scope"] == "main"]
         if main_only.blocks:
             pages.append((site, main_only))
+        # The current-edition H1 logo can be outside <main>, while old news
+        # teasers are <article> inside it. The article-first selection then
+        # hides the official 2027 heading and the live ticket categories.
+        # Recompose visible non-article blocks of the SAME signed homepage.
+        current_home = Page()
+        current_home.blocks = [
+            dict(b, scope="main") for b in root.blocks
+            if b["scope"] != "article"
+        ]
+        if current_home.blocks:
+            pages.append((site, current_home))
         for link in linked_pages(site, root):
             try:
                 linked_html = fetch(link)
@@ -577,7 +676,9 @@ def apply_independently_verified_updates(
                         "slug": slug, "official_site": site,
                         "reason": "different_from_current_signed_edition"})
                 continue
-            root_ok = home_matches_edition(root, old, today)
+            root_ok = (home_matches_edition(root, old, today)
+                       or matches_edition(current_home, old, today,
+                                          root_ok=False))
             claims, prices, sources = [], {}, []
             for url, doc in pages:
                 if not matches_edition(doc, old, today, root_ok=root_ok):
@@ -590,16 +691,27 @@ def apply_independently_verified_updates(
                     sources.append(url)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
-            new_names, seen = [], {key(n) for n in current_lineup if isinstance(n, str)}
+            cleaned_lineup = verified_artist_alias_cleanup(current_lineup, claims)
+            new_names, seen = [], {
+                key(n) for n in current_lineup if isinstance(n, str)
+            }
             for n in claims:
-                if key(n) not in seen:
+                # A long artist billing is the same solo act only for an
+                # explicit "celebrating the songs of" performance qualifier.
+                equivalent = (key(n) in seen or
+                              any(fold(n).startswith(fold(old_name) +
+                                      " celebrating the songs of ")
+                                  for old_name in current_lineup
+                                  if isinstance(old_name, str)))
+                if not equivalent:
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if (new_names and isinstance(old.get("lineup"), list)
+            if ((new_names or cleaned_lineup != current_lineup)
+                    and isinstance(old.get("lineup"), list)
                     and type(old.get("bands")) is int and
                     old["bands"] == len(old["lineup"])):
-                new["lineup"] = list(old["lineup"]) + new_names
+                new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
             if prices:
@@ -722,6 +834,41 @@ def apply_independently_verified_updates(
                                        "dateRangeIsContinuous", "status",
                                        "verificationStatus"))
                         sources.extend(verified_urls)
+            # A previously verified edition may still carry an obsolete
+            # "end date unknown" note from its earlier undated publication.
+            # Do not mutate text from intuition: re-read the exact multi-day
+            # range from the signed official host in this same Publisher run.
+            fresh_notes = clean_obsolete_date_notes(old.get("notes"))
+            if (fresh_notes != old.get("notes") and
+                    isinstance(old.get("startDate"), str) and
+                    isinstance(old.get("endDate"), str)):
+                try:
+                    signed_range = (date.fromisoformat(old["startDate"]),
+                                    date.fromisoformat(old["endDate"]))
+                except ValueError:
+                    signed_range = None
+                if signed_range and signed_range[0] < signed_range[1]:
+                    edition_year = signed_range[0].year
+                    parent_name = re.sub(
+                        r"\s+20[2-4]\d$", "", str(old.get("name") or ""))
+                    parent_name = {"name": parent_name}
+                    ranges, official_date_urls = set(), []
+                    for official_url, official_html in html_pages:
+                        proofs = (
+                            official_date(official_html, parent_name, edition_year),
+                            official_structured_date(
+                                official_html, parent_name, edition_year),
+                            weekday_labelled_official_dates(
+                                official_html, old, edition_year))
+                        valid = [d for d in proofs if d is not None]
+                        if valid:
+                            ranges.update(valid)
+                            official_date_urls.append(official_url)
+                    if (reconcile_official_date_ranges(ranges) == signed_range
+                            and official_date_urls):
+                        new["notes"] = fresh_notes
+                        fields.append("notes")
+                        sources.extend(official_date_urls)
             if len(report["official_edition_diagnostics"]) < 75:
                 report["official_edition_diagnostics"].append({
                     "slug": slug, "official_site": site,
