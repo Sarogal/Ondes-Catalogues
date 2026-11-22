@@ -114,11 +114,26 @@ def collect_research_dossiers(observation_root, research_root, today,
     for entry in inventory_reader(Path(observation_root)):
         ref = _inventory_key(entry)
         reviews = by_ref.get(ref, [])
-        if not reviews:
-            continue
         lead = _future_original(entry, today)
         if lead is None or not _safe_research_lead(lead, today):
             continue
+        # The immutable OA UID and agenda slug already originate from the
+        # private observation inventory. Always queue a first-party API
+        # recheck, even if no crawler found an external event website.
+        # The Publisher alone validates live status, rights, dates and GPS.
+        oa_first_party = (
+            "https://openagenda.com/" + lead["agenda_slug"] +
+            "/events/" + str(lead["event_uid"]))
+        for day in _day_sessions(lead, today):
+            key = (str(lead["event_uid"]), day,
+                   oa_first_party, oa_first_party)
+            if key not in seen:
+                seen.add(key)
+                proposals.append({
+                    "lead": lead, "date_start": day,
+                    "official_event_url": oa_first_party,
+                    "official_venue_url": oa_first_party,
+                })
         # Untrusted OA URLs do not attest authorship. Prefer a specific
         # canonicalUrl but also investigate other exact HTTPS OA links.
         oa_urls = []
@@ -146,8 +161,6 @@ def collect_research_dossiers(observation_root, research_root, today,
                 if municipal and target and _host(municipal) and _host(target):
                     pairs.append((_host(target), municipal))
         pair_count += len(set(pairs))
-        if not oa_urls:
-            continue
         for priority, host, official_event_url in sorted(set(oa_urls)):
             matching = sorted(set(
                 municipal_url for related_host, municipal_url in pairs
