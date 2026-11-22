@@ -6,6 +6,7 @@ Le mode preview ne modifie aucun fichier; le mode publish ne valide que le
 catalogue issu de cette preuve et de cet instantané.
 """
 import argparse
+from copy import deepcopy
 from datetime import datetime, date
 from math import isfinite
 from hashlib import sha1, sha256
