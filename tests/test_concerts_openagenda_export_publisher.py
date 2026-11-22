@@ -128,6 +128,33 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
                          "from-openagenda")
         self.assertEqual(len(result["approvals"]), 1)
 
+    def test_historical_pilot_venue_cannot_blacklist_new_official_oa_bill(self):
+        # A protected *event URL/ID* remains immutable. The same once-pilot
+        # venue ID must nonetheless be reusable for a different OA concert
+        # independently checked by the production publisher.
+        def original_record(url, cache):
+            self.assertEqual(url, EXPORT)
+            return official_export()
+        approvals, report = producer.build(
+            registry(), self.catalogue,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=original_record)
+        self.assertEqual(len(approvals["approvals"]), 1, report)
+        new_event = copy.deepcopy(approvals["approvals"][0])
+        old_venue = next(v for v in self.catalogue["venues"]
+                         if v["id"] == fixture.VENUE_ID)
+        # The synthetic venue ID intentionally models a *historically
+        # protected* pilot: no new concert should be denied only because
+        # the venue happens to be in such a legacy pilot.
+        sentinel = dict(old_venue, id="le-sew-morlaix")
+        new_event["event"]["venueId"] = sentinel["id"]
+        all_venues = {v["id"]: v for v in self.catalogue["venues"]}
+        all_venues[sentinel["id"]] = sentinel
+        artists = {a["id"]: a for a in self.catalogue["artists"]}
+        with mock.patch.object(identity, "safe_fetch",
+                               side_effect=original_record):
+            publisher.validate_approval(new_event, all_venues, artists, TODAY)
+
     def test_forged_ambiguous_or_wrong_style_export_never_approves(self):
         failures = (
             {"status": 2},
