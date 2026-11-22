@@ -3917,7 +3917,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
         and p.get("proofType") in {
             "dynamic-existing-venue-first-party-v1",
             "dynamic-existing-venue-osm-official-v1",
-            "dynamic-existing-venue-address-official-v1"}
+            "dynamic-existing-venue-address-official-v1",
+            "dynamic-existing-venue-official-single-source-v1"}
         for p in evidence)
     if dynamic_existing_source:
         from scripts import concert_dynamic_existing_venue
