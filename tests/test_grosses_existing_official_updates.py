@@ -92,6 +92,39 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(updated["showOnMap"], False)
         self.assertIsNone(updated["lat"])
 
+    def test_official_host_diagnostics_do_not_leak_fetch_errors(self):
+        import json
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        def forbidden_fetch(_url):
+            raise ValueError("UNTRUSTED_PRIVATE_MESSAGE_DO_NOT_LOG")
+        target, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=forbidden_fetch, limit=1, tick=0)
+        self.assertEqual(target, signed)
+        self.assertEqual(report["checked_official_hosts"], 1)
+        self.assertEqual(report["checked_official_sources"], [MOZHELL])
+        self.assertEqual(report["unavailable"], 1)
+        self.assertEqual(report["unavailable_official_sources"],
+                         [{"url": MOZHELL, "error_type": "ValueError"}])
+        self.assertNotIn("UNTRUSTED_PRIVATE_MESSAGE_DO_NOT_LOG",
+                         json.dumps(report))
+
+    def test_official_scan_explains_no_changed_fields_without_mutating_catalogue(self):
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        home = "<main><h1>mozhell-open-air 2027</h1><p>Infos festival 2027</p></main>"
+        target, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: home, limit=1, tick=0)
+        self.assertEqual(target, signed)
+        self.assertEqual(report["unavailable_official_sources"], [])
+        self.assertEqual(report["checked_official_sources"], [MOZHELL])
+        self.assertEqual(report["official_edition_diagnostics"][0]["slug"],
+                         row["slug"])
+        self.assertTrue(report["official_edition_diagnostics"][0][
+            "homepage_matches_signed_edition"])
+        self.assertEqual(report["official_edition_diagnostics"][0]["reason"],
+                         "no_changed_fields_from_official_evidence")
+
     def test_motocultor_real_format_from_official_article(self):
         row = festival("motocultor", MOTO,
                        dates=("2027-08-19", "2027-08-22"),
