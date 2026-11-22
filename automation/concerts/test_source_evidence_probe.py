@@ -324,10 +324,10 @@ class SourceProbeTests(unittest.TestCase):
             if len(calls) == 1:
                 raise TimeoutError("temporary TLS network delay")
             if url.endswith("/robots.txt"):
-                return 200, "User-agent: *\\nAllow: /agendas/\\n"
+                return 200, "User-agent: *\nAllow: /agendas/\n"
             return 200, '{"total": 1}'
         with patch.object(probe, "public_ip_addresses",
-                          return_value=["8.8.8.8"]), \\
+                          return_value=["8.8.8.8"]), \
              patch.object(probe, "request_pinned", side_effect=pinned):
             cache = {}
             result = probe.safe_fetch(
@@ -344,7 +344,7 @@ class SourceProbeTests(unittest.TestCase):
             calls.append(args)
             raise OSError("no route")
         with patch.object(probe, "public_ip_addresses",
-                          return_value=["8.8.8.8"]), \\
+                          return_value=["8.8.8.8"]), \
              patch.object(probe, "request_pinned", side_effect=unreachable):
             with self.assertRaisesRegex(ValueError, "transports unavailable"):
                 probe.safe_fetch("https://openagenda.com/agendas/123/events.json", {})
@@ -357,9 +357,9 @@ class SourceProbeTests(unittest.TestCase):
         calls.clear()
         def forbidden(url, host, ip, cap=probe.MAX_BYTES):
             calls.append(url)
-            return 200, "User-agent: *\\nDisallow: /agendas/\\n"
+            return 200, "User-agent: *\nDisallow: /agendas/\n"
         with patch.object(probe, "public_ip_addresses",
-                          return_value=["8.8.8.8"]), \\
+                          return_value=["8.8.8.8"]), \
              patch.object(probe, "request_pinned", side_effect=forbidden):
             with self.assertRaisesRegex(ValueError, "robots.txt"):
                 probe.safe_fetch("https://openagenda.com/agendas/123/events.json", {})
