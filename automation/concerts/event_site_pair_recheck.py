@@ -229,6 +229,22 @@ def _visible_artist_genres_from_this_event(html, title):
              "genre": found[_name(name)][1]} for name in band_names]
 
 
+def _official_title_anchor(official_title, lead):
+    """A title's typography may differ from discovery, but its lead may not.
+
+    The fresh first-party Event still MUST prove the complete named bill,
+    date, location, relevant genre, same origin and independent site identity.
+    This is a title-match rule only; it never grants source trust.
+    """
+    official = _name(official_title)
+    observed = _name(lead.get("name"))
+    artist = _name(lead.get("leadArtist"))
+    if not official or not observed or not artist:
+        return False
+    return (official == observed or
+            (" " + artist + " ") in (" " + official + " "))
+
+
 def _official_event(lead, html, url, today):
     require(isinstance(html, str) and len(html) <= 1_000_000,
             "official page too large")
@@ -258,7 +274,7 @@ def _official_event(lead, html, url, today):
             if node.get("url") != url:
                 continue  # Ambiguous multi-event pages need an exact canonical.
             if (discover.iso_day(node.get("startDate")) != lead.get("date")
-                    or _name(node.get("name")) != _name(lead.get("name"))):
+                    or not _official_title_anchor(node.get("name"), lead)):
                 continue
             bill = bridge.official_named_bill(node.get("performer"))
             if (bill is None or _name(lead.get("leadArtist"))
@@ -286,7 +302,8 @@ def _official_event(lead, html, url, today):
     day = discover.iso_day(raw.get("startDate"))
     require(day == lead.get("date") and dt.date.fromisoformat(day) >= today,
             "official event date mismatch or expired")
-    require(_name(raw.get("name")) == _name(lead.get("name")),
+    require(not discover.reject_listing(raw.get("name")) and
+            _official_title_anchor(raw.get("name"), lead),
             "official concert title changed")
     # Some official event systems emit full structured date/place metadata
     # but place the full individually genre-labelled artist bill in the same
