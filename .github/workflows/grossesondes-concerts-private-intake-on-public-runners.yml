@@ -17,6 +17,7 @@ on:
       - 'automation/concerts/generic_visible_bill.py'
       - 'automation/concerts/generic_first_party_venue_specs_v1.json'
       - 'automation/concerts/official_html_evidence.py'
+      - 'automation/concerts/first_party_tec_event.py'
       - 'automation/concerts/published_watch.py'
       - 'automation/concerts/official_rss_jsonld_bridge.py'
       - 'automation/concerts/structured_first_party_preflight.py'
