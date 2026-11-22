@@ -317,6 +317,54 @@ class SourceProbeTests(unittest.TestCase):
                           "2606:4700:4700::1111"])
         self.assertEqual(cache["newbar.fr"][0], "2606:4700:4700::1111")
 
+    def test_openagenda_transient_tls_retry_stays_on_audited_ip(self):
+        calls = []
+        def pinned(url, host, ip, cap=probe.MAX_BYTES):
+            calls.append((url, host, ip))
+            if len(calls) == 1:
+                raise TimeoutError("temporary TLS network delay")
+            if url.endswith("/robots.txt"):
+                return 200, "User-agent: *\nAllow: /agendas/\n"
+            return 200, '{"total": 1}'
+        with patch.object(probe, "public_ip_addresses",
+                          return_value=["8.8.8.8"]), \
+             patch.object(probe, "request_pinned", side_effect=pinned):
+            cache = {}
+            result = probe.safe_fetch(
+                "https://openagenda.com/agendas/9969608/events.json", cache)
+        self.assertEqual(result, '{"total": 1}')
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(all(ip == "8.8.8.8" for _, _, ip in calls))
+        self.assertEqual(calls[0][0], calls[1][0])
+        self.assertEqual(cache["openagenda.com"][0], "8.8.8.8")
+
+    def test_no_unbounded_retry_or_robots_bypass(self):
+        calls = []
+        def unreachable(*args, **kwargs):
+            calls.append(args)
+            raise OSError("no route")
+        with patch.object(probe, "public_ip_addresses",
+                          return_value=["8.8.8.8"]), \
+             patch.object(probe, "request_pinned", side_effect=unreachable):
+            with self.assertRaisesRegex(ValueError, "transports unavailable"):
+                probe.safe_fetch("https://openagenda.com/agendas/123/events.json", {})
+            self.assertEqual(len(calls), 2)
+            calls.clear()
+            with self.assertRaisesRegex(ValueError, "transports unavailable"):
+                probe.safe_fetch("https://unknown-venue.fr/agenda/", {})
+            self.assertEqual(len(calls), 1)
+
+        calls.clear()
+        def forbidden(url, host, ip, cap=probe.MAX_BYTES):
+            calls.append(url)
+            return 200, "User-agent: *\nDisallow: /agendas/\n"
+        with patch.object(probe, "public_ip_addresses",
+                          return_value=["8.8.8.8"]), \
+             patch.object(probe, "request_pinned", side_effect=forbidden):
+            with self.assertRaisesRegex(ValueError, "robots.txt"):
+                probe.safe_fetch("https://openagenda.com/agendas/123/events.json", {})
+        self.assertEqual(calls, ["https://openagenda.com/robots.txt"])
+
     def test_safe_fetch_keeps_pinned_ip_and_robots_policy(self):
         calls = []
         def fake_request(url, host, ip, cap=probe.MAX_BYTES):
