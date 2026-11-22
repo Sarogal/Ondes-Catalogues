@@ -73,7 +73,8 @@ class LegacyAutoAdmissionTests(unittest.TestCase):
     def test_failed_stream_can_be_kept_quarantined_only_with_real_failure_evidence(self):
         failed = station(1, state="quarantined", stream="candidate")
         prior = document([station(2)], sequence=1)
-        catalog = document([failed])
+        # Publication must preserve the already-signed station #2 too.
+        catalog = document([station(2), failed])
         self.assertTrue(validate_catalog(catalog, mode="publish",
                                          previous=prior, trusted_legacy=trusted(1)))
         self.assertEqual(validate_catalog(catalog, mode="publish",
