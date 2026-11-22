@@ -10,6 +10,7 @@ provides evidence of an actual event or permission to publish.
 import re
 
 from proof import norm
+from ptitesondes_primary_editorial import primary_out_of_scope
 from ptitesondes_family_national_scope import FAMILY_TYPES
 
 # Deliberately narrow: the product remains an app for children's radio.
@@ -80,6 +81,9 @@ def propose_family_activity(title, description):
             or not title.strip() or len(title) > 300
             or len(description) > 5000):
         outcome["decision"] = "invalid_activity_text"
+        return outcome
+    if primary_out_of_scope(title, description):
+        outcome["decision"] = "primary_activity_outside_editorial_scope"
         return outcome
     name, body = norm(title), norm(title + " " + description)
     if ADULT_ONLY.search(body):
