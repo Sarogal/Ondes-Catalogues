@@ -5848,20 +5848,20 @@
     },
     {
       "dateRangeIsContinuous": false,
-      "showOnMap": false,
+      "showOnMap": true,
       "officialSite": "https://www.mozhell.fr/fr/",
       "endDate": "2027-07-25",
       "name": "MozHell Open Air 2027",
       "notes": "Édition annoncée sur une page du site officiel ; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
       "region": null,
-      "city": null,
-      "lat": null,
+      "city": "Insming",
+      "lat": 48.9562,
       "lastVerified": "2026-11-22",
       "slug": "mozhell-open-air-2027",
       "status": "Annoncé",
       "department": null,
       "source": "https://www.mozhell.fr/fr/",
-      "lon": null,
+      "lon": 6.8831,
       "price": "Pass 3 jours : 129,90 € — billetterie officielle ouverte",
       "lineup": [
         "Ultra Vomit",
@@ -5874,8 +5874,20 @@
       "venue": null,
       "startDate": "2027-07-23",
       "auditSources": [
-        "https://www.mozhell.fr/fr/3-groupes-annonces-et-billetterie-ouverte"
-      ]
+        "https://www.mozhell.fr/fr/3-groupes-annonces-et-billetterie-ouverte",
+        "https://www.mozhell.fr/fr/"
+      ],
+      "geoCity": "Insming",
+      "geoPrecision": "commune",
+      "geoInsee": "57346",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Insming&fields=nom%2Ccode%2CcodeDepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-22",
+        "verifiedAt": "2026-11-22",
+        "officialSite": "https://www.mozhell.fr/fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "bands": 0,
