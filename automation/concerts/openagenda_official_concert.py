@@ -126,11 +126,11 @@ def _electronic_hardcore_only(record, raw_keywords, genres):
             return True  # fail closed when original evidence is malformed
     evidence = normalized(labels[:16000])
     electronic = re.search(
-        r"\\b(?:hardstyle|gabber|uptempo|frenchcore|hardtek|"
-        r"techno|electronic|electronique|electro)\\b", evidence)
+        r"\b(?:hardstyle|gabber|uptempo|frenchcore|hardtek|"
+        r"techno|electronic|electronique|electro)\b", evidence)
     guitar = re.search(
-        r"\\b(?:punk|metal|rock|metalcore|deathcore|thrash|"
-        r"grindcore|screamo|skramz)\\b", evidence)
+        r"\b(?:punk|metal|rock|metalcore|deathcore|thrash|"
+        r"grindcore|screamo|skramz)\b", evidence)
     return bool(electronic and not guitar)
 
 
