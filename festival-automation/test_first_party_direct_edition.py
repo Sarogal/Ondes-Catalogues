@@ -230,6 +230,39 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
         self.assertFalse(second["publication_authorized"])
 
+    def test_private_gate_diagnostics_never_grant_authority(self):
+        """Reproduce a stable lead whose live root loses its genre claim."""
+        cal, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        examine(state, queue(DAY1), cal, DAY1, fetch=lambda _: HOME)
+        stable = examine(state, queue(DAY2), cal, DAY2, fetch=lambda _: HOME)
+        self.assertEqual(stable["two_day_dates_count"], 1)
+        diagnostics = []
+        rejected = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, stable, DAY2,
+            fetch=lambda _: HOME.replace(
+                "Festival de rock et punk",
+                "Festival de gastronomie"),
+            diagnostics=diagnostics)
+        self.assertEqual(rejected, [])
+        self.assertEqual(diagnostics, [{
+            "dossier_id": "national-0123456789abcdef1234",
+            "gate": "OFFICIAL_BRAND_OR_GENRE_UNPROVEN",
+            "publication_authorized": False,
+        }])
+        self.assertFalse(stable["publication_authorized"])
+        self.assertNotIn("html", str(diagnostics).lower())
+        self.assertNotIn("https:", str(diagnostics).lower())
+
+        verified_diagnostics = []
+        accepted = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, stable, DAY2, fetch=lambda _: HOME,
+            diagnostics=verified_diagnostics)
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(verified_diagnostics[0]["gate"],
+                         "PRIVATE_PROPOSAL_READY_FOR_DUPLICATE_CHECK")
+        self.assertFalse(verified_diagnostics[0]["publication_authorized"])
+
     def test_missed_day_does_not_borrow_stale_observation(self):
         cat, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
