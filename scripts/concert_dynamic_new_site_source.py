@@ -272,10 +272,13 @@ def verify(event_approval, site_approval, published_venues, published_artists,
             "first-party new event location differs from approved location")
 
     def secure_geo(url_, cap):
-        require(isinstance(cap, int) and 0 < cap <= 400_000,
+        # Same bounded BAN+OSM map request as the independent producer.
+        # The secure fetcher never downloads over probe.MAX_BYTES (400k).
+        require(type(cap) is int and 0 < cap <= 650_000,
                 "geography budget invalid")
         body = fetch(url_, cache)
-        require(isinstance(body, str) and len(body) <= cap,
+        require(isinstance(body, str) and 0 < len(body) <= min(
+                    cap, probe.MAX_BYTES),
                 "geography response unavailable or oversized")
         return body, url_
 
