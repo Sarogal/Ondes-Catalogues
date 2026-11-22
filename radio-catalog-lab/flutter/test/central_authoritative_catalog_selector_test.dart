@@ -278,4 +278,28 @@ void main() {
         containsAll(['legacy-original-v64-4','directory-new-4','go-station-000004']));
   });
 
+  test('v5-only authoritative rollout rejects signed but incomplete TEST v4 cache',
+      () async {
+    final historicalProbe = await signed(4, [station(1)]);
+    await client(folder).disk.persist(historicalProbe);
+    final rejected = await selector.select(
+      client: client(folder),
+      favoriteIds: ['historical-000001'],
+      minimumSignedSequence: 5,
+    );
+    expect(rejected, isNull,
+        reason: 'A signed v4 diagnostic catalog cannot pass for the 320-radio migration');
+    final fullSigned = await signed(5, [station(1), station(2)],
+        previous: historicalProbe);
+    await client(folder).disk.persist(fullSigned);
+    final ready = await selector.select(
+      client: client(folder),
+      favoriteIds: ['historical-000001'],
+      minimumSignedSequence: 5,
+    );
+    expect(ready, isNotNull);
+    expect(ready!.signedSequence, 5);
+    expect(ready.stations, hasLength(2));
+  });
+
 }
