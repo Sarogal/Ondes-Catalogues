@@ -96,8 +96,8 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 if url != URL:
                     self.fail("One source means no OSM or second concert request")
                 return original(url, cache)
-            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \\
-                 mock.patch.object(identity.official_source, "SOURCES", sources), \\
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \
+                 mock.patch.object(identity.official_source, "SOURCES", sources), \
                  mock.patch.object(identity, "safe_fetch", side_effect=first_party_only):
                 proposals, report = pipeline.build(
                     registry(), BASE,
