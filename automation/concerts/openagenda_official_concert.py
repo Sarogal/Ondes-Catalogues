@@ -16,11 +16,10 @@ import datetime as dt
 import re
 from urllib.parse import urlsplit
 
-import discover
-import official_rss_jsonld_bridge as bridge
-import triage
+from automation.concerts import discover
+from automation.concerts import official_rss_jsonld_bridge as bridge
 from scripts import concert_event_site_contract as contract
-from source_admission_intake import normalized
+from automation.concerts.source_admission_intake import normalized
 
 AGENDA_PATH = re.compile(
     r"/(?:fr/|en/)?[a-z0-9][a-z0-9-]{1,119}/events/"
