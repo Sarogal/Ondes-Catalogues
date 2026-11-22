@@ -41,6 +41,21 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(report["publisher_accepted_new"], 1)
         self.assertEqual(len(result["events"]), len(reference["events"]) + 1)
 
+    def test_recurring_event_each_exact_day_is_eligible(self):
+        from datetime import timedelta
+        from test_ptitesondes_open_world_release_rehearsal import sessions
+        ref = base()
+        next_day = DAY + timedelta(days=1)
+        later = {**oa_event(), "timings": [
+            *sessions(),
+            {"begin": next_day.isoformat() + "T10:00:00+01:00",
+             "end": next_day.isoformat() + "T10:40:00+01:00"},
+        ]}
+        candidate, reason = admit_live_openagenda(
+            lead(), DAY.isoformat(), AGENDA, later, ref, ref, TODAY)
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["time"], "10:00 ; 15:00")
+
     def test_cancellation_change_and_duplicate_are_held(self):
         ref = base()
         for modification in ({"status": 3}, {"removed": True},
