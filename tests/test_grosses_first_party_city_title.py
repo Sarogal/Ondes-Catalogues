@@ -72,6 +72,10 @@ class FirstPartyCityTitleTests(unittest.TestCase):
         baseline = {"schema": 1, "festivals": baseline_rows}
         published = {"schema": 1, "festivals": baseline_rows + [row]}
         candidate = {"schema": 1, "festivals": baseline_rows + [new]}
+        # A private patch that merely declares this proof mode is not trusted:
+        # only an independently revalidated official Publisher scan can set it.
+        with self.assertRaises(ValueError):
+            safe_target(baseline, candidate, published)
         self.assertTrue(safe_target(
             baseline, candidate, published,
             verified_official_updates=frozenset({ROW["slug"]})))
