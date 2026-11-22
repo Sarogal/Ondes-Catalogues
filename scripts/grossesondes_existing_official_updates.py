@@ -341,7 +341,9 @@ def apply_independently_verified_updates(
                     claims += names
                     prices.update(offers)
                     sources.append(url)
-            new_names, seen = [], {key(n) for n in old.get("lineup", [])
+            current_lineup = old.get("lineup")
+            current_lineup = current_lineup if isinstance(current_lineup, list) else []
+            new_names, seen = [], {key(n) for n in current_lineup
                                    if isinstance(n, str)}
             for n in claims:
                 if key(n) not in seen:
