@@ -254,7 +254,8 @@ def verify(event_approval, site_approval, published_venues, published_artists,
         "venue": venue.get("name"), "city": venue.get("city"),
     }
     _raw, names, _unnamed, genres, site = sites._official_event(
-        lead, html, url, today)
+        lead, html, url, today,
+        first_party_fetch=lambda api_url: fetch(api_url, cache))
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"]
             and event.get("genres") == genres
@@ -417,7 +418,8 @@ def verify_self(event_approval, site_approval, published_venues,
             "leadArtist": proof["officialArtistNames"][0],
             "venue": venue["name"], "city": venue["city"]}
     _raw, names, _unnamed, genres, loc = sites._official_event(
-        lead, html, event["officialUrl"], today)
+        lead, html, event["officialUrl"], today,
+        first_party_fetch=lambda api_url: fetch(api_url, cache))
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
             "independent full lineup or relevant genre changed")
