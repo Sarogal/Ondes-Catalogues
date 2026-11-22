@@ -90,6 +90,14 @@ def _individual_event(html, url, when, venue, *, accept_generic=False):
                 intake.normalized(place.get("name")) !=
                 intake.normalized(venue["name"])):
             continue
+        # Complete the missing schema.org bill only from THIS exact
+        # first-party Event detail's unique H1 and per-artist genre labels.
+        # Nonempty contradictory structured performers must never be replaced.
+        if node.get("performer") in (None, "", []):
+            recovered = pairs._visible_artist_genres_from_this_event(
+                html, node.get("name"))
+            if recovered is not None:
+                node = {**node, "performer": recovered}
         bill = bridge.official_named_bill(node.get("performer"))
         if not bill:
             continue

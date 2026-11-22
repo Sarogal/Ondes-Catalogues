@@ -178,6 +178,8 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
             and _site(catalogue, candidate)["id"] == vid,
             "source or physical venue changed")
     cache = {}
+    # Source ownership MUST be independently established before fetching
+    # an untrusted candidate-host event URL. Never contact an unowned host.
     # The OSM claim is independent of the event page; do not read a domain
     # from a candidate as publisher authority.
     has_named_node = bool(verified.OSM_NODE.fullmatch(
