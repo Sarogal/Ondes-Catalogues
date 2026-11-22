@@ -18,6 +18,9 @@ from urllib.error import HTTPError
 from time import sleep
 from zoneinfo import ZoneInfo
 
+from dns_pinned_https import fetch_public_html
+from urllib.parse import urlsplit
+
 from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
 )
@@ -27,6 +30,9 @@ from grossesondes_future_geo_publisher import (
 )
 from grossesondes_future_city_publisher import (
     apply_independently_verified_city, private_city_report,
+)
+from grossesondes_existing_official_updates import (
+    apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -216,7 +222,42 @@ def _certified_new_commune_delta(old, new):
     return True
 
 
-def safe_target(baseline, candidate, currently_published):
+def _verified_official_update_delta(old, new):
+    """Bounded differential for a signed new edition; never independent trust."""
+    if not isinstance(old, dict) or not isinstance(new, dict):
+        return False
+    changed = {k for k in set(old) | set(new) if old.get(k) != new.get(k)}
+    if not changed or not changed <= OFFICIAL_UPDATE_FIELDS:
+        return False
+    old_names, new_names = old.get("lineup"), new.get("lineup")
+    if (not isinstance(old_names, list) or not isinstance(new_names, list)
+            or new_names[:len(old_names)] != old_names
+            or not 0 <= len(new_names)-len(old_names) <= 45
+            or type(old.get("bands")) is not int
+            or new.get("bands") != len(new_names)):
+        return False
+    if "price" in changed and (not isinstance(new.get("price"), str)
+                               or len(new["price"]) > 350
+                               or "billetterie officielle ouverte" not in new["price"]):
+        return False
+    if "lastVerified" in changed and (not isinstance(new.get("lastVerified"), str)
+                                      or new["lastVerified"] < old.get("lastVerified", "")):
+        return False
+    if "auditSources" in changed:
+        before, after = old.get("auditSources") or [], new.get("auditSources")
+        if (not isinstance(before, list) or not isinstance(after, list)
+                or after[:len(before)] != before
+                or len(after) > 20 or not old.get("officialSite")):
+            return False
+        site = urlsplit(old["officialSite"]).hostname
+        if any(not isinstance(u, str) or urlsplit(u).hostname != site
+               for u in after[len(before):]):
+            return False
+    return True
+
+
+def safe_target(baseline, candidate, currently_published,
+                verified_official_updates=frozenset()):
     """Le catalogue cloud courant doit être exactement la base ou une version
     précédemment validée de la nouvelle cible; jamais une variante imprévue.
     """
@@ -249,7 +290,9 @@ def safe_target(baseline, candidate, currently_published):
     for slug in set(live)-set(original):
         require(
             live[slug] == target[slug] or
-            _certified_new_commune_delta(live[slug], target[slug]),
+            _certified_new_commune_delta(live[slug], target[slug]) or
+            (slug in verified_official_updates and
+             _verified_official_update_delta(live[slug], target[slug])),
             "ancienne édition ajoutée devenue incohérente : " + slug
         )
     # On n'accepte pas un glissement silencieux de métadonnées de schéma.
@@ -309,7 +352,9 @@ def future_map_coverage(calendar, today):
 
 def build_candidate(snapshot, published, patch, official_sources, today, trusted_published=False,
                     geo_review=None, geo_fetcher=None, city_review=None,
-                    city_fetcher=None, city_admin_reader=None):
+                    city_fetcher=None, city_admin_reader=None,
+                    official_update_fetcher=None, official_update_tick=None,
+                    official_update_limit=8):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -391,7 +436,28 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
             "publication_authorized_by_private_report": False,
         }
     report["future_city_publisher"] = city_report
-    changed=safe_target(reference,target,published["festivals.json"])
+    if trusted_published and official_update_fetcher is not None:
+        target, first_party_report = apply_independently_verified_updates(
+            target, published["festivals.json"], today,
+            fetch=official_update_fetcher, limit=official_update_limit,
+            tick=official_update_tick)
+        report["accepted_updates"].extend(
+            {"slug": record["slug"], "fields": record["fields"]}
+            for record in first_party_report["accepted_changes"])
+        published_by_slug = {
+            r["slug"]: r for r in published["festivals.json"]["festivals"]}
+        report["source_proofs"].extend(
+            published_by_slug[slug]["officialSite"]
+            for slug in first_party_report["accepted"])
+    else:
+        first_party_report = {"checked_official_hosts": 0,
+                              "rechecked_pages": 0, "accepted": [],
+                              "accepted_changes": [], "unavailable": 0,
+                              "private_proposal_is_authority": False}
+    report["existing_first_party_updates"] = first_party_report
+    changed=safe_target(
+        reference, target, published["festivals.json"],
+        verified_official_updates=frozenset(first_party_report["accepted"]))
     report["candidate_total"] = len(target["festivals"])
     report["future_map_coverage"] = future_map_coverage(target, today)
     if not changed:
@@ -967,7 +1033,10 @@ def main():
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
         trusted_published=True, geo_review=geo_review,
-        city_review=city_review)
+        city_review=city_review,
+        official_update_fetcher=fetch_public_html,
+        official_update_tick=(today.toordinal() * 2 +
+                              (1 if datetime.now(ZoneInfo("Europe/Paris")).hour >= 15 else 0)))
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7
