@@ -199,8 +199,15 @@ def listed_artists(blocks):
     for i, b in enumerate(blocks):
         text = fold(b["text"])
         if b["tag"].startswith("h"):
-            active = bool(GENRE_LIST.search(text) and
-                          (ANNOUNCE.search(text) or "groupes" in text))
+            # Some official current-edition lineups use a location heading
+            # ("Ils seront à Carhaix") instead of "groupes annoncés".
+            # The caller already binds these blocks to the signed edition,
+            # and headings stop the list at the next unrelated section.
+            roster_heading = re.fullmatch(
+                r"(?:ils|elles) seront a [a-z0-9 ]{3,90}", text)
+            active = bool(roster_heading or (
+                GENRE_LIST.search(text) and
+                (ANNOUNCE.search(text) or "groupes" in text)))
         if b["tag"] == "li" and active:
             found = good_artist(b["lead"] or b["text"])
             if found:
