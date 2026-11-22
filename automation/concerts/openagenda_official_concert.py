@@ -18,6 +18,7 @@ import math
 import re
 import sys
 from pathlib import Path
+from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
 # The existing discovery modules have legacy top-level sibling imports.
@@ -39,6 +40,66 @@ AGENDA_PATH = re.compile(
 CANCELLED = ("cancel", "postpon", "resched", "report", "annul")
 PLACEHOLDERS = frozenset(("concert", "soiree", "festival", "concert punk",
                           "concert metal", "live", "show", "spectacle"))
+
+
+class _VisibleOfficialGenreText(HTMLParser):
+    """Genre signals may come from visible original OpenAgenda descriptions.
+
+    HTML attributes, scripts and hidden templates are not evidence. This
+    extracts only a bounded human-readable description; it never adds artists,
+    dates or locations and is not an additional event source.
+    """
+    _HIDDEN = frozenset({"script", "style", "noscript", "template"})
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.hidden = 0
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._HIDDEN:
+            self.hidden += 1
+
+    def handle_endtag(self, tag):
+        if tag in self._HIDDEN and self.hidden:
+            self.hidden -= 1
+
+    def handle_data(self, data):
+        if not self.hidden and len(self.parts) < 600:
+            self.parts.append(data)
+
+
+def _described_official_genres(record):
+    """Classify ONLY explicit genre words on the UID-authenticated OA record.
+
+    Never infer a support act's individual style or promote discovery hints.
+    Hardtek/hardcore techno is not evidence of the metal/punk universe.
+    """
+    descriptions = record.get("description")
+    if not isinstance(descriptions, dict):
+        return []
+    content = descriptions.get("fr") or descriptions.get("en")
+    if not isinstance(content, str) or not 4 <= len(content) <= 12000:
+        return []
+    parsed = _VisibleOfficialGenreText()
+    try:
+        parsed.feed(content)
+        parsed.close()
+    except (ValueError, TypeError):
+        return []
+    visible = normalized(" ".join(parsed.parts))
+    if not visible or len(visible) > 12000:
+        return []
+    labels = []
+    for match in contract.MUSIC.finditer(visible):
+        genre = match.group(0)
+        if genre == "hardcore" and re.match(
+                r"\\s+(?:techno|electro|electronic)\\b",
+                visible[match.end():]):
+            continue
+        if (genre not in labels and contract.relevant_genres([genre])):
+            labels.append(genre)
+    return labels[:8]
 
 
 def is_openagenda_event_url(url):
@@ -271,15 +332,18 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     keys = record.get("keywords")
     raw_genres = ((keys.get("fr") or keys.get("en"))
                   if isinstance(keys, dict) else None)
-    if not isinstance(raw_genres, list):
-        raise ValueError("OpenAgenda: original music tags missing")
-    # Event-level keywords attest musical relevance; never assign each band's
-    # style from the headliner's tags.
-    genres = [x for x in raw_genres
-              if isinstance(x, str) and contract.relevant_genres([x])]
+    # Keywords are useful but optional on a published OpenAgenda record.
+    # Explicit music genres in the original, UID-authenticated DESCRIPTION
+    # are equivalent first-party evidence. No second event domain is required.
+    # A collector/index hint is never enough and the publisher re-fetches.
+    genres = ([x for x in raw_genres
+               if isinstance(x, str) and contract.relevant_genres([x])]
+              if isinstance(raw_genres, list) else [])
     genres = list(dict.fromkeys(genres))
+    if not genres:
+        genres = _described_official_genres(record)
     if not genres or len(genres) > 20:
-        raise ValueError("OpenAgenda: outside metal/hard-rock/punk universe")
+        raise ValueError("OpenAgenda: original metal/punk genre evidence missing")
     names = _bill({"@type": "MusicEvent", "name": title})
     return names, genres
 
