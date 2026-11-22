@@ -139,6 +139,15 @@ def linked_pages(site, parsed):
             continue
         url = urljoin(site, href)
         bits = urlsplit(url)
+        # A relative href on a language-prefixed homepage sometimes repeats
+        # that locale (e.g. /fr/ + fr/news => /fr/fr/news, a 404). Derive
+        # the unique nonduplicated path ONLY from its actual first-party
+        # anchor, without allowing a different host or a candidate URL.
+        locale = urlsplit(site).path.strip("/")
+        if (re.fullmatch(r"[a-z]{2}", locale or "") and
+                bits.path.startswith("/" + locale + "/" + locale + "/")):
+            url = "https://" + host + bits.path[len(locale)+1:]
+            bits = urlsplit(url)
         if (bits.scheme != "https" or bits.hostname != host or bits.query or
                 bits.fragment or bits.username or bits.password or
                 bits.port is not None or url == site or
