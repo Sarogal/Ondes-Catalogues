@@ -2411,6 +2411,21 @@
       "id": "doorshan",
       "name": "DoorShan",
       "aliases": []
+    },
+    {
+      "id": "desertgirlz",
+      "name": "DeserTGirlZ",
+      "aliases": []
+    },
+    {
+      "id": "rok-dudu",
+      "name": "Rok & Dudu",
+      "aliases": []
+    },
+    {
+      "id": "parents-in-denial",
+      "name": "Parents in Denial",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3557,6 +3572,19 @@
       "longitude": -1.38968,
       "geoPrecision": "Point indicatif nominatif du bâtiment Espace Bel Air, OSM way W117002146 via Mapcarta (48.25787,-1.38968), cohérent avec le repère 7J56+44 du plan municipal",
       "geoSource": "https://mapcarta.com/fr/W117002146"
+    },
+    {
+      "name": "Les Ateliers du Vent",
+      "city": "Rennes",
+      "address": "59 Rue Alexandre Duval",
+      "postalCode": "35000",
+      "department": "35",
+      "region": "Bretagne",
+      "geoSource": "https://www.openstreetmap.org/way/144579185",
+      "latitude": 48.103264196428576,
+      "longitude": -1.6969548714285716,
+      "geoPrecision": "named-site-area",
+      "id": "go-site-77a4cea44b8b383434f8"
     }
   ],
   "events": [
@@ -15233,6 +15261,37 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Maroquinerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-22",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-22",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270122-rennes-desertgirlz",
+      "title": "DeserTGirlZ + Rok & Dudu + Parents in Denial",
+      "date": "2027-01-22",
+      "artistIds": [
+        "desertgirlz",
+        "rok-dudu",
+        "parents-in-denial"
+      ],
+      "venueId": "go-site-77a4cea44b8b383434f8",
+      "genres": [
+        "punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/desertgirlz-rok-and-dudu-parents-in-denial",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Les Ateliers du Vent",
       "ticketUrl": null,
       "lastVerified": "2026-11-22",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
