@@ -45,19 +45,19 @@ class Page(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.blocks, self.links, self.open, self.anchors = [], [], [], []
-        self.hide = 0
+        self.hidden_tag = None
         self.main = self.article = 0
         self.strong = None
 
     def handle_starttag(self, tag, attrs):
+        if self.hidden_tag is not None:
+            return
         if (tag in ("script", "style", "noscript", "svg", "template") or
                 any(k in ("hidden", "aria-hidden") and (v is None or v == "true")
                     for k, v in attrs) or
                 any(k == "style" and re.search(r"display\s*:\s*none", v or "", re.I)
                     for k, v in attrs)):
-            self.hide += 1
-            return
-        if self.hide:
+            self.hidden_tag = tag
             return
         if tag == "main":
             self.main += 1
@@ -73,7 +73,7 @@ class Page(HTMLParser):
             self.anchors.append([dict(attrs).get("href"), []])
 
     def handle_data(self, value):
-        if self.hide:
+        if self.hidden_tag is not None:
             return
         for b in self.open:
             b["buf"].append(value)
@@ -83,10 +83,9 @@ class Page(HTMLParser):
             self.strong.append(value)
 
     def handle_endtag(self, tag):
-        if tag in ("script", "style", "noscript", "svg", "template"):
-            self.hide = max(0, self.hide - 1)
-            return
-        if self.hide:
+        if self.hidden_tag is not None:
+            if tag == self.hidden_tag:
+                self.hidden_tag = None
             return
         if tag == "strong" and self.strong is not None:
             if self.open and self.open[-1]["tag"] == "li":
@@ -207,11 +206,15 @@ def advertised_passes(blocks):
     text = [b["text"] for b in blocks]
     for i, block in enumerate(text):
         for category in PASS.finditer(fold(block)):
-            # Use the exact-cased text for euros, normalized text for labels.
-            candidate = block
-            if i + 1 < len(text):
-                candidate += " " + text[i + 1][:150]
-            near = candidate[:220]
+            # The price and sale status may be in distinct consecutive
+            # blocks. Stop BEFORE another pass category, never borrow its
+            # price for a different pass.
+            pieces = [block]
+            for sibling in text[i + 1:i + 4]:
+                if PASS.search(fold(sibling)):
+                    break
+                pieces.append(sibling)
+            near = " ".join(pieces)[:480]
             price = PRICE.search(near)
             if price is None:
                 continue
@@ -235,12 +238,20 @@ def matches_edition(doc, row, today, *, root_ok):
     visible = fold(" ".join(b["text"] for b in doc.relevant()))
     if SENSITIVE.search(visible):
         return False
-    if re.search(r"\b" + str(start.year) + r"\b", visible):
+    brand = [w for w in fold(row.get("name", "")).split()
+             if len(w) >= 5 and w not in
+             ("festival", "festivals", "metal", "rock", "open", "music", "edition")]
+    named = any(re.search(r"\b" + re.escape(w) + r"\b", visible)
+                for w in brand)
+    has_year = re.search(r"\b" + str(start.year) + r"\b", visible) is not None
+    if named and has_year:
         return True
-    # First-party article can omit the edition year but show this precise
-    # future date range; its official homepage itself must name the year.
-    words = str(start.day) + " au " + str(end.day)
-    return bool(root_ok and start.month == end.month and words in visible)
+    # A first-party news item may refer to "18e édition" and the exact
+    # published weekend without repeating the brand/year. Its signed home
+    # MUST explicitly name the actual year and edition first.
+    days = str(start.day) + " au " + str(end.day)
+    return bool(root_ok and "edition" in visible and
+                start.month == end.month and days in visible)
 
 
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
