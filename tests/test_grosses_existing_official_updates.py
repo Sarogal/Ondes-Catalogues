@@ -111,6 +111,10 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
+        # Production homepage has a relative "fr/news" href from /fr/;
+        # never request its broken /fr/fr/news variant.
+        relative_locale = page(HOME.replace('href="/fr/', 'href="fr/'))
+        self.assertEqual(linked_pages(MOZHELL, relative_locale), [ARTICLE])
         row = festival("mozhell-open-air", MOZHELL)
         old = NEWS.replace("MozHell en 2027", "MozHell en 2026")
         got, report = apply_independently_verified_updates(
