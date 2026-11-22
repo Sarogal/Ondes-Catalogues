@@ -372,8 +372,10 @@ def apply_independently_verified_updates(
                     and old.get("showOnMap") is not True
                     and old.get("futureVenueConfirmed") is not True
                     and old.get("geoVerification") is None
-                    and old.get("geoPrecision") is None
-                    and root_ok):
+                    and old.get("geoPrecision") is None):
+                # A title with signed brand, EXACT dates and one town is its
+                # own first-party edition proof. The site's news teaser may
+                # omit the year, so root_ok cannot be an additional gate.
                 claim = exact_edition_city(root_html, old)
                 if (claim and claim.get("source") == site
                         and claim.get("slug") == slug
