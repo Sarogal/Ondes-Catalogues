@@ -37,7 +37,10 @@ class CentralMediaIdentityResolver {
       if (!catalog.goIds.contains(item.goStationId) ||
           item.goStationId != preview.stationsByGoId[item.goStationId]?.goStationId ||
           (item.legacyMediaId != item.goStationId &&
-              catalog.aliasOwners[item.legacyMediaId] != item.goStationId)) {
+              (catalog.goRedirects[
+                  catalog.aliasOwners[item.legacyMediaId] ??
+                  item.legacyMediaId] ??
+               catalog.aliasOwners[item.legacyMediaId]) != item.goStationId)) {
         throw const CentralCatalogException('Invalid projected media identity');
       }
     }
@@ -56,8 +59,9 @@ class CentralMediaIdentityResolver {
       return _invalid(CentralMediaStatus.malformed, requestedId, context);
     }
 
-    final goId = catalog.aliasOwners[requestedId] ??
+    final owner = catalog.aliasOwners[requestedId] ??
         (catalog.goIds.contains(requestedId) ? requestedId : null);
+    final goId = owner == null ? null : (catalog.goRedirects[owner] ?? owner);
 
     if (goId == null) {
       return _invalid(CentralMediaStatus.unknown, requestedId, context);

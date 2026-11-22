@@ -893,4 +893,138 @@ void main() {
   });
 
 
+  test('signed GO merge preserves favorites and Android Auto media IDs',
+      () async {
+    final first = await validatePayload(jsonBytes(catalog([station(1), station(2)])));
+    final second = await validatePayload(
+        jsonBytes(catalog([station(1)], sequence: 2, tombstones: [
+          {
+            'go_station_id': 'go-station-000002',
+            'legacy_aliases': ['legacy-2'],
+            'reason_code': 'merged_into_station',
+            'retired_at': '2026-11-22T19:00:00Z',
+            'redirect_to': 'go-station-000001',
+          }
+        ])),
+        sequence: 2,
+        previous: first);
+    expect(second.aliasOwners['legacy-2'], 'go-station-000002');
+    expect(second.goRedirects['go-station-000002'], 'go-station-000001');
+    final projection = const CentralCatalogProjector().preview(
+        catalog: second,
+        legacyFavoriteIds: ['legacy-1', 'legacy-2', 'go-station-000002']);
+    expect(projection.playableStations.length, 1);
+    expect(projection.favorites.projectedGoIds, ['go-station-000001']);
+    expect(projection.playableStations.single.legacyAliases,
+        containsAll(['legacy-1', 'legacy-2', 'go-station-000002']));
+    final auto = CentralMediaIdentityResolver(
+        catalog: second, preview: projection);
+    expect(auto.resolveStationId('legacy-2').playable, isTrue);
+    expect(auto.resolveStationId('legacy-2').goStationId, 'go-station-000001');
+    expect(auto.resolveStationId('go-station-000002').goStationId,
+        'go-station-000001');
+  });
+
+  test('merge redirect target must be active and reason explicit', () async {
+    final first = await validatePayload(jsonBytes(catalog([station(1), station(2)])));
+    for (final reason in ['merged_into_station', 'retired_by_editorial_review']) {
+      final next = jsonBytes(catalog([station(1)], sequence: 2, tombstones: [
+        {
+          'go_station_id': 'go-station-000002',
+          'legacy_aliases': ['legacy-2'],
+          'reason_code': reason,
+          'retired_at': '2026-11-22T19:00:00Z',
+          'redirect_to': reason == 'merged_into_station'
+              ? 'go-station-000003' : 'go-station-000001',
+        }
+      ]));
+      await expectLater(validatePayload(next, sequence: 2, previous: first),
+          throwsA(isA<CentralCatalogException>()));
+    }
+  });
+
+  test('redirects cannot be hijacked; a future second merger is flattened',
+      () async {
+    final first = await validatePayload(
+        jsonBytes(catalog([station(1), station(2), station(3)])));
+    Map<String, dynamic> tombstone(int id, int winner) => {
+      'go_station_id': 'go-station-' + id.toString().padLeft(6, '0'),
+      'legacy_aliases': ['legacy-' + id.toString()],
+      'reason_code': 'merged_into_station',
+      'retired_at': '2026-11-22T19:00:00Z',
+      'redirect_to': 'go-station-' + winner.toString().padLeft(6, '0'),
+    };
+    final second = await validatePayload(
+        jsonBytes(catalog([station(1), station(3)], sequence: 2,
+            tombstones: [tombstone(2, 1)])),
+        sequence: 2, previous: first);
+    final hijack = jsonBytes(catalog([station(1), station(3)],
+        sequence: 3, tombstones: [tombstone(2, 3)]));
+    await expectLater(validatePayload(hijack, sequence: 3, previous: second),
+        throwsA(isA<CentralCatalogException>()));
+    final third = await validatePayload(
+        jsonBytes(catalog([station(3)], sequence: 3,
+            tombstones: [tombstone(1, 3), tombstone(2, 3)])),
+        sequence: 3, previous: second);
+    expect(third.goRedirects['go-station-000001'], 'go-station-000003');
+    expect(third.goRedirects['go-station-000002'], 'go-station-000003');
+  });
+
+  test('signed V64 inherited admission has no fabricated human review date',
+      () async {
+    final inherited = station(1);
+    inherited['editorial'] = {
+      'admission_state': 'legacy_preserved',
+      'reviewed_at': null,
+      'evidence_refs': [
+        'v64-bootstrap:fc1a465acfe7cb02ee9578cf5b83a27eba9e0723:legacy-1',
+      ],
+    };
+    final accepted = await validatePayload(jsonBytes(catalog([inherited])));
+    expect(accepted.activeIds, contains('go-station-000001'));
+    expect(accepted.aliasOwners['legacy-1'], 'go-station-000001');
+  });
+
+  test('legacy claim without signed exact historical alias is refused',
+      () async {
+    final inherited = station(1);
+    inherited['editorial'] = {
+      'admission_state': 'legacy_preserved',
+      'reviewed_at': null,
+      'evidence_refs': [
+        'v64-bootstrap:fc1a465acfe7cb02ee9578cf5b83a27eba9e0723:forged-uuid',
+      ],
+    };
+    await expectLater(validatePayload(jsonBytes(catalog([inherited]))),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
+  test('historic publicly routed IPv4 radio works; SSRF private IP is forbidden',
+      () async {
+    final allowed = station(1);
+    (allowed['streams'] as List)[0]['url'] = 'http://79.120.77.11:8000/live';
+    (allowed['streams'] as List)[0]['protocol'] = 'http';
+    final verified = await validatePayload(jsonBytes(catalog([allowed])));
+    expect(verified.activeIds, contains('go-station-000001'));
+
+    for (final bad in <String>[
+      'http://127.0.0.1/stream',
+      'http://10.0.0.7/live',
+      'http://192.168.1.1/radio',
+      'http://169.254.169.254/secret',
+      'http://172.20.1.1/stream',
+      'http://100.64.12.4/stream',
+      'http://198.18.1.1/stream',
+      'http://203.0.113.4/stream',
+      'http://256.1.2.3/stream',
+      'http://017.0.0.1/stream',
+    ]) {
+      final forged = station(1);
+      (forged['streams'] as List)[0]['url'] = bad;
+      (forged['streams'] as List)[0]['protocol'] = 'http';
+      await expectLater(validatePayload(jsonBytes(catalog([forged]))),
+          throwsA(isA<CentralCatalogException>()), reason: bad);
+    }
+  });
+
 }

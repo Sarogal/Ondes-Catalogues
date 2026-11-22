@@ -96,10 +96,17 @@ def _validate_schema(data: dict, schema_name: str) -> None:
 def validate_release_content(
     catalog_bytes: bytes, previous: dict | None = None,
     *, trusted_signed_history: bool = False,
+    trusted_legacy: dict | None = None,
+    failed_audio_go_ids: set[str] | None = None,
 ) -> dict:
     catalog = strict_json(catalog_bytes, maximum=MAX_CATALOG_BYTES)
     _validate_schema(catalog, "radio_catalog_v1.schema.json")
-    errors = validate_catalog(catalog, mode="publish", previous=previous)
+    errors = validate_catalog(
+        catalog, mode="publish", previous=previous,
+        trusted_signed_history=trusted_signed_history,
+        trusted_legacy=trusted_legacy,
+        failed_audio_go_ids=failed_audio_go_ids,
+    )
     if trusted_signed_history and previous is None:
         # This exception is ONLY for verifying a previously trusted, signed
         # predecessor. A NEW release is never signed without its predecessor.
@@ -152,6 +159,8 @@ def verify_bundle(
     pointer_bytes: bytes, catalog_bytes: bytes, public_key: Ed25519PublicKey,
     *, previous: dict | None = None,
     trusted_signed_history: bool = False,
+    trusted_legacy: dict | None = None,
+    failed_audio_go_ids: set[str] | None = None,
 ) -> ReleaseBundle:
     pointer = strict_json(pointer_bytes, maximum=MAX_POINTER_BYTES)
     _validate_schema(pointer, "radio_catalog_pointer_v1.schema.json")
@@ -189,7 +198,8 @@ def verify_bundle(
     except InvalidSignature as error:
         raise BundleError("Ed25519 signature verification failed") from error
     document = validate_release_content(
-        catalog_bytes, previous, trusted_signed_history=trusted_signed_history)
+        catalog_bytes, previous, trusted_signed_history=trusted_signed_history,
+        trusted_legacy=trusted_legacy, failed_audio_go_ids=failed_audio_go_ids)
     if pointer["release_sequence"] != document["release_sequence"]:
         raise BundleError("Pointer and payload release sequence mismatch")
     return ReleaseBundle(
@@ -206,12 +216,16 @@ def verify_bundle(
 def create_bundle(
     catalog_bytes: bytes, private_key: Ed25519PrivateKey,
     *, key_id: str, published_at: str, previous: dict | None = None,
+    trusted_legacy: dict | None = None,
+    failed_audio_go_ids: set[str] | None = None,
 ) -> ReleaseBundle:
     if not KEY_ID_RE.fullmatch(key_id):
         raise BundleError("Invalid signing key identifier")
     if not valid_utc(published_at):
         raise BundleError("Publication timestamp must be explicit valid UTC")
-    catalog = validate_release_content(catalog_bytes, previous)
+    catalog = validate_release_content(
+        catalog_bytes, previous, trusted_legacy=trusted_legacy,
+        failed_audio_go_ids=failed_audio_go_ids)
     digest = hashlib.sha256(catalog_bytes).hexdigest()
     pointer = {
         "schema_version": 1,
@@ -233,7 +247,8 @@ def create_bundle(
     if len(raw_pointer) > MAX_POINTER_BYTES:
         raise BundleError("Signed pointer too large")
     return verify_bundle(raw_pointer, catalog_bytes, private_key.public_key(),
-                         previous=previous)
+                         previous=previous, trusted_legacy=trusted_legacy,
+                         failed_audio_go_ids=failed_audio_go_ids)
 
 
 def _read_limited(path: Path, maximum: int) -> bytes:
@@ -287,6 +302,30 @@ def load_verified_predecessor(directory: Path, trusted_public_key: Ed25519Public
     return strict_json(verified.catalog_bytes, maximum=MAX_CATALOG_BYTES)
 
 
+def read_trusted_legacy_report(path: Path) -> tuple[dict, set[str]]:
+    """Only an explicitly supplied, audited TEST-v5 migration report is valid.
+
+    This report is produced by independently joining the pinned V64 inventory,
+    historic admissions, TEST-v4 signed IDs and 358 stream decode artifacts.
+    A production release needs a separate reviewed canonical source.
+    """
+    report = strict_json(_read_limited(path, MAX_INPUT_BYTES), maximum=MAX_INPUT_BYTES)
+    if (report.get("scope") != "UNSIGNED_LEGACY_EVIDENCE_BACKED_PUBLISH_PREFLIGHT"
+        or report.get("publication_authorized") is not False
+        or report.get("signed_release_generated") is not False
+        or report.get("test_current_unchanged") is not True
+        or report.get("publish_admission_guard_issues") != []):
+        raise BundleError("Unrecognized or unaudited legacy provenance report")
+    legacy = report.get("legacy_provenance")
+    failed_ids = report.get("failed_radio_go_ids")
+    if (not isinstance(legacy, dict) or not legacy
+        or not isinstance(failed_ids, list)
+        or any(not isinstance(x, str) for x in failed_ids)
+        or len(set(failed_ids)) != len(failed_ids)):
+        raise BundleError("Malformed historical admission evidence")
+    return legacy, set(failed_ids)
+
+
 def write_staging(directory: Path, bundle: ReleaseBundle) -> Path:
     """Never overwrite existing output; caller later distributes independently."""
     destination = directory.resolve()
@@ -333,6 +372,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--previous-public-key-file", type=Path)
     parser.add_argument("--offline-stage-only", action="store_true",
                         help="Mandatory safety guard; never publishes remotely")
+    parser.add_argument("--legacy-evidence-report", type=Path,
+                        help="Audited immutable migration evidence; never the catalog itself")
     args = parser.parse_args(argv)
     if not args.offline_stage_only:
         parser.error("Explicit --offline-stage-only required; this cannot publish")
@@ -344,9 +385,12 @@ def main(argv: list[str] | None = None) -> int:
         previous = load_verified_predecessor(
             args.previous_bundle_dir, read_public_key(args.previous_public_key_file))
     body = _read_limited(args.catalog, MAX_CATALOG_BYTES)
+    legacy, failed = (read_trusted_legacy_report(args.legacy_evidence_report)
+                      if args.legacy_evidence_report else (None, None))
     secret = read_private_seed(args.signing_key_file)
     bundle = create_bundle(body, secret, key_id=args.key_id,
-                           published_at=args.published_at, previous=previous)
+                           published_at=args.published_at, previous=previous,
+                           trusted_legacy=legacy, failed_audio_go_ids=failed)
     output = write_staging(args.output_dir, bundle)
     print(json.dumps({
         "status": "OFFLINE_SIGNED_STAGING_ONLY_NOT_PUBLISHED",
