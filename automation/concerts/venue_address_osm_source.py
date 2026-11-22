@@ -75,8 +75,13 @@ def website_from_address(site, *, fetch=probe.safe_fetch, cache=None):
     except (ValueError,OSError,TimeoutError):
         # The read-only provider supplies the EXACT same OSM feature id;
         # do not skip a robots refusal or use unverified cached OSM tags.
-        api_url=readonly.element(feature.group(1),feature.group(2))
-        xml=fetch(api_url,cache)
+        try:
+            api_url=readonly.element(feature.group(1),feature.group(2))
+            xml=fetch(api_url,cache)
+        except (ValueError,OSError,TimeoutError):
+            api_url=readonly.element(
+                feature.group(1),feature.group(2),provider=1)
+            xml=fetch(api_url,cache)
     require(isinstance(xml,str) and len(xml)<=probe.MAX_BYTES
             and "<!DOCTYPE" not in xml.upper()
             and "<!ENTITY" not in xml.upper(),

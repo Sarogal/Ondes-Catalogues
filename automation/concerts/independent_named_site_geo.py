@@ -163,9 +163,15 @@ def _osm_map(site, center, fetch):
         # OpenStreetMap's editing API can be unavailable/robots-protected
         # for unattended public runners. The read-only Overpass request
         # covers the SAME tiny bbox, including referenced nodes for ways.
-        fallback = readonly.nearby(
-            lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF)
-        body, final = fetch(fallback, 650_000)
+        try:
+            fallback = readonly.nearby(
+                lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF)
+            body, final = fetch(fallback, 650_000)
+        except (ValueError, OSError, TimeoutError):
+            fallback = readonly.nearby(
+                lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF,
+                provider=1)
+            body, final = fetch(fallback, 650_000)
         url = fallback
     require(final == url and isinstance(body, str)
             and len(body) <= 650_000
