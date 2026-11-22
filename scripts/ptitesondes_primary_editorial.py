@@ -11,7 +11,7 @@ from proof import norm
 
 SCHOOL_SUPPORT = re.compile(
     r"\b(?:accompagnement scolaire|aide aux devoirs|soutien scolaire|"
-    r"remise a niveau scolaire|revision(?:s)? (?:scolaire|pour (?:les )?examens)|"
+    r"remise a niveau scolaire|revision(?:s)? (?:scolaires?|pour (?:les )?examens)|"
     r"preparation (?:aux examens|au brevet|au bac)|cours de soutien)\b"
 )
 NON_PERFORMANCE_GATHERING = re.compile(
@@ -20,7 +20,7 @@ NON_PERFORMANCE_GATHERING = re.compile(
     r"seminaire|debat citoyen))\b"
 )
 COMMERCIAL_STUDIO_SERVICE = re.compile(
-    r"^(?:(?:location|louez|reservez|reservation) (?:d un |de |du |d )?"
+    r"^(?:(?:location|louez|reservez|reservation) (?:un |une |d un |de |du |d )?"
     r"(?:studio|salle d enregistrement)|"
     r"(?:formule|abonnement) (?:studio|enregistrement))\b"
 )
