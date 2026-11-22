@@ -31,6 +31,7 @@ from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
 from ptitesondes_open_world_release_rehearsal import (
     rehearse_open_world_municipal_event,
 )
+from ptitesondes_oa_first_party_admission import admit_live_openagenda
 from ptitesondes_openagenda_v2_direct_evidence import (
     read_direct_agenda_v2, read_direct_v2, _valid_public_read_key,
 )
@@ -195,6 +196,24 @@ def prepare_open_world_patch(
                     held("live_oa_gps_invalid_or_partial")
                     continue
                 source_point = None
+            # OpenAgenda is sufficient first-party evidence for its own
+            # published, licensed factual record. Never trust a caller's
+            # claimed URL: only the UID-bound live API may create a card.
+            if urlsplit(event_url).hostname == "openagenda.com":
+                agenda = agenda_reader(lead["agenda_uid"], public_key)
+                direct, reason = admit_live_openagenda(
+                    lead, dossier["date_start"], agenda, api_event,
+                    reference, published, today)
+                if direct is None:
+                    held(reason)
+                    continue
+                if direct["id"] in checked or direct["id"] in reserved_ids:
+                    held("duplicate_private_open_world_id")
+                    continue
+                checked[direct["id"]] = direct
+                output["additions"].append(direct)
+                report["admitted_to_merge"] += 1
+                continue
             group = {"city": city, "venue": venue,
                      "key": [norm(city), norm(venue)],
                      "uids": [str(lead["event_uid"])]}
