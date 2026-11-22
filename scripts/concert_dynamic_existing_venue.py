@@ -122,16 +122,22 @@ def osm_identity(venue, event_url, fetch, cache):
         # read-only provider with a FIXED bounded, single-node query.
         # No candidate-controlled URL, user-supplied query or redirect.
         # This still uses the robots-aware, DNS-pinned HTTPS fetcher.
-        overpass_url = (
-            "https://overpass.private.coffee/api/interpreter?" +
-            urlencode({"data": "[out:xml][timeout:12];node(" +
-                       matched.group(1) + ");out body;"}))
-        try:
-            body = fetch(overpass_url, cache)
-        except (ValueError, OSError, TimeoutError) as exc:
+        import osm_read_only_fallback as readonly
+        last_transport_error = None
+        for provider in (0, 1):
+            # Both transports read the SAME immutable numeric OSM node.
+            # Never retry a successful but contradictory identity response.
+            overpass_url = readonly.element(
+                "node", matched.group(1), provider=provider)
+            try:
+                body = fetch(overpass_url, cache)
+                break
+            except (ValueError, OSError, TimeoutError) as exc:
+                last_transport_error = exc
+        if body is None:
             raise ValueError(
-                "Unlisted official source: OSM and read-only Overpass unavailable"
-            ) from exc
+                "Unlisted official source: all OSM read-only transports unavailable"
+            ) from last_transport_error
     require(body is not None, "OSM feature not independently fetched")
     require(isinstance(body, str) and len(body) <= probe.MAX_BYTES
             and "<!DOCTYPE" not in body.upper()
