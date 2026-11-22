@@ -49,5 +49,42 @@ class IcyHeaderTests(unittest.TestCase):
             mod.check_public_host("http://169.254.169.254/latest/meta-data")
 
 
+    def test_hls_media_segment_is_decoded_without_external_ffmpeg_urls(self):
+        master = b"#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=128000\nvariant.m3u8\n"
+        media = b"#EXTM3U\n#EXTINF:4.0,\nsegment-a.ts\n"
+        audio = b"RANDOM_AUDIO_BYTES_FOR_MOCK"
+        requests = []
+
+        def fake_download(url, **kwargs):
+            requests.append(url)
+            if url.endswith("variant.m3u8"):
+                return media, "application/vnd.apple.mpegurl", url
+            if url.endswith("segment-a.ts"):
+                return audio, "video/mp2t", url
+            return master, "application/vnd.apple.mpegurl", url
+
+        with patch.object(mod, "download_sample", side_effect=fake_download):
+            with patch.object(mod, "decode_sample", return_value=(True, "audio_decoded")):
+                result = mod.inspect_stream("go-station-000001",
+                    {"stream_id": "one", "url": "https://example.org/live.m3u8"},
+                    "ffmpeg", "2026-11-22T00:00:00Z")
+        self.assertTrue(result["verified"])
+        self.assertEqual(result["result"], "audio_decoded")
+        self.assertEqual(requests, ["https://example.org/live.m3u8",
+                                    "https://example.org/variant.m3u8",
+                                    "https://example.org/segment-a.ts"])
+
+    def test_hls_playlist_cannot_redirect_into_local_network(self):
+        playlist = b"#EXTM3U\n#EXTINF:3\nhttp://127.0.0.1/admin\n"
+        target, reason = mod.first_public_playlist_link(playlist, "https://radio.example.org/x.m3u8")
+        self.assertIsNone(target)
+        self.assertEqual(reason, "playlist_without_public_audio_url")
+
+    def test_encrypted_hls_cannot_be_misreported_as_verified(self):
+        encrypted = b'#EXTM3U\n#EXT-X-KEY:METHOD=AES-128,URI="key.key"\n#EXTINF:3\nsegment.ts\n'
+        _, reason = mod.first_public_playlist_link(encrypted, "https://example.org/live.m3u8")
+        self.assertEqual(reason, "hls_encrypted_requires_player")
+
+
 if __name__ == "__main__":
     unittest.main()
