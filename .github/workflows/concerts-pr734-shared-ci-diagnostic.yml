@@ -59,3 +59,33 @@ jobs:
               except (ValueError, OSError) as exc:
                   print('transport_failure',host,type(exc).__name__,flush=True)
           PY
+
+      - name: Examiner la forme des exports officiels OpenAgenda déjà publiés
+        run: |
+          python - <<'PY'
+          import sys, json
+          from pathlib import Path
+          sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
+          import source_evidence_probe as p
+          ip=p.public_ip_addresses('openagenda.com')[0]
+          for uid in ('70657920','27642848'):
+              url=('https://openagenda.com/agendas/9969608/events.json'
+                   '?oaq%5Buids%5D%5B%5D='+uid+'&limit=1')
+              try:
+                  status, body=p.request_pinned(url,'openagenda.com',ip,cap=400000)
+                  print('official_export',uid,'status',status,'size',len(body),flush=True)
+                  if status==200:
+                      doc=json.loads(body)
+                      ev=(doc.get('events') or [None])[0]
+                      if not isinstance(ev,dict):
+                          print('no_event_record',flush=True)
+                          continue
+                      print('record_identity',uid,'uid',ev.get('uid'),
+                            'origin',ev.get('origin'),'slug',ev.get('slug'),
+                            'canonical_fields',[k for k in ev if 'url' in k.lower()],
+                            'description_type',type(ev.get('description')).__name__,
+                            'keyword_type',type(ev.get('keywords')).__name__,
+                            'event_status',ev.get('status'),flush=True)
+              except (ValueError,OSError,TimeoutError) as exc:
+                  print('official_export_failed',uid,type(exc).__name__,flush=True)
+          PY
