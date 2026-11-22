@@ -8,6 +8,8 @@ on:
       - 'radio-catalog-lab/flutter/lib/central_radio_catalog_client.dart'
       - 'radio-catalog-lab/flutter/lib/central_signed_artwork_work_queue.dart'
       - 'radio-catalog-lab/flutter/test/central_signed_artwork_work_queue_test.dart'
+      - 'radio-catalog-lab/flutter/lib/central_android_auto_artwork_index.dart'
+      - 'radio-catalog-lab/flutter/test/central_android_auto_artwork_index_test.dart'
       - 'radio-catalog-lab/flutter/test/central_authoritative_catalog_selector_test.dart'
       - '.github/workflows/go-radio-authority-primary-uuid-flutter.yml'
   workflow_dispatch:
@@ -33,3 +35,5 @@ jobs:
         run: flutter test --reporter expanded test/central_authoritative_catalog_selector_test.dart
       - name: Verify disk-cache hydration and later remote SHA fetch always both execute
         run: flutter test --reporter expanded test/central_signed_artwork_work_queue_test.dart
+      - name: Verify SHA artwork continuity after signed GO-ID merges in Android Auto
+        run: flutter test --reporter expanded test/central_android_auto_artwork_index_test.dart
