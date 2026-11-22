@@ -4,8 +4,11 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_open_world_private_dossier_intake.py'
+      - 'scripts/ptitesondes_openagenda_backlog_private_dossiers.py'
+      - 'tests/test_ptitesondes_openagenda_backlog_private_dossiers.py'
       - 'scripts/ptitesondes_private_research_carry_forward.py'
       - 'tests/test_ptitesondes_open_world_private_dossier_intake.py'
+      - 'tests/test_ptitesondes_national_fair_dossiers.py'
       - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - '.github/workflows/ptitesondes-open-world-private-dossier-ci.yml'
 
@@ -28,6 +31,8 @@ jobs:
           PYTHONWARNINGS: error
         run: |
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_private_dossier_intake.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_fair_dossiers.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_backlog_private_dossiers.py' -v
       - name: Publisher bridge contract regression
         env:
           PYTHONWARNINGS: error

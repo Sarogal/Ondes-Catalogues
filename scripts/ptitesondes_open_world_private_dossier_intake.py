@@ -102,6 +102,44 @@ def choose_national_bridge_batch(cron, utc_hour, existing_queue):
     return 0 if not existing_queue else selected
 
 
+
+def fair_dossier_order(proposals):
+    """Interleave agendas, then event UIDs, without dropping a single session.
+
+    A single busy agenda, an event with dozens of sessions, or a Paris
+    municipality must not monopolise the first bounded Publisher batch.
+    No territorial allowlist, genre quota or arbitrary session cap.
+    """
+    from collections import deque
+
+    ordered = sorted(proposals, key=lambda x: (
+        x["date_start"], x["lead"]["agenda_uid"],
+        x["lead"]["event_uid"], x["official_event_url"],
+        x["official_venue_url"]))
+    grouped = {}
+    for dossier in ordered:
+        agenda_uid = dossier["lead"]["agenda_uid"]
+        event_uid = dossier["lead"]["event_uid"]
+        grouped.setdefault(agenda_uid, {}).setdefault(
+            event_uid, deque()).append(dossier)
+    agenda_queue = deque(sorted(grouped))
+    per_agenda = {
+        agenda: deque(sorted(event_groups))
+        for agenda, event_groups in grouped.items()
+    }
+    result = []
+    while agenda_queue:
+        agenda = agenda_queue.popleft()
+        event_uid = per_agenda[agenda].popleft()
+        pending = grouped[agenda][event_uid]
+        result.append(pending.popleft())
+        if pending:
+            per_agenda[agenda].append(event_uid)
+        if per_agenda[agenda]:
+            agenda_queue.append(agenda)
+    return result
+
+
 def collect_research_dossiers(observation_root, research_root, today,
                               *, batch_index=0, inventory_reader=_inventory,
                               report_reader=_read):
@@ -246,10 +284,7 @@ def collect_research_dossiers(observation_root, research_root, today,
                         continue
                     seen.add(key)
                     proposals.append(dict(dossier, date_start=day))
-    proposals.sort(key=lambda x: (
-        x["date_start"], x["lead"]["agenda_uid"],
-        x["lead"]["event_uid"], x["official_event_url"],
-        x["official_venue_url"]))
+    proposals = fair_dossier_order(proposals)
     # The four daily review slots are disjoint. If the queue is larger
     # than four slots, rotate through further waves on following days;
     # discovery limits are work budgets, not candidate denylist rules.
