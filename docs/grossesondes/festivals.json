@@ -6085,6 +6085,30 @@
       "lastVerified": "2026-11-22",
       "slug": "xtreme-fest-2027",
       "lat": null
+    },
+    {
+      "verificationStatus": "Site et édition officielle revérifiés",
+      "startDate": "2027-08-13",
+      "source": "https://www.colombin-rock.fr/",
+      "dateRangeIsContinuous": false,
+      "department": null,
+      "bands": 0,
+      "region": null,
+      "showOnMap": false,
+      "city": null,
+      "lat": null,
+      "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
+      "slug": "colomb-in-rock-festival-2027",
+      "status": "Annoncé",
+      "venue": null,
+      "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
+      "name": "Colomb'in Rock Festival 2027",
+      "lastVerified": "2026-11-22",
+      "lineup": [],
+      "officialSite": "https://www.colombin-rock.fr/",
+      "endDate": "2027-08-14",
+      "price": null,
+      "lon": null
     }
   ]
 }
