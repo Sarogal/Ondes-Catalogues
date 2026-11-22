@@ -142,7 +142,7 @@ def _verified_street(street, venue, place):
     # recorded house number or a mismatching street.
     if re.match(r"^[0-9]", reference):
         return False
-    without_number = re.sub(r"^[0-9]+(?:[a-z]|\\s+(?:bis|ter|quater))?\\s+", "", source)
+    without_number = re.sub(r"^[0-9]+(?:[a-z]|\s+(?:bis|ter|quater))?\s+", "", source)
     if (without_number == source or
             not (without_number == reference or
                  without_number.startswith(reference + " "))):
