@@ -76,6 +76,16 @@ class Page(HTMLParser):
                     for k, v in attrs)):
             self.hidden_tag = tag
             return
+        # Visible edition logos often provide the accessible H1 title as
+        # an image alt rather than a text node (e.g. the Motocultor 2027
+        # Astro homepage). Respect hidden/aria-hidden checks above and use
+        # only the first-party <img> alt inside a visible heading. Never
+        # read img src, OCR artwork, or third-party image URLs.
+        if tag == "img" and self.open and self.open[-1]["tag"] in (
+                "h1", "h2", "h3"):
+            alt = dict(attrs).get("alt")
+            if isinstance(alt, str) and 8 <= len(alt) <= 180:
+                self.open[-1]["buf"].append(alt)
         if tag == "main":
             self.main += 1
         if tag == "article":
