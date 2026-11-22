@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "scope": "GO_V5_EXPLICIT_VISUAL_DECISIONS_TEST_ONLY_UNSIGNED",
+  "reviewed_at": "2026-11-21",
+  "summary": "Three distinct historic radio logos visually identified in SHA-locked contact sheets and linked to independent first-party source evidence. Signature is NOT authorized by this file.",
+  "open_discovery_not_allowlist": true,
+  "all_other_candidates_remain_unapproved": true,
+  "publication_allowed": false,
+  "signed_catalog_created": false,
+  "activate_artwork_pointer": false,
+  "reference_runs": {
+    "v5_byte_shards": "44921656445",
+    "sha_locked_contact_sheets": "44925794574",
+    "official_firstparty_source": "44927683057",
+    "canonical_byte_recheck": "44928176620"
+  },
+  "records": [
+    {
+      "legacy_media_id": "681c6fee-8d61-437b-84a4-f96b8fd3422c",
+      "station_name": "Ritus",
+      "candidate_sha256": "076004761be8f6581ae10eefbf6704b13582c494f383e85ebd3b381ea3d33189",
+      "candidate_url": "https://assets.laut.fm/6523ee49b9dc72e1eb9e2ed32823490f?t=_640x640",
+      "desired_canonical_url": "https://assets.laut.fm/6523ee49b9dc72e1eb9e2ed32823490f",
+      "expected_width": 640,
+      "expected_height": 640,
+      "source_status_required": "OFFICIAL_API_EXACT_ASSET_PATH",
+      "source_official_page": "https://laut.fm/ritus",
+      "station_slug": "ritus",
+      "provider": "laut.fm",
+      "visual_evidence": "Explicit BLACK METAL RADIO RITUS lettering in the 640x640 SHA-matched preview.",
+      "editorial_decision": "VISUAL_TEST_ACCEPTED_CANONICAL_BYTES_PENDING",
+      "can_sign_now": false,
+      "replace_existing_logo": false,
+      "publication_allowed": false
+    },
+    {
+      "legacy_media_id": "961d7ccb-0601-11e8-ae97-52543be04c81",
+      "station_name": "Radio Beat",
+      "candidate_sha256": "988031f0bddb7a17226ab9da5899f6e98577f2f8c241a74e91a67c5cc4bd66b2",
+      "candidate_url": "https://www.radiobeat.cz/img/logo@2x.png",
+      "desired_canonical_url": "https://www.radiobeat.cz/img/logo@2x.png",
+      "expected_width": 400,
+      "expected_height": 400,
+      "source_status_required": "HOMEPAGE_METADATA_ASSET_PATH_MATCH",
+      "source_official_page": "https://www.radiobeat.cz/",
+      "station_slug": "radio-beat",
+      "provider": "radiobeat.cz",
+      "visual_evidence": "Explicit BEAT RADIO ClassicRock logo shown in the 400x400 SHA-matched preview and the official site's og:image:url.",
+      "editorial_decision": "VISUAL_TEST_ACCEPTED_SOURCE_REVIEWED",
+      "can_sign_now": false,
+      "replace_existing_logo": false,
+      "publication_allowed": false
+    },
+    {
+      "legacy_media_id": "9afeaf65-bb57-4d76-892d-c7a39fc6c805",
+      "station_name": "Hard Rock Radio FM",
+      "candidate_sha256": "82aaf239b99e031c391d14fece8fdfb24916aa275817b77414bbe08249f37976",
+      "candidate_url": "https://hardrockradiofm.weebly.com/uploads/6/0/1/4/60142111/hard-rock-radio-fm_orig.png",
+      "desired_canonical_url": "https://hardrockradiofm.weebly.com/uploads/6/0/1/4/60142111/hard-rock-radio-fm_orig.png",
+      "expected_width": 500,
+      "expected_height": 500,
+      "source_status_required": "HOMEPAGE_METADATA_ASSET_PATH_MATCH",
+      "source_official_page": "https://hardrockradiofm.weebly.com/",
+      "station_slug": "hard-rock-radio-fm",
+      "provider": "hardrockradiofm.weebly.com",
+      "visual_evidence": "Explicit HARD ROCK RADIO FM station name visible on the 500x500 SHA-matched image; exact image path found in homepage og:image.",
+      "editorial_decision": "VISUAL_TEST_ACCEPTED_SOURCE_REVIEWED",
+      "can_sign_now": false,
+      "replace_existing_logo": false,
+      "publication_allowed": false
+    }
+  ]
+}

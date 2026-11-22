@@ -1,0 +1,88 @@
+name: "GO TEST — strict resized laut.fm artwork SHA, no activation"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-lautfm-resize-sha-20261121
+    paths:
+      - ".github/workflows/go-test-lautfm-resize-sha-ci.yml"
+      - "radio-catalog-lab/tools/artwork_release_packager.py"
+      - "radio-catalog-lab/tools/test_artwork_release_packager.py"
+      - "radio-catalog-lab/tools/probe_v5_reviewed_resized_artwork.py"
+      - "radio-catalog-lab/tools/test_probe_v5_reviewed_resized_artwork.py"
+      - "radio-catalog-lab/tools/test_v5_artwork_unsigned_v2_12_preview.py"
+      - "radio-catalog-lab/tools/test_v5_artwork_unsigned_v2_preview.py"
+      - "grossesondes/radio-test-apk/artwork/previews/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  strict-resize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencies and unsigned gate tests
+        run: |
+          python -m pip install --disable-pip-version-check "cryptography==44.0.2" "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_release_packager.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_v5_reviewed_resized_artwork.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_12_preview.py" -v
+      - name: Fetch immutable old audit reports only
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/oldqueue" "$RUNNER_TEMP/sourceproof"
+          gh run download 44925396879 --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-editorial-queue-review-only" --dir "$RUNNER_TEMP/oldqueue"
+          gh run download 44927683057 --repo "$GITHUB_REPOSITORY" \
+            --pattern "go-v5-firstparty-source-shard-*" \
+            --dir "$RUNNER_TEMP/sourceproof"
+          test -f "$RUNNER_TEMP/oldqueue/go-v5-editorial-review.json"
+      - name: SHA/bytes/decoder compare for exact official 640px Ritus URL
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t sources < <(find "$RUNNER_TEMP/sourceproof" \
+            -type f -name 'go-v5-firstparty-shard-*.json' -print0 | sort -z)
+          test "${#sources[@]}" -eq 6
+          python radio-catalog-lab/tools/probe_v5_reviewed_resized_artwork.py \
+            --review grossesondes/radio-test-apk/artwork/v5_first_source_visual_review_20261121.json \
+            --queue "$RUNNER_TEMP/oldqueue/go-v5-editorial-review.json" \
+            --source-shard "${sources[@]}" \
+            --uuid 681c6fee-8d61-437b-84a4-f96b8fd3422c \
+            --network --output "$RUNNER_TEMP/go-ritus-resize-fresh-proof.json"
+      - name: Keep TEST pointers untouched and no publication
+        run: |
+          test ! -e grossesondes/radio-test-apk/artwork/current.json
+          test ! -e grossesondes/radio-test-apk/artwork/pending/test-current-v2.json
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"go-ritus-resize-fresh-proof.json"
+          d=json.loads(p.read_text())
+          assert d["fresh_sha_size_mime_dimensions_match"] is True
+          assert d["publication_allowed"] is False
+          assert d["signed_catalog_created"] is False
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          print("GO_ARTWORK_RESIZED_SHA_SOURCE_CONFIRMED_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-ritus-640px-fresh-sha-review-only
+          path: ${{ runner.temp }}/go-ritus-resize-fresh-proof.json
+          retention-days: 14
+          if-no-files-found: error

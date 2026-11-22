@@ -1,0 +1,86 @@
+name: "GO TEST — corroborate first-party v5 logo evidence (never publish)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-official-source-evidence-20261121
+    paths:
+      - ".github/workflows/go-v5-artwork-official-source-corroboration.yml"
+      - "radio-catalog-lab/tools/corroborate_v5_official_artwork_sources.py"
+      - "radio-catalog-lab/tools/test_corroborate_v5_official_artwork_sources.py"
+  workflow_dispatch:
+    inputs:
+      evidence_run:
+        description: "Successful previously assembled v5 editorial queue run"
+        required: true
+        default: "44925396879"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  source-evidence:
+    name: "v5 independent source evidence ${{ matrix.shard }}/6"
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5]
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EVIDENCE_RUN: ${{ inputs.evidence_run || '44925396879' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned image parser, run offline tests first
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_corroborate_v5_official_artwork_sources.py" -v
+          python -m py_compile radio-catalog-lab/tools/corroborate_v5_official_artwork_sources.py
+      - name: Recover existing SHA evidence without re-probing logo files
+        run: |
+          mkdir -p "$RUNNER_TEMP/queue"
+          gh run download "$EVIDENCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name "go-v5-editorial-queue-review-only" --dir "$RUNNER_TEMP/queue"
+          test -f "$RUNNER_TEMP/queue/go-v5-editorial-review.json"
+      - name: Examine official station metadata from HTTPS only
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python radio-catalog-lab/tools/corroborate_v5_official_artwork_sources.py \
+            --queue "$RUNNER_TEMP/queue/go-v5-editorial-review.json" \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --shard-index "$SHARD" --shard-count 6 --network \
+            --output "$RUNNER_TEMP/go-v5-firstparty-shard-${SHARD}.json"
+      - name: Enforce no signing, publication or pointer changes
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          source = json.loads((Path(os.environ["RUNNER_TEMP"]) /
+              ("go-v5-firstparty-shard-" + os.environ["SHARD"] + ".json")).read_text())
+          assert source["publication_allowed"] is False
+          assert source["signed_catalog_created"] is False
+          assert source["identity_visual_approved"] is False
+          assert all(not x["publication_allowed"] for x in source["records"])
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"] == 4
+          print("GO_V5_OFFICIAL_SOURCE_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
+      - name: Retain review evidence; never store original logos
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-firstparty-source-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/go-v5-firstparty-shard-${{ matrix.shard }}.json
+          if-no-files-found: error
+          retention-days: 14

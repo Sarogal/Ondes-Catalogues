@@ -1,0 +1,78 @@
+name: "GO TEST — check official no-v5 OG images SHA (not publishable)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-missing-v5-open-discovery-20261121
+    paths:
+      - ".github/workflows/go-v5-missing-historical-og-sha.yml"
+      - "radio-catalog-lab/tools/probe_historical_no_v5_homepage_images.py"
+      - "radio-catalog-lab/tools/test_probe_historical_no_v5_homepage_images.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  homepage-og-sha-only:
+    name: "historical official homepage OG image SHA"
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pin decoder and check security without network
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_historical_no_v5_homepage_images.py" -v
+      - name: Download exactly eight successful historical source reports
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/sources"
+          gh run download 44931329398 --repo "$GITHUB_REPOSITORY" \
+            --pattern "go-v5-missing-historical-source-shard-*" \
+            --dir "$RUNNER_TEMP/sources"
+          mapfile -d '' -t sources < <(find "$RUNNER_TEMP/sources" \
+            -name 'go-no-v5-firstparty-shard-*.json' -type f -print0 | sort -z)
+          test "${#sources[@]}" -eq 8
+      - name: Decode and hash only social-card images (no favicons)
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t sources < <(find "$RUNNER_TEMP/sources" \
+            -name 'go-no-v5-firstparty-shard-*.json' -type f -print0 | sort -z)
+          test "${#sources[@]}" -eq 8
+          python radio-catalog-lab/tools/probe_historical_no_v5_homepage_images.py \
+            --source-shard "${sources[@]}" --network \
+            --output "$RUNNER_TEMP/go-no-v5-og-image-sha-review.json"
+      - name: Assert zero editorial approvals or remote pointer changes
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ["RUNNER_TEMP"])/
+             "go-no-v5-og-image-sha-review.json").read_text())
+          assert d["historical_missing_v5"]==53
+          assert d["historical_scanned"]==53
+          assert d["publication_allowed"] is False
+          assert d["identity_visual_approved"] is False
+          assert d["signed_catalog_created"] is False
+          assert all(r["publication_allowed"] is False and
+                     r["identity_visual_approved"] is False
+                     for r in d["records"])
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          assert not Path("grossesondes/radio-test-apk/artwork/current.json").exists()
+          print("GO_NO_V5_OFFICIAL_OG_SHA_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-missing-historical-og-sha-review-only
+          path: ${{ runner.temp }}/go-no-v5-og-image-sha-review.json
+          retention-days: 14
+          if-no-files-found: error

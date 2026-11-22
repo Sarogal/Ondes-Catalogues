@@ -1,0 +1,43 @@
+name: "GO TEST — v5 artwork editorial triage (offline, no publish)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-editorial-triage-20261121
+    paths:
+      - ".github/workflows/go-artwork-v5-editorial-triage-ci.yml"
+      - "radio-catalog-lab/tools/assemble_v5_artwork_editorial_queue.py"
+      - "radio-catalog-lab/tools/test_assemble_v5_artwork_editorial_queue.py"
+  pull_request:
+    paths:
+      - ".github/workflows/go-artwork-v5-editorial-triage-ci.yml"
+      - "radio-catalog-lab/tools/assemble_v5_artwork_editorial_queue.py"
+      - "radio-catalog-lab/tools/test_assemble_v5_artwork_editorial_queue.py"
+
+permissions:
+  contents: read
+
+jobs:
+  editorial-triage-offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate offline editorial triage tests
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_assemble_v5_artwork_editorial_queue.py" -v
+          python -m py_compile radio-catalog-lab/tools/assemble_v5_artwork_editorial_queue.py
+      - name: Ensure TEST artwork remains pending and radio generation stays unchanged
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          radio = json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())
+          assert radio["release_sequence"] == 4, "Radio test pointer changed"
+          print("GO_V5_EDITORIAL_TRIAGE_SAFE_NO_PUBLICATION")
+          PY

@@ -1,0 +1,49 @@
+name: "Grosses Ondes — open Radio Browser logo discovery (TEST)"
+
+on:
+  push:
+    branches:
+      - feature/radio-central-apk-test-endpoint-20261121
+    paths:
+      - ".github/workflows/go-radio-browser-logo-discovery.yml"
+      - "grossesondes/radio-test-apk/artwork/**"
+      - "radio-catalog-lab/tools/discover_radio_browser_logo_candidates.py"
+      - "radio-catalog-lab/tools/test_discover_radio_browser_logo_candidates.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-discovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install isolated decoder required by image audit imports
+        run: python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+      - name: Prove no station whitelist, unsafe favicon or UUID confusion
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_discover_radio_browser_logo_candidates.py" -v
+      - name: Look up candidates by EXACT UUID without modifying any station
+        run: |
+          python radio-catalog-lab/tools/discover_radio_browser_logo_candidates.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --output radio-browser-logo-candidate-evidence.json \
+            --network
+      - name: Archive source candidates (not approved logos)
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-browser-logo-uuid-candidates
+          path: radio-browser-logo-candidate-evidence.json
+          retention-days: 14
+          if-no-files-found: error
+      - name: No signed release, no production writes
+        run: |
+          git diff --quiet
+          git diff --cached --quiet
+          echo "GO_UUID_LOGO_DISCOVERY_ONLY — source candidates, no approval"

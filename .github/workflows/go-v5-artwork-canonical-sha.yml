@@ -1,0 +1,79 @@
+name: "GO TEST — confirm official canonical logo SHA (never sign)"
+
+on:
+  push:
+    branches:
+      - feature/radio-artwork-v5-official-source-evidence-20261121
+    paths:
+      - ".github/workflows/go-v5-artwork-canonical-sha.yml"
+      - "radio-catalog-lab/tools/probe_v5_official_canonical_image_bytes.py"
+      - "radio-catalog-lab/tools/test_probe_v5_official_canonical_image_bytes.py"
+  workflow_dispatch:
+    inputs:
+      source_run:
+        description: "Successful official-source evidence run"
+        required: true
+        default: "44927683057"
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  canonical-image-byte-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN: ${{ inputs.source_run || '44927683057' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run offline tests before allowing HTTPS probes
+        run: |
+          python -m pip install --disable-pip-version-check "Pillow==11.2.1"
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_probe_v5_official_canonical_image_bytes.py" -v
+      - name: Download exactly six independent source shards
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/official"
+          gh run download "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" \
+            --pattern "go-v5-firstparty-source-shard-*" \
+            --dir "$RUNNER_TEMP/official"
+          mapfile -d '' -t source_files < <(find "$RUNNER_TEMP/official" \
+            -type f -name 'go-v5-firstparty-shard-*.json' -print0 | sort -z)
+          test "${#source_files[@]}" -eq 6
+          printf '%s\n' "${source_files[@]}" > "$RUNNER_TEMP/source-files.txt"
+      - name: Verify exact canonical HTTPS bytes separately from visual review
+        run: |
+          set -euo pipefail
+          mapfile -d '' -t source_files < <(find "$RUNNER_TEMP/official" \
+            -type f -name 'go-v5-firstparty-shard-*.json' -print0 | sort -z)
+          test "${#source_files[@]}" -eq 6
+          python radio-catalog-lab/tools/probe_v5_official_canonical_image_bytes.py \
+            --source-report "${source_files[@]}" --network \
+            --output "$RUNNER_TEMP/go-v5-laut-fm-canonical-sha-review.json"
+      - name: Validate unsigned and unchanged remote pointers
+        run: |
+          test ! -f grossesondes/radio-test-apk/artwork/current.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report=json.loads((Path(os.environ["RUNNER_TEMP"])/"go-v5-laut-fm-canonical-sha-review.json").read_text())
+          assert report["publication_allowed"] is False
+          assert report["signed_catalog_created"] is False
+          assert all(not x["identity_visual_approved"] for x in report["records"])
+          assert json.loads(Path("grossesondes/radio-test-apk/current.json").read_text())["release_sequence"]==4
+          print("GO_V5_CANONICAL_SHA_REVIEW_ONLY")
+          PY
+          git diff --exit-code
+      - name: Archive only the canonical SHA report
+        uses: actions/upload-artifact@v4
+        with:
+          name: go-v5-laut-fm-canonical-sha-review
+          path: ${{ runner.temp }}/go-v5-laut-fm-canonical-sha-review.json
+          retention-days: 14
+          if-no-files-found: error
