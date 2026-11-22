@@ -205,6 +205,63 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(len(names), 23)
         self.assertEqual(report["accepted_changes"][0]["artists_added"], 21)
 
+    def test_image_only_edition_h1_proves_signed_motocultor_2027(self):
+        # Real Astro homepage: the hero H1 contains ONLY the edition logo
+        # image. The accessible alt is the visible name/year; date and ticket
+        # details are ordinary HTML. News <article> cards compete for scope.
+        home = (
+            "<main><header><h1 class='hero__logo'>"
+            "<img alt='Motocultor Festival 2027' src='/logo.webp'></h1>"
+            "<p>Du jeudi 19 au dimanche 22 août 2027</p></header>"
+            "<h2>Ils seront à Carhaix</h2><ul><li>Helloween</li>"
+            "<li>Halestorm</li></ul>"
+            "<h2>Billetterie</h2>"
+            "<h3>Pass 4 jours</h3>"
+            "<p>Les quatre jours du festival.</p>"
+            "<ol><li><span>Tarif normal</span>"
+            "<span>239 €</span><span>En vente</span></li></ol>"
+            "<h3>Pass 1 jour</h3>"
+            "<p>Choisissez votre journée.</p>"
+            "<ol><li><span>Journée au choix</span>"
+            "<span>82 €</span><span>En vente</span></li></ol>"
+            "<article><h3><a href='/actualites/21-nouveaux-groupes/'>"
+            "21 nouveaux noms rejoignent l'affiche !</a></h3></article>"
+            "</main>")
+        row = festival("motocultor-festival", MOTO,
+                       dates=("2027-08-19", "2027-08-22"),
+                       lineup=["Helloween", "Halestorm"],
+                       price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"  # public signed row lacks year
+        signed = doc(row)
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch=lambda u: {MOTO: home, MOTO_NEWS: MOTO_ARTICLE}[u])
+        updated = out["festivals"][0]
+        self.assertEqual(report["accepted"], ["motocultor-festival"])
+        self.assertEqual(updated["bands"], 23)
+        self.assertIn("Alestorm", updated["lineup"])
+        self.assertIn("VCTMS", updated["lineup"])
+        self.assertIn("239 €", updated["price"])
+        self.assertIn("82 €", updated["price"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+
+    def test_only_accessible_visible_heading_logo_can_identify_edition(self):
+        parsed = page(
+            "<main><h1><img alt='Motocultor Festival 2027' "
+            "src='/signed.webp'></h1><p>19 au 22 août 2027</p></main>")
+        self.assertTrue(any(b["tag"] == "h1" and
+                            b["text"] == "Motocultor Festival 2027"
+                            for b in parsed.blocks))
+        # Non-heading logo and hidden image cannot authenticate an edition.
+        ignored = page(
+            "<main><img alt='Motocultor Festival 2027' src='/other.webp'>"
+            "<h1>Événement annoncé</h1>"
+            "<span aria-hidden='true'>"
+            "<img alt='Motocultor Festival 2027' src='/hidden.webp'>"
+            "</span><p>19 au 22 août 2027</p></main>")
+        self.assertFalse(any("Motocultor Festival 2027" in b["text"]
+                             for b in ignored.blocks))
+
     def test_no_artist_count_ceiling_for_a_verified_official_roster(self):
         # A real festival can confirm >60 groups on its own official page.
         # The HTML, source, edition and individual names remain validated.
