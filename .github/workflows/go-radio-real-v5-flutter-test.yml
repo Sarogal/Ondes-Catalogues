@@ -1,0 +1,57 @@
+name: GO radio — real 320-station signed Flutter v5/v6 integration test
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - 'radio-catalog-lab/flutter/test/central_authority_real_320_v5_test.dart'
+      - 'radio-catalog-lab/flutter/lib/central_radio_catalog_core.dart'
+      - 'radio-catalog-lab/flutter/lib/radio_station_stub.dart'
+      - '.github/workflows/go-radio-real-v5-flutter-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  real-320:
+    runs-on: ubuntu-latest
+    timeout-minutes: 23
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Retrieve unsigned v5 historical catalog, NOT production
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/verified-staging" radio-catalog-lab/flutter/test/fixtures
+          gh run download 45070247465 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/verified-staging" \
+            --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
+          SOURCE=$(find "$RUNNER_TEMP/verified-staging" \
+            -name full-test-v5-unsigned-preflight.json -print -quit)
+          test -n "$SOURCE"
+          cp "$SOURCE" radio-catalog-lab/flutter/test/fixtures/full_v5_unsigned.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          f=Path('radio-catalog-lab/flutter/test/fixtures/full_v5_unsigned.json')
+          c=json.loads(f.read_text())
+          assert c['release_sequence']==5 and len(c['stations'])==320
+          assert sum(s['status']['state']=='active' for s in c['stations'])==309
+          assert sum(s['status']['state']=='quarantined' for s in c['stations'])==11
+          print('Fixture admitted:',len(c['stations']),'320 real stations; NO real private TEST key')
+          PY
+      - name: Pub dependencies and analyze real selector
+        working-directory: radio-catalog-lab/flutter
+        run: |
+          flutter pub get
+          flutter analyze --fatal-infos
+      - name: Real 320-station Ed25519 ephemeral signing and server-only v6 simulation
+        working-directory: radio-catalog-lab/flutter
+        run: flutter test --reporter expanded test/central_authority_real_320_v5_test.dart
+      - name: Regression tests on full selector
+        working-directory: radio-catalog-lab/flutter
+        run: flutter test --reporter expanded test/central_authoritative_catalog_selector_test.dart
