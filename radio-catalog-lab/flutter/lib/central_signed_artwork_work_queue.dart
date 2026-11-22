@@ -1,24 +1,17 @@
-// Pure Dart queue for signed artwork hydration. A disk-only pass and a
-// subsequent remote pass must run in order, never silently skip the latter.
-// Untrusted images cannot be taken from any job other than the caller's
-// authenticated CentralLogoPreparationPlan.
+// Pure Dart FIFO queue for signed artwork hydration. Disk-only, network,
+// Android Auto and UI passes must never overlap or silently drop each other.
+// A failed job propagates to its caller without poisoning later jobs.
 class CentralSignedArtworkWorkQueue {
-  Future<void>? _running;
+  Future<void> _tail = Future<void>.value();
 
-  Future<void> run(Future<void> Function() job) async {
-    while (_running != null) {
-      try {
-        await _running;
-      } catch (_) {
-        // An earlier IO failure must not starve later signed generations.
-      }
-    }
-    final current = job();
-    _running = current;
-    try {
-      await current;
-    } finally {
-      if (identical(_running, current)) _running = null;
-    }
+  Future<void> run(Future<void> Function() job) {
+    // Reserve the next slot synchronously, before any await. Waiting on a
+    // shared in-flight Future with a while-loop is unsafe: multiple waiters
+    // can wake together and start their jobs concurrently.
+    final current = _tail.then((_) => job());
+    // Swallow failure ONLY in the internal scheduling tail. The returned
+    // future retains the original error for the job's caller.
+    _tail = current.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return current;
   }
 }
