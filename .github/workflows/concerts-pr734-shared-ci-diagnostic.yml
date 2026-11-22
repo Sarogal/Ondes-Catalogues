@@ -225,3 +225,29 @@ jobs:
           PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_osm_read_only_fallback.py' -v
           PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_overpass_secondary_readonly.py' -v
           PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_french_overpass_publisher.py' -v
+
+      - name: Checkout immutable pre-PR main for unrelated P'tites Ondes CI baseline
+        uses: actions/checkout@v4
+        with:
+          ref: c7fecd701dddb3269593d91244354252b5a2e0dc
+          path: po-baseline
+      - name: Isolate existing P'tites Ondes failures independently of Concerts
+        working-directory: po-baseline
+        run: |
+          python - <<'PY'
+          import subprocess
+          patterns=(
+            'test_ptitesondes_family_national_scope.py',
+            'test_ptitesondes_municipal_batch_readiness.py',
+            'test_ptitesondes_nonmusical_catalogue_shape_dryrun.py',
+          )
+          for name in patterns:
+              run=subprocess.run(
+                ['python','-m','unittest','discover','-s','tests','-p',name],
+                text=True,capture_output=True)
+              if run.returncode == 0:
+                  print('po_baseline',name,'unexpected_green',flush=True)
+              else:
+                  tail=run.stderr.strip().splitlines()[-1]
+                  print('po_baseline',name,tail,flush=True)
+          PY
