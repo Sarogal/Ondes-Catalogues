@@ -338,7 +338,7 @@ class _OfficialImageEditionIdentity(HTMLParser):
             return
         props = dict(attrs)
         if ("hidden" in props or props.get("aria-hidden") == "true"
-                or re.search(r"display\\s*:\\s*none", props.get("style") or "", re.I)):
+                or re.search(r"display\s*:\s*none", props.get("style") or "", re.I)):
             return
         value = props.get("alt")
         if isinstance(value, str) and 8 <= len(value) <= 180:
