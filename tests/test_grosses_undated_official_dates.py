@@ -92,7 +92,7 @@ class UndatedOfficialDateTests(unittest.TestCase):
 
     def test_future_rotation_rejects_previous_year_or_unpinned_identity(self):
         old = festival()
-        old["name"], old["slug"] = "Sylak Open Air 2026", "sylak-open-air-2026"
+        old["name"], old["slug"] = "Sylak Open Air 2025", "sylak-open-air-2025"
         self.assertEqual(signed_rotation(signed(old), DAY, 1, 0), [])
         forged = festival()
         forged["name"] = "An unrelated series 2027"
