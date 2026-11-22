@@ -201,6 +201,20 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             self.assertEqual(names, fixture.NAMES)
             self.assertIn("punk", genres)
 
+    def test_named_lineup_does_not_contain_the_venue_suffix(self):
+        venue = next(v for v in fixture.BASE["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        names, genres = oa.verified_export(
+            official_export(title={"fr": "LocoMuerte + DoorShan - Le Bikini"}),
+            URL, DAY, venue, agenda_uid="9969608", event_uid="87654321")
+        self.assertEqual(names, ["LocoMuerte", "DoorShan"])
+        self.assertIn("punk", genres)
+        # Unknown suffixes must not be stripped as if they were this venue.
+        wrong, _ = oa.verified_export(
+            official_export(title={"fr": "LocoMuerte + DoorShan - Another Room"}),
+            URL, DAY, venue, agenda_uid="9969608", event_uid="87654321")
+        self.assertEqual(wrong, ["LocoMuerte", "DoorShan - Another Room"])
+
     def test_untrusted_ids_cannot_change_first_party_origin(self):
         for ids in ((-1, 87654321), ("9969608/evil", "87654321"),
                     (9969608, "1?x=2"), (False, 87654321)):
