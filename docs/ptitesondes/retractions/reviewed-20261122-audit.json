@@ -1,0 +1,65 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-22",
+  "applied_at": "2026-11-22T23:59:12+01:00",
+  "before_count": 618,
+  "after_count": 609,
+  "catalogue_before_sha256": "d82aa92b030221b602dcb39ec39b7c657fcc300df4b399f2e558eb85ba8b1750",
+  "catalogue_after_sha256": "aa923e45256ca3d22b2724e206a31d6d72fca611ef11e4ea35ea09fa09f95a4f",
+  "withdrawn": [
+    {
+      "id": "openagenda-89509393-2026-11-24",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-24665005-2026-11-25",
+      "reason_code": "non_performance_gathering_primary",
+      "evidence_url": "https://www.paris.fr/evenements/forum-lutte-contre-les-violences-faites-aux-femmes-dans-le-11e-127701",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/24665005_forum-lutte-contre-les-violences-faites-aux-femmes-dans-le-11eme"
+    },
+    {
+      "id": "openagenda-89509393-2026-11-25",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-01",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-02",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-08",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-09",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-15",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    },
+    {
+      "id": "openagenda-89509393-2026-12-16",
+      "reason_code": "school_support_primary",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/89509393_coup-2-pouce-accompagnement-scolaire"
+    }
+  ]
+}
