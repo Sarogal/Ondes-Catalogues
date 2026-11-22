@@ -1,0 +1,65 @@
+name: GO radio — consolidate all 310 historic logo SHA proofs (UNSIGNED)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-310-logo-evidence-merge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  join-by-uuid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch all 16 read-only SHA proofs and unsigned 13-logo staging
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/images" "$RUNNER_TEMP/base"
+          gh run download 45066925484 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/images" --pattern go-logo-sha-source-*
+          gh run download 45066963322 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/base" --pattern go-radio-320-stations-345-audio-13-logos-unsigned
+          test "$(find "$RUNNER_TEMP/images" -name 'go-logo-probe-*.json' | wc -l)" -eq 16
+      - name: Reconcile historical image bytes SHA and exact old UUIDs
+        run: |
+          BASE=$(find "$RUNNER_TEMP/base" -name go-full-unsigned-audio-artwork.json -print -quit)
+          test -n "$BASE"
+          python radio-catalog-lab/tools/reconcile_full_historical_logo_sha.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --reports-dir "$RUNNER_TEMP/images" \
+            --catalog "$BASE" \
+            --out "$RUNNER_TEMP/complete-image-sha-unsigned.json" \
+            --report "$RUNNER_TEMP/complete-image-sha-report.json"
+      - name: Validate entire 320-station staging (never sign or publish)
+        run: |
+          python radio-catalog-lab/tools/radio_catalog_guard.py "$RUNNER_TEMP/complete-image-sha-unsigned.json" --mode staging
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])
+          j=json.loads((p/'complete-image-sha-report.json').read_text())
+          c=json.loads((p/'complete-image-sha-unsigned.json').read_text())
+          assert j['historical_inventory']==310
+          assert j['signed_publication_allowed'] is False
+          assert j['immutable_bytes_mirroring_required'] is True
+          assert len(c['stations'])==320
+          assert sum(v['state']=='verified' for s in c['stations'] for v in s['streams'])==345
+          print('Historic byte-verified SHA sources:',j['sha_verified_historical_sources'])
+          print('Total centrally mapped SHA logo descriptors:',j['total_sha_descriptors_in_central_preview'])
+          print('Non-verified source candidates:',j['discovery_image_candidates_unverified'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-historical-310-logo-sha-central-preview-unsigned
+          path: |
+            ${{ runner.temp }}/complete-image-sha-unsigned.json
+            ${{ runner.temp }}/complete-image-sha-report.json
+          retention-days: 14
