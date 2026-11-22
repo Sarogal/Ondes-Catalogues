@@ -159,8 +159,13 @@ def collect_research_dossiers(observation_root, research_root, today,
             # a research REQUEST only: DILA, venue GPS and exact sessions
             # are verified later by the Publisher. Never allow the fallback
             # to mint authority for an arbitrary OA-supplied website.
-            if priority == 0 and not matching:
-                matching = [official_event_url]
+            # OpenAgenda is an independently readable event source. A
+            # municipal backlink is optional research context, never a
+            # prerequisite for submitting the event to the Publisher.
+            # This does NOT approve the event: the Publisher must re-read
+            # the live UID, timings, rights, location and deduplicate.
+            if priority == 0 and official_event_url not in matching:
+                matching.append(official_event_url)
             # The OA venue's declared website is a candidate for research
             # even when there is no external link from a municipality.
             # This does NOT make OA's self-declared link authoritative:
