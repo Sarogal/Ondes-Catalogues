@@ -166,6 +166,28 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                                  {"held_original_or_named_site_unverified": 1},
                                  report)
 
+    def test_french_overseas_places_are_eligible_without_city_allowlist(self):
+        for code, postcode, department in (
+            ("gp", "97110", "971"), ("mq", "97200", "972"),
+            ("gf", "97300", "973"), ("re", "97400", "974"),
+            ("yt", "97600", "976"), ("nc", "98800", "988"),
+            ("pf", "98713", "987"), ("wf", "98600", "986"),
+            ("pm", "97500", "975"),
+        ):
+            with self.subTest(country=code):
+                place = producer._unpublished_location({
+                    "location": {
+                        "name": "Salle Libre", "city": "Ville Libre",
+                        "postalCode": postcode,
+                        "address": "15 rue Exemple, France",
+                        "countryCode": code,
+                    },
+                })
+                self.assertEqual(place["department"], department)
+                self.assertEqual(place["name"], "Salle Libre")
+                self.assertNotIn("latitude", place)
+                self.assertNotIn("longitude", place)
+
     def test_discovery_never_authorizes_known_venue_or_old_date(self):
         base = geo_fixture.test_catalogue()
         fetch = lambda *_: self.fail("untrusted lead must not reach network")
