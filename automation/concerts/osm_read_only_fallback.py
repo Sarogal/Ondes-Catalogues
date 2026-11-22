@@ -16,11 +16,20 @@ import re
 from urllib.parse import urlencode
 
 ENDPOINT = "https://overpass.private.coffee/api/interpreter"
+ALTERNATE_ENDPOINT = "https://overpass-api.de/api/interpreter"
+ENDPOINTS = (ENDPOINT, ALTERNATE_ENDPOINT)
+
+
+def _endpoint(provider):
+    # Source code selects either read-only transport, never an input lead.
+    if type(provider) is not int or provider not in (0, 1):
+        raise ValueError("Unsafe OSM read-only provider")
+    return ENDPOINTS[provider]
 MAX_TIMEOUT = 12
 OSM_ID = re.compile(r"[1-9][0-9]{0,18}\Z")
 
 
-def element(kind, identifier, *, fmt="xml"):
+def element(kind, identifier, *, fmt="xml", provider=0):
     """GET one named OSM node or way, safely and without an editing API."""
     if (kind not in ("node", "way") or fmt not in ("xml", "json")
             or not isinstance(identifier, str)
@@ -28,10 +37,10 @@ def element(kind, identifier, *, fmt="xml"):
         raise ValueError("Unsafe OSM read-only element query")
     data = (f"[out:{fmt}][timeout:{MAX_TIMEOUT}];" +
             f"{kind}({identifier});out body;")
-    return ENDPOINT + "?" + urlencode({"data": data})
+    return _endpoint(provider) + "?" + urlencode({"data": data})
 
 
-def nearby(south, west, north, east):
+def nearby(south, west, north, east, *, provider=0):
     """Return a tiny readonly bbox query for independently named OSM geometry.
 
     Unlike a name lookup, this also returns ways and their referenced nodes.
@@ -50,4 +59,4 @@ def nearby(south, west, north, east):
     bbox = ",".join(fmt(v) for v in coords)
     data = (f"[out:xml][timeout:{MAX_TIMEOUT}];"
             f"(node({bbox});way({bbox}););(._;>;);out body;")
-    return ENDPOINT + "?" + urlencode({"data": data})
+    return _endpoint(provider) + "?" + urlencode({"data": data})
