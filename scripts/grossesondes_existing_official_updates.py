@@ -16,6 +16,7 @@ import unicodedata
 from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
+from source_qualification import classify
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
@@ -49,7 +50,11 @@ class Page(HTMLParser):
         self.strong = None
 
     def handle_starttag(self, tag, attrs):
-        if tag in ("script", "style", "noscript", "svg", "template"):
+        if (tag in ("script", "style", "noscript", "svg", "template") or
+                any(k in ("hidden", "aria-hidden") and (v is None or v == "true")
+                    for k, v in attrs) or
+                any(k == "style" and re.search(r"display\s*:\s*none", v or "", re.I)
+                    for k, v in attrs)):
             self.hide += 1
             return
         if self.hide:
@@ -227,7 +232,7 @@ def matches_edition(doc, row, today, *, root_ok):
             return False
     except (KeyError, TypeError, ValueError):
         return False
-    visible = fold(" ".join(b["text"] for b in doc.blocks))
+    visible = fold(" ".join(b["text"] for b in doc.relevant()))
     if SENSITIVE.search(visible):
         return False
     if re.search(r"\b" + str(start.year) + r"\b", visible):
@@ -245,7 +250,8 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     grouped = {}
     for row in published["festivals"]:
         url = row.get("officialSite")
-        if not isinstance(url, str) or safe_public_url(url) != url:
+        if (not isinstance(url, str) or safe_public_url(url) != url or
+                classify(url) in ("TICKETING", "SOCIAL", "MEDIA", "THIRD_PARTY")):
             continue
         try:
             if date.fromisoformat(row["startDate"]) < date.fromisoformat(today):
@@ -288,7 +294,7 @@ def apply_independently_verified_updates(
         for old in rows:
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
-            if (any(old.get(f) != new.get(f) for f in CHANGEABLE) or
+            if (any(old.get(f) != new.get(f) for f in set(old) | set(new)) or
                     not isinstance(old.get("lineup"), list)):
                 continue
             root_ok = matches_edition(root, old, today, root_ok=False)
