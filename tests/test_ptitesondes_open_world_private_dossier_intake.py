@@ -275,7 +275,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
         (old / (data["ref"] + ".json")).write_text(
             json.dumps(data), encoding="utf8")
         rows, counts = self.load()
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(rows), 2)
         self.assertEqual(counts["reports"], 1)
         self.assertEqual(rows[0]["official_event_url"], SOURCE)
 
@@ -294,9 +294,9 @@ class NationalPrivateDossierTests(unittest.TestCase):
         rows, counts = self.load()
         self.assertEqual(counts["reports"], 2)
         self.assertEqual(counts["pairs"], 1)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["official_venue_url"], MUNICIPAL)
-        self.assertEqual(rows[0]["municipal_source_reference_url"], MUNICIPAL)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(any(row["official_venue_url"] == MUNICIPAL for row in rows))
+        self.assertEqual(next(row for row in rows if row["official_venue_url"] == MUNICIPAL)["municipal_source_reference_url"], MUNICIPAL)
 
     def test_old_research_does_not_become_permanent_authority(self):
         old = report()
@@ -322,7 +322,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
             "publisher_connected": True, "approved": True}
         self.write(value)
         rows, _ = self.load()
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(rows), 2)
         self.assertNotIn("diagnostic", rows[0])
         self.assertNotIn("approved", str(rows[0]))
 
@@ -343,7 +343,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(report())
         first, _ = self.load(batch_index=0)
         second, _ = self.load(batch_index=1)
-        self.assertEqual(len(first), 1)
+        self.assertEqual(len(first), 2)
         self.assertEqual(second, [])
         fourth, _ = self.load(batch_index=3)
         self.assertEqual(fourth, [])
@@ -368,7 +368,9 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(report(
             source=EVENT_PAGE, linked=EVENT_PAGE, municipal=VENUE_PAGE))
         requests, metrics = self.load()
-        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(metrics["queued"], 2)
+        requests = [row for row in requests if row["official_venue_url"] != EVENT_PAGE]
+        self.assertEqual(len(requests), 1)
         self.assertNotIn("municipal_source_reference_url", requests[0])
         staged = attach_research_dossiers(
             private_patch(ref, queue=[]), requests, TODAY)
