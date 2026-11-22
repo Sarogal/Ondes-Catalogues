@@ -730,7 +730,7 @@ class ApprovalBatchTests(unittest.TestCase):
                                  "independent-official-verifier")
                 self.assertEqual(row["locationKind"], "named-physical-site")
                 self.assertRegex(venue["geoSource"],
-                    r"^https://www\\.openstreetmap\\.org/(?:node|way|relation)/[0-9]+$")
+                    r"^https://www\.openstreetmap\.org/(?:node|way|relation)/[0-9]+$")
                 self.assertIn(venue["geoPrecision"],
                               ("named-site-point", "named-site-area"))
                 event_binding = row["eventBinding"]
