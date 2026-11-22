@@ -125,6 +125,46 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["official_edition_diagnostics"][0]["reason"],
                          "no_changed_fields_from_official_evidence")
 
+    def test_current_official_lineup_location_heading_and_tickets(self):
+        # A current-edition homepage may group artists beneath
+        # "Ils seront à Carhaix" without a "groupes annoncés" heading.
+        # The complete 2027 edition identity is independently checked.
+        row = festival(
+            "motocultor-festival", MOTO,
+            dates=("2027-08-19", "2027-08-22"),
+            lineup=["Helloween", "Halestorm"],
+            price="Pass 4 jours : 228 € (Early Bird 3)")
+        home = (
+            "<main><p>Du jeudi 19 au dimanche 22 août 2027</p>"
+            "<h2>Ils seront à Carhaix</h2><ul>"
+            "<li>Helloween</li><li>Alestorm</li>"
+            "<li>Cavalera Chaos A.D.</li><li>VCTMS</li>"
+            "<li>Alestorm</li><li>+ 12 groupes à confirmer</li>"
+            "</ul><h3>Pass 4 jours</h3>"
+            "<p>Tarif normal 239 € en vente</p>"
+            "<h3>Pass 1 jour</h3><p>82 € en vente</p>"
+            "<p>Motocultor Festival 2027</p></main>")
+        signed = doc(row)
+        updated, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: home, limit=1, tick=0)
+        festival_2027 = updated["festivals"][0]
+        self.assertEqual(
+            festival_2027["lineup"],
+            ["Helloween", "Halestorm", "Alestorm",
+             "Cavalera Chaos A.D.", "VCTMS"])
+        self.assertEqual(festival_2027["bands"], 5)
+        self.assertIn("239 €", festival_2027["price"])
+        self.assertIn("82 €", festival_2027["price"])
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertTrue(_verified_official_update_delta(row, festival_2027))
+
+        # A current-year page cannot serve as proof for next year's edition.
+        old_home = home.replace("2027", "2026")
+        untouched, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: old_home, limit=1, tick=0)
+        self.assertEqual(untouched["festivals"][0], row)
+        self.assertEqual(report["accepted"], [])
+
     def test_motocultor_real_format_from_official_article(self):
         row = festival("motocultor", MOTO,
                        dates=("2027-08-19", "2027-08-22"),
