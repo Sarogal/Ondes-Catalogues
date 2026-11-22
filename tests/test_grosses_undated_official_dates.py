@@ -8,6 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automation"))
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, signed_rotation,
+    undated_official_evidence_diagnostic,
 )
 from grossesondes_cloud_sync import _verified_official_update_delta, safe_target
 
@@ -39,6 +40,43 @@ class UndatedOfficialDateTests(unittest.TestCase):
         result, report = apply_independently_verified_updates(
             original, original, DAY, limit=1, tick=0, fetch=lambda url: html)
         return result["festivals"][0], report
+
+    def test_diagnostics_distinguish_raw_visible_identity_without_html_leak(self):
+        old = festival()
+        html = (
+            "<html><head><title>Accueil | Sylak Open Air</title></head>"
+            "<body><main><img alt='Edition 2027 Sylak Open Air logo'>"
+            "<h2>VENDREDI 30 SAMEDI 31 JUILLET 2027</h2>"
+            "</main></body></html>")
+        flags = undated_official_evidence_diagnostic(html, old, 2027)
+        self.assertEqual(flags, {
+            "raw_year_token": True,
+            "visible_year_token": True,
+            "visible_weekday_sequence": True,
+            "title_matches_identity": True,
+            "current_edition_logo_alt": True,
+        })
+        published, report = self.updated(html, old)
+        self.assertEqual(published["startDate"], "2027-07-30")
+        evidence = report["official_edition_diagnostics"][0]["undated_page_proof"]
+        self.assertEqual(len(evidence), 1)
+        self.assertEqual(evidence[0]["page_role"], "registered_home")
+        self.assertTrue(evidence[0]["weekday_date_validator"])
+        self.assertNotIn("Sylak Open Air", str(evidence))
+        self.assertNotIn("VENDREDI", str(evidence))
+
+    def test_undated_proof_flags_do_not_authorize_publication(self):
+        old = festival()
+        html = ("<html><body><script>Sylak Open Air 2027:"
+                "VENDREDI 30 SAMEDI 31 JUILLET 2027</script>"
+                "</body></html>")
+        flags = undated_official_evidence_diagnostic(html, old, 2027)
+        self.assertTrue(flags["raw_year_token"])
+        self.assertFalse(flags["visible_year_token"])
+        self.assertFalse(flags["visible_weekday_sequence"])
+        new, report = self.updated(html, old)
+        self.assertEqual(new, old)
+        self.assertEqual(report["accepted"], [])
 
     def test_future_date_exact_official_single_source_publishes(self):
         old = festival()
