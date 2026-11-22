@@ -93,6 +93,51 @@ class SignedSidecarTests(unittest.TestCase):
             verify(p,updated,self.secret.public_key(),previous=self.doc)
             ["release_sequence"],2)
 
+    def test_signed_v2_first_install_without_v1_cache_is_valid(self):
+        # Device has never seen the intentionally inactive v1. Its first
+        # authenticated remote pointer is already the signed v2.
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        verified=verify(pointer,body,self.secret.public_key())
+        self.assertEqual(verified["release_sequence"],2)
+        self.assertEqual(verified["assets"],self.doc["assets"])
+
+    def test_v2_first_install_still_requires_real_signature(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,body,Ed25519PrivateKey.generate().public_key())
+        corrupted=bytearray(body)
+        corrupted[-3]^=1
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,bytes(corrupted),self.secret.public_key())
+
+    def test_cached_v2_refuses_signed_v1_rollback_or_repeat(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        self.assertEqual(
+            verify(pointer,body,self.secret.public_key(),
+                   previous=self.doc)["release_sequence"],2)
+        with self.assertRaises(ArtworkBundleError):
+            verify(self.ptr,self.content,self.secret.public_key(),previous=d)
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,body,self.secret.public_key(),previous=d)
+
+    def test_publisher_cannot_skip_generation_without_prior_document(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        with self.assertRaisesRegex(ArtworkBundleError,"Publisher needs previous"):
+            sign_pending(wire(d),self.secret,KEY_ID,PUBLISHED)
+        # A verified reader, unlike the publisher, must accept the same
+        # signed v2 pointer on a new device (tested above).
+        self.assertEqual(validate_body(wire(d))["release_sequence"],2)
+
     def test_unknown_official_provider_is_supported_after_explicit_review(self):
         d=deepcopy(self.doc)
         s=d["assets"][0]["source"]
