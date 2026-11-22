@@ -96,6 +96,14 @@ def _city_jsonld(html, row):
 
 
 def _city_visible(html, row):
+    """A named dated edition, or a first-party edition/date/city hero.
+
+    The title may be in the official site's heading/identity while the
+    current-year date and city are in a separate hero caption. The latter
+    MUST explicitly say "édition" and put the location AFTER the current
+    dates in its own visible block. A bare historic venue, organizer address,
+    or undated contact/footer does not establish a future location.
+    """
     start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
     if start is None or end is None or start.year != end.year:
         return None
@@ -111,12 +119,16 @@ def _city_visible(html, row):
         parser.close()
     except (ValueError, TypeError, UnicodeError):
         return None
+    blocks = [raw for raw in
+              " ".join(parser.parts).split(VisibleParagraphs.SEP)
+              if 0 < len(raw) <= 1100]
+    # Another event's generic date + city can never be attributed to the
+    # published festival unless this SAME official page names its festival.
+    branded = any(name.search(" ".join(fold(raw).split())) for raw in blocks)
     facts = set()
-    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
-        if not 0 < len(raw) <= 1100:
-            continue
+    for raw in blocks:
         paragraph = " ".join(fold(raw).split())
-        if (not name.search(paragraph) or CANCEL.search(paragraph)
+        if (CANCEL.search(paragraph)
                 or {int(y) for y in re.findall(r"(?<!\d)20[2-4]\d(?!\d)", raw)}
                    != {start.year}):
             continue
@@ -124,14 +136,42 @@ def _city_visible(html, row):
                   in explicit_ranges(paragraph, start.year)}
         if dominant_visible_range(ranges) != (start, end):
             continue
-        # Exact edition and locality must share the SAME visible paragraph.
-        # Capitalization is retained for municipality extraction.
-        for match in CITY_PATTERN.finditer(raw):
-            city = _name(match.group(1))
-            if city and not re.search(r"\b(?:Festival|France|Parisien|Vente|Billetterie)\b", city):
-                facts.add(city)
+        named = name.search(paragraph) is not None
+        hero = (not named and branded
+                and re.search(r"\bedition\b", paragraph) is not None)
+        if not (named or hero):
+            continue
+        # Existing strict path: exact named festival, current dates and city
+        # in a single visible block.
+        if named:
+            for match in CITY_PATTERN.finditer(raw):
+                city = _name(match.group(1))
+                if city and not re.search(
+                        r"\b(?:Festival|France|Parisien|Vente|Billetterie)\b",
+                        city):
+                    facts.add(city)
+        # Official edition hero: "4e édition · 23 & 24 avril 2027 · Aix-en-
+        # Provence". The page separately names the festival. Never use a
+        # locality preceding the edition date or a second, undated paragraph.
+        if hero:
+            pieces = re.split(r"[·•]", raw)
+            for i, piece in enumerate(pieces[:-1]):
+                if not re.search(
+                        rf"(?<!\d){start.year}(?!\d)", piece):
+                    continue
+                for location in pieces[i + 1:i + 3]:
+                    candidate = location.strip()
+                    if (not re.fullmatch(
+                            r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-–]+"
+                            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-–]+){0,3}",
+                            candidate)
+                            or re.search(r"\d", candidate)):
+                        continue
+                    city = _name(candidate)
+                    if city and city not in ("France", "Festival",
+                                             "Programmation", "Billetterie"):
+                        facts.add(city)
     return next(iter(facts)) if len(facts) == 1 else None
-
 
 def undated_future_year(row, today=None):
     """Only signed, explicitly undated *future* festival edition identities.
