@@ -402,15 +402,23 @@ def apply_independently_verified_updates(
     positions = {r["slug"]: i for i, r in enumerate(result["festivals"])}
     report = {"checked_official_hosts": 0, "rechecked_pages": 0,
               "accepted": [], "accepted_changes": [], "unavailable": 0,
+              "checked_official_sources": [], "unavailable_official_sources": [],
+              "official_edition_diagnostics": [],
               "private_proposal_is_authority": False}
     for site, rows in signed_rotation(published, today, limit, tick):
         report["checked_official_hosts"] += 1
+        # These URLs are from the previously signed catalogue, never private
+        # suggestions. A bounded diagnostics list makes real omissions auditable.
+        report["checked_official_sources"].append(site)
         try:
             root_html = fetch(site)
             root = page(root_html)
             report["rechecked_pages"] += 1
-        except (OSError, TimeoutError, ValueError, UnicodeError):
+        except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
             report["unavailable"] += 1
+            # Do not log untrusted exception text, response HTML, or secrets.
+            report["unavailable_official_sources"].append({
+                "url": site, "error_type": type(exc).__name__})
             continue
         pages = [(site, root)]
         # Store only independently fetched, safely linked first-party HTML;
@@ -435,6 +443,10 @@ def apply_independently_verified_updates(
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
             if any(old.get(f) != new.get(f) for f in set(old) | set(new)):
+                if len(report["official_edition_diagnostics"]) < 75:
+                    report["official_edition_diagnostics"].append({
+                        "slug": slug, "official_site": site,
+                        "reason": "different_from_current_signed_edition"})
                 continue
             root_ok = home_matches_edition(root, old, today)
             claims, prices, sources = [], {}, []
@@ -563,6 +575,18 @@ def apply_independently_verified_updates(
                                        "dateRangeIsContinuous", "status",
                                        "verificationStatus"))
                         sources.extend(verified_urls)
+            if len(report["official_edition_diagnostics"]) < 75:
+                report["official_edition_diagnostics"].append({
+                    "slug": slug, "official_site": site,
+                    "homepage_matches_signed_edition": root_ok,
+                    "linked_pages_fetched": len(html_pages) - 1,
+                    "artist_names_claimed": len(claims),
+                    "artist_names_new": len(new_names),
+                    "open_pass_categories_found": sorted(prices),
+                    "fields_proposed": list(fields),
+                    "reason": ("proven_update" if fields
+                               else "no_changed_fields_from_official_evidence"),
+                })
             if not fields:
                 continue
             if isinstance(old.get("lastVerified"), str):
