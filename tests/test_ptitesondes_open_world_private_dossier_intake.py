@@ -423,8 +423,11 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(first)
         a = self.load()[0]
         slot1 = attach_research_dossiers(patch, a, TODAY)
-        self.assertEqual(len(slot1["open_world_research"]), 1)
-        # The same clue and an empty following batch must preserve this row.
+        # Both distinct venue-research requests must survive one review slot;
+        # the new OpenAgenda-first lane must not collapse the existing paths.
+        self.assertEqual(len(a), 2)
+        self.assertEqual(slot1["open_world_research"], a)
+        # The same clues and an empty following batch must preserve both rows.
         slot2 = attach_research_dossiers(slot1, a, TODAY)
         slot3 = attach_research_dossiers(slot2, [], TODAY)
         self.assertEqual(slot2["open_world_research"], a)
