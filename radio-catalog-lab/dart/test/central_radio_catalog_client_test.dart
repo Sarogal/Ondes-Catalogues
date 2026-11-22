@@ -893,4 +893,81 @@ void main() {
   });
 
 
+  test('signed GO merge preserves favorites and Android Auto media IDs',
+      () async {
+    final first = await validatePayload(jsonBytes(catalog([station(1), station(2)])));
+    final second = await validatePayload(
+        jsonBytes(catalog([station(1)], sequence: 2, tombstones: [
+          {
+            'go_station_id': 'go-station-000002',
+            'legacy_aliases': ['legacy-2'],
+            'reason_code': 'merged_into_station',
+            'retired_at': '2026-11-22T19:00:00Z',
+            'redirect_to': 'go-station-000001',
+          }
+        ])),
+        sequence: 2,
+        previous: first);
+    expect(second.aliasOwners['legacy-2'], 'go-station-000002');
+    expect(second.goRedirects['go-station-000002'], 'go-station-000001');
+    final projection = const CentralCatalogProjector().preview(
+        catalog: second,
+        legacyFavoriteIds: ['legacy-1', 'legacy-2', 'go-station-000002']);
+    expect(projection.playableStations.length, 1);
+    expect(projection.favorites.projectedGoIds, ['go-station-000001']);
+    expect(projection.playableStations.single.legacyAliases,
+        containsAll(['legacy-1', 'legacy-2', 'go-station-000002']));
+    final auto = CentralMediaIdentityResolver(
+        catalog: second, preview: projection);
+    expect(auto.resolveStationId('legacy-2').playable, isTrue);
+    expect(auto.resolveStationId('legacy-2').goStationId, 'go-station-000001');
+    expect(auto.resolveStationId('go-station-000002').goStationId,
+        'go-station-000001');
+  });
+
+  test('merge redirect target must be active and reason explicit', () async {
+    final first = await validatePayload(jsonBytes(catalog([station(1), station(2)])));
+    for (final reason in ['merged_into_station', 'retired_by_editorial_review']) {
+      final next = jsonBytes(catalog([station(1)], sequence: 2, tombstones: [
+        {
+          'go_station_id': 'go-station-000002',
+          'legacy_aliases': ['legacy-2'],
+          'reason_code': reason,
+          'retired_at': '2026-11-22T19:00:00Z',
+          'redirect_to': reason == 'merged_into_station'
+              ? 'go-station-000003' : 'go-station-000001',
+        }
+      ]));
+      await expectLater(validatePayload(next, sequence: 2, previous: first),
+          throwsA(isA<CentralCatalogException>()));
+    }
+  });
+
+  test('redirects cannot be hijacked; a future second merger is flattened',
+      () async {
+    final first = await validatePayload(
+        jsonBytes(catalog([station(1), station(2), station(3)])));
+    Map<String, dynamic> tombstone(int id, int winner) => {
+      'go_station_id': 'go-station-' + id.toString().padLeft(6, '0'),
+      'legacy_aliases': ['legacy-' + id.toString()],
+      'reason_code': 'merged_into_station',
+      'retired_at': '2026-11-22T19:00:00Z',
+      'redirect_to': 'go-station-' + winner.toString().padLeft(6, '0'),
+    };
+    final second = await validatePayload(
+        jsonBytes(catalog([station(1), station(3)], sequence: 2,
+            tombstones: [tombstone(2, 1)])),
+        sequence: 2, previous: first);
+    final hijack = jsonBytes(catalog([station(1), station(3)],
+        sequence: 3, tombstones: [tombstone(2, 3)]));
+    await expectLater(validatePayload(hijack, sequence: 3, previous: second),
+        throwsA(isA<CentralCatalogException>()));
+    final third = await validatePayload(
+        jsonBytes(catalog([station(3)], sequence: 3,
+            tombstones: [tombstone(1, 3), tombstone(2, 3)])),
+        sequence: 3, previous: second);
+    expect(third.goRedirects['go-station-000001'], 'go-station-000003');
+    expect(third.goRedirects['go-station-000002'], 'go-station-000003');
+  });
+
 }
