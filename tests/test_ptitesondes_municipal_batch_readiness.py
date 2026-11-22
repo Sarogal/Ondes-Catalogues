@@ -13,6 +13,7 @@ from ptitesondes_municipal_batch_readiness import (
     SCHEMA, inspect_municipal_batch,
 )
 from ptitesondes_municipal_appendonly_dryrun import canonical_sha256
+from ptitesondes_nonmusic_release_contract import TYPES
 from ptitesondes_municipal_admission import editorial_decision_line
 from ptitesondes_municipal_human_decision import (
     API, APPROVER, MANIFEST_SCHEMA, REPOSITORY,
