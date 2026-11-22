@@ -382,8 +382,8 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["accepted"], [row["slug"]])
         self.assertEqual(
             updated["festivals"][0]["price"],
-            "Pass 4 jours : 239 € ; pass 1 jour : 82 €"
-            " (billetterie officielle ouverte)")
+            "Pass 4 jours : 239 € ; Pass 1 jour : 82 €"
+            " — billetterie officielle ouverte")
         self.assertTrue(_verified_official_update_delta(
             row, updated["festivals"][0]))
 
