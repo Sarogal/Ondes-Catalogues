@@ -999,4 +999,30 @@ void main() {
         throwsA(isA<CentralCatalogException>()));
   });
 
+  test('historic publicly routed IPv4 radio works; SSRF private IP is forbidden',
+      () async {
+    final allowed = station(1);
+    (allowed['streams'] as List)[0]['url'] = 'http://79.120.77.11:8000/live';
+    final verified = await validatePayload(jsonBytes(catalog([allowed])));
+    expect(verified.activeIds, contains('go-station-000001'));
+
+    for (final bad in <String>[
+      'http://127.0.0.1/stream',
+      'http://10.0.0.7/live',
+      'http://192.168.1.1/radio',
+      'http://169.254.169.254/secret',
+      'http://172.20.1.1/stream',
+      'http://100.64.12.4/stream',
+      'http://198.18.1.1/stream',
+      'http://203.0.113.4/stream',
+      'http://256.1.2.3/stream',
+      'http://017.0.0.1/stream',
+    ]) {
+      final forged = station(1);
+      (forged['streams'] as List)[0]['url'] = bad;
+      await expectLater(validatePayload(jsonBytes(catalog([forged]))),
+          throwsA(isA<CentralCatalogException>()), reason: bad);
+    }
+  });
+
 }
