@@ -16,6 +16,7 @@ from test_ptitesondes_open_world_patch_bridge import private_patch
 from ptitesondes_national_backlog_bridge import _inventory_key
 from ptitesondes_open_world_private_dossier_intake import (
     collect_research_dossiers, attach_research_dossiers,
+    review_batch_for_cron,
 )
 from ptitesondes_private_research_carry_forward import (
     carry_same_day_research,
@@ -87,6 +88,45 @@ class NationalPrivateDossierTests(unittest.TestCase):
             inventory_reader=lambda _: [self.record])
         return [row for row in rows if row["official_event_url"].startswith(
             "https://openagenda.com/")]
+
+    def test_no_legacy_review_slots_cover_all_four_scheduled_batches(self):
+        for cron, hour, batch in (
+            ("17 07 * * *", 7, 0),
+            ("17 10 * * *", 10, 1),
+            ("17 14 * * *", 14, 2),
+            ("17 18 * * *", 18, 3),
+        ):
+            with self.subTest(cron=cron):
+                self.assertEqual(review_batch_for_cron(cron, hour), batch)
+        # Unknown/manual triggers are still deterministic UTC four-way runs.
+        self.assertEqual(review_batch_for_cron("", 2), 0)
+        self.assertEqual(review_batch_for_cron("", 23), 3)
+        for invalid in (-1, 24, "7", True):
+            with self.assertRaises(ValueError):
+                review_batch_for_cron("", invalid)
+
+    def test_no_legacy_slot_first_cycle_transmits_small_oa_only_queue(self):
+        batch = review_batch_for_cron("17 07 * * *", 7)
+        rows, metrics = self.load(include_direct=True, batch_index=batch)
+        self.assertEqual(metrics["reports"], 0)
+        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["official_event_url"].startswith(
+            "https://openagenda.com/"))
+        # Future slots must not repeat the same dossier.
+        for cron, hour in (("17 10 * * *", 10),
+                           ("17 14 * * *", 14),
+                           ("17 18 * * *", 18)):
+            next_rows, _ = self.load(include_direct=True, batch_index=(
+                review_batch_for_cron(cron, hour)))
+            self.assertEqual(next_rows, [])
+
+    def test_private_workflow_uses_cron_aware_batch_selector(self):
+        source = (ROOT / ".github/workflows/"
+                  "ptitesondes-private-intake-on-public-runners.yml").read_text(
+                      encoding="utf-8")
+        self.assertIn('review_batch_for_cron(os.getenv("REVIEW_CRON", "")', source)
+        self.assertIn('batch-index "$NO_SLOT_BATCH"', source)
 
     def test_openagenda_uid_queues_without_municipal_or_external_link(self):
         rows, metrics = self.load(include_direct=True)
