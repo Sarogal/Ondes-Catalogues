@@ -48,8 +48,13 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
             category_for(item["title"], event["description"]["fr"] +
                          " " + event["conditions"]["fr"])[0],
             "eveil-musical")
+        # The synthetic 100-row baseline contains only the "conte-musical"
+        # category; real production already contains "eveil-musical".
+        reference = base()
+        reference["events"][0]["category"] = "eveil-musical"
+        reference["events"][0]["category_label"] = "Éveil musical"
         candidate, reason = admit_live_openagenda(
-            item, DAY.isoformat(), AGENDA, event, base(), base(), TODAY)
+            item, DAY.isoformat(), AGENDA, event, reference, reference, TODAY)
         self.assertEqual(reason, "oa_direct_live_source_accepted")
         self.assertEqual(candidate["category"], "eveil-musical")
         self.assertEqual(candidate["date_start"], DAY.isoformat())
