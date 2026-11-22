@@ -5162,7 +5162,7 @@
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
         "source": "https://www.motocultor-festival.com/",
-        "verifiedAt": "2026-11-22",
+        "verifiedAt": "2026-11-23",
         "scope": "per_category_only",
         "categories": [
           {
@@ -6167,6 +6167,30 @@
       "auditSources": [
         "https://www.colombin-rock.fr/billetterie/"
       ]
+    },
+    {
+      "venue": null,
+      "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
+      "dateRangeIsContinuous": false,
+      "name": "La Sainte Rock Festival 2027",
+      "showOnMap": false,
+      "lineup": [],
+      "lon": null,
+      "bands": 0,
+      "slug": "la-sainte-rock-festival-2027",
+      "verificationStatus": "Site et édition officielle revérifiés",
+      "status": "Annoncé",
+      "source": "https://lasainterockfestival.fr/",
+      "department": null,
+      "startDate": "2027-04-23",
+      "region": null,
+      "endDate": "2027-04-24",
+      "lat": null,
+      "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
+      "officialSite": "https://lasainterockfestival.fr/",
+      "city": "Aix-en-Provence",
+      "price": null,
+      "lastVerified": "2026-11-23"
     }
   ]
 }
