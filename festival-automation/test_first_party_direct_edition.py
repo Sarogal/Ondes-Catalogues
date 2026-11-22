@@ -86,6 +86,85 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(row["startDate"], DATES[0])
         self.assertEqual(row["endDate"], DATES[1])
 
+    def test_official_split_hero_and_brand_in_founder_quote_is_valid(self):
+        """Real-world visual structure: dated hero, slogan h1, brand below."""
+        split = (
+            "<main><section>"
+            "<p>Wild &amp; Civilized et le 6MIC présentent</p>"
+            "<p>4e édition · 23 &amp; 24 avril 2027 · Aix-en-Provence</p>"
+            "<h1>Ça va faire du bruit</h1>"
+            "<p>Blind Pass · 2 jours</p>"
+            "<h2>Qui joue</h2><p>Vendredi 23 · Samedi 24</p>"
+            "<h3>Le running order</h3>"
+            "<p>Deux scènes, deux soirs, zéro temps mort.</p>"
+            "</section><section>"
+            "<p>Le mot du fondateur</p>"
+            "<blockquote>Pour l'amour du Rock et de la Montagne Sainte-Victoire, "
+            "j'avais un rêve : La Sainte Rock Festival.</blockquote>"
+            "</section></main>"
+        )
+        self.assertTrue(branded_official_site(SITE, TITLE, split))
+        self.assertEqual(verify_first_party_claims(
+            SITE, TITLE, DAY1, fetch=lambda _: split),
+            (DATES, "Aix-en-Provence"))
+        cal, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = examine(state, queue(DAY1), cal, DAY1, fetch=lambda _: split)
+        self.assertEqual(first["rows"][0]["start_date_hint"], DATES[0])
+        self.assertEqual(first["rows"][0]["end_date_hint"], DATES[1])
+        second = examine(state, queue(DAY2), cal, DAY2, fetch=lambda _: split)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        proposed = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, second, DAY2,
+            fetch=lambda _: split)
+        self.assertEqual(len(proposed), 1)
+        self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
+        self.assertFalse(proposed[0]["showOnMap"])
+
+    def test_colombin_official_archive_and_home_reach_direct_publisher(self):
+        """A tribute-rock festival with archived editions isn't disqualified."""
+        name = "Colomb'in Rock Festival 2027"
+        site = "https://www.colombin-rock.fr/"
+        detail = "https://www.colombin-rock.fr/programmation/"
+        homepage = (
+            "<main><h1>Tribute Fest – Colomb’in Rock Festival – "
+            "13 &amp; 14 août 2027</h1>"
+            "<p>Le Colomb’in Rock Festival est organisé tous les 13 "
+            "et 14 août. Les précédentes années furent 2025 et 2026.</p>"
+            "<p>Une expérience rock, 100% live, 100% tributes.</p>"
+            "<p>La prochaine édition anniversaire du Colomb’in Rock "
+            "Festival aura lieu les 13 et 14 août 2027.</p>"
+            "<h3>Edition 2026 : artistes passés.</h3>"
+            "</main>")
+        programme = (
+            "<main><h1>Programmation Colomb’in Rock 2027</h1>"
+            "<p>Le Colomb’in Rock Festival 2027 se tiendra "
+            "les 13 et 14 août 2027, rock et tributes.</p>"
+            "<p>Réunion des bénévoles le 26 mars 2027.</p>"
+            "<p>Samedi 14 août 2027 : concerts.</p></main>")
+        self.assertTrue(branded_official_site(site, name, homepage))
+        self.assertEqual(verify_first_party_claims(
+            site, name, DAY2, fetch=lambda _: homepage),
+            (("2027-08-13", "2027-08-14"), None))
+        cal, _, _ = fixtures()
+        def dossier(today):
+            q = queue(today)
+            q["dossiers"][0]["name_hint"] = "Colomb'in Rock Festival"
+            q["dossiers"][0]["sources"][0]["url"] = detail
+            q["dossiers"][0]["sources"][0]["discovered_via"] = detail
+            return q
+        state = {"schema": "grossesondes.source-watch.v1"}
+        fetch = lambda u: programme if u == detail else homepage
+        first = examine(state, dossier(DAY1), cal, DAY1, fetch=fetch)
+        self.assertEqual(first["rows"][0]["start_date_hint"], "2027-08-13")
+        second = examine(state, dossier(DAY2), cal, DAY2, fetch=fetch)
+        self.assertEqual(second["two_day_dates_count"], 1)
+        proposed = stable_first_party_direct_proposals(
+            state, dossier(DAY2), cal, second, DAY2, fetch=fetch)
+        self.assertEqual(len(proposed), 1)
+        self.assertEqual(proposed[0]["proofMode"], PROOF_MODE)
+        self.assertFalse(proposed[0]["showOnMap"])
+
     def test_no_independent_venue_or_municipal_confirmation_ever_needed(self):
         # These fixtures explicitly contain NO external hyperlinks.
         self.assertNotIn("href=", HOME)
@@ -150,6 +229,39 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(proposed[0]["officialSite"], SITE)
         self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
         self.assertFalse(second["publication_authorized"])
+
+    def test_private_gate_diagnostics_never_grant_authority(self):
+        """Reproduce a stable lead whose live root loses its genre claim."""
+        cal, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        examine(state, queue(DAY1), cal, DAY1, fetch=lambda _: HOME)
+        stable = examine(state, queue(DAY2), cal, DAY2, fetch=lambda _: HOME)
+        self.assertEqual(stable["two_day_dates_count"], 1)
+        diagnostics = []
+        rejected = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, stable, DAY2,
+            fetch=lambda _: HOME.replace(
+                "Festival de rock et punk",
+                "Festival de gastronomie"),
+            diagnostics=diagnostics)
+        self.assertEqual(rejected, [])
+        self.assertEqual(diagnostics, [{
+            "dossier_id": "national-0123456789abcdef1234",
+            "gate": "OFFICIAL_BRAND_OR_GENRE_UNPROVEN",
+            "publication_authorized": False,
+        }])
+        self.assertFalse(stable["publication_authorized"])
+        self.assertNotIn("html", str(diagnostics).lower())
+        self.assertNotIn("https:", str(diagnostics).lower())
+
+        verified_diagnostics = []
+        accepted = stable_first_party_direct_proposals(
+            state, queue(DAY2), cal, stable, DAY2, fetch=lambda _: HOME,
+            diagnostics=verified_diagnostics)
+        self.assertEqual(len(accepted), 1)
+        self.assertEqual(verified_diagnostics[0]["gate"],
+                         "PRIVATE_PROPOSAL_READY_FOR_DUPLICATE_CHECK")
+        self.assertFalse(verified_diagnostics[0]["publication_authorized"])
 
     def test_missed_day_does_not_borrow_stale_observation(self):
         cat, _, _ = fixtures()

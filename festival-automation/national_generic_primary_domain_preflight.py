@@ -44,7 +44,7 @@ from grossesondes_venue_reciprocal_edition import (
     safe_root as safe_venue_root, first_party_hero_hint,
 )
 from grossesondes_first_party_direct_edition import (
-    verify_first_party_claims,
+    verify_first_party_claims, branded_official_site,
     private_proposal as direct_private_proposal,
     validate_private_proposal as validate_direct_private_proposal,
 )
@@ -271,6 +271,46 @@ def _safe_same_host_edition_links(
 
 
 
+
+def _named_weekend_statement(html, title, year, target):
+    """Exact festival-name/weekend in one visible block, with no other named day.
+
+    This is a narrowly scoped same-domain corroboration for sites carrying
+    unrelated calendar dates elsewhere. It cannot infer a date from metadata
+    or one separated title/date block, and cannot override a contradiction
+    explicitly associated with the named edition.
+    """
+    parser = VisibleParagraphs()
+    parser.feed(html)
+    parser.close()
+    tokens = re.findall(
+        r"[a-z0-9]+", re.sub(r"\b20[2-4][0-9]\b", "", fold(title)))
+    if not tokens:
+        return False
+    exact = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, tokens)) +
+        r"(?![a-z0-9])")
+    proven = False
+    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        block = " ".join(fold(raw).split())
+        if (not 0 < len(block) <= 1600 or not exact.search(block)
+                or str(year) not in block):
+            continue
+        if CANCEL.search(block):
+            return False
+        dates = {(first, last) for _a, _b, first, last
+                 in explicit_ranges(block, year)}
+        if any((interval != target and not
+                (interval[0] == interval[1] and
+                 target[0] <= interval[0] <= target[1]))
+               for interval in dates):
+            return False
+        if target in dates:
+            proven = True
+    return proven
+
+
+
 def _recover_official_weekend_amid_isolated_days(source, primary_html,
                                                   fetch, today):
     """Distinguish an actual weekend from isolated dates on the SAME site.
@@ -340,11 +380,19 @@ def _recover_official_weekend_amid_isolated_days(source, primary_html,
         if homepage_dates is not None:
             homepage_dates = tuple(date.fromisoformat(x)
                                    for x in homepage_dates)
+    # A homepage may also mention an unrelated SINGLE calendar date.
+    # Accept the exact current weekend only when one visible paragraph
+    # explicitly names this festival and dates, and no same-name paragraph
+    # contains a different edition date. No external source is involved.
+    named_statement = _named_weekend_statement(
+        homepage, title, year, target)
+    if homepage_dates is None and named_statement:
+        homepage_dates = target
     if (homepage_dates != target
             or not no_same_edition_jsonld_contradiction(
                 homepage, title, *target)
-            or not visible_official_edition(
-                homepage, title, *target)):
+            or not (visible_official_edition(
+                    homepage, title, *target) or named_statement)):
         return None
     return target
 
@@ -761,12 +809,15 @@ def append_directory_proposals(folder, catalog, history, state, queue,
 
 
 def stable_first_party_direct_proposals(state, queue, catalog, report, today,
-                                         fetch=fetch_public_html, limit=2):
+                                         fetch=fetch_public_html, limit=2,
+                                         diagnostics=None):
     """Direct pathway: re-fetch the official site, not a second date source.
 
     J/J+1 is a PRIVATE stability observation of the SAME first-party website,
     not third-party confirmation. The Publisher independently re-downloads
     and compares current-edition dates before any append-only publication.
+    Optional PRIVATE diagnostic codes never grant authority, reveal HTML,
+    or cause extra network requests.
     """
     if (not isinstance(report, dict) or report.get("schema") != SCHEMA
             or report.get("as_of") != today
@@ -776,13 +827,23 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
             or report.get("publications") != 0
             or not isinstance(report.get("rows"), list)
             or len(report["rows"]) > MAX_CHECKS
-            or type(limit) is not int or not 0 <= limit <= 2):
+            or type(limit) is not int or not 0 <= limit <= 2
+            or (diagnostics is not None and not isinstance(diagnostics, list))):
         raise ValueError("Unsafe primary-only proposal research")
     records = state.get(STATE_KEY, {})
     if not isinstance(records, dict):
         raise ValueError("Untrusted primary proof registry")
     options = _eligible(queue, catalog, today)
     proposals, seen, checked = [], set(), 0
+
+    def explain(source, code):
+        if diagnostics is not None and len(diagnostics) < MAX_CHECKS:
+            diagnostics.append({
+                "dossier_id": source["dossier_id"],
+                "gate": code,
+                "publication_authorized": False,
+            })
+
     for row in report["rows"]:
         if checked >= limit:
             break
@@ -802,21 +863,41 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
                     or old.get("lastSeen") != today
                     or old.get("digest") != _digest(
                         source, *dates, row.get("date_source_mode"))):
+                explain(source, "STABLE_OBSERVATION_NOT_MATCHED")
                 continue
             try:
                 if not date.fromisoformat(old["firstSeen"]) < date.fromisoformat(today):
+                    explain(source, "FIRST_OBSERVATION_NOT_OLDER_THAN_TODAY")
                     continue
             except (ValueError, TypeError, KeyError):
+                explain(source, "FIRST_OBSERVATION_INVALID")
                 continue
             host = urlsplit(source["url"]).hostname
             site = "https://" + host + "/" if host else None
             if site is None or safe_venue_root(site) is None or site in seen:
+                explain(source, "OFFICIAL_ROOT_NOT_SAFE")
                 continue
             checked += 1
+            root_html = []
+            def record_root(url):
+                html = fetch(url)
+                if url == site and not root_html:
+                    root_html.append(html)
+                return html
             try:
                 primary_claim = verify_first_party_claims(
-                    site, source["title"], today, fetch=fetch)
-                if primary_claim is None or primary_claim[0] != tuple(dates):
+                    site, source["title"], today, fetch=record_root)
+                if primary_claim is None:
+                    if not root_html:
+                        explain(source, "OFFICIAL_ROOT_FETCH_FAILED")
+                    elif not branded_official_site(
+                            site, source["title"], root_html[0]):
+                        explain(source, "OFFICIAL_BRAND_OR_GENRE_UNPROVEN")
+                    else:
+                        explain(source, "OFFICIAL_EDITION_DATE_RECHECK_FAILED")
+                    continue
+                if primary_claim[0] != tuple(dates):
+                    explain(source, "CURRENT_OFFICIAL_DATES_CHANGED")
                     continue
                 # A city on the official current-edition date block is
                 # sufficient editorial evidence; map coordinates are not
@@ -827,14 +908,16 @@ def stable_first_party_direct_proposals(state, queue, catalog, report, today,
                 if (proposal is None
                         or validate_direct_private_proposal(
                             proposal, today) is None):
+                    explain(source, "PRIVATE_PROPOSAL_CONTRACT_FAILED")
                     continue
                 proposals.append(proposal)
                 seen.add(site)
+                explain(source, "PRIVATE_PROPOSAL_READY_FOR_DUPLICATE_CHECK")
             except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+                explain(source, "OFFICIAL_RECHECK_EXCEPTION")
                 continue
             break
     return proposals
-
 
 def append_direct_first_party_proposals(
         folder, catalog, history, state, queue, report, today,
@@ -842,8 +925,13 @@ def append_direct_first_party_proposals(
     if (not isinstance(history, dict) or history.get("schema") != 2
             or not isinstance(history.get("knownFestivals"), list)):
         raise ValueError("Unsafe historical reference")
+    checks = []
     additions = stable_first_party_direct_proposals(
-        state, queue, catalog, report, today, fetch=fetch)
+        state, queue, catalog, report, today, fetch=fetch,
+        diagnostics=checks)
+    # PRIVATE review only: bounded, closed-vocabulary gate codes. Nothing is
+    # exported into the signed catalogue or exposed by public workflow logs.
+    report["direct_first_party_gate_private"] = checks
     if not additions:
         return 0
     patch = latest_patch(folder, date.fromisoformat(today))
@@ -858,6 +946,9 @@ def append_direct_first_party_proposals(
         patch["additions"].append(row)
         used.add(row["slug"])
         n += 1
+    report["direct_first_party_staged_count_private"] = n
+    report["direct_first_party_duplicate_or_capacity_count_private"] = (
+        len(additions) - n)
     if n:
         patch["generated_at"] = today
         atomic_json(folder / ("patch-" + today + ".json"), patch)

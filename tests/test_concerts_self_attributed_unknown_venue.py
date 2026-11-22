@@ -56,7 +56,7 @@ def lead(*, name=None, venue="Place Libre", url=URL, observations=3):
     }
 
 
-def ban(*, score=0.95, city="Tours", street="Place Libre"):
+def ban(*, score=0.81, city="Tours", street="Place Libre"):
     return json.dumps({"features": [{
         "geometry": {"type": "Point", "coordinates": [0.688, 47.395]},
         "properties": {
@@ -169,6 +169,53 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
         self.assertEqual(published["venues"][-1]["id"],
                          room["venue"]["id"])
 
+    def test_official_visible_lineup_without_jsonld_performers_reaches_real_publisher(self):
+        # First-party Event provides the date/place; its ONE visible article
+        # explicitly labels the complete bill and each band's own genre.
+        # Neither collector hints nor a preapproved list supplies the bands.
+        base = test_catalogue()
+        _, _, _, original, _, _, _ = fixture.fixture()
+        raw = copy.deepcopy(original)
+        raw["@type"] = "Event"
+        raw.pop("performer", None)
+        raw.pop("genre", None)
+        page = (
+            "<html><main><h1>" + raw["name"] + "</h1>"
+            + "".join("<p><strong>" + name +
+                      " — Metalcore | France</strong></p>"
+                      for name in fixture.BANDS)
+            + "</main><script type=\"application/ld+json\">"
+            + json.dumps(raw, ensure_ascii=False) + "</script></html>")
+        fetch, _seen = fetch_for(page=page)
+        approved, report = producer.build(
+            lead(), base, before(), TODAY, fetch=fetch)
+        self.assertEqual(report["stateCounts"],
+                         {"publisher_bound_event_site_pair": 1}, report)
+        self.assertEqual(len(approved["approvals"][0]["newArtists"]), 8)
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                before(), approved, TODAY)), 1)
+            published, outcome = publisher.merge(
+                base, base, approved, TODAY)
+        self.assertEqual(outcome["newEvents"], 1, outcome.get("held"))
+        self.assertEqual(outcome["newVenues"], 1)
+        self.assertEqual(outcome["newArtists"], 8)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+
+        for invalid_page in (
+            page.replace("<p><strong>" + fixture.BANDS[-1] +
+                         " — Metalcore | France</strong></p>", ""),
+            page.replace("<main><h1>", "<main><h1>Other Event</h1><h1>"),
+            page.replace("</main>", "<p>Concert ANNULÉ</p></main>"),
+        ):
+            with self.subTest(page=invalid_page[:100]):
+                bad_fetch, _ = fetch_for(page=invalid_page)
+                withheld, denied = producer.build(
+                    lead(), base, before(), TODAY, fetch=bad_fetch)
+                self.assertEqual(withheld, before(), denied)
+                self.assertEqual(denied["stateCounts"],
+                                 {"held_source_or_site_unverified": 1}, denied)
+
     def test_new_room_and_eight_new_bands_reach_publisher_when_osm_editing_api_fails(self):
         # This covers the actual public runner failure: direct OSM editing API
         # is unavailable. Never skip independent identity; use a safe bounded
@@ -209,7 +256,7 @@ class IndependentUnknownVenuePublisherTests(unittest.TestCase):
             ("unconfirmed_genre", {"raw": no_genre}),
             ("cancelled", {"raw": cancelled}),
             ("wrong_venue", {"raw": wrong_venue}),
-            ("government_ambiguous", {"government": ban(score=0.82)}),
+            ("government_low_score", {"government": ban(score=0.70)}),
             ("wrong_government_city", {"government": ban(city="Orléans")}),
             ("forged_osm_site", {"osm": osm_xml(name="Other Hall")}),
             ("forged_event_host", {"osm": osm_xml(

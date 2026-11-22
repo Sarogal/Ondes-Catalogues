@@ -116,7 +116,12 @@ def source_for(lead, catalogue, source_file=SOURCE_FILE):
 
 
 def _name(value):
-    return triage.words(value)
+    # Unicode apostrophes in official artist/venue names differ by CMS.
+    # Normalize typography, NOT different artist words or extra performers.
+    text = str(value or "").translate(str.maketrans({
+        "’": "'", "‘": "'", "ʼ": "'", "＇": "'",
+    }))
+    return triage.words(text)
 
 
 def _department(postal, address):
@@ -164,6 +169,64 @@ def _read_osm_node(node_url, expected, fetch):
     require(type(lat) in (int, float) and type(lon) in (int, float),
             "OSM coordinates missing")
     return float(lat), float(lon)
+
+
+def _visible_artist_genres_from_this_event(html, title):
+    """Read genre-labelled artists from one first-party event body, NEVER a bio.
+
+    Only completes a structured Event whose own date, title and location are
+    subsequently rechecked. A title or an event-wide genre is not a bill.
+    """
+    import official_html_evidence as visible
+
+    if not isinstance(html, str) or not isinstance(title, str):
+        return None
+    parsed = visible.VisibleBlocks()
+    try:
+        parsed.feed(html)
+        parsed.close()
+    except (ValueError, TypeError, RecursionError):
+        return None
+    blocks = parsed.blocks
+    headings = [(i, t) for i, (kind, t) in enumerate(blocks)
+                if kind == "h1"]
+    if len(headings) != 1 or _name(headings[0][1]) != _name(title):
+        return None
+    if re.search(r"\bfest(?:ival)?\b", _name(title)):
+        return None
+    band_names = [s.strip() for s in re.split(r"\s+\+\s+", title)]
+    if not band_names or any(not 2 <= len(s) <= 120 for s in band_names):
+        return None
+    normalized = [_name(s) for s in band_names]
+    if len(set(normalized)) != len(normalized) or not all(normalized):
+        return None
+    # The 100 visible blocks are a bounded *page section* inspection, never
+    # an artist count cap. Only names already in the current H1 can qualify.
+    section = blocks[headings[0][0] + 1:headings[0][0] + 101]
+    early_text = " ".join(t for _kind, t in section[:20])
+    if re.search(r"\b(?:annulee?|reportee?|cancelled|postponed|rescheduled)\b",
+                 _name(early_text)):
+        return None
+    found = {}
+    for kind, text in section:
+        if kind != "strong":
+            continue
+        match = re.fullmatch(r"\s*(.{2,120}?)\s+[–—-]\s+(.{2,80}?)\s*",
+                             text)
+        if not match:
+            continue
+        band = _name(match.group(1))
+        genre = match.group(2).split("|", 1)[0].strip()
+        if band not in normalized or band in found:
+            # Any extra labelled performer, including a non-metal opening
+            # act, means the title is not a complete unambiguous roster.
+            return None
+        # Mixed-genre bills are valid: do not assign one band's style to all.
+        found[band] = (match.group(1).strip(), genre)
+    if set(found) != set(normalized):
+        return None
+    return [{"@type": "MusicGroup", "name": name,
+             "genre": found[_name(name)][1]} for name in band_names]
 
 
 def _official_event(lead, html, url, today):
@@ -225,6 +288,14 @@ def _official_event(lead, html, url, today):
             "official event date mismatch or expired")
     require(_name(raw.get("name")) == _name(lead.get("name")),
             "official concert title changed")
+    # Some official event systems emit full structured date/place metadata
+    # but place the full individually genre-labelled artist bill in the same
+    # visible event body. Only empty performer metadata can be completed;
+    # contradictory nonempty performer claims must fail closed.
+    if raw.get("performer") in (None, "", []):
+        recovered = _visible_artist_genres_from_this_event(html, raw.get("name"))
+        if recovered is not None:
+            raw = {**raw, "performer": recovered}
     bill = bridge.official_named_bill(raw.get("performer"))
     require(bill is not None, "complete official named bill missing")
     names, unnamed = bill
