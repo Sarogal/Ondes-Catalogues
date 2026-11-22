@@ -480,10 +480,70 @@ class CentralCatalogVerifier {
     final h = uri.host.toLowerCase().replaceAll(RegExp(r'\.$'), '');
     if (h == 'localhost' || h.endsWith('.local') ||
         h.endsWith('.internal') || !h.contains('.') ||
-        h.contains(':') ||
-        RegExp(r'^[0-9.]+$').hasMatch(h)) {
+        h.contains(':')) {
       return false;
     }
+    if (RegExp(r'^[0-9.]+
+}
+
+// Signing and structural verification must never hand mutable JSON trees to
+// projections: changing a nested stream or status would bypass the signature.
+dynamic _freezeCentralJson(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return Map<String, dynamic>.unmodifiable(value.map(
+      (key, child) => MapEntry(key, _freezeCentralJson(child)),
+    ));
+  }
+  if (value is List) {
+    return List<dynamic>.unmodifiable(value.map(_freezeCentralJson));
+  }
+  return value;
+}
+).hasMatch(h)) {
+      return _safePublicIpv4(h);
+    }
+    return true;
+  }
+
+  /// Do not reject historic public-IP radio CDNs, but never accept a
+  /// loopback, link-local, private, benchmark, multicast or reserved literal.
+  static bool _safePublicIpv4(String host) {
+    final parts = host.split('.');
+    if (parts.length != 4) return false;
+    final octets = <int>[];
+    for (final part in parts) {
+      if (part.isEmpty || part.length > 3 ||
+          (part.length > 1 && part.startsWith('0')) ||
+          !RegExp(r'^[0-9]{1,3}
+}
+
+// Signing and structural verification must never hand mutable JSON trees to
+// projections: changing a nested stream or status would bypass the signature.
+dynamic _freezeCentralJson(dynamic value) {
+  if (value is Map<String, dynamic>) {
+    return Map<String, dynamic>.unmodifiable(value.map(
+      (key, child) => MapEntry(key, _freezeCentralJson(child)),
+    ));
+  }
+  if (value is List) {
+    return List<dynamic>.unmodifiable(value.map(_freezeCentralJson));
+  }
+  return value;
+}
+).hasMatch(part)) return false;
+      final number = int.tryParse(part);
+      if (number == null || number > 255) return false;
+      octets.add(number);
+    }
+    final a = octets[0], b = octets[1], c = octets[2];
+    if (a == 0 || a == 10 || a == 127 || a >= 224) return false;
+    if (a == 100 && b >= 64 && b <= 127) return false;
+    if (a == 169 && b == 254) return false;
+    if (a == 172 && b >= 16 && b <= 31) return false;
+    if (a == 192 && (b == 168 || (b == 0 && c <= 2))) return false;
+    if (a == 198 && (b == 18 || b == 19 ||
+        (b == 51 && c == 100))) return false;
+    if (a == 203 && b == 0 && c == 113) return false;
     return true;
   }
 }
