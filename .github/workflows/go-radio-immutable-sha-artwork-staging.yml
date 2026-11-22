@@ -1,0 +1,63 @@
+name: GO radio — stage 101 immutable SHA artwork objects (TEST only)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-immutable-sha-artwork-staging.yml'
+      - 'radio-catalog-lab/tools/stage_immutable_sha_artwork.py'
+      - 'radio-catalog-lab/tests/test_immutable_sha_artwork_staging.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  mirror-by-sha:
+    name: 'Content-addressed image shard ${{ matrix.shard }}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install safe image decoder
+        run: python -m pip install 'pillow>=10,<13'
+      - name: Exercise exact SHA checks and no-publish invariants
+        run: python -m unittest discover -s radio-catalog-lab/tests -p 'test_immutable_sha_artwork_staging.py' -v
+      - name: Retrieve validated unsigned TEST-v5 radio catalog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/input"
+          gh run download 45069330690 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/input" --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
+      - name: Fetch and verify full image bytes, write only digest-named objects
+        run: |
+          FILE=$(find "$RUNNER_TEMP/input" -name full-test-v5-unsigned-preflight.json -print -quit)
+          test -n "$FILE"
+          python radio-catalog-lab/tools/stage_immutable_sha_artwork.py \
+            --catalog "$FILE" \
+            --shard-index ${{ matrix.shard }} --shard-count 16 \
+            --output-dir "$RUNNER_TEMP/sha-objects-${{ matrix.shard }}"
+      - name: Confirm no remote publishing or unsigned fallback substitution
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          report=json.loads((Path(os.environ['RUNNER_TEMP'])/'sha-objects-${{ matrix.shard }}'/'audit-report.json').read_text())
+          assert report['signed_or_published'] is False
+          assert report['permission_to_replace_current_json'] is False
+          assert report['stored']+report['failed']==report['selected']
+          print('SHA objects:',report['stored'],'/',report['selected'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-immutable-logo-test-${{ matrix.shard }}
+          path: ${{ runner.temp }}/sha-objects-${{ matrix.shard }}/
+          retention-days: 14
