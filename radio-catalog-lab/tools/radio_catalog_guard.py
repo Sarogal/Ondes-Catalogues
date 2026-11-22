@@ -208,7 +208,12 @@ def validate_catalog(document, *, mode="staging", previous=None,
                 automated_quarantine = (
                     legacy_valid
                     and state == "quarantined"
-                    and (goid in failed_audio_ids or trusted_signed_history)
+                    and (goid in failed_audio_ids or trusted_signed_history or (
+                        signed_legacy
+                        and isinstance(signed_previous.get("status"), dict)
+                        and signed_previous["status"].get("state") == "quarantined"
+                        and signed_previous["status"].get("reason_code") == "two_pass_audio_probe_unavailable"
+                    ))
                     and status.get("reason_code") == "two_pass_audio_probe_unavailable"
                     and verified == 0
                 )
