@@ -348,6 +348,51 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         tampered["bands"] = 1
         self.assertFalse(_verified_official_update_delta(row, tampered))
 
+    def test_live_pass_card_ignores_sold_out_earlier_tier(self):
+        # The real festival site now advertises the regular 4-day pass at
+        # 239 euros, despite three older Early Bird tiers being sold out.
+        # A nested LI card can contain both words "épuisé" and "en vente".
+        home = (
+            "<header><h1>Motocultor Festival 2027</h1>"
+            "<p>19 au 22 août 2027</p></header>"
+            "<main><section><ul>"
+            "<li><h3>Pass 4 jours</h3>"
+            "<p>Early Bird 3 : 228 € Épuisé</p>"
+            "<p>Tarif normal 239 € En vente</p>"
+            "<p>Hors frais de location</p></li>"
+            "<li><h3>Pass 1 jour</h3>"
+            "<p>Journée au choix 82 € En vente</p></li>"
+            "</ul></section>"
+            "<article><h3>Pass 4 jours Early Birds SOLD OUT</h3>"
+            "<p>L'ancienne offre est épuisée</p></article></main>"
+        )
+        clean = page(home)
+        available = advertised_passes([
+            b for b in clean.blocks if b["scope"] == "main"])
+        self.assertEqual(available, {4: "239 €", 1: "82 €"})
+        row = festival(
+            "motocultor-festival", MOTO,
+            dates=("2027-08-19", "2027-08-22"),
+            lineup=["Helloween"],
+            price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"
+        updated, report = apply_independently_verified_updates(
+            doc(row), doc(row), DAY, limit=1, tick=0,
+            fetch=lambda _: home)
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertEqual(
+            updated["festivals"][0]["price"],
+            "Pass 4 jours : 239 € ; Pass 1 jour : 82 €"
+            " — billetterie officielle ouverte")
+        self.assertTrue(_verified_official_update_delta(
+            row, updated["festivals"][0]))
+
+        sold_out = (
+            "<main><h1>Motocultor Festival 2027</h1>"
+            "<li><h3>Pass 4 jours</h3>"
+            "<p>Tarif normal 239 € Épuisé</p></li></main>")
+        self.assertEqual(advertised_passes(page(sold_out).relevant()), {})
+
     def test_artist_alias_cannot_collapse_without_current_official_roster(self):
         from grossesondes_existing_official_updates import verified_artist_alias_cleanup
         long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"
