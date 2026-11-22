@@ -1,0 +1,101 @@
+name: GO radio — evidence-backed 316 historic admissions (unsigned TEST v5)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - 'radio-catalog-lab/tools/prepare_full_test_legacy_auto_admission.py'
+      - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+      - '.github/workflows/go-radio-v5-auto-legacy-publish-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  legacy-admission-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install cryptographic verifier and schema checker
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Retrieve unsigned 345-decoder / 101-SHA artifact and two-pass proof
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/full" "$RUNNER_TEMP/audio"
+          gh run download 45067225034 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/full" --pattern go-radio-historical-310-logo-sha-central-preview-unsigned
+          gh run download 45066820850 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/audio" --pattern go-radio-345-decoded-unsigned-full-20261122
+      - name: Verify immutable TEST v4 cryptographic pointer against the *real* test key
+        run: |
+          python - <<'PY'
+          import base64,hashlib,json
+          from pathlib import Path
+          from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+          root=Path("grossesondes/radio-test-apk")
+          p=json.loads((root/"current.json").read_text())
+          body=(root/p["content_path"]).read_bytes()
+          pub=base64.b64decode((root/"TEST_PUBLIC_KEY.b64").read_text().strip())
+          assert p["release_sequence"] == 4
+          assert p["content_sha256"] == hashlib.sha256(body).hexdigest()
+          assert p["content_length"] == len(body)
+          msg="\n".join(["GO-RADIO-CATALOG-POINTER-V1",str(p["schema_version"]),
+            p["catalog_id"],str(p["release_sequence"]),p["published_at"],
+            p["content_sha256"],str(p["content_length"]),p["content_path"],
+            p["signature"]["key_id"],""]).encode()
+          Ed25519PublicKey.from_public_bytes(pub).verify(
+            base64.b64decode(p["signature"]["signature_base64"]),msg)
+          print("Verified TEST v4 predecessor signature, key ID and immutable content")
+          PY
+      - name: Prepare full legacy station continuity with no human approval fiction
+        run: |
+          BASE=$(find "$RUNNER_TEMP/full" -name complete-image-sha-unsigned.json -print -quit)
+          AUDIT=$(find "$RUNNER_TEMP/audio" -name coverage-2passes.json -print -quit)
+          test -n "$BASE" && test -n "$AUDIT"
+          PREVIOUS=$(python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("grossesondes/radio-test-apk")
+          print(root/json.loads((root/"current.json").read_text())["content_path"])
+          PY
+          )
+          python radio-catalog-lab/tools/prepare_full_test_legacy_auto_admission.py \
+            --catalog "$BASE" \
+            --historical grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --coverage radio-catalog-lab/full-staging/coverage-20261122.json \
+            --audio-report "$AUDIT" \
+            --previous "$PREVIOUS" \
+            --out "$RUNNER_TEMP/full-test-v5-unsigned-preflight.json" \
+            --report "$RUNNER_TEMP/full-test-v5-provenance-report.json"
+      - name: Check JSON Schema and continuity without forging signing
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          from jsonschema import Draft202012Validator,FormatChecker
+          data=Path(os.environ["RUNNER_TEMP"])
+          c=json.loads((data/"full-test-v5-unsigned-preflight.json").read_text())
+          r=json.loads((data/"full-test-v5-provenance-report.json").read_text())
+          schema=json.loads(Path("radio-catalog-lab/schemas/radio_catalog_v1.schema.json").read_text())
+          issues=list(Draft202012Validator(schema, format_checker=FormatChecker()).iter_errors(c))
+          assert not issues, [(e.json_path,e.message) for e in issues[:5]]
+          assert len(c["stations"])==320
+          assert sum(s["status"]["state"]=="active" for s in c["stations"])==309
+          assert r["legacy_approved_by_machine_evidence"]==316
+          assert r["same_signed_test_v4_station_rows"]==4
+          assert r["publish_admission_guard_issues"]==[]
+          assert r["publication_authorized"] is False
+          print("TEST-v5 admissible JSON (not signed):",len(c["stations"]),"stations,",309,"active, 9 historic radios quarantined with evidence")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v5-316-legacy-evidence-admission-unsigned
+          path: |
+            ${{ runner.temp }}/full-test-v5-unsigned-preflight.json
+            ${{ runner.temp }}/full-test-v5-provenance-report.json
+          retention-days: 14
