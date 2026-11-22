@@ -2,6 +2,7 @@
 import datetime as dt
 import json
 import unittest
+from unittest import mock
 
 from automation.concerts import national_openagenda_concert_candidates as scan
 from automation.concerts import openagenda_official_concert as source
@@ -55,6 +56,26 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         # ODS has no power to attest genre or grant any publisher signature.
         self.assertNotIn("officialEvidence", first)
         self.assertNotIn("reviewDecision", first)
+
+    def test_documented_index_client_remains_pinned_to_exact_api(self):
+        url = scan.urls(TODAY, 0)[0]
+        with mock.patch.object(scan.probe, "public_ip_addresses",
+                               return_value=["1.1.1.1"]) as lookup, \
+             mock.patch.object(scan.probe, "request_pinned",
+                               return_value=(200, '{"results":[]}')) as read:
+            data = scan.fetch_index_api(url, {})
+            self.assertEqual(json.loads(data), {"results": []})
+            lookup.assert_called_once_with("public.opendatasoft.com")
+            self.assertEqual(read.call_args.args[1:],
+                             ("public.opendatasoft.com", "1.1.1.1"))
+        for bad in (
+            "https://evil.example/api/search?q=concert",
+            "https://public.opendatasoft.com/login",
+            "https://public.opendatasoft.com/api/other?hack=1",
+            "http://public.opendatasoft.com/api/explore/v2.1/catalog/",
+        ):
+            with self.subTest(url=bad), self.assertRaises(ValueError):
+                scan.fetch_index_api(bad, {})
 
     def test_openagenda_url_is_bounded_to_real_individual_event(self):
         self.assertTrue(source.is_openagenda_event_url(EXACT))
