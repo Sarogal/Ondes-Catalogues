@@ -37,6 +37,32 @@ class TestsCloud(unittest.TestCase):
         self.assertNotIn(private_reason, summary)
         self.assertNotIn("openagenda-private", summary)
 
+    def test_open_world_summary_redacts_private_reason_even_with_counts(self):
+        private_id = "openagenda-super-secret-uid-2026-12-13"
+        private_url = "https://private.example.com/event"
+        report = {
+            "initial": 551, "final": 552, "ajoutes": 1,
+            "attente": [{"id": private_id, "raison": private_url}],
+            "open_world_counts": {
+                "research_dossiers": 20,
+                "reviewed_for_merge": 1,
+                "held_for_independent_review": 19,
+                "reason_counts": {
+                    "oa_direct_child_audience_missing": 8,
+                    "oa_direct_already_published": 2,
+                    private_id + "_untrusted": 9,
+                },
+            },
+        }
+        summary = public_summary(report)
+        self.assertIn("Dossiers nationaux présentés : 20", summary)
+        self.assertIn("Dossiers maintenus en vérification : 19", summary)
+        self.assertIn("oa_direct_child_audience_missing : 8", summary)
+        self.assertIn("oa_direct_already_published : 2", summary)
+        self.assertIn("other_private_reason : 9", summary)
+        self.assertNotIn(private_id, summary)
+        self.assertNotIn(private_url, summary)
+
     def test_public_sync_summary_only_counts_approved(self):
         report = {"initial":514,"final":517,"ajoutes":3,"attente":[]}
         summary = public_summary(report)
