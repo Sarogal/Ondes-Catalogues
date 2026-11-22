@@ -90,6 +90,50 @@ class UndatedOfficialDateTests(unittest.TestCase):
                 self.assertEqual(report["accepted"], [])
                 self.assertEqual(new, festival())
 
+    def test_linked_first_party_news_alone_can_confirm_dates(self):
+        old = festival()
+        article = SITE + "actualites/dates-2027"
+        home = ("<main><h1>Sylak Open Air 2027</h1>"
+                '<a href="/actualites/dates-2027">Annonce dates 2027</a>'</main>)
+        pages = {SITE: home, article: GOOD_HTML}
+        signed_doc = signed(old)
+        actual, report = apply_independently_verified_updates(
+            signed_doc, signed_doc, DAY, limit=1, tick=0,
+            fetch=lambda url: pages[url])
+        new = actual["festivals"][0]
+        self.assertEqual((new["startDate"], new["endDate"]),
+                         ("2027-07-30", "2027-07-31"))
+        self.assertEqual(new["auditSources"], [SITE, article])
+        self.assertTrue(_verified_official_update_delta(old, new))
+        self.assertEqual(report["accepted"], [old["slug"]])
+
+    def test_conflicting_official_linked_dates_do_not_publish(self):
+        old = festival()
+        article = SITE + "actualites/dates-2027"
+        home = (GOOD_HTML.replace("</main>",
+                '<a href="/actualites/dates-2027">Annonce dates 2027</a></main>'))
+        other = GOOD_HTML.replace("30 au 31 juillet", "23 au 24 juillet")
+        original = signed(old)
+        new, report = apply_independently_verified_updates(
+            original, original, DAY, limit=1, tick=0,
+            fetch=lambda url: {SITE:home, article:other}[url])
+        self.assertEqual(new["festivals"][0], old)
+        self.assertEqual(report["accepted"], [])
+
+    def test_official_news_proof_never_follows_outside_domain(self):
+        old = festival()
+        home = ("<main><h1>Sylak Open Air 2027</h1>"
+                '<a href="https://external.test/dates-2027">Annonce dates 2027</a>'</main>)
+        calls = []
+        def fetch(url):
+            calls.append(url)
+            return home
+        before = signed(old)
+        after, report = apply_independently_verified_updates(
+            before, before, DAY, limit=1, tick=0, fetch=fetch)
+        self.assertEqual(calls, [SITE])
+        self.assertEqual(after["festivals"][0], old)
+        self.assertEqual(report["accepted"], [])
     def test_future_rotation_rejects_previous_year_or_unpinned_identity(self):
         old = festival()
         old["name"], old["slug"] = "Sylak Open Air 2025", "sylak-open-air-2025"

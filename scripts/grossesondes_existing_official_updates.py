@@ -347,6 +347,9 @@ def apply_independently_verified_updates(
             report["unavailable"] += 1
             continue
         pages = [(site, root)]
+        # Store only independently fetched, safely linked first-party HTML;
+        # a future date may appear in official news rather than on the home.
+        html_pages = [(site, root_html)]
         # On a current-edition homepage, old news cards may be nested in
         # <article> while the live ticket categories are in <main>. Inspect
         # both as separate first-party content scopes, not one mixed roster.
@@ -356,7 +359,9 @@ def apply_independently_verified_updates(
             pages.append((site, main_only))
         for link in linked_pages(site, root):
             try:
-                pages.append((link, page(fetch(link))))
+                linked_html = fetch(link)
+                pages.append((link, page(linked_html)))
+                html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
             except (OSError, TimeoutError, ValueError, UnicodeError):
                 continue
@@ -454,15 +459,27 @@ def apply_independently_verified_updates(
                 if m and str(old.get("slug", "")).endswith("-" + m[2]):
                     parent = {"name": m[1]}
                     year = int(m[2])
-                    visible = official_date(root_html, parent, year)
-                    jsonld = official_structured_date(root_html, parent, year)
-                    matching_jsonld = matching_official_jsonld_present(
-                        root_html, parent, year)
-                    # Contradictions veto admission. No external evidence.
-                    dates = None
-                    if not (matching_jsonld and jsonld is None) and not (
-                            visible and jsonld and visible != jsonld):
+                    proposed_ranges, verified_urls = set(), []
+                    contradicted = False
+                    for official_url, official_html in html_pages:
+                        visible = official_date(official_html, parent, year)
+                        jsonld = official_structured_date(official_html, parent, year)
+                        matching_jsonld = matching_official_jsonld_present(
+                            official_html, parent, year)
+                        # Never cherry-pick between opposing first-party facts.
+                        if ((matching_jsonld and jsonld is None) or
+                                (visible and jsonld and visible != jsonld)):
+                            contradicted = True
+                            break
                         dates = visible or jsonld
+                        if dates:
+                            proposed_ranges.add(dates)
+                            verified_urls.append(official_url)
+                    # At most one interval across all inspected first-party
+                    # pages; historical year and incomplete date are no proof.
+                    dates = (next(iter(proposed_ranges))
+                             if not contradicted and len(proposed_ranges) == 1
+                             else None)
                     if (dates and dates[0] > date.fromisoformat(today)
                             and dates[1] > dates[0]
                             and (dates[1] - dates[0]).days <= 7):
@@ -476,7 +493,7 @@ def apply_independently_verified_updates(
                         fields.extend(("startDate", "endDate", "days",
                                        "dateRangeIsContinuous", "status",
                                        "verificationStatus"))
-                        sources.append(site)
+                        sources.extend(verified_urls)
             if not fields:
                 continue
             if isinstance(old.get("lastVerified"), str):
