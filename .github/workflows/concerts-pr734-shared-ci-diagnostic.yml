@@ -89,3 +89,20 @@ jobs:
               except (ValueError,OSError,TimeoutError) as exc:
                   print('official_export_failed',uid,type(exc).__name__,flush=True)
           PY
+
+      - name: Checkout source-unique genre feature (no secrets)
+        uses: actions/checkout@v4
+        with:
+          ref: feature/concerts-openagenda-official-description-genres-20261122
+          path: genre-check
+      - name: Test targeted original OpenAgenda description to real publisher
+        working-directory: genre-check
+        run: python -m unittest discover -s tests -p 'test_concerts_openagenda_description_genres.py' -v
+      - name: Checkout hardened OpenAgenda TLS retry (no secrets)
+        uses: actions/checkout@v4
+        with:
+          ref: fix/concerts-oa-transient-tls-retry-20261122
+          path: transport-check
+      - name: Test targeted TLS retry and SSRF controls
+        working-directory: transport-check
+        run: python -m unittest discover -s automation/concerts -p 'test_source_evidence_probe.py' -v
