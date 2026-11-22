@@ -118,8 +118,29 @@ class CentralAuthoritativeCatalogSelector {
           legacyFavoriteIds: favorites,
           preferredLegacyMediaIds: stableMediaIds,
         );
-        final playable = const CentralLegacyRadioAdapter()
+        final rawPlayable = const CentralLegacyRadioAdapter()
             .toPlayableLegacyStations(preview);
+        // Only the signed catalog can supply artwork keys. A signed URL is
+        // metadata, NOT a permission to display unverified downloaded bytes.
+        // The authority-only widget cache resolves this URL strictly through
+        // the digest-verified CentralRelease1ExperimentalArtwork map.
+        final signedArtworkUrls = <String, String>{
+          for (final record in candidate.stations)
+            if (record['logo'] is Map<String, dynamic>)
+              record['go_station_id'] as String:
+                  (record['logo'] as Map<String, dynamic>)['url'] as String,
+        };
+        final playable = rawPlayable.map((station) {
+          final goId = candidate.aliasOwners[station.id] ?? station.id;
+          final signedUrl = signedArtworkUrls[goId];
+          return signedUrl == null
+              ? station
+              : station.copyWith(
+                  logoUrl: signedUrl,
+                  catalogLogoUrl: signedUrl,
+                  logoSource: 'central-signed-sha-only',
+                );
+        }).toList(growable: false);
         if (playable.length != preview.playableStations.length ||
             playable.map((s) => s.id).toSet().length != playable.length) {
           throw const CentralCatalogException(
