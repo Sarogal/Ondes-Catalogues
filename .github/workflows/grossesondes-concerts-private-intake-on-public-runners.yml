@@ -49,6 +49,7 @@ on:
       - 'automation/concerts/national_openagenda_concert_candidates.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/dynamic_self_attributed_new_site_proposals.py'
+      - 'automation/concerts/openagenda_new_site_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'
       - 'automation/concerts/source_cross_domain_live_recheck.py'
       - 'scripts/concert_dynamic_existing_venue.py'
@@ -718,6 +719,33 @@ jobs:
             echo "::warning::Unknown-venue evidence unavailable; historical approvals unchanged."
           fi
 
+      - name: Vérifier les concerts OpenAgenda dans des lieux encore inconnus
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # OpenAgenda proves the exact concert, date, artist lineup and
+          # agenda identity. BAN and a named OSM feature independently locate
+          # the room. No other event website or guessed city marker is needed.
+          # No private proposal is trusted until the actual Publisher replays.
+          OUTPUT="$RUNNER_TEMP/concerts-openagenda-new-site-preview.json"
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          if python public/automation/concerts/openagenda_new_site_proposals.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --candidate "$RUNNER_TEMP/concerts-official-approvals-preview.json" \
+              --output "$OUTPUT" \
+              --report confidential/automation/concerts/intake/openagenda-new-site-proposals.json \
+              --scan-slot "$SCAN_SLOT" --limit 4 \
+              > "$RUNNER_TEMP/concerts-private-logs/openagenda-new-site-proposals.log" 2>&1; then
+            mv "$OUTPUT" "$RUNNER_TEMP/concerts-official-approvals-preview.json"
+            echo "OpenAgenda: nouvelles salles vérifiées proposées au Publisher."
+          else
+            rm -f "$OUTPUT"
+            echo "::warning::OpenAgenda nouveau lieu non vérifié ; aucune publication."
+          fi
+
       - name: Prévalider chaque nouvelle approbation avec le vrai moteur de publication
         id: publisher_preflight
         if: steps.access.outputs.ready == 'true'
@@ -1053,6 +1081,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/self-attributed-new-site-proposals.json ]; then
             git add --sparse -- automation/concerts/intake/self-attributed-new-site-proposals.json
+          fi
+          if [ -f automation/concerts/intake/openagenda-new-site-proposals.json ]; then
+            git add --sparse -- automation/concerts/intake/openagenda-new-site-proposals.json
           fi
           if [ "$GROSSES_ONDES_CONCERTS_AUTOREVIEW" = "enabled" ]; then
             # The private approvals file is staged only after real publisher
