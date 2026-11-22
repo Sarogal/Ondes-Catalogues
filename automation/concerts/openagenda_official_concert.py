@@ -210,9 +210,18 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     # Do not manufacture an artist named "DoorShan - La Maroquinerie".
     # This is safe only after the independent location block above has
     # authenticated the very same venue.
-    suffix = re.search(r"\s+[-–—]\s+([^–—]+?)\s*\Z", title)
-    if suffix and normalized(suffix.group(1)) == normalized(venue.get("name")):
-        title = title[:suffix.start()]
+    suffix_with_city = re.search(
+        r"\s+[-–—]\s+([^–—]+?)\s+[-–—]\s+([^–—]+?)\s*\Z", title)
+    if (suffix_with_city
+            and normalized(suffix_with_city.group(1)) ==
+                normalized(venue.get("name"))
+            and normalized(suffix_with_city.group(2)) ==
+                normalized(venue.get("city"))):
+        title = title[:suffix_with_city.start()]
+    else:
+        suffix = re.search(r"\s+[-–—]\s+([^–—]+?)\s*\Z", title)
+        if suffix and normalized(suffix.group(1)) == normalized(venue.get("name")):
+            title = title[:suffix.start()]
     keys = record.get("keywords")
     raw_genres = ((keys.get("fr") or keys.get("en"))
                   if isinstance(keys, dict) else None)
