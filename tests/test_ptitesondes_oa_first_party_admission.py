@@ -1,5 +1,7 @@
 """OA-only admission must work without any municipal or venue web reader."""
 from copy import deepcopy
+from pathlib import Path
+import tempfile
 import unittest
 
 from test_ptitesondes_candidate_promotion import base
@@ -9,6 +11,10 @@ from test_ptitesondes_open_world_release_rehearsal import (
 from test_ptitesondes_open_world_patch_bridge import private_patch, readers
 from ptitesondes_oa_first_party_admission import admit_live_openagenda
 from ptitesondes_open_world_patch_bridge import merge_verified_open_world
+from ptitesondes_open_world_private_dossier_intake import (
+    collect_research_dossiers, attach_research_dossiers,
+)
+from test_ptitesondes_open_world_private_dossier_intake import entry
 
 
 class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
@@ -40,6 +46,45 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(audit["ajoutes"], 1)
         self.assertEqual(report["publisher_accepted_new"], 1)
         self.assertEqual(len(result["events"]), len(reference["events"]) + 1)
+
+    def test_inventory_to_collector_to_private_patch_to_real_publisher(self):
+        """No municipal report, external site, hand-picked dossier or network."""
+        reference = base()
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            observations = root / "observation"
+            research = root / "research"
+            research.mkdir()
+            dossiers, metrics = collect_research_dossiers(
+                observations, research, TODAY,
+                inventory_reader=lambda _: [entry()])
+        self.assertEqual(metrics["reports"], 0)
+        self.assertEqual(metrics["candidate_dossiers"], 1)
+        self.assertEqual(len(dossiers), 1)
+        self.assertEqual(dossiers[0]["date_start"], DAY.isoformat())
+        patch = attach_research_dossiers(
+            private_patch(reference, queue=[]), dossiers, TODAY)
+        self.assertEqual(len(patch["open_world_research"]), 1)
+        kwargs = readers()
+
+        def no_external_site(*args):
+            raise AssertionError("OpenAgenda must publish without another source")
+
+        for key in ("directory_reader", "official_reader", "ign_reader", "osm_reader"):
+            kwargs[key] = no_external_site
+        result, audit, report = merge_verified_open_world(
+            reference, reference, patch, TODAY,
+            "oa_pk_open_world_release_rehearsal_test", **kwargs)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(report["dossiers"], 1)
+        self.assertEqual(report["admitted_to_merge"], 1)
+        self.assertEqual(report["publisher_accepted_new"], 1)
+        self.assertEqual(report["held"], 0)
+        self.assertEqual(result["events"][:len(reference["events"])],
+                         reference["events"])
+        self.assertEqual(
+            result["events"][-1]["id"],
+            "openagenda-999401-" + DAY.isoformat())
 
     def test_recurring_event_each_exact_day_is_eligible(self):
         from datetime import timedelta
