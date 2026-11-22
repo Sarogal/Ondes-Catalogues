@@ -189,9 +189,21 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
     for row in catalogue["festivals"]:
         if not isinstance(row, dict):
             raise ValueError("Malformed public festival")
-        # Undated signed listings are valid but cannot prove an EXACT edition.
+        # A signed undated edition is an EXACT public edition only when
+        # its year is explicit and agrees in BOTH name and slug. Keep this
+        # identity rule in parity with national_generic_publisher_funnel's
+        # _published_year; no date or map pin is invented here.
         start = row.get("startDate")
         if start is None:
+            if (row.get("endDate") is None
+                    and row.get("status") == "Dates à venir"
+                    and isinstance(row.get("name"), str)
+                    and isinstance(row.get("slug"), str)):
+                name_year = re.search(r"(?<!\d)(20[2-4]\d)$", row["name"])
+                slug_year = re.search(r"-(20[2-4]\d)$", row["slug"])
+                if (name_year and slug_year and
+                        name_year.group(1) == slug_year.group(1)):
+                    existing.add((_name(row["name"]), int(name_year.group(1))))
             continue
         if not isinstance(start, str) or not re.fullmatch(r"20[2-4][0-9]-[01][0-9]-[0-3][0-9]", start):
             raise ValueError("Malformed public edition date")

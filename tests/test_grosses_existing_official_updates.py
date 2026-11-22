@@ -441,6 +441,21 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertIn(ticket_url, item["auditSources"])
         self.assertTrue(_verified_official_update_delta(row, item))
 
+    def test_one_day_pass_never_borrows_four_day_price_from_same_news_teaser(self):
+        # Real official news teasers mention BOTH categories in one paragraph,
+        # but only the 4-day pass has a stated amount. Do not invent a 1J price.
+        combined = (
+            "<main><article><p>Le Pass 4J est désormais disponible au tarif "
+            "normal de 239 €, et les Pass 1J restent disponibles à la vente."
+            "</p></article></main>")
+        self.assertEqual(advertised_passes(page(combined).relevant()),
+                         {4: "239 €"})
+        # Price association remains strict when the 4-day offer is sold out.
+        sold_out = (
+            "<main><p>Les Pass 4J Early Bird à 228 € sont SOLD OUT, et "
+            "les Pass 1J sont disponibles sans tarif annoncé.</p></main>")
+        self.assertEqual(advertised_passes(page(sold_out).relevant()), {})
+
     def test_artist_alias_cannot_collapse_without_current_official_roster(self):
         from grossesondes_existing_official_updates import verified_artist_alias_cleanup
         long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"

@@ -357,7 +357,14 @@ def advertised_passes(blocks):
 
     text = [b["text"] for b in blocks]
     for i, block in enumerate(text):
-        for category in PASS.finditer(fold(block)):
+        # An article may say "Pass 4J: 239 €; Pass 1J also on sale".
+        # Its 4J amount is NOT a 1J price. Only use this fallback if the
+        # local block names exactly one pass category. Explicit bound offers
+        # above remain usable even in multi-category announcements.
+        categories = list(PASS.finditer(fold(block)))
+        if len({match.group(1) for match in categories}) != 1:
+            continue
+        for category in categories:
             if int(category.group(1)) in found:
                 continue
             # The price and sale status may be in distinct consecutive
