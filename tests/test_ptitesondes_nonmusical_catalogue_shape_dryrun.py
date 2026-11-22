@@ -145,8 +145,15 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
                 projection = dict(event, category=code, category_label=label)
                 production_ok, production_reason = valid(
                     projection, original_categories, fields, DAY)
-                self.assertFalse(production_ok)
-                self.assertEqual(production_reason, "catégorie inconnue")
+                # The live catalogue can already contain some youth arts
+                # categories after genuine first-party publications. Passing
+                # the public SHAPE contract is not event verification and
+                # must not be mistaken for permission to publish.
+                if code in original_categories:
+                    self.assertTrue(production_ok, production_reason)
+                else:
+                    self.assertFalse(production_ok)
+                    self.assertEqual(production_reason, "catégorie inconnue")
                 hypothetical_ok, hypothetical_reason = valid(
                     projection, original_categories | set(FAMILY_TYPES),
                     fields, DAY)
