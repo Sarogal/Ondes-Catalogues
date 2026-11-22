@@ -222,10 +222,10 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertIn('if [[ -s "$STATE/patch-$DAY.json" ]]; then', workflow)
         self.assertIn("ne pas écraser la file", workflow)
         # The per-report collector already enforces the rolling 14-day
-        # freshness cap. A missed current-day report must not disable
-        # recent, independently rechecked research.
+        # freshness cap. No outside research folder is needed to queue
+        # UID-first OpenAgenda leads from the private indexed inventory.
         self.assertIn(
-            'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
+            'if [[ -d "$STATE/national-observation/index/reports" ]]; then',
             workflow)
         self.assertNotIn(
             'if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then',
