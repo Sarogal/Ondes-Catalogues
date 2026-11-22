@@ -35,9 +35,10 @@ class FirstPartyCityTitleTests(unittest.TestCase):
             "lastVerified": "2026-11-18", "department": "57",
         }
         signed = {"schema": 1, "generatedAt": "2026-11-18", "festivals": [row]}
+        # Real homepage "news teaser" text may omit 2027 entirely:
+        # the exact edition/title/dates/town still suffice independently.
         home = TITLE + (
-            "<main><h1>MozHell Open Air 2027</h1>"
-            "<p>Festival métal 23 24 25 juillet 2027</p></main>"
+            "<article><p>Premiers noms &amp; ouverture de la billetterie</p></article>"
         )
         official_calls, government_calls = [], []
         def fetch(url):
