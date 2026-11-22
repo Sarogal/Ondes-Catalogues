@@ -20,9 +20,18 @@ from test_ptitesondes_nonmusic_release_contract import (
 
 
 def source():
-    # CI runs on the public repository. This reads the EXISTING tracked
-    # production catalogue, not a synthetic fixed-size substitute.
-    return json.loads((ROOT/"docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+    # This legacy municipal *hypothetical* category-extension rehearsal
+    # needs a baseline where those four categories have not yet appeared.
+    # Their independently verified OA publication is real and must not
+    # be mistaken for permission to publish unreviewed municipal dossiers.
+    # This filter affects a TEST COPY only, never the public catalogue.
+    document = json.loads(
+        (ROOT/"docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+    document["events"] = [
+        event for event in document["events"]
+        if event.get("category") not in TYPES
+    ]
+    return document
 
 
 def official_get(url):
