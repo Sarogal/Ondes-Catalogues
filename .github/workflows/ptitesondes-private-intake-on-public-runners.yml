@@ -105,6 +105,7 @@ jobs:
           python -m unittest discover -s tests -p 'test_ptitesondes_national_backlog_bridge.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_national_openworld_research_cycle.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_reuse_rights.py' -v
+          python -m unittest discover -s tests -p 'test_ptitesondes_openagenda_backlog_private_dossiers.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_release_rehearsal.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_open_world_admission_diagnostics.py' -v
           python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_visible_session_research.py' -v
@@ -577,6 +578,26 @@ jobs:
               fi
             else
               echo "::warning::Transmission nationale sans créneau historique impossible ; aucune preuve inventée."
+            fi
+          fi
+          # The historical collector already stores hundreds of OA/ODS leads.
+          # Resolve their agenda slugs through the OFFICIAL OA API and
+          # re-read exact UIDs before forwarding strictly untrusted research
+          # to the same independent Publisher. No second website is required.
+          # Never persist anything for a push/PR preview; no public writes.
+          if [[ "$RUN_MODE" == "write" && -s "$STATE/backlog.json" ]]; then
+            if python public/scripts/ptitesondes_openagenda_backlog_private_dossiers.py \
+                --backlog-file "$STATE/backlog.json" \
+                --patch-file "$STATE/patch-$DAY.json" \
+                --public-catalogue public/docs/ptitesondes/sorties.json \
+                --output-file "$OUT/patch-oa-backlog-$DAY.json" \
+                --day "$DAY" \
+                > "$LOG/openagenda-backlog-first-party.log" 2>&1; then
+              cp "$OUT/patch-oa-backlog-$DAY.json" "$STATE/patch-$DAY.json"
+              git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json"
+              push_private 'data(ptitesondes): transmettre les pistes OA du backlog au Publisher'
+            else
+              echo "::warning::Réexamen du backlog OpenAgenda indisponible ; les anciens dossiers sont conservés."
             fi
           fi
           # Expose only the numeric handoff count, never candidate names,

@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-22T21:40:16+01:00",
+  "updated_at": "2026-11-22T22:16:10+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -11663,6 +11663,26 @@
       "geo_precision": "venue",
       "lat": 48.106907,
       "lng": -1.676867
+    },
+    {
+      "id": "openagenda-12490229-2026-12-13",
+      "title": "Saison musicale - Concert de Noël - La Lauzeta, chœur d'enfants",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2026-12-13",
+      "date_end": "2026-12-13",
+      "time": "17:00",
+      "city": "Toulouse",
+      "department": "Haute-Garonne",
+      "region": "Occitanie",
+      "venue": "Chapelle des Carmélites",
+      "source_url": "https://openagenda.com/monuments-toulouse/events/12490229_saison-musicale-concert-de-noel-la-lauzeta-choeur-denfants",
+      "source_label": "Monuments de Toulouse — Licence Ouverte 2.0 — données mises à jour le 30/06/2026",
+      "verified_at": "2026-11-22",
+      "geo_verified_at": "2026-11-22",
+      "geo_precision": "venue",
+      "lat": 43.607579,
+      "lng": 1.443395
     }
   ]
 }

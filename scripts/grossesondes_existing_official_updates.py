@@ -307,7 +307,7 @@ def home_matches_edition(doc, row, today):
 
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
-            type(limit) is not int or not 0 <= limit <= 30):
+            type(limit) is not int or not 0 <= limit <= 60):
         raise ValueError("Invalid signed source rotation")
     grouped = {}
     for row in published["festivals"]:
