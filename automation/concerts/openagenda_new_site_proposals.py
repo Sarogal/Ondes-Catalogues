@@ -112,7 +112,10 @@ def _unpublished_location(record):
     require(all(isinstance(x, str) and 2 <= len(x.strip()) <= 220
                 for x in (name, city, zip_code, address))
             and re.fullmatch(r"[0-9]{5}", zip_code) is not None
-            and str(place.get("countryCode") or "").lower() == "fr",
+            and str(place.get("countryCode") or "").lower() in {
+                "fr", "gp", "mq", "gf", "re", "yt", "nc", "pf",
+                "wf", "pm", "bl", "mf",
+            },
             "incomplete French street, named place or postal address")
     # The OA address often appends ", 76000 Rouen, France"; keep ONLY the
     # named street. Exact BAN proof must independently confirm its number,
