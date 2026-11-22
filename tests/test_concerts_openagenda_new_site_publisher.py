@@ -188,6 +188,36 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                 self.assertNotIn("latitude", place)
                 self.assertNotIn("longitude", place)
 
+    def test_priority_and_unknown_genres_both_rotate_without_starvation(self):
+        leads = []
+        for bucket in ("genre_tag_review", "genre_unknown"):
+            for index in range(6):
+                leads.append((
+                    DAY,
+                    "https://openagenda.com/shotgun/events/" +
+                    bucket + "-" + str(index),
+                    {"candidateId": bucket + "-" + str(index),
+                     "reviewBucket": bucket},
+                ))
+        all_seen = set()
+        with mock.patch.object(producer, "eligible", return_value=leads), \
+             mock.patch.object(producer, "propose", side_effect=ValueError(
+                 "test only, do not publish")):
+            for slot in (0, 1, 2):
+                returned, report = producer.build(
+                    observation(), geo_fixture.test_catalogue(),
+                    geo_fixture.before(), TODAY, slot=slot, limit=4)
+                self.assertEqual(returned, geo_fixture.before())
+                self.assertEqual(report["examined"], 4)
+                ids = [item["candidateId"] for item in
+                       report["candidateChecks"]]
+                self.assertEqual(len([i for i in ids
+                                      if i.startswith("genre_tag_review")]), 2)
+                self.assertEqual(len([i for i in ids
+                                      if i.startswith("genre_unknown")]), 2)
+                all_seen.update(ids)
+        self.assertEqual(len(all_seen), 12)
+
     def test_discovery_never_authorizes_known_venue_or_old_date(self):
         base = geo_fixture.test_catalogue()
         fetch = lambda *_: self.fail("untrusted lead must not reach network")
