@@ -352,15 +352,20 @@ class NationalPrivateDossierTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" /
                     "ptitesondes-private-intake-on-public-runners.yml"
                     ).read_text(encoding="utf-8")
-        guard = 'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d'
-        self.assertIn(guard, workflow)
-        fallback = workflow[workflow.index(guard):]
+        # The independent bridge must be present after the legacy review
+        # loop whether it yielded zero or four slots. It is not conditional
+        # on the legacy slot count anymore.
+        guard = 'if [[ -d "$STATE/national-observation/index/reports" ]]; then'
+        self.assertGreaterEqual(workflow.count(guard), 2)
+        fallback = workflow[workflow.rindex(guard):]
         self.assertIn("ptitesondes_open_world_private_dossier_intake.py",
                       fallback)
-        self.assertIn("patch-no-review-slots-$DAY.json", fallback)
+        self.assertIn("patch-national-bridge-$DAY.json", fallback)
         self.assertIn("push_private 'data(ptitesondes): transmettre",
                       fallback)
-        self.assertLess(workflow.index(guard),
+        self.assertLess(workflow.index("          done\n          # National"),
+                        workflow.rindex(guard))
+        self.assertLess(workflow.rindex(guard),
                         workflow.index("# Dashboard redacted"))
         self.assertIn('if [[ "$RUN_MODE" == "write" ]]; then',
                       fallback)
