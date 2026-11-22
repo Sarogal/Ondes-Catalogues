@@ -230,9 +230,35 @@ def validate(row, today, event_approvals, *, sources=None,
                     new_source.SELF_PROFILE
                     for p in a["officialEvidence"])
         ] if isinstance(event_approvals, list) else []
-        demand(not (live_claims and self_claims),
+        # OpenAgenda is the first-party EVENT authority; the newly named OSM
+        # site authenticates only physical geography, not an OA website tag.
+        oa_claims = [
+            a for a in event_approvals
+            if isinstance(a, dict) and isinstance(a.get("event"), dict)
+            and a["event"].get("id") == ev_id
+            and isinstance(a.get("officialEvidence"), list)
+            and any(isinstance(p, dict) and p.get("proofType") ==
+                    new_source.OPENAGENDA_NEW_PROFILE
+                    for p in a["officialEvidence"])
+        ] if isinstance(event_approvals, list) else []
+        demand(sum(bool(group) for group in (
+                   live_claims, self_claims, oa_claims)) <= 1,
                "contradictory new-site source authorities")
-        if self_claims:
+        if oa_claims:
+            demand(len(oa_claims) == 1
+                   and isinstance(origin_venues, dict)
+                   and isinstance(origin_artists, dict),
+                   "OpenAgenda new-site publisher baseline absent or duplicated")
+            kwargs = {} if fetch is None else {"fetch": fetch}
+            if historical_event is None:
+                new_source.verify_openagenda(
+                    oa_claims[0], row, origin_venues, origin_artists,
+                    today, **kwargs)
+            else:
+                new_source.verify_openagenda_historical(
+                    oa_claims[0], row, origin_venues, origin_artists,
+                    historical_event, today)
+        elif self_claims:
             demand(len(self_claims) == 1
                    and isinstance(origin_venues, dict)
                    and isinstance(origin_artists, dict),
