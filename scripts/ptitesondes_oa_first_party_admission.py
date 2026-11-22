@@ -9,6 +9,7 @@ import re
 from merge_policy import valid, PUBLISHABLE_CHILD_ARTS
 from official_organizer_proof import canonical_event_title
 from proof import norm
+from ptitesondes_primary_editorial import primary_out_of_scope
 from ptitesondes_candidate_promotion import category_for
 from ptitesondes_family_activity_classification import propose_family_activity
 from ptitesondes_openagenda_national_event_research import _french_text
@@ -38,6 +39,7 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
     "oa_direct_no_exact_session",
     "oa_direct_not_public_or_identity_changed",
     "oa_direct_out_of_editorial_scope",
+    "oa_direct_primary_activity_outside_scope",
     "oa_direct_out_of_window",
     "oa_direct_outside_france",
     "oa_direct_public_contract_rejected",
@@ -141,6 +143,10 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     # sessions. No inferred age or free/registration claim is published.
     conditions = _french_text(event, "conditions")
     source_text = description + " " + conditions
+    # The live first-party title describes the main activity. A minor
+    # lecture or concert within a school programme/forum is not enough.
+    if primary_out_of_scope(title, source_text):
+        return fail("oa_direct_primary_activity_outside_scope")
     audience = _norm(title + " " + source_text)
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
