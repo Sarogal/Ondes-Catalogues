@@ -162,8 +162,8 @@ def _city_visible(html, row):
                 for location in pieces[i + 1:i + 3]:
                     candidate = location.strip()
                     if (not re.fullmatch(
-                            r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]+"
-                            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’-]+){0,3}",
+                            r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-–]+"
+                            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-–]+){0,3}",
                             candidate)
                             or re.search(r"\d", candidate)):
                         continue
