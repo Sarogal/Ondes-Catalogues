@@ -1,0 +1,61 @@
+name: GO radio — consolidate 358 decoded streams (STAGING ONLY)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - 'radio-catalog-lab/tools/merge_full_catalog_probe_evidence.py'
+      - '.github/workflows/go-radio-full-probe-merge.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  merge-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download 9 immutable prior READ-ONLY live probe reports
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/live-evidence"
+          gh run download 45065427405 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/live-evidence" --pattern 'go-radio-stream-evidence-*'
+          gh run download 45065588703 --repo "$GITHUB_REPOSITORY" \
+            --dir "$RUNNER_TEMP/live-evidence" --pattern 'go-audio-evidence-*'
+          find "$RUNNER_TEMP/live-evidence" -type f -name 'go-*.json' | wc -l
+      - name: Create a new UNSIGNED verified-evidence copy without changing current.json
+        run: |
+          python radio-catalog-lab/tools/merge_full_catalog_probe_evidence.py \
+            --catalog radio-catalog-lab/full-staging/candidate-20261122.json \
+            --reports-dir "$RUNNER_TEMP/live-evidence" \
+            --out "$RUNNER_TEMP/qualified-candidate-unsigned.json" \
+            --summary "$RUNNER_TEMP/decode-summary.json"
+      - name: Assert all streams accounted for and not published
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])
+          r=json.loads((p/'decode-summary.json').read_text())
+          assert r['probed_streams'] == 358
+          assert r['decoded_streams_this_scan'] == 338
+          assert r['publication_authorized'] is False
+          print(json.dumps({'decoded':r['decoded_streams_this_scan'],
+            'active_with_audio':r['active_stations_with_a_verified_audio_stream'],
+            'active_without_audio':len(r['active_stations_without_a_verified_stream']),
+            'failure_reasons':r['failure_reasons']},sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-358-stream-verified-unsigned-20261122
+          path: |
+            ${{ runner.temp }}/qualified-candidate-unsigned.json
+            ${{ runner.temp }}/decode-summary.json
+          retention-days: 14
