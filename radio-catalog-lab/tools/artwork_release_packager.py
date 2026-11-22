@@ -119,8 +119,10 @@ def validate_body(raw:bytes,previous:dict|None=None)->dict:
             d["source_radio_catalog_min_sequence"]<4):
         raise ArtworkBundleError("Invalid TEST-only artwork identity")
     n=d["release_sequence"]
+    # First installation can legitimately start at signed sequence 2+
+    # because TEST artwork v1 may never have been activated on that device.
+    # Every pre-existing verified snapshot retains strict anti-rollback.
     if type(n) is not int or n<1 or \
-       (previous is None and n!=1) or \
        (previous is not None and n<=previous["release_sequence"]):
         raise ArtworkBundleError("Invalid sequence or rollback")
     arr=d["assets"]
@@ -201,6 +203,10 @@ def sign_message(p:dict)->bytes:
 def sign_pending(body:bytes,secret:Ed25519PrivateKey,key_id:str,
                  published_at:str,previous:dict|None=None)->bytes:
     d=validate_body(body,previous)
+    # Unlike a reader performing a verified first install, a publisher
+    # MUST present the prior release when signing sequence 2 or later.
+    if d["release_sequence"]>1 and previous is None:
+        raise ArtworkBundleError("Publisher needs previous signed generation")
     if not valid_date(published_at) or not isinstance(key_id,str) or not KEY.fullmatch(key_id):
         raise ArtworkBundleError("Invalid test signing metadata")
     sha=hashlib.sha256(body).hexdigest()
