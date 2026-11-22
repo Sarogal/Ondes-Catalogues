@@ -69,7 +69,11 @@ def require(ok, message):
 
 
 def normal(value):
-    return triage.words(value) if isinstance(value, str) else ""
+    if not isinstance(value, str):
+        return ""
+    return triage.words(value.translate(str.maketrans({
+        "’": "'", "‘": "'", "ʼ": "'", "＇": "'",
+    })))
 
 
 def url_host(value):
@@ -374,6 +378,19 @@ def validate(approval, venues, artists, today, *, fetch=None):
             "individual first-party HTML missing")
     events = individual_event_nodes(
         html, accept_generic=(is_single_osm or is_address))
+    # Reconstruct the same first-party visible evidence during the LIVE
+    # Publisher recheck, AFTER OSM attribution was verified afresh.
+    if is_single_osm or is_address:
+        import event_site_pair_recheck as paired
+        attested = []
+        for raw in events:
+            if raw.get("performer") in (None, "", []):
+                names = paired._visible_artist_genres_from_this_event(
+                    html, raw.get("name"))
+                if names is not None:
+                    raw = {**raw, "performer": names}
+            attested.append(raw)
+        events = attested
     valid = []
     for raw in events:
         try:
