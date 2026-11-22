@@ -593,6 +593,11 @@ class ApprovalBatchTests(unittest.TestCase):
               "le-tetris-le-havre","bonjour-minuit-saint-brieuc","le-jardin-moderne-rennes"}))
         self.assertGreaterEqual(len(items), 19)
         for row in items:
+            # Historical pilot venues have legacy two-source evidence.
+            # Independently authenticated new event sites use the separate,
+            # strictly rechecked OpenAgenda + named-OSM binding below.
+            if row.get("venueKind") == "independent-event-site-v1":
+                continue
             v=row["venue"]
             with self.subTest(venue=v["id"]):
                 self.assertEqual(row["reviewDecision"],"approved")
@@ -705,6 +710,58 @@ class ApprovalBatchTests(unittest.TestCase):
                     "https://acceslibre.beta.gouv.fr/",
                     "https://www.fandefest.com/",
                     "https://www.loisirs-divertissements.com/")))
+
+
+    def test_new_openagenda_venue_proofs_bound_to_event_and_named_osm(self):
+        """New sites do not inherit legacy pilot proof types.
+
+        Every independently admitted new site must have a first-party
+        OpenAgenda event-location attestation and a distinct named OSM
+        feature bound to the exact approved concert, without city pins.
+        """
+        events = {a["event"]["id"]: a["event"] for a in self.rows}
+        for row in self.document.get("venueApprovals", []):
+            if row.get("venueKind") != "independent-event-site-v1":
+                continue
+            venue = row["venue"]
+            with self.subTest(venue=venue["id"]):
+                self.assertEqual(row["reviewDecision"], "approved")
+                self.assertEqual(row["reviewedBy"],
+                                 "independent-official-verifier")
+                self.assertEqual(row["locationKind"], "named-physical-site")
+                self.assertRegex(venue["geoSource"],
+                    r"^https://www\\.openstreetmap\\.org/(?:node|way|relation)/[0-9]+$")
+                self.assertIn(venue["geoPrecision"],
+                              ("named-site-point", "named-site-area"))
+                event_binding = row["eventBinding"]
+                event = events[event_binding["eventId"]]
+                self.assertEqual(event["venueId"], venue["id"])
+                self.assertEqual(event["date"], event_binding["eventDate"])
+                self.assertEqual(event["officialUrl"],
+                                 event_binding["eventOfficialUrl"])
+                self.assertEqual(event_binding["authoritySourceUrl"],
+                                 event["officialUrl"])
+                self.assertEqual(len(row["officialEvidence"]), 2)
+                primary, independent = row["officialEvidence"]
+                self.assertEqual(primary["proofType"],
+                                 "official-event-location")
+                self.assertEqual(primary["url"], event["officialUrl"])
+                self.assertEqual(primary["eventId"], event["id"])
+                self.assertEqual(primary["checkedAt"], row["reviewedAt"])
+                self.assertEqual(primary["venueName"], venue["name"])
+                self.assertEqual(primary["city"], venue["city"])
+                self.assertEqual(primary["country"], "FR")
+                self.assertEqual(independent["proofType"],
+                                 "independent-osm-site")
+                self.assertEqual(independent["url"], venue["geoSource"])
+                self.assertEqual(independent["checkedAt"], row["reviewedAt"])
+                self.assertEqual(independent["venueName"], venue["name"])
+                self.assertEqual(independent["city"], venue["city"])
+                self.assertEqual(independent["country"], "FR")
+                self.assertEqual(independent["latitude"], venue["latitude"])
+                self.assertEqual(independent["longitude"], venue["longitude"])
+                self.assertEqual(independent["geoPrecision"],
+                                 venue["geoPrecision"])
 
     def test_cave_poetes_exact_venue_point_20261108_and_three_punk_bands(self):
         v=next(x for x in self.document["venueApprovals"]
