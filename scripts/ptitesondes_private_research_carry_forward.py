@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 
 from ptitesondes_open_world_private_dossier_intake import (
-    attach_research_dossiers,
+    MAX_DOSSIERS, attach_research_dossiers,
 )
 from ptitesondes_national_backlog_bridge import _atomic_json, _read
 
