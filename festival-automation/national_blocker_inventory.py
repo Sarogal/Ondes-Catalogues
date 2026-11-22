@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import subprocess
+import sys
 import unicodedata
 from collections import Counter
 from datetime import date, datetime
@@ -341,5 +342,47 @@ def main():
           + ", publications=0")
 
 
+def safe_failure_code(exc):
+    """Closed codes only: never surface names, URLs, private JSON, or traceback.
+
+    GitHub's normal workflow intentionally hides complete private intake logs.
+    A safe category allows maintainers to fix a failed diagnostic stage
+    without publishing any private dossier or source material.
+    """
+    if not isinstance(exc, (ValueError, TypeError, KeyError, OSError)):
+        return "INVENTORY_UNEXPECTED_FAILURE"
+    reason = str(exc)
+    codes = (
+        ("Publisher funnel/public snapshot mismatch", "PUBLIC_SNAPSHOT_MISMATCH"),
+        ("National dossier lost between stages", "DOSSIER_SET_MISMATCH"),
+        ("Missing, stale or unsafe", "STAGE_REPORT_INVALID"),
+        ("Unsafe or stale private patch", "PRIVATE_PATCH_INVALID"),
+        ("Invalid private patch entries", "PRIVATE_PATCH_ITEMS_INVALID"),
+        ("Unsafe private patch slug", "PRIVATE_PATCH_SLUG_INVALID"),
+        ("Malformed private patch item", "PRIVATE_PATCH_ROW_INVALID"),
+        ("Unmatched concert referral", "CONCERT_REFERRAL_ID_INVALID"),
+        ("Invalid intermediate municipal lead", "MUNICIPAL_LINK_INVALID"),
+        ("Unsafe private historical municipal report", "MUNICIPAL_HISTORY_INVALID"),
+        ("Private municipal history unavailable", "MUNICIPAL_GIT_HISTORY_UNAVAILABLE"),
+        ("Cannot inspect private municipal history", "MUNICIPAL_GIT_HISTORY_UNAVAILABLE"),
+        ("Private municipal historical snapshot unavailable", "MUNICIPAL_GIT_SNAPSHOT_UNAVAILABLE"),
+        ("Missing private stage rows", "STAGE_ROWS_INVALID"),
+        ("Invalid or duplicate private dossier", "DUPLICATE_DOSSIER"),
+        ("Invalid dossier source list", "DOSSIER_SOURCES_INVALID"),
+        ("Invalid editorial blockers", "EDITORIAL_BLOCKERS_INVALID"),
+        ("Malformed public edition date", "PUBLIC_DATE_INVALID"),
+        ("Signed public catalogue required", "PUBLIC_CATALOGUE_INVALID"),
+    )
+    return next((code for phrase, code in codes if phrase in reason),
+                "INVENTORY_UNCLASSIFIED_INVALID_INPUT")
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        # This exact ASCII marker carries only an enumerated constant.
+        # The original exception remains in the confidential redirected log.
+        print("FESTIVALS_INVENTORY_DIAG=" + safe_failure_code(exc),
+              file=sys.stderr)
+        raise
