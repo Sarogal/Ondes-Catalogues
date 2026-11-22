@@ -184,6 +184,67 @@ class UndatedOfficialDateTests(unittest.TestCase):
                 self.assertEqual(actual["festivals"][0], old)
                 self.assertEqual(report["accepted"], [])
 
+    def test_titleless_official_wix_heading_and_current_year_logo_confirms_dates(self):
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        wix = ("<html><body><main>"
+               '<img alt="EDITION 2027 FERTOIS METAL FEST LOGO" src="/logo.png">'
+               "<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027</heading>"
+               "<p>Chemin des 2 Rivières • La Ferté-sous-Jouarre</p>"
+               "</main></body></html>")
+        original = signed(old)
+        result, report = apply_independently_verified_updates(
+            original, original, DAY, limit=1, tick=0, fetch=lambda _: wix)
+        current = result["festivals"][0]
+        self.assertEqual((current["startDate"], current["endDate"]),
+                         ("2027-08-27", "2027-08-29"))
+        self.assertEqual(current["days"], "3")
+        self.assertTrue(_verified_official_update_delta(old, current))
+        self.assertEqual(report["accepted"], [old["slug"]])
+
+    def test_titleless_logo_must_be_visible_brand_and_exact_future_year(self):
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        body = ("<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027</heading>")
+        images = (
+            '<img alt="EDITION 2026 FERTOIS METAL FEST LOGO">',
+            '<img alt="EDITION 2027 ANOTHER ROCK FEST LOGO">',
+            '<img style="display:none" alt="EDITION 2027 FERTOIS METAL FEST">',
+            '<img hidden alt="EDITION 2027 FERTOIS METAL FEST LOGO">',
+            '<img aria-hidden="true" alt="EDITION 2027 FERTOIS METAL FEST">',
+        )
+        for image in images:
+            with self.subTest(image=image):
+                official = "<html><body>" + image + body + "</body></html>"
+                original = signed(old)
+                result, report = apply_independently_verified_updates(
+                    original, original, DAY, limit=1, tick=0,
+                    fetch=lambda _: official)
+                self.assertEqual(result["festivals"][0], old)
+                self.assertEqual(report["accepted"], [])
+
+    def test_official_title_with_conflicting_year_blocks_logo_fallback(self):
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        html = ("<html><head><title>Fertois Metal Fest 2026</title></head>"
+                "<body><img alt=\'EDITION 2027 FERTOIS METAL FEST LOGO\'>"
+                "<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027"
+                "</heading></body></html>")
+        original = signed(old)
+        result, report = apply_independently_verified_updates(
+            original, original, DAY, limit=1, tick=0, fetch=lambda _: html)
+        self.assertEqual(result["festivals"][0], old)
+        self.assertEqual(report["accepted"], [])
+
     def test_future_rotation_rejects_previous_year_or_unpinned_identity(self):
         old = festival()
         old["name"], old["slug"] = "Sylak Open Air 2025", "sylak-open-air-2025"
