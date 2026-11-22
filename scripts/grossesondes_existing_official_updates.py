@@ -36,7 +36,7 @@ DATE_FIELDS = frozenset((
     "startDate", "endDate", "days", "dateRangeIsContinuous",
     "status", "verificationStatus",
 ))
-CHANGEABLE = (frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+CHANGEABLE = (frozenset(("lineup", "bands", "price", "notes", "lastVerified", "auditSources"))
               | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
@@ -55,6 +55,38 @@ def fold(s):
 
 def key(s):
     return fold(s).replace(" ", "")
+
+
+def clean_obsolete_date_notes(notes):
+    """Retire seulement les assertions de dates manquantes devenues fausses.
+
+    Conserve les archives, indications de site, tarifs et faits historiques.
+    L'appelant doit revérifier la période exacte sur la source officielle.
+    """
+    if not isinstance(notes, str):
+        return notes
+    sections = []
+    for section in re.split(r"\s+\|\s+", notes):
+        sentences = []
+        for sentence in re.split(r"(?<=\.)\s+", section):
+            clauses = []
+            for clause in sentence.split(";"):
+                normalized = fold(clause)
+                wrong_end = ("date de fin" in normalized and any(
+                    x in normalized for x in (
+                        "pas etablie", "inconnue", "pas connue", "non connue",
+                        "a confirmer", "inventee")))
+                wrong_empty = ("startdate enddate vides" in normalized or
+                               "statut dates a venir" in normalized)
+                wrong_range = ("periode continue inventee" in normalized)
+                if not (wrong_end or wrong_empty or wrong_range):
+                    if clause.strip():
+                        clauses.append(clause.strip())
+            if clauses:
+                sentences.append("; ".join(clauses))
+        if sentences:
+            sections.append(" ".join(sentences))
+    return " | ".join(sections)
 
 
 class Page(HTMLParser):
@@ -722,6 +754,41 @@ def apply_independently_verified_updates(
                                        "dateRangeIsContinuous", "status",
                                        "verificationStatus"))
                         sources.extend(verified_urls)
+            # A previously verified edition may still carry an obsolete
+            # "end date unknown" note from its earlier undated publication.
+            # Do not mutate text from intuition: re-read the exact multi-day
+            # range from the signed official host in this same Publisher run.
+            fresh_notes = clean_obsolete_date_notes(old.get("notes"))
+            if (fresh_notes != old.get("notes") and
+                    isinstance(old.get("startDate"), str) and
+                    isinstance(old.get("endDate"), str)):
+                try:
+                    signed_range = (date.fromisoformat(old["startDate"]),
+                                    date.fromisoformat(old["endDate"]))
+                except ValueError:
+                    signed_range = None
+                if signed_range and signed_range[0] < signed_range[1]:
+                    edition_year = signed_range[0].year
+                    parent_name = re.sub(
+                        r"\s+20[2-4]\d$", "", str(old.get("name") or ""))
+                    parent_name = {"name": parent_name}
+                    ranges, official_date_urls = set(), []
+                    for official_url, official_html in html_pages:
+                        proofs = (
+                            official_date(official_html, parent_name, edition_year),
+                            official_structured_date(
+                                official_html, parent_name, edition_year),
+                            weekday_labelled_official_dates(
+                                official_html, old, edition_year))
+                        valid = [d for d in proofs if d is not None]
+                        if valid:
+                            ranges.update(valid)
+                            official_date_urls.append(official_url)
+                    if (reconcile_official_date_ranges(ranges) == signed_range
+                            and official_date_urls):
+                        new["notes"] = fresh_notes
+                        fields.append("notes")
+                        sources.extend(official_date_urls)
             if len(report["official_edition_diagnostics"]) < 75:
                 report["official_edition_diagnostics"].append({
                     "slug": slug, "official_site": site,

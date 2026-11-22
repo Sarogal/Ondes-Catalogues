@@ -443,6 +443,64 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(len(set(seen)), 53)
         self.assertLessEqual(len(signed_rotation(signed, DAY, limit=24, tick=0)), 24)
 
+    def test_fresh_official_dates_clean_only_stale_historical_notes(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        site = "https://www.fertoismetalfest.com/"
+        row = festival(
+            "fertois-metal-fest-2027", site,
+            dates=("2027-08-27", "2027-08-29"))
+        row["name"] = "Fertois Metal Fest 2027"
+        row["notes"] = (
+            "10e anniversaire : événement officiel annoncé le vendredi 27 août 2027. "
+            "La date de fin n'étant pas établie, conserver startDate/endDate vides "
+            "et le statut Dates à venir. Pas de période continue inventée. "
+            "| Audit carte 22/10 : site officiel chemin des Deux Rivières, "
+            "point sur chemin ; aucune date de fin inventée.")
+        page_html = (
+            "<html><head><title>Accueil | Fertois Metal Fest</title></head>"
+            "<body><main><img alt='EDITION 2027 FERTOIS METAL FEST LOGO.png'>"
+            "<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027"
+            "</heading></main></body></html>")
+        before = doc(row)
+        after, report = apply_independently_verified_updates(
+            before, before, DAY, fetch=lambda _: page_html, limit=1, tick=0)
+        entry = after["festivals"][0]
+        self.assertEqual(report["accepted"], ["fertois-metal-fest-2027"])
+        self.assertNotIn("date de fin n'étant pas établie", entry["notes"])
+        self.assertNotIn("Dates à venir", entry["notes"])
+        self.assertNotIn("période continue inventée", entry["notes"])
+        self.assertNotIn("date de fin inventée", entry["notes"])
+        self.assertIn("10e anniversaire", entry["notes"])
+        self.assertIn("site officiel chemin des Deux Rivières", entry["notes"])
+        self.assertEqual(entry["startDate"], row["startDate"])
+        self.assertEqual(entry["endDate"], row["endDate"])
+        self.assertEqual(entry["notes"], clean_obsolete_date_notes(row["notes"]))
+        self.assertTrue(_verified_official_update_delta(row, entry))
+
+    def test_notes_cleanup_requires_same_official_range_and_no_forgery(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        site = "https://www.fertoismetalfest.com/"
+        row = festival(
+            "fertois-metal-fest-2027", site,
+            dates=("2027-08-27", "2027-08-29"))
+        row["name"] = "Fertois Metal Fest 2027"
+        row["notes"] = "La date de fin reste inconnue. Adresse officielle maintenue."
+        signed = doc(row)
+        no_dates = "<main><h1>Fertois Metal Fest 2027</h1></main>"
+        after, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda _: no_dates, limit=1, tick=0)
+        self.assertEqual(after["festivals"][0], row)
+        self.assertEqual(report["accepted"], [])
+        forged = deepcopy(row)
+        forged["notes"] = "Texte non vérifié imposé par une proposition privée"
+        self.assertFalse(_verified_official_update_delta(row, forged))
+        with_proof_but_no_date = deepcopy(row)
+        with_proof_but_no_date["notes"] = clean_obsolete_date_notes(row["notes"])
+        self.assertTrue(_verified_official_update_delta(
+            row, with_proof_but_no_date))
+        # The deterministic delta guard is NOT a substitute for fresh proof:
+        # only apply_independently_verified_updates may add the slug.
+
     def test_rotation_covers_all_sites_without_closed_roster(self):
         rows = [festival(str(i), f"https://official{i}.example.fr/")
                 for i in range(80)]
