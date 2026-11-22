@@ -230,10 +230,9 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(proposed[0]["city"], "Aix-en-Provence")
         self.assertFalse(second["publication_authorized"])
 
-    def test_same_domain_official_two_page_recheck_with_calendar_day(self):
-        """Strict Publisher recheck may reconcile SAME-domain festival pages."""
+    def test_official_named_weekend_needs_no_second_page_for_calendar_day(self):
+        """One named first-party 2027 edition is sufficient after Publisher reread."""
         site = "https://www.colombin-rock.fr/"
-        detail = site + "programmation/"
         title = "Colomb'in Rock Festival 2027"
         dates = ("2027-08-13", "2027-08-14")
         homepage = (
@@ -242,20 +241,15 @@ class FirstPartyDirectTests(TestCase):
             "les 13 et 14 août 2027, festival 100% rock.</p>"
             "<p>Notre association tiendra sa réunion le 26 mars 2027.</p>"
             '<a href="/programmation/">Programmation</a></main>')
-        programme = (
-            "<main><h1>Programmation Colomb’in Rock Festival 2027</h1>"
-            "<p>Le Colomb’in Rock Festival revient les "
-            "13 et 14 août 2027, deux soirées rock.</p>"
-            "<p>Samedi 14 août 2027 : concerts.</p>"
-            "<p>Assemblée générale des bénévoles le 26 mars 2027.</p>"
-            "</main>")
         calls = []
         def fetch(url):
             calls.append(url)
-            return {site: homepage, detail: programme}[url]
-        self.assertEqual(verify_first_party_claims(
-            site, title, DAY2, fetch=fetch), (dates, None))
-        self.assertEqual(calls, [site, detail])
+            self.assertEqual(url, site)
+            return homepage
+        self.assertEqual(
+            verify_first_party_claims(site, title, DAY2, fetch=fetch),
+            (dates, None))
+        self.assertEqual(calls, [site])
         private = private_proposal(title, site, dates, DAY1)
         result = independently_verify(private, DAY2, fetch=fetch)
         self.assertIsNotNone(result)
@@ -263,37 +257,29 @@ class FirstPartyDirectTests(TestCase):
         self.assertEqual(result["endDate"], dates[1])
         self.assertFalse(result["showOnMap"])
         self.assertEqual(result["lineup"], [])
-
-        # The second page cannot invent a different festival weekend, nor
-        # advertise another date of the exact named current edition.
-        bad_pages = [
-            programme.replace("13 et 14 août", "20 et 21 août"),
-            programme.replace("</main>",
+        self.assertEqual(calls, [site, site])
+        # A contradictory current-edition claim ON THE SAME first-party
+        # page still vetoes the candidate, including hidden JSON-LD.
+        invalid = [
+            homepage.replace("</main>",
                 "<p>Colomb’in Rock Festival 2027 : autre date "
                 "le 26 mars 2027.</p></main>"),
-            programme.replace("</main>",
+            homepage.replace("</main>",
                 "<p>Le Colomb’in Rock Festival 2027 aura lieu "
                 "les 20 et 21 août 2027.</p></main>"),
-            programme.replace("</main>",
+            homepage.replace("</main>",
                 "<script type='application/ld+json'>"
                 '{"@type":"MusicEvent","name":"Colomb-in Rock Festival 2027",'
                 '"startDate":"2027-09-20","endDate":"2027-09-21"}'
                 "</script></main>"),
+            homepage.replace("festival 100% rock", "festival 100% rock annulé"),
+            homepage.replace("13 et 14 août 2027", "20 et 21 août 2027"),
+            homepage.replace("festival 100% rock", "festival de gastronomie"),
         ]
-        for broken in bad_pages:
-            with self.subTest(fragment=broken[-100:]):
+        for invalid_home in invalid:
+            with self.subTest(fragment=invalid_home[-120:]):
                 self.assertIsNone(verify_first_party_claims(
-                    site, title, DAY2,
-                    fetch=lambda url: homepage if url == site else broken))
-        bad_home = homepage.replace("</main>",
-            "<p>Colomb’in Rock Festival 2027 : nouvelle date "
-            "le 26 mars 2027.</p></main>")
-        attempted = []
-        self.assertIsNone(verify_first_party_claims(
-            site, title, DAY2,
-            fetch=lambda url: attempted.append(url) or (
-                bad_home if url == site else programme)))
-        self.assertEqual(attempted, [site])
+                    site, title, DAY2, fetch=lambda _: invalid_home))
 
     def test_private_gate_diagnostics_never_grant_authority(self):
         """Reproduce a stable lead whose live root loses its genre claim."""
