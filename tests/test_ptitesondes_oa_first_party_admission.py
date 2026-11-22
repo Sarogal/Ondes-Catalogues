@@ -141,6 +141,37 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
                 self.assertEqual(
                     reason, "oa_direct_not_public_or_identity_changed")
 
+    def test_uid_bound_event_envelope_support_without_identity_bypass(self):
+        ref = base()
+        dossier = {
+            "lead": lead(), "date_start": DAY.isoformat(),
+            "official_event_url":
+                "https://openagenda.com/agenda-nouveau-organisateur/events/999401",
+            "official_venue_url":
+                "https://openagenda.com/agenda-nouveau-organisateur/events/999401",
+        }
+        patch = private_patch(ref, queue=[dossier])
+        kwargs = readers()
+        kwargs["event_reader"] = lambda *args: {"event": oa_event()}
+        result, audit, report = merge_verified_open_world(
+            ref, ref, patch, TODAY,
+            "oa_pk_open_world_release_rehearsal_test", **kwargs)
+        self.assertEqual(audit["ajoutes"], 1)
+        self.assertEqual(report["publisher_accepted_new"], 1)
+
+        for envelope in (
+            {"event": {**oa_event(), "uid": 123456}},
+            {"uid": 123456, "event": oa_event()},
+            {"event": [oa_event()]},
+        ):
+            with self.subTest(shape=list(envelope)):
+                kwargs["event_reader"] = lambda *args: envelope
+                _, audit, report = merge_verified_open_world(
+                    ref, ref, patch, TODAY,
+                    "oa_pk_open_world_release_rehearsal_test", **kwargs)
+                self.assertEqual(audit["ajoutes"], 0)
+                self.assertGreater(report["held"], 0)
+
     def test_other_openagenda_uid_url_cannot_publish(self):
         ref = base()
         patch = private_patch(ref, queue=[{
