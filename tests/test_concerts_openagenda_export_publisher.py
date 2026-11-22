@@ -101,6 +101,8 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
     def test_forged_ambiguous_or_wrong_style_export_never_approves(self):
         failures = (
             {"status": 2},
+            {"eventStatus": "https://schema.org/EventCancelled"},
+            {"eventStatus": "EventPostponed"},
             {"firstDate": "2027-03-06"},
             {"originAgenda": {"uid": 987654, "slug": "shotgun"}},
             {"originAgenda": {"uid": 9969608, "slug": "forged"}},
