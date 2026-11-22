@@ -8,6 +8,7 @@ on:
       - ".github/workflows/go-test-artwork-v2-cold-start-ci.yml"
       - "radio-catalog-lab/tools/artwork_release_packager.py"
       - "radio-catalog-lab/tools/test_artwork_release_packager.py"
+      - "grossesondes/radio-test-apk/artwork/V2_FIRST_INSTALL_APPEND_ONLY_20261122.md"
   workflow_dispatch:
 
 permissions:
