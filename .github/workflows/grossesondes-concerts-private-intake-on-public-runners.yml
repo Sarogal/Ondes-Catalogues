@@ -46,6 +46,8 @@ on:
       - 'automation/concerts/dynamic_osm_official_proposals.py'
       - 'automation/concerts/official_venue_single_source.py'
       - 'automation/concerts/openagenda_official_concert.py'
+      # Updated private approval contracts must be checked in a trusted run.
+      - 'automation/concerts/test_approved_snapshot.py'
       - 'automation/concerts/national_openagenda_concert_candidates.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/dynamic_self_attributed_new_site_proposals.py'
