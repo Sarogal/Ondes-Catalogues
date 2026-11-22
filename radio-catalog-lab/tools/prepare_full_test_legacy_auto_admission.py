@@ -112,8 +112,24 @@ def prepare(catalog: dict, historical: dict, coverage: dict,
     for station in cloned["stations"]:
         goid = station["go_station_id"]
         if goid in previous_stations:
-            if station != previous_stations[goid]:
-                raise ValueError("signed TEST v4 content changed or replaced")
+            # A previously signed stream may legitimately gain a *new* audio
+            # verification timestamp. It may not lose a verified state, change
+            # URLs/codec/priority, or rewrite its signed identity/logo/genre.
+            prior = copy.deepcopy(previous_stations[goid])
+            replayed = copy.deepcopy(station)
+            old_stream_states = [s["state"] for s in prior["streams"]]
+            new_stream_states = [s["state"] for s in replayed["streams"]]
+            if any(a == "verified" and b != "verified"
+                   for a, b in zip(old_stream_states, new_stream_states)):
+                raise ValueError("signed TEST v4 stream verification regressed")
+            for row in prior["streams"]:
+                row.pop("state", None)
+                row.pop("last_checked_at", None)
+            for row in replayed["streams"]:
+                row.pop("state", None)
+                row.pop("last_checked_at", None)
+            if replayed != prior:
+                raise ValueError("signed TEST v4 identity, artwork or stream URL altered")
             continue
         if station["editorial"]["admission_state"] != "legacy_preserved" or goid not in trusted:
             raise ValueError("unexpected non-legacy addition")
