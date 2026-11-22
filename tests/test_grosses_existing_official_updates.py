@@ -148,15 +148,19 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         from grossesondes_cloud_sync import safe_target
         baseline_row = festival("festival-foudre-2027", MOZHELL,
                                 lineup=["Known Band"])
-        before = doc(baseline_row)
-        previous = doc(baseline_row)
-        previous["festivals"][0]["lineup"] += ["Previously Approved"]
-        previous["festivals"][0]["bands"] = 2
+        # Cloud signed-head guards require a realistic published catalogue
+        # cardinality, even in isolated unit regressions.
+        foundation = [{"slug": f"stable-base-{i}", "name": f"Base {i}"}
+                      for i in range(90)]
+        before = doc(*foundation, baseline_row)
+        previous = doc(*foundation, baseline_row)
+        previous["festivals"][-1]["lineup"] += ["Previously Approved"]
+        previous["festivals"][-1]["bands"] = 2
         next_calendar = deepcopy(previous)
-        next_calendar["festivals"][0]["lineup"] += ["New Official Band"]
-        next_calendar["festivals"][0]["bands"] = 3
-        next_calendar["festivals"][0]["lastVerified"] = DAY
-        next_calendar["festivals"][0]["auditSources"] += [ARTICLE]
+        next_calendar["festivals"][-1]["lineup"] += ["New Official Band"]
+        next_calendar["festivals"][-1]["bands"] = 3
+        next_calendar["festivals"][-1]["lastVerified"] = DAY
+        next_calendar["festivals"][-1]["auditSources"] += [ARTICLE]
         from grossesondes_preview import require
         with self.assertRaises(Exception):
             safe_target(before, next_calendar, previous)
@@ -165,12 +169,12 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
             verified_official_updates=frozenset({"festival-foudre-2027"})))
         # The same append-only proof is eligible for editions inserted after
         # the legacy baseline, without granting a private patch authority.
-        empty = doc()
+        empty = doc(*foundation)
         self.assertTrue(safe_target(
             empty, next_calendar, previous,
             verified_official_updates=frozenset({"festival-foudre-2027"})))
         altered = deepcopy(next_calendar)
-        altered["festivals"][0]["venue"] = "Unverified venue"
+        altered["festivals"][-1]["venue"] = "Unverified venue"
         with self.assertRaises(Exception):
             safe_target(before, altered, previous,
                         verified_official_updates=frozenset({"festival-foudre-2027"}))
