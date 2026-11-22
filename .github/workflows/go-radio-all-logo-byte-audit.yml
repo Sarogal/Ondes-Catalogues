@@ -1,0 +1,50 @@
+name: GO radio — 310 historical artwork SHA audit (TEST only)
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - '.github/workflows/go-radio-all-logo-byte-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sha-audit:
+    name: "Legacy image shard ${{ matrix.shard }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 6
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image decoder without altering app or remote catalog
+        run: python -m pip install 'pillow>=10,<13'
+      - name: Bounded bytes SHA image validation; no images saved
+        run: |
+          python radio-catalog-lab/tools/audit_open_radio_artwork_inventory.py \
+            --inventory grossesondes/radio-test-apk/artwork/legacy_v64_inventory.json \
+            --shard-index ${{ matrix.shard }} --shard-count 16 --network \
+            --output "$RUNNER_TEMP/go-logo-probe-${{ matrix.shard }}.json"
+      - name: Check read-only and count historical evidence for this shard
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          j=json.loads((Path(os.environ["RUNNER_TEMP"])/"go-logo-probe-${{ matrix.shard }}.json").read_text())
+          assert j["inventory_total"] == 310
+          assert j["publication_allowed"] is False and j["signed_catalog_created"] is False
+          count=sum(r.get("probe",{}).get("verified_bytes") is True for r in j["records"])
+          print(json.dumps({"shard":${{ matrix.shard }}, "stations":len(j["records"]), "decoded_sha":count,
+             "source_missing":sum(not bool(r["source_logo_url"]) for r in j["records"])}))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-logo-sha-source-${{ matrix.shard }}
+          path: ${{ runner.temp }}/go-logo-probe-${{ matrix.shard }}.json
+          retention-days: 14
