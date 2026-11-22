@@ -34,6 +34,69 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
             "other_private_reason": 4,
         })
 
+    def test_live_oa_conditions_can_prove_child_audience_for_sung_comptines(self):
+        from ptitesondes_candidate_promotion import category_for
+        event = dict(
+            oa_event(),
+            title={"fr": "Les petites boîtes à musique"},
+            description={"fr": "Envie de chanter Noël ? Découvrez les comptines revisitées."},
+            age=None,
+            conditions={"fr": "Entrée libre. Pour les enfants de 0 à 6 ans."},
+        )
+        item = dict(lead(), title="Les petites boîtes à musique")
+        self.assertEqual(
+            category_for(item["title"], event["description"]["fr"] +
+                         " " + event["conditions"]["fr"])[0],
+            "eveil-musical")
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, event, base(), base(), TODAY)
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "eveil-musical")
+        self.assertEqual(candidate["date_start"], DAY.isoformat())
+
+    def test_live_oa_conditions_restrict_adults_only_even_when_title_is_child(self):
+        source = dict(oa_event(), conditions={
+            "fr": "Réservé aux adultes uniquement. Pas d'accès familial."})
+        candidate, reason = admit_live_openagenda(
+            lead(), DAY.isoformat(), AGENDA, source, base(), base(), TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_restricted_access")
+
+    def test_children_conditions_do_not_turn_generic_exhibition_into_music(self):
+        from ptitesondes_candidate_promotion import category_for
+        source = dict(
+            oa_event(),
+            title={"fr": "Exposition de livres illustrés"},
+            description={"fr": "Catalogue de comptines à découvrir en famille."},
+            age=None,
+            conditions={"fr": "Pour les enfants de 0 à 6 ans."},
+        )
+        self.assertIsNone(category_for(
+            "Exposition de livres illustrés",
+            source["description"]["fr"] + " " + source["conditions"]["fr"]))
+        item = dict(lead(), title="Exposition de livres illustrés")
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, source, base(), base(), TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_out_of_editorial_scope")
+
+    def test_plural_musical_storytelling_and_baby_storytime_are_generic(self):
+        from ptitesondes_candidate_promotion import category_for
+        from ptitesondes_family_activity_classification import propose_family_activity
+        self.assertEqual(category_for(
+            "Contes musicaux", "Pour les enfants")[0], "conte-musical")
+        self.assertEqual(category_for(
+            "Lectures en musique", "Pour les enfants")[0], "conte-musical")
+        self.assertEqual(propose_family_activity(
+            "Bébés lecteurs aux Bordes",
+            "Lecture et comptines pour les tout-petits")["category_proposal"],
+            "lecture-jeunesse")
+        # Mere library access is not a live performance.
+        self.assertIsNone(propose_family_activity(
+            "Ouverture de la bibliothèque jeunesse",
+            "Accueil des enfants pendant les horaires d'ouverture"
+        )["category_proposal"])
+
     def test_live_public_event_admitted_without_municipal_proof(self):
         reference = base()
         candidate, reason = admit_live_openagenda(
