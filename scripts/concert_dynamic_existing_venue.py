@@ -53,6 +53,9 @@ OPENAGENDA_PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "officialOpenAgendaEventUrl",
 })
+OPENAGENDA_EXPORT_PROOF_FIELDS = OPENAGENDA_PROOF_FIELDS | frozenset({
+    "officialOpenAgendaUid", "officialOpenAgendaEventUid",
+})
 OFFICIAL_SOURCE_PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "officialVenueSourceUrl",
@@ -363,7 +366,11 @@ def validate(approval, venues, artists, today, *, fetch=None):
     is_address = proof.get("proofType") == OSM_ADDRESS_PROFILE
     is_official = proof.get("proofType") == OFFICIAL_SOURCE_PROFILE
     is_openagenda = proof.get("proofType") == OPENAGENDA_PROFILE
-    required_fields = (OPENAGENDA_PROOF_FIELDS if is_openagenda else
+    has_openagenda_export = (is_openagenda and
+                             "officialOpenAgendaUid" in proof)
+    required_fields = (OPENAGENDA_EXPORT_PROOF_FIELDS
+                       if has_openagenda_export else
+                       OPENAGENDA_PROOF_FIELDS if is_openagenda else
                        OFFICIAL_SOURCE_PROOF_FIELDS if is_official else
                        OSM_ADDRESS_PROOF_FIELDS if is_address else
                        OSM_SINGLE_PROOF_FIELDS if is_single_osm else
@@ -415,13 +422,23 @@ def validate(approval, venues, artists, today, *, fetch=None):
                 "fresh named-site OSM identity or official website changed")
     else:
         osm_identity(venue, event["officialUrl"], fetch, cache)
-    html = fetch(event["officialUrl"], cache)
-    require(isinstance(html, str) and
-            100 <= len(html) <= probe.MAX_BYTES,
-            "individual first-party HTML missing")
+    if has_openagenda_export:
+        body = fetch(openagenda.official_export_url(
+            proof["officialOpenAgendaUid"],
+            proof["officialOpenAgendaEventUid"]), cache)
+        names, genres = openagenda.verified_export(
+            body, event["officialUrl"], event["date"], venue,
+            agenda_uid=proof["officialOpenAgendaUid"],
+            event_uid=proof["officialOpenAgendaEventUid"])
+    else:
+        html = fetch(event["officialUrl"], cache)
+        require(isinstance(html, str) and
+                100 <= len(html) <= probe.MAX_BYTES,
+                "individual first-party HTML missing")
     if is_openagenda:
-        names, genres = openagenda.verified_bill(
-            html, event["officialUrl"], event["date"], venue)
+        if not has_openagenda_export:
+            names, genres = openagenda.verified_bill(
+                html, event["officialUrl"], event["date"], venue)
         require([normal(x) for x in names] ==
                 [normal(resolved[aid]["name"])
                  for aid in event.get("artistIds", [])]
