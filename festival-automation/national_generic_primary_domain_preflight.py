@@ -942,16 +942,13 @@ def append_direct_first_party_proposals(
         if (len(patch["additions"]) >= 100 or row["slug"] in used
                 or conflicts_with_signed_catalogue(
                     row, catalog["festivals"], history["knownFestivals"])):
-            for item in checks:
-                if item["gate"] == "PRIVATE_PROPOSAL_READY_FOR_DUPLICATE_CHECK":
-                    item["gate"] = "PATCH_CAPACITY_OR_DUPLICATE_COLLISION"
             continue
         patch["additions"].append(row)
         used.add(row["slug"])
         n += 1
-        for item in checks:
-            if item["gate"] == "PRIVATE_PROPOSAL_READY_FOR_DUPLICATE_CHECK":
-                item["gate"] = "PRIVATE_PROPOSAL_STAGED"
+    report["direct_first_party_staged_count_private"] = n
+    report["direct_first_party_duplicate_or_capacity_count_private"] = (
+        len(additions) - n)
     if n:
         patch["generated_at"] = today
         atomic_json(folder / ("patch-" + today + ".json"), patch)
