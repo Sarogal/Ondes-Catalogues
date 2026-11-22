@@ -6,6 +6,8 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_radio_flutter_lab/central_authoritative_catalog_selector.dart';
+import 'package:go_radio_flutter_lab/central_radio_catalog_projection.dart';
+import 'package:go_radio_flutter_lab/central_catalog_media_identity.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_client.dart';
 import 'package:go_radio_flutter_lab/central_radio_catalog_core.dart';
 
@@ -246,4 +248,101 @@ void main() {
     expect(offline!.signedSequence, 6);
     expect(offline.stations, hasLength(310));
   }, skip: !fixture.existsSync());
+  test('real signed 320-station catalog supports future server-only duplicate fusion with preserved favorite and Android Auto UUID', () async {
+    final v5 = await syntheticSignature(authenticDraft, temporaryKey, verifier);
+    final v6Draft = jsonDecode(jsonEncode(authenticDraft)) as Map<String, dynamic>;
+    v6Draft['release_sequence'] = 6;
+    v6Draft['generated_at'] = '2026-11-22T21:31:00Z';
+    final newStationId = 'go-station-901001';
+    final newLegacyId = 'test-hardradio-secondary-uuid';
+    final stations6 = (v6Draft['stations'] as List).cast<Map<String, dynamic>>();
+    final hard = stations6.singleWhere((s) => s['display_name'] == 'HardRadio');
+    final survivingId = hard['go_station_id'] as String;
+    final duplicate = jsonDecode(jsonEncode(hard)) as Map<String, dynamic>;
+    duplicate['go_station_id'] = newStationId;
+    duplicate['display_name'] = 'HardRadio TEST secondary only';
+    duplicate['legacy_aliases'] = [newLegacyId];
+    duplicate['radio_browser_uuids'] = [
+      {'uuid': newLegacyId, 'state': 'historical'},
+    ];
+    duplicate['streams'] = [
+      {
+        'stream_id': 'test-aac',
+        'url': 'https://stream-fixture.example.org/hardradio-aac',
+        'protocol': 'https',
+        'codec': 'AAC', 'bitrate_kbps': 64, 'priority': 0,
+        'state': 'verified'
+      }
+    ];
+    duplicate['logo'] = null;
+    duplicate['editorial'] = {
+      'admission_state': 'approved',
+      'reviewed_at': '2026-11-22T21:31:00Z',
+      'evidence_refs': <String>[],
+    };
+    stations6.add(duplicate);
+    final v6 = await syntheticSignature(v6Draft, temporaryKey, verifier, previous:v5);
+    var current = v6;
+    final remote = testedClient(tempFolder, verifier, () => current);
+    const selector = CentralAuthoritativeCatalogSelector();
+    final savedFavorite = [newLegacyId];
+    final before = await selector.select(client:remote,
+        favoriteIds:savedFavorite, allowNetwork:true);
+    expect(before!.signedSequence, 6);
+    expect(before.stations, hasLength(310));
+    expect(before.stations.any((s) => s.id == newLegacyId), isTrue);
+
+    final v7Draft = jsonDecode(jsonEncode(v6Draft)) as Map<String, dynamic>;
+    v7Draft['release_sequence'] = 7;
+    v7Draft['generated_at'] = '2026-11-22T21:32:00Z';
+    (v7Draft['stations'] as List).removeWhere(
+        (s) => (s as Map<String, dynamic>)['go_station_id'] == newStationId);
+    (v7Draft['tombstones'] as List).add({
+      'go_station_id': newStationId,
+      'legacy_aliases': [newLegacyId],
+      'reason_code': 'merged_into_station',
+      'retired_at': '2026-11-22T21:32:00Z',
+      'redirect_to': survivingId,
+    });
+    final v7 = await syntheticSignature(v7Draft, temporaryKey, verifier, previous:v6);
+    current = v7;
+
+    final after = await selector.select(client:remote,
+        favoriteIds:savedFavorite, allowNetwork:true);
+    expect(after, isNotNull);
+    expect(after!.signedSequence, 7);
+    expect(after.stations, hasLength(309));
+    expect(after.stations.where((s) => s.name == 'HardRadio'), hasLength(1));
+    expect(after.originalFavoriteIds, savedFavorite);
+    expect(after.unresolvedFavoriteIds, isEmpty);
+    expect(after.unavailableFavoriteIds, isEmpty);
+    final survivor = after.stations.singleWhere((s) => s.name == 'HardRadio');
+    expect(survivor.allStationIds, contains(newLegacyId));
+    expect(after.snapshot.aliasOwners[newLegacyId], newStationId);
+    expect(after.snapshot.goRedirects[newStationId], survivingId);
+
+    final projection = const CentralCatalogProjector().preview(
+      catalog: after.snapshot,
+      legacyFavoriteIds: savedFavorite,
+    );
+    expect(projection.favorites.projectedGoIds, contains(survivingId));
+    final androidAuto = CentralMediaIdentityResolver(
+        catalog: after.snapshot, preview: projection);
+    expect(androidAuto.resolveStationId(newLegacyId).goStationId, survivingId);
+    expect(androidAuto.resolveStationId(newLegacyId).playable, isTrue);
+    expect(androidAuto.resolveMediaId('go:auto:station:$newLegacyId').playable,
+        isTrue);
+
+    // Restart the identical installed client offline, with zero V64 fallback.
+    final offline = await selector.select(
+      client: testedClient(tempFolder, verifier, () => current,
+          networkError:true),
+      favoriteIds:savedFavorite,
+    );
+    expect(offline!.signedSequence, 7);
+    expect(offline.stations, hasLength(309));
+    expect(offline.stations.singleWhere((s) => s.name == 'HardRadio')
+        .allStationIds, contains(newLegacyId));
+  }, skip: !fixture.existsSync());
+
 }
