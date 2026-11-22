@@ -170,7 +170,7 @@ def load_production(reference_manifest, reader=None):
         data[filename]=obj
     return data
 
-def _certified_new_commune_delta(old, new):
+def _certified_new_commune_delta(old, new, *, allow_direct=False):
     """Safely retain independent town-centre pins on post-baseline editions.
 
     Non-baseline rows were previously required byte-identical, which prevented
@@ -193,8 +193,9 @@ def _certified_new_commune_delta(old, new):
                 "officialSite", "markerMeaning",
             }
             or proof.get("proofMode") not in (
-                "current-edition-commune-two-day.v1",
-                "current-edition-commune-direct-official.v1",
+                ("current-edition-commune-two-day.v1",) +
+                (("current-edition-commune-direct-official.v1",)
+                 if allow_direct else ())
             )
             or proof.get("markerMeaning") != "centre_indicatif_de_commune"
             or proof.get("officialSite") != old.get("officialSite")
@@ -251,7 +252,7 @@ def _verified_official_update_delta(old, new):
                 commune_only[field] = new[field]
             else:
                 commune_only.pop(field, None)
-        if not _certified_new_commune_delta(old, commune_only):
+        if not _certified_new_commune_delta(old, commune_only, allow_direct=True):
             return False
     old_names, new_names = old.get("lineup"), new.get("lineup")
     if "lineup" in changed:
