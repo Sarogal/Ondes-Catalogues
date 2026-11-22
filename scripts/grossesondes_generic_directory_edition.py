@@ -478,6 +478,73 @@ def _nonadministrative_dates_visible(html, title, year):
                explicit_ranges(visible, year))
 
 
+
+def _same_host_named_weekend(html, title, year, today):
+    """Find one current-edition weekend on the official host, but never alone.
+
+    The caller must reproduce this same weekend on another live page of
+    that SAME site. An unrelated single date can be ignored; a conflicting
+    named festival date, second weekend, cancellation or tour cannot.
+    """
+    if (not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or not isinstance(title, str) or type(year) is not int):
+        return None
+    try:
+        parser = VisibleParagraphs()
+        parser.feed(html)
+        parser.close()
+        full = " ".join(fold(" ".join(parser.parts)).split())
+        if CANCEL.search(full) or CANCELLED.search(full):
+            return None
+        name_tokens = re.findall(
+            r"[a-z0-9]+",
+            re.sub(r"\b20[2-4][0-9]\b", "", fold(title)))
+        if not name_tokens or len("".join(name_tokens)) < 8:
+            return None
+        name = re.compile(
+            r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, name_tokens))
+            + r"(?![a-z0-9])")
+        without_brand = name.sub(" ", full)
+        if not ROCK_METAL_PUNK_GENRES.search(without_brand):
+            return None
+        excluded = administrative_calendar_dates(html, title, year)
+        dates = {(start, end) for _a, _b, start, end
+                 in explicit_ranges(full, year)
+                 if (start, end) not in excluded}
+        multi = {(a, b) for a, b in dates if a < b}
+        if len(multi) != 1:
+            return None
+        target = next(iter(multi))
+        if (target[0] < date.fromisoformat(today)
+                or target[0].year != year or target[1].year != year
+                or touring_concert_stop(html, *target)
+                or not no_same_edition_jsonld_contradiction(
+                    html, title, *target)):
+            return None
+        proven = False
+        for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+            paragraph = " ".join(fold(raw).split())
+            if (not 0 < len(paragraph) <= 1600
+                    or not name.search(paragraph)
+                    or str(year) not in paragraph):
+                continue
+            if CANCEL.search(paragraph):
+                return None
+            named = {(a, b) for _i, _j, a, b
+                     in explicit_ranges(paragraph, year)}
+            if any(interval != target and not (
+                    interval[0] == interval[1] and
+                    target[0] <= interval[0] <= target[1])
+                   for interval in named):
+                return None
+            if target in named:
+                proven = True
+        return tuple(x.isoformat() for x in target) if proven else None
+    except (OSError, ValueError, TypeError, UnicodeError, KeyError):
+        return None
+
+
+
 def verify_official_site_pages(site, homepage_html, title, year, today,
                                fetch=fetch_public_html):
     """Recheck a directory-attributed SITE independently of private URL hints.
@@ -495,8 +562,14 @@ def verify_official_site_pages(site, homepage_html, title, year, today,
         return dates
     try:
         visible_home = visible_text(homepage_html)
-        if (CANCELLED.search(visible_home) or
-                _nonadministrative_dates_visible(homepage_html, title, year)):
+        if CANCELLED.search(visible_home):
+            return None
+        # A visible year-date conflict blocks by default; only one named
+        # weekend re-proven on another SAME-HOST page can be recovered.
+        homepage_weekend = _same_host_named_weekend(
+            homepage_html, title, year, today)
+        if (_nonadministrative_dates_visible(homepage_html, title, year)
+                and homepage_weekend is None):
             return None
         pending = _publisher_same_host_links(
             homepage_html, site, year, today)
@@ -515,7 +588,13 @@ def verify_official_site_pages(site, homepage_html, title, year, today,
                 # Network failure never supplies proof.
                 continue
             event_dates = verify_primary(page, title, year, today)
+            if event_dates is None and homepage_weekend is not None:
+                event_dates = _same_host_named_weekend(
+                    page, title, year, today)
             if event_dates is not None:
+                if (homepage_weekend is not None
+                        and tuple(event_dates) != homepage_weekend):
+                    return None
                 if (not no_same_edition_jsonld_contradiction(
                         homepage_html, title,
                         date.fromisoformat(event_dates[0]),
