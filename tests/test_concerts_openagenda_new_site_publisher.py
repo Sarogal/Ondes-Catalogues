@@ -204,6 +204,41 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
                                  {"held_original_or_named_site_unverified": 1},
                                  report)
 
+    def test_electronic_hardcore_is_not_punk_hardcore(self):
+        """Actual Hysta-style hardstyle/gabber labels do not sign a metal concert."""
+        case = json.loads(official())["events"][0]
+        original_url = URL
+        venue = case["location"]
+        electric = ("<p>Hysta est une figure de la musique électronique "
+                    "et du hardcore. Soirée hardstyle, gabber et uptempo.</p>")
+        electronic_cases = (
+            ({"fr": ["hardcore", "hardstyle", "gabber", "uptempo"]},
+             {"fr": electric}),
+            ({"fr": []}, {"fr": electric}),
+            ({"fr": ["hardcore"]}, {"fr": electric}),
+        )
+        for keywords, description in electronic_cases:
+            with self.subTest(keywords=keywords):
+                payload = official(keywords=keywords, description=description)
+                with self.assertRaisesRegex(
+                        ValueError, "original metal/punk genre evidence missing"):
+                    oa.verified_export(
+                        payload, original_url, DAY, venue,
+                        agenda_uid=AGENDA_UID, event_uid=EVENT_UID)
+        for keywords, description in (
+            ({"fr": ["hardcore"]},
+             {"fr": "<p>Hardcore punk avec riffs de guitare.</p>"}),
+            ({"fr": ["hardcore", "punk", "hardstyle"]},
+             {"fr": "<p>Hardcore punk et hardstyle sur le même plateau.</p>"}),
+        ):
+            with self.subTest(accepted=keywords):
+                names, genres = oa.verified_export(
+                    official(keywords=keywords, description=description),
+                    original_url, DAY, venue,
+                    agenda_uid=AGENDA_UID, event_uid=EVENT_UID)
+                self.assertTrue(names)
+                self.assertTrue(genres)
+
     def test_french_overseas_places_are_eligible_without_city_allowlist(self):
         for code, postcode, department in (
             ("gp", "97110", "971"), ("mq", "97200", "972"),
