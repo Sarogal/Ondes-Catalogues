@@ -105,12 +105,26 @@ class CentralCatalogProjector {
     for (final record in catalog.stations) {
       final goId = record['go_station_id'] as String;
       final state = (record['status'] as Map<String, dynamic>)['state'] as String;
-      final aliases =
-          List<String>.unmodifiable((record['legacy_aliases'] as List).cast<String>());
+      // Signed redirects preserve the original owner of every historical UUID
+      // in the verified catalog, but also expose it as a playable alias of the
+      // survivor for existing favorites and Android Auto MediaItem references.
+      final aliasSet = <String>{
+        ...(record['legacy_aliases'] as List).cast<String>(),
+        for (final redirect in catalog.goRedirects.entries)
+          if (redirect.value == goId) redirect.key,
+        for (final entry in catalog.aliasOwners.entries)
+          if (catalog.goRedirects[entry.value] == goId) entry.key,
+      };
+      final aliases = List<String>.unmodifiable(aliasSet);
       final preferred = preferredLegacyMediaIds[goId];
+      final owner = preferred == null
+          ? null
+          : (catalog.aliasOwners[preferred] ??
+              (catalog.goIds.contains(preferred) ? preferred : null));
       if (preferred != null &&
           preferred != goId &&
-          catalog.aliasOwners[preferred] != goId) {
+          (owner == null ||
+              (catalog.goRedirects[owner] ?? owner) != goId)) {
         throw CentralCatalogException(
             'Unrecognized historical MediaItem ID for $goId');
       }
@@ -174,12 +188,13 @@ class CentralCatalogProjector {
     final seenGo = <String>{};
 
     for (final input in original) {
-      final goId = catalog.aliasOwners[input] ??
+      final originalGoId = catalog.aliasOwners[input] ??
           (catalog.goIds.contains(input) ? input : null);
-      if (goId == null) {
+      if (originalGoId == null) {
         unresolved.add(input);
         continue;
       }
+      final goId = catalog.goRedirects[originalGoId] ?? originalGoId;
       if (!seenGo.add(goId)) continue;
 
       resolved.add(goId);
