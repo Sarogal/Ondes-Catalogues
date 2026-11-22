@@ -260,6 +260,78 @@ def eligible_undated(calendar, today):
     return rows
 
 
+class _EditionTitle(HTMLParser):
+    """Read only the actual first-party HTML title, never scripts or metadata."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.inside = False
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "title":
+            self.inside = True
+
+    def handle_endtag(self, tag):
+        if tag == "title":
+            self.inside = False
+
+    def handle_data(self, data):
+        if self.inside:
+            self.parts.append(data)
+
+
+def _city_from_dated_title(html, row):
+    """Exact signed edition + dates + commune in one first-party page title.
+
+    Example (not a named-site rule):
+    Festival X - 23 24 25 juillet 2027 - Commune (57)
+    A loose footer, historic edition or unrelated location is insufficient.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if start is None or end is None or start.year != end.year or start.month != end.month:
+        return None
+    parsed = _EditionTitle()
+    try:
+        parsed.feed(html)
+        parsed.close()
+    except (TypeError, ValueError, UnicodeError):
+        return None
+    title = " ".join(" ".join(parsed.parts).split())
+    if not 10 <= len(title) <= 250:
+        return None
+    normalized = fold(title)
+    brand = fold(re.sub(r"\b20[2-4]\d\b", "", row.get("name", ""))).strip()
+    if len(brand.replace(" ", "")) < 8 or not re.search(
+            r"(?<![a-z0-9])" + r"\s+".join(map(re.escape, brand.split()))
+            + r"(?![a-z0-9])", normalized):
+        return None
+    years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", normalized))
+    if years != {str(start.year)}:
+        return None
+    months = ("janvier", "fevrier", "mars", "avril", "mai", "juin",
+              "juillet", "aout", "septembre", "octobre", "novembre", "decembre")
+    month = months[start.month - 1]
+    match = re.search(
+        r"((?:\b\d{1,2}\b\s+(?:(?:au|et)\s+)?){1,8})"
+        + month + r"\s+" + str(start.year) + r"\b",
+        normalized)
+    if match is None:
+        return None
+    days = [int(n) for n in re.findall(r"\b\d{1,2}\b", match.group(1))]
+    if not days or days[0] != start.day or days[-1] != end.day:
+        return None
+    tail = re.search(
+        rf"\b{start.year}\b\s*[-–|·:]\s*"
+        r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]{1,80}?)"
+        r"(?:\s*\(\d{2,3}\))?\s*$", title)
+    if tail is None:
+        return None
+    city = _name(tail.group(1).strip())
+    if not city or city in ("France", "Festival", "Programmation", "Billetterie"):
+        return None
+    return city
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -280,9 +352,11 @@ def exact_edition_city(html, row):
     if structured is False:
         return None
     visible = _city_visible(html, row)
-    if structured is not None and visible is not None and _normal(structured) != _normal(visible):
+    title = _city_from_dated_title(html, row) if start is not None else None
+    evidence = [c for c in (structured, visible, title) if c is not None]
+    if len({_normal(c) for c in evidence}) > 1:
         return None
-    city = structured or visible
+    city = structured or visible or title
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
