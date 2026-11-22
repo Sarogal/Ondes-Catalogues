@@ -696,7 +696,7 @@ def apply_independently_verified_updates(
                        if old.get("startDate") is None and
                           old.get("endDate") is None and
                           isinstance(old.get("name"), str) and
-                          re.fullmatch(r".+\\s+20[2-4]\\d", old["name"])
+                          re.fullmatch(r".+\s+20[2-4]\d", old["name"])
                        else {}),
                     "reason": ("proven_update" if fields
                                else "no_changed_fields_from_official_evidence"),
