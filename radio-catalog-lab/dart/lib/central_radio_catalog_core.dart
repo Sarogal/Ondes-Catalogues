@@ -512,36 +512,22 @@ class CentralCatalogVerifier {
         !(uri.scheme == 'https' || (allowHttp && uri.scheme == 'http'))) {
       return false;
     }
-    final h = uri.host.toLowerCase().replaceAll(RegExp(r'\.$'), '');
+    final originalHost = uri.host.toLowerCase();
+    final h = originalHost.endsWith('.')
+        ? originalHost.substring(0, originalHost.length - 1)
+        : originalHost;
     if (h == 'localhost' || h.endsWith('.local') ||
         h.endsWith('.internal') || !h.contains('.') ||
         h.contains(':')) {
       return false;
     }
-    if (RegExp(r'^[0-9.]+
-}
-
-// Signing and structural verification must never hand mutable JSON trees to
-// projections: changing a nested stream or status would bypass the signature.
-dynamic _freezeCentralJson(dynamic value) {
-  if (value is Map<String, dynamic>) {
-    return Map<String, dynamic>.unmodifiable(value.map(
-      (key, child) => MapEntry(key, _freezeCentralJson(child)),
-    ));
-  }
-  if (value is List) {
-    return List<dynamic>.unmodifiable(value.map(_freezeCentralJson));
-  }
-  return value;
-}
-).hasMatch(h)) {
-      return _safePublicIpv4(h);
-    }
+    final numericHost = h.runes.every((c) => c == 46 || (c >= 48 && c <= 57));
+    if (numericHost) return _safePublicIpv4(h);
     return true;
   }
 
-  /// Do not reject historic public-IP radio CDNs, but never accept a
-  /// loopback, link-local, private, benchmark, multicast or reserved literal.
+  /// Public numeric IPs used by historical stations are allowed.
+  /// Local, private, carrier NAT, link-local and reserved ranges are not.
   static bool _safePublicIpv4(String host) {
     final parts = host.split('.');
     if (parts.length != 4) return false;
@@ -549,23 +535,7 @@ dynamic _freezeCentralJson(dynamic value) {
     for (final part in parts) {
       if (part.isEmpty || part.length > 3 ||
           (part.length > 1 && part.startsWith('0')) ||
-          !RegExp(r'^[0-9]{1,3}
-}
-
-// Signing and structural verification must never hand mutable JSON trees to
-// projections: changing a nested stream or status would bypass the signature.
-dynamic _freezeCentralJson(dynamic value) {
-  if (value is Map<String, dynamic>) {
-    return Map<String, dynamic>.unmodifiable(value.map(
-      (key, child) => MapEntry(key, _freezeCentralJson(child)),
-    ));
-  }
-  if (value is List) {
-    return List<dynamic>.unmodifiable(value.map(_freezeCentralJson));
-  }
-  return value;
-}
-).hasMatch(part)) return false;
+          !part.runes.every((c) => c >= 48 && c <= 57)) return false;
       final number = int.tryParse(part);
       if (number == null || number > 255) return false;
       octets.add(number);
@@ -583,8 +553,6 @@ dynamic _freezeCentralJson(dynamic value) {
   }
 }
 
-// Signing and structural verification must never hand mutable JSON trees to
-// projections: changing a nested stream or status would bypass the signature.
 dynamic _freezeCentralJson(dynamic value) {
   if (value is Map<String, dynamic>) {
     return Map<String, dynamic>.unmodifiable(value.map(
