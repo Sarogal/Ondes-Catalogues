@@ -12,11 +12,13 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from test_ptitesondes_open_world_release_rehearsal import lead, TODAY
-from test_ptitesondes_open_world_patch_bridge import private_patch
+from test_ptitesondes_open_world_patch_bridge import private_patch, dossier
+from test_ptitesondes_candidate_promotion import base
 from ptitesondes_national_backlog_bridge import _inventory_key
 from ptitesondes_open_world_private_dossier_intake import (
     collect_research_dossiers, attach_research_dossiers,
     review_batch_for_cron, choose_national_bridge_batch,
+    published_ids_from_catalogue,
 )
 from ptitesondes_private_research_carry_forward import (
     carry_same_day_research,
@@ -88,6 +90,73 @@ class NationalPrivateDossierTests(unittest.TestCase):
             inventory_reader=lambda _: [self.record])
         return [row for row in rows if row["official_event_url"].startswith(
             "https://openagenda.com/")]
+
+    def test_reclaims_confirmed_public_dossiers_without_dropping_new_sources(self):
+        day = (TODAY + timedelta(days=10)).isoformat()
+        old = [
+            dict(dossier(), lead=dict(lead(), event_uid=50000+i),
+                 date_start=day)
+            for i in range(80)
+        ]
+        new = [
+            dict(dossier(), lead=dict(lead(), event_uid=60000+i),
+                 date_start=day)
+            for i in range(15)
+        ]
+        published = {
+            f"openagenda-{50000+i}-{day}" for i in range(70)
+        }
+        patch = private_patch(base(), queue=old)
+        result = attach_research_dossiers(
+            patch, new, TODAY, published_ids=published)
+        kept = result["open_world_research"]
+        self.assertEqual(len(kept), 25)
+        self.assertEqual(
+            [x["lead"]["event_uid"] for x in kept],
+            [50000+i for i in range(70, 80)]
+            + [60000+i for i in range(15)])
+        self.assertEqual(len(patch["open_world_research"]), 80)
+        self.assertEqual(len(new), 15)
+        self.assertNotIn("safe_to_publish", kept[0])
+        self.assertFalse(result["safe_to_publish"])
+
+    def test_no_source_registry_or_session_limit_in_public_duplicate_pruning(self):
+        day = (TODAY + timedelta(days=20)).isoformat()
+        long_series = [dict(dossier(), lead=dict(lead(), event_uid=777777),
+                            date_start=(TODAY + timedelta(days=k)).isoformat())
+                       for k in range(1, 48)]
+        unknown = dict(dossier(), lead=dict(
+            lead(), agenda_uid=88888888, agenda_slug="new-unknown-commune",
+            event_uid=777778), date_start=day)
+        patch = private_patch(base(), queue=long_series)
+        filtered = attach_research_dossiers(
+            patch, [unknown], TODAY, published_ids={
+                f"openagenda-777777-{(TODAY + timedelta(days=k)).isoformat()}"
+                for k in range(1, 16)})
+        sessions = filtered["open_world_research"]
+        self.assertEqual(len(sessions), 33)
+        self.assertEqual(sum(x["lead"]["event_uid"] == 777777 for x in sessions),
+                         32)
+        self.assertEqual(sessions[-1]["lead"]["agenda_slug"],
+                         "new-unknown-commune")
+
+    def test_invalid_public_snapshot_never_authorizes_queue_filtering(self):
+        for value in (None, [], {}, {"events": "corrupt"},
+                      {"events": [{"id": 123}]}):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(ValueError, "invalid_public_duplicate_snapshot"):
+                    published_ids_from_catalogue(value)
+        self.assertEqual(published_ids_from_catalogue(
+            {"events": [{"id": "openagenda-42-2026-12-05"}]}),
+            {"openagenda-42-2026-12-05"})
+
+    def test_malformed_or_wrong_type_published_ids_rejected(self):
+        patch = private_patch(base(), queue=[dossier()])
+        for bad in ([], "openagenda-1", {123}, {False}):
+            with self.subTest(bad=bad):
+                with self.assertRaisesRegex(ValueError, "invalid_public_duplicate_snapshot"):
+                    attach_research_dossiers(
+                        patch, [], TODAY, published_ids=bad)
 
     def test_no_legacy_review_slots_cover_all_four_scheduled_batches(self):
         for cron, hour, batch in (
