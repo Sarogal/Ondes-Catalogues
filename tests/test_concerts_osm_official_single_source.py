@@ -155,6 +155,89 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                 self.assertEqual(calls[0].startswith(
                     "https://api.openstreetmap.org"), True)
 
+    def test_openagenda_one_public_event_is_enough_for_eight_unknown_artists(self):
+        import json
+        url = ("https://openagenda.com/fr/metal-tour/events/"
+               "87654321-eight-unknown-metal-bands")
+        venue = next(v for v in BASE["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        def body(*, title=None, day="2027-03-05", genre="Black Metal",
+                 place="Le Bikini", status="EventScheduled",
+                 advertised=None):
+            bill = advertised or fixture.NAMES
+            event = {
+                "@context": "https://schema.org",
+                "@type": "Event",
+                "name": title or " + ".join(bill),
+                "startDate": day + "T20:00:00+01:00",
+                "eventStatus": "https://schema.org/" + status,
+                "genre": genre,
+                # A public OA Event often lists only the headliner, while
+                # its own title explicitly names every opening act.
+                "performer": [{"@type": "MusicGroup",
+                               "name": fixture.NAMES[0]}],
+                "location": {
+                    "@type": "Place", "name": place,
+                    "address": {
+                        "streetAddress": venue["address"],
+                        "addressLocality": venue["city"],
+                        "postalCode": venue["postalCode"],
+                        "addressCountry": "FR",
+                    }
+                },
+            }
+            return ('<html><main><h1>Un événement OpenAgenda</h1>'
+                    '<script type="application/ld+json">' +
+                    json.dumps(event, ensure_ascii=False) +
+                    '</script></main></html>')
+        observed = []
+        def official_page_only(link, cache):
+            observed.append(link)
+            if link != url:
+                self.fail("OpenAgenda same-source proof must not call OSM")
+            return body()
+        with mock.patch.object(identity, "safe_fetch",
+                               side_effect=official_page_only):
+            proposals, report = pipeline.build(
+                registry(source="agenda_officiel_openagenda", url=url),
+                BASE, {"schema": publisher.SCHEMA, "approvals": []},
+                TODAY, slot=0, limit=8, fetch=official_page_only)
+            self.assertEqual(report["stateCounts"],
+                             {"independently_verified_proposal": 1}, report)
+            self.assertEqual(
+                proposals["approvals"][0]["officialEvidence"][0]["proofType"],
+                identity.OPENAGENDA_PROFILE)
+            self.assertEqual(len(proposals["approvals"][0]["newArtists"]), 8)
+            from automation.concerts import approval_preflight
+            self.assertEqual(len(approval_preflight.check_append_only(
+                {"schema": publisher.SCHEMA, "approvals": []},
+                proposals, TODAY)), 1)
+            result, stats = publisher.merge(
+                BASE, BASE, proposals, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats["held"])
+        self.assertEqual(stats["newArtists"], 8)
+        self.assertEqual(result["events"][-1]["officialUrl"], url)
+        self.assertEqual(set(observed), {url})
+
+        for corrupt in (
+            {"day": "2027-03-06"},
+            {"genre": "Hardcore Techno"},
+            {"status": "EventCancelled"},
+            {"place": "Different Room"},
+            {"advertised": ["Other Group", "Another Other Group"]},
+        ):
+            with self.subTest(corrupt=corrupt):
+                def false_page(link, cache):
+                    self.assertEqual(link, url)
+                    return body(**corrupt)
+                held, why = pipeline.build(
+                    registry(source="agenda_officiel_openagenda", url=url),
+                    BASE, {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, slot=0, limit=8, fetch=false_page)
+                self.assertEqual(held["approvals"], [])
+                self.assertEqual(why["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+
     def test_unknown_artists_and_domain_publish_via_real_publisher(self):
         fetch = fixture.fake_fetch()
         reads = []

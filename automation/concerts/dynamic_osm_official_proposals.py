@@ -37,6 +37,7 @@ from automation.concerts import source_cross_domain_corroboration as cross
 from automation.concerts import dynamic_first_party_venue_proposals as official
 from automation.concerts import venue_address_osm_source as address_osm
 from automation.concerts import official_venue_single_source as official_source
+from automation.concerts import openagenda_official_concert as openagenda
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
@@ -60,7 +61,9 @@ def _site(catalogue, c):
                      str(venue.get("department")) == str(c["department"]))
                 and (verified.OSM_NODE.fullmatch(
                     str(venue.get("geoSource", "")))
-                    or address_osm.eligible_address(venue))]
+                    or address_osm.eligible_address(venue)
+                    or openagenda.is_openagenda_event_url(
+                        c.get("eventDetailUrl") or c.get("sourceUrl")))]
     require(len(matching) == 1,
             "exact published venue with independently verifiable geography required")
     return matching[0]
@@ -108,8 +111,8 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
             held("not_pending_review")
             continue
         if (type(entry.get("stableObservations")) is not int
-                or entry["stableObservations"] < 2):
-            held("insufficient_stability")
+                or entry["stableObservations"] < 1):
+            held("invalid_observation_stability")
             continue
         if (c.get("publicationAllowed") is not False
                 or c.get("reviewRequired") is not True):
@@ -140,7 +143,17 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
         try:
             venue = _site(catalogue, c)
         except (TypeError, ValueError, KeyError):
-            held("no_unique_published_osm_venue")
+            held("no_unique_published_venue")
+            continue
+        # ONE live read of a legitimate official venue agenda or of the OA
+        # platform is enough to propose a show. Independent publisher replay
+        # supplies the second *verification*, not a second *source* or a
+        # mandatory second calendar day. Unknown unowned domains retain the
+        # original two-day stability barrier.
+        if (entry["stableObservations"] < 2
+                and not openagenda.is_openagenda_event_url(url)
+                and official_source.official_origin(venue, url) is None):
+            held("insufficient_stability")
             continue
         if (url, date.isoformat()) in published:
             held("already_published")
@@ -183,9 +196,12 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     # dated show announcement, not fresh OSM ownership before every show.
     # Other unlisted sites still take the generic BAN/OSM route.
     official_home = official_source.official_origin(venue, url)
+    openagenda_page = openagenda.is_openagenda_event_url(url)
     has_named_node = bool(verified.OSM_NODE.fullmatch(
         str(venue.get("geoSource", ""))))
-    if official_home is not None:
+    if openagenda_page:
+        feature, website = None, None
+    elif official_home is not None:
         feature, website = None, official_home
     else:
         try:
@@ -204,8 +220,12 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     require(isinstance(body, str) and 100 <= len(body) <= 400_000,
             "missing individual official event page")
     try:
-        names, genres = official._individual_event(
-            body, url, date, venue, accept_generic=True)
+        if openagenda_page:
+            names, genres = openagenda.verified_bill(
+                body, url, date, venue)
+        else:
+            names, genres = official._individual_event(
+                body, url, date, venue, accept_generic=True)
     except (ValueError, TypeError, KeyError) as exc:
         raise ValueError("official_event_content: " + str(exc)) from exc
     lead = candidate.get("leadArtist")
@@ -232,16 +252,21 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     now = today.isoformat()
     proof = {
         "url": url,
-        "proofType": (verified.OFFICIAL_SOURCE_PROFILE if official_home else
+        "proofType": (verified.OPENAGENDA_PROFILE if openagenda_page else
+                      verified.OFFICIAL_SOURCE_PROFILE if official_home else
                       verified.OSM_SINGLE_PROFILE if has_named_node else
                       verified.OSM_ADDRESS_PROFILE),
         "checkedAt": now,
-        "checkedFields": (list(verified.CHECKED) if official_home or
+        "checkedFields": (list(verified.OPENAGENDA_CHECKED)
+                          if openagenda_page else
+                          list(verified.CHECKED) if official_home or
                           has_named_node else list(verified.ADDRESS_CHECKED)),
         "officialArtistNames": names,
         "officialGenreLabels": genres,
     }
-    if official_home:
+    if openagenda_page:
+        proof["officialOpenAgendaEventUrl"] = url
+    elif official_home:
         proof["officialVenueSourceUrl"] = official_home
     else:
         proof["namedOsmUrl"] = feature

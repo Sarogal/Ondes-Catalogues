@@ -45,6 +45,8 @@ on:
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
       - 'automation/concerts/dynamic_osm_official_proposals.py'
       - 'automation/concerts/official_venue_single_source.py'
+      - 'automation/concerts/openagenda_official_concert.py'
+      - 'automation/concerts/national_openagenda_concert_candidates.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/dynamic_self_attributed_new_site_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'
@@ -158,6 +160,29 @@ jobs:
             "$RUNNER_TEMP/concerts-municipal-referrals" \
             "$RUNNER_TEMP/concerts-private-logs"
           python -m compileall -q public/automation/concerts
+
+      - name: Veille nationale OpenAgenda : une fiche publiée suffit
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/concerts-openagenda"
+          if ! python public/automation/concerts/national_openagenda_concert_candidates.py \
+            --catalogue public/docs/grossesondes/concerts.json \
+            --output "$RUNNER_TEMP/concerts-openagenda/candidates.json" \
+            > "$RUNNER_TEMP/concerts-private-logs/openagenda.log" 2>&1; then
+            echo "::warning::Index national OpenAgenda temporairement indisponible ; les autres sources continuent."
+            python - <<'PY'
+          import json, os
+          from pathlib import Path
+          target = Path(os.environ["RUNNER_TEMP"]) / "concerts-openagenda/candidates.json"
+          target.write_text(json.dumps({
+              "schema": "grossesondes.concert.discovery.v1",
+              "publicationAllowed": False, "automaticPublication": False,
+              "candidates": [], "triageCounts": {}
+          }), encoding="utf-8")
+          PY
+          fi
 
       - name: Veille nationale des salles, agendas et Ticketmaster
         if: steps.access.outputs.ready == 'true'
@@ -398,7 +423,7 @@ jobs:
         run: |
           set -euo pipefail
           STORE="confidential/automation/concerts/intake/registry.json"
-          for channel in concerts-discovery concerts-tours concerts-organizers concerts-osm-venues concerts-festival-referrals concerts-municipal-referrals concerts-festival-published; do
+          for channel in concerts-discovery concerts-openagenda concerts-tours concerts-organizers concerts-osm-venues concerts-festival-referrals concerts-municipal-referrals concerts-festival-published; do
             if ! python public/automation/concerts/intake_archive.py \
                 --source "$RUNNER_TEMP/$channel/candidates.json" \
                 --store "$STORE" --summary "$RUNNER_TEMP/$channel/archive-summary.json" \

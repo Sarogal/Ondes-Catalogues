@@ -113,7 +113,8 @@ def check_append_only(previous, proposed, today):
                 "dynamic-existing-venue-first-party-v1",
                 "dynamic-existing-venue-osm-official-v1",
                 "dynamic-existing-venue-address-official-v1",
-                "dynamic-existing-venue-official-single-source-v1"}
+                "dynamic-existing-venue-official-single-source-v1",
+                "dynamic-existing-venue-openagenda-single-source-v1"}
         ] if isinstance(approval, dict) and isinstance(
                 approval.get("officialEvidence"), list) else []
         independent_dynamic = (
@@ -127,6 +128,14 @@ def check_append_only(previous, proposed, today):
                 and isinstance(
                     dynamic_site_proofs[0].get("officialVenueSourceUrl"), str)
                 and bool(dynamic_site_proofs[0]["officialVenueSourceUrl"])
+            ) or (
+                dynamic_site_proofs[0].get("proofType") ==
+                "dynamic-existing-venue-openagenda-single-source-v1"
+                and isinstance(
+                    dynamic_site_proofs[0].get("officialOpenAgendaEventUrl"),
+                    str)
+                and (dynamic_site_proofs[0].get("officialOpenAgendaEventUrl")
+                     == event.get("officialUrl"))
             ) or (
                 isinstance(dynamic_site_proofs[0].get("namedOsmUrl"), str)
                 and bool(dynamic_site_proofs[0]["namedOsmUrl"])

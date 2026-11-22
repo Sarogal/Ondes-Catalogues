@@ -32,6 +32,7 @@ import source_cross_domain_live_recheck as cross_live
 import source_cross_domain_corroboration as cross
 import triage
 import official_venue_single_source as official_source
+import openagenda_official_concert as openagenda
 from independent_named_site_geo import _distance_meters
 
 PROFILE = "dynamic-existing-venue-first-party-v1"
@@ -46,6 +47,12 @@ OSM_ADDRESS_PROFILE = "dynamic-existing-venue-address-official-v1"
 # Once a venue's official agenda is explicitly bound to the published site,
 # ONE first-party event page suffices. No second concert witness or live OSM.
 OFFICIAL_SOURCE_PROFILE = "dynamic-existing-venue-official-single-source-v1"
+OPENAGENDA_PROFILE = "dynamic-existing-venue-openagenda-single-source-v1"
+OPENAGENDA_CHECKED = ["artists", "date", "venue", "genre", "openAgendaPage"]
+OPENAGENDA_PROOF_FIELDS = frozenset({
+    "url", "proofType", "checkedAt", "checkedFields",
+    "officialArtistNames", "officialGenreLabels", "officialOpenAgendaEventUrl",
+})
 OFFICIAL_SOURCE_PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "officialVenueSourceUrl",
@@ -355,7 +362,9 @@ def validate(approval, venues, artists, today, *, fetch=None):
     is_single_osm = proof.get("proofType") == OSM_SINGLE_PROFILE
     is_address = proof.get("proofType") == OSM_ADDRESS_PROFILE
     is_official = proof.get("proofType") == OFFICIAL_SOURCE_PROFILE
-    required_fields = (OFFICIAL_SOURCE_PROOF_FIELDS if is_official else
+    is_openagenda = proof.get("proofType") == OPENAGENDA_PROFILE
+    required_fields = (OPENAGENDA_PROOF_FIELDS if is_openagenda else
+                       OFFICIAL_SOURCE_PROOF_FIELDS if is_official else
                        OSM_ADDRESS_PROOF_FIELDS if is_address else
                        OSM_SINGLE_PROOF_FIELDS if is_single_osm else
                        PROOF_FIELDS)
@@ -364,11 +373,16 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(proof["url"] == event.get("officialUrl")
             and proof["proofType"] in {
                 PROFILE, OSM_SINGLE_PROFILE, OSM_ADDRESS_PROFILE,
-                OFFICIAL_SOURCE_PROFILE}
+                OFFICIAL_SOURCE_PROFILE, OPENAGENDA_PROFILE}
             and proof["checkedAt"] == approval.get("reviewedAt")
             and proof["checkedFields"] == (
+                OPENAGENDA_CHECKED if is_openagenda else
                 ADDRESS_CHECKED if is_address else CHECKED)
-            and (proof["officialVenueSourceUrl"] ==
+            and (proof["officialOpenAgendaEventUrl"] == event.get("officialUrl")
+                 and openagenda.is_openagenda_event_url(
+                     proof["officialOpenAgendaEventUrl"])
+                 if is_openagenda else
+                 proof["officialVenueSourceUrl"] ==
                  official_source.official_origin(venue, event["officialUrl"])
                  and bool(proof["officialVenueSourceUrl"])
                  if is_official else
@@ -378,14 +392,18 @@ def validate(approval, venues, artists, today, *, fetch=None):
             "first-party source evidence differs")
     origin = url_host(event["officialUrl"])
     witness = proof.get("corroboratingEventUrl")
-    if not (is_single_osm or is_address or is_official):
+    if not (is_single_osm or is_address or is_official or is_openagenda):
         witness_host = url_host(witness)
         require(cross.domain(witness_host) != cross.domain(origin),
                 "cross-domain witness is controlled by the same source apex")
     cache = {}
     # Verify named public OSM feature AND its website attribution on each
     # prospective publication. This also detects later ownership changes.
-    if is_official:
+    if is_openagenda:
+        # OpenAgenda itself is the one public source of this exact event.
+        # Never require an unrelated site to repeat the announcement.
+        pass
+    elif is_official:
         # Source identity is bound to a published venue's own official agenda;
         # OSM is not an event witness and must not be re-fetched for each show.
         pass
@@ -401,6 +419,19 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(isinstance(html, str) and
             100 <= len(html) <= probe.MAX_BYTES,
             "individual first-party HTML missing")
+    if is_openagenda:
+        names, genres = openagenda.verified_bill(
+            html, event["officialUrl"], event["date"], venue)
+        require([normal(x) for x in names] ==
+                [normal(resolved[aid]["name"])
+                 for aid in event.get("artistIds", [])]
+                and normal(" + ".join(names)) == normal(event.get("title"))
+                and genres == proof["officialGenreLabels"]
+                and names == proof["officialArtistNames"]
+                and all(normal(label) in {normal(g) for g in genres}
+                        for label in event.get("genres", [])),
+                "fresh OpenAgenda concert differs from signed official page")
+        return True
     events = individual_event_nodes(
         html, accept_generic=(is_single_osm or is_address or is_official))
     # Reconstruct the same first-party visible evidence during the LIVE
