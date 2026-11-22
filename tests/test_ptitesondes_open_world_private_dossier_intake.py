@@ -67,10 +67,35 @@ class NationalPrivateDossierTests(unittest.TestCase):
         path = self.day / (data["ref"] + ".json")
         path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf8")
 
-    def load(self, **kwargs):
-        return collect_research_dossiers(
+    def load(self, *, include_direct=False, **kwargs):
+        rows, metrics = collect_research_dossiers(
             self.observation, self.research, TODAY,
             inventory_reader=lambda _: [self.record], **kwargs)
+        if include_direct:
+            return rows, metrics
+        # Legacy municipal-research assertions remain scoped to that lane.
+        # OA-only dossiers have dedicated coverage below.
+        rows = [row for row in rows if not row["official_event_url"].startswith(
+            "https://openagenda.com/")]
+        metrics = dict(metrics, queued=len(rows), candidate_dossiers=(
+            metrics["candidate_dossiers"] - len(self.direct_dossiers())))
+        return rows, metrics
+
+    def direct_dossiers(self):
+        rows, _ = collect_research_dossiers(
+            self.observation, self.research, TODAY,
+            inventory_reader=lambda _: [self.record])
+        return [row for row in rows if row["official_event_url"].startswith(
+            "https://openagenda.com/")]
+
+    def test_openagenda_uid_queues_without_municipal_or_external_link(self):
+        rows, metrics = self.load(include_direct=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(rows[0]["official_event_url"],
+                         "https://openagenda.com/agenda-nouveau-organisateur/events/999401")
+        self.assertEqual(rows[0]["official_event_url"], rows[0]["official_venue_url"])
+        self.assertFalse(rows[0]["lead"]["publication_ready"])
 
     def test_research_queue_survives_an_entire_new_collector_run(self):
         ref = {"updated_at": "unchanged", "events": []}
