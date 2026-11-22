@@ -68,7 +68,7 @@ def read(html, url, fetch, *, normalize, artists_from_description):
     title = row.get("title")
     description = row.get("description")
     start = row.get("start_date")
-    if (not isinstance(title, str) or not 3 <= len(title) <= 200
+    if (not isinstance(title, str) or not 3 <= len(title) <= 1000
             or not isinstance(description, str)
             or not 50 <= len(description) <= 250_000
             or not isinstance(start, str) or not _DATE.fullmatch(start)):
