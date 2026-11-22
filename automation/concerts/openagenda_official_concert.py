@@ -102,6 +102,38 @@ def _described_official_genres(record):
     return labels[:8]
 
 
+def _electronic_hardcore_only(record, raw_keywords, genres):
+    """Disambiguate electronic hardcore from metal/punk hardcore.
+
+    'Hardcore' is shared by punk and electronic music. One authenticated
+    OpenAgenda source is enough, but its own explicit hardstyle/gabber/techno
+    context cannot be ignored when it otherwise gives ONLY 'hardcore'.
+    Explicit punk/metal/rock evidence still qualifies a mixed event.
+    """
+    if len(genres) != 1 or normalized(genres[0]) != "hardcore":
+        return False
+    labels = " ".join(x for x in raw_keywords if isinstance(x, str))
+    description = record.get("description")
+    original = (description.get("fr") or description.get("en")
+                if isinstance(description, dict) else "")
+    if isinstance(original, str) and 4 <= len(original) <= 12000:
+        reader = _VisibleOfficialGenreText()
+        try:
+            reader.feed(original)
+            reader.close()
+            labels += " " + " ".join(reader.parts)
+        except (ValueError, TypeError):
+            return True  # fail closed when original evidence is malformed
+    evidence = normalized(labels[:16000])
+    electronic = re.search(
+        r"\\b(?:hardstyle|gabber|uptempo|frenchcore|hardtek|"
+        r"techno|electronic|electronique|electro)\\b", evidence)
+    guitar = re.search(
+        r"\\b(?:punk|metal|rock|metalcore|deathcore|thrash|"
+        r"grindcore|screamo|skramz)\\b", evidence)
+    return bool(electronic and not guitar)
+
+
 def is_openagenda_event_url(url):
     if not isinstance(url, str) or not 20 <= len(url) <= 1000:
         return False
@@ -342,6 +374,9 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     genres = list(dict.fromkeys(genres))
     if not genres:
         genres = _described_official_genres(record)
+    if _electronic_hardcore_only(
+            record, raw_genres if isinstance(raw_genres, list) else [], genres):
+        genres = []
     if not genres or len(genres) > 20:
         raise ValueError("OpenAgenda: original metal/punk genre evidence missing")
     names = _bill({"@type": "MusicEvent", "name": title})
