@@ -264,7 +264,8 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
                      address="Quai des Antilles", postalCode="44200",
                      latitude=47.20058, longitude=-1.57365,
                      geoPrecision="point du lieu (OpenStreetMap node 373218467)")
-        cat["artists"].append({"id": "sunami", "name": "Sunami", "aliases": []})
+        if not any(a["id"] == "sunami" for a in cat["artists"]):
+            cat["artists"].append({"id": "sunami", "name": "Sunami", "aliases": []})
         cat["events"].append({
             "id": "go-c-signed-existing-sunami", "title": "Sunami + Desolated",
             "date": DAY, "artistIds": ["sunami"],
