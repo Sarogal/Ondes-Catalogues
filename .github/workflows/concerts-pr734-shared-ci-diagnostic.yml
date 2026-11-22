@@ -179,3 +179,37 @@ jobs:
                       kind=type(e).__name__
                   print('osm_probe',i,'origin',host,'result',kind,flush=True)
           PY
+
+      - name: Qualifier des instances Overpass publiques alternatives sans publication
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          from urllib.parse import urlencode
+          sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
+          import source_evidence_probe as p
+          from independent_named_site_geo import LAT_HALF,LON_HALF
+          lat,lon=43.54795,1.48568
+          bbox=','.join(f'{x:.6f}' for x in (
+              lat-LAT_HALF,lon-LON_HALF,lat+LAT_HALF,lon+LON_HALF))
+          script='[out:xml][timeout:12];(node('+bbox+');way('+bbox+'););(._;>;);out body;'
+          providers=(
+            'https://overpass.openstreetmap.fr/api/interpreter',
+            'https://api-overpass.pikamap.fr/api/interpreter',
+            'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+          )
+          for i,base in enumerate(providers):
+              url=base+'?'+urlencode({'data':script})
+              host=p.intake.valid_https(url)
+              try:
+                  body=p.safe_fetch(url,{})
+                  result='osm_xml' if '<osm version=' in body[:200] else 'other_body'
+                  print('overpass_alt',i,host,result,'bytes',len(body),flush=True)
+              except (ValueError,OSError,TimeoutError) as e:
+                  msg=str(e)
+                  kind=('robots_forbidden' if 'robots.txt' in msg else
+                        'transport_unavailable' if 'transports unavailable' in msg else
+                        'http_error' if 'HTTP status' in msg else
+                        'size_limit' if 'cap' in msg else type(e).__name__)
+                  print('overpass_alt',i,host,kind,flush=True)
+          PY
