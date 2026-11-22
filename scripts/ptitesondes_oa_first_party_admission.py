@@ -72,13 +72,19 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
         "agenda_slug": lead.get("agenda_slug"),
         "timezone": event.get("timezone"),
     }
+    # OA v2 may return a status integer or a structured {id, label} value.
+    # 1 = scheduled, 2 = rescheduled with new published timings.
+    # 3-6 are moved-online, postponed, sold-out or cancelled: not admissible.
+    status = event.get("status")
+    if type(status) is dict:
+        status = status.get("id")
     if (not _calendar_review(reviewed)
             or str(agenda.get("uid")) != str(lead["agenda_uid"])
             or agenda.get("slug") != lead["agenda_slug"]
             or type(event.get("uid")) is not int
             or event["uid"] != lead.get("event_uid")
-            or event.get("state") != 2 or event.get("status") != 1
-            or event.get("removed") is True
+            or event.get("state") != 2 or type(status) is not int
+            or status not in (1, 2) or event.get("removed") is True
             or event.get("attendanceMode") not in (1, 3)):
         return fail("oa_direct_not_public_or_identity_changed")
     loc = event.get("location")
