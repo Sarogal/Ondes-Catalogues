@@ -165,27 +165,30 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertEqual(held["approvals"], [])
         self.assertTrue(rejected["candidateChecks"][0]["reason"].startswith(
             "official_event_content:"), rejected)
-        self.assertFalse(any("openstreetmap.org" in u or
-                             "overpass.private.coffee" in u for u in reads))
+        # Source ownership must be established before an unknown host is
+        # read, even when its later bill turns out to be incomplete.
+        self.assertTrue(any("openstreetmap.org" in u for u in reads))
 
-    def test_nonmetal_official_event_skips_osm_network(self):
+    def test_nonmetal_official_event_stays_held_after_source_verification(self):
         first_party = fixture.page(URL).replace(
             "Black Metal", "Hardcore Techno")
         base = fixture.fake_fetch({"primary": first_party})
-        reads = []
+        visited = []
         def fetch(url, cache):
-            reads.append(url)
-            if "openstreetmap.org" in url or "overpass.private.coffee" in url:
-                self.fail("Irrelevant Event cannot query OSM")
+            visited.append(url)
             return base(url, cache)
-        held, report = pipeline.build(
+        withheld, report = pipeline.build(
             registry(), BASE,
             {"schema": publisher.SCHEMA, "approvals": []},
             TODAY, fetch=fetch)
-        self.assertEqual(held["approvals"], [])
+        self.assertEqual(withheld["approvals"], [])
         self.assertTrue(report["candidateChecks"][0]["reason"].startswith(
             "official_event_content:"), report)
-        self.assertEqual(reads, [URL])
+        self.assertIn(URL, visited)
+        self.assertTrue(any("openstreetmap.org" in u for u in visited))
+        self.assertLess(
+            next(i for i,u in enumerate(visited)
+                 if "openstreetmap.org" in u), visited.index(URL))
 
     def test_unavailable_osm_api_host_uses_second_official_api(self):
         # A failed API hostname cannot discard an authentic concert when
