@@ -128,6 +128,44 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         self.assertEqual(published["events"][-1]["venueId"],
                          published["venues"][-1]["id"])
 
+    def test_named_osm_site_without_optional_address_tags_reaches_publisher(self):
+        # BAN independently proves the street and town. A unique, precisely
+        # located, identically named OSM room is still a real place even if the
+        # OSM mapper did not fill in addr:city and addr:postcode.
+        osm = geo_fixture.osm_xml()
+        no_tags = osm.replace('<tag k="addr:city" v="Tours"/>', '').replace(
+            '<tag k="addr:postcode" v="37000"/>', '')
+        self.assertNotEqual(no_tags, osm)
+        base = geo_fixture.test_catalogue()
+        before = geo_fixture.before()
+        fetch, _ = official_get(osm=no_tags)
+        proposed, report = producer.build(
+            observation(), base, before, TODAY, fetch=fetch)
+        self.assertEqual(report["stateCounts"], {
+            "publisher_bound_openagenda_event_site_pair": 1}, report)
+        self.assertEqual(len(proposed["venueApprovals"]), 1)
+        self.assertEqual(proposed["venueApprovals"][0]["venue"]["geoPrecision"],
+                         "named-site-point")
+        with mock.patch.object(signer.probe, "safe_fetch", side_effect=fetch):
+            self.assertEqual(len(approval_preflight.check_append_only(
+                before, proposed, TODAY)), 1)
+            published, stats = publisher.merge(base, base, proposed, TODAY)
+        self.assertEqual(stats["newEvents"], 1)
+        self.assertEqual(stats["newVenues"], 1)
+        self.assertEqual(published["venues"][-1]["name"], "Place Libre")
+
+        # Absence of a tag is not the same as a conflicting assertion.
+        for bad_tag in ('<tag k="addr:city" v="Paris"/>',
+                        '<tag k="addr:postcode" v="75001"/>'):
+            with self.subTest(bad_tag=bad_tag):
+                wrong_osm = no_tags.replace("</node>", bad_tag + "</node>")
+                denied_fetch, _ = official_get(osm=wrong_osm)
+                denied, reason = producer.build(
+                    observation(), base, before, TODAY, fetch=denied_fetch)
+                self.assertEqual(denied, before, reason)
+                self.assertEqual(reason["stateCounts"], {
+                    "held_original_or_named_site_unverified": 1}, reason)
+
     def test_openagenda_new_venue_fails_closed_on_false_identity_or_geography(self):
         base = geo_fixture.test_catalogue()
         reference = official()
