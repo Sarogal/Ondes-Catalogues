@@ -274,7 +274,7 @@ def category_for(title, description):
         if (re.search(r"\b(?:comptines?|chansons? enfantines?)\b", body)
                 and re.search(
                     r"\b(?:chanter|chantons|chante(?:r|nt|z)?|chants?|"
-                    r"concerts?|spectacles?|musique|musical(?:e|es)?)\b",
+                    r"concerts?|spectacles?|recitals?|interprete(?:r|s|nt)?)\b",
                     body)):
             return "eveil-musical", "Éveil musical"
         for label, category, caption in (
