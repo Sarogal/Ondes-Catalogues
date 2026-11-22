@@ -3,8 +3,8 @@ import datetime as dt
 import json
 import unittest
 
-import national_openagenda_concert_candidates as scan
-import openagenda_official_concert as source
+from automation.concerts import national_openagenda_concert_candidates as scan
+from automation.concerts import openagenda_official_concert as source
 
 TODAY = dt.date(2026, 11, 22)
 EXACT = ("https://openagenda.com/fr/metal-tour/events/"
