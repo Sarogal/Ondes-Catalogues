@@ -6114,8 +6114,11 @@
       "lineup": [],
       "officialSite": "https://www.colombin-rock.fr/",
       "endDate": "2027-08-14",
-      "price": null,
-      "lon": null
+      "price": "Pass 2 jours : 10 € — billetterie officielle ouverte",
+      "lon": null,
+      "auditSources": [
+        "https://www.colombin-rock.fr/billetterie/"
+      ]
     }
   ]
 }
