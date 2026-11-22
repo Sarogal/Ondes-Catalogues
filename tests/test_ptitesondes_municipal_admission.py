@@ -25,13 +25,22 @@ from test_ptitesondes_nonmusic_release_contract import (
     TODAY, URL, access, private_access, private_review,
 )
 from ptitesondes_municipal_appendonly_dryrun import _event_from_proposal
+from ptitesondes_nonmusic_release_contract import TYPES
 
 PR_SHA = "a" * 40
 PR_NUMBER = 88
 
 
 def catalogue():
-    return json.loads((ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+    # The legacy nonmusical municipal gate tests a hypothetical extension
+    # of categories not yet published via this gate. Real OA releases have
+    # introduced some categories; use an isolated pre-release TEST COPY.
+    document = json.loads(
+        (ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+    document["events"] = [
+        row for row in document["events"] if row.get("category") not in TYPES
+    ]
+    return document
 
 
 def fixture(*, explicit=True, event_html=None):
