@@ -368,6 +368,27 @@ WEEKDAY_DATE_SEQUENCE = re.compile(
 )
 
 
+def reconcile_official_date_ranges(ranges):
+    """One fully dated range may contain corroborating single-day mentions.
+
+    A page can say "Friday 27, Saturday 28, Sunday 29 August" while a
+    second conservative parser recognizes only "29 August". That is not
+    a contradiction. However, two distinct multi-day intervals, disjoint
+    dates and partly overlapping ranges must not silently be reconciled.
+    """
+    unique = set(ranges)
+    if not unique:
+        return None
+    candidates = [
+        interval for interval in unique
+        if all(other == interval or (
+            other[0] == other[1]
+            and interval[0] <= other[0] <= interval[1])
+            for other in unique)
+    ]
+    return candidates[0] if len(candidates) == 1 else None
+
+
 def undated_official_evidence_diagnostic(html, row, year):
     """Report safe proof flags for an undated signed official site.
 
@@ -653,22 +674,30 @@ def apply_independently_verified_updates(
                             "visible_date_validator": visible is not None,
                             "structured_date_validator": jsonld is not None,
                             "weekday_date_validator": weekdays is not None,
+                            "visible_date_single_day": bool(
+                                visible and visible[0] == visible[1]),
+                            "weekday_date_spans_days": bool(
+                                weekdays and weekdays[1] > weekdays[0]),
+                            "date_readings_differ": bool(
+                                visible and weekdays and visible != weekdays),
+                            "matching_jsonld_invalid": bool(
+                                matching_jsonld and jsonld is None),
                         })
-                        # Never cherry-pick between opposing first-party facts.
-                        if ((matching_jsonld and jsonld is None) or
-                                len({d for d in (visible, jsonld, weekdays)
-                                     if d is not None}) > 1):
+                        # A full date range and one of its constituent
+                        # days agree. Two distinct multi-day ranges never do.
+                        if matching_jsonld and jsonld is None:
                             contradicted = True
                             break
-                        dates = visible or jsonld or weekdays
-                        if dates:
-                            proposed_ranges.add(dates)
+                        found = [d for d in (visible, jsonld, weekdays)
+                                 if d is not None]
+                        if found:
+                            proposed_ranges.update(found)
                             verified_urls.append(official_url)
-                    # At most one interval across all inspected first-party
-                    # pages; historical year and incomplete date are no proof.
-                    dates = (next(iter(proposed_ranges))
-                             if not contradicted and len(proposed_ranges) == 1
-                             else None)
+                    # Reconcile only nested single days, across all first-party
+                    # pages. Never invent a missing end date or pick between
+                    # incompatible calendar announcements.
+                    dates = (reconcile_official_date_ranges(proposed_ranges)
+                             if not contradicted else None)
                     if (dates and dates[0] > date.fromisoformat(today)
                             and dates[1] > dates[0]
                             and (dates[1] - dates[0]).days <= 7):
