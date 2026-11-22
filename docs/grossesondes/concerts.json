@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-21",
+  "updatedAt": "2026-11-22",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2385,6 +2385,31 @@
     {
       "id": "deryck-whibley",
       "name": "DERYCK WHIBLEY",
+      "aliases": []
+    },
+    {
+      "id": "haywire",
+      "name": "HAYWIRE",
+      "aliases": []
+    },
+    {
+      "id": "whispers",
+      "name": "WHISPERS",
+      "aliases": []
+    },
+    {
+      "id": "speedway",
+      "name": "SPEEDWAY",
+      "aliases": []
+    },
+    {
+      "id": "locomuerte",
+      "name": "LocoMuerte",
+      "aliases": []
+    },
+    {
+      "id": "doorshan",
+      "name": "DoorShan",
       "aliases": []
     }
   ],
@@ -15151,6 +15176,71 @@
       "history": [
         {
           "date": "2026-11-21",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270116-villeurbanne-comeback-kid",
+      "title": "COMEBACK KID + HAYWIRE + WHISPERS + SPEEDWAY",
+      "date": "2027-01-16",
+      "artistIds": [
+        "comeback-kid",
+        "haywire",
+        "whispers",
+        "speedway"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "metal",
+        "punk",
+        "hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/comeback-kid-haywire-whispers-speedway",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Rayonne",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-22",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-22",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270115-paris-locomuerte",
+      "title": "LocoMuerte + DoorShan",
+      "date": "2027-01-15",
+      "artistIds": [
+        "locomuerte",
+        "doorshan"
+      ],
+      "venueId": "la-maroquinerie-paris",
+      "genres": [
+        "metal",
+        "thrash metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/locomuerte-doorshan-la-maroquinerie",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Maroquinerie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-22",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-22",
           "change": "Ajout après revue des preuves officielles"
         }
       ]

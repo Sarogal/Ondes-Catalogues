@@ -184,7 +184,11 @@ def linked_pages(site, parsed):
 
 
 def good_artist(value):
-    name = " ".join(str(value).strip().strip(" .:;").split())
+    name = " ".join(str(value).strip().strip(" :;").split())
+    # Preserve official acronyms ending in dot-separated initials
+    # (e.g. "Cavalera Chaos A.D.") while trimming sentence punctuation.
+    if not re.search(r"(?:\b[A-Za-z]\.){2,}$", name):
+        name = name.rstrip(".")
     if (not 2 <= len(key(name)) <= 90 or len(name) > 110 or
             not re.search(r"[A-Za-zÀ-ÿ]", name) or
             re.search(r"[\r\n<>@/\\]", name) or
@@ -199,8 +203,15 @@ def listed_artists(blocks):
     for i, b in enumerate(blocks):
         text = fold(b["text"])
         if b["tag"].startswith("h"):
-            active = bool(GENRE_LIST.search(text) and
-                          (ANNOUNCE.search(text) or "groupes" in text))
+            # Some official current-edition lineups use a location heading
+            # ("Ils seront à Carhaix") instead of "groupes annoncés".
+            # The caller already binds these blocks to the signed edition,
+            # and headings stop the list at the next unrelated section.
+            roster_heading = re.fullmatch(
+                r"(?:ils|elles) seront a [a-z0-9 ]{3,90}", text)
+            active = bool(roster_heading or (
+                GENRE_LIST.search(text) and
+                (ANNOUNCE.search(text) or "groupes" in text)))
         if b["tag"] == "li" and active:
             found = good_artist(b["lead"] or b["text"])
             if found:
