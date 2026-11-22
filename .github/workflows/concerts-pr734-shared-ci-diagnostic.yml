@@ -141,3 +141,41 @@ jobs:
                   break
               print('robots_policy_check',host,result,flush=True)
           PY
+
+      - name: Sonder la géolocalisation OSM par coordonnées publiques connues
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
+          from urllib.robotparser import RobotFileParser
+          import source_evidence_probe as p
+          import osm_read_only_fallback as osm
+          from independent_named_site_geo import OSM_MAP,LAT_HALF,LON_HALF
+          lat, lon=43.54795,1.48568
+          bbox=','.join(f'{x:.6f}' for x in (lon-LON_HALF,lat-LAT_HALF,lon+LON_HALF,lat+LAT_HALF))
+          urls=[
+            OSM_MAP+'?bbox='+bbox,
+            osm.nearby(lat-LAT_HALF,lon-LON_HALF,lat+LAT_HALF,lon+LON_HALF),
+            osm.nearby(lat-LAT_HALF,lon-LON_HALF,lat+LAT_HALF,lon+LON_HALF,provider=1)
+          ]
+          for i,url in enumerate(urls):
+              host=p.intake.valid_https(url)
+              try:
+                  cache={}
+                  body=p.safe_fetch(url,cache)
+                  print('osm_probe',i,'origin',host,'result','ok','bytes',len(body),flush=True)
+              except (OSError,TimeoutError,ValueError) as e:
+                  reason=str(e)
+                  if 'robots.txt' in reason:
+                      kind='robots_forbidden'
+                  elif 'transports unavailable' in reason:
+                      kind='transport_unavailable'
+                  elif 'non-success HTTP status' in reason:
+                      kind='http_status'
+                  elif 'response over cap' in reason:
+                      kind='response_cap'
+                  else:
+                      kind=type(e).__name__
+                  print('osm_probe',i,'origin',host,'result',kind,flush=True)
+          PY
