@@ -39,7 +39,7 @@ def carry_same_day_research(previous, fresh, today):
     if "open_world_research" not in previous:
         return fresh
     queue = previous["open_world_research"]
-    if not isinstance(queue, list) or len(queue) > 30:
+    if not isinstance(queue, list) or len(queue) > MAX_DOSSIERS:
         raise ValueError("invalid_private_research_queue")
     # This cannot overwrite the newly collected historical additions.
     # A simultaneous new queue on the fresh patch is deduplicated.
