@@ -16,7 +16,7 @@ from test_ptitesondes_open_world_patch_bridge import private_patch
 from ptitesondes_national_backlog_bridge import _inventory_key
 from ptitesondes_open_world_private_dossier_intake import (
     collect_research_dossiers, attach_research_dossiers,
-    review_batch_for_cron,
+    review_batch_for_cron, choose_national_bridge_batch,
 )
 from ptitesondes_private_research_carry_forward import (
     carry_same_day_research,
@@ -125,17 +125,62 @@ class NationalPrivateDossierTests(unittest.TestCase):
         source = (ROOT / ".github/workflows/"
                   "ptitesondes-private-intake-on-public-runners.yml").read_text(
                       encoding="utf-8")
-        self.assertIn('review_batch_for_cron(os.getenv("REVIEW_CRON", "")', source)
-        self.assertIn('batch-index "$NO_SLOT_BATCH"', source)
+        self.assertIn('choose_national_bridge_batch(os.getenv("REVIEW_CRON","")', source)
+        self.assertIn('batch-index "$OA_BRIDGE_BATCH"', source)
         self.assertIn(
             'if [[ -d "$STATE/national-observation/index/reports" ]]; then',
             source)
-        self.assertIn(
+        self.assertNotIn(
             'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/index/reports" ]]; then',
             source)
+        # The bridge runs *after* the historical slot loop and reads the
+        # current private patch, even when slot 3 was the only replayed slot.
+        self.assertLess(source.index("          done\n          # National"),
+                        source.index('choose_national_bridge_batch'))
+        self.assertIn('"$STATE/patch-$DAY.json")"', source)
         self.assertNotIn(
             'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
             source)
+
+    def test_slot_three_cannot_starve_first_party_batch_zero_after_deploy(self):
+        # The 18:47 UTC external rescue run can process historical slot 3,
+        # while slots 0-2 were consumed by the former production version.
+        # The OA queue starts empty and has only one eligible first batch.
+        for cron in ("", "17 18 * * *"):
+            with self.subTest(cron=cron):
+                selected = choose_national_bridge_batch(cron, 18, [])
+                self.assertEqual(selected, 0)
+                batch, counts = self.load(
+                    include_direct=True, batch_index=selected)
+                self.assertEqual(counts["queued"], 1)
+                patch = private_patch({"updated_at": "unused", "events": []},
+                                      queue=[])
+                forwarded = attach_research_dossiers(patch, batch, TODAY)
+                self.assertEqual(len(forwarded["open_world_research"]), 1)
+                self.assertEqual(forwarded["additions"], [])
+                self.assertFalse(forwarded["safe_to_publish"])
+                # Once a dossier exists, the regular scheduling partition
+                # resumes and cannot replace the outstanding request.
+                self.assertEqual(
+                    choose_national_bridge_batch(
+                        cron, 18, forwarded["open_world_research"]), 3)
+
+    def test_bridge_batch_fails_closed_on_untrusted_private_queue(self):
+        for bad in (None, {}, "no", [None] * 31):
+            with self.subTest(bad=type(bad).__name__):
+                with self.assertRaises(ValueError):
+                    choose_national_bridge_batch("", 18, bad)
+
+    def test_private_actions_summary_exposes_only_bounded_queue_count(self):
+        workflow = (ROOT / ".github/workflows/"
+                    "ptitesondes-private-intake-on-public-runners.yml"
+                    ).read_text(encoding="utf-8")
+        self.assertIn('OA_HANDOFF_COUNT="$(python -c', workflow)
+        self.assertIn('assert type(q) is list and len(q)<=30', workflow)
+        self.assertIn('Dossiers OA sauvegardés en privé', workflow)
+        self.assertIn('Dossiers OA en prévisualisation uniquement', workflow)
+        self.assertNotIn('print(q)', workflow)
+        self.assertNotIn('print(q[0])', workflow)
 
     def test_direct_openagenda_can_stage_without_research_root(self):
         missing = self.parent / "never-collected-external-web-clues"
@@ -318,15 +363,20 @@ class NationalPrivateDossierTests(unittest.TestCase):
         workflow = (ROOT / ".github" / "workflows" /
                     "ptitesondes-private-intake-on-public-runners.yml"
                     ).read_text(encoding="utf-8")
-        guard = 'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d'
-        self.assertIn(guard, workflow)
-        fallback = workflow[workflow.index(guard):]
+        # The independent bridge must be present after the legacy review
+        # loop whether it yielded zero or four slots. It is not conditional
+        # on the legacy slot count anymore.
+        guard = 'if [[ -d "$STATE/national-observation/index/reports" ]]; then'
+        self.assertGreaterEqual(workflow.count(guard), 2)
+        fallback = workflow[workflow.rindex(guard):]
         self.assertIn("ptitesondes_open_world_private_dossier_intake.py",
                       fallback)
-        self.assertIn("patch-no-review-slots-$DAY.json", fallback)
+        self.assertIn("patch-national-bridge-$DAY.json", fallback)
         self.assertIn("push_private 'data(ptitesondes): transmettre",
                       fallback)
-        self.assertLess(workflow.index(guard),
+        self.assertLess(workflow.index("          done\n          # National"),
+                        workflow.rindex(guard))
+        self.assertLess(workflow.rindex(guard),
                         workflow.index("# Dashboard redacted"))
         self.assertIn('if [[ "$RUN_MODE" == "write" ]]; then',
                       fallback)

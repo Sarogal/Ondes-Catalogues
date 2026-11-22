@@ -553,32 +553,40 @@ jobs:
               push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
             fi
           done
-          # National dossiers are NOT dependent on the legacy 4 review slots.
-          # A later collection may have no outstanding historical verification
-          # slot, yet it may have just discovered new official source leads.
-          # Always promote those PRIVATE hints to the cloud Publisher queue.
-          # Each one will be fully independently re-verified there; no local
-          # report can mint authority or a public change.
-          if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/index/reports" ]]; then
-            # Each scheduled outings run covers one of four batches, including
-            # batch zero at 07:17 UTC. The UTC-hour//6 shortcut silently
-            # skipped it in all regularly scheduled daytime runs.
-            NO_SLOT_BATCH="$(python -c 'import os,sys; from datetime import datetime,timezone; sys.path.insert(0,"public/scripts"); from ptitesondes_open_world_private_dossier_intake import review_batch_for_cron; print(review_batch_for_cron(os.getenv("REVIEW_CRON", ""),datetime.now(timezone.utc).hour))')"
+          # National OpenAgenda dossiers must not depend on whether the
+          # historical preflight still has a review slot. For example, the
+          # first cycle after a deployment can re-run slot 3 only; if slots
+          # 0-2 were already reviewed with the OLD code, the first OA UID
+          # candidates were never queued. Always run a bounded extra pass.
+          # If the private queue is empty, explicitly recover batch zero;
+          # otherwise rotate the usual disjoint scheduled batch. Dedup and
+          # the 30-dossier cap remain enforced by the offline producer.
+          if [[ -d "$STATE/national-observation/index/reports" ]]; then
+            OA_BRIDGE_BATCH="$(python -c 'import json,os,sys; from datetime import datetime,timezone; sys.path.insert(0,"public/scripts"); from ptitesondes_open_world_private_dossier_intake import choose_national_bridge_batch; p=json.load(open(sys.argv[1],encoding="utf-8")); print(choose_national_bridge_batch(os.getenv("REVIEW_CRON",""),datetime.now(timezone.utc).hour,p.get("open_world_research",[])))' "$STATE/patch-$DAY.json")"
             if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
                 --observation-root "$STATE/national-observation" \
                 --research-root "$STATE/national-observation/research" \
                 --patch-file "$STATE/patch-$DAY.json" \
-                --output-file "$OUT/patch-no-review-slots-$DAY.json" \
-                --day "$DAY" --batch-index "$NO_SLOT_BATCH" \
-                > "$LOG/openworld-dossiers-no-slot.log" 2>&1; then
-              cp "$OUT/patch-no-review-slots-$DAY.json" "$STATE/patch-$DAY.json"
+                --output-file "$OUT/patch-national-bridge-$DAY.json" \
+                --day "$DAY" --batch-index "$OA_BRIDGE_BATCH" \
+                > "$LOG/openworld-dossiers-national-bridge.log" 2>&1; then
+              cp "$OUT/patch-national-bridge-$DAY.json" "$STATE/patch-$DAY.json"
               if [[ "$RUN_MODE" == "write" ]]; then
                 git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json"
-                push_private 'data(ptitesondes): transmettre la recherche nationale sans créneau historique'
+                push_private 'data(ptitesondes): transmettre les dossiers OA indépendamment des créneaux historiques'
               fi
             else
-              echo "::warning::La qualification nationale sans créneau a échoué ; aucune preuve ni approbation inventée."
+              echo "::warning::Transmission nationale sans créneau historique impossible ; aucune preuve inventée."
             fi
+          fi
+          # Expose only the numeric handoff count, never candidate names,
+          # URLs, UIDs, or source claims. A queue is a research request, not
+          # an approval. The next independent cloud sync may reject all.
+          OA_HANDOFF_COUNT="$(python -c 'import json,sys; p=json.load(open(sys.argv[1],encoding="utf-8")); q=p.get("open_world_research",[]); assert type(q) is list and len(q)<=30; print(len(q))' "$STATE/patch-$DAY.json")"
+          if [[ "$RUN_MODE" == "write" ]]; then
+            echo "Dossiers OA sauvegardés en privé pour relecture indépendante : $OA_HANDOFF_COUNT (zéro approbation locale)." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Dossiers OA en prévisualisation uniquement : $OA_HANDOFF_COUNT (aucune sauvegarde)." >> "$GITHUB_STEP_SUMMARY"
           fi
           # Dashboard redacted, stored in PRIVATE state only. Its failure never
           # prevents intake collection, qualification, or recovery.
