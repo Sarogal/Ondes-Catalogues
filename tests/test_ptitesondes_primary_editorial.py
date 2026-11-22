@@ -1,0 +1,126 @@
+"""Regression tests based on 22 Nov 2026 OpenAgenda editorial incidents.
+
+All tests are offline; no private source, venue or agenda allowlist.
+"""
+from datetime import date
+from pathlib import Path
+import sys
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "tests"))
+
+from ptitesondes_primary_editorial import primary_out_of_scope
+from ptitesondes_candidate_promotion import category_for
+from ptitesondes_family_activity_classification import propose_family_activity
+from ptitesondes_openagenda_national_event_research import propose_event
+from ptitesondes_oa_first_party_admission import admit_live_openagenda
+from test_ptitesondes_candidate_promotion import base
+from test_ptitesondes_open_world_release_rehearsal import (
+    TODAY, DAY, AGENDA, lead, oa_event,
+)
+
+
+def live_case(title, description, *, category=None):
+    source = dict(oa_event(), title={"fr": title},
+                  description={"fr": description}, age={"min": 5, "max": 13})
+    item = dict(lead(), title=title)
+    ref = base()
+    if category:
+        ref["events"][0]["category"] = category
+        ref["events"][0]["category_label"] = {
+            "atelier-musical": "Atelier musical",
+            "concert": "Concert",
+            "lecture-jeunesse": "Lecture jeunesse",
+        }[category]
+    return admit_live_openagenda(item, DAY.isoformat(), AGENDA,
+                                 source, ref, ref, TODAY)
+
+
+class PrimaryEditorialTests(unittest.TestCase):
+    def test_school_support_with_incidental_reading_is_not_storytelling(self):
+        title = "Coup 2 Pouce - Accompagnement scolaire"
+        desc = ("Public CE1 à 6ème : révisions et aide aux devoirs, "
+                "lecture à voix haute, recherche documentaire et jeux.")
+        self.assertEqual(primary_out_of_scope(title, desc),
+                         "school_support_primary")
+        self.assertIsNone(category_for(title, desc))
+        self.assertIsNone(propose_family_activity(
+            title, desc)["category_proposal"])
+        candidate, reason = live_case(title, desc)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+
+    def test_adult_focused_forum_with_incidental_concert_is_not_music_event(self):
+        title = "Forum « lutte contre les violences faites aux femmes » dans le 11ème"
+        desc = ("Jeunes et adultes. Deux tables rondes, accompagnement "
+                "des associations, concert et danse. Enfants bienvenus.")
+        self.assertEqual(primary_out_of_scope(title, desc),
+                         "non_performance_gathering_primary")
+        self.assertIsNone(category_for(title, desc))
+        candidate, reason = live_case(title, desc)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_primary_activity_outside_scope")
+
+    def test_generic_school_and_forum_wording_without_named_event_ids(self):
+        for name in (
+            "Soutien scolaire : ateliers et contes",
+            "Aide aux devoirs et lecture à voix haute",
+            "Révisions scolaires et chansons jeunesse",
+            "Conférence : la musique chez les enfants",
+            "Table ronde avec interlude musical pour les familles",
+            "Réunion d'information autour des spectacles jeunesse",
+            "Réservez un studio d'enregistrement pour vos projets",
+        ):
+            with self.subTest(name=name):
+                self.assertIsNotNone(primary_out_of_scope(name))
+
+    def test_child_friendly_mixed_audience_studio_can_be_legitimate(self):
+        title = "Créez et enregistrez votre musique en studio"
+        desc = ("Atelier musical dès 10 ans. Enfants et jeunes : "
+                "une expérience ludique. Adultes et débutants bienvenus.")
+        self.assertIsNone(primary_out_of_scope(title, desc))
+        candidate, reason = live_case(title, desc, category="atelier-musical")
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "atelier-musical")
+
+    def test_genuine_reading_and_intergenerational_concert_remain_eligible(self):
+        story = propose_family_activity(
+            "Lecture à voix haute pour les tout-petits",
+            "Contes animés pour les enfants et leurs parents.")
+        self.assertEqual(story["category_proposal"], "lecture-jeunesse")
+        self.assertEqual(category_for(
+            "Concert acoustique", "Un concert pour les enfants, "
+            "les familles et les grands-parents."), ("concert", "Concert"))
+        self.assertIsNone(primary_out_of_scope(
+            "Spectacle de marionnettes pour enfants",
+            "Le spectacle évoque le forum du quartier."))
+
+    def test_incidental_school_word_in_genuine_performance_does_not_veto(self):
+        self.assertIsNone(primary_out_of_scope(
+            "Conte musical pour enfants",
+            "Après les devoirs, venez découvrir des chansons."))
+        candidate, reason = live_case(
+            "Concert pour enfants", "Spectacle en famille, "
+            "après la réunion d'information des parents.", category="concert")
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "concert")
+
+    def test_discovery_rejects_primary_non_editorial_research(self):
+        source = dict(oa_event(), title={"fr": "Aide aux devoirs : des histoires"},
+                      description={"fr": "Lecture à voix haute pour enfants."})
+        item, reason = propose_event(
+            source, {"agenda_uid": AGENDA["uid"],
+                     "agenda_slug": AGENDA["slug"]}, TODAY)
+        self.assertIsNone(item)
+        self.assertEqual(reason, "primary_activity_outside_editorial_scope")
+
+    def test_no_session_count_cap_on_real_youth_workshops(self):
+        self.assertIsNone(primary_out_of_scope(
+            "Éveil musical pour les tout-petits",
+            "Atelier pour les familles, 35 représentations avec dates distinctes."))
+
+
+if __name__ == "__main__":
+    unittest.main()
