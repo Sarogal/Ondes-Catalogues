@@ -134,15 +134,22 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
                 and age["min"] > age["max"])):
         return fail("oa_direct_invalid_age")
     description = _french_text(event, "description") + " " + _french_text(event, "longDescription")
-    audience = _norm(title + " " + description)
+    # OA's official registration/attendance conditions can contain the only
+    # explicit child-age statement (e.g. "pour les enfants de 0 à 6 ans").
+    # Read them from the UID-bound live record, never from a collector hint.
+    # The same field can also DENY admission for adults-only or private
+    # sessions. No inferred age or free/registration claim is published.
+    conditions = _french_text(event, "conditions")
+    source_text = description + " " + conditions
+    audience = _norm(title + " " + source_text)
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
     if not CHILD.search(audience) and not child_age:
         return fail("oa_direct_child_audience_missing")
-    category = category_for(title, description)
+    category = category_for(title, source_text)
     if category is None:
-        family = propose_family_activity(title, description)
+        family = propose_family_activity(title, source_text)
         if family["category_proposal"] in PUBLISHABLE_CHILD_ARTS:
             category = (family["category_proposal"], family["category_label_proposal"])
     if category is None:

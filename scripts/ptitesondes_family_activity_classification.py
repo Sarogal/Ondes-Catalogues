@@ -21,6 +21,10 @@ ACTIVITY_PATTERNS = {
         r"\bconte(?:s)? (?:pour enfants|jeune public|pour les petits)\b",
         r"\bhistoires racontees?\b",
         r"\bseance de contes\b",
+        # Baby/toddler story-time is a live storytelling event, not a
+        # generic library opening or an unrestricted reading room.
+        r"\bbebes? lecteurs?\b",
+        r"\blectures? (?:de contes|d histoires|pour les tout petits)\b",
     ),
     "spectacle-jeunesse": (
         r"\bspectacle (?:de )?(?:marionnettes|magie|cirque|clown)\b",
