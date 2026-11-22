@@ -50,7 +50,12 @@ PASS = re.compile(r"\bpass\s*([1-7])\s*(?:jours?|j)\b")
 # pass is available and bind the category and price locally.
 NORMAL_PRICE_AVAILABLE = re.compile(
     r"\bpass\s*([1-7])\s*(?:jours?|j)\s+"
-    r"est\s+(?:d[eé]sormais\s+)?disponible\s+au\s+"
+    # Both official constructions identify the NEW normal-price tier:
+    # "Pass 4J est désormais disponible au tarif normal de 239 €" and
+    # "Pass 4J passe au tarif normal de 239 €". The latter commonly shares
+    # a teaser with "Pass 1J reste en vente" without stating any 1J price.
+    r"(?:est\s+(?:d[eé]sormais\s+)?disponible\s+au\s+|"
+    r"passe\s+au\s+)"
     r"tarif\s+(?:normal|public)\s+de\s+"
     r"(\d{2,4}(?:[,.]\d{2})?)\s*€", re.I)
 
