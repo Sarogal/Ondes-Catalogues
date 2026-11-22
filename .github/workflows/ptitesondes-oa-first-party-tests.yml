@@ -1,0 +1,37 @@
+name: P'tites Ondes — OpenAgenda first-party Publisher tests
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_oa_first_party_admission.py'
+      - 'scripts/ptitesondes_open_world_patch_bridge.py'
+      - 'scripts/ptitesondes_open_world_private_dossier_intake.py'
+      - 'tests/test_ptitesondes_oa_first_party_admission.py'
+      - 'tests/test_ptitesondes_open_world_patch_bridge.py'
+      - 'tests/test_ptitesondes_open_world_private_dossier_intake.py'
+      - '.github/workflows/ptitesondes-oa-first-party-tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-publisher-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile Publisher and admission modules
+        run: |
+          python -m py_compile scripts/ptitesondes_oa_first_party_admission.py scripts/ptitesondes_open_world_patch_bridge.py scripts/ptitesondes_open_world_private_dossier_intake.py
+      - name: Run offline admission and Publisher regressions
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m unittest -v \
+            test_ptitesondes_oa_first_party_admission \
+            test_ptitesondes_open_world_patch_bridge \
+            test_ptitesondes_open_world_private_dossier_intake
