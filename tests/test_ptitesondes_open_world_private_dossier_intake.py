@@ -148,13 +148,13 @@ class NationalPrivateDossierTests(unittest.TestCase):
     def test_municipally_discovered_unknown_domain_creates_research_not_addition(self):
         self.write(report())
         rows, stats = self.load()
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(stats["candidate_dossiers"], 1)
-        self.assertEqual(stats["queued"], 1)
-        self.assertEqual(rows[0]["official_event_url"], SOURCE)
-        self.assertEqual(rows[0]["official_venue_url"], MUNICIPAL)
-        self.assertEqual(
-            rows[0]["municipal_source_reference_url"], MUNICIPAL)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(stats["candidate_dossiers"], 2)
+        self.assertEqual(stats["queued"], 2)
+        self.assertTrue(all(row["official_event_url"] == SOURCE for row in rows))
+        municipal = next(row for row in rows
+                         if row["official_venue_url"] == MUNICIPAL)
+        self.assertEqual(municipal["municipal_source_reference_url"], MUNICIPAL)
         self.assertFalse(rows[0]["lead"]["publication_ready"])
         ref = {"updated_at": "unused", "events": []}
         patch = private_patch(ref, queue=[])
@@ -169,6 +169,18 @@ class NationalPrivateDossierTests(unittest.TestCase):
         refreshed = attach_research_dossiers(out, [], TODAY)
         self.assertEqual(refreshed["open_world_research"], rows)
         self.assertFalse(refreshed["safe_to_publish"])
+
+    def test_canonical_source_remains_eligible_even_with_municipal_backlink(self):
+        # A second source is optional; the Publisher must receive the OA
+        # canonical URL as its own independent research candidate.
+        self.write(report(source=SOURCE, linked=EXTERNAL, municipal=MUNICIPAL))
+        rows, counts = self.load()
+        self.assertEqual(counts["candidate_dossiers"], 2)
+        self.assertEqual({row["official_venue_url"] for row in rows},
+                         {SOURCE, MUNICIPAL})
+        self.assertTrue(all(row["official_event_url"] == SOURCE for row in rows))
+        self.assertTrue(all(row["lead"]["publication_ready"] is False
+                            for row in rows))
 
     def test_unpaired_canonical_url_is_research_only_not_autoapproval(self):
         # Any unknown publisher-supplied source is untrusted. It can be
