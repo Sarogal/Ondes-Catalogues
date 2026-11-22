@@ -93,6 +93,98 @@ class SignedSidecarTests(unittest.TestCase):
             verify(p,updated,self.secret.public_key(),previous=self.doc)
             ["release_sequence"],2)
 
+    def test_signed_v2_first_install_without_v1_cache_is_valid(self):
+        # Device has never seen the intentionally inactive v1. Its first
+        # authenticated remote pointer is already the signed v2.
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        verified=verify(pointer,body,self.secret.public_key())
+        self.assertEqual(verified["release_sequence"],2)
+        self.assertEqual(verified["assets"],self.doc["assets"])
+
+    def test_v2_first_install_still_requires_real_signature(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,body,Ed25519PrivateKey.generate().public_key())
+        corrupted=bytearray(body)
+        corrupted[-3]^=1
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,bytes(corrupted),self.secret.public_key())
+
+    def test_cached_v2_refuses_signed_v1_rollback_or_repeat(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        body=wire(d)
+        pointer=sign_pending(body,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        self.assertEqual(
+            verify(pointer,body,self.secret.public_key(),
+                   previous=self.doc)["release_sequence"],2)
+        with self.assertRaises(ArtworkBundleError):
+            verify(self.ptr,self.content,self.secret.public_key(),previous=d)
+        with self.assertRaises(ArtworkBundleError):
+            verify(pointer,body,self.secret.public_key(),previous=d)
+
+    def test_publisher_cannot_skip_generation_without_prior_document(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        with self.assertRaisesRegex(ArtworkBundleError,"Publisher needs previous"):
+            sign_pending(wire(d),self.secret,KEY_ID,PUBLISHED)
+        # A verified reader, unlike the publisher, must accept the same
+        # signed v2 pointer on a new device (tested above).
+        self.assertEqual(validate_body(wire(d))["release_sequence"],2)
+
+    def test_signed_v2_rejects_removing_old_station_even_when_signed(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        # An entirely different media UUID would be valid in a new
+        # installation but must not erase a previously signed UUID.
+        d["assets"][0]["legacy_media_id"]="223e4567-e89b-42d3-a456-426614174000"
+        with self.assertRaisesRegex(ArtworkBundleError,"removed or modified"):
+            sign_pending(wire(d),self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+
+    def test_signed_v2_rejects_changing_old_url_or_hash(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        d["assets"][0]["logo"]["url"]="https://assets.laut.fm/"+"b"*32
+        with self.assertRaisesRegex(ArtworkBundleError,"removed or modified"):
+            sign_pending(wire(d),self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        d["assets"][0]["logo"]["sha256"]="0"*64
+        d["assets"][0]["logo"]["asset_id"]="sha256:"+"0"*64
+        with self.assertRaisesRegex(ArtworkBundleError,"removed or modified"):
+            sign_pending(wire(d),self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+
+    def test_signed_v2_may_append_unknown_station_without_whitelist(self):
+        d=deepcopy(self.doc)
+        d["release_sequence"]=2
+        appended=deepcopy(d["assets"][0])
+        appended["legacy_media_id"]="223e4567-e89b-42d3-a456-426614174000"
+        appended["station_name"]="Brand new radio with no fixed host list"
+        appended["source"]["provider"]="brand-new-independent-network"
+        appended["source"]["official_station_page"] = (
+            "https://new-provider.example.org/radio/unknown-channel"
+        )
+        appended["source"]["station_slug"]="unknown-channel"
+        appended["source"]["visual_identity_evidence"]=(
+            "Exact station wordmark verified from independent official source"
+        )
+        appended["logo"]["url"]="https://new-cdn.example.org/new-logo.png"
+        d["assets"].append(appended)
+        signed=wire(d)
+        pointer=sign_pending(signed,self.secret,KEY_ID,PUBLISHED,previous=self.doc)
+        self.assertEqual(
+            len(verify(pointer,signed,self.secret.public_key(),
+                       previous=self.doc)["assets"]),2)
+        # A fresh installation with no previous artwork sees v2 directly.
+        self.assertEqual(
+            len(verify(pointer,signed,self.secret.public_key())["assets"]),2)
+
     def test_unknown_official_provider_is_supported_after_explicit_review(self):
         d=deepcopy(self.doc)
         s=d["assets"][0]["source"]
