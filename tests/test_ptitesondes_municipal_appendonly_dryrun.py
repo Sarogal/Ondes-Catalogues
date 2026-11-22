@@ -80,6 +80,22 @@ class AppendOnlySimulationTests(unittest.TestCase):
         self.assertNotIn("additions",summary)
         self.assertNotIn("events",summary)
 
+    def test_current_live_catalogue_remains_immutable_even_with_youth_categories(self):
+        # OA has legitimately published some family categories. The legacy
+        # municipal REHEARSAL is still read-only against this real snapshot,
+        # and must never mutate or publish it.
+        current = json.loads(
+            (ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+        original = deepcopy(current)
+        report = run(catalogue=current)
+        self.assertEqual(current, original)
+        self.assertEqual(report["catalogue_sha256"],
+                         canonical_sha256(current))
+        self.assertEqual(report["public_writes"], 0)
+        self.assertFalse(report["approval_granted_to_publisher"])
+        self.assertNotIn("events", report)
+        self.assertNotIn("additions", report)
+
     def test_actual_publisher_rejects_all_four_nonmusical_categories(self):
         # Prove existing merge_policy cannot be silently used as a release path.
         catalogue=source()
