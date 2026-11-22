@@ -1,0 +1,36 @@
+name: Diagnostic isolé — régression CI partagée
+on:
+  push:
+    branches: [diagnostic/concerts-pr734-shared-ci-20261122]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  synthetic-fixture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Examiner uniquement les données de test synthétiques, jamais les données privées
+        run: |
+          python - <<'PY'
+          import sys, json
+          from pathlib import Path
+          sys.path.insert(0, 'tests')
+          import test_ptitesondes_nonmusical_catalogue_shape_dryrun as t
+          from ptitesondes_nonmusical_html_gate_router import route_nonmusical_html_session
+          print("fixture_day", t.DAY.isoformat())
+          print("fixture_leads", len(t.LEADS))
+          print("catalogue_revision_day", t.CATALOGUE.get("updated_at", "")[:10])
+          p = t.packet()
+          stage = route_nonmusical_html_session(p["lead"],p["page"],p["trusted_index"],p["child_prefix"],p["independent_context"],t.DAY)
+          print("route_stage", stage.get("stage"))
+          event, why = t._prototype(p["lead"],p["page"],p["trusted_index"],p["child_prefix"],p["independent_context"],p["admin_pin"],t.DAY)
+          print("prototype_blocker", why)
+          out=t.simulate()
+          print("rehearsal_blockers", json.dumps({k:v for k,v in out["blockers"].items() if v}, sort_keys=True))
+          print("stage_expected", sorted(t.SHAPE_STAGES))
+          PY
