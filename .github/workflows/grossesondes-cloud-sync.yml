@@ -176,9 +176,9 @@ jobs:
         env:
           GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
           GROSSES_ONDES_CLOUD_SYNC: ${{ vars.GROSSES_ONDES_CLOUD_SYNC }}
-          # Trust the monotonically increasing public workflow run number,
-          # not private intake claims or a same-day timestamp, for scan rotation.
-          GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ github.run_number }}
+          # Keep scan rotation tied to the Paris half-day slot in
+          # grossesondes_cloud_sync.py, not github.run_number: PR-only test
+          # runs advance that counter without scanning any official sites.
           MODE: ${{ (github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_run') && vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled' && 'publish' || inputs.mode || 'preview' }}
         run: |
           python scripts/grossesondes_cloud_sync.py --mode "$MODE"
