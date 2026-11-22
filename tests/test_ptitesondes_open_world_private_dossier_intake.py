@@ -171,6 +171,17 @@ class NationalPrivateDossierTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     choose_national_bridge_batch("", 18, bad)
 
+    def test_private_actions_summary_exposes_only_bounded_queue_count(self):
+        workflow = (ROOT / ".github/workflows/"
+                    "ptitesondes-private-intake-on-public-runners.yml"
+                    ).read_text(encoding="utf-8")
+        self.assertIn('OA_HANDOFF_COUNT="$(python -c', workflow)
+        self.assertIn('assert type(q) is list and len(q)<=30', workflow)
+        self.assertIn('Dossiers OA sauvegardés en privé', workflow)
+        self.assertIn('Dossiers OA en prévisualisation uniquement', workflow)
+        self.assertNotIn('print(q)', workflow)
+        self.assertNotIn('print(q[0])', workflow)
+
     def test_direct_openagenda_can_stage_without_research_root(self):
         missing = self.parent / "never-collected-external-web-clues"
         self.assertFalse(missing.exists())
