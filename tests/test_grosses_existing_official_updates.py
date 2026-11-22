@@ -196,6 +196,21 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         altered["status"] = "Annulé"
         self.assertFalse(_verified_official_update_delta(row, altered))
 
+    def test_cloud_rotation_advances_on_real_public_runs(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/grossesondes-cloud-sync.yml").read_text(
+            encoding="utf-8")
+        publisher = (root / "scripts/grossesondes_cloud_sync.py").read_text(
+            encoding="utf-8")
+        self.assertIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ github.run_number }}",
+                      workflow)
+        self.assertIn("official_update_tick=rotation_tick", publisher)
+        self.assertIn("official_update_limit=12", publisher)
+        # Github run_number changes between repeated same-day attempts;
+        # no untrusted private URL or editorial field chooses scan slots.
+        self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ inputs.",
+                         workflow)
+
     def test_rotation_covers_all_sites_without_closed_roster(self):
         rows = [festival(str(i), f"https://official{i}.example.fr/")
                 for i in range(80)]
