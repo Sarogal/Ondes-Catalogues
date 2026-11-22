@@ -25,7 +25,7 @@ import socket
 import subprocess
 import threading
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urljoin
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPHandler, HTTPRedirectHandler, Request, build_opener
 
@@ -147,6 +147,61 @@ def decode_sample(payload: bytes, ffmpeg: str | None) -> tuple[bool, str]:
     return True, "audio_decoded"
 
 
+
+PLAYLIST_MIME = {"application/vnd.apple.mpegurl", "application/x-mpegurl",
+                 "audio/x-mpegurl", "audio/mpegurl", "application/vnd.apple.mpegurl"}
+
+
+def is_playlist(data: bytes, mime: str) -> bool:
+    return data[:50].lstrip().startswith((b"#EXTM3U", b"[playlist]")) or mime in PLAYLIST_MIME
+
+
+def first_public_playlist_link(payload: bytes, base_url: str) -> tuple[str | None, str]:
+    if len(payload) > MAX_SAMPLE_BYTES:
+        return None, "playlist_oversized"
+    text = payload.decode("utf-8", errors="replace")
+    if "#EXT-X-KEY:" in text and "METHOD=NONE" not in text:
+        return None, "hls_encrypted_requires_player"
+    for line in text.splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.lower().startswith("file") and "=" in value:
+            value = value.split("=", 1)[1].strip()
+        elif value.startswith("#"):
+            continue
+        if len(value) > 2048:
+            continue
+        resolved = urljoin(base_url, value)
+        if safe_url(resolved):
+            return resolved, "playlist_first_safe_target"
+    # Certain master playlists carry the audio variant in an EXT-X-MEDIA tag.
+    match = re.search(r'#EXT-X-MEDIA:[^\r\n]*\bURI="([^"\r\n]{1,2048})"', text)
+    if match:
+        resolved = urljoin(base_url, match.group(1))
+        if safe_url(resolved):
+            return resolved, "playlist_audio_media_target"
+    return None, "playlist_without_public_audio_url"
+
+
+def playlist_audio_sample(data: bytes, mime: str, final_url: str,
+                          *, max_levels: int = 2) -> tuple[bytes, str, str]:
+    current_data, current_mime, current_url = data, mime, final_url
+    for level in range(max_levels + 1):
+        if not is_playlist(current_data, current_mime):
+            return current_data, current_mime, "segment_audio_sample"
+        if level >= max_levels:
+            return b"", current_mime, "playlist_max_depth_reached"
+        next_url, kind = first_public_playlist_link(current_data, current_url)
+        if next_url is None:
+            return b"", current_mime, kind
+        try:
+            current_data, current_mime, current_url = download_sample(next_url)
+        except (HTTPError, URLError, OSError, ValueError, http.client.HTTPException) as exc:
+            return b"", current_mime, "playlist_segment_" + type(exc).__name__
+    return b"", current_mime, "playlist_unresolved"
+
+
 def inspect_stream(station: str, stream: dict, ffmpeg: str | None, checked: str):
     url = stream.get("url")
     record = {"go_station_id": station, "stream_id": stream.get("stream_id"),
@@ -157,10 +212,17 @@ def inspect_stream(station: str, stream: dict, ffmpeg: str | None, checked: str)
         record["mime_type"] = mime
         record["bytes_read"] = len(data)
         record["redirected"] = final_url != url
-        if data[:16].lstrip().startswith((b"#EXTM3U", b"[playlist]")) or \
-                mime in ("application/vnd.apple.mpegurl", "application/x-mpegurl"):
-            record["result"] = "playlist_needs_bounded_segment_probe"
-        elif data.lstrip().startswith(b"<html") or data.lstrip().startswith(b"<!DOCTYPE"):
+        if is_playlist(data, mime):
+            data, mime, kind = playlist_audio_sample(data, mime, final_url)
+            record["playlist_resolution"] = kind
+            record["bytes_read"] += len(data)
+            if not data:
+                record["result"] = kind
+            elif data.lstrip().lower().startswith((b"<html", b"<!doctype")):
+                record["result"] = "playlist_segment_not_audio"
+            else:
+                record["verified"], record["result"] = decode_sample(data, ffmpeg)
+        elif data.lstrip().lower().startswith((b"<html", b"<!doctype")):
             record["result"] = "html_not_audio"
         else:
             record["verified"], record["result"] = decode_sample(data, ffmpeg)
