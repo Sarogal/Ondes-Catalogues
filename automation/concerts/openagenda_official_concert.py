@@ -205,6 +205,14 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
             or any(x in normalized(title)
                    for x in ("festival", "annule", "annulled"))):
         raise ValueError("OpenAgenda: missing concert bill or festival")
+    # An OpenAgenda title may append the EXACT physical venue name as a
+    # presentation suffix (e.g. "LocoMuerte + DoorShan - La Maroquinerie").
+    # Do not manufacture an artist named "DoorShan - La Maroquinerie".
+    # This is safe only after the independent location block above has
+    # authenticated the very same venue.
+    suffix = re.search(r"\s+[-–—]\s+([^–—]+?)\s*\Z", title)
+    if suffix and normalized(suffix.group(1)) == normalized(venue.get("name")):
+        title = title[:suffix.start()]
     keys = record.get("keywords")
     raw_genres = ((keys.get("fr") or keys.get("en"))
                   if isinstance(keys, dict) else None)
