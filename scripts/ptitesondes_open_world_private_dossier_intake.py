@@ -88,6 +88,20 @@ def review_batch_for_cron(cron, utc_hour):
     return _OUTINGS_CRON_BATCH.get(cron, utc_hour // 6)
 
 
+def choose_national_bridge_batch(cron, utc_hour, existing_queue):
+    """Recover first-party UID research even after all old slots were checked.
+
+    Existing OA hints are never approval and are preserved by the normal
+    deduplicating collector. The first batch is always examined when no hint
+    has yet entered the private patch, regardless of the review-slot count.
+    """
+    if (type(existing_queue) is not list
+            or len(existing_queue) > MAX_DOSSIERS):
+        raise ValueError("invalid_private_dossier_existing_queue")
+    selected = review_batch_for_cron(cron, utc_hour)
+    return 0 if not existing_queue else selected
+
+
 def collect_research_dossiers(observation_root, research_root, today,
                               *, batch_index=0, inventory_reader=_inventory,
                               report_reader=_read):
