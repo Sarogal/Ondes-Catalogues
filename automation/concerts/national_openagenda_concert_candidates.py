@@ -97,13 +97,26 @@ def fetch_index_api(url, cache):
     if (parsed.hostname != INDEX_HOST or parsed.username or parsed.password
             or parsed.port or parsed.fragment):
         raise ValueError("OpenAgenda index origin invalid")
-    if INDEX_HOST not in cache:
-        cache[INDEX_HOST] = probe.public_ip_addresses(INDEX_HOST)[0]
-    status, text = probe.request_pinned(
-        url, INDEX_HOST, cache[INDEX_HOST], cap=probe.MAX_BYTES)
-    if status != 200:
-        raise ValueError("OpenAgenda public dataset API unavailable")
-    return text
+    if INDEX_HOST in cache:
+        status, text = probe.request_pinned(
+            url, INDEX_HOST, cache[INDEX_HOST], cap=probe.MAX_BYTES)
+        if status != 200:
+            raise ValueError("OpenAgenda public dataset API unavailable")
+        return text
+    # The runner may lack IPv6 connectivity. Retry only IPs that already
+    # passed ALL global-address DNS checks; never re-resolve inside fetch
+    # or fall back to arbitrary candidate origins.
+    for ip in probe.public_ip_addresses(INDEX_HOST):
+        try:
+            status, text = probe.request_pinned(
+                url, INDEX_HOST, ip, cap=probe.MAX_BYTES)
+        except (OSError, TimeoutError):
+            continue
+        if status != 200:
+            raise ValueError("OpenAgenda public dataset API unavailable")
+        cache[INDEX_HOST] = ip
+        return text
+    raise ValueError("OpenAgenda index public DNS transports unavailable")
 
 
 def _day(value):

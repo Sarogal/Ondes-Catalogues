@@ -57,6 +57,25 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertNotIn("officialEvidence", first)
         self.assertNotIn("reviewDecision", first)
 
+    def test_index_retries_only_verified_dns_addresses(self):
+        url = scan.urls(TODAY, 0)[0]
+        calls = []
+        def pinned(uri, host, ip, cap=None):
+            calls.append((uri, host, ip))
+            if ip == "8.8.8.8":
+                raise OSError(101, "Network is unreachable")
+            return (200, '{"results":[]}')
+        with mock.patch.object(scan.probe, "public_ip_addresses",
+                               return_value=["8.8.8.8", "2606:4700:4700::1111"]), \
+             mock.patch.object(scan.probe, "request_pinned", side_effect=pinned):
+            cache = {}
+            self.assertEqual(scan.fetch_index_api(url, cache),
+                             '{"results":[]}')
+        self.assertEqual([c[2] for c in calls],
+                         ["8.8.8.8", "2606:4700:4700::1111"])
+        self.assertEqual(cache["public.opendatasoft.com"],
+                         "2606:4700:4700::1111")
+
     def test_documented_index_client_remains_pinned_to_exact_api(self):
         url = scan.urls(TODAY, 0)[0]
         with mock.patch.object(scan.probe, "public_ip_addresses",

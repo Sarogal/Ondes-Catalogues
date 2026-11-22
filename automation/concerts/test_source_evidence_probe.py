@@ -285,6 +285,38 @@ class SourceProbeTests(unittest.TestCase):
                           return_value=wrong_family), self.assertRaises(ValueError):
             probe.public_ip_addresses("newbar.fr")
 
+    def test_public_dns_prefers_ipv4_over_unroutable_ipv6(self):
+        mixed = [
+            (socket.AF_INET6, socket.SOCK_STREAM, socket.IPPROTO_TCP,
+             "", ("2606:4700:4700::1111", 443)),
+            (socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP,
+             "", ("8.8.8.8", 443)),
+        ]
+        with patch.object(probe.socket, "getaddrinfo", return_value=mixed):
+            self.assertEqual(probe.public_ip_addresses("newbar.fr"),
+                             ["8.8.8.8", "2606:4700:4700::1111"])
+
+    def test_unreachable_dns_transport_only_falls_back_to_audited_ip(self):
+        calls = []
+        def pinned(url, host, ip, cap=probe.MAX_BYTES):
+            calls.append((url, ip))
+            if ip == "8.8.8.8":
+                raise OSError(101, "Network is unreachable")
+            if url.endswith("/robots.txt"):
+                return 200, "User-agent: *\nDisallow:\n"
+            return 200, "<html>real concert</html>"
+        with patch.object(probe, "public_ip_addresses",
+                          return_value=["8.8.8.8", "2606:4700:4700::1111"]), \
+             patch.object(probe, "request_pinned", side_effect=pinned):
+            cache = {}
+            self.assertEqual(
+                probe.safe_fetch("https://newbar.fr/agenda/", cache),
+                "<html>real concert</html>")
+        self.assertEqual([ip for _, ip in calls],
+                         ["8.8.8.8", "2606:4700:4700::1111",
+                          "2606:4700:4700::1111"])
+        self.assertEqual(cache["newbar.fr"][0], "2606:4700:4700::1111")
+
     def test_safe_fetch_keeps_pinned_ip_and_robots_policy(self):
         calls = []
         def fake_request(url, host, ip, cap=probe.MAX_BYTES):
