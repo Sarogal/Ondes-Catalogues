@@ -19,7 +19,8 @@ import test_concerts_dynamic_existing_venue as fixture
 TODAY = dt.date(2026, 11, 22)
 DAY = "2027-03-05"
 URL = "https://openagenda.com/fr/shotgun/events/87654321_eight-unknown-metal-bands"
-EXPORT = "https://openagenda.com/agendas/9969608/events.json?uid=87654321&limit=1"
+EXPORT = ("https://openagenda.com/agendas/9969608/events.json?"
+          "oaq%5Buids%5D%5B%5D=87654321&limit=1")
 
 
 def registry():
@@ -48,7 +49,9 @@ def official_export(**changes):
     record = {
         "uid": 87654321, "slug": "eight-unknown-metal-bands",
         "status": 1, "firstDate": DAY, "lastDate": DAY,
-        "originAgenda": {"uid": 9969608, "slug": "shotgun"},
+        "origin": {"uid": 9969608, "slug": "shotgun"},
+        "canonicalUrl": ("https://openagenda.com/shotgun/events/"
+                         "87654321_eight-unknown-metal-bands"),
         "title": {"fr": " + ".join(fixture.NAMES)},
         "keywords": {"fr": ["Black Metal", "punk"]},
         "location": {
@@ -161,8 +164,10 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             {"eventStatus": "https://schema.org/EventCancelled"},
             {"eventStatus": "EventPostponed"},
             {"firstDate": "2027-03-06"},
-            {"originAgenda": {"uid": 987654, "slug": "shotgun"}},
+            {"origin": {"uid": 987654, "slug": "shotgun"}},
+            {"origin": {"uid": 9969608, "slug": "forged"}},
             {"originAgenda": {"uid": 9969608, "slug": "forged"}},
+            {"origin": None},
             {"uid": 87654322},
             {"slug": "another-event"},
             {"title": {"fr": "Festival des arts métal"}},
@@ -182,6 +187,33 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
                 self.assertEqual(proposals["approvals"], [])
                 self.assertEqual(result["stateCounts"],
                     {"held_event_or_source_not_verified": 1})
+
+    def test_real_export_supports_prefixed_or_plain_public_event_slug(self):
+        # Actual OpenAgenda JSON uses origin, and its canonical URL may have
+        # an immutable UID prefix while the indexed link omits that prefix.
+        venue = next(v for v in fixture.BASE["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        for page in (URL, "https://openagenda.com/shotgun/events/"
+                     "87654321_eight-unknown-metal-bands"):
+            names, genres = oa.verified_export(
+                official_export(), page, DAY, venue,
+                agenda_uid="9969608", event_uid="87654321")
+            self.assertEqual(names, fixture.NAMES)
+            self.assertIn("punk", genres)
+
+    def test_named_lineup_does_not_contain_the_venue_suffix(self):
+        venue = next(v for v in fixture.BASE["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        names, genres = oa.verified_export(
+            official_export(title={"fr": "LocoMuerte + DoorShan - Le Bikini"}),
+            URL, DAY, venue, agenda_uid="9969608", event_uid="87654321")
+        self.assertEqual(names, ["LocoMuerte", "DoorShan"])
+        self.assertIn("punk", genres)
+        # Unknown suffixes must not be stripped as if they were this venue.
+        wrong, _ = oa.verified_export(
+            official_export(title={"fr": "LocoMuerte + DoorShan - Another Room"}),
+            URL, DAY, venue, agenda_uid="9969608", event_uid="87654321")
+        self.assertEqual(wrong, ["LocoMuerte", "DoorShan - Another Room"])
 
     def test_untrusted_ids_cannot_change_first_party_origin(self):
         for ids in ((-1, 87654321), ("9969608/evil", "87654321"),
