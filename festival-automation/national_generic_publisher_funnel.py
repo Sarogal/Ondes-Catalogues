@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime
 import json
+import re
 from pathlib import Path
 import sys
 from zoneinfo import ZoneInfo
@@ -37,6 +38,18 @@ from grossesondes_institutional_edition import (
     PROOF_MODE as INSTITUTION_MODE,
     validate_private_proposal as verify_institution_structure,
 )
+from grossesondes_first_party_direct_edition import (
+    PROOF_MODE as DIRECT_MODE,
+    validate_private_proposal as verify_direct_structure,
+)
+from grossesondes_openagenda_linked_edition import (
+    PROOF_MODE as OPENAGENDA_MODE,
+    validate_private_proposal as verify_openagenda_structure,
+)
+from grossesondes_venue_reciprocal_edition import (
+    PROOF_MODE as VENUE_MODE,
+    validate_private_proposal as verify_venue_structure,
+)
 
 SCHEMA = "grossesondes.national-generic-publisher-funnel-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -45,6 +58,9 @@ STRUCTURAL_CONTRACTS = {
     DIRECTORY_MODE: verify_directory_structure,
     INSTITUTION_LINKED_MODE: verify_institution_linked_structure,
     INSTITUTION_MODE: verify_institution_structure,
+    DIRECT_MODE: verify_direct_structure,
+    OPENAGENDA_MODE: verify_openagenda_structure,
+    VENUE_MODE: verify_venue_structure,
 }
 MAX_DOSSIERS = 500
 MAX_ADDITIONS = 100
@@ -55,6 +71,27 @@ def _year(value):
         return date.fromisoformat(value).year
     except (TypeError, ValueError):
         return None
+
+
+def _published_year(row):
+    """Published future editions can have no exact dates yet.
+
+    A signed undated row is still a published edition if its exact year is
+    printed BOTH in name and slug. This is only a diagnostic identity; it
+    never approves a patch or invents dates/coordinates for the Publisher.
+    """
+    parsed = _year(row.get("startDate"))
+    if parsed is not None:
+        return parsed
+    if (row.get("startDate") is not None or row.get("endDate") is not None
+            or row.get("status") != "Dates à venir"
+            or not isinstance(row.get("name"), str)
+            or not isinstance(row.get("slug"), str)):
+        return None
+    name = re.search(r"(?<!\d)(20[2-4]\d)$", row["name"])
+    slug = re.search(r"-(20[2-4]\d)$", row["slug"])
+    return int(name.group(1)) if name and slug and (
+        name.group(1) == slug.group(1)) else None
 
 
 def _identity(name, year):
@@ -90,7 +127,7 @@ def build_report(discovery, patch, published, today):
     for row in published["festivals"]:
         if not isinstance(row, dict):
             raise ValueError("Malformed signed festival")
-        key = _identity(row.get("name"), _year(row.get("startDate")))
+        key = _identity(row.get("name"), _published_year(row))
         if key is not None:
             public_snapshot.add(key)
 
