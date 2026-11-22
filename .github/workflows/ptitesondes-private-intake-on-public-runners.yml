@@ -510,9 +510,10 @@ jobs:
             # exact OA session and venue GPS; nothing here grants APPROVED.
             # The private patch is the only place the research URLs go.
             # The producer rechecks up to 14 previous days of private
-            # research reports; requiring today's folder alone discarded
-            # still-usable discoveries after a delayed or missed run.
-            if [[ -d "$STATE/national-observation/research/reports" ]]; then
+            # research reports; direct first-party OpenAgenda dossiers come
+            # from the inventory even when no separate research report exists.
+            # The optional research root is only a source of extra clues.
+            if [[ -d "$STATE/national-observation/index/reports" ]]; then
               if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
                 --observation-root "$STATE/national-observation" \
                 --research-root "$STATE/national-observation/research" \
@@ -558,10 +559,11 @@ jobs:
           # Always promote those PRIVATE hints to the cloud Publisher queue.
           # Each one will be fully independently re-verified there; no local
           # report can mint authority or a public change.
-          if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/research/reports" ]]; then
-            # Partition the bounded queue across repeated no-slot cycles.
-            # Hour comes from the runner clock, not from the candidate source.
-            NO_SLOT_BATCH="$(python -c 'from datetime import datetime,timezone; print(datetime.now(timezone.utc).hour//6)')"
+          if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/index/reports" ]]; then
+            # Each scheduled outings run covers one of four batches, including
+            # batch zero at 07:17 UTC. The UTC-hour//6 shortcut silently
+            # skipped it in all regularly scheduled daytime runs.
+            NO_SLOT_BATCH="$(python -c 'import os,sys; from datetime import datetime,timezone; sys.path.insert(0,"public/scripts"); from ptitesondes_open_world_private_dossier_intake import review_batch_for_cron; print(review_batch_for_cron(os.getenv("REVIEW_CRON", ""),datetime.now(timezone.utc).hour))')"
             if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
                 --observation-root "$STATE/national-observation" \
                 --research-root "$STATE/national-observation/research" \
