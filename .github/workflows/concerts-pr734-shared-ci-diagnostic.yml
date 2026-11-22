@@ -222,6 +222,6 @@ jobs:
       - name: Test fixed OSM providers and real Publisher with third fallback
         working-directory: osm-france-check
         run: |
-          python -m unittest discover -s tests -p 'test_concerts_osm_read_only_fallback.py' -v
-          python -m unittest discover -s tests -p 'test_concerts_overpass_secondary_readonly.py' -v
-          python -m unittest discover -s tests -p 'test_concerts_french_overpass_publisher.py' -v
+          PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_osm_read_only_fallback.py' -v
+          PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_overpass_secondary_readonly.py' -v
+          PYTHONPATH=automation/concerts:. python -m unittest discover -s tests -p 'test_concerts_french_overpass_publisher.py' -v
