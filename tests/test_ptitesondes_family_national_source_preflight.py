@@ -18,7 +18,7 @@ from ptitesondes_family_national_source_preflight import (
     SCHEMA, official_host, inspect_family_national_preflight,
     canonical_sha256,
 )
-from ptitesondes_family_national_scope import FAMILY_TYPES
+from ptitesondes_family_national_scope import FAMILY_TYPES, LEGACY_MUSICAL
 
 TODAY = date(2026, 11, 17)
 HOST = "agenda.commune.test"
