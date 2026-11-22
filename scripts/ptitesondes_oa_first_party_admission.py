@@ -86,10 +86,8 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     times, days, error = _sessions(event, event["timezone"], day, today)
     if error or not times:
         return fail("oa_direct_invalid_times")
-    # One UID may represent a multi-day event; don't silently split it into
-    # several potentially misleading single-day cards.
-    if len(days) != 1:
-        return fail("oa_direct_multiday_needs_grouping")
+    # A recurring UID may have several days: each observed exact day is
+    # separately eligible, and duplicate day IDs remain guarded by Publisher.
     age = event.get("age")
     if age is not None and (not isinstance(age, dict)
             or any(type(v) is not int or not 0 <= v <= 120
