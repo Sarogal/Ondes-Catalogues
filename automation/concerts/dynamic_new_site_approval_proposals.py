@@ -120,10 +120,15 @@ def _origin_site(url, catalogue, fetch, cache):
 def _independent_geo(location, fetch, cache):
     """Apply the same BAN/OSM location proof used by Publisher; no city pin."""
     def secure_get(url, size):
-        require(type(size) is int and 0 < size <= 400_000,
+        # The OSM map reader legitimately requests a 650k CAPACITY, but the
+        # pinned HTTPS network fetch still enforces the stricter 400k limit.
+        # Refusing the request solely for its requested cap blocked every
+        # independent BAN+OSM new-site proof without a direct OSM URL.
+        require(type(size) is int and 0 < size <= 650_000,
                 "oversized geographic evidence budget")
         body = fetch(url, cache)
-        require(isinstance(body, str) and len(body) <= size,
+        require(isinstance(body, str) and 0 < len(body) <= min(
+                    size, probe.MAX_BYTES),
                 "independent named geography missing")
         return body, url
     if not location["region"]:
