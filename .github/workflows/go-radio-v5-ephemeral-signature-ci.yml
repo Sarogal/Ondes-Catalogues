@@ -7,6 +7,7 @@ on:
       - '.github/workflows/go-radio-v5-ephemeral-signature-ci.yml'
       - 'radio-catalog-lab/tools/radio_catalog_release_packager.py'
       - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+      - 'radio-catalog-lab/tools/prepare_full_test_legacy_auto_admission.py'
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,7 +28,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p "$RUNNER_TEMP/v5"
-          gh run download 45069330690 --repo "$GITHUB_REPOSITORY" \
+          gh run download 45070247465 --repo "$GITHUB_REPOSITORY" \
             --dir "$RUNNER_TEMP/v5" --pattern go-radio-v5-316-legacy-evidence-admission-unsigned
       - name: Verify v4 signed history and test v5/v6 in memory only, never export keys
         run: |
