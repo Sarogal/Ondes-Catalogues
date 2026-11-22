@@ -368,6 +368,59 @@ WEEKDAY_DATE_SEQUENCE = re.compile(
 )
 
 
+def undated_official_evidence_diagnostic(html, row, year):
+    """Report safe proof flags for an undated signed official site.
+
+    Never return scraped text or HTML, and never grant publication authority:
+    the existing independent source validators remain decisive.
+    """
+    flags = {
+        "raw_year_token": False,
+        "visible_year_token": False,
+        "visible_weekday_sequence": False,
+        "title_matches_identity": False,
+        "current_edition_logo_alt": False,
+    }
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return flags
+    title = _EditionTitle()
+    images = _OfficialImageEditionIdentity()
+    body = VisibleText()
+    try:
+        title.feed(html)
+        title.close()
+        images.feed(html)
+        images.close()
+        body.feed(html)
+        body.close()
+    except (ValueError, TypeError, UnicodeError):
+        return flags
+    brand = fold(re.sub(r"\\b20[2-4]\\d\\b", "", row.get("name", "")))
+    if len(key(brand)) < 8:
+        return flags
+    expression = re.compile(
+        r"(?<![a-z0-9])" + r"\\s+".join(map(re.escape, brand.split()))
+        + r"(?![a-z0-9])"
+    )
+    title_words = fold(" ".join(title.parts))
+    visible = fold(" ".join(body.parts))
+    flags["raw_year_token"] = bool(re.search(
+        r"(?<!\\d)" + str(year) + r"(?!\\d)", html))
+    flags["visible_year_token"] = bool(re.search(
+        r"\\b" + str(year) + r"\\b", visible))
+    flags["visible_weekday_sequence"] = any(
+        match.group(3) == str(year)
+        for match in WEEKDAY_DATE_SEQUENCE.finditer(visible)
+    )
+    flags["title_matches_identity"] = bool(expression.search(title_words))
+    flags["current_edition_logo_alt"] = any(
+        expression.search(fold(alt))
+        and set(re.findall(r"\\b20[2-4]\\d\\b", fold(alt))) == {str(year)}
+        for alt in images.alts
+    )
+    return flags
+
+
 def weekday_labelled_official_dates(html, row, year):
     """Bind explicit weekday/day sequences to the registered festival title.
 
@@ -583,6 +636,7 @@ def apply_independently_verified_updates(
                     parent = {"name": m[1]}
                     year = int(m[2])
                     proposed_ranges, verified_urls = set(), []
+                    undated_page_proof = []
                     contradicted = False
                     for official_url, official_html in html_pages:
                         visible = official_date(official_html, parent, year)
@@ -591,6 +645,15 @@ def apply_independently_verified_updates(
                             official_html, old, year)
                         matching_jsonld = matching_official_jsonld_present(
                             official_html, parent, year)
+                        undated_page_proof.append({
+                            "page_role": ("registered_home" if official_url == site
+                                          else "same_host_link"),
+                            **undated_official_evidence_diagnostic(
+                                official_html, old, year),
+                            "visible_date_validator": visible is not None,
+                            "structured_date_validator": jsonld is not None,
+                            "weekday_date_validator": weekdays is not None,
+                        })
                         # Never cherry-pick between opposing first-party facts.
                         if ((matching_jsonld and jsonld is None) or
                                 len({d for d in (visible, jsonld, weekdays)
@@ -629,6 +692,12 @@ def apply_independently_verified_updates(
                     "artist_names_new": len(new_names),
                     "open_pass_categories_found": sorted(prices),
                     "fields_proposed": list(fields),
+                    **({"undated_page_proof": undated_page_proof}
+                       if old.get("startDate") is None and
+                          old.get("endDate") is None and
+                          isinstance(old.get("name"), str) and
+                          re.fullmatch(r".+\\s+20[2-4]\\d", old["name"])
+                       else {}),
                     "reason": ("proven_update" if fields
                                else "no_changed_fields_from_official_evidence"),
                 })
