@@ -1,0 +1,55 @@
+name: "GO TEST — signed artwork v2 first install and rollback"
+
+on:
+  push:
+    branches:
+      - feature/artwork-v2-first-install-20261122
+    paths:
+      - ".github/workflows/go-test-artwork-v2-cold-start-ci.yml"
+      - "radio-catalog-lab/tools/artwork_release_packager.py"
+      - "radio-catalog-lab/tools/test_artwork_release_packager.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  first-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "cryptography==44.0.2" "Pillow==11.2.1"
+      - name: Verify cold v2, signature, antirollback and original v1
+        run: |
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_artwork_release_packager.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_preview.py" -v
+          python -m unittest discover -s radio-catalog-lab/tools \
+            -p "test_v5_artwork_unsigned_v2_12_preview.py" -v
+      - name: Confirm preview stays unsigned and generation 4 is untouched
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path("grossesondes/radio-test-apk")
+          art=root/"artwork"
+          old=json.loads((art/"releases/b85a4ddc27783e2a242747924f28a5438f1fb8d5adb6500c28126a90e588235d.json").read_text())
+          next_=json.loads((art/"previews/unsigned-v2-12-logos-20261121.json").read_text())
+          assert old["release_sequence"]==1 and len(old["assets"])==9
+          assert next_["release_sequence"]==2 and len(next_["assets"])==12
+          assert next_["scope"]=="TEST_ONLY" and next_["production_publication_allowed"] is False
+          assert not (art/"current.json").exists()
+          assert not (art/"pending/test-current-v2.json").exists()
+          assert json.loads((root/"current.json").read_text())["release_sequence"]==4
+          print("GO_ARTWORK_FRESH_V2_TEST_ONLY_NO_ACTIVATION")
+          PY
+          git diff --exit-code
+          git diff --cached --exit-code
