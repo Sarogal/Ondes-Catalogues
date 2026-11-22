@@ -191,8 +191,9 @@ void main() {
     ]);
     expect(v2.stations.first.streamUrl,
         'https://stream.example.org/new.mp3');
-    expect(v2.stations.first.logoUrl, isEmpty,
-        reason: 'Only verified local SHA assets may become Flutter images');
+    expect(v2.stations.first.logoUrl, 'https://cdn.example.org/logos/test.png',
+        reason: 'The signed URL is only a lookup key; Flutter must use a verified SHA file');
+    expect(v2.stations.first.logoSource, 'central-signed-sha-only');
     expect(v2.originalFavoriteIds, favoriteIds);
     expect(v2.unavailableFavoriteIds, ['historical-000002']);
     expect(v2.unresolvedFavoriteIds, ['unresolved-favorite']);
