@@ -18,6 +18,22 @@ from test_ptitesondes_open_world_private_dossier_intake import entry
 
 
 class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
+    def test_cloud_summary_shows_only_safe_oa_hold_codes(self):
+        from run_cloud_sync import redacted_blocker_counts
+        from ptitesondes_oa_first_party_admission import PUBLIC_OA_DIRECT_REASONS
+        self.assertIn("oa_direct_reuse_rights_missing", PUBLIC_OA_DIRECT_REASONS)
+        self.assertIn("oa_direct_invalid_coordinates", PUBLIC_OA_DIRECT_REASONS)
+        counts = redacted_blocker_counts({
+            "oa_direct_invalid_coordinates": 2,
+            "oa_direct_reuse_rights_missing": 3,
+            "private-name-and-event-uid": 4,
+        })
+        self.assertEqual(counts, {
+            "oa_direct_invalid_coordinates": 2,
+            "oa_direct_reuse_rights_missing": 3,
+            "other_private_reason": 4,
+        })
+
     def test_live_public_event_admitted_without_municipal_proof(self):
         reference = base()
         candidate, reason = admit_live_openagenda(
