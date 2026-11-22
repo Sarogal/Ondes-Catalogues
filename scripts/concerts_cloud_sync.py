@@ -3941,10 +3941,14 @@ def validate_approval(approval, venues, known_artist_ids, today):
             approval, venues, known_artist_ids, today)
     # 29/01 Saint-Germain-en-Laye + 12/02 Saint-Aubin-du-Cormier.
     # Aucune autorisation fondée sur l'inconnu 'À venir' de Rage Tour.
+    # Historical event IDs/URLs remain immutable. An already-signed first-party
+    # dynamic source (freshly rechecked by the real Publisher) must not inherit
+    # the old finite venue pilot's ban on UNRELATED future concerts.
     clef_belair = TOURNEE_DU_COEUR_CLEF_BELAIR_SIGNED_20261105
     locked_urls = {a["event"]["officialUrl"] for a in clef_belair.values()}
     locked_venues = set(TOURNEE_DU_COEUR_CLEF_BELAIR_VENUES_20261105)
-    if (event_id in clef_belair or event.get("venueId") in locked_venues
+    if (event_id in clef_belair
+            or (event.get("venueId") in locked_venues and not dynamic_existing_source)
             or event.get("officialUrl") in locked_urls):
         signed_bill = clef_belair.get(event_id)
         require(signed_bill is not None
@@ -3979,7 +3983,8 @@ def validate_approval(approval, venues, known_artist_ids, today):
     signed = TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_SIGNED_20261105
     protected_urls = {r["event"]["officialUrl"] for r in signed.values()}
     protected_venues = set(TOURNEE_DU_COEUR_SAINT_QUENTIN_VITRY_VENUES_20261105)
-    if (event_id in signed or event.get("venueId") in protected_venues
+    if (event_id in signed
+            or (event.get("venueId") in protected_venues and not dynamic_existing_source)
             or event.get("officialUrl") in protected_urls):
         expected = signed.get(event_id)
         require(expected is not None
@@ -4048,7 +4053,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                   for key, v in coeur_signed.items()}
     if (event_id in coeur_signed
             or event.get("officialUrl") in coeur_urls
-            or event.get("venueId") == "le-sew-morlaix"):
+            or (event.get("venueId") == "le-sew-morlaix" and not dynamic_existing_source)):
         signed = coeur_signed.get(event_id)
         require(signed is not None and event == signed["event"]
                 and approval.get("newArtists", []) == signed["newArtists"]
@@ -4084,6 +4089,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
     signed_urls = {x["event"]["officialUrl"]: key for key, x in
                    HOWLIN_TWO_SIGNED_20261105.items()}
     if ((event.get("venueId") in HOWLIN_TWO_VENUES
+          and not dynamic_existing_source
           and event_id not in STRANGLERS_FOUR_SIGNED_20261106) or
             event_id in HOWLIN_TWO_SIGNED_20261105 or
             event.get("officialUrl") in signed_urls):
@@ -4112,6 +4118,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
     # nominative (pas d'approbation générale de tous ses futurs concerts).
     signed_cap = CAP_CAVAL_SIGNED_20261105["event"]
     if ((event.get("venueId") == "salle-cap-caval-penmarch"
+          and not dynamic_existing_source
           and event_id not in STRANGLERS_FOUR_SIGNED_20261106) or
             event_id == signed_cap["id"] or
             event.get("officialUrl") == signed_cap["officialUrl"]):
@@ -4143,7 +4150,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                         for eid,p in HOWLIN_FINAL_FOUR_SIGNED_20261105.items()}
     if (event_id in HOWLIN_FINAL_FOUR_SIGNED_20261105 or
             event.get("officialUrl") in howlin_four_urls or
-            event.get("venueId") == "marche-gare-lyon"):
+            (event.get("venueId") == "marche-gare-lyon" and not dynamic_existing_source)):
         spec = HOWLIN_FINAL_FOUR_SIGNED_20261105.get(event_id)
         require(spec is not None
                 and event == spec["event"]
