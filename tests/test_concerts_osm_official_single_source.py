@@ -224,7 +224,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             {"genre": "Hardcore Techno"},
             {"status": "EventCancelled"},
             {"place": "Different Room"},
-            {"advertised": ["Other Group", fixture.NAMES[0]]},
+            {"advertised": ["Other Group", "Another Other Group"]},
         ):
             with self.subTest(corrupt=corrupt):
                 def false_page(link, cache):
