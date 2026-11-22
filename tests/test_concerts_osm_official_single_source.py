@@ -3,6 +3,9 @@ import copy
 import datetime as dt
 import html
 import unittest
+import json
+import tempfile
+from pathlib import Path
 from unittest import mock
 
 from automation.concerts import dynamic_osm_official_proposals as pipeline
@@ -70,6 +73,87 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertIsNotNone(old)
         self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
             fixture.VENUE_ID, old))
+
+    def test_one_first_party_venue_site_alone_publishes_eight_unknown_artists(self):
+        # One officially identified room programme is sufficient: no OSM
+        # website recheck, no second show page, no artist/domain allowlist.
+        # The source file is an ordinary venue discovery record, here created
+        # dynamically; neither approval nor publisher may trust the lead.
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{
+                    "kind": "official_venue_agenda_candidate",
+                    "name": "Le Bikini", "city": "Ramonville-Saint-Agne",
+                    "url": "https://nouveau-domaine-independant.fr/"
+                }]
+            }), encoding="utf-8")
+            original = fixture.fake_fetch()
+            seen = []
+            def first_party_only(url, cache):
+                seen.append(url)
+                if url != URL:
+                    self.fail("One source means no OSM or second concert request")
+                return original(url, cache)
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \\
+                 mock.patch.object(identity.official_source, "SOURCES", sources), \\
+                 mock.patch.object(identity, "safe_fetch", side_effect=first_party_only):
+                proposals, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, slot=0, limit=8, fetch=first_party_only)
+                self.assertEqual(report["stateCounts"],
+                                 {"independently_verified_proposal": 1},
+                                 report)
+                self.assertEqual(len(proposals["approvals"]), 1)
+                approved = proposals["approvals"][0]
+                self.assertEqual(
+                    approved["officialEvidence"][0]["proofType"],
+                    identity.OFFICIAL_SOURCE_PROFILE)
+                self.assertEqual(
+                    approved["officialEvidence"][0]["officialVenueSourceUrl"],
+                    "https://nouveau-domaine-independant.fr/")
+                self.assertEqual(len(approved["newArtists"]), 8)
+                from automation.concerts import approval_preflight
+                signed = approval_preflight.check_append_only(
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    proposals, TODAY)
+                self.assertEqual(len(signed), 1)
+                merged, outcome = publisher.merge(
+                    BASE, BASE, proposals, TODAY)
+                self.assertEqual(outcome["newEvents"], 1, outcome["held"])
+                self.assertEqual(outcome["newArtists"], 8)
+                self.assertEqual(outcome["newVenues"], 0)
+                self.assertEqual(merged["events"][-1]["officialUrl"], URL)
+            self.assertTrue(seen)
+            self.assertEqual(set(seen), {URL})
+
+    def test_official_venue_source_is_not_a_lead_controlled_origin(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_file = Path(directory) / "sources.json"
+            source_file.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{
+                    "kind": "official_venue_agenda_candidate",
+                    "name": "Another Venue", "city": "Another City",
+                    "url": "https://nouveau-domaine-independant.fr/"
+                }]
+            }), encoding="utf-8")
+            calls = []
+            def no_unowned_origin(url, cache):
+                calls.append(url)
+                raise ValueError("No verified official venue source")
+            with mock.patch.object(pipeline.official_source, "SOURCES", source_file):
+                proposed, report = pipeline.build(
+                    registry(), BASE,
+                    {"schema": publisher.SCHEMA, "approvals": []},
+                    TODAY, slot=0, limit=8, fetch=no_unowned_origin)
+                self.assertEqual(proposed["approvals"], [])
+                self.assertEqual(report["stateCounts"],
+                                 {"held_event_or_source_not_verified": 1})
+                self.assertEqual(calls[0].startswith(
+                    "https://api.openstreetmap.org"), True)
 
     def test_unknown_artists_and_domain_publish_via_real_publisher(self):
         fetch = fixture.fake_fetch()
