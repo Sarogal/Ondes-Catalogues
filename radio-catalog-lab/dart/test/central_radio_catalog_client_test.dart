@@ -1003,6 +1003,7 @@ void main() {
       () async {
     final allowed = station(1);
     (allowed['streams'] as List)[0]['url'] = 'http://79.120.77.11:8000/live';
+    (allowed['streams'] as List)[0]['protocol'] = 'http';
     final verified = await validatePayload(jsonBytes(catalog([allowed])));
     expect(verified.activeIds, contains('go-station-000001'));
 
@@ -1020,6 +1021,7 @@ void main() {
     ]) {
       final forged = station(1);
       (forged['streams'] as List)[0]['url'] = bad;
+      (forged['streams'] as List)[0]['protocol'] = 'http';
       await expectLater(validatePayload(jsonBytes(catalog([forged]))),
           throwsA(isA<CentralCatalogException>()), reason: bad);
     }
