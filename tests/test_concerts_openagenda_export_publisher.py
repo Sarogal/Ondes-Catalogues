@@ -295,6 +295,35 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         self.assertTrue(any("already published or overlapping concert" in key
                             for key in report["rejectionReasons"]))
 
+    def test_named_lineup_removes_only_exact_venue_and_city_suffix(self):
+        # Real official titles may append BOTH the venue and city.
+        # Neither part belongs to the support act's artist identity.
+        venue = copy.deepcopy(next(v for v in fixture.BASE["venues"]
+                                  if v["id"] == fixture.VENUE_ID))
+        venue.update(name="Fury Défendu", city="Rouen",
+                     postalCode="76000", address="2 Quai Pierre Corneille")
+        location = {
+            "name": "Fury Défendu", "city": "Rouen",
+            "postalCode": "76000", "countryCode": "fr",
+            "address": "2 Quai Pierre Corneille, 76000 Rouen, France",
+        }
+        for title, expected in (
+            ("Wake the dead + devotion - Fury defendu - Rouen",
+             ["Wake the dead", "devotion"]),
+            ("Wake the dead - Fury defendu - Rouen", ["Wake the dead"]),
+            ("Wake the dead + devotion - Another Room - Rouen",
+             ["Wake the dead", "devotion - Another Room - Rouen"]),
+            ("Wake the dead + devotion - Fury defendu - Paris",
+             ["Wake the dead", "devotion - Fury defendu - Paris"]),
+        ):
+            with self.subTest(title=title):
+                names, genres = oa.verified_export(
+                    official_export(location=location, title={"fr": title}),
+                    URL, DAY, venue, agenda_uid="9969608",
+                    event_uid="87654321")
+                self.assertEqual(names, expected)
+                self.assertIn("punk", genres)
+
     def test_untrusted_ids_cannot_change_first_party_origin(self):
         for ids in ((-1, 87654321), ("9969608/evil", "87654321"),
                     (9969608, "1?x=2"), (False, 87654321)):
