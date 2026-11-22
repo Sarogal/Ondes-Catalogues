@@ -178,19 +178,6 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
             and _site(catalogue, candidate)["id"] == vid,
             "source or physical venue changed")
     cache = {}
-    # The OSM claim is independent of the event page; do not read a domain
-    # from a candidate as publisher authority.
-    has_named_node = bool(verified.OSM_NODE.fullmatch(
-        str(venue.get("geoSource", ""))))
-    try:
-        if has_named_node:
-            feature = verified.osm_identity(venue, url, fetch, cache)
-            website = None
-        else:
-            feature, website = verified.address_identity(
-                venue, url, fetch, cache)
-    except (ValueError, OSError, TimeoutError) as exc:
-        raise ValueError("osm_identity: " + str(exc)) from exc
     try:
         body = fetch(url, cache)
     except (ValueError, OSError, TimeoutError) as exc:
@@ -223,6 +210,21 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
          bool(set(e.get("artistIds") or []) & set(artists)))
         for e in catalogue["events"] if isinstance(e, dict)),
         "already published or overlapping concert")
+    # Unrelated, non-musical and incomplete events must not spend an OSM
+    # network budget. Geography remains mandatory BEFORE any approval.
+    # The OSM claim is independent of the event page; do not read a domain
+    # from a candidate as publisher authority.
+    has_named_node = bool(verified.OSM_NODE.fullmatch(
+        str(venue.get("geoSource", ""))))
+    try:
+        if has_named_node:
+            feature = verified.osm_identity(venue, url, fetch, cache)
+            website = None
+        else:
+            feature, website = verified.address_identity(
+                venue, url, fetch, cache)
+    except (ValueError, OSError, TimeoutError) as exc:
+        raise ValueError("osm_identity: " + str(exc)) from exc
     now = today.isoformat()
     proof = {
         "url": url,
