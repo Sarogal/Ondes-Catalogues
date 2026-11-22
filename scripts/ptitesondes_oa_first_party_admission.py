@@ -20,6 +20,37 @@ from ptitesondes_openagenda_v2_direct_evidence import (
 from ptitesondes_open_world_release_rehearsal import _sessions_for_day, NOT_PUBLIC_ACCESS
 from ptitesondes_shared_venue_location_evidence import _coordinates
 
+# Safe status codes only: do not expose private names, event URLs or UIDs.
+PUBLIC_OA_DIRECT_REASONS = frozenset({
+    "oa_direct_admin_boundaries_missing",
+    "oa_direct_already_published",
+    "oa_direct_child_audience_missing",
+    "oa_direct_invalid_age",
+    "oa_direct_invalid_coordinates",
+    "oa_direct_invalid_date",
+    "oa_direct_invalid_lead",
+    "oa_direct_invalid_published_date",
+    "oa_direct_invalid_slug",
+    "oa_direct_invalid_times",
+    "oa_direct_invalid_timings",
+    "oa_direct_location_missing",
+    "oa_direct_missing_live_source",
+    "oa_direct_no_exact_session",
+    "oa_direct_not_public_or_identity_changed",
+    "oa_direct_out_of_editorial_scope",
+    "oa_direct_out_of_window",
+    "oa_direct_outside_france",
+    "oa_direct_public_contract_rejected",
+    "oa_direct_restricted_access",
+    "oa_direct_reuse_rights_missing",
+    "oa_direct_semantic_duplicate",
+    "oa_direct_session_changed",
+    "oa_direct_territory_timezone_mismatch",
+    "oa_direct_title_changed",
+    "oa_direct_url_uid_or_slug_mismatch",
+    "oa_direct_venue_changed",
+})
+
 
 def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, today):
     """Return (candidate, stable_reason). No network or catalogue writes."""
