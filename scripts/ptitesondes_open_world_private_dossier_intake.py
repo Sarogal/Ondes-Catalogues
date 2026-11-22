@@ -300,7 +300,32 @@ def collect_research_dossiers(observation_root, research_root, today,
     }
 
 
-def attach_research_dossiers(patch, dossiers, today):
+def published_ids_from_catalogue(document):
+    """Read only existing public IDs; this is a duplicate check, not approval.
+
+    Fresh official events are still re-read and verified independently by
+    the Publisher; the source catalogue never approves an untrusted dossier.
+    """
+    if (type(document) is not dict
+            or type(document.get("events")) is not list
+            or len(document["events"]) > 20_000
+            or any(type(event) is not dict
+                   or type(event.get("id")) is not str
+                   for event in document["events"])):
+        raise ValueError("invalid_public_duplicate_snapshot")
+    return {e["id"] for e in document["events"]}
+
+
+def already_published_dossier(dossier, ids):
+    lead = dossier.get("lead") if isinstance(dossier, dict) else None
+    if not isinstance(lead, dict):
+        return False
+    event_uid, day = lead.get("event_uid"), dossier.get("date_start")
+    return (type(event_uid) is int and isinstance(day, str)
+            and f"openagenda-{event_uid}-{day}" in ids)
+
+
+def attach_research_dossiers(patch, dossiers, today, *, published_ids=None):
     if (not isinstance(patch, dict)
             or patch.get("schema") != "ptitesondes.patch.v1"
             or patch.get("generated_at") != today.isoformat()
@@ -316,6 +341,11 @@ def attach_research_dossiers(patch, dossiers, today):
                 and (not isinstance(patch["open_world_research"], list)
                      or len(patch["open_world_research"]) > MAX_DOSSIERS))):
         raise ValueError("invalid_private_dossier_patch")
+    if published_ids is None:
+        published_ids = set()
+    if (type(published_ids) is not set
+            or any(type(event_id) is not str for event_id in published_ids)):
+        raise ValueError("invalid_public_duplicate_snapshot")
     # Private collection has four daily slots, but the cloud Publisher may
     # read the patch only after several slots have been processed. Replacing
     # this field with the *last* slot (often empty) silently deleted earlier
@@ -344,6 +374,11 @@ def attach_research_dossiers(patch, dossiers, today):
         if values in keys:
             continue
         keys.add(values)
+        # A published occurrence is already on the map. Keeping dozens of
+        # such requests in the 80-place private queue would perpetually hide
+        # genuine discoveries despite successful dedup at publication time.
+        if already_published_dossier(item, published_ids):
+            continue
         if len(pending) < MAX_DOSSIERS:
             pending.append(item)
     return {**patch, "open_world_research": pending}
@@ -369,14 +404,28 @@ def main():
     rows, report = collect_research_dossiers(
         args.observation_root, args.research_root, args.day,
         batch_index=args.batch_index)
-    combined = attach_research_dossiers(patch, rows, args.day)
+    # Read the public checkout, never a caller-provided or private path.
+    # Absence, corruption or oversize must fail closed, not silently disable
+    # the duplicate pruning and refill.
+    live_path = repo / "docs/ptitesondes/sorties.json"
+    with live_path.open("rb") as handle:
+        raw = handle.read(9_000_001)
+    if len(raw) > 9_000_000:
+        raise ValueError("public_catalogue_too_large_for_private_dedup")
+    published_ids = published_ids_from_catalogue(json.loads(raw))
+    skipped = sum(
+        already_published_dossier(item, published_ids)
+        for item in [*patch.get("open_world_research", []), *rows])
+    combined = attach_research_dossiers(
+        patch, rows, args.day, published_ids=published_ids)
+    report["already_public_queue_requests_skipped"] = skipped
     _atomic_json(args.output_file, combined)
     # Do not print URLs, names, place or event IDs to public Actions.
     # A candidate held in a private report is never counted as published.
     report["queued_for_publisher"] = len(combined["open_world_research"])
     report["pending_queue_capacity_deferred"] = max(
         0, len(patch.get("open_world_research", [])) + len(rows)
-        - report["queued_for_publisher"])
+        - skipped - report["queued_for_publisher"])
     print(json.dumps({"schema": SCHEMA, **report}, sort_keys=True))
 
 
