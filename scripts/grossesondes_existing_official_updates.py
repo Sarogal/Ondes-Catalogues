@@ -701,12 +701,21 @@ def apply_independently_verified_updates(
         for old in rows:
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
-            if any(old.get(f) != new.get(f) for f in set(old) | set(new)):
+            # An independently staged ticket-availability update is not a
+            # competing date/lineup/price edit. Permit the OFFICIAL scanner
+            # to enrich its signed edition in the SAME run; all earlier stage
+            # changes are separately validated by safe_target before this
+            # second, independently sourced delta is admitted.
+            prior_fields = {f for f in set(old) | set(new)
+                            if (f in old) != (f in new)
+                            or old.get(f) != new.get(f)}
+            if prior_fields - {"ticketAvailability"}:
                 if len(report["official_edition_diagnostics"]) < 75:
                     report["official_edition_diagnostics"].append({
                         "slug": slug, "official_site": site,
                         "reason": "different_from_current_signed_edition"})
                 continue
+            before_official = deepcopy(new)
             root_ok = (home_matches_edition(root, old, today)
                        or matches_edition(current_home, old, today,
                                           root_ok=False))
@@ -930,7 +939,9 @@ def apply_independently_verified_updates(
                     used.append(source)
             new["auditSources"] = used[:20]
             fields.append("auditSources")
-            if any(old.get(f) != new.get(f) for f in set(old) | set(new)
+            if any((f in before_official) != (f in new)
+                   or before_official.get(f) != new.get(f)
+                   for f in set(before_official) | set(new)
                    if f not in CHANGEABLE):
                 raise ValueError("Unproven mutation of festival fields")
             report["accepted"].append(slug)

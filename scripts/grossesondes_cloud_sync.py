@@ -6,6 +6,7 @@ Le mode preview ne modifie aucun fichier; le mode publish ne valide que le
 catalogue issu de cette preuve et de cet instantané.
 """
 import argparse
+from copy import deepcopy
 from datetime import datetime, date
 from math import isfinite
 from hashlib import sha1, sha256
@@ -542,6 +543,11 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
             "publication_authorized_by_private_report": False,
         }
     report["future_city_publisher"] = city_report
+    # Two independently validated update stages may concern ONE signed row:
+    # first the qualified ticket status, then the verified official ticket
+    # price/lineup. Freeze and validate the earlier stage separately rather
+    # than rejecting it or treating its unrelated fields as official proof.
+    before_official = deepcopy(target)
     if trusted_published and official_update_fetcher is not None:
         target, first_party_report = apply_independently_verified_updates(
             target, published["festivals.json"], today,
@@ -562,9 +568,16 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                               "private_proposal_is_authority": False}
     report["existing_first_party_updates"] = first_party_report
     if first_party_report["accepted"]:
-        changed = safe_target(
-            reference, target, published["festivals.json"],
+        # Phase 1: all pre-existing stage/geo/ticket changes must ALREADY
+        # pass the original signed publication guard without this official
+        # update granting any additional authority to those earlier fields.
+        safe_target(reference, before_official, published["festivals.json"])
+        # Phase 2: the official recheck may change only its proven fields
+        # relative to the independently validated intermediate catalogue.
+        safe_target(
+            before_official, target, before_official,
             verified_official_updates=frozenset(first_party_report["accepted"]))
+        changed = (published["festivals.json"]["festivals"] != target["festivals"])
     else:
         # Keep the original three-argument contract for existing security
         # instrumentation and all no-new-update situations.
