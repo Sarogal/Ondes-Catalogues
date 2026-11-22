@@ -161,7 +161,7 @@ jobs:
             "$RUNNER_TEMP/concerts-private-logs"
           python -m compileall -q public/automation/concerts
 
-      - name: Veille nationale OpenAgenda : une fiche publiée suffit
+      - name: "Veille nationale OpenAgenda : une fiche publiée suffit"
         if: steps.access.outputs.ready == 'true'
         shell: bash
         run: |
