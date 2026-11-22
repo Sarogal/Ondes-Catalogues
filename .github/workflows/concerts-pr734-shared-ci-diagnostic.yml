@@ -106,3 +106,38 @@ jobs:
       - name: Test targeted TLS retry and SSRF controls
         working-directory: transport-check
         run: python -m unittest discover -s automation/concerts -p 'test_source_evidence_probe.py' -v
+
+      - name: Comparer les règles robots des API publiques avec des URLs fictives
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          from urllib.robotparser import RobotFileParser
+          sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
+          import source_evidence_probe as p
+          targets = {
+            'openagenda.com': '/agendas/9969608/events.json?limit=1',
+            'data.geopf.fr': '/geocodage/search/?q=rue+fictive',
+            'api.openstreetmap.org': '/api/0.6/map?bbox=3.8,43.6,3.81,43.61',
+            'overpass.private.coffee': '/api/interpreter?data=%5Bout%3Axml%5D',
+            'overpass-api.de': '/api/interpreter?data=%5Bout%3Axml%5D',
+          }
+          for host,path in targets.items():
+              result='transport_unverified'
+              for ip in p.public_ip_addresses(host)[:4]:
+                  try:
+                      status,body=p.request_pinned(
+                          'https://'+host+'/robots.txt',host,ip,cap=120000)
+                  except (OSError,TimeoutError,ValueError):
+                      continue
+                  if status==404:
+                      result='no_robots_file'
+                  else:
+                      rp=RobotFileParser()
+                      rp.set_url('https://'+host+'/robots.txt')
+                      rp.parse(body.splitlines())
+                      result='allowed' if rp.can_fetch(
+                          p.AGENT,'https://'+host+path) else 'denied'
+                  break
+              print('robots_policy_check',host,result,flush=True)
+          PY
