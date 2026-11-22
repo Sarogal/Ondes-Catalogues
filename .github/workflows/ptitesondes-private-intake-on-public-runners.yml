@@ -562,7 +562,7 @@ jobs:
           # otherwise rotate the usual disjoint scheduled batch. Dedup and
           # the 30-dossier cap remain enforced by the offline producer.
           if [[ -d "$STATE/national-observation/index/reports" ]]; then
-            OA_BRIDGE_BATCH="$(python -c 'import json,os,sys; from datetime import datetime,timezone; sys.path.insert(0,"public/scripts"); from ptitesondes_open_world_private_dossier_intake import review_batch_for_cron; p=json.load(open(sys.argv[1],encoding="utf-8")); queue=p.get("open_world_research",[]); print(0 if not queue else review_batch_for_cron(os.getenv("REVIEW_CRON",""),datetime.now(timezone.utc).hour))' "$STATE/patch-$DAY.json")"
+            OA_BRIDGE_BATCH="$(python -c 'import json,os,sys; from datetime import datetime,timezone; sys.path.insert(0,"public/scripts"); from ptitesondes_open_world_private_dossier_intake import choose_national_bridge_batch; p=json.load(open(sys.argv[1],encoding="utf-8")); print(choose_national_bridge_batch(os.getenv("REVIEW_CRON",""),datetime.now(timezone.utc).hour,p.get("open_world_research",[])))' "$STATE/patch-$DAY.json")"
             if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
                 --observation-root "$STATE/national-observation" \
                 --research-root "$STATE/national-observation/research" \
