@@ -121,7 +121,7 @@ def official_export_url(agenda_uid, event_uid):
     agenda_uid = _numeric_uid(agenda_uid)
     event_uid = _numeric_uid(event_uid)
     return (f"https://openagenda.com/agendas/{agenda_uid}/events.json"
-            f"?uid={event_uid}&limit=1")
+            f"?oaq%5Buids%5D%5B%5D={event_uid}&limit=1")
 
 
 def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
@@ -147,7 +147,13 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
             or not isinstance(doc["events"][0], dict)):
         raise ValueError("OpenAgenda: no unique original event")
     record = doc["events"][0]
-    agenda = record.get("originAgenda")
+    # The still-live legacy OpenAgenda events.json export calls this "origin",
+    # whereas the v2 API calls it "originAgenda". We deliberately read the
+    # legacy contract used by official_export_url rather than silently accepting
+    # an unbound discovery/index field as the source identity.
+    agenda = record.get("origin")
+    if ("originAgenda" in record and record["originAgenda"] != agenda):
+        raise ValueError("OpenAgenda: contradictory origin identities")
     path_parts = [x for x in urlsplit(url).path.split("/") if x]
     if path_parts and path_parts[0] in ("fr", "en"):
         path_parts = path_parts[1:]
