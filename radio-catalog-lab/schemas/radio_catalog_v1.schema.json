@@ -375,6 +375,10 @@
         "reason_code": {
           "type": "string",
           "minLength": 1
+        },
+        "redirect_to": {
+          "type": "string",
+          "pattern": "^go-station-[0-9]{6,}$"
         }
       }
     }
