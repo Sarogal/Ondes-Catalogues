@@ -166,7 +166,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
                         cron, 18, forwarded["open_world_research"]), 3)
 
     def test_bridge_batch_fails_closed_on_untrusted_private_queue(self):
-        for bad in (None, {}, "no", [None] * 31):
+        for bad in (None, {}, "no", [None] * 81):
             with self.subTest(bad=type(bad).__name__):
                 with self.assertRaises(ValueError):
                     choose_national_bridge_batch("", 18, bad)
@@ -176,7 +176,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
                     "ptitesondes-private-intake-on-public-runners.yml"
                     ).read_text(encoding="utf-8")
         self.assertIn('OA_HANDOFF_COUNT="$(python -c', workflow)
-        self.assertIn('assert type(q) is list and len(q)<=30', workflow)
+        self.assertIn('assert type(q) is list and len(q)<=80', workflow)
         self.assertIn('Dossiers OA sauvegardés en privé', workflow)
         self.assertIn('Dossiers OA en prévisualisation uniquement', workflow)
         self.assertNotIn('print(q)', workflow)
@@ -555,9 +555,9 @@ class NationalPrivateDossierTests(unittest.TestCase):
         item = self.load()[0][0]
         first = [
             {**item, "lead": {**item["lead"], "event_uid": 900000 + i}}
-            for i in range(30)]
+            for i in range(80)]
         waiting = attach_research_dossiers(patch, first, TODAY)
-        self.assertEqual(len(waiting["open_world_research"]), 30)
+        self.assertEqual(len(waiting["open_world_research"]), 80)
         later = attach_research_dossiers(waiting, [{
             **item, "lead": {**item["lead"], "event_uid": 990000},
         }], TODAY)
@@ -583,7 +583,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
             dict(base, schema="ptitesondes.patch.replacement"),
             dict(base, generated_at="2026-11-20"),
             dict(base, open_world_research={"approved": True}),
-            dict(base, open_world_research=[{"approved": True}] * 31),
+            dict(base, open_world_research=[{"approved": True}] * 81),
         ):
             with self.subTest(value=str(changed)[:70]):
                 with self.assertRaises(ValueError):
