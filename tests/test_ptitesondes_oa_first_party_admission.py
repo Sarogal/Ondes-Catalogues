@@ -117,6 +117,30 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(reason, "oa_direct_live_source_accepted")
         self.assertEqual(candidate["time"], "10:00 ; 15:00")
 
+    def test_live_rescheduled_status_keeps_exact_sessions(self):
+        reference = base()
+        for status in (2, {"id": 2, "label": "Reprogrammé"},
+                       {"id": 1, "label": "Programmé"}):
+            with self.subTest(status=status):
+                live = {**oa_event(), "status": status}
+                candidate, reason = admit_live_openagenda(
+                    lead(), DAY.isoformat(), AGENDA, live,
+                    reference, reference, TODAY)
+                self.assertEqual(reason, "oa_direct_live_source_accepted")
+                self.assertEqual(candidate["time"], "10:00 ; 15:00")
+
+        # Neither unknown nor unavailable status is an acceptable session.
+        for status in (3, 4, 5, 6, {"id": 6}, {"id": "2"},
+                       None, {"label": "Programmé"}):
+            with self.subTest(status=status):
+                candidate, reason = admit_live_openagenda(
+                    lead(), DAY.isoformat(), AGENDA,
+                    {**oa_event(), "status": status}, reference, reference,
+                    TODAY)
+                self.assertIsNone(candidate)
+                self.assertEqual(
+                    reason, "oa_direct_not_public_or_identity_changed")
+
     def test_other_openagenda_uid_url_cannot_publish(self):
         ref = base()
         patch = private_patch(ref, queue=[{
