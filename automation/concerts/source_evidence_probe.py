@@ -121,20 +121,29 @@ def safe_fetch(url, cache):
         # A DNS answer may have an unreachable transport on the public
         # GitHub runner. Fail closed unless ONE already-audited public IP
         # passes TLS/SNI and the same pinned-origin robots policy.
+        # A transient failure on OpenAgenda's fixed official source must
+        # not discard a real concert on the first failed TLS connection.
+        # One extra attempt is allowed ONLY on the same DNS-audited IP.
+        # All other hosts retain their original single-try budget.
+        attempts = 2 if host == "openagenda.com" else 1
         for ip in public_ip_addresses(host):
-            try:
-                status, content = request_pinned(
-                    "https://" + host + "/robots.txt", host, ip, cap=120_000)
-            except (OSError, TimeoutError, ssl.SSLError):
-                continue
-            if status == 404:
-                robots = None  # Absent robots.txt, not a network failure.
-            else:
-                robots = RobotFileParser()
-                robots.set_url("https://" + host + "/robots.txt")
-                robots.parse(content.splitlines())
-            cache[host] = (ip, robots)
-            break
+            for _ in range(attempts):
+                try:
+                    status, content = request_pinned(
+                        "https://" + host + "/robots.txt", host, ip,
+                        cap=120_000)
+                except (OSError, TimeoutError, ssl.SSLError):
+                    continue
+                if status == 404:
+                    robots = None  # Absent robots.txt, not network failure.
+                else:
+                    robots = RobotFileParser()
+                    robots.set_url("https://" + host + "/robots.txt")
+                    robots.parse(content.splitlines())
+                cache[host] = (ip, robots)
+                break
+            if host in cache:
+                break
         else:
             raise ValueError("All independently verified public IP transports unavailable")
     ip, robots = cache[host]
