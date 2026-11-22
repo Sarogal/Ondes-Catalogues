@@ -311,9 +311,36 @@ def listed_artists(blocks):
 
 def advertised_passes(blocks):
     found = {}
+    # Explicit, visible ticket-card offers take precedence over generic
+    # article snippets. On live festival pages an old Early Bird tier can
+    # read "sold out" beside a CURRENT "tarif normal ... en vente" tier
+    # of that same 4-day category. Never veto the newer priced offer
+    # merely because a DIFFERENT tier is exhausted.
+    for card in blocks:
+        if card.get("tag") != "li" or not isinstance(card.get("text"), str):
+            continue
+        raw = card["text"]
+        categories = {int(x.group(1)) for x in PASS.finditer(fold(raw))}
+        if len(categories) != 1:
+            continue
+        prices = list(PRICE.finditer(raw))
+        for idx, match in reversed(list(enumerate(prices))):
+            following = raw[match.end():min(
+                match.end() + 115,
+                prices[idx + 1].start() if idx + 1 < len(prices)
+                else len(raw))]
+            status = fold(following)
+            if (re.search(r"\b(?:en vente|ouverte|ouvert|disponible)\b", status)
+                    and not re.search(r"\b(?:epuise|sold out|complet)\b", status)):
+                found[next(iter(categories))] = (
+                    match.group(1).replace(".", ",") + " €")
+                break
+
     text = [b["text"] for b in blocks]
     for i, block in enumerate(text):
         for category in PASS.finditer(fold(block)):
+            if int(category.group(1)) in found:
+                continue
             # The price and sale status may be in distinct consecutive
             # blocks. Stop BEFORE another pass category, never borrow its
             # price for a different pass.
