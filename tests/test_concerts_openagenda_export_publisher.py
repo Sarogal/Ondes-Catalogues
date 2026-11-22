@@ -98,6 +98,36 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         self.assertGreaterEqual(len(observed), 3)
         self.assertEqual(set(observed), {EXPORT})
 
+    def test_fresh_official_openagenda_is_not_starved_by_old_queue(self):
+        huge = registry()
+        for i in range(32):
+            entry = copy.deepcopy(huge["items"]["from-openagenda"])
+            candidate = entry["candidate"]
+            ident = "older-recheck-%02d" % i
+            candidate["candidateId"] = ident
+            link = ("https://openagenda.com/fr/shotgun/events/"
+                    "older-metal-concert-%02d" % i)
+            candidate["sourceUrl"] = link
+            candidate["sourcePage"] = link
+            candidate["eventDetailUrl"] = link
+            candidate.pop("openAgendaUid")
+            candidate.pop("openAgendaEventUid")
+            huge["items"][ident] = entry
+        def only_verified_export(link, cache):
+            self.assertEqual(link, EXPORT)
+            return official_export()
+        # The normal moving window would revisit only one old venue URL at
+        # slot=2, leaving the newly discovered OA record waiting for days.
+        result, report = producer.build(
+            huge, self.catalogue,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, slot=2, limit=1, fetch=only_verified_export)
+        self.assertEqual(report["eligibleQueue"], 33)
+        self.assertEqual(report["examined"], 1)
+        self.assertEqual(report["candidateChecks"][0]["candidateId"],
+                         "from-openagenda")
+        self.assertEqual(len(result["approvals"]), 1)
+
     def test_forged_ambiguous_or_wrong_style_export_never_approves(self):
         failures = (
             {"status": 2},

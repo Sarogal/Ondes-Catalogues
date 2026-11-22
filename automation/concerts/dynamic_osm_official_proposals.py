@@ -328,11 +328,26 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     eligibility_rejections = Counter()
     selected = eligible(registry, catalogue, today,
                         diagnostics=eligibility_rejections)
-    # Non-overlapping daily slots; rotate through ANY number of candidates.
-    start = (((today - dt.date(2026, 11, 21)).days * 3 + slot) *
-             limit) % len(selected) if selected else 0
-    window = [selected[(start + i) % len(selected)]
-              for i in range(min(limit, len(selected)))]
+    # Keep the national queue fair while processing newly verified OpenAgenda
+    # exports promptly. A published first-party OA event must not wait through
+    # a hundred old leads. Reserve at most half of the bounded rechecks for
+    # fresh OA observations and rotate BOTH pools across all future dates.
+    # When one pool is short, spend the unused checks on the other.
+    fast = [row for row in selected
+            if row[3].get("source") == "agenda_officiel_openagenda"
+            and row[3].get("openAgendaUid")
+            and row[3].get("openAgendaEventUid")]
+    regular = [row for row in selected if row not in fast]
+    tick = (today - dt.date(2026, 11, 21)).days * 3 + slot
+    reserved = min(len(fast), max(1, limit // 2)) if fast else 0
+    fstart = (tick * max(1, reserved)) % len(fast) if fast else 0
+    window = [fast[(fstart + i) % len(fast)] for i in range(reserved)]
+    rstart = (tick * limit) % len(regular) if regular else 0
+    take_regular = min(len(regular), limit - len(window))
+    window.extend(regular[(rstart + i) % len(regular)]
+                  for i in range(take_regular))
+    while len(window) < min(limit, len(selected)) and len(window) < len(fast) + take_regular:
+        window.append(fast[(fstart + len(window) - take_regular) % len(fast)])
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)
     known = {row["event"]["id"] for row in output["approvals"]
