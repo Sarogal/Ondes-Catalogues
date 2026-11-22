@@ -45,7 +45,9 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         ref = base()
         for modification in ({"status": 3}, {"removed": True},
                              {"timings": []}, {"attendanceMode": 2},
-                             {"rights": {"license": {"id": "copyright"}}}):
+                             {"rights": {"license": {"id": "copyright"}}},
+                             {"description": {"fr": "Spectacle pour enfants, scolaires uniquement"}},
+                             {"timings": None}):
             live = {**oa_event(), **modification}
             candidate, reason = admit_live_openagenda(
                 lead(), DAY.isoformat(), AGENDA, live, ref, ref, TODAY)
