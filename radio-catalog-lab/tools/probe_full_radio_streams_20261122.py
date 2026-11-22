@@ -177,10 +177,12 @@ def inspect_stream(station: str, stream: dict, ffmpeg: str | None, checked: str)
     return record
 
 
-def probe(catalog: dict, *, max_streams: int | None = None,
+def probe(catalog: dict, *, max_streams: int | None = None, offset: int = 0,
           workers: int = 12, ffmpeg: str | None = None):
     if max_streams is not None and max_streams <= 0:
         raise ValueError("max_streams must be positive")
+    if offset < 0:
+        raise ValueError("offset must be nonnegative")
     if not 1 <= workers <= 24:
         raise ValueError("workers must be between 1 and 24")
     errors = validate_catalog(catalog, mode="staging")
@@ -189,7 +191,7 @@ def probe(catalog: dict, *, max_streams: int | None = None,
     checked = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     jobs = [(s["go_station_id"], stream) for s in catalog["stations"]
             for stream in s["streams"] if stream["state"] != "disabled"]
-    selected = jobs[:max_streams] if max_streams else jobs
+    selected = jobs[offset:offset + max_streams] if max_streams else jobs[offset:]
     # Do not hammer providers with many similar genre feeds on one host.
     limiters = {}
     for _, stream in selected:
@@ -219,6 +221,7 @@ def probe(catalog: dict, *, max_streams: int | None = None,
     report = {
         "source_release_sequence": catalog["release_sequence"],
         "checked_at": checked, "requested_streams": len(jobs),
+        "first_stream_index": offset,
         "probed_streams": len(results), "verified_this_run":
             sum(row["verified"] for row in results),
         "reason_counts": dict(sorted(counts.items())), "rows": results,
@@ -246,13 +249,14 @@ def main():
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--enriched-out", type=Path)
     parser.add_argument("--max-streams", type=int)
+    parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--workers", type=int, default=12)
     args = parser.parse_args()
     for f in (args.report, args.enriched_out):
         if f and f.exists():
             parser.error("refusing to overwrite existing report or catalog")
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
-    updated, result = probe(catalog, max_streams=args.max_streams,
+    updated, result = probe(catalog, max_streams=args.max_streams, offset=args.offset,
                             workers=args.workers, ffmpeg=installed_ffmpeg())
     args.report.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n",
                            encoding="utf-8")
