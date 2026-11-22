@@ -34,3 +34,28 @@ jobs:
           print("rehearsal_blockers", json.dumps({k:v for k,v in out["blockers"].items() if v}, sort_keys=True))
           print("stage_expected", sorted(t.SHAPE_STAGES))
           PY
+
+      - name: Vérifier les transports HTTPS publics épinglés sans contenu ni secret
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
+          import source_evidence_probe as p
+          for host in ('openagenda.com', 'data.geopf.fr', 'api.openstreetmap.org'):
+              try:
+                  ips = p.public_ip_addresses(host)
+                  print('transport_origin',host,'audited_address_count',len(ips),flush=True)
+                  outcomes=[]
+                  for addr in ips[:4]:
+                      try:
+                          status, _ = p.request_pinned('https://'+host+'/robots.txt',host,addr,cap=120000)
+                          outcomes.append('http-'+str(status))
+                      except (OSError, TimeoutError) as exc:
+                          outcomes.append(type(exc).__name__)
+                      except ValueError:
+                          outcomes.append('http-invalid-status')
+                  print('transport_results',host,'/'.join(outcomes),flush=True)
+              except (ValueError, OSError) as exc:
+                  print('transport_failure',host,type(exc).__name__,flush=True)
+          PY
