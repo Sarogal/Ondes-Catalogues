@@ -215,6 +215,85 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             URL, DAY, venue, agenda_uid="9969608", event_uid="87654321")
         self.assertEqual(wrong, ["LocoMuerte", "DoorShan - Another Room"])
 
+    def test_numbered_official_street_matches_named_unnumbered_published_pin(self):
+        # Historical Ferrailleur map: "Quai des Antilles"; OpenAgenda's
+        # exact street adds "21". They are the SAME named point, not a new
+        # candidate venue, and the official GPS remains near the map pin.
+        site = copy.deepcopy(next(v for v in fixture.BASE["venues"]
+                                  if v["id"] == fixture.VENUE_ID))
+        site.update(name="Le Ferrailleur", city="Nantes",
+                    address="Quai des Antilles", postalCode="44200",
+                    latitude=47.20058, longitude=-1.57365,
+                    geoPrecision="point du lieu (OpenStreetMap node 373218467)")
+        place = {
+            "name": "Le Ferrailleur", "city": "Nantes",
+            "address": "21 quai des Antilles, 44200 Nantes, France",
+            "postalCode": "44200", "countryCode": "fr",
+            "latitude": 47.200163, "longitude": -1.573912,
+        }
+        names, genres = oa.verified_export(
+            official_export(location=place, title={"fr": "Sunami + Desolated"}),
+            URL, DAY, site, agenda_uid="9969608", event_uid="87654321")
+        self.assertEqual(names, ["Sunami", "Desolated"])
+        self.assertIn("punk", genres)
+
+        # A different street, remote point, uncertain map, wrong postcode,
+        # or contradicting published house number must still be refused.
+        cases = (
+            ({"address": "21 quai du Port, 44200 Nantes"}, {}, "street"),
+            ({"latitude": 47.205, "longitude": -1.573912}, {}, "street"),
+            ({"longitude": None}, {}, "street"),
+            ({}, {"geoPrecision": "centre de commune"}, "street"),
+            ({}, {"address": "20 quai des Antilles"}, "street"),
+            ({"postalCode": "44100"}, {}, "postal"),
+        )
+        for place_change, site_change, reason in cases:
+            with self.subTest(place=place_change, site=site_change):
+                p = dict(place, **place_change)
+                v = dict(site, **site_change)
+                with self.assertRaisesRegex(ValueError, reason):
+                    oa.verified_export(
+                        official_export(location=p, title={"fr": "Sunami + Desolated"}),
+                        URL, DAY, v, agenda_uid="9969608",
+                        event_uid="87654321")
+
+    def test_same_day_venue_headliner_from_another_url_remains_a_duplicate(self):
+        cat = copy.deepcopy(self.catalogue)
+        venue = next(v for v in cat["venues"] if v["id"] == fixture.VENUE_ID)
+        venue.update(name="Le Ferrailleur", city="Nantes",
+                     address="Quai des Antilles", postalCode="44200",
+                     latitude=47.20058, longitude=-1.57365,
+                     geoPrecision="point du lieu (OpenStreetMap node 373218467)")
+        cat["artists"].append({"id": "sunami", "name": "Sunami", "aliases": []})
+        cat["events"].append({
+            "id": "go-c-signed-existing-sunami", "title": "Sunami + Desolated",
+            "date": DAY, "artistIds": ["sunami"],
+            "venueId": fixture.VENUE_ID,
+            "officialUrl": "https://www.leferrailleur.fr/agenda",
+        })
+        lead = registry()
+        candidate = lead["items"]["from-openagenda"]["candidate"]
+        candidate.update(name="Sunami + Desolated", leadArtist="Sunami",
+                         venue="Le Ferrailleur", city="Nantes",
+                         department=None)
+        place = {
+            "name": "Le Ferrailleur", "city": "Nantes",
+            "address": "21 quai des Antilles, 44200 Nantes, France",
+            "postalCode": "44200", "countryCode": "fr",
+            "latitude": 47.200163, "longitude": -1.573912,
+        }
+        def official(link, cache):
+            self.assertEqual(link, EXPORT)
+            return official_export(location=place,
+                                   title={"fr": "Sunami + Desolated"})
+        proposed, report = producer.build(
+            lead, cat, {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=official)
+        self.assertEqual(report["examined"], 1)
+        self.assertEqual(proposed["approvals"], [])
+        self.assertTrue(any("already published or overlapping concert" in key
+                            for key in report["rejectionReasons"]))
+
     def test_untrusted_ids_cannot_change_first_party_origin(self):
         for ids in ((-1, 87654321), ("9969608/evil", "87654321"),
                     (9969608, "1?x=2"), (False, 87654321)):
