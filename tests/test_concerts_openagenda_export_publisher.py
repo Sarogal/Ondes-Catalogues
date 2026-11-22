@@ -220,7 +220,7 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         # exact street adds "21". They are the SAME named point, not a new
         # candidate venue, and the official GPS remains near the map pin.
         site = copy.deepcopy(next(v for v in fixture.BASE["venues"]
-                                  if v["id"] == fixture.VENUE_ID))
+                                  if v["id"] == "le-ferrailleur-nantes"))
         site.update(name="Le Ferrailleur", city="Nantes",
                     address="Quai des Antilles", postalCode="44200",
                     latitude=47.20058, longitude=-1.57365,
@@ -259,7 +259,7 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
 
     def test_same_day_venue_headliner_from_another_url_remains_a_duplicate(self):
         cat = copy.deepcopy(self.catalogue)
-        venue = next(v for v in cat["venues"] if v["id"] == fixture.VENUE_ID)
+        venue = next(v for v in cat["venues"] if v["id"] == "le-ferrailleur-nantes")
         venue.update(name="Le Ferrailleur", city="Nantes",
                      address="Quai des Antilles", postalCode="44200",
                      latitude=47.20058, longitude=-1.57365,
@@ -269,7 +269,7 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         cat["events"].append({
             "id": "go-c-signed-existing-sunami", "title": "Sunami + Desolated",
             "date": DAY, "artistIds": ["sunami"],
-            "venueId": fixture.VENUE_ID,
+            "venueId": "le-ferrailleur-nantes",
             "officialUrl": "https://www.leferrailleur.fr/agenda",
         })
         lead = registry()
