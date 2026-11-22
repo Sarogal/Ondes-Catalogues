@@ -11,7 +11,7 @@ from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, linked_pages, page,
     signed_rotation, listed_artists, advertised_passes,
 )
-from grossesondes_cloud_sync import _verified_official_update_delta, safe_target
+from grossesondes_cloud_sync import _verified_official_update_delta
 
 DAY = "2026-11-22"
 MOZHELL = "https://www.mozhell.fr/fr/"
@@ -130,13 +130,11 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertIn("Pass 4 jours : 239 €", value["price"])
         self.assertIn("Pass 1 jour : 82 €", value["price"])
         self.assertEqual(report["accepted"], ["motocultor-festival"])
-        # The two strict guards are independent: the earlier stage is
-        # validated WITHOUT granting its data official-update authority;
-        # the current signed-site delta is then validated on that base.
-        self.assertTrue(safe_target(signed, intermediate, signed))
-        self.assertTrue(safe_target(
-            intermediate, out, intermediate,
-            verified_official_updates=frozenset({"motocultor-festival"})))
+        # The official delta is valid ONLY relative to the prior stage.
+        # A combined signed-row delta is deliberately NOT accepted as a
+        # single unqualified official update.
+        self.assertTrue(_verified_official_update_delta(
+            intermediate["festivals"][0], value))
         self.assertFalse(_verified_official_update_delta(row, value))
 
         # Other pre-mutated fields are not admissible to the official scan.
