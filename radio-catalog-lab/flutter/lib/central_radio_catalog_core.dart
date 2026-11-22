@@ -110,8 +110,9 @@ class ValidatedCentralCatalog {
     this.stations,
     this.aliasOwners,
     this.goIds,
-    this.activeIds,
-  ) : _pointerBytes = Uint8List.fromList(pointerBytes),
+    this.activeIds, {
+    this.goRedirects = const <String, String>{},
+  }) : _pointerBytes = Uint8List.fromList(pointerBytes),
       _catalogBytes = Uint8List.fromList(catalogBytes);
 
   final CentralCatalogPointer pointer;
@@ -127,6 +128,8 @@ class ValidatedCentralCatalog {
   final Map<String, String> aliasOwners;
   final Set<String> goIds;
   final Set<String> activeIds;
+  /// Immutable signed tombstone GO ID -> active surviving GO ID.
+  final Map<String, String> goRedirects;
 }
 
 class CentralCatalogVerifier {
@@ -201,6 +204,7 @@ class CentralCatalogVerifier {
     final aliases = <String, String>{};
     final goIds = <String>{};
     final active = <String>{};
+    final redirects = <String, String>{};
     final stations = <Map<String, dynamic>>[];
     final logoContentMetadata = <String, String>{};
     for (final raw in records) {
@@ -372,6 +376,29 @@ class CentralCatalogVerifier {
           DateTime.tryParse(item['retired_at'] as String) == null) {
         throw const CentralCatalogException('Missing retirement reason or date');
       }
+      const knownTombstoneFields = {
+        'go_station_id', 'legacy_aliases', 'retired_at', 'reason_code',
+        'redirect_to',
+      };
+      if (item.keys.any((key) => !knownTombstoneFields.contains(key))) {
+        throw const CentralCatalogException('Unknown tombstone field');
+      }
+      if (item.containsKey('redirect_to')) {
+        final destination = item['redirect_to'];
+        if (item['reason_code'] != 'merged_into_station' ||
+            destination is! String || !_goId.hasMatch(destination) ||
+            destination == id || redirects.containsKey(id)) {
+          throw const CentralCatalogException('Invalid signed station redirect');
+        }
+        redirects[id] = destination;
+      }
+    }
+    // A signed redirect never points to another tombstone. Chains are flattened
+    // by the publisher so old favorites resolve in one step and cannot cycle.
+    for (final destination in redirects.values) {
+      if (!active.contains(destination)) {
+        throw const CentralCatalogException('Redirect target must be active');
+      }
     }
 
     // Permanent GO IDs are first-class identities, not ordinary aliases.
@@ -405,6 +432,13 @@ class CentralCatalogVerifier {
       if (!goIds.containsAll(previous.goIds)) {
         throw const CentralCatalogException('Historical GO identity lost');
       }
+      for (final old in previous.goRedirects.entries) {
+        final next = redirects[old.key];
+        if (next == null ||
+            (next != old.value && redirects[old.value] != next)) {
+          throw const CentralCatalogException('Historical redirect lost or hijacked');
+        }
+      }
       for (final entry in previous.aliasOwners.entries) {
         if (aliases[entry.key] != entry.value) {
           throw const CentralCatalogException('Historical alias lost or reassigned');
@@ -423,7 +457,8 @@ class CentralCatalogVerifier {
         List<Map<String, dynamic>>.unmodifiable(stations),
         Map<String, String>.unmodifiable(aliases),
         Set<String>.unmodifiable(goIds),
-        Set<String>.unmodifiable(active));
+        Set<String>.unmodifiable(active),
+        goRedirects: Map<String, String>.unmodifiable(redirects));
   }
 
   static Map<String, dynamic> _object(dynamic value, String label) {
