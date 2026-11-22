@@ -94,7 +94,7 @@ class UndatedOfficialDateTests(unittest.TestCase):
         old = festival()
         article = SITE + "actualites/dates-2027"
         home = ("<main><h1>Sylak Open Air 2027</h1>"
-                '<a href="/actualites/dates-2027">Annonce dates 2027</a>'</main>)
+                '<a href="/actualites/dates-2027">Annonce dates 2027</a></main>')
         pages = {SITE: home, article: GOOD_HTML}
         signed_doc = signed(old)
         actual, report = apply_independently_verified_updates(
@@ -123,7 +123,7 @@ class UndatedOfficialDateTests(unittest.TestCase):
     def test_official_news_proof_never_follows_outside_domain(self):
         old = festival()
         home = ("<main><h1>Sylak Open Air 2027</h1>"
-                '<a href="https://external.test/dates-2027">Annonce dates 2027</a>'</main>)
+                '<a href="https://external.test/dates-2027">Annonce dates 2027</a></main>')
         calls = []
         def fetch(url):
             calls.append(url)
