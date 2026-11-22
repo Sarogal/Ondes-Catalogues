@@ -42,7 +42,7 @@ jobs:
           from pathlib import Path
           sys.path.insert(0,str(Path.cwd()/'automation/concerts'))
           import source_evidence_probe as p
-          for host in ('openagenda.com', 'data.geopf.fr', 'api.openstreetmap.org'):
+          for host in ('openagenda.com', 'data.geopf.fr', 'api.openstreetmap.org', 'overpass.private.coffee', 'overpass-api.de'):
               try:
                   ips = p.public_ip_addresses(host)
                   print('transport_origin',host,'audited_address_count',len(ips),flush=True)
