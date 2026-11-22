@@ -187,6 +187,17 @@ def prepare_open_world_patch(
             # coordinates. No GPS may be copied from a private dossier.
             api_event = event_reader(
                 lead["agenda_uid"], lead["event_uid"], public_key)
+            # Some API read adapters expose an envelope {"event": record}
+            # rather than the record directly. Only the OpenAgenda-first
+            # lane may normalize it, and only with an exact integer UID match.
+            # Do not let a wrapper override a conflicting top-level identity.
+            if (urlsplit(event_url).hostname == "openagenda.com"
+                    and isinstance(api_event, dict)
+                    and type(api_event.get("uid")) is not int
+                    and type(api_event.get("event")) is dict
+                    and type(api_event["event"].get("uid")) is int
+                    and api_event["event"]["uid"] == lead["event_uid"]):
+                api_event = api_event["event"]
             loc = api_event.get("location") if isinstance(api_event, dict) else None
             source_point = (
                 (loc.get("latitude"), loc.get("longitude"))
