@@ -6,6 +6,8 @@ on:
     paths:
       - 'radio-catalog-lab/full-staging/**'
       - 'radio-catalog-lab/tests/test_full_catalog_staging_20261122.py'
+      - 'radio-catalog-lab/tests/test_full_staging_artwork_20261122.py'
+      - 'radio-catalog-lab/tools/attach_full_staging_artwork_20261122.py'
       - '.github/workflows/go-radio-full-staging-only.yml'
   workflow_dispatch:
 permissions:
@@ -23,6 +25,8 @@ jobs:
         run: python -m pip install 'cryptography>=42,<47'
       - name: Verify exact TEST v4 signature and full migration invariants
         run: python -m unittest discover -s radio-catalog-lab/tests -p 'test_full_catalog_staging_20261122.py' -v
+      - name: Verify 12 previously evidenced TEST SHA logos by immutable historical UUID
+        run: python -m unittest discover -s radio-catalog-lab/tests -p 'test_full_staging_artwork_20261122.py' -v
       - name: Guard non-production target from accidental pointer override
         shell: bash
         run: |
