@@ -327,6 +327,24 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     return [(url, grouped[url]) for url in urls[offset:offset + limit]]
 
 
+class _OfficialImageEditionIdentity(HTMLParser):
+    """Read visible first-party image alt text; no external image fetch."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.alts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "img" or len(self.alts) >= 50:
+            return
+        props = dict(attrs)
+        if ("hidden" in props or props.get("aria-hidden") == "true"
+                or re.search(r"display\\s*:\\s*none", props.get("style") or "", re.I)):
+            return
+        value = props.get("alt")
+        if isinstance(value, str) and 8 <= len(value) <= 180:
+            self.alts.append(value)
+
+
 WEEKDAY_2027_LABELS = {
     "lundi": 0, "mardi": 1, "mercredi": 2, "jeudi": 3,
     "vendredi": 4, "samedi": 5, "dimanche": 6,
@@ -349,20 +367,36 @@ def weekday_labelled_official_dates(html, row, year):
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
         return None
     title = _EditionTitle()
+    images = _OfficialImageEditionIdentity()
     body = VisibleText()
     try:
         title.feed(html)
         title.close()
+        images.feed(html)
+        images.close()
         body.feed(html)
         body.close()
     except (ValueError, TypeError, UnicodeError):
         return None
     title_words = fold(" ".join(title.parts))
     brand = fold(re.sub(r"\b20[2-4]\d\b", "", row.get("name", "")))
-    if (len(key(brand)) < 8 or not title_words
-            or not re.search(r"(?<![a-z0-9])" +
-                             r"\s+".join(map(re.escape, brand.split())) +
-                             r"(?![a-z0-9])", title_words)):
+    if len(key(brand)) < 8:
+        return None
+    expected_brand = re.compile(
+        r"(?<![a-z0-9])" +
+        r"\s+".join(map(re.escape, brand.split())) + r"(?![a-z0-9])"
+    )
+    title_brand = bool(expected_brand.search(title_words))
+    image_brand = any(
+        expected_brand.search(fold(alt))
+        and set(re.findall(r"\b20[2-4]\d\b", fold(alt))) == {str(year)}
+        for alt in images.alts
+    )
+    # An explicit contradictory year in the first-party title is a veto,
+    # even when an image logo contains the requested edition year.
+    title_years = set(re.findall(r"\b20[2-4]\d\b", title_words))
+    if ((title_years and title_years != {str(year)})
+            or not (title_brand or image_brand)):
         return None
     visible = fold(" ".join(body.parts))
     if OFFICIAL_CANCELLATION.search(visible):
