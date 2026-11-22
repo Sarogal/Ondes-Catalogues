@@ -395,19 +395,19 @@ def undated_official_evidence_diagnostic(html, row, year):
         body.close()
     except (ValueError, TypeError, UnicodeError):
         return flags
-    brand = fold(re.sub(r"\\b20[2-4]\\d\\b", "", row.get("name", "")))
+    brand = fold(re.sub(r"\b20[2-4]\d\b", "", row.get("name", "")))
     if len(key(brand)) < 8:
         return flags
     expression = re.compile(
-        r"(?<![a-z0-9])" + r"\\s+".join(map(re.escape, brand.split()))
+        r"(?<![a-z0-9])" + r"\s+".join(map(re.escape, brand.split()))
         + r"(?![a-z0-9])"
     )
     title_words = fold(" ".join(title.parts))
     visible = fold(" ".join(body.parts))
     flags["raw_year_token"] = bool(re.search(
-        r"(?<!\\d)" + str(year) + r"(?!\\d)", html))
+        r"(?<!\d)" + str(year) + r"(?!\d)", html))
     flags["visible_year_token"] = bool(re.search(
-        r"\\b" + str(year) + r"\\b", visible))
+        r"\b" + str(year) + r"\b", visible))
     flags["visible_weekday_sequence"] = any(
         match.group(3) == str(year)
         for match in WEEKDAY_DATE_SEQUENCE.finditer(visible)
@@ -415,7 +415,7 @@ def undated_official_evidence_diagnostic(html, row, year):
     flags["title_matches_identity"] = bool(expression.search(title_words))
     flags["current_edition_logo_alt"] = any(
         expression.search(fold(alt))
-        and set(re.findall(r"\\b20[2-4]\\d\\b", fold(alt))) == {str(year)}
+        and set(re.findall(r"\b20[2-4]\d\b", fold(alt))) == {str(year)}
         for alt in images.alts
     )
     return flags
