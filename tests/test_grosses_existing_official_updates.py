@@ -108,6 +108,26 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(len(names), 23)
         self.assertEqual(report["accepted_changes"][0]["artists_added"], 21)
 
+    def test_no_artist_count_ceiling_for_a_verified_official_roster(self):
+        # A real festival can confirm >60 groups on its own official page.
+        # The HTML, source, edition and individual names remain validated.
+        row = festival("mozhell-open-air", MOZHELL)
+        announced = [f"Artist {i:03d}" for i in range(1, 76)]
+        official = (
+            "<main><h1>MozHell Open Air 2027</h1>"
+            "<h2>Groupes annoncés</h2><ul>" +
+            "".join(f"<li>{name}</li>" for name in announced) +
+            "</ul></main>"
+        )
+        signed = doc(row)
+        result, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=lambda url: official, limit=1, tick=0)
+        new = result["festivals"][0]
+        self.assertEqual(new["lineup"], announced)
+        self.assertEqual(new["bands"], 75)
+        self.assertTrue(_verified_official_update_delta(row, new))
+        self.assertEqual(report["accepted"], ["mozhell-open-air"])
+
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
