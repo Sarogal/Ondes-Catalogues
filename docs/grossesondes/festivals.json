@@ -5085,7 +5085,7 @@
       "department": "29",
       "region": "Bretagne",
       "styles": "Metal",
-      "bands": 36,
+      "bands": 58,
       "days": "4",
       "capacity": null,
       "price": "Pass 4 jours : 228 € (Early Bird 3)",
@@ -5094,7 +5094,7 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://feverup.com/m/706920?thm=16601",
-      "lastVerified": "2026-10-09",
+      "lastVerified": "2026-11-22",
       "notes": "Billetterie officielle 2027 : pass 4 jours Early Bird 1 à 198 € et Early Bird 2 à 218 € (épuisés) ; Early Bird 3 à 228 € proposé à la vente au 9 octobre 2026 ; palier régulier affiché à 239 € (non encore disponible à cette vérification). Prix et disponibilités susceptibles d’évoluer. Programmation partielle, par jour, publiée sur la billetterie 2027 : d’autres groupes sont annoncés à venir. Ne pas confondre avec les prix 2026 encore présents sur la page Infos pratiques du site officiel.",
       "lat": 48.2708,
       "lon": -3.5654,
@@ -5136,7 +5136,29 @@
         "My Sleeping Karma",
         "Peeling Flesh",
         "Sons of Arrakis",
-        "Sunborn"
+        "Sunborn",
+        "Alestorm",
+        "Cavalera Chaos A.D.",
+        "DevilDriver",
+        "Eluveitie",
+        "Gogol Bordello",
+        "Katatonia",
+        "Sventevith",
+        "Agriculture",
+        "Flotsam & Jetsam",
+        "Grima",
+        "John Bush celebrating the songs of Anthrax, 1993-2003",
+        "Villagers of Ioannina City",
+        "Dirty Sound Magnet",
+        "Godsleep",
+        "Gorod",
+        "Holy Fawn",
+        "Les Bâtards du Roi",
+        "Les Garçons Bouchers",
+        "Lion's Law",
+        "Spitting Glass",
+        "Suicidal Angels",
+        "VCTMS"
       ],
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
@@ -5153,7 +5175,11 @@
             "status": "in_stock"
           }
         ]
-      }
+      },
+      "auditSources": [
+        "https://www.motocultor-festival.com/",
+        "https://www.motocultor-festival.com/actualites/"
+      ]
     },
     {
       "slug": "furiosfest",
