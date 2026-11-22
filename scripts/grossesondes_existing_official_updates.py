@@ -271,6 +271,30 @@ def advertised_passes(blocks):
             if re.search(r"\b(?:epuise|sold out|complet)\b", norm):
                 continue
             found[int(category.group(1))] = price.group(1).replace(".", ",") + " €"
+    # A pass can contain *several* tiers: sold-out Early Birds followed by
+    # a current normal-price tier on sale. Never let one expired tier veto a
+    # distinct on-sale tier, and never borrow a price from another pass.
+    # Reuse the heading's own bounded first-party ticket section only.
+    for i, block in enumerate(blocks):
+        for category in PASS.finditer(fold(block["text"])):
+            days = int(category.group(1))
+            if days in found:
+                continue
+            for nearby in blocks[i:i + 14]:
+                words = fold(nearby["text"])
+                next_pass = PASS.search(words)
+                if next_pass is not None and int(next_pass.group(1)) != days:
+                    break
+                if nearby["tag"] not in ("li", "p", "h3"):
+                    continue
+                if (not re.search(r"\b(?:en vente|ouverte|ouvert|disponible)\b", words)
+                        or re.search(r"\b(?:epuise|sold out|complet)\b", words)):
+                    continue
+                exact_tier_price = PRICE.search(nearby["text"])
+                if exact_tier_price is not None:
+                    found[days] = (exact_tier_price.group(1).replace(".", ",")
+                                   + " €")
+                    break
     return found
 
 
