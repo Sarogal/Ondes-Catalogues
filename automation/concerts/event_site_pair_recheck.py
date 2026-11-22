@@ -146,8 +146,13 @@ def _read_osm_node(node_url, expected, fetch):
     except (ValueError, OSError, TimeoutError):
         # A bounded read-only query is a separate OSM data transport, not
         # an event witness or a publisher-approved domain.
-        api_url = readonly.element("node", str(number), fmt="json")
-        data, final = fetch(api_url, 120_000)
+        try:
+            api_url = readonly.element("node", str(number), fmt="json")
+            data, final = fetch(api_url, 120_000)
+        except (ValueError, OSError, TimeoutError):
+            api_url = readonly.element(
+                "node", str(number), fmt="json", provider=1)
+            data, final = fetch(api_url, 120_000)
     require(final == api_url and isinstance(data, str)
             and len(data) <= 120_000, "OSM object not independently fetched")
     object_ = json.loads(data)
