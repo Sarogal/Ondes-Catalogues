@@ -129,6 +129,51 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertLessEqual(next_day["two_day_stable"], 1)
         self.assertTrue(next_day["publication_authorized"] is False)
 
+    def test_current_festival_city_in_separate_official_edition_hero(self):
+        """Real-world first-party layout: title in brand, city after dates."""
+        row = {
+            **ROW, "slug": "la-sainte-rock-festival-2027",
+            "name": "La Sainte Rock Festival 2027",
+            "startDate": "2027-04-23", "endDate": "2027-04-24",
+            "officialSite": "https://lasainterockfestival.fr/",
+        }
+        hero = (
+            "<section><p>Wild & Civilized et le 6MIC présentent</p>"
+            "<div>4e édition · 23 &amp; 24 avril 2027 · Aix-en-Provence</div>"
+            "<h1>Ça va faire du bruit</h1></section>"
+            "<blockquote>Pour l'amour du Rock, je rêvais de créer "
+            "La Sainte Rock Festival.</blockquote>"
+        )
+        result = exact_edition_city(hero, row)
+        self.assertEqual(result, {
+            "slug": row["slug"], "city": "Aix-en-Provence",
+            "source": row["officialSite"],
+        })
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: hero), result)
+        # Only the visible official current-edition caption is sufficient.
+        # A footer-only city, another year, an unnamed event, or two towns
+        # cannot enrich the signed festival identity.
+        invalid = [
+            hero.replace("2027 · Aix", "2026 · Aix"),
+            hero.replace("2027 · Aix", "2027</div><p>à Aix"),
+            hero.replace("La Sainte Rock Festival", "autre festival"),
+            hero.replace("4e édition", "Le concert"),
+            hero.replace("Aix-en-Provence", "Aix-en-Provence · Bordeaux"),
+            hero.replace("2027 · Aix", "2027 · Bordeaux")
+                .replace("La Sainte Rock Festival",
+                         "Festival sans rapport"),
+        ]
+        for sample in invalid:
+            with self.subTest(sample=sample):
+                self.assertIsNone(exact_edition_city(sample, row))
+        # Historical footers are no longer allowed to become a 2027 pin.
+        other = (
+            "<p>La Sainte Rock Festival 2027 : dates à venir</p>"
+            "<p>La Sainte Rock Festival 2026 à Aix-en-Provence</p>"
+        )
+        self.assertIsNone(exact_edition_city(other, row))
+
     def test_current_year_city_visible_in_one_dated_official_paragraph(self):
         value = exact_edition_city(MESSAGE, ROW)
         self.assertEqual(value, {
