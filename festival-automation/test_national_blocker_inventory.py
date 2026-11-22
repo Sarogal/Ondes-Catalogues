@@ -84,6 +84,35 @@ class BlockerInventoryTests(TestCase):
             self.assertRegex(result, r"^[A-Z_]+$")
             self.assertNotIn("private", result.lower())
 
+    def test_signed_undated_year_matches_funnel_without_inventing_dates(self):
+        reports, catalogue = fixture()
+        # A real announced 2027 edition may have a signed year but no dates.
+        # Funnel already counts it as present; inventory must agree.
+        catalogue["festivals"].append({
+            "slug": "colomb-in-rock-festival-2027",
+            "name": "Colomb'in Rock Festival 2027",
+            "startDate": None, "endDate": None,
+            "status": "Dates à venir", "showOnMap": False,
+        })
+        reports["funnel"]["dossiers"][0]["status"] = (
+            "EXACT_EDITION_IN_PUBLIC_SNAPSHOT")
+        result = build_inventory(reports, catalogue, TODAY)
+        self.assertEqual(result["dossiers_already_in_public_snapshot"], 2)
+        self.assertTrue(result["dossiers"][0]["in_signed_public_catalogue"])
+        self.assertIsNone(catalogue["festivals"][-1]["startDate"])
+        # A mismatched slug year or non-announced status cannot masquerade
+        # as the published edition; keep the independent snapshot check.
+        for change in (
+            {"slug": "colomb-in-rock-festival-2026"},
+            {"status": "Recherche nécessaire"},
+            {"endDate": "2027-08-13"},
+        ):
+            with self.subTest(change=change):
+                invalid = deepcopy(catalogue)
+                invalid["festivals"][-1].update(change)
+                with self.assertRaisesRegex(ValueError, "snapshot mismatch"):
+                    build_inventory(reports, invalid, TODAY)
+
     def test_unknown_names_survive_and_published_referrals_stay_separate(self):
         reports, catalogue = fixture()
         out = build_inventory(reports, catalogue, TODAY)
