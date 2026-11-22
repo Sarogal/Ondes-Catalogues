@@ -144,6 +144,50 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         changed["auditSources"].append("https://untrusted.example/article")
         self.assertFalse(_verified_official_update_delta(a, changed))
 
+    def test_signed_baseline_and_newer_published_editions_retain_guard(self):
+        from grossesondes_cloud_sync import safe_target
+        baseline_row = festival("festival-foudre-2027", MOZHELL,
+                                lineup=["Known Band"])
+        before = doc(baseline_row)
+        previous = doc(baseline_row)
+        previous["festivals"][0]["lineup"] += ["Previously Approved"]
+        previous["festivals"][0]["bands"] = 2
+        next_calendar = deepcopy(previous)
+        next_calendar["festivals"][0]["lineup"] += ["New Official Band"]
+        next_calendar["festivals"][0]["bands"] = 3
+        next_calendar["festivals"][0]["lastVerified"] = DAY
+        next_calendar["festivals"][0]["auditSources"] += [ARTICLE]
+        from grossesondes_preview import require
+        with self.assertRaises(Exception):
+            safe_target(before, next_calendar, previous)
+        self.assertTrue(safe_target(
+            before, next_calendar, previous,
+            verified_official_updates=frozenset({"festival-foudre-2027"})))
+        # The same append-only proof is eligible for editions inserted after
+        # the legacy baseline, without granting a private patch authority.
+        empty = doc()
+        self.assertTrue(safe_target(
+            empty, next_calendar, previous,
+            verified_official_updates=frozenset({"festival-foudre-2027"})))
+        altered = deepcopy(next_calendar)
+        altered["festivals"][0]["venue"] = "Unverified venue"
+        with self.assertRaises(Exception):
+            safe_target(before, altered, previous,
+                        verified_official_updates=frozenset({"festival-foudre-2027"}))
+
+    def test_ticket_only_signed_update_without_roster_is_safe(self):
+        row = festival("festival-2027", MOZHELL)
+        del row["lineup"]
+        row["bands"] = None
+        updated = deepcopy(row)
+        updated["price"] = "Pass 3 jours : 129,90 € — billetterie officielle ouverte"
+        updated["auditSources"] += [ARTICLE]
+        updated["lastVerified"] = DAY
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        altered = deepcopy(updated)
+        altered["status"] = "Annulé"
+        self.assertFalse(_verified_official_update_delta(row, altered))
+
     def test_rotation_covers_all_sites_without_closed_roster(self):
         rows = [festival(str(i), f"https://official{i}.example.fr/")
                 for i in range(80)]
