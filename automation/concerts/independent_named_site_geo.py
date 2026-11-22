@@ -160,19 +160,23 @@ def _osm_map(site, center, fetch):
     try:
         body, final = fetch(url, 650_000)
     except (ValueError, OSError, TimeoutError):
-        # OpenStreetMap's editing API can be unavailable/robots-protected
-        # for unattended public runners. The read-only Overpass request
-        # covers the SAME tiny bbox, including referenced nodes for ways.
-        try:
-            fallback = readonly.nearby(
-                lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF)
-            body, final = fetch(fallback, 650_000)
-        except (ValueError, OSError, TimeoutError):
+        # OSM editing API may reject unattended requests. Use only these
+        # reviewed read-only transports with the SAME bounded bbox. Each
+        # fetch independently enforces DNS pinning, TLS, robots and caps.
+        # A successful but contradictory geometry never triggers failover:
+        # only failures of the transport may select another provider.
+        for provider in range(len(readonly.ENDPOINTS)):
             fallback = readonly.nearby(
                 lat-LAT_HALF, lon-LON_HALF, lat+LAT_HALF, lon+LON_HALF,
-                provider=1)
-            body, final = fetch(fallback, 650_000)
-        url = fallback
+                provider=provider)
+            try:
+                body, final = fetch(fallback, 650_000)
+                url = fallback
+                break
+            except (ValueError, OSError, TimeoutError):
+                continue
+        else:
+            raise ValueError("All reviewed OSM read-only transports unavailable")
     require(final == url and isinstance(body, str)
             and len(body) <= 650_000
             and "<!DOCTYPE" not in body.upper()
