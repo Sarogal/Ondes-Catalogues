@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-17T08:49:57+01:00",
+  "updated_at": "2026-11-22T21:40:16+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -11623,6 +11623,46 @@
       "geo_precision": "venue",
       "lat": 47.206759863397714,
       "lng": -1.5961453442574385
+    },
+    {
+      "id": "openagenda-61978360-2027-02-07",
+      "title": "Babilbeloola",
+      "category": "concert",
+      "category_label": "Concert",
+      "date_start": "2027-02-07",
+      "date_end": "2027-02-07",
+      "time": "11:00 ; 16:00",
+      "city": "Rennes",
+      "department": "Ille-et-Vilaine",
+      "region": "Bretagne",
+      "venue": "L'Étage",
+      "source_url": "https://openagenda.com/letage-rennes/events/61978360_babilbeloola-2088807",
+      "source_label": "L'Étage Rennes — Licence Ouverte 2.0 — données mises à jour le 21/08/2026",
+      "verified_at": "2026-11-22",
+      "geo_verified_at": "2026-11-22",
+      "geo_precision": "venue",
+      "lat": 48.106907,
+      "lng": -1.676867
+    },
+    {
+      "id": "openagenda-36186334-2027-04-11",
+      "title": "Le Mini-Dancing à Coquille",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2027-04-11",
+      "date_end": "2027-04-11",
+      "time": "15:00 ; 17:00",
+      "city": "Rennes",
+      "department": "Ille-et-Vilaine",
+      "region": "Bretagne",
+      "venue": "L'Étage",
+      "source_url": "https://openagenda.com/letage-rennes/events/36186334_le-mini-dancing-a-coquille",
+      "source_label": "L'Étage Rennes — Licence Ouverte 2.0 — données mises à jour le 21/08/2026",
+      "verified_at": "2026-11-22",
+      "geo_verified_at": "2026-11-22",
+      "geo_precision": "venue",
+      "lat": 48.106907,
+      "lng": -1.676867
     }
   ]
 }
