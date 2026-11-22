@@ -102,6 +102,43 @@ class NationalOAEventResearchTests(unittest.TestCase):
                 self.assertEqual(status, "editorial_candidate")
                 self.assertEqual(x["editorial_category_proposal"], category)
 
+    def test_live_conditions_allow_only_editorial_research_for_child_music(self):
+        doc = event(
+            title="Les Petites boîtes à musique",
+            desc="Comptines chantées et chansons douces.")
+        # The audience age may be published only in the official conditions.
+        doc["conditions"] = {"fr": "Pour les enfants de 0 à 6 ans"}
+        proposed, status = propose_event(doc, AGENDA, DAY)
+        self.assertEqual(status, "editorial_candidate")
+        self.assertEqual(proposed["editorial_category_proposal"],
+                         "eveil-musical")
+        self.assertFalse(proposed["publication_ready"])
+        self.assertFalse(proposed["rights_reviewed"])
+        self.assertFalse(proposed["location_verified"])
+        self.assertFalse(proposed["session_verified"])
+        # Without the first-party child wording, the same text is only
+        # unclassified research, never published on an inferred age.
+        doc.pop("conditions")
+        missing, reason = propose_event(doc, AGENDA, DAY)
+        self.assertIsNone(missing)
+        self.assertEqual(reason, "editorial_evidence_not_yet_recognised")
+
+    def test_adults_only_conditions_block_youth_music_discovery(self):
+        doc = event(title="Éveil musical pour bébés")
+        doc["conditions"] = {"fr": "Réservé aux adultes uniquement"}
+        proposed, status = propose_event(doc, AGENDA, DAY)
+        self.assertIsNone(proposed)
+        self.assertEqual(status, "explicit_adults_only")
+
+    def test_children_conditions_do_not_make_nonradio_activity_eligible(self):
+        doc = event(
+            title="Goûter au parc",
+            desc="Atelier nature avec les oiseaux et les feuilles")
+        doc["conditions"] = {"fr": "Ouvert aux enfants de 0 à 6 ans"}
+        proposed, status = propose_event(doc, AGENDA, DAY)
+        self.assertIsNone(proposed)
+        self.assertEqual(status, "editorial_evidence_not_yet_recognised")
+
     def test_work_title_uses_long_description_for_youth_performance(self):
         doc = event(title="Le Voyage des étoiles", desc="")
         doc["longDescription"] = {
