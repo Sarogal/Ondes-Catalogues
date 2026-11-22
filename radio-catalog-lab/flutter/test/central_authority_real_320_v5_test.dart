@@ -117,6 +117,24 @@ void main() {
         reason: 'Signed historical v5 may not be discarded as unsupported');
     expect(first!.source, CentralAuthoritySource.signedNetwork);
     expect(first.stations, hasLength(309));
+    final signedArtworkRows = verified.stations.where(
+      (s) => (s['status'] as Map<String, dynamic>)['state'] == 'active'
+          && s['logo'] is Map<String, dynamic>,
+    ).toList();
+    expect(signedArtworkRows.length, greaterThanOrEqualTo(80));
+    final knownUrlByOwner = <String, String>{
+      for (final record in signedArtworkRows)
+        record['go_station_id'] as String:
+            (record['logo'] as Map<String, dynamic>)['url'] as String,
+    };
+    final actualLogoRows = first.stations.where((s) =>
+        s.logoSource == 'central-signed-sha-only').toList();
+    expect(actualLogoRows, hasLength(signedArtworkRows.length));
+    for (final imageStation in actualLogoRows) {
+      final goId = verified.aliasOwners[imageStation.id] ?? imageStation.id;
+      expect(imageStation.logoUrl, knownUrlByOwner[goId]);
+      expect(imageStation.catalogLogoUrl, knownUrlByOwner[goId]);
+    }
     expect(first.stations.map((s) => s.id).toSet(), hasLength(309));
     final hard = first.stations.where((s) => s.name == 'HardRadio').single;
     expect(hard.id, oldHardUuid);
@@ -213,6 +231,13 @@ void main() {
     final imageRow = second.snapshot.stations.firstWhere((s) =>
         s['go_station_id'] == withLogo['go_station_id']);
     expect((imageRow['logo'] as Map<String, dynamic>)['sha256'], replacementSha);
+    final changedArtworkStation = second.stations.firstWhere((s) {
+      final owner = second.snapshot.aliasOwners[s.id] ?? s.id;
+      return owner == withLogo['go_station_id'];
+    });
+    expect(changedArtworkStation.logoUrl,
+        'https://cdn.example.org/new-verified-logo.png');
+    expect(changedArtworkStation.logoSource, 'central-signed-sha-only');
 
     // New signed v6 remains available with the same installed client offline.
     final offline = await selector.select(
