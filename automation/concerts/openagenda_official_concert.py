@@ -109,10 +109,7 @@ def verified_bill(html, url, when, venue):
         if discover.iso_day(row.get("startDate")) != when:
             continue
         try:
-            if dt.date.fromisoformat(when) < dt.date.today():
-                # date.today is used ONLY by direct standalone calls; the
-                # publisher supplies a future today through its own gate.
-                continue
+            dt.date.fromisoformat(when)
         except (ValueError, TypeError):
             continue
         state = str(row.get("eventStatus") or "").casefold()
