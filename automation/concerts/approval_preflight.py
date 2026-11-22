@@ -112,7 +112,8 @@ def check_append_only(previous, proposed, today):
             and proof.get("proofType") in {
                 "dynamic-existing-venue-first-party-v1",
                 "dynamic-existing-venue-osm-official-v1",
-            "dynamic-existing-venue-address-official-v1"}
+                "dynamic-existing-venue-address-official-v1",
+                "dynamic-existing-venue-official-single-source-v1"}
         ] if isinstance(approval, dict) and isinstance(
                 approval.get("officialEvidence"), list) else []
         independent_dynamic = (
@@ -120,10 +121,18 @@ def check_append_only(previous, proposed, today):
             and len(dynamic_site_proofs) == 1
             and dynamic_site_proofs[0].get("url") == event.get("officialUrl")
             and dynamic_site_proofs[0].get("checkedAt") == today.isoformat()
-            and isinstance(dynamic_site_proofs[0].get("namedOsmUrl"), str)
-            and bool(dynamic_site_proofs[0]["namedOsmUrl"])
-            # The two profiles have distinct exact evidence field sets;
-            # the production Publisher re-fetches and validates them both.
+            and ((
+                dynamic_site_proofs[0].get("proofType") ==
+                "dynamic-existing-venue-official-single-source-v1"
+                and isinstance(
+                    dynamic_site_proofs[0].get("officialVenueSourceUrl"), str)
+                and bool(dynamic_site_proofs[0]["officialVenueSourceUrl"])
+            ) or (
+                isinstance(dynamic_site_proofs[0].get("namedOsmUrl"), str)
+                and bool(dynamic_site_proofs[0]["namedOsmUrl"])
+            ))
+            # The Publisher independently verifies the declared official
+            # venue source. An OSM link is not a second event witness.
         )
         independent_existing = (
             isinstance(event, dict)
