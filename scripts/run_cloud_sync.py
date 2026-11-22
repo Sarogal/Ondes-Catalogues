@@ -55,6 +55,7 @@ def public_summary(report):
         f"- Dossiers nationaux présentés : {counts['research_dossiers']}\n"
         f"- Dossiers recontrôlés pour fusion : {counts['reviewed_for_merge']}\n"
         f"- Dossiers maintenus en vérification : {counts['held_for_independent_review']}\n"
+        f"- Séances expirées ignorées en sécurité : {counts.get('expired_dossiers_skipped', 0)}\n"
         if counts else "")
     blockers = redacted_blocker_counts(counts.get("reason_counts", {}))
     if blockers:
@@ -97,6 +98,7 @@ def main():
             "research_dossiers":bridge["dossiers"],
             "reviewed_for_merge":bridge["admitted_to_merge"],
             "held_for_independent_review":bridge["held"],
+            "expired_dossiers_skipped":bridge.get("expired_dossiers_skipped", 0),
             "reason_counts":redacted_blocker_counts(
                 bridge.get("held_reason_counts", {}))}
     else:

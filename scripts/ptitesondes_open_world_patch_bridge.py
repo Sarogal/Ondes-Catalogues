@@ -142,8 +142,31 @@ def prepare_open_world_patch(
     research = private_patch.get("open_world_research", [])
     if not isinstance(research, list) or len(research) > MAX_DOSSIERS:
         raise ValueError("invalid_or_unpartitioned_open_world_queue")
-    if any(not _safe_dossier(row, today) for row in research):
+    # A private patch remains cached for the whole day. A valid occurrence
+    # can cross midnight in Europe/Paris before the next collection refresh.
+    # A past session is no longer publishable, but it must NOT poison the
+    # entire queue and stop the Publisher for all future events.
+    # Accept only an otherwise fully valid *past* dossier as expired.
+    # Every malformed, forged, future-too-distant or partial row still fails
+    # closed; no untrusted data is silently repaired or approved.
+    active_research = []
+    expired_dossiers = 0
+    for row in research:
+        if _safe_dossier(row, today):
+            active_research.append(row)
+            continue
+        expired_day = None
+        if type(row) is dict and type(row.get("date_start")) is str:
+            try:
+                expired_day = date.fromisoformat(row["date_start"])
+            except ValueError:
+                pass
+        if (expired_day is not None and expired_day < today
+                and _safe_dossier(row, expired_day)):
+            expired_dossiers += 1
+            continue
         raise ValueError("invalid_private_open_world_dossier")
+    research = active_research
     for reader in (agenda_reader, event_reader, directory_reader,
                    official_reader, ign_reader, osm_reader, legacy_checker):
         if not callable(reader):
@@ -157,6 +180,7 @@ def prepare_open_world_patch(
     report = {
         "dossiers": len(research), "admitted_to_merge": 0,
         "held": 0, "held_reason_counts": {},
+        "expired_dossiers_skipped": expired_dossiers,
         "publication_complete": False,
     }
 

@@ -1,6 +1,6 @@
 """Connected, no-network publisher bridge. No PR-approval flags are trusted."""
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 import sys
 import unittest
@@ -109,6 +109,61 @@ class OpenWorldPublisherBridgeTests(unittest.TestCase):
             result["held_reason_counts"],
             {"openagenda_public_read_key_unavailable": 1})
         calls.assert_not_called()
+
+    def test_midnight_expired_valid_dossier_is_skipped_not_fatal(self):
+        ref = base()
+        tomorrow = DAY + timedelta(days=1)
+        expired = dossier()  # Entirely valid research request, now in the past.
+        future = dossier(date_start=(DAY + timedelta(days=2)).isoformat())
+        rows = [expired, future]
+        patched, checker, report = prepare_open_world_patch(
+            ref, ref, private_patch(ref, rows), tomorrow, KEY, **readers())
+        self.assertEqual(report["expired_dossiers_skipped"], 1)
+        self.assertEqual(report["dossiers"], 1)
+        self.assertNotIn("open_world_research", patched)
+        self.assertTrue(callable(checker))
+
+    def test_expired_dossier_requires_full_original_structural_integrity(self):
+        ref = base()
+        tomorrow = DAY + timedelta(days=1)
+        expired = dossier()
+        invalids = [
+            dict(expired, official_event_url="http://insecure.example/event"),
+            dict(expired, lead=dict(expired["lead"], publication_ready=True)),
+            dict(expired, date_start="not-a-date"),
+            dict(expired, unexpected_approval=True),
+        ]
+        for bad in invalids:
+            with self.subTest(bad=list(bad)):
+                with self.assertRaisesRegex(
+                        ValueError, "invalid_private_open_world_dossier"):
+                    prepare_open_world_patch(
+                        ref, ref, private_patch(ref, [bad]), tomorrow,
+                        KEY, **readers())
+
+    def test_only_expired_queue_is_safe_and_does_not_fetch_official_sources(self):
+        ref = base()
+        tomorrow = DAY + timedelta(days=1)
+        network = Mock(side_effect=AssertionError(
+            "expired-only queue must not use any external source"))
+        r = readers()
+        for name in ("agenda_reader", "event_reader", "directory_reader",
+                     "official_reader", "osm_reader", "ign_reader"):
+            r[name] = network
+        result, checker, report = prepare_open_world_patch(
+            ref, ref, private_patch(ref, [dossier()]),
+            tomorrow, KEY, **r)
+        self.assertEqual(report["expired_dossiers_skipped"], 1)
+        self.assertEqual(report["dossiers"], 0)
+        self.assertNotIn("open_world_research", result)
+        network.assert_not_called()
+
+    def test_future_beyond_184_days_still_fails_closed(self):
+        ref = base()
+        row = dossier(date_start=(TODAY + timedelta(days=185)).isoformat())
+        with self.assertRaisesRegex(ValueError, "invalid_private_open_world_dossier"):
+            prepare_open_world_patch(
+                ref, ref, private_patch(ref, [row]), TODAY, KEY, **readers())
 
     def test_nonmusical_child_show_and_storytelling_reach_real_publisher(self):
         # Radio-adjacent performing arts are recognized by the national
