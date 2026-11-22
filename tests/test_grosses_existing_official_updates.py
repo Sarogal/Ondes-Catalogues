@@ -531,6 +531,23 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(entry["notes"], clean_obsolete_date_notes(row["notes"]))
         self.assertTrue(_verified_official_update_delta(row, entry))
 
+    def test_cleanup_never_rewrites_unrelated_verified_notes(self):
+        from grossesondes_existing_official_updates import clean_obsolete_date_notes
+        untouched = (
+            "Billetterie officielle : Pass 4 jours à 239 € ; "
+            "Pass 1 jour à 82 € (hors frais). "
+            "| Site de Kerampuilh, Carhaix-Plouguer. "
+            "L'édition 2027 est datée et confirmée.")
+        self.assertEqual(clean_obsolete_date_notes(untouched), untouched)
+        # This is especially important for actual published archives, where
+        # semicolon spacing must never masquer a source-backed field change.
+        obsolete = (
+            "L'édition 2027 est annoncée. Date de fin inconnue. "
+            "Site officiel ; tarifs bientôt publiés.")
+        cleaned = clean_obsolete_date_notes(obsolete)
+        self.assertNotIn("Date de fin inconnue", cleaned)
+        self.assertIn("tarifs bientôt publiés", cleaned)
+
     def test_notes_cleanup_requires_same_official_range_and_no_forgery(self):
         from grossesondes_existing_official_updates import clean_obsolete_date_notes
         site = "https://www.fertoismetalfest.com/"

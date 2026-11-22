@@ -90,6 +90,7 @@ def clean_obsolete_date_notes(notes):
     if not isinstance(notes, str):
         return notes
     sections = []
+    removed_obsolete_claim = False
     for section in re.split(r"\s+\|\s+", notes):
         sentences = []
         for sentence in re.split(r"(?<=\.)\s+", section):
@@ -103,14 +104,18 @@ def clean_obsolete_date_notes(notes):
                 wrong_empty = ("startdate enddate vides" in normalized or
                                "statut dates a venir" in normalized)
                 wrong_range = ("periode continue inventee" in normalized)
-                if not (wrong_end or wrong_empty or wrong_range):
-                    if clause.strip():
-                        clauses.append(clause.strip())
+                if wrong_end or wrong_empty or wrong_range:
+                    removed_obsolete_claim = True
+                elif clause.strip():
+                    clauses.append(clause.strip())
             if clauses:
                 sentences.append("; ".join(clauses))
         if sentences:
             sections.append(" ".join(sentences))
-    return " | ".join(sections)
+    # Absolutely no editorial rewrite when nothing was obsolete.
+    # In particular preserve punctuation, whitespace and semicolon spacing
+    # in verified descriptions across successive scheduled rechecks.
+    return " | ".join(sections) if removed_obsolete_claim else notes
 
 
 class Page(HTMLParser):
