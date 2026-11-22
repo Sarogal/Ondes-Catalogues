@@ -3,7 +3,7 @@
 No publisher, tokens, network, mutation, patches, or event data leave outputs.
 """
 from copy import deepcopy
-from datetime import date
+from datetime import date, timedelta
 import json
 from pathlib import Path
 import sys
@@ -23,9 +23,21 @@ from test_ptitesondes_html_index_detail_funnel import (
     MPT_TEMPLATE, ONE, PIN,
 )
 
-DAY = date(2026, 11, 20)
 CATALOGUE = json.loads(
     (ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+# This is a synthetic source/date rehearsal, NOT a historical replay.
+# After a genuine publication the catalogue's updated_at moves forward;
+# the fixture clock and its exact fictional sessions must follow it.
+DAY = max(date(2026, 11, 20),
+          date.fromisoformat(CATALOGUE["updated_at"][:10]))
+_FRENCH_MONTHS = ("janvier", "février", "mars", "avril", "mai", "juin",
+                  "juillet", "août", "septembre", "octobre", "novembre",
+                  "décembre")
+_SESSION_DAY = DAY + timedelta(days=1)
+_SESSION_TEXT = (f"{_SESSION_DAY.day} "
+                 f"{_FRENCH_MONTHS[_SESSION_DAY.month - 1]} "
+                 f"{_SESSION_DAY.year}")
+MPT_TEMPLATE = MPT_TEMPLATE.replace("21 novembre 2026", _SESSION_TEXT)
 PUBLIC_SHA = _hash(CATALOGUE)
 LEADS = parse_montpellier_mpt_detail(MPT_TEMPLATE, ONE, DAY)
 VENUE = {
@@ -100,7 +112,7 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
                        "09:15", "43.6", "3.85", "source_url"):
             self.assertNotIn(secret, dump)
 
-    def test_static_hypothetical_structure_is_valid_against_real_549_catalogue(self):
+    def test_static_hypothetical_structure_is_valid_against_current_catalogue(self):
         before = deepcopy(CATALOGUE)
         self.assertGreaterEqual(len(CATALOGUE["events"]), 100)
         self.assertEqual(len(LEADS), 2)
@@ -284,7 +296,8 @@ class GenericNonmusicalShapeTests(unittest.TestCase):
 
     def test_future_catalogue_timestamp_is_held_even_when_hash_matches(self):
         published = deepcopy(CATALOGUE)
-        published["updated_at"] = "2026-11-21T09:00:00+01:00"
+        published["updated_at"] = ((DAY + timedelta(days=1)).isoformat()
+                                   + "T09:00:00+01:00")
         out = simulate([packet(catalogue=published)], public=published)
         self.assertEqual(out["blockers"]["historical_snapshot_unchecked"], 1)
         self.assertEqual(out["hypothetical_structural_matches_only"], 0)
