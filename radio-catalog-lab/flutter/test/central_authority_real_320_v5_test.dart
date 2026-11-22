@@ -86,7 +86,7 @@ void main() {
     authenticDraft = json;
     temporaryKey = await Ed25519().newKeyPair();
     verifier = CentralCatalogVerifier(trustedKeys: {
-      'test-full-v5-ephemeral-only': await temporaryKey.extractPublicKey(),
+      'test-full-v5-ephemeral-only': (await temporaryKey.extractPublicKey()) as SimplePublicKey,
     });
   });
 
