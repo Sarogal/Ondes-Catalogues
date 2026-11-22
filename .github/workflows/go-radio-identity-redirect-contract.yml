@@ -5,6 +5,7 @@ on:
       - feature/radio-identity-redirect-contract-20261122
     paths:
       - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+      - 'radio-catalog-lab/tools/test_radio_catalog_legacy_autoadmission.py'
       - 'radio-catalog-lab/schemas/radio_catalog_v1.schema.json'
       - 'radio-catalog-lab/tools/test_radio_catalog_signed_merge_redirects.py'
       - '.github/workflows/go-radio-identity-redirect-contract.yml'
@@ -22,5 +23,7 @@ jobs:
           python-version: '3.12'
       - name: Install schema validator for non-production tests
         run: python -m pip install 'jsonschema>=4.21,<5'
+      - name: Check inherited admission security regressions
+        run: python radio-catalog-lab/tools/test_radio_catalog_legacy_autoadmission.py
       - name: Verify signed merge redirect and history rules
         run: python -m unittest radio-catalog-lab/tools/test_radio_catalog_signed_merge_redirects.py -v
