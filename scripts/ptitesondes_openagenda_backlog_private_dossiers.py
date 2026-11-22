@@ -174,6 +174,36 @@ def live_research_dossier(identity, today, agenda, event):
             "official_event_url": exact, "official_venue_url": exact}
 
 
+def fair_backlog_identity_order(identities):
+    """Rotate between agendas and original event UIDs before bounded API reads.
+
+    The historical backlog may contain dozens of dates from the same busy
+    source; chronological slicing alone can hide other French sources.
+    Preserve every identity for later rounds, including long event series.
+    """
+    from collections import deque
+    grouped = {}
+    for slug, uid, day, title in sorted(
+            identities, key=lambda x: (x[2], x[0], x[1], x[3])):
+        grouped.setdefault(slug, {}).setdefault(uid, deque()).append(
+            (slug, uid, day, title))
+    pending_agendas = deque(sorted(grouped))
+    pending_events = {
+        slug: deque(sorted(events)) for slug, events in grouped.items()
+    }
+    result = []
+    while pending_agendas:
+        slug = pending_agendas.popleft()
+        uid = pending_events[slug].popleft()
+        queue = grouped[slug][uid]
+        result.append(queue.popleft())
+        if queue:
+            pending_events[slug].append(uid)
+        if pending_events[slug]:
+            pending_agendas.append(slug)
+    return result
+
+
 def build_backlog_dossiers(backlog, patch, published, today, key, *,
                            batch_index=0, agenda_reader=read_agenda_by_slug,
                            event_reader=read_direct_v2):
@@ -185,10 +215,10 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         raise ValueError("invalid_backlog_first_party_inputs")
     combined = attach_research_dossiers(patch, [], today)
     capacity = MAX_DOSSIERS - len(combined["open_world_research"])
-    identities = sorted(set(
+    identities = fair_backlog_identity_order(set(
         identity for row in backlog
         if (identity := backlog_identity(row, today)) is not None
-    ), key=lambda x: (x[2], x[0], x[1], x[3]))
+    ))
     # Rotate four independent time slots and successive days. No named
     # source whitelist and no permanent blacklist; all clues remain eligible.
     start = ((today.toordinal() * 4 + batch_index) * MAX_ATTEMPTS
