@@ -112,6 +112,12 @@ def main():
             file.write("changed="+str(changed).lower()+"\n")
     print("Catalogue :",report["initial"],"->",report["final"],
           " | admis :",report["ajoutes"]," | en attente :",len(report["attente"]))
+    # Safe diagnostic counters are needed even when GitHub's rich job
+    # summary cannot be read by external monitoring. The helper exposes
+    # only fixed, preapproved reason codes and counts, never a private
+    # event ID, organizer name, URL, title or venue.
+    if "open_world_counts" in report:
+        print(public_summary(report).rstrip())
     # Ne jamais exposer les IDs et motifs privés dans les journaux publics.
     summary_path=os.getenv("GITHUB_STEP_SUMMARY")
     if summary_path:
