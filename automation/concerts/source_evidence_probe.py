@@ -61,7 +61,11 @@ def public_ip_addresses(host):
         exact = str(ip)
         if exact not in ips:
             ips.append(exact)
-    return sorted(ips)
+    # Hosted CI runners often have no routable IPv6. Both families have
+    # already passed global-address validation; try IPv4 first while keeping
+    # deterministic, DNS-pinned TLS checks for every request.
+    return sorted(ips, key=lambda raw: (
+        ipaddress.ip_address(raw).version != 4, raw))
 
 
 class PinnedHTTPS(http.client.HTTPSConnection):
@@ -114,17 +118,25 @@ def safe_fetch(url, cache):
     if host is None:
         raise ValueError("Untrusted HTTPS origin")
     if host not in cache:
-        ips = public_ip_addresses(host)
-        ip = ips[0]
-        status, content = request_pinned(
-            "https://" + host + "/robots.txt", host, ip, cap=120_000)
-        if status == 404:
-            robots = None  # Absent robots.txt, not a network failure.
+        # A DNS answer may have an unreachable transport on the public
+        # GitHub runner. Fail closed unless ONE already-audited public IP
+        # passes TLS/SNI and the same pinned-origin robots policy.
+        for ip in public_ip_addresses(host):
+            try:
+                status, content = request_pinned(
+                    "https://" + host + "/robots.txt", host, ip, cap=120_000)
+            except (OSError, TimeoutError, ssl.SSLError):
+                continue
+            if status == 404:
+                robots = None  # Absent robots.txt, not a network failure.
+            else:
+                robots = RobotFileParser()
+                robots.set_url("https://" + host + "/robots.txt")
+                robots.parse(content.splitlines())
+            cache[host] = (ip, robots)
+            break
         else:
-            robots = RobotFileParser()
-            robots.set_url("https://" + host + "/robots.txt")
-            robots.parse(content.splitlines())
-        cache[host] = (ip, robots)
+            raise ValueError("All independently verified public IP transports unavailable")
     ip, robots = cache[host]
     if robots is not None and not robots.can_fetch(AGENT, url):
         raise ValueError("robots.txt forbids the candidate page")
