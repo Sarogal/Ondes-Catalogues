@@ -5856,19 +5856,26 @@
       "region": null,
       "city": null,
       "lat": null,
-      "lastVerified": "2026-11-18",
+      "lastVerified": "2026-11-22",
       "slug": "mozhell-open-air-2027",
       "status": "Annoncé",
       "department": null,
       "source": "https://www.mozhell.fr/fr/",
       "lon": null,
-      "price": null,
-      "lineup": [],
+      "price": "Pass 3 jours : 129,90 € — billetterie officielle ouverte",
+      "lineup": [
+        "Ultra Vomit",
+        "THE ARRS",
+        "LocoMuerte"
+      ],
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "bands": 0,
+      "bands": 3,
       "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
       "venue": null,
-      "startDate": "2027-07-23"
+      "startDate": "2027-07-23",
+      "auditSources": [
+        "https://www.mozhell.fr/fr/3-groupes-annonces-et-billetterie-ouverte"
+      ]
     },
     {
       "bands": 0,
