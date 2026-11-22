@@ -242,7 +242,7 @@ def category_for(title, description):
     name = norm(title)
     body = norm(title + " " + description)
     if "conte musical" in name or re.search(
-            r"\\bcontes? music(?:al(?:e|es)?|aux)\\b", name):
+            r"\bcontes? music(?:al(?:e|es)?|aux)\b", name):
         return "conte-musical", "Conte musical"
     if "eveil musical" in name:
         return "eveil-musical", "Éveil musical"
@@ -264,17 +264,17 @@ def category_for(title, description):
         # Children's musical storytelling may be titled "contes musicaux"
         # or "lectures en musique", without the legacy singular spelling.
         if re.search(
-                r"\\b(?:contes? music(?:al(?:e|es)?|aux)|"
+                r"\b(?:contes? music(?:al(?:e|es)?|aux)|"
                 r"lectures? (?:en musique|musicales?)|"
-                r"histoires? en musique)\\b", body):
+                r"histoires? en musique)\b", body):
             return "conte-musical", "Conte musical"
         # Singing/performing nursery rhymes is radio-adjacent musical
         # discovery. Mentions of a nursery-rhyme BOOK alone are insufficient:
         # a live singing/music/performance cue must also be present.
-        if (re.search(r"\\b(?:comptines?|chansons? enfantines?)\\b", body)
+        if (re.search(r"\b(?:comptines?|chansons? enfantines?)\b", body)
                 and re.search(
-                    r"\\b(?:chanter|chantons|chante(?:r|nt|z)?|chants?|"
-                    r"concerts?|spectacles?|musique|musical(?:e|es)?)\\b",
+                    r"\b(?:chanter|chantons|chante(?:r|nt|z)?|chants?|"
+                    r"concerts?|spectacles?|musique|musical(?:e|es)?)\b",
                     body)):
             return "eveil-musical", "Éveil musical"
         for label, category, caption in (
