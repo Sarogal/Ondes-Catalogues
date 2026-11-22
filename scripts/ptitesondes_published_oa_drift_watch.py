@@ -219,9 +219,6 @@ def main():
     key = environ.get("OPENAGENDA_READ_KEY", "")
     if not key:
         raise RuntimeError("read_only_openagenda_key_missing")
-    def fetch(uid, secret, slug):
-        return read_direct_v2(
-            next(int(e.get("agenda_uid")) for e in []), uid, secret)
     # UID-only published source URLs do not record the numeric agenda UID.
     # We therefore need to resolve the agenda slug via the first-party
     # OpenAgenda public index before invoking the authenticated events API.
