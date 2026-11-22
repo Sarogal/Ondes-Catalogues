@@ -12,7 +12,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
 from test_ptitesondes_candidate_promotion import base
-from test_ptitesondes_open_world_release_rehearsal import TODAY, DAY, AGENDA, oa_event
+from test_ptitesondes_open_world_release_rehearsal import TODAY, DAY, AGENDA, TITLE, oa_event
 from test_ptitesondes_open_world_patch_bridge import private_patch, readers
 from ptitesondes_openagenda_backlog_private_dossiers import (
     backlog_identity, live_research_dossier, read_agenda_by_slug,
@@ -27,7 +27,7 @@ def clue(uid=999401, day=DAY.isoformat(), source="opendatasoft-index"):
         "source_url":
             "https://openagenda.com/agenda-nouveau-organisateur/events/"
             + str(uid) + "_conte-musical",
-        "title": "Conte musical", "date_start": day,
+        "title": TITLE, "date_start": day,
         "city": "Nouvelleville", "venue": "Nouveau théâtre",
         "reason": "Piste non vérifiée",
     }
