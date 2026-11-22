@@ -123,7 +123,7 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         import json
         import re
         source = fixture.page(URL)
-        match = re.search(r"<script type='application/ld\\+json'>(.*?)</script>", source)
+        match = re.search(r"<script type='application/ld\+json'>(.*?)</script>", source)
         self.assertIsNotNone(match)
         event = json.loads(match.group(1))
         event["@type"] = "Event"
