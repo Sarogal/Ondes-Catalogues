@@ -250,11 +250,23 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ github.run_number }}",
                       workflow)
         self.assertIn("official_update_tick=rotation_tick", publisher)
-        self.assertIn("official_update_limit=12", publisher)
+        self.assertIn("official_update_limit=24", publisher)
         # Github run_number changes between repeated same-day attempts;
         # no untrusted private URL or editorial field chooses scan slots.
         self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ inputs.",
                          workflow)
+
+    def test_twenty_four_hosts_cover_signed_festival_rotation_in_three_runs(self):
+        # A realistic nationwide pool of 53 independent first-party sites
+        # must be completely visited in <= 3 successful cloud passes.
+        rows = [festival(str(i), f"https://signed{i}.example.fr/")
+                for i in range(53)]
+        signed = doc(*rows)
+        seen = [url for tick in range(3)
+                for url, _ in signed_rotation(signed, DAY, limit=24, tick=tick)]
+        self.assertEqual(len(seen), 53)
+        self.assertEqual(len(set(seen)), 53)
+        self.assertLessEqual(len(signed_rotation(signed, DAY, limit=24, tick=0)), 24)
 
     def test_rotation_covers_all_sites_without_closed_roster(self):
         rows = [festival(str(i), f"https://official{i}.example.fr/")
