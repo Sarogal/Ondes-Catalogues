@@ -970,4 +970,33 @@ void main() {
     expect(third.goRedirects['go-station-000002'], 'go-station-000003');
   });
 
+  test('signed V64 inherited admission has no fabricated human review date',
+      () async {
+    final inherited = station(1);
+    inherited['editorial'] = {
+      'admission_state': 'legacy_preserved',
+      'reviewed_at': null,
+      'evidence_refs': [
+        'v64-bootstrap:fc1a465acfe7cb02ee9578cf5b83a27eba9e0723:legacy-1',
+      ],
+    };
+    final accepted = await validatePayload(jsonBytes(catalog([inherited])));
+    expect(accepted.activeIds, contains('go-station-000001'));
+    expect(accepted.aliasOwners['legacy-1'], 'go-station-000001');
+  });
+
+  test('legacy claim without signed exact historical alias is refused',
+      () async {
+    final inherited = station(1);
+    inherited['editorial'] = {
+      'admission_state': 'legacy_preserved',
+      'reviewed_at': null,
+      'evidence_refs': [
+        'v64-bootstrap:fc1a465acfe7cb02ee9578cf5b83a27eba9e0723:forged-uuid',
+      ],
+    };
+    await expectLater(validatePayload(jsonBytes(catalog([inherited]))),
+        throwsA(isA<CentralCatalogException>()));
+  });
+
 }
