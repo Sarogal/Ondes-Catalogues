@@ -68,7 +68,11 @@ class CentralAuthoritativeCatalogSelector {
     required CentralRadioCatalogClient client,
     required Iterable<String> favoriteIds,
     bool allowNetwork = false,
+    int minimumSignedSequence = 1,
   }) async {
+    if (minimumSignedSequence < 1) {
+      throw const CentralCatalogException('Invalid minimum release sequence');
+    }
     final favorites = List<String>.unmodifiable(favoriteIds);
     List<ValidatedCentralCatalog> history;
     try {
@@ -100,6 +104,13 @@ class CentralAuthoritativeCatalogSelector {
     var priorRejected = false;
     for (final candidate in candidates) {
       try {
+        // The TEST v4 predecessor contains only a few synthetic entries.
+        // A new authoritative installation requires the first fully qualified
+        // 320-radio signed generation, never that historical probe snapshot.
+        if (candidate.pointer.sequence < minimumSignedSequence) {
+          priorRejected = true;
+          continue;
+        }
         // The projection is built exclusively from the signed candidate.
         // Do not pass the old V64 list to the legacy-model compatibility
         // adapter. New, updated and retired stations follow the server.
