@@ -184,6 +184,16 @@ def validate_body(raw:bytes,previous:dict|None=None)->dict:
             raise ArtworkBundleError("Unverified laut.fm station-image relation")
     if [r["legacy_media_id"] for r in arr]!=sorted(seen):
         raise ArtworkBundleError("Assignments must be sorted by historical UUID")
+    if previous is not None:
+        # Signed TEST sidecars are append-only for now: the previous verified
+        # UUID/image/source record must survive byte-for-byte as JSON values.
+        # A future explicit reviewed replacement would need a new protocol
+        # and a separately tested legacy-cache fallback.
+        now={r["legacy_media_id"]:r for r in arr}
+        for old in previous["assets"]:
+            if now.get(old["legacy_media_id"])!=old:
+                raise ArtworkBundleError(
+                    "Artwork update removed or modified a prior signed UUID")
     return d
 
 
