@@ -57,6 +57,30 @@ def key(s):
     return fold(s).replace(" ", "")
 
 
+def verified_artist_alias_cleanup(lineup, official_names):
+    """Collapse a billed soloist and its explicit performance description.
+
+    The long name must also appear in the freshly read official roster. This
+    cannot silently combine unrelated acts merely sharing a first word.
+    """
+    if not isinstance(lineup, list):
+        return lineup
+    confirmed = {key(x) for x in official_names if isinstance(x, str)}
+    kept = list(lineup)
+    for short in lineup:
+        if not isinstance(short, str):
+            continue
+        prefix = fold(short) + " celebrating the songs of "
+        if len(fold(short)) < 6:
+            continue
+        if any(isinstance(long, str) and long != short
+               and fold(long).startswith(prefix) and key(long) in confirmed
+               for long in lineup):
+            if short in kept:
+                kept.remove(short)
+    return kept
+
+
 def clean_obsolete_date_notes(notes):
     """Retire seulement les assertions de dates manquantes devenues fausses.
 
@@ -592,6 +616,17 @@ def apply_independently_verified_updates(
         main_only.blocks = [b for b in root.blocks if b["scope"] == "main"]
         if main_only.blocks:
             pages.append((site, main_only))
+        # The current-edition H1 logo can be outside <main>, while old news
+        # teasers are <article> inside it. The article-first selection then
+        # hides the official 2027 heading and the live ticket categories.
+        # Recompose visible non-article blocks of the SAME signed homepage.
+        current_home = Page()
+        current_home.blocks = [
+            dict(b, scope="main") for b in root.blocks
+            if b["scope"] != "article"
+        ]
+        if current_home.blocks:
+            pages.append((site, current_home))
         for link in linked_pages(site, root):
             try:
                 linked_html = fetch(link)
@@ -609,7 +644,9 @@ def apply_independently_verified_updates(
                         "slug": slug, "official_site": site,
                         "reason": "different_from_current_signed_edition"})
                 continue
-            root_ok = home_matches_edition(root, old, today)
+            root_ok = (home_matches_edition(root, old, today)
+                       or matches_edition(current_home, old, today,
+                                          root_ok=False))
             claims, prices, sources = [], {}, []
             for url, doc in pages:
                 if not matches_edition(doc, old, today, root_ok=root_ok):
@@ -622,16 +659,27 @@ def apply_independently_verified_updates(
                     sources.append(url)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
-            new_names, seen = [], {key(n) for n in current_lineup if isinstance(n, str)}
+            cleaned_lineup = verified_artist_alias_cleanup(current_lineup, claims)
+            new_names, seen = [], {
+                key(n) for n in current_lineup if isinstance(n, str)
+            }
             for n in claims:
-                if key(n) not in seen:
+                # A long artist billing is the same solo act only for an
+                # explicit "celebrating the songs of" performance qualifier.
+                equivalent = (key(n) in seen or
+                              any(fold(n).startswith(fold(old_name) +
+                                      " celebrating the songs of ")
+                                  for old_name in current_lineup
+                                  if isinstance(old_name, str)))
+                if not equivalent:
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if (new_names and isinstance(old.get("lineup"), list)
+            if ((new_names or cleaned_lineup != current_lineup)
+                    and isinstance(old.get("lineup"), list)
                     and type(old.get("bands")) is int and
                     old["bands"] == len(old["lineup"])):
-                new["lineup"] = list(old["lineup"]) + new_names
+                new["lineup"] = cleaned_lineup + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
             if prices:

@@ -307,6 +307,60 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["accepted"], [row["slug"]])
         self.assertTrue(_verified_official_update_delta(row, updated))
 
+    def test_motocultor_real_layout_header_outside_main_news_inside_main(self):
+        # Real signed homepage composition: the 2027 logo is in a header,
+        # ticket cards in main, and archival 2026 articles inside main.
+        # Exactly one John Bush act, despite two historical billings.
+        long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"
+        home = (
+            "<header><h1><img alt='Motocultor Festival 2027' "
+            "src='/current.webp'></h1>"
+            "<p>Du jeudi 19 au dimanche 22 août 2027</p></header>"
+            "<main><section><h2>Ils seront à Carhaix</h2><ul>"
+            "<li>Helloween</li><li>John Bush "
+            "celebrating the songs of Anthrax, 1993-2003</li></ul></section>"
+            "<section><h2>Billetterie</h2><ul><li><h3>Pass 4 jours</h3>"
+            "<p>Les quatre jours du festival</p><ol>"
+            "<li>Tarif normal 239 € En vente</li></ol></li>"
+            "<li><h3>Pass 1 jour</h3><ol>"
+            "<li>Journée au choix 82 € En vente</li></ol></li></ul></section>"
+            "<article><h3>Souvenirs 2026</h3>"
+            "<p>Ancienne édition 2026 en images</p></article></main>"
+        )
+        row = festival("motocultor-festival", MOTO,
+                       dates=("2027-08-19", "2027-08-22"),
+                       lineup=["Helloween", "John Bush", long_billing],
+                       price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"
+        signed = doc(row)
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch=lambda _: home)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["lineup"], ["Helloween", long_billing])
+        self.assertEqual(updated["bands"], 2)
+        self.assertIn("239 €", updated["price"])
+        self.assertIn("82 €", updated["price"])
+        self.assertEqual(report["accepted"], ["motocultor-festival"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        tampered = deepcopy(updated)
+        tampered["lineup"] = ["Helloween"]
+        tampered["bands"] = 1
+        self.assertFalse(_verified_official_update_delta(row, tampered))
+
+    def test_artist_alias_cannot_collapse_without_current_official_roster(self):
+        from grossesondes_existing_official_updates import verified_artist_alias_cleanup
+        long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"
+        old = ["Helloween", "John Bush", long_billing]
+        self.assertEqual(verified_artist_alias_cleanup(old, []), old)
+        self.assertEqual(
+            verified_artist_alias_cleanup(old, [long_billing]),
+            ["Helloween", long_billing])
+        self.assertEqual(
+            verified_artist_alias_cleanup(
+                ["Foo", "Foo Fighters"], ["Foo Fighters"]),
+            ["Foo", "Foo Fighters"])
+
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
