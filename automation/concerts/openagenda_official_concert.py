@@ -94,7 +94,7 @@ def _described_official_genres(record):
     for match in contract.MUSIC.finditer(visible):
         genre = match.group(0)
         if genre == "hardcore" and re.match(
-                r"\\s+(?:techno|electro|electronic)\\b",
+                r"\s+(?:techno|electro|electronic)\b",
                 visible[match.end():]):
             continue
         if (genre not in labels and contract.relevant_genres([genre])):
