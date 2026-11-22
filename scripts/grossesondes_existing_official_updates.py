@@ -213,7 +213,7 @@ def listed_artists(blocks):
         if k not in unique:
             unique.add(k)
             result.append(name)
-    return result[:60]
+    return result
 
 
 def advertised_passes(blocks):
@@ -367,8 +367,7 @@ def apply_independently_verified_updates(
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if (new_names and len(new_names) <= 45 and
-                    type(old.get("bands")) is int and
+            if (new_names and type(old.get("bands")) is int and
                     old["bands"] == len(old["lineup"])):
                 new["lineup"] = list(old["lineup"]) + new_names
                 new["bands"] = len(new["lineup"])

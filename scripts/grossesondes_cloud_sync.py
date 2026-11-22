@@ -257,7 +257,7 @@ def _verified_official_update_delta(old, new):
     if "lineup" in changed:
         if (not isinstance(old_names, list) or not isinstance(new_names, list)
                 or new_names[:len(old_names)] != old_names
-                or not 1 <= len(new_names)-len(old_names) <= 45
+                or len(new_names) <= len(old_names)
                 or type(old.get("bands")) is not int
                 or old["bands"] != len(old_names)
                 or new.get("bands") != len(new_names)):
