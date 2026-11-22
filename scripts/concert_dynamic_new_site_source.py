@@ -254,7 +254,8 @@ def verify(event_approval, site_approval, published_venues, published_artists,
         "venue": venue.get("name"), "city": venue.get("city"),
     }
     _raw, names, _unnamed, genres, site = sites._official_event(
-        lead, html, url, today)
+        lead, html, url, today,
+        first_party_fetch=lambda api_url: fetch(api_url, cache))
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"]
             and event.get("genres") == genres
@@ -271,10 +272,13 @@ def verify(event_approval, site_approval, published_venues, published_artists,
             "first-party new event location differs from approved location")
 
     def secure_geo(url_, cap):
-        require(isinstance(cap, int) and 0 < cap <= 400_000,
+        # Same bounded BAN+OSM map request as the independent producer.
+        # The secure fetcher never downloads over probe.MAX_BYTES (400k).
+        require(type(cap) is int and 0 < cap <= 650_000,
                 "geography budget invalid")
         body = fetch(url_, cache)
-        require(isinstance(body, str) and len(body) <= cap,
+        require(isinstance(body, str) and 0 < len(body) <= min(
+                    cap, probe.MAX_BYTES),
                 "geography response unavailable or oversized")
         return body, url_
 
@@ -417,7 +421,8 @@ def verify_self(event_approval, site_approval, published_venues,
             "leadArtist": proof["officialArtistNames"][0],
             "venue": venue["name"], "city": venue["city"]}
     _raw, names, _unnamed, genres, loc = sites._official_event(
-        lead, html, event["officialUrl"], today)
+        lead, html, event["officialUrl"], today,
+        first_party_fetch=lambda api_url: fetch(api_url, cache))
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
             "independent full lineup or relevant genre changed")

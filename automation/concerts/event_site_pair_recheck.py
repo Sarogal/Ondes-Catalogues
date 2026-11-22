@@ -250,7 +250,7 @@ def _official_title_anchor(official_title, lead):
             (" " + artist + " ") in (" " + official + " "))
 
 
-def _official_event(lead, html, url, today):
+def _official_event(lead, html, url, today, *, first_party_fetch=None):
     require(isinstance(html, str) and len(html) <= 1_000_000,
             "official page too large")
     # A page may contain a specific concert PLUS unrelated recommendation
@@ -269,6 +269,20 @@ def _official_event(lead, html, url, today):
         # a broken or contradictory structured claim must remain held.
         import event_site_microdata
         nodes = event_site_microdata.read_microdata_events(html)
+    # The Events Calendar may serve the event's complete named bill via
+    # same-origin REST when schema.org HTML has no performer. Never replace
+    # an existing nonempty structured bill or conflicting date/place/title.
+    if (first_party_fetch is not None and len(nodes) <= 1 and
+            (not nodes or nodes[0].get("performer") in (None, "", []))):
+        import first_party_tec_event as tec
+        from_api = tec.read(
+            html, url, first_party_fetch, normalize=_name,
+            artists_from_description=_visible_artist_genres_from_this_event)
+        if from_api is not None:
+            require(not nodes or tec.compatible(
+                nodes[0], from_api, _name, discover.iso_day),
+                "official structured Event contradicts same-origin agenda")
+            nodes = [from_api]
     require(bool(nodes),
             "one unambiguous individual official Event/MusicEvent required")
     if len(nodes) == 1:
@@ -456,8 +470,12 @@ def verify(lead, catalogue, today, *, fetch, source_file=SOURCE_FILE):
     url = lead["eventDetailUrl"]
     html, final = fetch(url, 1_000_000)
     require(final == url, "official event URL redirected")
+    def official_api(api_url):
+        content, reached = fetch(api_url, 350_000)
+        require(reached == api_url, "first-party event API redirected")
+        return content
     raw, names, unnamed, genres, location = _official_event(
-        lead, html, url, today)
+        lead, html, url, today, first_party_fetch=official_api)
     recovered_address_point = None
     if not location["region"]:
         recovered_address_point, location["region"] = (
