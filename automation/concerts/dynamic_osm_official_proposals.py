@@ -111,8 +111,8 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
             held("not_pending_review")
             continue
         if (type(entry.get("stableObservations")) is not int
-                or entry["stableObservations"] < 2):
-            held("insufficient_stability")
+                or entry["stableObservations"] < 1):
+            held("invalid_observation_stability")
             continue
         if (c.get("publicationAllowed") is not False
                 or c.get("reviewRequired") is not True):
@@ -143,7 +143,17 @@ def eligible(registry, catalogue, today, *, diagnostics=None):
         try:
             venue = _site(catalogue, c)
         except (TypeError, ValueError, KeyError):
-            held("no_unique_published_osm_venue")
+            held("no_unique_published_venue")
+            continue
+        # ONE live read of a legitimate official venue agenda or of the OA
+        # platform is enough to propose a show. Independent publisher replay
+        # supplies the second *verification*, not a second *source* or a
+        # mandatory second calendar day. Unknown unowned domains retain the
+        # original two-day stability barrier.
+        if (entry["stableObservations"] < 2
+                and not openagenda.is_openagenda_event_url(url)
+                and official_source.official_origin(venue, url) is None):
+            held("insufficient_stability")
             continue
         if (url, date.isoformat()) in published:
             held("already_published")
