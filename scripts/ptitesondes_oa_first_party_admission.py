@@ -17,7 +17,7 @@ from ptitesondes_openagenda_v2_direct_evidence import (
     _sessions, _calendar_review, _norm, CHILD, EXCLUSIVELY_ADULT, FR_TZ,
     ADDITIONAL_TERRITORY_ZONES,
 )
-from ptitesondes_open_world_release_rehearsal import _sessions_for_day
+from ptitesondes_open_world_release_rehearsal import _sessions_for_day, NOT_PUBLIC_ACCESS
 from ptitesondes_shared_venue_location_evidence import _coordinates
 
 
@@ -74,7 +74,9 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     selected = _sessions_for_day(lead, day)
     if not selected:
         return fail("oa_direct_no_exact_session")
-    actual = [x for x in event.get("timings", []) if (
+    if not isinstance(event.get("timings"), list):
+        return fail("oa_direct_invalid_timings")
+    actual = [x for x in event["timings"] if (
         isinstance(x, dict) and isinstance(x.get("begin"), str)
         and x["begin"][:10] == day_text)]
     if (len(actual) != len(selected)
@@ -97,8 +99,8 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
         return fail("oa_direct_invalid_age")
     description = _french_text(event, "description") + " " + _french_text(event, "longDescription")
     audience = _norm(title + " " + description)
-    if EXCLUSIVELY_ADULT.search(audience):
-        return fail("oa_direct_adults_only")
+    if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
+        return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
     if not CHILD.search(audience) and not child_age:
         return fail("oa_direct_child_audience_missing")
