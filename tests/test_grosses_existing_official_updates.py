@@ -125,6 +125,30 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["official_edition_diagnostics"][0]["reason"],
                          "no_changed_fields_from_official_evidence")
 
+    def test_cloud_scan_rotation_ignores_pr_only_run_numbers(self):
+        # 48 signed official hosts must be covered by the two daily
+        # publisher scans regardless of any intervening CI-only PR runs.
+        from datetime import date
+        yml = (Path(__file__).resolve().parents[1] /
+               ".github/workflows/grossesondes-cloud-sync.yml"
+               ).read_text(encoding="utf-8")
+        self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN:", yml)
+        self.assertIn("cron: '47 10 * * *'", yml)
+        self.assertIn("cron: '45 17 * * *'", yml)
+        hosts = [festival(f"festival-{i:02d}",
+                          f"https://festival-{i:02d}.fr/")
+                 for i in range(48)]
+        published = doc(*hosts)
+        morning = date.fromisoformat(DAY).toordinal() * 2
+        first = {url for url, _ in signed_rotation(
+            published, DAY, limit=24, tick=morning)}
+        second = {url for url, _ in signed_rotation(
+            published, DAY, limit=24, tick=morning + 1)}
+        self.assertEqual(len(first), 24)
+        self.assertEqual(len(second), 24)
+        self.assertFalse(first & second)
+        self.assertEqual(len(first | second), 48)
+
     def test_motocultor_real_format_from_official_article(self):
         row = festival("motocultor", MOTO,
                        dates=("2027-08-19", "2027-08-22"),
