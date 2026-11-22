@@ -239,8 +239,8 @@ def matches_edition(doc, row, today, *, root_ok):
 
 
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
-    if not isinstance(published, dict) or published.get("schema") != 1 or
-       type(limit) is not int or not 0 <= limit <= 30:
+    if (not isinstance(published, dict) or published.get("schema") != 1 or
+            type(limit) is not int or not 0 <= limit <= 30):
         raise ValueError("Invalid signed source rotation")
     grouped = {}
     for row in published["festivals"]:
@@ -308,8 +308,9 @@ def apply_independently_verified_updates(
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if new_names and len(new_names) <= 45 and type(old.get("bands")) is int and
-               old["bands"] == len(old["lineup"]):
+            if (new_names and len(new_names) <= 45 and
+                    type(old.get("bands")) is int and
+                    old["bands"] == len(old["lineup"])):
                 new["lineup"] = list(old["lineup"]) + new_names
                 new["bands"] = len(new["lineup"])
                 fields.extend(("lineup", "bands"))
