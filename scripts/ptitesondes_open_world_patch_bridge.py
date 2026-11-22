@@ -31,6 +31,7 @@ from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
 from ptitesondes_open_world_release_rehearsal import (
     rehearse_open_world_municipal_event,
 )
+from ptitesondes_oa_first_party_admission import admit_live_openagenda
 from ptitesondes_openagenda_v2_direct_evidence import (
     read_direct_agenda_v2, read_direct_v2, _valid_public_read_key,
 )
@@ -186,6 +187,17 @@ def prepare_open_world_patch(
             # coordinates. No GPS may be copied from a private dossier.
             api_event = event_reader(
                 lead["agenda_uid"], lead["event_uid"], public_key)
+            # Some API read adapters expose an envelope {"event": record}
+            # rather than the record directly. Only the OpenAgenda-first
+            # lane may normalize it, and only with an exact integer UID match.
+            # Do not let a wrapper override a conflicting top-level identity.
+            if (urlsplit(event_url).hostname == "openagenda.com"
+                    and isinstance(api_event, dict)
+                    and type(api_event.get("uid")) is not int
+                    and type(api_event.get("event")) is dict
+                    and type(api_event["event"].get("uid")) is int
+                    and api_event["event"]["uid"] == lead["event_uid"]):
+                api_event = api_event["event"]
             loc = api_event.get("location") if isinstance(api_event, dict) else None
             source_point = (
                 (loc.get("latitude"), loc.get("longitude"))
@@ -195,6 +207,36 @@ def prepare_open_world_patch(
                     held("live_oa_gps_invalid_or_partial")
                     continue
                 source_point = None
+            # OpenAgenda is sufficient first-party evidence for its own
+            # published, licensed factual record. Never trust a caller's
+            # claimed URL: only the UID-bound live API may create a card.
+            if urlsplit(event_url).hostname == "openagenda.com":
+                # A caller cannot substitute another OA event's URL for the
+                # UID-bound live API record. A short UID URL is permitted only
+                # for our private source-first queue; full URLs must carry
+                # the same UID and live slug.
+                canonical_prefix = ("https://openagenda.com/" +
+                                    lead["agenda_slug"] + "/events/" +
+                                    str(lead["event_uid"]))
+                canonical_full = canonical_prefix + "_" + str(
+                    api_event.get("slug", ""))
+                if event_url not in (canonical_prefix, canonical_full):
+                    held("oa_direct_url_uid_or_slug_mismatch")
+                    continue
+                agenda = agenda_reader(lead["agenda_uid"], public_key)
+                direct, reason = admit_live_openagenda(
+                    lead, dossier["date_start"], agenda, api_event,
+                    reference, published, today)
+                if direct is None:
+                    held(reason)
+                    continue
+                if direct["id"] in checked or direct["id"] in reserved_ids:
+                    held("duplicate_private_open_world_id")
+                    continue
+                checked[direct["id"]] = direct
+                output["additions"].append(direct)
+                report["admitted_to_merge"] += 1
+                continue
             group = {"city": city, "venue": venue,
                      "key": [norm(city), norm(venue)],
                      "uids": [str(lead["event_uid"])]}

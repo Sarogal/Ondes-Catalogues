@@ -16,6 +16,7 @@ from test_ptitesondes_open_world_patch_bridge import private_patch
 from ptitesondes_national_backlog_bridge import _inventory_key
 from ptitesondes_open_world_private_dossier_intake import (
     collect_research_dossiers, attach_research_dossiers,
+    review_batch_for_cron,
 )
 from ptitesondes_private_research_carry_forward import (
     carry_same_day_research,
@@ -67,10 +68,95 @@ class NationalPrivateDossierTests(unittest.TestCase):
         path = self.day / (data["ref"] + ".json")
         path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf8")
 
-    def load(self, **kwargs):
-        return collect_research_dossiers(
+    def load(self, *, include_direct=False, **kwargs):
+        rows, metrics = collect_research_dossiers(
             self.observation, self.research, TODAY,
             inventory_reader=lambda _: [self.record], **kwargs)
+        if include_direct:
+            return rows, metrics
+        # Legacy municipal-research assertions remain scoped to that lane.
+        # OA-only dossiers have dedicated coverage below.
+        rows = [row for row in rows if not row["official_event_url"].startswith(
+            "https://openagenda.com/")]
+        metrics = dict(metrics, queued=len(rows), candidate_dossiers=(
+            metrics["candidate_dossiers"] - len(self.direct_dossiers())))
+        return rows, metrics
+
+    def direct_dossiers(self):
+        rows, _ = collect_research_dossiers(
+            self.observation, self.research, TODAY,
+            inventory_reader=lambda _: [self.record])
+        return [row for row in rows if row["official_event_url"].startswith(
+            "https://openagenda.com/")]
+
+    def test_no_legacy_review_slots_cover_all_four_scheduled_batches(self):
+        for cron, hour, batch in (
+            ("17 07 * * *", 7, 0),
+            ("17 10 * * *", 10, 1),
+            ("17 14 * * *", 14, 2),
+            ("17 18 * * *", 18, 3),
+        ):
+            with self.subTest(cron=cron):
+                self.assertEqual(review_batch_for_cron(cron, hour), batch)
+        # Unknown/manual triggers are still deterministic UTC four-way runs.
+        self.assertEqual(review_batch_for_cron("", 2), 0)
+        self.assertEqual(review_batch_for_cron("", 23), 3)
+        for invalid in (-1, 24, "7", True):
+            with self.assertRaises(ValueError):
+                review_batch_for_cron("", invalid)
+
+    def test_no_legacy_slot_first_cycle_transmits_small_oa_only_queue(self):
+        batch = review_batch_for_cron("17 07 * * *", 7)
+        rows, metrics = self.load(include_direct=True, batch_index=batch)
+        self.assertEqual(metrics["reports"], 0)
+        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["official_event_url"].startswith(
+            "https://openagenda.com/"))
+        # Future slots must not repeat the same dossier.
+        for cron, hour in (("17 10 * * *", 10),
+                           ("17 14 * * *", 14),
+                           ("17 18 * * *", 18)):
+            next_rows, _ = self.load(include_direct=True, batch_index=(
+                review_batch_for_cron(cron, hour)))
+            self.assertEqual(next_rows, [])
+
+    def test_private_workflow_uses_cron_aware_batch_selector(self):
+        source = (ROOT / ".github/workflows/"
+                  "ptitesondes-private-intake-on-public-runners.yml").read_text(
+                      encoding="utf-8")
+        self.assertIn('review_batch_for_cron(os.getenv("REVIEW_CRON", "")', source)
+        self.assertIn('batch-index "$NO_SLOT_BATCH"', source)
+        self.assertIn(
+            'if [[ -d "$STATE/national-observation/index/reports" ]]; then',
+            source)
+        self.assertIn(
+            'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/index/reports" ]]; then',
+            source)
+        self.assertNotIn(
+            'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
+            source)
+
+    def test_direct_openagenda_can_stage_without_research_root(self):
+        missing = self.parent / "never-collected-external-web-clues"
+        self.assertFalse(missing.exists())
+        rows, counts = collect_research_dossiers(
+            self.observation, missing, TODAY,
+            inventory_reader=lambda _: [self.record])
+        self.assertEqual(counts["reports"], 0)
+        self.assertEqual(counts["queued"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertTrue(rows[0]["official_event_url"].startswith(
+            "https://openagenda.com/"))
+
+    def test_openagenda_uid_queues_without_municipal_or_external_link(self):
+        rows, metrics = self.load(include_direct=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(rows[0]["official_event_url"],
+                         "https://openagenda.com/agenda-nouveau-organisateur/events/999401")
+        self.assertEqual(rows[0]["official_event_url"], rows[0]["official_venue_url"])
+        self.assertFalse(rows[0]["lead"]["publication_ready"])
 
     def test_research_queue_survives_an_entire_new_collector_run(self):
         ref = {"updated_at": "unchanged", "events": []}
@@ -136,10 +222,10 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertIn('if [[ -s "$STATE/patch-$DAY.json" ]]; then', workflow)
         self.assertIn("ne pas écraser la file", workflow)
         # The per-report collector already enforces the rolling 14-day
-        # freshness cap. A missed current-day report must not disable
-        # recent, independently rechecked research.
+        # freshness cap. No outside research folder is needed to queue
+        # UID-first OpenAgenda leads from the private indexed inventory.
         self.assertIn(
-            'if [[ -d "$STATE/national-observation/research/reports" ]]; then',
+            'if [[ -d "$STATE/national-observation/index/reports" ]]; then',
             workflow)
         self.assertNotIn(
             'if [[ -d "$STATE/national-observation/research/reports/$DAY" ]]; then',
@@ -148,13 +234,13 @@ class NationalPrivateDossierTests(unittest.TestCase):
     def test_municipally_discovered_unknown_domain_creates_research_not_addition(self):
         self.write(report())
         rows, stats = self.load()
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(stats["candidate_dossiers"], 1)
-        self.assertEqual(stats["queued"], 1)
-        self.assertEqual(rows[0]["official_event_url"], SOURCE)
-        self.assertEqual(rows[0]["official_venue_url"], MUNICIPAL)
-        self.assertEqual(
-            rows[0]["municipal_source_reference_url"], MUNICIPAL)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(stats["candidate_dossiers"], 2)
+        self.assertEqual(stats["queued"], 2)
+        self.assertTrue(all(row["official_event_url"] == SOURCE for row in rows))
+        municipal = next(row for row in rows
+                         if row["official_venue_url"] == MUNICIPAL)
+        self.assertEqual(municipal["municipal_source_reference_url"], MUNICIPAL)
         self.assertFalse(rows[0]["lead"]["publication_ready"])
         ref = {"updated_at": "unused", "events": []}
         patch = private_patch(ref, queue=[])
@@ -169,6 +255,18 @@ class NationalPrivateDossierTests(unittest.TestCase):
         refreshed = attach_research_dossiers(out, [], TODAY)
         self.assertEqual(refreshed["open_world_research"], rows)
         self.assertFalse(refreshed["safe_to_publish"])
+
+    def test_canonical_source_remains_eligible_even_with_municipal_backlink(self):
+        # A second source is optional; the Publisher must receive the OA
+        # canonical URL as its own independent research candidate.
+        self.write(report(source=SOURCE, linked=EXTERNAL, municipal=MUNICIPAL))
+        rows, counts = self.load()
+        self.assertEqual(counts["candidate_dossiers"], 2)
+        self.assertEqual({row["official_venue_url"] for row in rows},
+                         {SOURCE, MUNICIPAL})
+        self.assertTrue(all(row["official_event_url"] == SOURCE for row in rows))
+        self.assertTrue(all(row["lead"]["publication_ready"] is False
+                            for row in rows))
 
     def test_unpaired_canonical_url_is_research_only_not_autoapproval(self):
         # Any unknown publisher-supplied source is untrusted. It can be
@@ -263,7 +361,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
         (old / (data["ref"] + ".json")).write_text(
             json.dumps(data), encoding="utf8")
         rows, counts = self.load()
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(rows), 2)
         self.assertEqual(counts["reports"], 1)
         self.assertEqual(rows[0]["official_event_url"], SOURCE)
 
@@ -282,9 +380,9 @@ class NationalPrivateDossierTests(unittest.TestCase):
         rows, counts = self.load()
         self.assertEqual(counts["reports"], 2)
         self.assertEqual(counts["pairs"], 1)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]["official_venue_url"], MUNICIPAL)
-        self.assertEqual(rows[0]["municipal_source_reference_url"], MUNICIPAL)
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(any(row["official_venue_url"] == MUNICIPAL for row in rows))
+        self.assertEqual(next(row for row in rows if row["official_venue_url"] == MUNICIPAL)["municipal_source_reference_url"], MUNICIPAL)
 
     def test_old_research_does_not_become_permanent_authority(self):
         old = report()
@@ -310,7 +408,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
             "publisher_connected": True, "approved": True}
         self.write(value)
         rows, _ = self.load()
-        self.assertEqual(len(rows), 1)
+        self.assertEqual(len(rows), 2)
         self.assertNotIn("diagnostic", rows[0])
         self.assertNotIn("approved", str(rows[0]))
 
@@ -331,7 +429,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(report())
         first, _ = self.load(batch_index=0)
         second, _ = self.load(batch_index=1)
-        self.assertEqual(len(first), 1)
+        self.assertEqual(len(first), 2)
         self.assertEqual(second, [])
         fourth, _ = self.load(batch_index=3)
         self.assertEqual(fourth, [])
@@ -356,7 +454,9 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(report(
             source=EVENT_PAGE, linked=EVENT_PAGE, municipal=VENUE_PAGE))
         requests, metrics = self.load()
-        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(metrics["queued"], 2)
+        requests = [row for row in requests if row["official_venue_url"] != EVENT_PAGE]
+        self.assertEqual(len(requests), 1)
         self.assertNotIn("municipal_source_reference_url", requests[0])
         staged = attach_research_dossiers(
             private_patch(ref, queue=[]), requests, TODAY)
@@ -384,8 +484,11 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.write(first)
         a = self.load()[0]
         slot1 = attach_research_dossiers(patch, a, TODAY)
-        self.assertEqual(len(slot1["open_world_research"]), 1)
-        # The same clue and an empty following batch must preserve this row.
+        # Both distinct venue-research requests must survive one review slot;
+        # the new OpenAgenda-first lane must not collapse the existing paths.
+        self.assertEqual(len(a), 2)
+        self.assertEqual(slot1["open_world_research"], a)
+        # The same clues and an empty following batch must preserve both rows.
         slot2 = attach_research_dossiers(slot1, a, TODAY)
         slot3 = attach_research_dossiers(slot2, [], TODAY)
         self.assertEqual(slot2["open_world_research"], a)

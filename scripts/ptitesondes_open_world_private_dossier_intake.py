@@ -69,6 +69,25 @@ def _day_sessions(lead, today):
     return sorted(set(future))
 
 
+# Translate each scheduled outings cycle to one of the four disjoint batches.
+# A UTC-hour bucket incorrectly started at batch 1 on the first 07:17 run,
+# silently dropping the first 30 leads on days without legacy review slots.
+# Unknown/manual triggers retain the original four-bucket fallback.
+_OUTINGS_CRON_BATCH = {
+    "17 07 * * *": 0,
+    "17 10 * * *": 1,
+    "17 14 * * *": 2,
+    "17 18 * * *": 3,
+}
+
+
+def review_batch_for_cron(cron, utc_hour):
+    """Pick the no-legacy-slot dossier partition without losing batch zero."""
+    if type(cron) is not str or type(utc_hour) is not int or not 0 <= utc_hour <= 23:
+        raise ValueError("invalid_private_dossier_review_batch")
+    return _OUTINGS_CRON_BATCH.get(cron, utc_hour // 6)
+
+
 def collect_research_dossiers(observation_root, research_root, today,
                               *, batch_index=0, inventory_reader=_inventory,
                               report_reader=_read):
@@ -114,11 +133,26 @@ def collect_research_dossiers(observation_root, research_root, today,
     for entry in inventory_reader(Path(observation_root)):
         ref = _inventory_key(entry)
         reviews = by_ref.get(ref, [])
-        if not reviews:
-            continue
         lead = _future_original(entry, today)
         if lead is None or not _safe_research_lead(lead, today):
             continue
+        # The immutable OA UID and agenda slug already originate from the
+        # private observation inventory. Always queue a first-party API
+        # recheck, even if no crawler found an external event website.
+        # The Publisher alone validates live status, rights, dates and GPS.
+        oa_first_party = (
+            "https://openagenda.com/" + lead["agenda_slug"] +
+            "/events/" + str(lead["event_uid"]))
+        for day in _day_sessions(lead, today):
+            key = (str(lead["event_uid"]), day,
+                   oa_first_party, oa_first_party)
+            if key not in seen:
+                seen.add(key)
+                proposals.append({
+                    "lead": lead, "date_start": day,
+                    "official_event_url": oa_first_party,
+                    "official_venue_url": oa_first_party,
+                })
         # Untrusted OA URLs do not attest authorship. Prefer a specific
         # canonicalUrl but also investigate other exact HTTPS OA links.
         oa_urls = []
@@ -146,8 +180,6 @@ def collect_research_dossiers(observation_root, research_root, today,
                 if municipal and target and _host(municipal) and _host(target):
                     pairs.append((_host(target), municipal))
         pair_count += len(set(pairs))
-        if not oa_urls:
-            continue
         for priority, host, official_event_url in sorted(set(oa_urls)):
             matching = sorted(set(
                 municipal_url for related_host, municipal_url in pairs
@@ -159,8 +191,13 @@ def collect_research_dossiers(observation_root, research_root, today,
             # a research REQUEST only: DILA, venue GPS and exact sessions
             # are verified later by the Publisher. Never allow the fallback
             # to mint authority for an arbitrary OA-supplied website.
-            if priority == 0 and not matching:
-                matching = [official_event_url]
+            # OpenAgenda is an independently readable event source. A
+            # municipal backlink is optional research context, never a
+            # prerequisite for submitting the event to the Publisher.
+            # This does NOT approve the event: the Publisher must re-read
+            # the live UID, timings, rights, location and deduplicate.
+            if priority == 0 and official_event_url not in matching:
+                matching.append(official_event_url)
             # The OA venue's declared website is a candidate for research
             # even when there is no external link from a municipality.
             # This does NOT make OA's self-declared link authoritative:
