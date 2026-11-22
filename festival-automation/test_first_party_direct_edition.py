@@ -273,13 +273,22 @@ class FirstPartyDirectTests(TestCase):
                 '"startDate":"2027-09-20","endDate":"2027-09-21"}'
                 "</script></main>"),
             homepage.replace("festival 100% rock", "festival 100% rock annulé"),
-            homepage.replace("13 et 14 août 2027", "20 et 21 août 2027"),
             homepage.replace("festival 100% rock", "festival de gastronomie"),
         ]
         for invalid_home in invalid:
             with self.subTest(fragment=invalid_home[-120:]):
                 self.assertIsNone(verify_first_party_claims(
                     site, title, DAY2, fetch=lambda _: invalid_home))
+        # If the festival truly changes its official date, the re-reader
+        # may recognize the NEW date, but the signed private 13–14 August
+        # candidate can no longer pass the Publisher's exact-date comparison.
+        changed = homepage.replace(
+            "13 et 14 août 2027", "20 et 21 août 2027")
+        self.assertEqual(verify_first_party_claims(
+            site, title, DAY2, fetch=lambda _: changed)[0],
+            ("2027-08-20", "2027-08-21"))
+        self.assertIsNone(independently_verify(
+            private, DAY2, fetch=lambda _: changed))
 
     def test_private_gate_diagnostics_never_grant_authority(self):
         """Reproduce a stable lead whose live root loses its genre claim."""
