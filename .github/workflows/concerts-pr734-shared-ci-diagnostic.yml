@@ -251,3 +251,8 @@ jobs:
                   tail=run.stderr.strip().splitlines()[-1]
                   print('po_baseline',name,tail,flush=True)
           PY
+
+      - name: Run all standalone Grosses Ondes Concerts regressions on PR743
+        working-directory: osm-france-check
+        run: |
+          PYTHONPATH=automation/concerts:tests:. python -m unittest discover -s tests -p 'test_concerts_*.py' -v
