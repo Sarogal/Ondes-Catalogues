@@ -139,7 +139,6 @@ class MunicipalBootstrapTests(unittest.TestCase):
             {"event": event(uid=original_uid + 1)},
             {"uid": original_uid + 1, "event": event()},
             {"event": event(uid=str(original_uid))},
-            {"event": {"uid": original_uid}},
             {"event": "not-an-event"},
         ]
         for response in conflicting:
@@ -152,6 +151,13 @@ class MunicipalBootstrapTests(unittest.TestCase):
                 self.assertFalse(out["publication_ready"])
                 self.assertEqual(out["public_writes"], 0)
                 directory_reader.assert_not_called()
+
+        # A matching UID alone never substitutes for publish status,
+        # location or other live fields.
+        incomplete = run(oa_event={"event": {"uid": original_uid}})
+        self.assertEqual(incomplete["status"],
+                         "live_oa_event_unpublished_or_cancelled")
+        self.assertFalse(incomplete["publication_ready"])
 
     def test_uncharted_city_is_allowed_but_dila_unavailable_is_not_a_denial(self):
         reading = Mock(side_effect=AssertionError("never fetch unknown city"))
