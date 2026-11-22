@@ -53,12 +53,13 @@ def backlog_identity(row, today):
     try:
         day = date.fromisoformat(row["date_start"])
         url = urlsplit(row["source_url"])
+        port = url.port
     except ValueError:
         return None
     if not today <= day <= today + timedelta(days=184):
         return None
     if (url.scheme != "https" or url.hostname != "openagenda.com"
-            or url.username or url.password or url.port not in (None, 443)
+            or url.username or url.password or port not in (None, 443)
             or url.query or url.fragment):
         return None
     match = SOURCE_PATH.fullmatch(url.path)
