@@ -19,7 +19,7 @@ import source_admission_intake as intake
 SOURCES = Path(__file__).with_name("sources.json")
 
 
-def official_origin(venue, event_url, sources_path=SOURCES):
+def official_origin(venue, event_url, sources_path=None):
     """Return exact registered official venue agenda URL, or None.
 
     Matching is identity-based rather than an allowlist of artists/events:
@@ -32,7 +32,7 @@ def official_origin(venue, event_url, sources_path=SOURCES):
     if not host:
         return None
     try:
-        sources = json.loads(Path(sources_path).read_text(encoding="utf-8"))
+        sources = json.loads(Path(sources_path or SOURCES).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None
     if (not isinstance(sources, dict) or
