@@ -134,6 +134,56 @@ class UndatedOfficialDateTests(unittest.TestCase):
         self.assertEqual(calls, [SITE])
         self.assertEqual(after["festivals"][0], old)
         self.assertEqual(report["accepted"], [])
+    def test_fertois_real_official_weekdays_promote_full_2027_weekend(self):
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        official = (
+            "<html><head><title>Accueil | Fertois Metal Fest</title></head>"
+            "<body><main><h2>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027"
+            "</h2><p>Chemin des deux rivières, La Ferté-sous-Jouarre</p>"
+            "<p>Billetterie bientôt ouverte</p></main></body></html>"
+        )
+        row = signed(old)
+        result, report = apply_independently_verified_updates(
+            row, row, DAY, limit=1, tick=0, fetch=lambda url: official)
+        new = result["festivals"][0]
+        self.assertEqual((new["startDate"], new["endDate"]),
+                         ("2027-08-27", "2027-08-29"))
+        self.assertEqual(new["days"], "3")
+        self.assertEqual(report["accepted"], [old["slug"]])
+        self.assertEqual(new["auditSources"], [old["officialSite"]])
+        self.assertTrue(_verified_official_update_delta(old, new))
+
+    def test_official_weekdays_must_match_calendar_and_organizer_title(self):
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        good = ("<html><head><title>Fertois Metal Fest</title></head>"
+                "<body><h2>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOUT 2027"
+                "</h2></body></html>")
+        bad_pages = (
+            good.replace("VENDREDI 27", "JEUDI 27"),
+            good.replace("Fertois Metal Fest</title>", "Other Festival</title>"),
+            good.replace("29 AOUT 2027", "29 AOUT 2026"),
+            good.replace("SAMEDI 28 ", ""),
+            good.replace("DIMANCHE 29", "DIMANCHE 30"),
+            good.replace("27 SAMEDI 28", "27 SAMEDI 28") +
+            "<p>VENDREDI 20 SAMEDI 21 DIMANCHE 22 AOUT 2027</p>",
+        )
+        for html in bad_pages:
+            with self.subTest(html=html[:90]):
+                target = signed(old)
+                actual, report = apply_independently_verified_updates(
+                    target, target, DAY, limit=1, tick=0,
+                    fetch=lambda url: html)
+                self.assertEqual(actual["festivals"][0], old)
+                self.assertEqual(report["accepted"], [])
+
     def test_future_rotation_rejects_previous_year_or_unpinned_identity(self):
         old = festival()
         old["name"], old["slug"] = "Sylak Open Air 2025", "sylak-open-air-2025"
