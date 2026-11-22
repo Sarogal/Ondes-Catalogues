@@ -269,6 +269,20 @@ def matches_edition(doc, row, today, *, root_ok):
                 start.month == end.month and days in visible)
 
 
+def home_matches_edition(doc, row, today):
+    """Festival home may have 2026 news <article> before 2027 <main>.
+
+    A news teaser must not hide the signed current edition's own homepage
+    section. A cross-edition article itself is still independently checked.
+    """
+    if matches_edition(doc, row, today, root_ok=False):
+        return True
+    main_only = Page()
+    main_only.blocks = [b for b in doc.blocks if b["scope"] == "main"]
+    return bool(main_only.blocks and
+                matches_edition(main_only, row, today, root_ok=False))
+
+
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
             type(limit) is not int or not 0 <= limit <= 30):
@@ -317,6 +331,13 @@ def apply_independently_verified_updates(
             report["unavailable"] += 1
             continue
         pages = [(site, root)]
+        # On a current-edition homepage, old news cards may be nested in
+        # <article> while the live ticket categories are in <main>. Inspect
+        # both as separate first-party content scopes, not one mixed roster.
+        main_only = Page()
+        main_only.blocks = [b for b in root.blocks if b["scope"] == "main"]
+        if main_only.blocks:
+            pages.append((site, main_only))
         for link in linked_pages(site, root):
             try:
                 pages.append((link, page(fetch(link))))
@@ -329,7 +350,7 @@ def apply_independently_verified_updates(
             if (any(old.get(f) != new.get(f) for f in set(old) | set(new)) or
                     not isinstance(old.get("lineup"), list)):
                 continue
-            root_ok = matches_edition(root, old, today, root_ok=False)
+            root_ok = home_matches_edition(root, old, today)
             claims, prices, sources = [], {}, []
             for url, doc in pages:
                 if not matches_edition(doc, old, today, root_ok=root_ok):
