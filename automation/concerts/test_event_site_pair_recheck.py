@@ -202,6 +202,38 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             reviewer._official_event(wrong, body, EVENT, DAY)
 
+    def test_official_descriptive_title_reconciles_to_same_dated_bill(self):
+        # The discovered title can be editorial, while the canonical
+        # first-party Event names the same group(s) in a different format.
+        lead, raw, cat, osm = fixture()
+        lead["name"] = "7WEEKS et NEW METAL SUPPORT au concert metal de Paris"
+        read = fake_fetch(raw, osm, [])
+        approval, site = reviewer.verify(lead, cat, DAY, fetch=read)
+        self.assertEqual(approval["event"]["title"],
+                         "7WEEKS + NEW METAL SUPPORT")
+        self.assertEqual(approval["event"]["date"], DATE)
+        self.assertEqual(approval["newArtists"],
+                         [{"id": "new-metal-support", "name": "NEW METAL SUPPORT"}])
+        self.assertEqual(site["venue"]["name"], "Esplanade des Tests")
+
+        unrelated = dict(raw, name="COMPLETELY DIFFERENT EVENT")
+        with self.assertRaisesRegex(ValueError, "official concert title changed"):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(unrelated, osm, []))
+        festival = dict(raw, name="7WEEKS FESTIVAL")
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(festival, osm, []))
+        wrong_date = dict(raw, startDate="2027-05-18T20:00:00+02:00")
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(wrong_date, osm, []))
+        wrong_bill = dict(raw, performer=[
+            {"@type": "MusicGroup", "name": "OTHER ACT"}])
+        with self.assertRaises(ValueError):
+            reviewer.verify(lead, cat, DAY,
+                            fetch=fake_fetch(wrong_bill, osm, []))
+
     def test_many_unknown_bands_not_capped(self):
         names = ("7WEEKS",) + tuple(f"NEW BAND {i:02d}" for i in range(9))
         lead, raw, cat, osm = fixture(names=names)
