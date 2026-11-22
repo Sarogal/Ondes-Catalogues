@@ -14,15 +14,19 @@ import test_concerts_dynamic_existing_venue as fixture
 
 
 class SecondaryReadOnlyOSMTests(unittest.TestCase):
-    def test_only_two_static_providers_and_numeric_identifiers(self):
+    def test_only_three_static_providers_and_numeric_identifiers(self):
         first = readonly.element("node", "380889428")
         second = readonly.element("node", "380889428", provider=1)
+        third = readonly.element("node", "380889428", provider=2)
         self.assertTrue(first.startswith(
             "https://overpass.private.coffee/api/interpreter?"))
         self.assertTrue(second.startswith(
             "https://overpass-api.de/api/interpreter?"))
+        self.assertTrue(third.startswith(
+            "https://overpass.openstreetmap.fr/api/interpreter?"))
         self.assertEqual(first.split("?", 1)[1], second.split("?", 1)[1])
-        for provider in (-1, 2, True, "https://evil.invalid"):
+        self.assertEqual(first.split("?", 1)[1], third.split("?", 1)[1])
+        for provider in (-1, 3, True, "https://evil.invalid"):
             with self.subTest(provider=provider):
                 with self.assertRaises(ValueError):
                     readonly.element("node", "380889428", provider=provider)

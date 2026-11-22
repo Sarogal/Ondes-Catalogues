@@ -17,12 +17,16 @@ from urllib.parse import urlencode
 
 ENDPOINT = "https://overpass.private.coffee/api/interpreter"
 ALTERNATE_ENDPOINT = "https://overpass-api.de/api/interpreter"
-ENDPOINTS = (ENDPOINT, ALTERNATE_ENDPOINT)
+# Public read-only instance run by OpenStreetMap France. The fixed third
+# provider is a transport fallback, NEVER an OSM authority whitelist.
+FRANCE_ENDPOINT = "https://overpass.openstreetmap.fr/api/interpreter"
+ENDPOINTS = (ENDPOINT, ALTERNATE_ENDPOINT, FRANCE_ENDPOINT)
 
 
 def _endpoint(provider):
-    # Source code selects either read-only transport, never an input lead.
-    if type(provider) is not int or provider not in (0, 1):
+    # Only these reviewed public read-only transports may be selected.
+    # Neither a discovered event nor user-supplied input can set a host.
+    if type(provider) is not int or provider not in (0, 1, 2):
         raise ValueError("Unsafe OSM read-only provider")
     return ENDPOINTS[provider]
 MAX_TIMEOUT = 12
