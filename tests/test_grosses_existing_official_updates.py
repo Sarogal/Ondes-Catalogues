@@ -393,6 +393,54 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
             "<p>Tarif normal 239 € Épuisé</p></li></main>")
         self.assertEqual(advertised_passes(page(sold_out).relevant()), {})
 
+    def test_official_4j_normal_price_after_sold_out_early_bird(self):
+        # Reproduces the current 21-Nov first-party announcement: "Pass 4J"
+        # is the shorthand for pass 4 jours. The *Early Bird* tiers were
+        # sold out; the currently available normal pass costs 239 €.
+        news = (
+            "<main><article>"
+            "<h1>Les Pass 4J Early Birds sont SOLD OUT !</h1>"
+            "<p>Motocultor Festival 2027, 19 au 22 août à Carhaix.</p>"
+            "<h2>Le Pass 4J passe au tarif normal</h2>"
+            "<p>Après l'épuisement des trois paliers d'Early Birds, "
+            "le Pass 4J est désormais disponible au tarif normal "
+            "de 239 € (hors frais de location).</p>"
+            "<p>Les Pass 1J sont également disponibles à la vente "
+            "depuis une semaine.</p></article></main>"
+        )
+        found = advertised_passes(page(news).relevant())
+        self.assertEqual(found, {4: "239 €"})
+        self.assertEqual(
+            advertised_passes(page(
+                "<article><h2>Les Pass 4J Early Birds sont SOLD OUT !</h2>"
+                "<p>Ancien palier 228 € épuisé.</p></article>"
+            ).relevant()), {})
+
+        home = (
+            MOTO_HOME.replace("</main>",
+                "<section><h3>Pass 1 jour</h3>"
+                "<p>Journée au choix 82 € en vente</p></section>"
+                "<a href='/actualites/early-birds-epuises/'>"
+                "Pass 4J tarif normal annoncé</a></main>")
+        )
+        ticket_url = "https://www.motocultor-festival.com/actualites/early-birds-epuises/"
+        row = festival("motocultor-festival", MOTO,
+                       dates=("2027-08-19", "2027-08-22"),
+                       lineup=["Helloween"],
+                       price="Pass 4 jours : 228 € (Early Bird 3)")
+        row["name"] = "Motocultor Festival"
+        pages = {MOTO: home, ticket_url: news, MOTO_NEWS: MOTO_ARTICLE}
+        updated, report = apply_independently_verified_updates(
+            doc(row), doc(row), DAY, limit=1, tick=0,
+            fetch=lambda url: pages[url])
+        self.assertEqual(report["accepted"], [row["slug"]])
+        item = updated["festivals"][0]
+        self.assertIn("239 €", item["price"])
+        self.assertIn("82 €", item["price"])
+        self.assertNotIn("228 €", item["price"])
+        self.assertIn(ticket_url, item["auditSources"])
+        self.assertTrue(_verified_official_update_delta(row, item))
+
     def test_artist_alias_cannot_collapse_without_current_official_roster(self):
         from grossesondes_existing_official_updates import verified_artist_alias_cleanup
         long_billing = "John Bush celebrating the songs of Anthrax, 1993-2003"

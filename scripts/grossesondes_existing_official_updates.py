@@ -44,7 +44,16 @@ GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affi
 ANNOUNCE = re.compile(r"\b(?:nouveaux?|annonces?|programmation|affiche|ils seront|trois groupes)\b")
 SENSITIVE = re.compile(r"\b(?:annule|annulee|reportee|cancelled|postponed)\b")
 PRICE = re.compile(r"(\d{2,4}(?:[,.]\d{2})?)\s*€")
-PASS = re.compile(r"\bpass\s*([1-7])\s*jours?\b")
+PASS = re.compile(r"\bpass\s*([1-7])\s*(?:jours?|j)\b")
+# A trusted festival page can announce a new normal-price tier at the exact
+# moment its EARLY BIRD tier sells out. The sentence must affirm the CURRENT
+# pass is available and bind the category and price locally.
+NORMAL_PRICE_AVAILABLE = re.compile(
+    r"\bpass\s*([1-7])\s*(?:jours?|j)\s+"
+    r"est\s+(?:d[eé]sormais\s+)?disponible\s+au\s+"
+    r"tarif\s+(?:normal|public)\s+de\s+"
+    r"(\d{2,4}(?:[,.]\d{2})?)\s*€", re.I)
+
 
 
 def fold(s):
@@ -335,6 +344,16 @@ def advertised_passes(blocks):
                 found[next(iter(categories))] = (
                     match.group(1).replace(".", ",") + " €")
                 break
+
+    # Full official announcements are also first-party price evidence:
+    # "Pass 4J est désormais disponible au tarif normal de 239 €"
+    # remains true even if ANOTHER tier (Early Bird) is labelled SOLD OUT.
+    for block in blocks:
+        if not isinstance(block.get("text"), str):
+            continue
+        for current in NORMAL_PRICE_AVAILABLE.finditer(block["text"]):
+            found[int(current.group(1))] = (
+                current.group(2).replace(".", ",") + " €")
 
     text = [b["text"] for b in blocks]
     for i, block in enumerate(text):
