@@ -190,6 +190,49 @@ class NationalPrivateDossierTests(unittest.TestCase):
                 self.assertFalse(queued["safe_to_publish"])
                 self.assertEqual(queued["additions"], [])
 
+    def test_unpaired_exact_venue_website_is_an_untrusted_research_request(self):
+        item = report()
+        item["review"]["private_unverified_oa_web_leads"][0][
+            "source_field"] = "location.website"
+        item["review"]["private_research_reviews"] = []
+        self.write(item)
+        rows, metrics = self.load()
+        self.assertEqual(metrics["queued"], 1)
+        self.assertEqual(rows[0]["official_event_url"], SOURCE)
+        self.assertEqual(rows[0]["official_venue_url"], SOURCE)
+        self.assertNotIn("municipal_source_reference_url", rows[0])
+        self.assertFalse(rows[0]["lead"]["publication_ready"])
+        ref = {"updated_at": "unchanged", "events": []}
+        private = attach_research_dossiers(
+            private_patch(ref, queue=[]), rows, TODAY)
+        self.assertEqual(private["additions"], [])
+        self.assertFalse(private["safe_to_publish"])
+
+    def test_unrelated_registration_link_without_backlink_never_promoted(self):
+        item = report()
+        item["review"]["private_unverified_oa_web_leads"][0][
+            "source_field"] = "registration"
+        item["review"]["private_research_reviews"] = []
+        self.write(item)
+        self.assertEqual(self.load()[0], [])
+
+    def test_private_runner_prepares_national_dossiers_without_legacy_slots(self):
+        workflow = (ROOT / ".github" / "workflows" /
+                    "ptitesondes-private-intake-on-public-runners.yml"
+                    ).read_text(encoding="utf-8")
+        guard = 'if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d'
+        self.assertIn(guard, workflow)
+        fallback = workflow[workflow.index(guard):]
+        self.assertIn("ptitesondes_open_world_private_dossier_intake.py",
+                      fallback)
+        self.assertIn("patch-no-review-slots-$DAY.json", fallback)
+        self.assertIn("push_private 'data(ptitesondes): transmettre",
+                      fallback)
+        self.assertLess(workflow.index(guard),
+                        workflow.index("# Dashboard redacted"))
+        self.assertIn('if [[ "$RUN_MODE" == "write" ]]; then',
+                      fallback)
+
     def test_unsafe_or_noncanonical_url_never_enters_direct_lane(self):
         for source in (
             "http://nouvelle-salle.example/spectacle",

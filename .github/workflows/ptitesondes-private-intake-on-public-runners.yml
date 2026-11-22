@@ -552,6 +552,32 @@ jobs:
               push_private 'data(ptitesondes): conserver les diagnostics anonymisés des preuves'
             fi
           done
+          # National dossiers are NOT dependent on the legacy 4 review slots.
+          # A later collection may have no outstanding historical verification
+          # slot, yet it may have just discovered new official source leads.
+          # Always promote those PRIVATE hints to the cloud Publisher queue.
+          # Each one will be fully independently re-verified there; no local
+          # report can mint authority or a public change.
+          if [[ ${#REVIEW_SLOTS[@]} -eq 0 && -d "$STATE/national-observation/research/reports" ]]; then
+            # Partition the bounded queue across repeated no-slot cycles.
+            # Hour comes from the runner clock, not from the candidate source.
+            NO_SLOT_BATCH="$(python -c 'from datetime import datetime,timezone; print(datetime.now(timezone.utc).hour//6)')"
+            if python public/scripts/ptitesondes_open_world_private_dossier_intake.py \
+                --observation-root "$STATE/national-observation" \
+                --research-root "$STATE/national-observation/research" \
+                --patch-file "$STATE/patch-$DAY.json" \
+                --output-file "$OUT/patch-no-review-slots-$DAY.json" \
+                --day "$DAY" --batch-index "$NO_SLOT_BATCH" \
+                > "$LOG/openworld-dossiers-no-slot.log" 2>&1; then
+              cp "$OUT/patch-no-review-slots-$DAY.json" "$STATE/patch-$DAY.json"
+              if [[ "$RUN_MODE" == "write" ]]; then
+                git -C state add -- "automation-intake/ptitesondes/patch-$DAY.json"
+                push_private 'data(ptitesondes): transmettre la recherche nationale sans créneau historique'
+              fi
+            else
+              echo "::warning::La qualification nationale sans créneau a échoué ; aucune preuve ni approbation inventée."
+            fi
+          fi
           # Dashboard redacted, stored in PRIVATE state only. Its failure never
           # prevents intake collection, qualification, or recovery.
           if [[ "$RUN_MODE" == "write" ]]; then

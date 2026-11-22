@@ -161,6 +161,23 @@ def collect_research_dossiers(observation_root, research_root, today,
             # to mint authority for an arbitrary OA-supplied website.
             if priority == 0 and not matching:
                 matching = [official_event_url]
+            # The OA venue's declared website is a candidate for research
+            # even when there is no external link from a municipality.
+            # This does NOT make OA's self-declared link authoritative:
+            # the Publisher must find a separately named OSM/DILA venue,
+            # exact live sessions, legal factual reuse and no duplication.
+            if priority == 1 and not matching:
+                # Only the location.website field can act as an unpaired
+                # venue-site clue; registrations/marketing links cannot.
+                independent_venue_home = any(
+                    source.get("url") == official_event_url
+                    and source.get("source_field") == "location.website"
+                    for review in reviews
+                    for source in review.get("private_unverified_oa_web_leads", [])
+                    if isinstance(source, dict)
+                )
+                if independent_venue_home:
+                    matching = [official_event_url]
             for municipal_url in matching:
                 municipal_host = _host(municipal_url)
                 dossier = {
