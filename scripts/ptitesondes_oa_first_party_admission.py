@@ -15,7 +15,7 @@ from ptitesondes_openagenda_national_event_research import _french_text
 from ptitesondes_openagenda_reuse_rights import review_event_rights
 from ptitesondes_openagenda_v2_direct_evidence import (
     _sessions, _calendar_review, _norm, CHILD, EXCLUSIVELY_ADULT, FR_TZ,
-    ADDITIONAL_TERRITORY_ZONES,
+    ADDITIONAL_TERRITORY_ZONES, OVERSEAS_ADMIN,
 )
 from ptitesondes_open_world_release_rehearsal import _sessions_for_day, NOT_PUBLIC_ACCESS
 from ptitesondes_shared_venue_location_evidence import _coordinates
@@ -54,7 +54,8 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     if not isinstance(loc, dict):
         return fail("oa_direct_location_missing")
     country = loc.get("countryCode")
-    if country != "FR" and country not in ADDITIONAL_TERRITORY_ZONES:
+    if (country != "FR" and country not in ADDITIONAL_TERRITORY_ZONES
+            and country not in OVERSEAS_ADMIN):
         return fail("oa_direct_outside_france")
     if (country in ADDITIONAL_TERRITORY_ZONES
             and event["timezone"] not in ADDITIONAL_TERRITORY_ZONES[country]):
