@@ -18,8 +18,12 @@ from urllib.error import HTTPError
 from time import sleep
 from zoneinfo import ZoneInfo
 
-from dns_pinned_https import fetch_public_html
 from urllib.parse import urlsplit
+import sys
+_AUTOMATION_DIR = str(Path(__file__).resolve().parents[1] / "festival-automation")
+if _AUTOMATION_DIR not in sys.path:
+    sys.path.insert(0, _AUTOMATION_DIR)
+from dns_pinned_https import fetch_public_html
 
 from grossesondes_preview import (
     ROOT, CAL_URL, HIS_URL, load_patch, require, index
@@ -455,9 +459,14 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                               "accepted_changes": [], "unavailable": 0,
                               "private_proposal_is_authority": False}
     report["existing_first_party_updates"] = first_party_report
-    changed=safe_target(
-        reference, target, published["festivals.json"],
-        verified_official_updates=frozenset(first_party_report["accepted"]))
+    if first_party_report["accepted"]:
+        changed = safe_target(
+            reference, target, published["festivals.json"],
+            verified_official_updates=frozenset(first_party_report["accepted"]))
+    else:
+        # Keep the original three-argument contract for existing security
+        # instrumentation and all no-new-update situations.
+        changed = safe_target(reference, target, published["festivals.json"])
     report["candidate_total"] = len(target["festivals"])
     report["future_map_coverage"] = future_map_coverage(target, today)
     if not changed:
