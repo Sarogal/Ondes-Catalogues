@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import http.client
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 import ipaddress
@@ -26,7 +27,7 @@ import threading
 from pathlib import Path
 from urllib.parse import urlsplit
 from urllib.error import HTTPError, URLError
-from urllib.request import HTTPRedirectHandler, Request, build_opener
+from urllib.request import HTTPHandler, HTTPRedirectHandler, Request, build_opener
 
 from radio_catalog_guard import safe_url, validate_catalog
 
@@ -53,6 +54,40 @@ def check_public_host(url: str) -> None:
         raise ValueError("dns_non_public_address")
 
 
+
+class IcyHTTPResponse(http.client.HTTPResponse):
+    """Treat legacy Icecast ICY status as HTTP/1.0, never bypass URL checks."""
+
+    def _read_status(self):
+        raw = self.fp.readline(http.client._MAXLINE + 1)
+        if len(raw) > http.client._MAXLINE:
+            raise http.client.LineTooLong("status line")
+        line = raw.decode("iso-8859-1")
+        parts = line.split(None, 2)
+        if len(parts) < 2:
+            raise http.client.BadStatusLine(line)
+        version = "HTTP/1.0" if parts[0] == "ICY" else parts[0]
+        if not version.startswith("HTTP/"):
+            raise http.client.BadStatusLine(line)
+        try:
+            status = int(parts[1])
+        except ValueError as error:
+            raise http.client.BadStatusLine(line) from error
+        if not 100 <= status <= 999:
+            raise http.client.BadStatusLine(line)
+        reason = parts[2].strip() if len(parts) == 3 else ""
+        return version, status, reason
+
+
+class IcyHTTPConnection(http.client.HTTPConnection):
+    response_class = IcyHTTPResponse
+
+
+class IcyHTTPHandler(HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(IcyHTTPConnection, req)
+
+
 class CheckedRedirects(HTTPRedirectHandler):
     max_redirections = 4
 
@@ -66,7 +101,7 @@ _thread_local = threading.local()
 
 def opener():
     if not hasattr(_thread_local, "opener"):
-        _thread_local.opener = build_opener(CheckedRedirects())
+        _thread_local.opener = build_opener(IcyHTTPHandler(), CheckedRedirects())
     return _thread_local.opener
 
 
@@ -131,6 +166,8 @@ def inspect_stream(station: str, stream: dict, ffmpeg: str | None, checked: str)
             record["verified"], record["result"] = decode_sample(data, ffmpeg)
     except HTTPError as exc:
         record["result"] = f"http_{exc.code}"
+    except http.client.HTTPException as exc:
+        record["result"] = f"invalid_http_status_{type(exc).__name__}"
     except URLError as exc:
         record["result"] = f"url_error_{str(exc.reason)[:90]}"
     except ValueError as exc:
@@ -140,12 +177,10 @@ def inspect_stream(station: str, stream: dict, ffmpeg: str | None, checked: str)
     return record
 
 
-def probe(catalog: dict, *, max_streams: int | None = None, offset: int = 0,
+def probe(catalog: dict, *, max_streams: int | None = None,
           workers: int = 12, ffmpeg: str | None = None):
     if max_streams is not None and max_streams <= 0:
         raise ValueError("max_streams must be positive")
-    if offset < 0:
-        raise ValueError("offset must be nonnegative")
     if not 1 <= workers <= 24:
         raise ValueError("workers must be between 1 and 24")
     errors = validate_catalog(catalog, mode="staging")
@@ -154,7 +189,7 @@ def probe(catalog: dict, *, max_streams: int | None = None, offset: int = 0,
     checked = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     jobs = [(s["go_station_id"], stream) for s in catalog["stations"]
             for stream in s["streams"] if stream["state"] != "disabled"]
-    selected = jobs[offset:offset + max_streams] if max_streams else jobs[offset:]
+    selected = jobs[:max_streams] if max_streams else jobs
     # Do not hammer providers with many similar genre feeds on one host.
     limiters = {}
     for _, stream in selected:
@@ -184,7 +219,6 @@ def probe(catalog: dict, *, max_streams: int | None = None, offset: int = 0,
     report = {
         "source_release_sequence": catalog["release_sequence"],
         "checked_at": checked, "requested_streams": len(jobs),
-        "first_stream_index": offset,
         "probed_streams": len(results), "verified_this_run":
             sum(row["verified"] for row in results),
         "reason_counts": dict(sorted(counts.items())), "rows": results,
@@ -194,21 +228,32 @@ def probe(catalog: dict, *, max_streams: int | None = None, offset: int = 0,
     return updated, report
 
 
+
+def installed_ffmpeg() -> str | None:
+    direct = shutil.which("ffmpeg")
+    if direct:
+        return direct
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except (ImportError, RuntimeError, OSError):
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("catalog", type=Path)
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--enriched-out", type=Path)
     parser.add_argument("--max-streams", type=int)
-    parser.add_argument("--offset", type=int, default=0)
     parser.add_argument("--workers", type=int, default=12)
     args = parser.parse_args()
     for f in (args.report, args.enriched_out):
         if f and f.exists():
             parser.error("refusing to overwrite existing report or catalog")
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
-    updated, result = probe(catalog, max_streams=args.max_streams, offset=args.offset,
-                            workers=args.workers, ffmpeg=shutil.which("ffmpeg"))
+    updated, result = probe(catalog, max_streams=args.max_streams,
+                            workers=args.workers, ffmpeg=installed_ffmpeg())
     args.report.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n",
                            encoding="utf-8")
     if args.enriched_out:
