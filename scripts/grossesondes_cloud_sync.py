@@ -1062,7 +1062,7 @@ def main():
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
         official_update_tick=rotation_tick,
-        official_update_limit=12)
+        official_update_limit=24)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7
