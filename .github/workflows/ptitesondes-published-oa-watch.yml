@@ -1,0 +1,74 @@
+name: "P'tites Ondes — surveillance des événements OpenAgenda publiés"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_published_oa_drift_watch.py'
+      - 'tests/test_ptitesondes_published_oa_drift_watch.py'
+      - '.github/workflows/ptitesondes-published-oa-watch.yml'
+  schedule:
+    - cron: '31 06 * * *'
+    - cron: '31 10 * * *'
+    - cron: '31 15 * * *'
+    - cron: '31 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  watch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Offline drift tests
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m py_compile scripts/ptitesondes_published_oa_drift_watch.py
+          python -m unittest -v test_ptitesondes_published_oa_drift_watch
+      - name: Recheck current official OA series without writing to catalogue
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SLOT="$(python - <<'PY'
+          from datetime import datetime, timezone
+          h = datetime.now(timezone.utc).hour
+          print(0 if h < 9 else 1 if h < 13 else 2 if h < 18 else 3)
+          PY
+          )"
+          python scripts/ptitesondes_published_oa_drift_watch.py \
+            --catalogue docs/ptitesondes/sorties.json \
+            --date "$(TZ=Europe/Paris date +%Y-%m-%d)" \
+            --slot "$SLOT" \
+            --output "$RUNNER_TEMP/ptitesondes-published-oa-drift.json"
+          python - "$RUNNER_TEMP/ptitesondes-published-oa-drift.json" <<'PY'
+          import json,sys,os
+          report=json.load(open(sys.argv[1],encoding="utf-8"))
+          assert report["schema"] == "ptitesondes.published_oa_drift_watch.v1"
+          assert report["public_writes"]==0 and report["catalogue_modified"] is False
+          lines=["### Surveillance OpenAgenda publiés",
+                 "- Séries recontrôlées : "+str(report["source_series_checked"]),
+                 "- Séries au catalogue : "+str(report["total_source_series"]),
+                 "- Modification du catalogue : aucune",
+                 "- Motifs anonymisés : "+json.dumps(report["reason_counts"],ensure_ascii=False)]
+          with open(os.environ["GITHUB_STEP_SUMMARY"],"a",encoding="utf-8") as f:
+              f.write("\n".join(lines)+"\n")
+          PY
+      - name: Garder un rapport d'écart consultable, jamais une approbation
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ptitesondes-published-oa-drift
+          path: ${{ runner.temp }}/ptitesondes-published-oa-drift.json
+          retention-days: 7
+          if-no-files-found: error
