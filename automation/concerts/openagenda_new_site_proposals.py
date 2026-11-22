@@ -266,9 +266,28 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             and type(limit) is int and 1 <= limit <= 6,
             "private approval ledger or bounded scan invalid")
     selected = eligible(registry, catalogue, today)
-    start = (today.toordinal() * 3 + slot) * limit
-    chosen = [selected[(start + i) % len(selected)]
-              for i in range(min(limit, len(selected)))] if selected else []
+    # Spend half the scarce live verification budget on clearly signalled
+    # metal/punk shows without starving genre-unknown acts: both pools get
+    # daily/slot rotation. Neither pool is a fixed list or admission authority.
+    priority = [x for x in selected
+                if x[2]["reviewBucket"] == "genre_tag_review"]
+    unknown = [x for x in selected
+               if x[2]["reviewBucket"] != "genre_tag_review"]
+    tick = (today - dt.date(2026, 11, 22)).days * 3 + slot
+    priority_count = min(len(priority), max(1, limit // 2))
+    unknown_count = min(len(unknown), limit - priority_count)
+    chosen = (
+        [priority[(tick * max(1, priority_count) + i) % len(priority)]
+         for i in range(priority_count)] if priority else []
+    )
+    if unknown:
+        chosen.extend(unknown[(tick * max(1, unknown_count) + i) %
+                              len(unknown)] for i in range(unknown_count))
+    if len(chosen) < min(limit, len(selected)):
+        remaining = [row for row in selected if row not in chosen]
+        start = (tick * limit) % len(remaining) if remaining else 0
+        chosen.extend(remaining[(start + i) % len(remaining)]
+                      for i in range(min(limit - len(chosen), len(remaining))))
     output = copy.deepcopy(before)
     current = copy.deepcopy(catalogue)
     signed_ids = {a.get("event", {}).get("id") for a in before["approvals"]
