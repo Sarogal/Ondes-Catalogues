@@ -15,10 +15,10 @@ from urllib.parse import urlsplit
 
 import official_html_evidence
 
-_BODY = re.compile(r"<body\\b[^>]{0,9000}>", re.I | re.S)
-_CLASSES = re.compile(r"\\bclass\\s*=\\s*(['\"])([^'\"]{1,8000})\\1", re.I | re.S)
-_ID = re.compile(r"(?<![\\w-])postid-([1-9][0-9]{0,11})(?![0-9])")
-_DATE = re.compile(r"20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]\\Z")
+_BODY = re.compile(r"<body\b[^>]{0,9000}>", re.I | re.S)
+_CLASSES = re.compile(r"\bclass\s*=\s*(['\"])([^'\"]{1,8000})\1", re.I | re.S)
+_ID = re.compile(r"(?<![\w-])postid-([1-9][0-9]{0,11})(?![0-9])")
+_DATE = re.compile(r"20[0-9]{2}-[01][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9]\Z")
 
 
 def _body_post_id(html):
@@ -106,7 +106,7 @@ def read(html, url, fetch, *, normalize, artists_from_description):
         raise ValueError("Official event postal venue identity incomplete")
     # A punctuation comma immediately after the house number is typographic,
     # not a changed number, street, postcode or municipality.
-    street = re.sub(r"^([0-9]{1,5})\\s*,\\s*", r"\\1 ", street.strip())
+    street = re.sub(r"^([0-9]{1,5})\s*,\s*", r"\1 ", street.strip())
     return {
         "@type": "Event", "url": url, "name": title,
         "startDate": start.replace(" ", "T"),
