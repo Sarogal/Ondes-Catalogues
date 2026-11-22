@@ -36,6 +36,7 @@ from automation.concerts import source_admission_intake as intake
 from automation.concerts import source_cross_domain_corroboration as cross
 from automation.concerts import dynamic_first_party_venue_proposals as official
 from automation.concerts import venue_address_osm_source as address_osm
+from automation.concerts import official_venue_single_source as official_source
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
@@ -178,21 +179,24 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
             and _site(catalogue, candidate)["id"] == vid,
             "source or physical venue changed")
     cache = {}
-    # Source ownership MUST be independently established before fetching
-    # an untrusted candidate-host event URL. Never contact an unowned host.
-    # The OSM claim is independent of the event page; do not read a domain
-    # from a candidate as publisher authority.
+    # Official sites already attached to the published venue need ONE
+    # dated show announcement, not fresh OSM ownership before every show.
+    # Other unlisted sites still take the generic BAN/OSM route.
+    official_home = official_source.official_origin(venue, url)
     has_named_node = bool(verified.OSM_NODE.fullmatch(
         str(venue.get("geoSource", ""))))
-    try:
-        if has_named_node:
-            feature = verified.osm_identity(venue, url, fetch, cache)
-            website = None
-        else:
-            feature, website = verified.address_identity(
-                venue, url, fetch, cache)
-    except (ValueError, OSError, TimeoutError) as exc:
-        raise ValueError("osm_identity: " + str(exc)) from exc
+    if official_home is not None:
+        feature, website = None, official_home
+    else:
+        try:
+            if has_named_node:
+                feature = verified.osm_identity(venue, url, fetch, cache)
+                website = None
+            else:
+                feature, website = verified.address_identity(
+                    venue, url, fetch, cache)
+        except (ValueError, OSError, TimeoutError) as exc:
+            raise ValueError("osm_identity: " + str(exc)) from exc
     try:
         body = fetch(url, cache)
     except (ValueError, OSError, TimeoutError) as exc:
@@ -228,20 +232,24 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     now = today.isoformat()
     proof = {
         "url": url,
-        "proofType": (verified.OSM_SINGLE_PROFILE if has_named_node
-                      else verified.OSM_ADDRESS_PROFILE),
+        "proofType": (verified.OFFICIAL_SOURCE_PROFILE if official_home else
+                      verified.OSM_SINGLE_PROFILE if has_named_node else
+                      verified.OSM_ADDRESS_PROFILE),
         "checkedAt": now,
-        "checkedFields": (list(verified.CHECKED) if has_named_node else
-                          list(verified.ADDRESS_CHECKED)),
+        "checkedFields": (list(verified.CHECKED) if official_home or
+                          has_named_node else list(verified.ADDRESS_CHECKED)),
         "officialArtistNames": names,
         "officialGenreLabels": genres,
-        "namedOsmUrl": feature,
     }
-    if not has_named_node:
-        proof.update({
-            "publishedVenueGeoSource": venue["geoSource"],
-            "sourceWebsite": website,
-        })
+    if official_home:
+        proof["officialVenueSourceUrl"] = official_home
+    else:
+        proof["namedOsmUrl"] = feature
+        if not has_named_node:
+            proof.update({
+                "publishedVenueGeoSource": venue["geoSource"],
+                "sourceWebsite": website,
+            })
     approval = {
         "reviewDecision": "approved",
         "reviewedBy": "independent-official-verifier",

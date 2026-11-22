@@ -44,6 +44,7 @@ on:
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
       - 'automation/concerts/dynamic_osm_official_proposals.py'
+      - 'automation/concerts/official_venue_single_source.py'
       - 'automation/concerts/dynamic_new_site_approval_proposals.py'
       - 'automation/concerts/dynamic_self_attributed_new_site_proposals.py'
       - 'automation/concerts/source_cross_domain_corroboration.py'

@@ -31,6 +31,7 @@ import source_evidence_probe as probe
 import source_cross_domain_live_recheck as cross_live
 import source_cross_domain_corroboration as cross
 import triage
+import official_venue_single_source as official_source
 from independent_named_site_geo import _distance_meters
 
 PROFILE = "dynamic-existing-venue-first-party-v1"
@@ -42,6 +43,13 @@ OSM_SINGLE_PROFILE = "dynamic-existing-venue-osm-official-v1"
 # independently checked via their EXACT French street + named OSM feature.
 # A city centroid or venue name alone never creates source authority.
 OSM_ADDRESS_PROFILE = "dynamic-existing-venue-address-official-v1"
+# Once a venue's official agenda is explicitly bound to the published site,
+# ONE first-party event page suffices. No second concert witness or live OSM.
+OFFICIAL_SOURCE_PROFILE = "dynamic-existing-venue-official-single-source-v1"
+OFFICIAL_SOURCE_PROOF_FIELDS = frozenset({
+    "url", "proofType", "checkedAt", "checkedFields",
+    "officialArtistNames", "officialGenreLabels", "officialVenueSourceUrl",
+})
 PROOF_FIELDS = frozenset({
     "url", "proofType", "checkedAt", "checkedFields",
     "officialArtistNames", "officialGenreLabels", "namedOsmUrl",
@@ -346,31 +354,42 @@ def validate(approval, venues, artists, today, *, fetch=None):
     proof = proofset[0]
     is_single_osm = proof.get("proofType") == OSM_SINGLE_PROFILE
     is_address = proof.get("proofType") == OSM_ADDRESS_PROFILE
-    required_fields = (OSM_ADDRESS_PROOF_FIELDS if is_address else
+    is_official = proof.get("proofType") == OFFICIAL_SOURCE_PROFILE
+    required_fields = (OFFICIAL_SOURCE_PROOF_FIELDS if is_official else
+                       OSM_ADDRESS_PROOF_FIELDS if is_address else
                        OSM_SINGLE_PROOF_FIELDS if is_single_osm else
                        PROOF_FIELDS)
     require(set(proof) == required_fields,
             "wrong first-party source evidence fields")
     require(proof["url"] == event.get("officialUrl")
             and proof["proofType"] in {
-                PROFILE, OSM_SINGLE_PROFILE, OSM_ADDRESS_PROFILE}
+                PROFILE, OSM_SINGLE_PROFILE, OSM_ADDRESS_PROFILE,
+                OFFICIAL_SOURCE_PROFILE}
             and proof["checkedAt"] == approval.get("reviewedAt")
             and proof["checkedFields"] == (
                 ADDRESS_CHECKED if is_address else CHECKED)
-            and (proof["publishedVenueGeoSource"] == venue.get("geoSource")
+            and (proof["officialVenueSourceUrl"] ==
+                 official_source.official_origin(venue, event["officialUrl"])
+                 and bool(proof["officialVenueSourceUrl"])
+                 if is_official else
+                 proof["publishedVenueGeoSource"] == venue.get("geoSource")
                  if is_address else
                  proof["namedOsmUrl"] == venue.get("geoSource")),
             "first-party source evidence differs")
     origin = url_host(event["officialUrl"])
     witness = proof.get("corroboratingEventUrl")
-    if not (is_single_osm or is_address):
+    if not (is_single_osm or is_address or is_official):
         witness_host = url_host(witness)
         require(cross.domain(witness_host) != cross.domain(origin),
                 "cross-domain witness is controlled by the same source apex")
     cache = {}
     # Verify named public OSM feature AND its website attribution on each
     # prospective publication. This also detects later ownership changes.
-    if is_address:
+    if is_official:
+        # Source identity is bound to a published venue's own official agenda;
+        # OSM is not an event witness and must not be re-fetched for each show.
+        pass
+    elif is_address:
         feature, homepage = address_identity(
             venue, event["officialUrl"], fetch, cache)
         require(feature == proof["namedOsmUrl"]
@@ -383,10 +402,10 @@ def validate(approval, venues, artists, today, *, fetch=None):
             100 <= len(html) <= probe.MAX_BYTES,
             "individual first-party HTML missing")
     events = individual_event_nodes(
-        html, accept_generic=(is_single_osm or is_address))
+        html, accept_generic=(is_single_osm or is_address or is_official))
     # Reconstruct the same first-party visible evidence during the LIVE
     # Publisher recheck, AFTER OSM attribution was verified afresh.
-    if is_single_osm or is_address:
+    if is_single_osm or is_address or is_official:
         import event_site_pair_recheck as paired
         attested = []
         for raw in events:
@@ -401,7 +420,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
     for raw in events:
         try:
             valid.append(_event(raw, event, venue, resolved,
-                                accept_generic=(is_single_osm or is_address)))
+                                accept_generic=(is_single_osm or is_address or is_official)))
         except (ValueError, KeyError, TypeError):
             continue
     require(len(valid) == 1, "no unique exact first-party MusicEvent")
@@ -409,7 +428,7 @@ def validate(approval, venues, artists, today, *, fetch=None):
     require(names == proof["officialArtistNames"]
             and genres == proof["officialGenreLabels"],
             "independent live event differs from signed first-party proof")
-    if not (is_single_osm or is_address):
+    if not (is_single_osm or is_address or is_official):
         # The legacy two-domain proof still requires its fresh witness.
         corroboration = fetch(witness, cache)
         matched = cross_live.event_page_witness(
