@@ -17,10 +17,15 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
+from grossesondes_archived_html_intake import (
+    official_date, official_structured_date, matching_official_jsonld_present,
+)
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
-CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources",
+                        "startDate", "endDate", "days", "dateRangeIsContinuous",
+                        "status", "verificationStatus"))
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -274,7 +279,15 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
                 classify(url) in ("TICKETING", "SOCIAL", "MEDIA", "THIRD_PARTY")):
             continue
         try:
-            if date.fromisoformat(row["startDate"]) < date.fromisoformat(today):
+            start = row.get("startDate")
+            if start is None and row.get("endDate") is None:
+                # An announced year-specific future edition needs rechecking.
+                m = re.fullmatch(r".+\s+(20[2-4]\d)", row.get("name") or "")
+                if (not m or not str(row.get("slug", "")).endswith("-" + m[1])
+                        or not date.fromisoformat(today).year <= int(m[1])
+                               <= date.fromisoformat(today).year + 2):
+                    continue
+            elif date.fromisoformat(start) < date.fromisoformat(today):
                 continue
         except (ValueError, TypeError, KeyError):
             continue
@@ -299,7 +312,8 @@ def apply_independently_verified_updates(
     for site, rows in signed_rotation(published, today, limit, tick):
         report["checked_official_hosts"] += 1
         try:
-            root = page(fetch(site))
+            root_html = fetch(site)
+            root = page(root_html)
             report["rechecked_pages"] += 1
         except (OSError, TimeoutError, ValueError, UnicodeError):
             report["unavailable"] += 1
@@ -314,8 +328,7 @@ def apply_independently_verified_updates(
         for old in rows:
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
-            if (any(old.get(f) != new.get(f) for f in set(old) | set(new)) or
-                    not isinstance(old.get("lineup"), list)):
+            if any(old.get(f) != new.get(f) for f in set(old) | set(new)):
                 continue
             root_ok = matches_edition(root, old, today, root_ok=False)
             claims, prices, sources = [], {}, []
@@ -328,13 +341,15 @@ def apply_independently_verified_updates(
                     claims += names
                     prices.update(offers)
                     sources.append(url)
-            new_names, seen = [], {key(n) for n in old["lineup"]}
+            new_names, seen = [], {key(n) for n in old.get("lineup", [])
+                                   if isinstance(n, str)}
             for n in claims:
                 if key(n) not in seen:
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if (new_names and type(old.get("bands")) is int and
+            if (new_names and isinstance(old.get("lineup"), list)
+                    and type(old.get("bands")) is int and
                     old["bands"] == len(old["lineup"])):
                 new["lineup"] = list(old["lineup"]) + new_names
                 new["bands"] = len(new["lineup"])
@@ -351,6 +366,37 @@ def apply_independently_verified_updates(
                         old_price != summary):
                     new["price"] = summary
                     fields.append("price")
+            # Only a complete *multi-day* current-edition range can replace
+            # unknown dates. A lone opening date cannot establish the end.
+            if old.get("startDate") is None and old.get("endDate") is None:
+                m = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old.get("name") or "")
+                if m and str(old.get("slug", "")).endswith("-" + m[2]):
+                    parent = {"name": m[1]}
+                    year = int(m[2])
+                    visible = official_date(root_html, parent, year)
+                    jsonld = official_structured_date(root_html, parent, year)
+                    has_jsonld = matching_official_jsonld_present(
+                        root_html, parent, year)
+                    # Conflicting evidence, or malformed matching JSON-LD,
+                    # blocks admission rather than choosing the nicer dates.
+                    dates = None
+                    if not (has_jsonld and jsonld is None) and not (
+                            visible and jsonld and visible != jsonld):
+                        dates = visible or jsonld
+                    if (dates and dates[0] > date.fromisoformat(today)
+                            and dates[1] > dates[0]
+                            and (dates[1] - dates[0]).days <= 7):
+                        new["startDate"], new["endDate"] = (
+                            dates[0].isoformat(), dates[1].isoformat())
+                        new["days"] = str((dates[1] - dates[0]).days + 1)
+                        new["dateRangeIsContinuous"] = True
+                        new["status"] = "Annoncé"
+                        new["verificationStatus"] = (
+                            "Dates confirmées sur le site officiel")
+                        fields.extend(("startDate", "endDate", "days",
+                                       "dateRangeIsContinuous", "status",
+                                       "verificationStatus"))
+                        sources.append(site)
             if not fields:
                 continue
             if isinstance(old.get("lastVerified"), str):
