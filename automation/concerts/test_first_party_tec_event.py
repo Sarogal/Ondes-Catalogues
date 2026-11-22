@@ -46,7 +46,7 @@ def page(*, title=TITLE, postid=EVENT_ID, bill=True):
 def fetch(api):
     def get(request):
         if request != API:
-            raise AssertionError("Unexpected or cross-origin TEC URL: " + request)
+            raise ValueError("Same-origin official API unavailable")
         return json.dumps(api, ensure_ascii=False)
     return get
 
@@ -76,7 +76,7 @@ class FirstPartyTecProof(unittest.TestCase):
                 '<p><strong>Unannounced band — Metalcore</strong></p>')},
             {"venue": dict(official_api()["venue"], city="Lyon")},
             {"venue": dict(official_api()["venue"], country="Belgique")},
-            {"venue": dict(official_api()["venue"], zip="99999")},
+            {"venue": dict(official_api()["venue"], zip="invalid-zip")},
         ):
             with self.subTest(change=list(change)):
                 data = dict(official_api(), **change)
