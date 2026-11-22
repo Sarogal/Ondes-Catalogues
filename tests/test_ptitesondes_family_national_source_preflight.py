@@ -350,10 +350,11 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
         original = deepcopy(current)
         run(catalog=current)
         self.assertEqual(current, original)
-        self.assertEqual(set(e["category"] for e in current["events"]), {
-            "concert", "conte-musical", "spectacle-musical",
-            "eveil-musical", "atelier-musical", "cine-concert", "festival",
-        })
+        actual_categories = {e["category"] for e in current["events"]}
+        self.assertTrue(LEGACY_MUSICAL <= actual_categories)
+        # Some real family categories are already public after an
+        # independently verified OpenAgenda release.
+        self.assertTrue(actual_categories <= LEGACY_MUSICAL | set(FAMILY_TYPES))
 
 
 if __name__ == "__main__":
