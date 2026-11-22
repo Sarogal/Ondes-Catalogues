@@ -166,6 +166,9 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     # and deprogrammed records never enter the public confirmed catalogue.
     if record.get("status") != 1:
         raise ValueError("OpenAgenda: event is not currently scheduled")
+    event_status = str(record.get("eventStatus") or "").casefold()
+    if any(token in event_status for token in CANCELLED):
+        raise ValueError("OpenAgenda: event is cancelled or postponed")
     try:
         exact = dt.date.fromisoformat(when)
         if (record.get("firstDate") != exact.isoformat()
