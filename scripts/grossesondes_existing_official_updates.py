@@ -17,8 +17,14 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
-from future_city_preflight import exact_edition_city, _normal as normal_city
+from future_city_preflight import exact_edition_city, _normal as normal_city, _EditionTitle
 from official_admin_communes import verified_commune
+from grossesondes_archived_html_intake import (
+    official_date, official_structured_date, matching_official_jsonld_present,
+)
+from grossesondes_official_html_edition import (
+    VisibleText, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
+)
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
@@ -26,7 +32,12 @@ COMMUNE_FIELDS = frozenset((
     "city", "lat", "lon", "showOnMap", "geoCity", "geoPrecision",
     "geoInsee", "geoSource", "geoVerification",
 ))
-CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources")) | COMMUNE_FIELDS
+DATE_FIELDS = frozenset((
+    "startDate", "endDate", "days", "dateRangeIsContinuous",
+    "status", "verificationStatus",
+))
+CHANGEABLE = (frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+              | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -294,7 +305,15 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
                 classify(url) in ("TICKETING", "SOCIAL", "MEDIA", "THIRD_PARTY")):
             continue
         try:
-            if date.fromisoformat(row["startDate"]) < date.fromisoformat(today):
+            start = row.get("startDate")
+            if start is None and row.get("endDate") is None:
+                # Recheck signed year-specific future editions awaiting dates.
+                m = re.fullmatch(r".+\s+(20[2-4]\d)", row.get("name") or "")
+                if (not m or not str(row.get("slug", "")).endswith("-" + m[1])
+                        or not date.fromisoformat(today).year <= int(m[1])
+                               <= date.fromisoformat(today).year + 2):
+                    continue
+            elif date.fromisoformat(start) < date.fromisoformat(today):
                 continue
         except (ValueError, TypeError, KeyError):
             continue
@@ -307,6 +326,69 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     offset = batch % ceil(len(urls) / limit) * limit
     return [(url, grouped[url]) for url in urls[offset:offset + limit]]
 
+
+WEEKDAY_2027_LABELS = {
+    "lundi": 0, "mardi": 1, "mercredi": 2, "jeudi": 3,
+    "vendredi": 4, "samedi": 5, "dimanche": 6,
+}
+WEEKDAY_NAMES = "|".join(WEEKDAY_2027_LABELS)
+MONTH_NAMES = "|".join(sorted(OFFICIAL_MONTHS, key=len, reverse=True))
+WEEKDAY_DATE_SEQUENCE = re.compile(
+    r"(?<![a-z0-9])((?:(?:" + WEEKDAY_NAMES +
+    r")\s+\d{1,2}\s+){2,7})(" + MONTH_NAMES + r")\s+(20[2-4]\d)\b"
+)
+
+
+def weekday_labelled_official_dates(html, row, year):
+    """Bind explicit weekday/day sequences to the registered festival title.
+
+    Some official festivals print VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOUT 2027
+    without a numeric range. Do not borrow days from an unrelated organizer
+    event, infer an end date, or trust a mismatching weekday/year.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return None
+    title = _EditionTitle()
+    body = VisibleText()
+    try:
+        title.feed(html)
+        title.close()
+        body.feed(html)
+        body.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    title_words = fold(" ".join(title.parts))
+    brand = fold(re.sub(r"\b20[2-4]\d\b", "", row.get("name", "")))
+    if (len(key(brand)) < 8 or not title_words
+            or not re.search(r"(?<![a-z0-9])" +
+                             r"\s+".join(map(re.escape, brand.split())) +
+                             r"(?![a-z0-9])", title_words)):
+        return None
+    visible = fold(" ".join(body.parts))
+    if OFFICIAL_CANCELLATION.search(visible):
+        return None
+    matches = set()
+    for match in WEEKDAY_DATE_SEQUENCE.finditer(visible):
+        if int(match.group(3)) != year:
+            continue
+        month = OFFICIAL_MONTHS.get(match.group(2))
+        if month is None:
+            continue
+        labels = re.findall(r"(" + WEEKDAY_NAMES + r")\s+(\d{1,2})",
+                            match.group(1))
+        if not 2 <= len(labels) <= 7:
+            return None
+        try:
+            dates = [date(year, month, int(day)) for _, day in labels]
+        except ValueError:
+            return None
+        if (any(day.weekday() != WEEKDAY_2027_LABELS[label]
+                for (label, _), day in zip(labels, dates))
+                or any(right.toordinal() != left.toordinal() + 1
+                       for left, right in zip(dates, dates[1:]))):
+            return None
+        matches.add((dates[0], dates[-1]))
+    return next(iter(matches)) if len(matches) == 1 else None
 
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
@@ -331,6 +413,9 @@ def apply_independently_verified_updates(
             report["unavailable"] += 1
             continue
         pages = [(site, root)]
+        # Store only independently fetched, safely linked first-party HTML;
+        # a future date may appear in official news rather than on the home.
+        html_pages = [(site, root_html)]
         # On a current-edition homepage, old news cards may be nested in
         # <article> while the live ticket categories are in <main>. Inspect
         # both as separate first-party content scopes, not one mixed roster.
@@ -340,15 +425,16 @@ def apply_independently_verified_updates(
             pages.append((site, main_only))
         for link in linked_pages(site, root):
             try:
-                pages.append((link, page(fetch(link))))
+                linked_html = fetch(link)
+                pages.append((link, page(linked_html)))
+                html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
             except (OSError, TimeoutError, ValueError, UnicodeError):
                 continue
         for old in rows:
             slug = old["slug"]
             new = result["festivals"][positions[slug]]
-            if (any(old.get(f) != new.get(f) for f in set(old) | set(new)) or
-                    not isinstance(old.get("lineup"), list)):
+            if any(old.get(f) != new.get(f) for f in set(old) | set(new)):
                 continue
             root_ok = home_matches_edition(root, old, today)
             claims, prices, sources = [], {}, []
@@ -361,13 +447,16 @@ def apply_independently_verified_updates(
                     claims += names
                     prices.update(offers)
                     sources.append(url)
-            new_names, seen = [], {key(n) for n in old["lineup"]}
+            current_lineup = old.get("lineup")
+            current_lineup = current_lineup if isinstance(current_lineup, list) else []
+            new_names, seen = [], {key(n) for n in current_lineup if isinstance(n, str)}
             for n in claims:
                 if key(n) not in seen:
                     seen.add(key(n))
                     new_names.append(n)
             fields = []
-            if (new_names and type(old.get("bands")) is int and
+            if (new_names and isinstance(old.get("lineup"), list)
+                    and type(old.get("bands")) is int and
                     old["bands"] == len(old["lineup"])):
                 new["lineup"] = list(old["lineup"]) + new_names
                 new["bands"] = len(new["lineup"])
@@ -428,6 +517,52 @@ def apply_independently_verified_updates(
                         })
                         fields.extend(sorted(COMMUNE_FIELDS))
                         sources.append(site)
+            # An already signed future edition without dates is rechecked
+            # directly on the registered first-party homepage. Do not infer
+            # a multi-day festival from an isolated opening date.
+            if old.get("startDate") is None and old.get("endDate") is None:
+                m = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old.get("name") or "")
+                if m and str(old.get("slug", "")).endswith("-" + m[2]):
+                    parent = {"name": m[1]}
+                    year = int(m[2])
+                    proposed_ranges, verified_urls = set(), []
+                    contradicted = False
+                    for official_url, official_html in html_pages:
+                        visible = official_date(official_html, parent, year)
+                        jsonld = official_structured_date(official_html, parent, year)
+                        weekdays = weekday_labelled_official_dates(
+                            official_html, old, year)
+                        matching_jsonld = matching_official_jsonld_present(
+                            official_html, parent, year)
+                        # Never cherry-pick between opposing first-party facts.
+                        if ((matching_jsonld and jsonld is None) or
+                                len({d for d in (visible, jsonld, weekdays)
+                                     if d is not None}) > 1):
+                            contradicted = True
+                            break
+                        dates = visible or jsonld or weekdays
+                        if dates:
+                            proposed_ranges.add(dates)
+                            verified_urls.append(official_url)
+                    # At most one interval across all inspected first-party
+                    # pages; historical year and incomplete date are no proof.
+                    dates = (next(iter(proposed_ranges))
+                             if not contradicted and len(proposed_ranges) == 1
+                             else None)
+                    if (dates and dates[0] > date.fromisoformat(today)
+                            and dates[1] > dates[0]
+                            and (dates[1] - dates[0]).days <= 7):
+                        new["startDate"], new["endDate"] = (
+                            dates[0].isoformat(), dates[1].isoformat())
+                        new["days"] = str((dates[1] - dates[0]).days + 1)
+                        new["dateRangeIsContinuous"] = True
+                        new["status"] = "Annoncé"
+                        new["verificationStatus"] = (
+                            "Dates confirmées sur le site officiel")
+                        fields.extend(("startDate", "endDate", "days",
+                                       "dateRangeIsContinuous", "status",
+                                       "verificationStatus"))
+                        sources.extend(verified_urls)
             if not fields:
                 continue
             if isinstance(old.get("lastVerified"), str):

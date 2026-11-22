@@ -239,9 +239,42 @@ def _verified_official_update_delta(old, new):
         return False
     changed = {k for k in set(old) | set(new)
                if (k not in old) != (k not in new) or old.get(k) != new.get(k)}
+    newly_dated = {"startDate", "endDate"} <= changed
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
             not ({"lineup", "price"} & changed)
-            and not (COMMUNE_UPDATE_FIELDS & changed)):
+            and not (COMMUNE_UPDATE_FIELDS & changed)
+            and not newly_dated):
+        return False
+    date_fields = {"startDate", "endDate", "days", "dateRangeIsContinuous",
+                   "status", "verificationStatus"}
+    if newly_dated:
+        # Only an independently rechecked, signed, future unknown-date edition
+        # may gain exact dates; it must keep all non-date editorial fields.
+        if (not changed <= date_fields | {"lastVerified", "auditSources"}
+                or old.get("startDate") is not None
+                or old.get("endDate") is not None
+                or old.get("status") != "Dates à venir"
+                or not isinstance(old.get("name"), str)):
+            return False
+        matched = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old["name"])
+        if (not matched or not str(old.get("slug", "")).endswith("-" + matched[2])
+                or not isinstance(new.get("startDate"), str)
+                or not isinstance(new.get("endDate"), str)):
+            return False
+        try:
+            begin = date.fromisoformat(new["startDate"])
+            end = date.fromisoformat(new["endDate"])
+        except ValueError:
+            return False
+        if (begin.year != int(matched[2]) or end.year != begin.year
+                or not 1 <= (end - begin).days <= 7
+                or new.get("days") != str((end - begin).days + 1)
+                or new.get("dateRangeIsContinuous") is not True
+                or new.get("status") != "Annoncé"
+                or new.get("verificationStatus") !=
+                    "Dates confirmées sur le site officiel"):
+            return False
+    elif changed & date_fields:
         return False
     if COMMUNE_UPDATE_FIELDS & changed:
         # Verify the certified marker IN ISOLATION so a price/roster update
@@ -303,6 +336,15 @@ def safe_target(baseline, candidate, currently_published,
     for slug, old in original.items():
         new=target[slug]
         current=live[slug]
+        # The legacy baseline alone cannot authorize an unproven switch from
+        # a future unknown-date edition to arbitrary supplied dates.
+        if ((current.get("startDate") is None or current.get("endDate") is None)
+                and (new.get("startDate") != current.get("startDate")
+                     or new.get("endDate") != current.get("endDate"))):
+            require(slug in verified_official_updates and
+                    _verified_official_update_delta(current, new),
+                    "dates futures sans preuve officielle independante : " + slug)
+            continue
         if (slug in verified_official_updates and current != new):
             require(_verified_official_update_delta(current, new),
                     "mise a jour officielle non prouvee : "+slug)

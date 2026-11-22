@@ -46,7 +46,8 @@ class ConcurrentPublishRetryGuardTests(unittest.TestCase):
         archive = (ROOT / ".github/workflows/grossesondes-history-release.yml"
                   ).read_text(encoding="utf-8")
         self.assertIn("format('ondes-ci-grossesondes-cloud-{0}'", w)
-        self.assertIn("format('ondes-ci-grossesondes-history-{0}'", archive)
+        self.assertIn("format('ondes-ci-grossesondes-history-{0}-{1}'", archive)
+        self.assertIn("github.event.pull_request.number, github.sha", archive)
         self.assertIn("|| 'ondes-cloud-publication'", w)
         self.assertIn("|| 'ondes-cloud-publication'", archive)
         for content in (w, archive):
