@@ -480,11 +480,13 @@ def _nonadministrative_dates_visible(html, title, year):
 
 
 def _same_host_named_weekend(html, title, year, today):
-    """Find one current-edition weekend on the official host, but never alone.
+    """Read an explicitly named official edition, with harmless stray dates.
 
-    The caller must reproduce this same weekend on another live page of
-    that SAME site. An unrelated single date can be ignored; a conflicting
-    named festival date, second weekend, cancellation or tour cannot.
+    The caller already independently re-fetched the signed, first-party
+    domain. A second source or URL is NOT needed when the festival's own
+    visible homepage names this exact upcoming weekend, the rock/metal/punk
+    context is stated outside its brand, and no named date conflicts.
+    Announcements with a second weekend, cancellation or tour fail closed.
     """
     if (not isinstance(html, str) or not 0 < len(html) <= 650_000
             or not isinstance(title, str) or type(year) is not int):
@@ -564,12 +566,16 @@ def verify_official_site_pages(site, homepage_html, title, year, today,
         visible_home = visible_text(homepage_html)
         if CANCELLED.search(visible_home):
             return None
-        # A visible year-date conflict blocks by default; only one named
-        # weekend re-proven on another SAME-HOST page can be recovered.
+        # An exact current-edition claim on the festival's OWN official
+        # homepage is sufficient. An unrelated administrative/calendar
+        # date must not demand another source or even another same-host
+        # article. The parser still blocks same-edition conflicting dates,
+        # cancellation, tours, wrong genre and contradictory JSON-LD.
         homepage_weekend = _same_host_named_weekend(
             homepage_html, title, year, today)
-        if (_nonadministrative_dates_visible(homepage_html, title, year)
-                and homepage_weekend is None):
+        if homepage_weekend is not None:
+            return homepage_weekend
+        if _nonadministrative_dates_visible(homepage_html, title, year):
             return None
         pending = _publisher_same_host_links(
             homepage_html, site, year, today)
