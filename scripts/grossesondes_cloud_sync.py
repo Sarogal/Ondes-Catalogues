@@ -316,6 +316,15 @@ def safe_target(baseline, candidate, currently_published,
     for slug, old in original.items():
         new=target[slug]
         current=live[slug]
+        # An old signed undated edition must not acquire dates through an
+        # unverified private patch just because the legacy baseline is old.
+        if ((current.get("startDate") is None or current.get("endDate") is None)
+                and (new.get("startDate") != current.get("startDate")
+                     or new.get("endDate") != current.get("endDate"))):
+            require(slug in verified_official_updates and
+                    _verified_official_update_delta(current, new),
+                    "dates futures sans preuve officielle independante : " + slug)
+            continue
         if (slug in verified_official_updates and current != new):
             require(_verified_official_update_delta(current, new),
                     "mise a jour officielle non prouvee : "+slug)
