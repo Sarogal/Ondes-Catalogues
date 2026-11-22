@@ -441,6 +441,26 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertIn(ticket_url, item["auditSources"])
         self.assertTrue(_verified_official_update_delta(row, item))
 
+    def test_normal_four_day_fare_in_mixed_one_day_official_teaser(self):
+        # Motocultor official homepage: 4J moved from sold-out Early Bird
+        # to the normal tier, while 1J stays in sale without a price HERE.
+        teaser = (
+            "<main><article><p>Les trois paliers d'Early Birds sont "
+            "épuisés. Le Pass 4J passe au tarif normal de 239 € hors frais "
+            "de location, et les Pass 1J restent en vente.</p>"
+            "</article></main>")
+        self.assertEqual(advertised_passes(page(teaser).relevant()),
+                         {4: "239 €"})
+        # Ticket cards on the same first-party home offer the actual 1J
+        # amount. Keep both distinct amounts, independent of page order.
+        cards = (
+            "<main><ul><li>Pass 4 jours <p>Tarif normal239 €En vente"
+            "</p></li><li>Pass 1 jour <p>Journée au choix82 €En "
+            "vente</p></li></ul></main>")
+        offers = advertised_passes(page(cards).relevant())
+        offers.update(advertised_passes(page(teaser).relevant()))
+        self.assertEqual(offers, {4: "239 €", 1: "82 €"})
+
     def test_one_day_pass_never_borrows_four_day_price_from_same_news_teaser(self):
         # Real official news teasers mention BOTH categories in one paragraph,
         # but only the 4-day pass has a stated amount. Do not invent a 1J price.
