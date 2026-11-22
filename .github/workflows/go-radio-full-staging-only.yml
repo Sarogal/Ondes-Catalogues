@@ -1,0 +1,39 @@
+name: GO radio full catalog — STAGING verification only
+on:
+  push:
+    branches:
+      - feature/go-radio-full-staging-validation-20261122
+    paths:
+      - 'radio-catalog-lab/full-staging/**'
+      - 'radio-catalog-lab/tests/test_full_catalog_staging_20261122.py'
+      - '.github/workflows/go-radio-full-staging-only.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test-only Ed25519 verifier
+        run: python -m pip install 'cryptography>=42,<47'
+      - name: Verify exact TEST v4 signature and full migration invariants
+        run: python -m unittest discover -s radio-catalog-lab/tests -p 'test_full_catalog_staging_20261122.py' -v
+      - name: Guard non-production target from accidental pointer override
+        shell: bash
+        run: |
+          test ! -e radio-catalog-lab/full-staging/current.json
+          test ! -e radio-catalog-lab/full-staging/TEST_PRIVATE_KEY.b64
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=Path('radio-catalog-lab/full-staging')
+          v=json.loads((c/'coverage-20261122.json').read_text())
+          assert v['ready_to_publish'] is False
+          assert v['signed_replacement_generated'] is False
+          print('STAGING VERIFIED, no release or current.json published')
+          PY
