@@ -11,7 +11,7 @@ from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, linked_pages, page,
     signed_rotation, listed_artists, advertised_passes,
 )
-from grossesondes_cloud_sync import _verified_official_update_delta
+from grossesondes_cloud_sync import _verified_official_update_delta, safe_target
 
 DAY = "2026-11-22"
 MOZHELL = "https://www.mozhell.fr/fr/"
@@ -91,6 +91,63 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertFalse(report["private_proposal_is_authority"])
         self.assertEqual(updated["showOnMap"], False)
         self.assertIsNone(updated["lat"])
+
+    def test_prevalidated_ticket_status_and_new_prices_are_composable(self):
+        # Reproduces the actual Motocultor Publisher order: a separately
+        # validated ticket-availability update precedes the current official
+        # price recheck on the same signed edition.
+        row = festival(
+            "motocultor-festival", MOTO,
+            dates=("2027-08-19", "2027-08-22"),
+            lineup=["Helloween", "Halestorm"],
+            price="Pass 1 jour : 82 € — billetterie officielle ouverte")
+        row["name"] = "Motocultor Festival"
+        signed = doc(row)
+        intermediate = deepcopy(signed)
+        intermediate["festivals"][0]["ticketAvailability"] = {
+            "source": MOTO, "verifiedAt": DAY,
+            "scope": "per_category_only", "categories": [
+                {"name": "Pass 1 jour", "status": "in_stock"},
+                {"name": "Pass 4 jours", "status": "in_stock"}]}
+        official_home = (
+            "<main><h1>Motocultor Festival 2027</h1>"
+            "<p>Carhaix, du 19 au 22 août 2027.</p>"
+            "<section><ul><li><h3>Pass 4 jours</h3><p>Les quatre "
+            "jours du festival.</p><ol><li>Tarif normal239 €En vente"
+            "</li></ol></li><li><h3>Pass 1 jour</h3>"
+            "<p>Choisissez votre journée.</p>"
+            "<ol><li>Journée au choix82 €En vente</li></ol>"
+            "</li></ul></section>"
+            "<article><p>Les Pass 4J Early Birds sont SOLD OUT ; "
+            "le Pass 4J passe au tarif normal de 239 € hors frais, "
+            "et les Pass 1J restent en vente.</p></article></main>")
+        out, report = apply_independently_verified_updates(
+            intermediate, signed, DAY, fetch=lambda _: official_home,
+            limit=1, tick=0)
+        value = out["festivals"][0]
+        self.assertEqual(value["ticketAvailability"],
+                         intermediate["festivals"][0]["ticketAvailability"])
+        self.assertIn("Pass 4 jours : 239 €", value["price"])
+        self.assertIn("Pass 1 jour : 82 €", value["price"])
+        self.assertEqual(report["accepted"], ["motocultor-festival"])
+        # The two strict guards are independent: the earlier stage is
+        # validated WITHOUT granting its data official-update authority;
+        # the current signed-site delta is then validated on that base.
+        self.assertTrue(safe_target(signed, intermediate, signed))
+        self.assertTrue(safe_target(
+            intermediate, out, intermediate,
+            verified_official_updates=frozenset({"motocultor-festival"})))
+        self.assertFalse(_verified_official_update_delta(row, value))
+
+        # Other pre-mutated fields are not admissible to the official scan.
+        altered = deepcopy(intermediate)
+        altered["festivals"][0]["lineup"].append("unverified private artist")
+        unchanged, held = apply_independently_verified_updates(
+            altered, signed, DAY, fetch=lambda _: official_home,
+            limit=1, tick=0)
+        self.assertEqual(unchanged, altered)
+        self.assertEqual(held["official_edition_diagnostics"][0]["reason"],
+                         "different_from_current_signed_edition")
 
     def test_official_host_diagnostics_do_not_leak_fetch_errors(self):
         import json
