@@ -5,6 +5,9 @@ from unittest.mock import patch
 
 from national_generic_publisher_funnel import build_report, SCHEMA
 from grossesondes_generic_directory_edition import private_proposal
+from grossesondes_first_party_direct_edition import (
+    private_proposal as direct_private_proposal,
+)
 
 DAY = "2026-11-21"
 NAME = "Festival Foudre Imaginaire"
@@ -65,6 +68,56 @@ class GenericPublisherFunnelTests(TestCase):
         self.assertFalse(dossier["independent_publisher_recheck_completed"])
         self.assertNotIn("officialSite", str(dossier))
         self.assertNotIn("127.0.0.1", str(result))
+
+    def test_real_direct_first_party_contract_reaches_funnel(self):
+        """A genuine private official-domain proposal must NOT be invisible."""
+        discovery, source, signed = fixture()
+        proposal = direct_private_proposal(TITLE, SITE, DATES, DAY)
+        self.assertIsNotNone(proposal)
+        source["additions"] = [proposal]
+        with patch("dns_pinned_https.fetch_public_html",
+                   side_effect=AssertionError("no network in private funnel")):
+            report = build_report(discovery, source, signed, DAY)
+        self.assertEqual(report["structurally_valid_private_generic_additions"], 1)
+        self.assertEqual(report["still_without_generic_proposal_count"], 0)
+        self.assertEqual(report["generic_publisher_recheck_pending_count"], 1)
+        self.assertEqual(report["dossiers"][0]["candidate_proof_modes"],
+                         ["generic-first-party-direct-edition.v1"])
+        self.assertFalse(report["dossiers"][0]["publication_authorized"])
+        self.assertFalse(report["dossiers"][0][
+            "independent_publisher_recheck_completed"])
+        for mutate in (
+            lambda row: row.update(lat=48.123, showOnMap=True),
+            lambda row: row.update(proofMode="generic-tampered.v1"),
+            lambda row: row.update(verified_at="2026-09-10"),
+            lambda row: row.update(source="https://wrong.example/"),
+        ):
+            with self.subTest(mutate=mutate):
+                forged = deepcopy(source)
+                mutate(forged["additions"][0])
+                result = build_report(discovery, forged, signed, DAY)
+                self.assertEqual(result["generic_publisher_recheck_pending_count"], 0)
+                self.assertEqual(result["still_without_generic_proposal_count"], 1)
+
+    def test_signed_undated_edition_is_already_in_public_snapshot(self):
+        discovery, source, signed = fixture()
+        signed["festivals"] = [{
+            "slug": "festival-foudre-imaginaire-2027",
+            "name": TITLE, "startDate": None, "endDate": None,
+            "status": "Dates à venir", "showOnMap": False,
+        }]
+        report = build_report(discovery, source, signed, DAY)
+        self.assertEqual(report["already_in_public_snapshot_count"], 1)
+        self.assertEqual(report["dossiers"][0]["status"],
+                         "EXACT_EDITION_IN_PUBLIC_SNAPSHOT")
+        # The same name with a conflicting slug year is not verified.
+        signed["festivals"][0]["slug"] = "festival-foudre-imaginaire-2026"
+        report = build_report(discovery, source, signed, DAY)
+        self.assertEqual(report["already_in_public_snapshot_count"], 0)
+        signed["festivals"][0]["slug"] = "festival-foudre-imaginaire-2027"
+        signed["festivals"][0]["status"] = "Recherche nécessaire"
+        report = build_report(discovery, source, signed, DAY)
+        self.assertEqual(report["already_in_public_snapshot_count"], 0)
 
     def test_already_signed_editions_do_not_look_like_new_publications(self):
         discovery, source, signed = fixture()
