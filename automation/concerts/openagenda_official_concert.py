@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import math
 import re
 import sys
 from pathlib import Path
@@ -124,6 +125,52 @@ def official_export_url(agenda_uid, event_uid):
             f"?oaq%5Buids%5D%5B%5D={event_uid}&limit=1")
 
 
+def _verified_street(street, venue, place):
+    """Match an official numbered street to an unnumbered map entry safely.
+
+    A historic map may say "Quai des Antilles" while the OpenAgenda
+    event gives "21 quai des Antilles". Never ignore a conflicting
+    stored house number. The extra case requires an independently
+    positioned named venue, consistent postcode and nearby event GPS.
+    """
+    source, reference = normalized(street), normalized(venue.get("address"))
+    if not source or not reference:
+        return False
+    if source == reference or source.startswith(reference + " "):
+        return True
+    # Only an official leading house number may be removed, never a
+    # recorded house number or a mismatching street.
+    if re.match(r"^[0-9]", reference):
+        return False
+    without_number = re.sub(r"^[0-9]+(?:[a-z]|\s+(?:bis|ter|quater))?\s+", "", source)
+    if (without_number == source or
+            not (without_number == reference or
+                 without_number.startswith(reference + " "))):
+        return False
+    precision = normalized(venue.get("geoPrecision"))
+    if not (precision.startswith("point du lieu") or
+            precision.startswith("point nominatif") or
+            precision.startswith("noeud openstreetmap")):
+        return False
+    try:
+        lat1, lon1 = float(place["latitude"]), float(place["longitude"])
+        lat2, lon2 = float(venue["latitude"]), float(venue["longitude"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not all(math.isfinite(n) for n in (lat1, lon1, lat2, lon2)):
+        return False
+    if not all(-90 <= x <= 90 for x in (lat1, lat2)):
+        return False
+    if not all(-180 <= x <= 180 for x in (lon1, lon2)):
+        return False
+    radius = 6371000
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp, dl = math.radians(lat2 - lat1), math.radians(lon2 - lon1)
+    arc = (math.sin(dp / 2) ** 2 +
+           math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2)
+    return 2 * radius * math.asin(min(1, math.sqrt(arc))) <= 125
+
+
 def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
     """Fresh OpenAgenda-owned single-event export; no external corroboration.
 
@@ -192,8 +239,7 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
         raise ValueError("OpenAgenda: postal code mismatch")
     street = place.get("address")
     if (street and venue.get("address")
-            and not normalized(street).startswith(
-                normalized(venue["address"]))):
+            and not _verified_street(street, venue, place)):
         raise ValueError("OpenAgenda: official street location mismatch")
     if str(place.get("countryCode") or "").lower() not in ("fr", "gp",
             "mq", "gf", "re", "yt", "nc", "pf", "wf", "pm", "bl", "mf"):
