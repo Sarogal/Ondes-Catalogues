@@ -1050,13 +1050,19 @@ def main():
         patch, signed_published_slugs, today.isoformat()))
     geo_review = private_geo_report(token)
     city_review = private_city_report(token)
+    raw_rotation = os.environ.get("GROSSES_ONDES_OFFICIAL_UPDATE_RUN", "")
+    require(not raw_rotation or bool(re.fullmatch(r"[1-9][0-9]{0,11}", raw_rotation)),
+            "numéro de rotation GitHub invalide")
+    rotation_tick = (int(raw_rotation) if raw_rotation else
+                     today.toordinal() * 2 +
+                     (1 if datetime.now(ZoneInfo("Europe/Paris")).hour >= 15 else 0))
     out,report=build_candidate(
         snapshot,published,patch,sources,today.isoformat(),
         trusted_published=True, geo_review=geo_review,
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
-        official_update_tick=(today.toordinal() * 2 +
-                              (1 if datetime.now(ZoneInfo("Europe/Paris")).hour >= 15 else 0)))
+        official_update_tick=rotation_tick,
+        official_update_limit=12)
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7
