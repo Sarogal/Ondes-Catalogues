@@ -492,3 +492,161 @@ def verify_self_historical(event_approval, site_approval, published_venues,
                     for ident, name in zip(event["artistIds"], names)),
             "published artist bill differs from historical first-party proof")
     return True
+
+
+# A first-party OpenAgenda export authenticates an event without a venue-domain
+# ownership claim. BAN + a named OSM feature independently authenticate its
+# physical location. This profile never authorizes guessed map positions.
+OPENAGENDA_NEW_PROFILE = "dynamic-openagenda-new-site-v1"
+OPENAGENDA_NEW_CHECKED = ["artists", "date", "venue", "genre", "openAgendaPage", "independentLocation"]
+OPENAGENDA_NEW_FIELDS = frozenset({
+    "url", "proofType", "checkedAt", "checkedFields",
+    "officialArtistNames", "officialGenreLabels",
+    "officialOpenAgendaUid", "officialOpenAgendaEventUid", "namedOsmUrl",
+})
+
+
+def _openagenda_new_basics(event_approval, site_approval):
+    import openagenda_official_concert as oa
+    require(isinstance(event_approval, dict) and
+            isinstance(site_approval, dict) and
+            event_approval.get("reviewDecision") == "approved" and
+            event_approval.get("reviewedBy") == "independent-official-verifier" and
+            site_approval.get("reviewDecision") == "approved" and
+            site_approval.get("reviewedBy") == "independent-official-verifier" and
+            site_approval.get("venueKind") == contract.PROFILE and
+            site_approval.get("reviewedAt") == event_approval.get("reviewedAt"),
+            "OpenAgenda new-site approvals not independently paired")
+    event, venue = event_approval.get("event"), site_approval.get("venue")
+    binding = site_approval.get("eventBinding")
+    proofs = event_approval.get("officialEvidence")
+    require(isinstance(event, dict) and isinstance(venue, dict) and
+            isinstance(binding, dict) and isinstance(proofs, list) and
+            len(proofs) == 2 and isinstance(proofs[0], dict) and
+            proofs[0].get("proofType") == "official-organizer-or-venue" and
+            proofs[0].get("url") == event.get("officialUrl") and
+            proofs[0].get("checkedAt") == event_approval.get("reviewedAt") and
+            proofs[0].get("checkedFields") == ["artists", "date", "venue", "genre"] and
+            isinstance(proofs[1], dict) and
+            set(proofs[1]) == OPENAGENDA_NEW_FIELDS,
+            "OpenAgenda new-site event proof missing or malformed")
+    proof = proofs[1]
+    url = event.get("officialUrl")
+    require(proof.get("url") == url and oa.is_openagenda_event_url(url)
+            and proof.get("proofType") == OPENAGENDA_NEW_PROFILE
+            and proof.get("checkedAt") == event_approval.get("reviewedAt")
+            and proof.get("checkedFields") == OPENAGENDA_NEW_CHECKED
+            and isinstance(proof.get("officialArtistNames"), list)
+            and proof["officialArtistNames"]
+            and isinstance(proof.get("officialGenreLabels"), list)
+            and contract.relevant_genres(proof["officialGenreLabels"])
+            and event.get("title") == " + ".join(proof["officialArtistNames"])
+            and event.get("genres") == proof["officialGenreLabels"]
+            and event.get("status") == "confirmed"
+            and event.get("time") is None
+            and event.get("sourceType") == "organisateur"
+            and event.get("venueId") == venue.get("id")
+            and venue.get("id") == contract.site_id(
+                venue.get("name", ""), venue.get("city", ""),
+                venue.get("geoSource", ""))
+            and proof.get("namedOsmUrl") == venue.get("geoSource")
+            and binding.get("eventId") == event.get("id")
+            and binding.get("eventDate") == event.get("date")
+            and binding.get("eventOfficialUrl") == url
+            and binding.get("authoritySourceUrl") == url
+            and binding.get("authorityArtistId") is None,
+            "OpenAgenda concert and physical site identity changed")
+    # Only exact positive decimal IDs can form the first-party read-only URL.
+    oa.official_export_url(proof.get("officialOpenAgendaUid"),
+                           proof.get("officialOpenAgendaEventUid"))
+    return event, venue, proof
+
+
+def verify_openagenda(event_approval, site_approval, published_venues,
+                      published_artists, today, *, fetch=None):
+    """Publisher-bound fresh OA event + independent named-site verification."""
+    import copy
+    import math
+    import openagenda_official_concert as oa
+    from automation.concerts import dynamic_new_site_approval_proposals as geo
+    from automation.concerts.independent_named_site_geo import _distance_meters
+    if fetch is None:
+        fetch = probe.safe_fetch
+    require(isinstance(today, dt.date) and not isinstance(today, dt.datetime)
+            and isinstance(published_venues, dict)
+            and isinstance(published_artists, dict),
+            "OpenAgenda new-site publisher baseline missing")
+    event, venue, proof = _openagenda_new_basics(event_approval, site_approval)
+    try:
+        checked = dt.date.fromisoformat(event_approval.get("reviewedAt"))
+        day = dt.date.fromisoformat(event.get("date"))
+    except (TypeError, ValueError):
+        raise ValueError("OpenAgenda new-site review date invalid")
+    require(0 <= (today - checked).days <= 7 and day >= today and checked <= day,
+            "OpenAgenda new-site evidence expired or future-dated")
+    require(venue.get("id") not in published_venues and
+            not any(sites._name(v.get("name")) == sites._name(venue.get("name"))
+                        and sites._name(v.get("city")) == sites._name(venue.get("city"))
+                        for v in published_venues.values() if isinstance(v, dict)),
+            "OpenAgenda site already on published map")
+    cache = {}
+    url = oa.official_export_url(proof["officialOpenAgendaUid"],
+                                 proof["officialOpenAgendaEventUid"])
+    raw = fetch(url, cache)
+    names, genres = oa.verified_export(
+        raw, event["officialUrl"], event["date"], venue,
+        agenda_uid=proof["officialOpenAgendaUid"],
+        event_uid=proof["officialOpenAgendaEventUid"])
+    require(names == proof["officialArtistNames"] and
+            genres == proof["officialGenreLabels"],
+            "OpenAgenda full bill or event genre changed")
+    ids, fresh = sites._artists(
+        names, {"artists": list(published_artists.values())})
+    require(event.get("artistIds") == ids and
+            event_approval.get("newArtists", []) == fresh,
+            "OpenAgenda original artist identities differ")
+    try:
+        source_place = __import__("json").loads(raw)["events"][0]["location"]
+    except (KeyError, ValueError, IndexError, TypeError):
+        raise ValueError("OpenAgenda original venue location missing")
+    official_lat, official_lon = source_place.get("latitude"), source_place.get("longitude")
+    if official_lat is not None or official_lon is not None:
+        require(type(official_lat) in (int, float) and
+                type(official_lon) in (int, float) and
+                all(math.isfinite(x) for x in (official_lat, official_lon))
+                and -90 <= official_lat <= 90 and -180 <= official_lon <= 180
+                and _distance_meters(
+                    official_lat, official_lon,
+                    venue["latitude"], venue["longitude"]) <= 125,
+                "OpenAgenda event GPS contradicts named OSM site")
+    # A claimed point is never accepted: recompute independently via exact
+    # government BAN address + one named OSM feature at every initial replay.
+    mapped = {k: venue[k] for k in ("name", "city", "address",
+               "postalCode", "department", "region")}
+    geo._independent_geo(mapped, fetch, cache)
+    require(all(venue.get(k) == mapped.get(k)
+                for k in ("id", "geoSource", "latitude", "longitude",
+                          "geoPrecision", "region", "department", "postalCode",
+                          "address", "city", "name")),
+            "OpenAgenda location differs from independently named geography")
+    return True
+
+
+def verify_openagenda_historical(event_approval, site_approval,
+                                 published_venues, published_artists,
+                                 published_event, today):
+    """Historical exact replay cannot approve a new site or alter a published one."""
+    event, venue, proof = _openagenda_new_basics(event_approval, site_approval)
+    require(isinstance(published_event, dict) and
+            isinstance(published_venues, dict) and
+            isinstance(published_artists, dict) and
+            isinstance(today, dt.date),
+            "OpenAgenda historical site has no signed published baseline")
+    require(all(event.get(k) == published_event.get(k) for k in
+                ("id", "title", "date", "time", "artistIds", "venueId",
+                 "genres", "status", "officialUrl", "sourceType"))
+            and published_venues.get(venue.get("id")) == venue
+            and event.get("artistIds")
+            and all(ident in published_artists for ident in event["artistIds"]),
+            "OpenAgenda historical event, artists or venue modified")
+    return True
