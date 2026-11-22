@@ -318,6 +318,18 @@ def _official_event(lead, html, url, today):
     names, unnamed = bill
     require(_name(lead.get("leadArtist")) in {_name(n) for n in names},
             "lead artist not on fresh official bill")
+    # A discovery title that explicitly advertises ACT + ACT must not
+    # replace a promised support with an unrelated name. Descriptive venue/
+    # date titles may be reformulated, but named artist assertions stay exact.
+    advertised = lead.get("name")
+    if isinstance(advertised, str) and " + " in advertised:
+        pieces = advertised.split(" + ")
+        official_names = [_name(name) for name in names]
+        require(all(
+            any((" " + artist + " ") in (" " + _name(piece) + " ")
+                for artist in official_names)
+            for piece in pieces),
+            "discovery advertised act absent from official bill")
     genres, _genre_scope = bridge.event_genres_from_own_bill(raw)
     require(contract.relevant_genres(genres),
             "explicit relevant non-electronic event genre absent")
