@@ -98,9 +98,16 @@ class CentralAndroidAutoArtworkIndexBuilder {
         selected = verifiedLocal ?? fallback;
       }
 
+      // A signed merge keeps the old GO identity and UUID ownership in the
+      // tombstone. Both must resolve to the verified SHA of the *active*
+      // survivor on Android Auto, not regress to a generic genre fallback.
       final ids = <String>{
         goId,
         ...(station['legacy_aliases'] as List).cast<String>(),
+        for (final redirect in catalog.goRedirects.entries)
+          if (redirect.value == goId) redirect.key,
+        for (final entry in catalog.aliasOwners.entries)
+          if (catalog.goRedirects[entry.value] == goId) entry.key,
       };
       for (final id in ids) {
         final previousOwner = ownerByMediaId[id];
