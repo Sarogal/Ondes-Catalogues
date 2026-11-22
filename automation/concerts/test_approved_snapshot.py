@@ -450,6 +450,57 @@ class ApprovalBatchTests(unittest.TestCase):
                                      ["FFF","Howlin' Jaws"])
                     self.assertEqual(e["artistIds"], ["fff","howlin-jaws"])
                     self.assertIsNone(e["time"])
+                elif any(
+                        p.get("proofType") ==
+                            "dynamic-existing-venue-openagenda-single-source-v1"
+                        for p in row.get("officialEvidence", [])
+                        if isinstance(p, dict)):
+                    # The real Publisher independently re-fetched the exact
+                    # OpenAgenda UID-scoped original and authenticated the
+                    # agenda, bill, genre, date and existing named venue.
+                    # Do not mistake this official single-source profile for
+                    # a missing legacy first-party organizer witness.
+                    proofs = row["officialEvidence"]
+                    self.assertEqual(len(proofs), 1)
+                    proof = proofs[0]
+                    self.assertEqual(row["reviewedBy"],
+                                     "independent-official-verifier")
+                    self.assertEqual(e["sourceType"], "salle")
+                    self.assertIsNone(e["time"])
+                    self.assertEqual(set(proof), {
+                        "url", "proofType", "checkedAt", "checkedFields",
+                        "officialArtistNames", "officialGenreLabels",
+                        "officialOpenAgendaEventUrl", "officialOpenAgendaUid",
+                        "officialOpenAgendaEventUid",
+                    })
+                    self.assertEqual(proof["url"], e["officialUrl"])
+                    self.assertEqual(proof["officialOpenAgendaEventUrl"],
+                                     e["officialUrl"])
+                    self.assertEqual(proof["checkedAt"], row["reviewedAt"])
+                    self.assertEqual(proof["checkedFields"],
+                                     ["artists", "date", "venue", "genre",
+                                      "openAgendaPage"])
+                    self.assertEqual(proof["officialArtistNames"],
+                                     e["title"].split(" + "))
+                    self.assertEqual(len(proof["officialArtistNames"]),
+                                     len(e["artistIds"]))
+                    self.assertEqual(proof["officialGenreLabels"],
+                                     e["genres"])
+                    self.assertTrue(isinstance(e.get("venueId"), str)
+                                    and e["venueId"])
+                    self.assertEqual(urlsplit(proof["url"]).scheme, "https")
+                    self.assertEqual(urlsplit(proof["url"]).hostname,
+                                     "openagenda.com")
+                    self.assertRegex(urlsplit(proof["url"]).path,
+                                     r"^/(?:fr/|en/)?[a-z0-9-]+/events/[a-z0-9_-]+$")
+                    for key in ("officialOpenAgendaUid",
+                                "officialOpenAgendaEventUid"):
+                        value = proof[key]
+                        self.assertTrue(isinstance(value, str)
+                                        and value.isascii()
+                                        and value.isdecimal()
+                                        and 1 <= len(value) <= 12
+                                        and int(value) > 0)
                 else:
                     self.assertTrue(any(p.get("url")==e["officialUrl"]
                         and p.get("proofType")=="official-organizer-or-venue"
