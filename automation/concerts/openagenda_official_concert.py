@@ -13,6 +13,7 @@ republished; the public event URL attributes the originating record.
 from __future__ import annotations
 
 import datetime as dt
+import json
 import re
 import sys
 from pathlib import Path
@@ -101,6 +102,117 @@ def _bill(event):
             or any(not normalized(s) for s in names)):
         raise ValueError("OpenAgenda: duplicate or malformed performers")
     return names
+
+
+
+def _numeric_uid(value):
+    """Only decimal OpenAgenda IDs can enter a pinned first-party export URL."""
+    if type(value) not in (int, str):
+        raise ValueError("OpenAgenda: malformed numeric identifier")
+    raw = str(value)
+    if (not raw.isascii() or not raw.isdecimal()
+            or not 1 <= len(raw) <= 12 or int(raw) == 0):
+        raise ValueError("OpenAgenda: malformed numeric identifier")
+    return int(raw)
+
+
+def official_export_url(agenda_uid, event_uid):
+    """OpenAgenda's own public read-only export, never a candidate URL."""
+    agenda_uid = _numeric_uid(agenda_uid)
+    event_uid = _numeric_uid(event_uid)
+    return (f"https://openagenda.com/agendas/{agenda_uid}/events.json"
+            f"?uid={event_uid}&limit=1")
+
+
+def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
+    """Fresh OpenAgenda-owned single-event export; no external corroboration.
+
+    The public national index may suggest IDs, but cannot sign a concert.
+    The actual OpenAgenda export must bind both IDs to the exact source slug,
+    date, published location and music classification.
+    """
+    if not is_openagenda_event_url(url):
+        raise ValueError("OpenAgenda: noncanonical event URL")
+    origin_id = _numeric_uid(agenda_uid)
+    record_id = _numeric_uid(event_uid)
+    if not isinstance(raw_json, str) or not 20 <= len(raw_json) <= 400_000:
+        raise ValueError("OpenAgenda: official JSON export missing")
+    try:
+        doc = json.loads(raw_json)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("OpenAgenda: invalid official JSON export") from exc
+    if (not isinstance(doc, dict) or doc.get("total") != 1
+            or not isinstance(doc.get("events"), list)
+            or len(doc["events"]) != 1
+            or not isinstance(doc["events"][0], dict)):
+        raise ValueError("OpenAgenda: no unique original event")
+    record = doc["events"][0]
+    agenda = record.get("originAgenda")
+    path_parts = [x for x in urlsplit(url).path.split("/") if x]
+    if path_parts and path_parts[0] in ("fr", "en"):
+        path_parts = path_parts[1:]
+    if len(path_parts) != 3 or path_parts[1] != "events":
+        raise ValueError("OpenAgenda: invalid original event slug")
+    event_slug = str(record.get("slug") or "")
+    source_slug = re.sub(r"^[0-9]{1,12}[_-]", "", path_parts[2])
+    if (type(record.get("uid")) is not int or record["uid"] != record_id
+            or not isinstance(agenda, dict)
+            or type(agenda.get("uid")) is not int
+            or agenda["uid"] != origin_id
+            or normalized(agenda.get("slug")) != normalized(path_parts[0])
+            or not event_slug or event_slug != source_slug):
+        raise ValueError("OpenAgenda: original event identity not authenticated")
+    # OpenAgenda status 1 means published/scheduled; cancelled, postponed
+    # and deprogrammed records never enter the public confirmed catalogue.
+    if record.get("status") != 1:
+        raise ValueError("OpenAgenda: event is not currently scheduled")
+    event_status = str(record.get("eventStatus") or "").casefold()
+    if any(token in event_status for token in CANCELLED):
+        raise ValueError("OpenAgenda: event is cancelled or postponed")
+    try:
+        exact = dt.date.fromisoformat(when)
+        if (record.get("firstDate") != exact.isoformat()
+                or dt.date.fromisoformat(record.get("lastDate")) < exact):
+            raise ValueError("OpenAgenda: contradictory event date")
+    except (ValueError, TypeError) as exc:
+        raise ValueError("OpenAgenda: invalid event date") from exc
+    place = record.get("location")
+    if (not isinstance(place, dict)
+            or normalized(place.get("name")) != normalized(venue.get("name"))
+            or normalized(place.get("city")) != normalized(venue.get("city"))):
+        raise ValueError("OpenAgenda: official physical venue mismatch")
+    if (place.get("postalCode") and venue.get("postalCode")
+            and str(place["postalCode"]) != str(venue["postalCode"])):
+        raise ValueError("OpenAgenda: postal code mismatch")
+    street = place.get("address")
+    if (street and venue.get("address")
+            and not normalized(street).startswith(
+                normalized(venue["address"]))):
+        raise ValueError("OpenAgenda: official street location mismatch")
+    if str(place.get("countryCode") or "").lower() not in ("fr", "gp",
+            "mq", "gf", "re", "yt", "nc", "pf", "wf", "pm", "bl", "mf"):
+        raise ValueError("OpenAgenda: non-French event location")
+    title = record.get("title")
+    title = (title.get("fr") or title.get("en")) if isinstance(
+        title, dict) else None
+    if (not isinstance(title, str) or not 3 <= len(title) <= 900
+            or any(x in normalized(title)
+                   for x in ("festival", "annule", "annulled"))):
+        raise ValueError("OpenAgenda: missing concert bill or festival")
+    keys = record.get("keywords")
+    raw_genres = ((keys.get("fr") or keys.get("en"))
+                  if isinstance(keys, dict) else None)
+    if not isinstance(raw_genres, list):
+        raise ValueError("OpenAgenda: original music tags missing")
+    # Event-level keywords attest musical relevance; never assign each band's
+    # style from the headliner's tags.
+    genres = [x for x in raw_genres
+              if isinstance(x, str) and contract.relevant_genres([x])]
+    genres = list(dict.fromkeys(genres))
+    if not genres or len(genres) > 20:
+        raise ValueError("OpenAgenda: outside metal/hard-rock/punk universe")
+    names = _bill({"@type": "MusicEvent", "name": title})
+    return names, genres
 
 
 def verified_bill(html, url, when, venue):

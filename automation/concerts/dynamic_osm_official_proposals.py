@@ -213,14 +213,27 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
                     venue, url, fetch, cache)
         except (ValueError, OSError, TimeoutError) as exc:
             raise ValueError("osm_identity: " + str(exc)) from exc
+    # New OpenAgenda observations include two research-only numeric locators.
+    # They never grant an approval: a fresh first-party OpenAgenda export
+    # independently verifies event, agenda ownership, date, room and genre.
+    export_ids = (candidate.get("openAgendaUid"),
+                  candidate.get("openAgendaEventUid"))
+    official_export = openagenda_page and all(export_ids)
     try:
-        body = fetch(url, cache)
+        if official_export:
+            body = fetch(openagenda.official_export_url(*export_ids), cache)
+        else:
+            body = fetch(url, cache)
     except (ValueError, OSError, TimeoutError) as exc:
         raise ValueError("official_event_fetch: " + str(exc)) from exc
-    require(isinstance(body, str) and 100 <= len(body) <= 400_000,
-            "missing individual official event page")
+    require(isinstance(body, str) and 20 <= len(body) <= 400_000,
+            "missing individual official OpenAgenda evidence")
     try:
-        if openagenda_page:
+        if official_export:
+            names, genres = openagenda.verified_export(
+                body, url, date, venue, agenda_uid=export_ids[0],
+                event_uid=export_ids[1])
+        elif openagenda_page:
             names, genres = openagenda.verified_bill(
                 body, url, date, venue)
         else:
@@ -266,6 +279,9 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
     }
     if openagenda_page:
         proof["officialOpenAgendaEventUrl"] = url
+        if official_export:
+            proof["officialOpenAgendaUid"] = str(export_ids[0])
+            proof["officialOpenAgendaEventUid"] = str(export_ids[1])
     elif official_home:
         proof["officialVenueSourceUrl"] = official_home
     else:
