@@ -17,15 +17,24 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
+from future_city_preflight import exact_edition_city, _normal as normal_city
+from official_admin_communes import verified_commune
 from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
 )
 
 MAX_LINKS = 5
 MAX_HOSTS = 8
-CHANGEABLE = frozenset(("lineup", "bands", "price", "lastVerified", "auditSources",
-                        "startDate", "endDate", "days", "dateRangeIsContinuous",
-                        "status", "verificationStatus"))
+COMMUNE_FIELDS = frozenset((
+    "city", "lat", "lon", "showOnMap", "geoCity", "geoPrecision",
+    "geoInsee", "geoSource", "geoVerification",
+))
+DATE_FIELDS = frozenset((
+    "startDate", "endDate", "days", "dateRangeIsContinuous",
+    "status", "verificationStatus",
+))
+CHANGEABLE = (frozenset(("lineup", "bands", "price", "lastVerified", "auditSources"))
+              | COMMUNE_FIELDS | DATE_FIELDS)
 ROLE = re.compile(r"\b(?:programmation|line up|lineup|groupes?|noms|artistes?|"
                   r"annonce|affiche|actualites?|news|billetterie|tarifs?|pass|202[7-9])\b")
 GENRE_LIST = re.compile(r"\b(?:groupes?|noms|artistes?|programmation|lineup|affiche|ils seront)\b")
@@ -268,6 +277,20 @@ def matches_edition(doc, row, today, *, root_ok):
                 start.month == end.month and days in visible)
 
 
+def home_matches_edition(doc, row, today):
+    """Festival home may have 2026 news <article> before 2027 <main>.
+
+    A news teaser must not hide the signed current edition's own homepage
+    section. A cross-edition article itself is still independently checked.
+    """
+    if matches_edition(doc, row, today, root_ok=False):
+        return True
+    main_only = Page()
+    main_only.blocks = [b for b in doc.blocks if b["scope"] == "main"]
+    return bool(main_only.blocks and
+                matches_edition(main_only, row, today, root_ok=False))
+
+
 def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
             type(limit) is not int or not 0 <= limit <= 30):
@@ -281,7 +304,7 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
         try:
             start = row.get("startDate")
             if start is None and row.get("endDate") is None:
-                # An announced year-specific future edition needs rechecking.
+                # Recheck signed year-specific future editions awaiting dates.
                 m = re.fullmatch(r".+\s+(20[2-4]\d)", row.get("name") or "")
                 if (not m or not str(row.get("slug", "")).endswith("-" + m[1])
                         or not date.fromisoformat(today).year <= int(m[1])
@@ -302,8 +325,13 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
 
 
 def apply_independently_verified_updates(
-        target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS, tick=None):
-    """Only update changed artists/prices; never infer venue, dates or cancellations."""
+        target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
+        tick=None, commune_resolver=verified_commune):
+    """Recheck signed artists/prices and exact first-party city proof.
+
+    A commune marker is only an indicative administrative centre: no precise
+    festival entrance is inferred from a former venue or an organizer footer.
+    """
     result = deepcopy(target)
     positions = {r["slug"]: i for i, r in enumerate(result["festivals"])}
     report = {"checked_official_hosts": 0, "rechecked_pages": 0,
@@ -319,6 +347,13 @@ def apply_independently_verified_updates(
             report["unavailable"] += 1
             continue
         pages = [(site, root)]
+        # On a current-edition homepage, old news cards may be nested in
+        # <article> while the live ticket categories are in <main>. Inspect
+        # both as separate first-party content scopes, not one mixed roster.
+        main_only = Page()
+        main_only.blocks = [b for b in root.blocks if b["scope"] == "main"]
+        if main_only.blocks:
+            pages.append((site, main_only))
         for link in linked_pages(site, root):
             try:
                 pages.append((link, page(fetch(link))))
@@ -330,7 +365,7 @@ def apply_independently_verified_updates(
             new = result["festivals"][positions[slug]]
             if any(old.get(f) != new.get(f) for f in set(old) | set(new)):
                 continue
-            root_ok = matches_edition(root, old, today, root_ok=False)
+            root_ok = home_matches_edition(root, old, today)
             claims, prices, sources = [], {}, []
             for url, doc in pages:
                 if not matches_edition(doc, old, today, root_ok=root_ok):
@@ -343,8 +378,7 @@ def apply_independently_verified_updates(
                     sources.append(url)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
-            new_names, seen = [], {key(n) for n in current_lineup
-                                   if isinstance(n, str)}
+            new_names, seen = [], {key(n) for n in current_lineup if isinstance(n, str)}
             for n in claims:
                 if key(n) not in seen:
                     seen.add(key(n))
@@ -368,8 +402,53 @@ def apply_independently_verified_updates(
                         old_price != summary):
                     new["price"] = summary
                     fields.append("price")
-            # Only a complete *multi-day* current-edition range can replace
-            # unknown dates. A lone opening date cannot establish the end.
+            # The signed current-edition title may explicitly name the town.
+            # Publisher re-fetches the site itself, then independently resolves
+            # that exact commune through the fixed government geocoding API.
+            # Neither private leads nor a previously used venue are authority.
+            if (old.get("lat") is None and old.get("lon") is None
+                    and old.get("showOnMap") is not True
+                    and old.get("futureVenueConfirmed") is not True
+                    and old.get("geoVerification") is None
+                    and old.get("geoPrecision") is None):
+                # A title with signed brand, EXACT dates and one town is its
+                # own first-party edition proof. The site's news teaser may
+                # omit the year, so root_ok cannot be an additional gate.
+                claim = exact_edition_city(root_html, old)
+                if (claim and claim.get("source") == site
+                        and claim.get("slug") == slug
+                        and (not old.get("city")
+                             or normal_city(old["city"]) == normal_city(claim["city"]))):
+                    try:
+                        commune = commune_resolver(claim["city"], old.get("department"))
+                    except (OSError, TimeoutError, ValueError, UnicodeError):
+                        commune = None
+                    if (commune and normal_city(commune.get("city")) == normal_city(claim["city"])
+                            and type(commune.get("lat")) in (float, int)
+                            and type(commune.get("lon")) in (float, int)
+                            and isinstance(commune.get("codeInsee"), str)
+                            and isinstance(commune.get("geoSource"), str)):
+                        new.update({
+                            "city": commune["city"],
+                            "lat": commune["lat"], "lon": commune["lon"],
+                            "geoCity": commune["city"],
+                            "geoPrecision": "commune",
+                            "geoInsee": commune["codeInsee"],
+                            "geoSource": commune["geoSource"],
+                            "showOnMap": True,
+                            "geoVerification": {
+                                "proofMode": "current-edition-commune-direct-official.v1",
+                                "firstObserved": today,
+                                "verifiedAt": today,
+                                "officialSite": site,
+                                "markerMeaning": "centre_indicatif_de_commune",
+                            },
+                        })
+                        fields.extend(sorted(COMMUNE_FIELDS))
+                        sources.append(site)
+            # An already signed future edition without dates is rechecked
+            # directly on the registered first-party homepage. Do not infer
+            # a multi-day festival from an isolated opening date.
             if old.get("startDate") is None and old.get("endDate") is None:
                 m = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old.get("name") or "")
                 if m and str(old.get("slug", "")).endswith("-" + m[2]):
@@ -377,12 +456,11 @@ def apply_independently_verified_updates(
                     year = int(m[2])
                     visible = official_date(root_html, parent, year)
                     jsonld = official_structured_date(root_html, parent, year)
-                    has_jsonld = matching_official_jsonld_present(
+                    matching_jsonld = matching_official_jsonld_present(
                         root_html, parent, year)
-                    # Conflicting evidence, or malformed matching JSON-LD,
-                    # blocks admission rather than choosing the nicer dates.
+                    # Contradictions veto admission. No external evidence.
                     dates = None
-                    if not (has_jsonld and jsonld is None) and not (
+                    if not (matching_jsonld and jsonld is None) and not (
                             visible and jsonld and visible != jsonld):
                         dates = visible or jsonld
                     if (dates and dates[0] > date.fromisoformat(today)

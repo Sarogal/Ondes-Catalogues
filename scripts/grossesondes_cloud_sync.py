@@ -37,6 +37,7 @@ from grossesondes_future_city_publisher import (
 )
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
+    COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -169,7 +170,7 @@ def load_production(reference_manifest, reader=None):
         data[filename]=obj
     return data
 
-def _certified_new_commune_delta(old, new):
+def _certified_new_commune_delta(old, new, *, allow_direct=False):
     """Safely retain independent town-centre pins on post-baseline editions.
 
     Non-baseline rows were previously required byte-identical, which prevented
@@ -191,12 +192,18 @@ def _certified_new_commune_delta(old, new):
                 "proofMode", "firstObserved", "verifiedAt",
                 "officialSite", "markerMeaning",
             }
-            or proof.get("proofMode") != "current-edition-commune-two-day.v1"
+            or proof.get("proofMode") not in (
+                ("current-edition-commune-two-day.v1",) +
+                (("current-edition-commune-direct-official.v1",)
+                 if allow_direct else ())
+            )
             or proof.get("markerMeaning") != "centre_indicatif_de_commune"
             or proof.get("officialSite") != old.get("officialSite")
             or not isinstance(proof.get("firstObserved"), str)
             or not isinstance(proof.get("verifiedAt"), str)
-            or proof["firstObserved"] >= proof["verifiedAt"]
+            or (proof["firstObserved"] >= proof["verifiedAt"]
+                if proof.get("proofMode") == "current-edition-commune-two-day.v1"
+                else proof["firstObserved"] != proof["verifiedAt"])
             or old.get("showOnMap") is True
             or old.get("lat") is not None or old.get("lon") is not None
             or old.get("geoVerification") is not None
@@ -234,21 +241,23 @@ def _verified_official_update_delta(old, new):
                if (k not in old) != (k not in new) or old.get(k) != new.get(k)}
     newly_dated = {"startDate", "endDate"} <= changed
     if (not changed or not changed <= OFFICIAL_UPDATE_FIELDS or
-            not ({"lineup", "price"} & changed or newly_dated)):
+            not ({"lineup", "price"} & changed)
+            and not (COMMUNE_UPDATE_FIELDS & changed)
+            and not newly_dated):
         return False
     date_fields = {"startDate", "endDate", "days", "dateRangeIsContinuous",
                    "status", "verificationStatus"}
     if newly_dated:
-        # A signed undated edition may receive its own official dates;
-        # already dated editions may never silently shift in this pathway.
+        # Only an independently rechecked, signed, future unknown-date edition
+        # may gain exact dates; it must keep all non-date editorial fields.
         if (not changed <= date_fields | {"lastVerified", "auditSources"}
                 or old.get("startDate") is not None
                 or old.get("endDate") is not None
                 or old.get("status") != "Dates à venir"
                 or not isinstance(old.get("name"), str)):
             return False
-        expected = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old["name"])
-        if (not expected or not str(old.get("slug", "")).endswith("-" + expected[2])
+        matched = re.fullmatch(r"(.+)\s+(20[2-4]\d)", old["name"])
+        if (not matched or not str(old.get("slug", "")).endswith("-" + matched[2])
                 or not isinstance(new.get("startDate"), str)
                 or not isinstance(new.get("endDate"), str)):
             return False
@@ -257,7 +266,7 @@ def _verified_official_update_delta(old, new):
             end = date.fromisoformat(new["endDate"])
         except ValueError:
             return False
-        if (begin.year != int(expected[2]) or end.year != begin.year
+        if (begin.year != int(matched[2]) or end.year != begin.year
                 or not 1 <= (end - begin).days <= 7
                 or new.get("days") != str((end - begin).days + 1)
                 or new.get("dateRangeIsContinuous") is not True
@@ -267,6 +276,17 @@ def _verified_official_update_delta(old, new):
             return False
     elif changed & date_fields:
         return False
+    if COMMUNE_UPDATE_FIELDS & changed:
+        # Verify the certified marker IN ISOLATION so a price/roster update
+        # cannot mask an unproved venue, arbitrary coordinate or fake source.
+        commune_only = dict(old)
+        for field in COMMUNE_UPDATE_FIELDS:
+            if field in new:
+                commune_only[field] = new[field]
+            else:
+                commune_only.pop(field, None)
+        if not _certified_new_commune_delta(old, commune_only, allow_direct=True):
+            return False
     old_names, new_names = old.get("lineup"), new.get("lineup")
     if "lineup" in changed:
         if (not isinstance(old_names, list) or not isinstance(new_names, list)
@@ -316,8 +336,8 @@ def safe_target(baseline, candidate, currently_published,
     for slug, old in original.items():
         new=target[slug]
         current=live[slug]
-        # An old signed undated edition must not acquire dates through an
-        # unverified private patch just because the legacy baseline is old.
+        # The legacy baseline alone cannot authorize an unproven switch from
+        # a future unknown-date edition to arbitrary supplied dates.
         if ((current.get("startDate") is None or current.get("endDate") is None)
                 and (new.get("startDate") != current.get("startDate")
                      or new.get("endDate") != current.get("endDate"))):

@@ -128,6 +128,31 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(_verified_official_update_delta(row, new))
         self.assertEqual(report["accepted"], ["mozhell-open-air"])
 
+    def test_motocultor_homepage_news_cards_do_not_hide_main_ticket_prices(self):
+        # Public homepage mixes historic news <article> cards with 2027
+        # programming and ticket categories in <main>.
+        home = (MOTO_HOME.replace("</main>", (
+            "<h3>Pass 4 jours</h3><p>Tarif normal 239 € en vente</p>"
+            "<h3>Pass 1 jour</h3><p>Journée au choix 82 € en vente</p>"
+            "</main>")) +
+            "<article><p>Dernières actualités : édition 2026</p></article>")
+        row = festival(
+            "motocultor-festival", MOTO,
+            dates=("2027-08-19", "2027-08-22"),
+            lineup=["Helloween", "Halestorm"],
+            price="Pass 4 jours : 228 € (Early Bird 3)")
+        signed = doc(row)
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, limit=1, tick=0,
+            fetch=lambda url: {MOTO: home, MOTO_NEWS: MOTO_ARTICLE}[url])
+        updated = out["festivals"][0]
+        self.assertEqual(updated["bands"], 23)
+        self.assertIn("Alestorm", updated["lineup"])
+        self.assertIn("239 €", updated["price"])
+        self.assertIn("82 €", updated["price"])
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+
     def test_no_rogue_host_or_old_edition_proof(self):
         a = page(HOME)
         self.assertEqual(linked_pages(MOZHELL, a), [ARTICLE])
