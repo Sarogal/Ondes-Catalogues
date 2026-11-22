@@ -17,10 +17,13 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
-from future_city_preflight import exact_edition_city, _normal as normal_city
+from future_city_preflight import exact_edition_city, _normal as normal_city, _EditionTitle
 from official_admin_communes import verified_commune
 from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
+)
+from grossesondes_official_html_edition import (
+    VisibleText, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
 )
 
 MAX_LINKS = 5
@@ -324,6 +327,69 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     return [(url, grouped[url]) for url in urls[offset:offset + limit]]
 
 
+WEEKDAY_2027_LABELS = {
+    "lundi": 0, "mardi": 1, "mercredi": 2, "jeudi": 3,
+    "vendredi": 4, "samedi": 5, "dimanche": 6,
+}
+WEEKDAY_NAMES = "|".join(WEEKDAY_2027_LABELS)
+MONTH_NAMES = "|".join(sorted(OFFICIAL_MONTHS, key=len, reverse=True))
+WEEKDAY_DATE_SEQUENCE = re.compile(
+    r"(?<![a-z0-9])((?:(?:" + WEEKDAY_NAMES +
+    r")\s+\d{1,2}\s+){2,7})(" + MONTH_NAMES + r")\s+(20[2-4]\d)\b"
+)
+
+
+def weekday_labelled_official_dates(html, row, year):
+    """Bind explicit weekday/day sequences to the registered festival title.
+
+    Some official festivals print VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOUT 2027
+    without a numeric range. Do not borrow days from an unrelated organizer
+    event, infer an end date, or trust a mismatching weekday/year.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return None
+    title = _EditionTitle()
+    body = VisibleText()
+    try:
+        title.feed(html)
+        title.close()
+        body.feed(html)
+        body.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    title_words = fold(" ".join(title.parts))
+    brand = fold(re.sub(r"\b20[2-4]\d\b", "", row.get("name", "")))
+    if (len(key(brand)) < 8 or not title_words
+            or not re.search(r"(?<![a-z0-9])" +
+                             r"\s+".join(map(re.escape, brand.split())) +
+                             r"(?![a-z0-9])", title_words)):
+        return None
+    visible = fold(" ".join(body.parts))
+    if OFFICIAL_CANCELLATION.search(visible):
+        return None
+    matches = set()
+    for match in WEEKDAY_DATE_SEQUENCE.finditer(visible):
+        if int(match.group(3)) != year:
+            continue
+        month = OFFICIAL_MONTHS.get(match.group(2))
+        if month is None:
+            continue
+        labels = re.findall(r"(" + WEEKDAY_NAMES + r")\s+(\d{1,2})",
+                            match.group(1))
+        if not 2 <= len(labels) <= 7:
+            return None
+        try:
+            dates = [date(year, month, int(day)) for _, day in labels]
+        except ValueError:
+            return None
+        if (any(day.weekday() != WEEKDAY_2027_LABELS[label]
+                for (label, _), day in zip(labels, dates))
+                or any(right.toordinal() != left.toordinal() + 1
+                       for left, right in zip(dates, dates[1:]))):
+            return None
+        matches.add((dates[0], dates[-1]))
+    return next(iter(matches)) if len(matches) == 1 else None
+
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
         tick=None, commune_resolver=verified_commune):
@@ -464,14 +530,17 @@ def apply_independently_verified_updates(
                     for official_url, official_html in html_pages:
                         visible = official_date(official_html, parent, year)
                         jsonld = official_structured_date(official_html, parent, year)
+                        weekdays = weekday_labelled_official_dates(
+                            official_html, old, year)
                         matching_jsonld = matching_official_jsonld_present(
                             official_html, parent, year)
                         # Never cherry-pick between opposing first-party facts.
                         if ((matching_jsonld and jsonld is None) or
-                                (visible and jsonld and visible != jsonld)):
+                                len({d for d in (visible, jsonld, weekdays)
+                                     if d is not None}) > 1):
                             contradicted = True
                             break
-                        dates = visible or jsonld
+                        dates = visible or jsonld or weekdays
                         if dates:
                             proposed_ranges.add(dates)
                             verified_urls.append(official_url)
