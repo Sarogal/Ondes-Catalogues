@@ -1,0 +1,31 @@
+name: GO radio — signed GO-ID redirect Dart tests
+on:
+  push:
+    branches:
+      - feature/radio-identity-redirect-contract-20261122
+    paths:
+      - 'radio-catalog-lab/dart/lib/central_radio_catalog_core.dart'
+      - 'radio-catalog-lab/dart/lib/central_radio_catalog_projection.dart'
+      - 'radio-catalog-lab/dart/lib/central_catalog_media_identity.dart'
+      - 'radio-catalog-lab/dart/test/central_radio_catalog_client_test.dart'
+      - '.github/workflows/go-radio-redirect-dart-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dart-redirect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: radio-catalog-lab/dart
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - run: dart pub get
+      - name: Analyze exact copied Dart verifier and projections
+        run: dart analyze --fatal-infos
+      - name: Verify signed redirects and all existing central client tests
+        run: dart test --reporter expanded
