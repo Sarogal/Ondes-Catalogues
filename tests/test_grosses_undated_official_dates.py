@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automation"))
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, signed_rotation,
-    undated_official_evidence_diagnostic,
+    undated_official_evidence_diagnostic, reconcile_official_date_ranges,
 )
 from grossesondes_cloud_sync import _verified_official_update_delta, safe_target
 
@@ -76,6 +76,61 @@ class UndatedOfficialDateTests(unittest.TestCase):
         self.assertFalse(flags["visible_weekday_sequence"])
         new, report = self.updated(html, old)
         self.assertEqual(new, old)
+        self.assertEqual(report["accepted"], [])
+
+    def test_full_official_weekend_and_contained_single_day_agree(self):
+        from datetime import date
+        from unittest.mock import patch
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        homepage = (
+            "<html><head><title>Accueil | Fertois Metal Fest</title></head>"
+            "<body><main>"
+            "<img alt='EDITION 2027 FERTOIS METAL FEST LOGO.png'>"
+            "<heading>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOÛT 2027"
+            "</heading></main></body></html>")
+        full = (date(2027, 8, 27), date(2027, 8, 29))
+        last_day = (date(2027, 8, 29), date(2027, 8, 29))
+        self.assertEqual(reconcile_official_date_ranges({full, last_day}),
+                         full)
+        before = signed(old)
+        with patch("grossesondes_existing_official_updates.official_date",
+                   return_value=last_day):
+            after, report = apply_independently_verified_updates(
+                before, before, DAY, fetch=lambda _: homepage, limit=1, tick=0)
+        item = after["festivals"][0]
+        self.assertEqual((item["startDate"], item["endDate"]),
+                         ("2027-08-27", "2027-08-29"))
+        self.assertEqual(item["days"], "3")
+        self.assertEqual(report["accepted"], [old["slug"]])
+        self.assertTrue(report["official_edition_diagnostics"][0][
+            "undated_page_proof"][0]["date_readings_differ"])
+        self.assertTrue(_verified_official_update_delta(old, item))
+
+    def test_distinct_multi_day_intervals_remain_contradictory(self):
+        from datetime import date
+        from unittest.mock import patch
+        old = festival()
+        old.update(slug="fertois-metal-fest-2027",
+                   name="Fertois Metal Fest 2027",
+                   officialSite="https://www.fertoismetalfest.com/")
+        old["auditSources"] = [old["officialSite"]]
+        homepage = (
+            "<html><title>Fertois Metal Fest</title>"
+            "<img alt='EDITION 2027 FERTOIS METAL FEST LOGO'>"
+            "<p>VENDREDI 27 SAMEDI 28 DIMANCHE 29 AOUT 2027</p></html>")
+        conflicting = (date(2027, 8, 27), date(2027, 8, 28))
+        full = (date(2027, 8, 27), date(2027, 8, 29))
+        self.assertIsNone(reconcile_official_date_ranges({full, conflicting}))
+        before = signed(old)
+        with patch("grossesondes_existing_official_updates.official_date",
+                   return_value=conflicting):
+            after, report = apply_independently_verified_updates(
+                before, before, DAY, fetch=lambda _: homepage, limit=1, tick=0)
+        self.assertEqual(after["festivals"][0], old)
         self.assertEqual(report["accepted"], [])
 
     def test_future_date_exact_official_single_source_publishes(self):
