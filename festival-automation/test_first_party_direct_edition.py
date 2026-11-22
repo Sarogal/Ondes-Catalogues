@@ -1,8 +1,7 @@
-"""Offline regressions: official festival sites alone establish their own dates.
+"""Offline regressions: a verified official domain can establish own dates.
 
-A URL taken from the discovery queue is an untrusted lead until BOTH the
-private J/J+1 check and the independent cloud Publisher first-party reread.
-Neither venue nor municipal calendar must contain or repeat the date.
+The private same-day proposal remains untrusted until the independent
+Publisher first-party reread. No venue/municipal repetition is required.
 """
 from copy import deepcopy
 from pathlib import Path
@@ -212,15 +211,19 @@ class FirstPartyDirectTests(TestCase):
                     "https://lasainterockfestival.fr@evil.fr/"):
             self.assertFalse(branded_official_site(bad, TITLE, HOME))
 
-    def test_j1_is_stability_not_another_source(self):
+    def test_single_official_source_suffices_on_first_day(self):
         cat, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
         reader = lambda url: HOME if url == SITE else self.fail(
             "External date source forbidden")
         first = examine(state, queue(DAY1), cat, DAY1, fetch=reader)
         self.assertEqual(first["two_day_dates_count"], 0)
-        self.assertEqual(stable_first_party_direct_proposals(
-            state, queue(DAY1), cat, first, DAY1, fetch=reader), [])
+        announced = stable_first_party_direct_proposals(
+            state, queue(DAY1), cat, first, DAY1, fetch=reader)
+        self.assertEqual(len(announced), 1)
+        self.assertEqual(announced[0]["officialSite"], SITE)
+        self.assertFalse(announced[0]["showOnMap"])
+        self.assertFalse(first["publication_authorized"])
         second = examine(state, queue(DAY2), cat, DAY2, fetch=reader)
         self.assertEqual(second["two_day_dates_count"], 1)
         proposed = stable_first_party_direct_proposals(
@@ -331,9 +334,35 @@ class FirstPartyDirectTests(TestCase):
         report = examine(
             state, queue(third), cat, third, fetch=lambda _: HOME)
         self.assertEqual(report["two_day_dates_count"], 0)
-        self.assertEqual(stable_first_party_direct_proposals(
-            state, queue(third), cat, report, third,
-            fetch=lambda _: HOME), [])
+        # A fresh proof can yield a new same-day proposal, but the missed
+        # day cannot falsely upgrade J/J+1 stable evidence.
+        issued = stable_first_party_direct_proposals(
+            state, queue(third), cat, report, third, fetch=lambda _: HOME)
+        self.assertEqual(len(issued), 1)
+        self.assertFalse(report["publication_authorized"])
+        self.assertFalse(state[
+            "national_generic_primary_date_observations_private"][SITE]["stable"])
+
+    def test_same_day_verification_remains_fail_closed_on_source_changes(self):
+        cat, _, _ = fixtures()
+        state = {"schema": "grossesondes.source-watch.v1"}
+        original = examine(state, queue(DAY1), cat, DAY1,
+                           fetch=lambda _: HOME)
+        # A statement seen at intake cannot survive a later official
+        # removal, conflicting date, genre switch or offline origin.
+        invalid = (
+            HOME.replace("23 &amp; 24 avril 2027", "24 &amp; 25 avril 2027"),
+            HOME.replace("Festival de rock et punk", "Festival de cuisine"),
+            HOME.replace("La Sainte Rock Festival 2027",
+                         "Autre événement 2027"),
+        )
+        for live in invalid:
+            with self.subTest(live=live[:60]):
+                self.assertEqual(
+                    stable_first_party_direct_proposals(
+                        state, queue(DAY1), cat, original, DAY1,
+                        fetch=lambda _: live), [])
+        self.assertFalse(original["publication_authorized"])
 
     def test_publisher_rejects_forged_private_dates(self):
         proposal = private_proposal(TITLE, SITE, DATES, DAY1)
