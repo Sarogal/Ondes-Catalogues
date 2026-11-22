@@ -58,19 +58,24 @@ def urls(today, slot):
     # rotate every cycle across searches AND pages; no fixed first 12 results.
     offset = today.toordinal() * 3 + slot
     end = (today + dt.timedelta(days=366)).isoformat()
-    window = ("lastdate_begin >= date'" + today.isoformat() +
+    # The public mirror mixes historical and upcoming events. Query future
+    # FIRST dates directly so a 2022 exhibition cannot crowd out 2026 shows.
+    window = ("firstdate_begin >= date'" + today.isoformat() +
               "' AND firstdate_begin < date'" + end + "'")
-    return [
-        SOURCE + "?" + urlencode({
+    queries = []
+    for i in range(PER_CYCLE):
+        field, term = SEEDS[(offset + i) % len(SEEDS)]
+        queries.append(SOURCE + "?" + urlencode({
             "select": SELECT,
-            "where": "(" + "search(" + field + ",\"" + term + "\")" +
-                     ") AND " + window,
+            "where": "(search(" + field + ',\"' + term + '\")) AND ' + window,
             "limit": str(PER_PAGE),
-            "offset": str(((offset // len(SEEDS)) % 20) * PER_PAGE),
-        })
-        for field,term in (SEEDS[(offset + i) % len(SEEDS)]
-                           for i in range(PER_CYCLE))
-    ]
+            # Always scan the nearest public page first; additional rotating
+            # pages avoid a permanent closed results window over successive
+            # runs without starving new events in small regional agendas.
+            "offset": str(0 if i < 3 else
+                          ((offset // len(SEEDS)) % 20) * PER_PAGE),
+        }))
+    return queries
 
 
 def _day(value):
