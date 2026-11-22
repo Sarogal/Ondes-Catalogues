@@ -174,8 +174,9 @@ void main() {
 
     final withLogo = stations.firstWhere((s) => s['logo'] is Map);
     final logo = withLogo['logo'] as Map<String, dynamic>;
-    logo['sha256'] = 'c' * 64;
-    logo['asset_id'] = 'sha256:NaN';
+    final replacementSha = List<String>.filled(64, 'c').join();
+    logo['sha256'] = replacementSha;
+    logo['asset_id'] = 'sha256:' + replacementSha;
     logo['url'] = 'https://cdn.example.org/new-verified-logo.png';
     logo['revision'] = (logo['revision'] as int) + 1;
 
@@ -211,7 +212,7 @@ void main() {
         'https://new-radio-stream.example.org/hardradio.mp3');
     final imageRow = second.snapshot.stations.firstWhere((s) =>
         s['go_station_id'] == withLogo['go_station_id']);
-    expect((imageRow['logo'] as Map<String, dynamic>)['sha256'], 'c' * 64);
+    expect((imageRow['logo'] as Map<String, dynamic>)['sha256'], replacementSha);
 
     // New signed v6 remains available with the same installed client offline.
     final offline = await selector.select(
