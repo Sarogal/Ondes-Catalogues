@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 from ptitesondes_open_world_private_dossier_intake import fair_dossier_order, MAX_DOSSIERS
+from ptitesondes_openagenda_backlog_private_dossiers import fair_backlog_identity_order
 
 
 def item(agenda_uid, event_uid, day, venue="new"):
@@ -72,6 +73,28 @@ class FairNationalDossiersTests(unittest.TestCase):
         self.assertEqual(len(ordered[320:]), 128)
         self.assertCountEqual(
             [repr(x) for x in ordered], [repr(x) for x in source])
+
+    def test_backlog_api_budget_fair_between_unknown_agendas(self):
+        busy = [("que-faire-a-paris", 8181, f"2026-12-{d:02d}", "Studio")
+                for d in range(1, 31)]
+        others = [("new-" + str(i), 100+i, "2026-12-19", "Family music")
+                  for i in range(15)]
+        result = fair_backlog_identity_order(set(busy + others))
+        self.assertEqual(len(result), 45)
+        self.assertEqual(set(result), set(busy + others))
+        self.assertEqual(len({entry[0] for entry in result[:24]}), 16)
+        self.assertEqual(
+            sum(x[0] == "que-faire-a-paris" for x in result), 30)
+
+    def test_backlog_repeated_showtimes_remain_individually_eligible(self):
+        long_series = [("source-new", 987, f"2026-12-{d:02d}", "Atelier musical")
+                       for d in range(1, 31)]
+        long_series += [("source-new", 987, f"2027-01-{d:02d}", "Atelier musical")
+                        for d in range(1, 9)]
+        other = [("source-new", 988, "2026-12-24", "Concert jeunesse")]
+        ordered = fair_backlog_identity_order(set(long_series + other))
+        self.assertEqual(ordered[1], other[0])
+        self.assertEqual(len(ordered), 39)
 
     def test_empty_and_single_event(self):
         self.assertEqual(fair_dossier_order([]), [])
