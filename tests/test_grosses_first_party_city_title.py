@@ -77,7 +77,7 @@ class FirstPartyCityTitleTests(unittest.TestCase):
         forged = dict(new, venue="Supposed festival entrance")
         self.assertFalse(_verified_official_update_delta(row, forged))
         self.assertFalse(_verified_official_update_delta(
-            row, dict(new, lat=-1.0)))
+            row, dict(new, lat=-91.0)))
 
     def test_no_geo_without_current_edition_in_visible_first_party_content(self):
         row = {
