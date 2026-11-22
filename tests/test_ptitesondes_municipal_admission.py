@@ -25,6 +25,7 @@ from test_ptitesondes_nonmusic_release_contract import (
     TODAY, URL, access, private_access, private_review,
 )
 from ptitesondes_municipal_appendonly_dryrun import _event_from_proposal
+from ptitesondes_nonmusic_release_contract import TYPES
 
 PR_SHA = "a" * 40
 PR_NUMBER = 88
