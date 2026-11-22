@@ -213,3 +213,15 @@ jobs:
                         'size_limit' if 'cap' in msg else type(e).__name__)
                   print('overpass_alt',i,host,kind,flush=True)
           PY
+
+      - name: Checkout Overpass France new-venue PR (no secrets)
+        uses: actions/checkout@v4
+        with:
+          ref: fix/concerts-french-overpass-failover-20261122
+          path: osm-france-check
+      - name: Test fixed OSM providers and real Publisher with third fallback
+        working-directory: osm-france-check
+        run: |
+          python -m unittest discover -s tests -p 'test_concerts_osm_read_only_fallback.py' -v
+          python -m unittest discover -s tests -p 'test_concerts_overpass_secondary_readonly.py' -v
+          python -m unittest discover -s tests -p 'test_concerts_french_overpass_publisher.py' -v
