@@ -119,6 +119,74 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
         self.assertEqual(again["newEvents"], 0)
         self.assertEqual(same, merged)
 
+    def test_visible_first_party_eight_band_bill_passes_real_publisher(self):
+        import json
+        import re
+        source = fixture.page(URL)
+        match = re.search(r"<script type='application/ld\\+json'>(.*?)</script>", source)
+        self.assertIsNotNone(match)
+        event = json.loads(match.group(1))
+        event["@type"] = "Event"
+        event.pop("performer", None)
+        event.pop("genre", None)
+        visible = ("<html><main><h1>" +
+                   html.escape(" + ".join(fixture.NAMES)) + "</h1>" +
+                   "".join("<p><strong>" + html.escape(n) +
+                           " — Black Metal | France</strong></p>"
+                           for n in fixture.NAMES) +
+                   "</main><script type='application/ld+json'>" +
+                   json.dumps(event) + "</script></html>")
+        read = fixture.fake_fetch({"primary": visible})
+        result, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=read)
+        self.assertEqual(report["stateCounts"],
+                         {"independently_verified_proposal": 1}, report)
+        self.assertEqual(len(result["approvals"][0]["newArtists"]), 8)
+        with mock.patch.object(identity, "safe_fetch", side_effect=read):
+            published, stats = publisher.merge(BASE, BASE, result, TODAY)
+        self.assertEqual(stats["newEvents"], 1, stats.get("held"))
+        self.assertEqual(stats["newArtists"], 8)
+        self.assertEqual(published["events"][-1]["officialUrl"], URL)
+
+        incomplete = visible.replace(
+            "<p><strong>" + html.escape(fixture.NAMES[-1]) +
+            " — Black Metal | France</strong></p>", "")
+        source = fixture.fake_fetch({"primary": incomplete})
+        reads = []
+        def visit(url, cache):
+            reads.append(url)
+            return source(url, cache)
+        held, rejected = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=visit)
+        self.assertEqual(held["approvals"], [])
+        self.assertTrue(rejected["candidateChecks"][0]["reason"].startswith(
+            "official_event_content:"), rejected)
+        self.assertFalse(any("openstreetmap.org" in u or
+                             "overpass.private.coffee" in u for u in reads))
+
+    def test_nonmetal_official_event_skips_osm_network(self):
+        first_party = fixture.page(URL).replace(
+            "Black Metal", "Hardcore Techno")
+        base = fixture.fake_fetch({"primary": first_party})
+        reads = []
+        def fetch(url, cache):
+            reads.append(url)
+            if "openstreetmap.org" in url or "overpass.private.coffee" in url:
+                self.fail("Irrelevant Event cannot query OSM")
+            return base(url, cache)
+        held, report = pipeline.build(
+            registry(), BASE,
+            {"schema": publisher.SCHEMA, "approvals": []},
+            TODAY, fetch=fetch)
+        self.assertEqual(held["approvals"], [])
+        self.assertTrue(report["candidateChecks"][0]["reason"].startswith(
+            "official_event_content:"), report)
+        self.assertEqual(reads, [URL])
+
     def test_unavailable_osm_api_host_uses_second_official_api(self):
         # A failed API hostname cannot discard an authentic concert when
         # another official OSM API endpoint returns the SAME named node.
