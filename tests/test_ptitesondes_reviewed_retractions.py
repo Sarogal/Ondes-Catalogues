@@ -14,8 +14,18 @@ MANIFEST = ROOT / "config/ptitesondes-reviewed-retractions-20261122.json"
 
 
 def fixture():
-    return json.loads(CAT.read_text(encoding="utf-8")), json.loads(
-        MANIFEST.read_text(encoding="utf-8"))
+    document = json.loads(CAT.read_text(encoding="utf-8"))
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    # Regression fixtures must be reproducible even after this one-off
+    # correction has succeeded on main. Restore the nine immutable,
+    # source-reviewed snapshots IN MEMORY only for the negative tests.
+    seen = {e["id"] for e in document["events"]}
+    for approval in manifest["approvals"]:
+        original = approval["expected_event"]
+        if original["id"] not in seen:
+            document["events"].append(deepcopy(original))
+            seen.add(original["id"])
+    return document, manifest
 
 
 class EditorialRetractionTests(unittest.TestCase):
@@ -88,6 +98,19 @@ class EditorialRetractionTests(unittest.TestCase):
         plan["approvals"][0]["reason_code"] = "non_performance_gathering_primary"
         with self.assertRaisesRegex(ValueError, "invalid_approval_identity"):
             reviewed_retraction(original, plan)
+
+    def test_actual_published_catalogue_is_safe_to_recheck_after_withdrawal(self):
+        actual = json.loads(CAT.read_text(encoding="utf-8"))
+        manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+        present = {
+            x["expected_event"]["id"] for x in manifest["approvals"]
+            if any(e["id"] == x["expected_event"]["id"] for e in actual["events"])
+        }
+        if not present:
+            corrected, audit, changed = reviewed_retraction(actual, manifest)
+            self.assertFalse(changed)
+            self.assertIsNone(audit)
+            self.assertEqual(corrected, actual)
 
     def test_dry_run_never_changes_catalogue_bytes(self):
         original_bytes = CAT.read_bytes()
