@@ -200,9 +200,15 @@ def _osm_map(site, center, fetch):
             if not ident or not ident.isdigit() or int(ident) < 1:
                 continue
             tags = _node_tags(feature)
+            # OSM POIs frequently omit address tags. The exact official
+            # street is already independently verified by BAN, and the named
+            # feature must be unique within 95 m. Never treat an explicitly
+            # contradictory OSM city or postal code as missing information.
             if (clean(tags.get("name")) != clean(site["name"])
-                    or clean(tags.get("addr:city")) != clean(site["city"])
-                    or tags.get("addr:postcode") != site["postalCode"]
+                    or (tags.get("addr:city") is not None
+                        and clean(tags["addr:city"]) != clean(site["city"]))
+                    or (tags.get("addr:postcode") is not None
+                        and tags["addr:postcode"] != site["postalCode"])
                     or tags.get("addr:country", "FR").upper() != "FR"):
                 continue
             if (tags.get("addr:street")
