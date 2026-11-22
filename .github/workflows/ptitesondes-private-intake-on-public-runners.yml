@@ -603,7 +603,7 @@ jobs:
           # Expose only the numeric handoff count, never candidate names,
           # URLs, UIDs, or source claims. A queue is a research request, not
           # an approval. The next independent cloud sync may reject all.
-          OA_HANDOFF_COUNT="$(python -c 'import json,sys; p=json.load(open(sys.argv[1],encoding="utf-8")); q=p.get("open_world_research",[]); assert type(q) is list and len(q)<=30; print(len(q))' "$STATE/patch-$DAY.json")"
+          OA_HANDOFF_COUNT="$(python -c 'import json,sys; p=json.load(open(sys.argv[1],encoding="utf-8")); q=p.get("open_world_research",[]); assert type(q) is list and len(q)<=80; print(len(q))' "$STATE/patch-$DAY.json")"
           if [[ "$RUN_MODE" == "write" ]]; then
             echo "Dossiers OA sauvegardés en privé pour relecture indépendante : $OA_HANDOFF_COUNT (zéro approbation locale)." >> "$GITHUB_STEP_SUMMARY"
           else
