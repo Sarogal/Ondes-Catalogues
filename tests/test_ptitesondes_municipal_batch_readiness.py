@@ -31,9 +31,17 @@ WEEK = ("lundi", "mardi", "mercredi", "jeudi", "vendredi",
 
 
 def historical():
-    return json.loads(
+    # Synthetic pre-family-category baseline for the old PRIVATE
+    # municipal approval rehearsal, never a replacement for the live
+    # catalogue or a bypass of the first-party OA release policy.
+    document = json.loads(
         (ROOT / "docs/ptitesondes/sorties.json").read_text(encoding="utf-8")
     )
+    document["events"] = [
+        row for row in document["events"]
+        if row.get("category") not in TYPES
+    ]
+    return document
 
 
 def sample_nine(*, public=None, known_conditions=True):
