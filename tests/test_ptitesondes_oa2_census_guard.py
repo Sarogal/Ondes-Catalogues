@@ -73,17 +73,27 @@ class CensusGuardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             guard.guarded(row)
 
-    def test_workflow_keeps_api_key_in_trusted_environment_only(self):
+    def test_workflow_keeps_key_private_and_uses_open_world_research(self):
+        # The old diagnostic of a fixed configured-agenda list remains
+        # available as a manual library, but it must not be a publishing
+        # prerequisite. This workflow now discovers unknown agendas and
+        # venues without making them trusted or approved.
         workflow = (Path(__file__).resolve().parents[1] /
                     ".github/workflows/ptitesondes-private-intake-on-public-runners.yml"
                     ).read_text(encoding="utf-8")
         self.assertIn("OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}", workflow)
-        self.assertIn("public/scripts/ptitesondes_openagenda_v2_agenda_census.py", workflow)
-        self.assertIn("public/scripts/ptitesondes_oa2_census_guard.py", workflow)
+        self.assertIn(
+            "public/scripts/ptitesondes_national_openworld_research_cycle.py",
+            workflow)
+        self.assertIn(
+            "public/scripts/ptitesondes_open_world_private_dossier_intake.py",
+            workflow)
         self.assertIn("src/automation/sources.json", workflow)
         self.assertIn("RUN_MODE", workflow)
         self.assertIn("state/automation-intake/ptitesondes", workflow)
-        self.assertIn("reports/openagenda-v2-agendas-$DAY.json", workflow)
+        self.assertIn("national-observation/research", workflow)
+        self.assertIn("publish", workflow.lower())
+        self.assertIn("github.ref == 'refs/heads/main'", workflow)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,21 @@
+{
+  "schema": "ptitesondes.institutional_source_policy_registry.v1",
+  "entries": [
+    {
+      "source_id": "montpellier-mpt",
+      "approved_host": "mpt.montpellier.fr",
+      "index_url": "https://mpt.montpellier.fr/evenements",
+      "child_prefix": "/evenement/",
+      "publisher_notice_url": "https://mpt.montpellier.fr/index.php/mentions-legales",
+      "external_authority_url": "https://www.montpellier.fr/campagnes/rencontres-artistiques-doctobre-decembre-2026",
+      "provenance_state": "independent_authority_reference_documented_not_rechecked_live",
+      "reuse_policy_state": "pending_source_legal_review",
+      "facts_only_review_evidence_url": null,
+      "reuse_reviewed_on": null,
+      "reuse_expires_on": null,
+      "no_third_party_description_or_images": true,
+      "access_terms_require_per_session_review": true,
+      "authority_expected_path_prefix": "/maisons/"
+    }
+  ]
+}

@@ -1,0 +1,168 @@
+# P’tites Ondes — diagnostic de bout en bout index HTML → fiches → séances
+
+**19 novembre 2026 — composant de démonstration, sans activation ni écriture.**
+
+## Pourquoi ce pilote
+
+La PR #420 permet de **repérer** des URL de fiches enfants depuis un index
+HTML officiel. Ce fait seul n'établit aucune séance, aucun public enfant ni
+aucune capacité de publier. La nouvelle PR développe le raccordement
+générique à un **parseur de fiches existant** et à l'audit national des
+propositions de sorties, avec métriques étape par étape.
+
+Le site pilote est `mpt.montpellier.fr` (Maisons pour Tous de Montpellier),
+dont le parseur de fiches `parse_montpellier_mpt_detail` préexistait dans le
+projet. Nous n'ajoutons **aucune exception par événement**.
+
+## Chaîne de lecture seule
+
+1. Un caller de confiance sélectionne un index institutionnel **séparément
+   des événements candidats** : hôte exact + URL HTTPS exacte.
+2. `discover_live_html_event_pages` vérifie la page, ses liens visibles
+   et leurs hôtes (PR #420).
+3. Un contrat d'**adaptateur par famille de site**, non par événement,
+   restreint les cibles à `/evenement/` sur le domaine revu.
+4. Jusqu'à 12 fiches par défaut (maximum 30) sont relues par GET HTTPS
+   exact sans redirection. Le résultat est un échantillon déterministe,
+   avec nombre de fiches non inspectées indiqué.
+5. Le parseur préexistant n'extrait que les séances futures explicites :
+   titre, lieu déclaré, date et heure, catégorie familiale et état d'accès
+   quand celui-ci est identifiable. Une plage de dates ne crée pas
+   artificiellement une séance quotidienne.
+6. `scope_proposals` mesure les propositions **structurellement plausibles**
+   suivant les catégories et les refus de l'audit national.
+
+La réponse publique est **purement agrégée** : liens, fiches tentées,
+fiches lues/refusées, séances futures repérées, propositions plausibles,
+raisons de refus à clés fixes. Aucune URL, titre, UID, adresse ni contenu de
+page ne peut y être injecté.
+
+## Niveau de confiance
+
+**Interdit de confondre** :
+- un lien repéré avec un événement confirmé ;
+- une séance lue sur une page avec une séance admise ;
+- un public enfant déclaré avec une plage d'âge indépendante validée ;
+- un lieu nommé avec un point GPS indépendant vérifié ;
+- un domaine institutionnel avec une licence de reproduction.
+
+Les compteurs de GPS vérifié, de droits, de source authentifiée,
+d'autorisation de publier et d'écriture publique restent à zéro ou faux.
+Le diagnostic ne possède aucun connecteur vers le publisher ou les catalogues.
+
+## Validation
+
+11 tests hors réseau couvrent : index vers fiche vers date explicite,
+plusieurs événements du même index, plusieurs séances sur une seule page,
+adultes, annulation, date expirée, lieu manquant, host forgé, réponse enfant
+indisponible, échantillonnage borné et anonymisation d'un rapport malveillant.
+
+Les tests CI valident un **jeu de fixtures**, pas un recensement en
+production. Le contrôle manuel des liens réels effectué précédemment a
+repéré 24 URL distinctes de fiches sur l'index officiel des Maisons pour
+Tous, mais la PR ne revendique ni 24 fiches réellement analysées ni
+une nouvelle sortie publiée.
+
+**Étape suivante** : exécuter le diagnostic depuis un environnement privé
+de confiance sur des index officiellement revus, puis compléter les
+preuves indépendantes de séance/âge/lieu/droits et les règles
+anti-doublons. Rien ne doit être activé en production sans validation.
+
+
+## Essai réseau public contrôlé (nouveau)
+
+Un workflow **PR-only** `.github/workflows/ptitesondes-html-index-live-smoke.yml`
+exécute `scripts/ptitesondes_html_index_detail_live_smoke.py`.
+Il lit uniquement le domaine institutionnel public préexistant
+`mpt.montpellier.fr`, récupère l'index exact et **au maximum trois fiches
+enfants par essai**. Il ne lit aucun secret, backlog ou catalogue privé.
+
+Sa sortie standard est uniquement `redact_detail_funnel_report` :
+nombres de fiches tentées, lues et de séances extraites. Il échoue avec un
+code fixe si aucune fiche ne peut être lue ; ce cas **ne doit jamais être
+compté comme une veille réussie**.
+
+Ceci n'homologue ni les pages, ni les droits, ni les lieux et ne déclenche
+aucune écriture. Une CI réseau verte confirme **seulement la capacité de
+lecture du petit échantillon à la date de son exécution**.
+
+
+## Résultat initial réel et correction du format de la page
+
+Premier essai réseau public du 19/11, avant correction de l'adaptateur :
+**24 liens repérés, 3 fiches lues, 0 séance extraite**, 0 écriture.
+Ce constat ne valide pas les 21 autres fiches non échantillonnées.
+
+L'examen indépendant de plusieurs de ces pages a mis en évidence deux
+règles techniques trop fragiles, non liées à la sécurité :
+1. La plupart des pages portent la mention « Maison pour tous X », suivie
+   plus bas d'une mention d'organisateur « Organisé par la maison X » ;
+   l'ancien parseur cherchait surtout un libellé « Lieu : ».
+2. Une page explicitement étiquetée **Adultes** peut mentionner des
+   « familles » ou des « enfants » dans son texte descriptif.
+
+L'adaptateur partagé a été corrigé de façon générique : il exige un
+**accord de nom exact** entre la maison affichée et la maison organisatrice
+pour le nouveau format, sans déduire le GPS ; il bloque les pages déclarées
+adultes uniquement même si leur description mentionne des enfants.
+
+Le rapport ajoute **`unclassified_occurrences_held`** : les séances
+réellement datées mais dont le thème n'appartient pas aux 13 catégories
+familiales approuvées restent visibles dans les compteurs de blocage,
+et ne sont jamais reclassées arbitrairement. Exemple de sujet à
+évaluer éditorialement : ateliers sensoriels « snoezelen ».
+
+Des tests hors réseau supplémentaires couvrent le gabarit actuel, les
+séances multiples, les étiquettes adultes, les publics mixtes et les
+catégories en attente. Seul un nouvel essai réseau peut confirmer
+l'efficacité de cette correction sur le site vivant.
+
+
+## Échantillonnage représentatif et dédoublonnage de diagnostic
+
+Le premier essai prenait les premières URL triées alphabétiquement, ce
+qui surreprésentait les fiches sans catégorie explicite et les variantes
+numériques d'un même spectacle.
+
+L'ordre de lecture a été adapté **uniquement pour le diagnostic** :
+- les slugs d'URL contenant des indices de catégories familiales déjà
+  reconnues sont explorés avant ceux sans catégorie ;
+- les suffixes numériques `-0`, `-1`, etc. sont répartis après les
+  premiers représentants de familles d'URL, pour diversifier l'échantillon ;
+- aucun lien n'est supprimé par ces heuristiques, et **aucune catégorie,
+  séance, âge ou preuve de source n'est déduite d'un slug**.
+
+Après lecture réelle des fiches, deux URL différentes portant exactement
+le même titre, la même ville, le même lieu, la même date **et la même
+heure de début** sont comptées une seule fois ; les autres occurrences
+restent distinctes. Les doublons comptés sont explicitement signalés par
+`duplicate_child_sessions_held`.
+
+Cette déduplication statistique ne modifie pas les règles de publication ni
+le catalogue historique. Une éventuelle fusion éditoriale nécessite les
+contrôles du moteur de qualification privé.
+
+
+## Refus des séances déjà commencées et des heures DST ambiguës
+
+Le live smoke utilise **l'heure réelle de Montpellier** en
+`Europe/Paris`, pas le jour UTC du runner GitHub. Le paramètre
+`as_of` est fourni exclusivement par le caller de confiance, jamais
+depuis les fiches collectées.
+
+Le diagnostic vérifie chaque jour et heure locale avant de compter une
+séance future. Les débuts déjà passés, les heures locales inexistantes
+au passage à l'heure d'été, et les heures ambiguës au passage à l'heure
+d'hiver (sans décalage explicite) restent **bloqués**, même si la date
+de l'événement est aujourd'hui.
+
+Le rapport distingue `already_started_sessions_held` et
+`exact_local_clock_cutoff_applied`. Les exécutions hors réseau
+sans `as_of` conservent volontairement un précontrôle **date seule** :
+elles ne sauraient être décrites comme des validations temporelles
+complètes en conditions réelles.
+
+L'échantillon live antérieur à cette correction donnait 3 séances
+datées après le début du jour et 1 proposition structurellement
+plausible. **Un nouveau contrôle temporel est nécessaire** avant de
+compter combien de ces séances étaient encore à venir à l'heure locale.

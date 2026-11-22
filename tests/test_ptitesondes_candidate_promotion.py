@@ -64,6 +64,44 @@ def base():
 
 
 class CandidatePromotionTests(unittest.TestCase):
+    def test_open_license_attribution_is_bound_to_same_oa_event(self):
+        item = lead()
+        row = record()
+        official = {
+            "uid": 77081258,
+            "state": 2, "status": 1, "removed": False,
+            "title": {"fr": item["title"]},
+            "location": {"name": item["venue"], "adminLevel4": item["city"]},
+            "updatedAt": "2026-11-03T12:00:00+01:00",
+            "rights": {
+                "license": {"id": "etalab-2.0"},
+                "licensor": {"name": "Théâtre de Jeanne"},
+                "publisher": {"name": "Nantes Métropole"},
+            },
+        }
+        e = make_event(item, row, registry_location(item), TODAY,
+                       oa_rights_event=official)
+        self.assertIn("Théâtre de Jeanne", e["source_label"])
+        self.assertIn("Licence Ouverte 2.0", e["source_label"])
+        self.assertIn("03/11/2026", e["source_label"])
+        self.assertNotIn("Nantes Métropole", e["source_label"])
+        self.assertEqual(e["source_url"], URL)
+        for change in (
+            {"uid": 999},
+            {"title": {"fr": "Another show"}},
+            {"location": {"name": "Autre lieu", "adminLevel4": item["city"]}},
+            {"rights": {"license": {"id": "proprietary"},
+                        "licensor": {"name": "Théâtre de Jeanne"}}},
+        ):
+            altered = dict(official, **change)
+            with self.subTest(change=change):
+                with self.assertRaises(ValueError):
+                    make_event(item, row, registry_location(item), TODAY,
+                               oa_rights_event=altered)
+        # No opt-in keeps the historical output untouched.
+        old = make_event(item, row, registry_location(item), TODAY)
+        self.assertEqual(old["source_label"], "Nantes Métropole")
+
     def test_cli_can_consume_only_local_private_files_without_github_token(self):
         with tempfile.TemporaryDirectory() as root:
             root = Path(root)
@@ -244,6 +282,33 @@ class CandidatePromotionTests(unittest.TestCase):
             confirmed_session(times, "2027-02-11")
         with self.assertRaises(ValueError):
             confirmed_session([{"begin":"2027-02-10T14:30"}], DAY)
+
+    def test_more_than_four_genuine_sessions_are_not_arbitrarily_rejected(self):
+        times = [
+            {"begin": f"2027-02-10T{hour:02d}:00:00+01:00"}
+            for hour in range(8, 20)
+        ]
+        # Duplicated collector observations are not extra performances.
+        times.append({"begin": "2027-02-10T08:00:00+01:00"})
+        times.append({"begin": "2027-02-11T20:00:00+01:00"})
+        result = confirmed_session(times, DAY, "11111")
+        self.assertEqual(result.split(", "), [
+            f"{hour:02d}:00" for hour in range(8, 20)
+        ])
+        self.assertEqual(len(result.split(", ")), 12)
+
+    def test_school_only_time_is_excluded_even_on_busy_days(self):
+        sample = [
+            {"begin": "2027-01-22T14:30:00+01:00"}
+        ] + [
+            {"begin": f"2027-01-22T{hour:02d}:00:00+01:00"}
+            for hour in range(16, 22)
+        ]
+        slots = confirmed_session(sample, "2027-01-22", "54065371")
+        self.assertNotIn("14:30", slots)
+        self.assertEqual(slots.split(", "), [
+            f"{hour:02d}:00" for hour in range(16, 22)
+        ])
 
     def test_curated_school_only_slots_are_never_published_as_family_outings(self):
         # First-party organizer schedules differentiate schools and family seats.

@@ -1,0 +1,92 @@
+name: "P'tites Ondes — recherches de sources ouvertes (tests hors réseau)"
+
+# Only PR validation; never scheduled, dispatched for production or allowed writes.
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_dynamic_municipal_source_links.py'
+      - 'tests/test_ptitesondes_dynamic_municipal_source_links.py'
+      - 'scripts/ptitesondes_unlisted_source_safe_recheck.py'
+      - 'tests/test_ptitesondes_unlisted_source_safe_recheck.py'
+      - 'scripts/ptitesondes_unlisted_exact_session_research.py'
+      - 'tests/test_ptitesondes_unlisted_exact_session_research.py'
+      - 'scripts/ptitesondes_open_world_municipal_bootstrap.py'
+      - 'tests/test_ptitesondes_open_world_municipal_bootstrap.py'
+      - 'scripts/ptitesondes_open_world_municipal_crawler.py'
+      - 'tests/test_ptitesondes_open_world_municipal_crawler.py'
+      - 'scripts/ptitesondes_independent_municipal_event_research.py'
+      - 'tests/test_ptitesondes_independent_municipal_event_research.py'
+      - 'scripts/ptitesondes_open_world_admission_diagnostics.py'
+      - 'tests/test_ptitesondes_open_world_admission_diagnostics.py'
+      - 'scripts/ptitesondes_open_world_candidate_rotation.py'
+      - 'tests/test_ptitesondes_open_world_candidate_rotation.py'
+      - 'scripts/ptitesondes_national_segment_rotation_bridge.py'
+      - 'tests/test_ptitesondes_national_segment_rotation_bridge.py'
+      - 'scripts/ptitesondes_private_national_rotation_runner.py'
+      - 'tests/test_ptitesondes_private_national_rotation_runner.py'
+      - '.github/workflows/ptitesondes-open-world-sources-offline-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  offline-adversarial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify DILA-origin source links without a registry
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_dynamic_municipal_source_links.py' -v
+      - name: Verify DNS pinning, no SSRF and non-publishing source checks
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_source_safe_recheck.py' -v
+      - name: Verify exact OpenAgenda source sessions without closed catalogues
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_unlisted_exact_session_research.py' -v
+      - name: Verify unknown OpenAgenda agendas bootstrap municipal source research
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_municipal_bootstrap.py' -v
+      - name: Verify resumable open-world municipal page crawl
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_municipal_crawler.py' -v
+      - name: Verify DILA municipal programme and unknown source session claims
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_independent_municipal_event_research.py' -v
+      - name: Verify open-world admission research and unnumbered geographic proofs
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_admission_diagnostics.py' -v
+      - name: Verify automatic unknown-source rotation with private checkpoints
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_open_world_candidate_rotation.py' -v
+      - name: Verify full national OA segment research fairness and resumption
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_national_segment_rotation_bridge.py' -v
+      - name: Verify private atomic runner and auto-discovered national segments
+        env:
+          PYTHONWARNINGS: error
+        run: |
+          python -m unittest discover -s tests -p 'test_ptitesondes_private_national_rotation_runner.py' -v

@@ -122,14 +122,15 @@ class NationalFamilyIndependentPreflightTests(unittest.TestCase):
                           "source_url", "review_id", "catalogue"):
             self.assertNotIn(forbidden, out)
 
-    def test_all_thirteen_categories_check_source_without_opening_publisher(self):
+    def test_all_supported_categories_check_source_without_opening_publisher(self):
         docs, pages = [], {}
         for i, category in enumerate(FAMILY_TYPES, start=1):
             row, html = fixture(category, i)
             docs.append(row)
             pages[row["source"]["official_url"]] = html
         out = run(docs=docs, pages=pages)
-        self.assertEqual(out["official_source_cues_passed"], 13)
+        self.assertIn("atelier-sensoriel", FAMILY_TYPES)
+        self.assertEqual(out["official_source_cues_passed"], len(FAMILY_TYPES))
         self.assertTrue(out["source_preflight_batch_passed"])
         self.assertEqual(out["public_writes"], 0)
 

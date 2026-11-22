@@ -1,0 +1,38 @@
+name: "P'tites Ondes — seances organiseur JSON-LD independantes"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_openagenda_v2_structured_organizer.py'
+      - 'tests/test_ptitesondes_openagenda_v2_structured_organizer.py'
+      - 'docs/PTITESONDES_OA2_STRUCTURED_FIRST_PARTY_20261118.md'
+      - '.github/workflows/ptitesondes-oa2-structured-first-party-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  first-party-jsonld-offline:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Independent first party session tests without secrets
+        run: |
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_v2_structured_organizer.py' -v
+      - name: Guard against publish, network and credentials
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          src = Path('scripts/ptitesondes_openagenda_v2_structured_organizer.py').read_text()
+          assert 'public_writes' in src and 'approval_granted' in src
+          assert 'organizer_ownership_attested' in src
+          assert not any(x in src for x in ('requests.' + 'post(', 'urllib.request', 'PRIVATE_' + 'INTAKE_READ_TOKEN', 'git' + ' push'))
+          print('PASS: offline source-only confirmation, no publisher')
+          PY

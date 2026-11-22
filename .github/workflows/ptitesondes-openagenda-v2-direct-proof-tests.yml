@@ -7,13 +7,68 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_openagenda_slug_discovery.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
+      - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
+      - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
+      - 'scripts/ptitesondes_generic_venue_ign_corroboration.py'
+      - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
+      - 'scripts/ptitesondes_generic_venue_official_proof.py'
+      - 'tests/test_ptitesondes_generic_venue_official_proof.py'
+      - 'scripts/ptitesondes_dila_municipal_domains.py'
+      - 'tests/test_ptitesondes_dila_municipal_domains.py'
+      - 'scripts/ptitesondes_municipal_official_page_reader.py'
+      - 'tests/test_ptitesondes_municipal_official_page_reader.py'
+      - 'scripts/ptitesondes_municipal_domain_coverage.py'
+      - 'tests/test_ptitesondes_municipal_domain_coverage.py'
+      - 'scripts/ptitesondes_municipal_venue_link_discovery.py'
+      - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
+      - 'scripts/ptitesondes_ods_oa_source_binding.py'
+      - 'tests/test_ptitesondes_ods_oa_source_binding.py'
+      - 'scripts/ptitesondes_generic_venue_visible_address.py'
+      - 'tests/test_ptitesondes_generic_venue_visible_address.py'
+      - 'scripts/ptitesondes_generic_venue_official_geocode.py'
+      - 'scripts/ptitesondes_shared_venue_location_evidence.py'
+      - 'tests/test_ptitesondes_shared_venue_location_evidence.py'
+      - 'scripts/ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'tests/test_ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'scripts/ptitesondes_unnumbered_official_geo_proof.py'
+      - 'tests/test_ptitesondes_unnumbered_official_geo_proof.py'
+      - 'scripts/ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'tests/test_ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'scripts/ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_proven_unknown_venue_promotion.py'
+      - 'scripts/ptitesondes_family_activity_classification.py'
+      - 'scripts/ptitesondes_openagenda_national_event_research.py'
+      - 'tests/test_ptitesondes_openagenda_national_event_research.py'
+      - 'scripts/ptitesondes_private_national_event_campaign.py'
+      - 'tests/test_ptitesondes_private_national_event_campaign.py'
+      - 'scripts/ptitesondes_private_national_qualification_handoff.py'
+      - 'tests/test_ptitesondes_private_national_qualification_handoff.py'
+      - 'scripts/ptitesondes_private_national_handoff_rotation.py'
+      - 'tests/test_ptitesondes_private_national_handoff_rotation.py'
+      - 'scripts/ptitesondes_private_venue_batch_rollup.py'
+      - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
+      - 'scripts/ptitesondes_private_venue_campaign.py'
+      - 'tests/test_ptitesondes_private_venue_campaign.py'
+      - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
+      - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
+      - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_openagenda_slug_discovery.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
@@ -25,13 +80,68 @@ on:
     paths:
       - 'scripts/ptitesondes_openagenda_v2_direct_evidence.py'
       - 'scripts/ptitesondes_openagenda_v2_preintegration.py'
+      - 'scripts/ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'scripts/ptitesondes_openagenda_v2_live_smoke.py'
       - 'scripts/ptitesondes_openagenda_v2_organizer_bridge.py'
       - 'scripts/ptitesondes_openagenda_v2_agenda_census.py'
       - 'scripts/ptitesondes_openagenda_v2_backlog_reconciliation.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'scripts/ptitesondes_openagenda_slug_discovery.py'
+      - 'scripts/ptitesondes_ods_direct_mirror_cycle.py'
+      - 'scripts/ptitesondes_generic_venue_osm_preflight.py'
+      - 'tests/test_ptitesondes_generic_venue_osm_preflight.py'
+      - 'scripts/ptitesondes_generic_venue_ign_corroboration.py'
+      - 'tests/test_ptitesondes_generic_venue_ign_corroboration.py'
+      - 'scripts/ptitesondes_generic_venue_official_proof.py'
+      - 'tests/test_ptitesondes_generic_venue_official_proof.py'
+      - 'scripts/ptitesondes_dila_municipal_domains.py'
+      - 'tests/test_ptitesondes_dila_municipal_domains.py'
+      - 'scripts/ptitesondes_municipal_official_page_reader.py'
+      - 'tests/test_ptitesondes_municipal_official_page_reader.py'
+      - 'scripts/ptitesondes_municipal_domain_coverage.py'
+      - 'tests/test_ptitesondes_municipal_domain_coverage.py'
+      - 'scripts/ptitesondes_municipal_venue_link_discovery.py'
+      - 'tests/test_ptitesondes_municipal_venue_link_discovery.py'
+      - 'scripts/ptitesondes_ods_oa_source_binding.py'
+      - 'tests/test_ptitesondes_ods_oa_source_binding.py'
+      - 'scripts/ptitesondes_generic_venue_visible_address.py'
+      - 'tests/test_ptitesondes_generic_venue_visible_address.py'
+      - 'scripts/ptitesondes_generic_venue_official_geocode.py'
+      - 'scripts/ptitesondes_shared_venue_location_evidence.py'
+      - 'tests/test_ptitesondes_shared_venue_location_evidence.py'
+      - 'scripts/ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'tests/test_ptitesondes_unnumbered_venue_osm_official_hint.py'
+      - 'scripts/ptitesondes_unnumbered_official_geo_proof.py'
+      - 'tests/test_ptitesondes_unnumbered_official_geo_proof.py'
+      - 'scripts/ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'tests/test_ptitesondes_dynamic_oa_agenda_discovery.py'
+      - 'scripts/ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_openagenda_public_agenda_index.py'
+      - 'tests/test_ptitesondes_proven_unknown_venue_promotion.py'
+      - 'scripts/ptitesondes_family_activity_classification.py'
+      - 'scripts/ptitesondes_openagenda_national_event_research.py'
+      - 'tests/test_ptitesondes_openagenda_national_event_research.py'
+      - 'scripts/ptitesondes_private_national_event_campaign.py'
+      - 'tests/test_ptitesondes_private_national_event_campaign.py'
+      - 'scripts/ptitesondes_private_national_qualification_handoff.py'
+      - 'tests/test_ptitesondes_private_national_qualification_handoff.py'
+      - 'scripts/ptitesondes_private_national_handoff_rotation.py'
+      - 'tests/test_ptitesondes_private_national_handoff_rotation.py'
+      - 'scripts/ptitesondes_private_venue_batch_rollup.py'
+      - 'tests/test_ptitesondes_private_venue_batch_rollup.py'
+      - 'scripts/ptitesondes_private_venue_campaign.py'
+      - 'tests/test_ptitesondes_private_venue_campaign.py'
+      - 'tests/test_ptitesondes_generic_venue_official_geocode.py'
+      - 'docs/PTITESONDES_GENERIC_VENUE_OSM_PREFLIGHT_20261120.md'
+      - 'tests/test_ptitesondes_ods_direct_mirror_absence_audit.py'
+      - 'tests/test_ptitesondes_openagenda_slug_discovery.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_cycle.py'
+      - 'tests/test_ptitesondes_ods_direct_mirror_workflow_contract.py'
+      - '.github/workflows/ptitesondes-private-intake-on-public-runners.yml'
       - 'scripts/ptitesondes_candidate_promotion.py'
       - 'tests/test_ptitesondes_openagenda_v2_direct_evidence.py'
       - 'tests/test_ptitesondes_openagenda_v2_preintegration.py'
+      - 'tests/test_ptitesondes_direct_missing_mirror_publication_preview.py'
       - 'tests/test_ptitesondes_openagenda_v2_dryrun_e2e.py'
       - 'tests/test_ptitesondes_openagenda_v2_live_smoke.py'
       - 'tests/test_ptitesondes_openagenda_v2_organizer_bridge.py'
@@ -62,6 +172,8 @@ jobs:
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_preintegration.py' -v
           python -m unittest discover -s tests \
+            -p 'test_ptitesondes_direct_missing_mirror_publication_preview.py' -v
+          python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_dryrun_e2e.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_live_smoke.py' -v
@@ -71,6 +183,58 @@ jobs:
             -p 'test_ptitesondes_openagenda_v2_agenda_census.py' -v
           python -m unittest discover -s tests \
             -p 'test_ptitesondes_openagenda_v2_backlog_reconciliation.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_absence_audit.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_slug_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_cycle.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_direct_mirror_workflow_contract.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_osm_preflight.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_ign_corroboration.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_official_proof.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_dila_municipal_domains.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_municipal_official_page_reader.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_municipal_domain_coverage.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_municipal_venue_link_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_ods_oa_source_binding.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_visible_address.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_generic_venue_official_geocode.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_shared_venue_location_evidence.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_unnumbered_venue_osm_official_hint.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_unnumbered_official_geo_proof.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_dynamic_oa_agenda_discovery.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_public_agenda_index.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_proven_unknown_venue_promotion.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_openagenda_national_event_research.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_national_event_campaign.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_national_qualification_handoff.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_national_handoff_rotation.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_venue_batch_rollup.py' -v
+          python -m unittest discover -s tests \
+            -p 'test_ptitesondes_private_venue_campaign.py' -v
       - name: Ensure this change cannot publish, access secrets or add a cron
         shell: bash
         run: |
@@ -86,9 +250,15 @@ jobs:
           preflight = Path("scripts/ptitesondes_openagenda_v2_preintegration.py").read_text()
           assert "publisher_connected" in preflight and "public_writes" in preflight
           assert not any(x in preflight for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          proposal = Path("scripts/ptitesondes_direct_missing_mirror_publication_preview.py").read_text()
+          assert "publisher_connected" in proposal and "public_writes" in proposal
+          assert not any(x in proposal for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           smoke = Path("scripts/ptitesondes_openagenda_v2_live_smoke.py").read_text()
           assert "public_writes" in smoke and "approval_granted" in smoke
           assert not any(x in smoke for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
+          slug_source = Path("scripts/ptitesondes_openagenda_slug_discovery.py").read_text()
+          assert "approval_granted" in slug_source and "public_writes" in slug_source
+          assert not any(x in slug_source for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))
           organizer = Path("scripts/ptitesondes_openagenda_v2_organizer_bridge.py").read_text()
           assert "public_writes" in organizer and "approval_granted" in organizer
           assert not any(x in organizer for x in ("requests.post(", "git" + " push", "PRIVATE_INTAKE" + "_READ_TOKEN"))

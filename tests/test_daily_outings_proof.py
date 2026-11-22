@@ -63,6 +63,23 @@ class DailyProofTests(unittest.TestCase):
         self.assertFalse(official_openagenda_explicit_month_day(
             event, page.replace("Mercredi 10", "Jeudi 10")))
 
+    def test_openagenda_month_heading_confirms_all_busy_day_sessions(self):
+        from proof_text import official_openagenda_explicit_month_day
+        hours = [f"{h:02d}:00" for h in range(8, 20)]
+        event = {
+            "source_url": "https://openagenda.com/new-agenda/events/12345_nouveau",
+            "date_start": "2027-02-10", "date_end": "2027-02-10",
+            "time": ", ".join(hours),
+        }
+        page = ("Février 2027 Mercredi 10 " +
+                " ".join(f"{h} - activité" for h in hours) +
+                " Dimanche 14 20:00")
+        self.assertTrue(official_openagenda_explicit_month_day(event, page))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            event, page.replace("19:00 - activité", "")))
+        self.assertFalse(official_openagenda_explicit_month_day(
+            dict(event, time=", ".join(hours[:-1]) + ", 20:00"), page))
+
     def test_openagenda_exact_day_accepts_official_french_hour_notation(self):
         from proof_text import official_openagenda_explicit_month_day
         event = {

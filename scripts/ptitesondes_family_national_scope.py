@@ -22,6 +22,7 @@ FAMILY_TYPES = {
     "lecture-cinema": ("Lecture et cinéma", "cinema"),
     "jeux-famille": ("Jeux en famille", "jeux"),
     "atelier-creatif": ("Atelier créatif", "atelier"),
+    "atelier-sensoriel": ("Atelier sensoriel", "atelier"),
     "atelier-scientifique": ("Atelier scientifique", "atelier"),
     "spectacle-jeunesse": ("Spectacle jeune public", "spectacle"),
     "cinema-jeunesse": ("Cinéma jeune public", "cinema"),

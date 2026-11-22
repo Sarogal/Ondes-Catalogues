@@ -97,7 +97,9 @@ def official_openagenda_explicit_month_day(event, text):
         return False
     start_times = set(re.findall(
         r"\b(?:[01]?\d|2[0-3]):[0-5]\d\b", str(event.get("time", ""))))
-    if not start_times or len(start_times) > 4:
+    # Never reject a genuine multi-session day due to a fixed session count.
+    # Each claimed start time must still be present in this exact day block.
+    if not start_times:
         return False
     weekdays = ("lundi", "mardi", "mercredi", "jeudi", "vendredi",
                 "samedi", "dimanche")
@@ -108,7 +110,10 @@ def official_openagenda_explicit_month_day(event, text):
               r"\s+" + str(day.day) + r"\b")
     for occurrence in re.finditer(anchor, body):
         # Adjacent sessions in a multi-date listing are never interchangeable.
-        window = body[occurrence.end():occurrence.end() + 90]
+        # Scope to the displayed day and stop before the next dated weekday.
+        # A longer, bounded text window supports busy programming days.
+        window_size = min(4096, max(120, 40 * len(start_times)))
+        window = body[occurrence.end():occurrence.end() + window_size]
         # An adjacent session cannot supply the time for this date.
         weekday_anchor = '|'.join(weekdays)
         next_session = '(?:' + weekday_anchor + ') [0-9]{1,2}'

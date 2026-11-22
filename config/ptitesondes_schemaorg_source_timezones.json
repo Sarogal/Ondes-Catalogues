@@ -1,0 +1,9 @@
+{
+  "schema": "ptitesondes.schemaorg_trusted_source_timezones.v1",
+  "entries": [
+    {
+      "source_id": "montpellier-mpt",
+      "timezone": "Europe/Paris"
+    }
+  ]
+}

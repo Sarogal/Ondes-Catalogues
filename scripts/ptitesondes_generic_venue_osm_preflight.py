@@ -1,0 +1,535 @@
+#!/usr/bin/env python3
+"""Generic, bounded, PRIVATE-ONLY independent OSM location discovery.
+
+No whitelist of cities, venues or event types. This is a discovery stage:
+OSM matches do NOT grant official-venue attestation, audience eligibility,
+publisher approval, or permission to use an unverified coordinate.
+"""
+import argparse
+from collections import defaultdict
+from datetime import date
+import json
+import math
+import os
+from pathlib import Path
+from urllib.parse import urlencode
+from urllib.request import Request, build_opener, HTTPRedirectHandler
+
+from proof import meters, norm
+from ptitesondes_candidate_promotion import admission_failure_group, api_record
+
+SCHEMA = "ptitesondes.generic_venue_osm_preflight.v1"
+ENDPOINTS = ("https://lz4.overpass-api.de/api/interpreter",
+             "https://overpass.private.coffee/api/interpreter")
+MAX_BACKLOG = 4000
+MAX_PER_RUN = 12
+MAX_ELEMENTS = 100
+MAX_BYTES = 160000
+RADIUS_M = 120
+MAX_SOURCE_DISTANCE_M = 65
+
+
+def groups_for_review(backlog, today):
+    """Group strictly eligible *but unregistered* leads by exact venue/city."""
+    if not isinstance(backlog, list) or len(backlog) > MAX_BACKLOG:
+        raise ValueError("invalid_private_backlog")
+    groups = defaultdict(list)
+    for lead in backlog:
+        if admission_failure_group(lead, today) != "venue_gps_unverified":
+            continue
+        city, venue = lead["city"], lead["venue"]
+        key = (norm(city), norm(venue))
+        if not all(key):
+            continue
+        groups[key].append(lead)
+    return [
+        {"city": items[0]["city"], "venue": items[0]["venue"],
+         "key": list(key), "lead_count": len(items),
+         "unique_candidate_sessions": len({
+             (item["external_id"], item["date_start"]) for item in items
+         }),
+         "uids": sorted({item["external_id"] for item in items})}
+        for key, items in sorted(groups.items(),
+                                 key=lambda p: (-len(p[1]), p[0]))
+    ]
+
+
+def private_rotation(groups, today, max_places=MAX_PER_RUN, batch_index=0):
+    """Disjoint bounded private batches, deterministic for one calendar day.
+
+    Callers opt into later batches explicitly; the default (batch 0) is
+    backward compatible. Every unknown venue is selected exactly once
+    across ceil(len(groups) / max_places) batches in the same day.
+    No network or publisher action happens here.
+    """
+    if (not isinstance(today, date) or type(max_places) is not int
+            or not 1 <= max_places <= MAX_PER_RUN
+            or type(batch_index) is not int or batch_index < 0):
+        raise ValueError("invalid_rotation")
+    if not groups:
+        if batch_index != 0:
+            raise ValueError("batch_out_of_range")
+        return []
+    offset = batch_index * max_places
+    if offset >= len(groups):
+        raise ValueError("batch_out_of_range")
+    start = ((today.toordinal() * max_places) + offset) % len(groups)
+    count = min(max_places, len(groups) - offset)
+    return [groups[(start + i) % len(groups)] for i in range(count)]
+
+
+def source_center(group, record_fetch=api_record):
+    """ODS/OA metadata supplies an UNTRUSTED search centre, never GPS proof.
+
+    Require exact UID + city + venue for up to three distinct UID records;
+    any missing/contradictory sampled record blocks the private probe. More
+    records may exist: this is NEVER a full registry or GPS attestation.
+    """
+    uids = group["uids"]
+    if not uids:
+        return None, "no_exact_uid_for_probe"
+    centers = []
+    try:
+        for uid in uids[:3]:
+            row = record_fetch(uid)
+            if (str(row.get("uid")) != uid
+                    or norm(row.get("location_city")) != group["key"][0]
+                    or norm(row.get("location_name")) != group["key"][1]):
+                return None, "source_identity_mismatch"
+            loc = row.get("location_coordinates")
+            if not isinstance(loc, dict):
+                return None, "source_coordinates_missing"
+            lat, lng = float(loc["lat"]), float(loc["lon"])
+            if (not math.isfinite(lat) or not math.isfinite(lng)
+                    or not -90 <= lat <= 90 or not -180 <= lng <= 180):
+                return None, "source_coordinates_invalid"
+            centers.append((lat, lng))
+    except (ValueError, KeyError, TypeError, OSError):
+        return None, "source_record_unavailable"
+    if any(meters(centers[0], point) > MAX_SOURCE_DISTANCE_M
+           for point in centers[1:]):
+        return None, "source_coordinates_disagree"
+    return centers[0], None
+
+
+class NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def overpass_query(lat, lng):
+    if not all(math.isfinite(x) for x in (lat, lng)):
+        raise ValueError("invalid_center")
+    if not -90 <= lat <= 90 or not -180 <= lng <= 180:
+        raise ValueError("invalid_center")
+    return ('[out:json][timeout:20];'
+            'nwr(around:%d,%.7f,%.7f)["name"];out center tags %d;'
+            % (RADIUS_M, lat, lng, MAX_ELEMENTS))
+
+
+def fetch_overpass(center):
+    """Fixed trusted endpoints, no redirects, strict response size limits."""
+    query = overpass_query(*center)
+    for endpoint in ENDPOINTS:
+        try:
+            url = endpoint + "?" + urlencode({"data": query})
+            req = Request(url, headers={
+                "Accept": "application/json",
+                "User-Agent": "PtitesOndes-PrivateVenueEvidence/1.0 (read-only)",
+            })
+            with build_opener(NoRedirect()).open(req, timeout=26) as response:
+                if response.status != 200 or response.geturl() != url:
+                    raise ValueError("bad_provider_response")
+                content = response.read(MAX_BYTES + 1)
+            if not content or len(content) > MAX_BYTES:
+                raise ValueError("oversized_provider_response")
+            return json.loads(content)
+        except (OSError, UnicodeError, ValueError):
+            continue
+    raise ValueError("independent_provider_unavailable")
+
+
+def osm_hints(group, center, response):
+    """Only exact-name OSM features near centre; NOT an approved GPS."""
+    if (not isinstance(response, dict)
+            or not isinstance(response.get("elements"), list)
+            or response.get("remark")
+            or len(response["elements"]) >= MAX_ELEMENTS):
+        raise ValueError("incomplete_independent_provider_response")
+    found = []
+    seen = set()
+    for item in response["elements"]:
+        if not isinstance(item, dict):
+            continue
+        typ, oid, tags = item.get("type"), item.get("id"), item.get("tags")
+        if (typ not in ("node", "way", "relation") or type(oid) is not int
+                or oid <= 0 or not isinstance(tags, dict)
+                or norm(tags.get("name")) != group["key"][1]):
+            continue
+        # Explicitly conflicting municipality is a hard reject. Absence is
+        # still a hint but not independent municipality attestation.
+        tagged_city = tags.get("addr:city") or tags.get("is_in:city")
+        if tagged_city and norm(tagged_city) != group["key"][0]:
+            continue
+        loc = item if typ == "node" else item.get("center")
+        if not isinstance(loc, dict):
+            continue
+        try:
+            lat, lng = float(loc["lat"]), float(loc["lon"])
+        except (KeyError, TypeError, ValueError, OverflowError):
+            continue
+        if (not math.isfinite(lat) or not math.isfinite(lng)
+                or not -90 <= lat <= 90 or not -180 <= lng <= 180
+                or meters(center, (lat, lng)) > MAX_SOURCE_DISTANCE_M):
+            continue
+        oidtext = "%s/%d" % (typ, oid)
+        if oidtext in seen:
+            continue
+        seen.add(oidtext)
+        found.append({
+            "osm_object_hint": oidtext,
+            "osm_url_hint": "https://www.openstreetmap.org/" + oidtext,
+            "lat_unverified": lat, "lng_unverified": lng,
+            "city_tag_confirmed": bool(tagged_city),
+            "official_venue_verified": False,
+            "gps_verified": False,
+        })
+    return sorted(found, key=lambda x: x["osm_object_hint"])
+
+
+def inspect_group(group, record_fetch=api_record, osm_fetch=fetch_overpass,
+                  ign_fetch=None, official_page_get=None,
+                  approved_official_hosts=(), dila_directory_get=None,
+                  official_geocode=False, source_record_from_reader=None,
+                  shared_proof_day=None):
+    # Direct OA-v2 UID data may supply a *search hint*, avoiding an ODS-only
+    # dependency. This is NOT independent GPS proof or publisher admission.
+    if source_record_from_reader is not None:
+        if not callable(source_record_from_reader):
+            raise ValueError("invalid_private_source_callback")
+        record_fetch = lambda uid: source_record_from_reader(group, uid)
+    center, why = source_center(group, record_fetch)
+    if why:
+        return {"status": why, "osm_candidates_unverified": []}
+    official_status = None
+    if (official_geocode and ign_fetch is not None
+            and official_page_get is not None
+            and dila_directory_get is not None):
+        from ptitesondes_generic_venue_official_geocode import (
+            confirm_official_address_ban,
+        )
+        try:
+            directory = dila_directory_get(group["city"])
+            page_url, page_html = official_page_get(group)
+            official_status = confirm_official_address_ban(
+                group, center, directory, page_url, page_html, ign_fetch)
+        except (ValueError, TypeError, KeyError, OSError,
+                TimeoutError, UnicodeError):
+            official_status = {"status": "official_geocode_provider_unavailable",
+                               "independent_geo_correlated": False,
+                               "publication_ready": False, "public_writes": 0}
+        if official_status["independent_geo_correlated"] is True:
+            # Independent municipality + BAN + UID-bound event center.
+            # This avoids dependence on an unreliable public OSM endpoint,
+            # but NEVER grants publication or publisher venue admission.
+            result = {"status": "official_address_ban_private_review",
+                      "osm_candidates_unverified": [],
+                      "official_geocode": official_status}
+            if shared_proof_day is not None:
+                from datetime import date
+                from ptitesondes_shared_venue_location_evidence import (
+                    mint_private_location_proof, location_from_proof,
+                )
+                # The shared proof is deliberately ephemeral and never
+                # serialized to a public artifact or used by a publisher.
+                # A fresh independent BAN check must agree as well.
+                ok = False
+                if type(shared_proof_day) is date:
+                    try:
+                        witness = mint_private_location_proof(
+                            group, directory, page_url, page_html,
+                            ign_fetch, shared_proof_day, source_center=center)
+                        ok = location_from_proof(
+                            witness, group["city"], group["venue"],
+                            shared_proof_day, source_point=center) is not None
+                    except (ValueError, TypeError, KeyError, OSError,
+                            TimeoutError, OverflowError):
+                        ok = False
+                result["shared_location_proof_private_review"] = ok
+            return result
+    try:
+        response = osm_fetch(center)
+        evidence = osm_hints(group, center, response)
+    except (ValueError, OSError, TypeError, KeyError):
+        result = {"status": "independent_provider_unavailable_or_incomplete",
+                  "osm_candidates_unverified": []}
+        if official_status is not None:
+            result["official_geocode"] = official_status
+        return result
+    if len(evidence) == 1:
+        status = "single_osm_hint_requires_official_venue_and_address_proof"
+    elif evidence:
+        status = "multiple_osm_hints_ambiguous"
+    else:
+        status = "no_exact_osm_venue_found"
+    result = {"status": status, "osm_candidates_unverified": evidence}
+    if official_status is not None:
+        result["official_geocode"] = official_status
+    if len(evidence) == 1 and ign_fetch is not None:
+        from ptitesondes_generic_venue_ign_corroboration import (
+            corroborate_osm_records,
+        )
+        independent = corroborate_osm_records(
+            group, response, center, ign_fetch)
+        # A matching BAN address is geography corroboration only.
+        # Never use this flag to modify VENUES or authorize publication.
+        result["independent_address"] = independent
+        if (independent.get("address_correlated") is True
+                and official_page_get is not None):
+            from ptitesondes_generic_venue_official_proof import (
+                official_venue_page_proof,
+            )
+            try:
+                page_url, html = official_page_get(group)
+            except (OSError, ValueError, TypeError, KeyError, UnicodeError):
+                page_url, html = None, None
+            if dila_directory_get is not None:
+                # DILA is independent of OSM/OpenAgenda's self-asserted
+                # "website" fields. Fail closed if the official directory
+                # is unavailable; never fall back to a caller host list.
+                from ptitesondes_dila_municipal_domains import (
+                    approved_municipal_page_host,
+                )
+                try:
+                    directory = dila_directory_get(group["city"])
+                    trusted = approved_municipal_page_host(
+                        page_url, group["city"], directory)
+                except (OSError, ValueError, TypeError, KeyError,
+                        UnicodeError):
+                    trusted = None
+                hosts = frozenset((trusted,)) if trusted else frozenset()
+            else:
+                hosts = approved_official_hosts
+            result["official_page"] = official_venue_page_proof(
+                group, independent["address_candidate_private"],
+                independent, page_url, html, hosts)
+    # A park, public square or other venue without a numbered address may
+    # still merit private research. Require one named OSM geometry and a
+    # DILA-authenticated *specific* municipal venue page. The correlation
+    # is NEVER a certified venue point or publisher admission.
+    if (len(evidence) == 1 and official_page_get is not None
+            and dila_directory_get is not None
+            and not result.get("independent_address", {}).get(
+                "address_correlated", False)):
+        from ptitesondes_unnumbered_venue_osm_official_hint import (
+            unnumbered_named_venue_hint,
+        )
+        try:
+            directory = dila_directory_get(group["city"])
+            url, html = official_page_get(group)
+            result["unnumbered_named_venue_hint"] = (
+                unnumbered_named_venue_hint(
+                    group, center, response, directory, url, html))
+            # Extra private-only corroboration: a DILA-authenticated page
+            # with explicit official coordinates + unique named OSM geometry
+            # can prove a physical place WITHOUT a postal street number.
+            # The source centre is an index hint, never the published point.
+            if shared_proof_day is not None:
+                from ptitesondes_unnumbered_official_geo_proof import (
+                    mint_private_unnumbered_location_proof,
+                )
+                from ptitesondes_shared_venue_location_evidence import (
+                    location_from_proof,
+                )
+                witness = mint_private_unnumbered_location_proof(
+                    group, directory, url, html, response, center,
+                    shared_proof_day)
+                result["shared_location_proof_private_review"] = (
+                    location_from_proof(
+                        witness, group["city"], group["venue"],
+                        shared_proof_day, source_point=center) is not None)
+        except (OSError, ValueError, KeyError, TypeError,
+                TimeoutError, UnicodeError):
+            result["unnumbered_named_venue_hint"] = {
+                "status": "municipal_source_unavailable",
+                "official_name_correlated": False,
+                "osm_geometry_correlated": False,
+                "gps_verified": False,
+                "official_venue_verified": False,
+                "event_sessions_verified": False,
+                "publication_ready": False,
+                "public_writes": 0,
+            }
+    return result
+
+
+def audit(backlog, today, record_fetch=api_record,
+          osm_fetch=fetch_overpass, live=False, ign_fetch=None,
+          official_page_get=None, approved_official_hosts=(),
+          dila_directory_get=None, official_geocode=False,
+          source_record_from_reader=None, shared_proof_preview=False,
+          batch_index=0):
+    groups = groups_for_review(backlog, today)
+    chosen = private_rotation(groups, today, batch_index=batch_index)
+    checked = []
+    for group in chosen:
+        result = (inspect_group(group, record_fetch, osm_fetch,
+                                ign_fetch, official_page_get,
+                                approved_official_hosts, dila_directory_get,
+                                official_geocode,
+                                source_record_from_reader,
+                                today if shared_proof_preview else None)
+                  if live else {"status": "not_scanned_preview",
+                                "osm_candidates_unverified": []})
+        checked.append({"city": group["city"], "venue": group["venue"],
+                        "lead_count": group["lead_count"],
+                        "unique_candidate_sessions":
+                            group["unique_candidate_sessions"],
+                        "uids": group["uids"], **result})
+    address_matched = [
+        x for x in checked
+        if x.get("independent_address", {}).get("address_correlated") is True
+    ]
+    official_matched = [
+        x for x in checked
+        if x.get("official_page", {}).get(
+            "location_evidence_complete_for_private_review") is True
+    ]
+    official_geo_matched = [
+        x for x in checked
+        if x.get("official_geocode", {}).get(
+            "independent_geo_correlated") is True
+    ]
+    reusable = [x for x in checked
+                if x.get("shared_location_proof_private_review") is True]
+    unnumbered = [x for x in checked
+                  if x.get("unnumbered_named_venue_hint", {}).get(
+                      "official_name_correlated") is True
+                  and x["unnumbered_named_venue_hint"].get(
+                      "osm_geometry_correlated") is True]
+    return {
+        "schema": SCHEMA, "day": today.isoformat(),
+        "mode": "private_osm_hints_no_publisher_access",
+        "total_backlog": len(backlog),
+        "unknown_venue_leads": sum(x["lead_count"] for x in groups),
+        # Unique UID+date within a venue; aliases in two collectors never
+        # inflate the number of sessions that could progress.
+        "unknown_candidate_sessions": sum(
+            x["unique_candidate_sessions"] for x in groups),
+        "duplicate_collector_or_repeated_leads": sum(
+            x["lead_count"] - x["unique_candidate_sessions"] for x in groups),
+        "unknown_unique_venues": len(groups),
+        "batch_index": batch_index,
+        "batch_count": (len(groups) + MAX_PER_RUN - 1) // MAX_PER_RUN,
+        "selected_venues": len(checked),
+        "queried_venues": len(checked) if live else 0,
+        "independent_hints": sum(
+            x["status"] == "single_osm_hint_requires_official_venue_and_address_proof"
+            for x in checked),
+        "independent_address_matches": len(address_matched),
+        "leads_with_independent_address_hint": sum(
+            x["lead_count"] for x in address_matched),
+        "official_identity_address_matches": len(official_matched),
+        "leads_with_private_official_place_evidence": sum(
+            x["lead_count"] for x in official_matched),
+        "independent_official_ban_address_matches": len(official_geo_matched),
+        "leads_with_official_ban_geo_private_review": sum(
+            x["lead_count"] for x in official_geo_matched),
+        "private_reusable_location_proofs": len(reusable),
+        "leads_with_private_reusable_proof": sum(
+            x["lead_count"] for x in reusable),
+        "candidate_sessions_with_private_reusable_proof": sum(
+            x["unique_candidate_sessions"] for x in reusable),
+        "unnumbered_named_venue_private_hints": len(unnumbered),
+        "candidate_sessions_with_unnumbered_private_hint": sum(
+            x["unique_candidate_sessions"] for x in unnumbered),
+        "verified_venue_leads": 0,
+        "records": checked,
+        "gps_verified": False, "official_venue_verified": False,
+        "publication_ready": False, "public_writes": 0,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--backlog", type=Path, required=True)
+    parser.add_argument("--output-private-report", type=Path, required=True)
+    parser.add_argument("--day", type=date.fromisoformat,
+                        default=date.today())
+    parser.add_argument("--live-probe", action="store_true")
+    parser.add_argument("--official-municipal-pages", action="store_true")
+    parser.add_argument("--official-address-geocode", action="store_true")
+    parser.add_argument("--shared-location-evidence", action="store_true")
+    parser.add_argument("--batch-index", type=int, default=0,
+                        help="0-based private venue batch (maximum 12 places)")
+    parser.add_argument("--private-source-config", type=Path)
+    args = parser.parse_args()
+    # Block BOTH private input and output paths inside the public checkout.
+    # A future workflow must explicitly use a private runner workspace and
+    # must never upload the report as a public Actions artifact.
+    repository = Path(__file__).resolve().parents[1]
+    if (args.output_private_report.resolve().is_relative_to(repository)
+            or args.backlog.resolve().is_relative_to(repository)):
+        raise ValueError("private_backlog_and_report_outside_public_repo_required")
+    if (args.official_municipal_pages and
+            (not args.live_probe or args.private_source_config is None)):
+        raise ValueError("private_municipal_preview_requires_explicit_opt_in")
+    if args.official_address_geocode and not args.official_municipal_pages:
+        raise ValueError("official_ban_geocode_requires_private_municipal_source")
+    if args.shared_location_evidence and not (
+            args.live_probe and args.official_municipal_pages
+            and args.official_address_geocode):
+        raise ValueError("shared_evidence_requires_explicit_private_full_probe")
+    if (args.private_source_config is not None
+            and args.private_source_config.resolve().is_relative_to(repository)):
+        raise ValueError("source_config_outside_public_repo_required")
+    if args.backlog.stat().st_size > 1_000_000:
+        raise ValueError("oversized_private_backlog")
+    backlog = json.loads(args.backlog.read_text(encoding="utf-8"))
+    if args.live_probe:
+        from ptitesondes_generic_venue_ign_corroboration import fetch_ign
+        callbacks = {}
+        if args.official_municipal_pages:
+            if (not args.private_source_config.is_file()
+                    or args.private_source_config.is_symlink()
+                    or args.private_source_config.stat().st_size > 60_000):
+                raise ValueError("private_source_config_invalid")
+            cfg = json.loads(args.private_source_config.read_text(encoding="utf-8"))
+            if (not isinstance(cfg, dict)
+                    or cfg.get("schema") != "ptitesondes.sources.v1"
+                    or not isinstance(cfg.get("openagenda_agendas"), list)):
+                raise ValueError("private_source_config_schema_invalid")
+            from ptitesondes_municipal_official_page_reader import (
+                MunicipalOfficialPageReader,
+            )
+            key = os.environ.get("OPENAGENDA_READ_KEY", "")
+            reader = MunicipalOfficialPageReader(
+                backlog, cfg["openagenda_agendas"], key)
+            callbacks = {
+                "official_page_get": reader.official_page_get,
+                "dila_directory_get": reader.dila_directory_get,
+                "source_record_from_reader": reader.source_record_for_group,
+            }
+        report = audit(backlog, args.day, live=True, ign_fetch=fetch_ign,
+                       official_geocode=args.official_address_geocode,
+                       shared_proof_preview=args.shared_location_evidence,
+                       batch_index=args.batch_index, **callbacks)
+    else:
+        report = audit(backlog, args.day, live=False,
+                       batch_index=args.batch_index)
+    args.output_private_report.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8")
+    # Never log private venue names, coordinates, URLs or exception details.
+    print(json.dumps({
+        "unknown_venue_leads": report["unknown_venue_leads"],
+        "unknown_unique_venues": report["unknown_unique_venues"],
+        "selected_venues": report["selected_venues"],
+        "batch_index": report["batch_index"],
+        "batch_count": report["batch_count"],
+        "publication_ready": False, "public_writes": 0,
+    }))
+
+
+if __name__ == "__main__":
+    main()

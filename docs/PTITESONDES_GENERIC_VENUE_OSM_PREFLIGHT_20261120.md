@@ -1,0 +1,465 @@
+# P'tites Ondes — découverte générique des lieux encore inconnus (20/11/2026)
+
+## Périmètre, mesure réelle
+Relecture du backlog privé `automation/ptitesondes-intake` et des registres publics
+au 20 novembre 2026 : **441 pistes**, **141 bloquées au premier filtre
+pour lieu/GPS**, représentant **79 couples exacts (commune, lieu) dans
+52 communes**. **36 lieux sont récurrents** ; les 10 plus fréquents
+concentrent **43 pistes**. Le rapport privé de qualification du 20/11
+confirme 141 dossiers et 209 admissibles au premier filtre.
+
+Ces métriques concernent des pistes en attente et non des séances publiables.
+Le total de **dossiers réellement débloqués par cette PR est zéro**.
+
+## Nouveau code
+`scripts/ptitesondes_generic_venue_osm_preflight.py` :
+- reprend la classification `admission_failure_group()` effective ;
+- regroupe une seule fois les entrées par commune + lieu, pas par séance ;
+- traite au plus **12 lieux par exécution**, avec rotation déterministe ;
+- exige un UID source exact et compare identité du lieu et coordonnées issues
+  des fiches ODS, **uniquement comme centre de recherche non fiable** ;
+- interroge exclusivement deux endpoints Overpass configurés en dur, sans
+  redirection, avec un budget strict sur les réponses ;
+- retient uniquement un objet OSM indépendant au **nom exact**, situé
+  à moins de **65 m**, sans contradiction explicite de commune ;
+- distingue **aucun**, **un** ou **plusieurs** objets candidats et les erreurs ;
+- produit des résultats de revue **privés**, sans exporter de coordonnées
+  ou de noms de lieux dans les résumés publics ;
+- ne modifie **ni** le registre `VENUES`, ni les fichiers publics, ni le
+  moteur de promotion, ni les workflows GitHub Actions.
+
+Le simple point OSM ne prouve pas l'adresse officielle, l'organisateur,
+l'identité de l'établissement, la date, l'horaire ni le public familial.
+**Tout résultat reste non attesté et aucune publication n'est possible.**
+
+## Exécution (réservée au contexte privé)
+Le script consomme le **backlog privé déjà téléchargé dans un runner
+authentifié**. Par défaut la commande ne contacte aucun site externe :
+
+```bash
+python scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog /chemin/prive/backlog.json \
+  --output-private-report /chemin/prive/venue-osm-report.json \
+  --day 2026-11-20
+```
+
+`--live-probe` autorise explicitement la lecture bornée ODS + OSM.
+Ce flag ne doit pas être ajouté à un workflow de production sans
+une nouvelle validation, ni sans chemin sûr de stockage dans la branche
+privée. Les deux autres sources d'échec (UID absent du miroir,
+preuve officielle de lieu indisponible) demeurent des blocages.
+
+## Pour passer ensuite de découverte à admission
+1. Vérifier la fiche officielle du lieu : nom, commune, adresse physique
+   ou emplacement extérieur, et provenance institutionnelle réelle.
+2. Corroborer l'adresse, le bâtiment ou la place par un **fournisseur
+   géographique indépendant** ; interdire les correspondances approximatives
+   ou ambiguës, sans imposer une salle de spectacle préenregistrée.
+3. Introduire une attestation de lieu réutilisable dans la vérification
+   `registry_location()`, avec contrôle d'identité, expiration et relecture
+   des preuves. Aucune donnée du collecteur n'est une preuve indépendante.
+4. Vérifier **chaque séance** (date/heure/public/organisateur), doublons,
+   droits de réutilisation, statut et publication append-only.
+5. Tester le chemin publisher -> GitHub Pages -> carte avant activation
+   ou déploiement, avec autorisation explicite.
+
+Cette PR prépare une recherche générique mais ne prétend pas atteindre
+l'autonomie totale. Pas de fusion, de nouveau workflow activé ou de
+modification de la production.
+
+## Extension : corroboration IGN/BAN sans liste de villes
+
+`scripts/ptitesondes_generic_venue_ign_corroboration.py` reprend le niveau
+de rigueur du contrôleur IGN/BAN déjà présent pour quatre bâtiments homologués
+(`ptitesondes_independent_ign_venue_recheck.py`), mais le **généralise**
+aux lieux nouvellement découverts : pas de noms, communes ou adresses épinglés.
+
+Après un résultat OSM au nom exact et sans ambiguïté, une requête IGN/BAN
+unique est possible **seulement si le POI fournit explicitement numéro,
+rue et code postal**. La réponse doit être un numéro de rue exact,
+dans la même ville avec le même code postal, score ≥ 0,95 et coordonnées
+à 65 mètres maximum du point nommé OSM **et** du centre source. Une rue
+sans numéro, un centroïde de commune, une adresse ambigüe, une divergence
+de points ou une erreur réseau ne déclenchent aucune admission.
+
+Le rapport privé distingue :
+- `independent_address_matches` : **nombre de lieux avec une adresse
+  corroborée**, sans homologation officielle ;
+- `leads_with_independent_address_hint` : nombre de pistes
+  potentiellement concernées (ce ne sont **pas** des événements débloqués) ;
+- `verified_venue_leads` : **toujours zéro** tant que le mécanisme
+  d'attestation officielle du lieu n'est pas construit ;
+- `publication_ready=false`, `public_writes=0` sans exception.
+
+Le mode par défaut ne fait **aucun accès réseau**. Le flag explicite
+`--live-probe` lance ODS, Overpass puis IGN/BAN, sans aucune écriture
+publique. Le chemin du backlog **et** du rapport doivent se trouver hors
+du checkout public. Aucun workflow de production n'invoque ce flag.
+
+## Limites opérationnelles restantes
+
+- La proximité du point OSM avec le centre OpenAgenda/ODS ne prouve pas
+  l'identité ou la disponibilité du lieu, seulement une cohérence
+  géographique partielle.
+- Un lieu sans adresse postale (parc, place, espace temporaire) exige
+  une voie distincte de preuve de l'emprise publique et du nom, jamais
+  l'invention d'une adresse numérotée.
+- Une donnée OSM/BAN ne peut pas remplacer la preuve de l'établissement
+  par son site officiel, ni la confirmation de chaque séance et de son public.
+- Les UID absents du miroir ODS restent à traiter par la PR #503 et un
+  pont de lecture OpenAgenda v2, **sans** assimiler une preuve directe
+  de l'organisateur à une source indépendante.
+- Le publisher reste volontairement déconnecté de cette PR.
+
+## Extension : preuve générique de l'identité officielle de l'établissement
+
+`ptitesondes_generic_venue_official_proof.py` ajoute une vérification
+**purement hors réseau** des données structurées `schema.org/Place`
+(et sous-types explicitement documentés) sur la page officielle d'un lieu.
+
+Conditions cumulatives :
+1. La preuve OSM + adresse IGN/BAN a réussi.
+2. L'URL de la page officielle est fournie **indépendamment du collecteur
+   et des attributs OSM** et appartient à un hôte approuvé par un registre
+   distinct. L'outil refuse les domaines OpenAgenda/ODS/OSM/IGN comme preuve
+   d'identité institutionnelle.
+3. Une seule entité `Place` porte le nom exact, la commune, la rue,
+   le numéro et le code postal corroborés ; toute contradiction des coordonnées
+   éventuelles bloque la qualification géographique.
+4. Si l'URL officielle n'existe pas, si le domaine n'a pas été approuvé
+   indépendamment, ou si la page ne contient pas de `Place` exploitable,
+   le dossier reste en attente, sans inventer l'identité.
+
+Cette couche est intégrée au moteur en **injection de preuves uniquement** :
+`official_page_get` et `approved_official_hosts` doivent être fournis par
+un futur connecteur institutionnel authentifié ; ils ne sont **pas**
+alimentés par le backlog privé ou par un champ `website` de la carte OSM.
+Ainsi **aucun site externe arbitraire n'est automatiquement homologué**.
+
+Même dans le cas positif, le rapport `location_evidence_complete_for_private_review`
+n'est **pas** une permission de publier : `verified_venue_leads=0`,
+`publication_ready=false`, `public_writes=0`. Il manque encore le
+raccordement authentifié des sources officielles, l'admission de chaque séance
+et le publisher, explicitement hors périmètre de cette PR. Le test d'intégration
+couvre l'ensemble ODS → OSM → IGN/BAN → HTML officiel, sans connexion réseau.
+
+## 20 novembre — provenance municipale automatisable via DILA
+
+**Mesure actualisée du backlog privé** : **449 dossiers**, dont **149 classés
+`venue_gps_unverified`**, toujours **79 couples ville+lieu distincts**
+(52 communes lors de la mesure initiale). Les 209 admissibles au premier
+filtre ne sont pas prêts à publier.
+
+La Direction de l'information légale et administrative (DILA) publie
+l'annuaire officiel de l'administration et des services publics, source :
+- https://www.data.gouv.fr/dataservices/api-annuaire-de-ladministration-et-des-services-publics
+- API `https://api-lannuaire.service-public.gouv.fr/api/explore/v2.1`
+- Données `api-lannuaire-administration`, champs `nom`, `pivot`,
+  `code_insee_commune`, `adresse`, `site_internet`, `categorie`,
+  `statut_de_diffusion` et `url_service_public`.
+
+Le module **`scripts/ptitesondes_dila_municipal_domains.py`** fournit
+la vérification générique d'un **domaine municipal indépendant** :
+- recherche bornée par nom de commune et `mairie`, sans liste de villes ;
+- revue exacte du nom de mairie, du code INSEE, de l'adresse en France,
+  du caractère public de la fiche et de l'éditeur DILA ;
+- vérification de la présence d'un unique résultat municipal non ambigu ;
+- hôtes HTTPS des sites répertoriés par DILA (jamais une URL inventée
+  ou déclarée `official=1` par OpenAgenda) ;
+- refus des réseaux sociaux, hébergeurs mutualisés et domaines trompeurs ;
+- restriction aux sites de la commune identifiée, sans accorder confiance
+  à l'ensemble des sites en `.fr` ou `.gouv.fr`.
+
+La preuve DILA est raccordée **par injection d'une lecture du répertoire**
+dans `inspect_group()`/`audit()`. Lorsqu'un lecteur DILA est fourni,
+il **remplace** la liste d'hôtes déclarée par l'appelant : une erreur de
+l'annuaire, une mairie ambiguë ou un hôte différent bloque la preuve du lieu.
+Le contrôle d'identité sur une page officielle reste strict et séparé du
+contrôle du site municipal. Un domaine municipal **ne suffit pas** à prouver
+qu'un événement se tient dans le lieu mentionné.
+
+**Aucune activation en production :** le CLI de préflight n'a pas encore
+de découverte fiable du détail officiel du lieu à ouvrir ; les tests
+simulent des cas positifs/négatifs hors réseau. Pour achever l'autonomie,
+il faut obtenir la page d'établissement au sein du domaine DILA confirmé,
+vérifier l'identité/coordonnées puis transmettre un résultat réutilisable
+au publisher après toutes les autres vérifications de la séance.
+
+**Attribution future en cas de réutilisation des données DILA** :
+mentionner « Service-Public.gouv.fr / DILA », la source et la date,
+selon la notice officielle (aucun nouveau jeu de données n'est publié ici).
+
+Les parcs et lieux éphémères sans adresse numérotée nécessitent une branche
+géographique distincte ; la voie IGN/BAN numéro de rue ne doit pas les
+bloquer définitivement. `verified_venue_leads=0`, aucun raccordement
+publisher, aucun déploiement GitHub Pages/Infomaniak.
+
+## Contrôle des URL de lieux OpenAgenda contre les sites municipaux DILA
+
+Les fiches de lieu OpenAgenda v2 contiennent un champ facultatif
+`location.website`, indiqué dans la documentation OpenAgenda :
+https://developers.openagenda.com/en/lieux/structure/.
+
+`verified_oa_location_website()` permet de retenir ce lien en
+**candidat de lecture**, mais uniquement en présence cumulée :
+- d'un événement OA v2 public et présentiel, d'un UID attendu, d'un
+  lieu et d'une commune cohérents ;
+- d'un site HTTPS dont le domaine appartient au site municipal déclaré
+  pour **la même commune** dans l'annuaire DILA authentifié ;
+- d'aucune erreur, ambiguïté ni contradiction de domaine.
+
+La propriété `location.website` d'OpenAgenda n'est **pas** une preuve
+d'institution : elle sert seulement à trouver la page à lire. L'adresse
+municipale du domaine provient d'un registre administratif distinct.
+
+À ce stade, **aucune exécution réseau réelle de ce pont n'est activée** :
+son API est testée hors réseau et prête à être utilisée par un adaptateur
+de récupération OA v2 + DILA dans l'espace privé. Le programme CLI
+actuel continue de ne publier ni ne valider de sortie. La page exacte
+doit ensuite passer `official_venue_page_proof` sur les attributs
+Schema.org du lieu, puis les vérifications complètes de la séance.
+
+## Lecteur municipal utilisable en prévisualisation privée explicite
+
+Le nouveau `scripts/ptitesondes_municipal_official_page_reader.py` clôt
+l'écart entre des adaptateurs isolés et un **lecteur de pages réellement
+appelable** : à partir d'un backlog privé et de la liste privée des UID des
+agendas retenus, il recoupe le slug OA, l'UID événement, le nom exact du lieu,
+la commune et `location.website`, obtient la fiche municipale DILA,
+puis charge uniquement une page HTTPS relevant du domaine municipal approuvé.
+
+Le CLI `ptitesondes_generic_venue_osm_preflight.py` propose désormais
+une option **désactivée par défaut** `--official-municipal-pages` :
+```bash
+# À exécuter uniquement dans un runner isolé, sans publication ni artifact public.
+# La clé de lecture OPENAGENDA_READ_KEY est fournie en secret d'environnement.
+python scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog /espace-prive/automation-intake/ptitesondes/backlog.json \
+  --private-source-config /espace-prive/automation/sources.json \
+  --output-private-report /espace-prive/venue-proof-preview.json \
+  --day 2026-11-20 --live-probe --official-municipal-pages
+```
+
+La commande exige explicitement `--live-probe`, un `sources.json`
+privé hors checkout public, et `OPENAGENDA_READ_KEY`. Le mode par défaut
+n'effectue **aucun** appel réseau. Aucune action programmée n'a été ajoutée,
+aucun secret n'est affiché ni ajouté au dépôt.
+
+Le lecteur refuse tout agenda non enregistré dans la configuration privée,
+UID OA divergent, site Internet absent, source DILA ambiguë, URL externe
+hors domaine municipal, redirection, mauvais type MIME ou page trop volumineuse.
+Une seule commune est interrogée une fois par cycle grâce au cache privé ;
+au plus trois UID sont comparés pour un même lieu très représenté.
+Ces trois UID **ne valident pas les autres séances** : toutes les vérifications
+d'événements restent individuelles.
+
+Les rapports contenant des noms de lieux, URL ou coordonnées doivent demeurer
+**strictement privés**. Le fichier source `docs/ptitesondes/sorties.json`
+et le publisher ne sont pas utilisés par cette branche.
+
+**Limites connues** :
+- Les pages de lieux sans `schema.org/Place` explicite restent bloquées,
+  même si l'établissement est réel ; enrichir l'extraction officielle
+  sans inventer de preuves.
+- Les sites privés de lieux (hors domaine municipal DILA) et les espaces
+  publics sans numéro exigent d'autres registres institutionnels.
+- Les dossiers avec UID absent du miroir ODS sont encore dépendants du
+  correctif #503 et de la preuve OA directe.
+- Aucun lancement réel de cette commande contre le backlog privé n'est
+  revendiqué dans ce chantier : son comportement positif est couvert
+  par des tests hors réseau. **Zéro nouvelle sortie effectivement admise**.
+
+## Mesure réelle nationale de la disponibilité des sites municipaux (20/11/2026)
+
+Sur le backlog privé `automation/ptitesondes-intake` du 20/11, **449 pistes**
+dont **149 dossiers** bloqués au préfiltre `venue_gps_unverified` :
+**79 lieux uniques répartis dans 52 communes**. Aucun nom, UID, URL ou lieu
+privé n'est publié ici.
+
+Les **52 requêtes publiques** à l'API nationale DILA, réalisées pour les
+seules communes et sans transmettre les événements, ont toutes retourné un
+document JSON exploitable. Le filtre `nom = "Mairie - <commune>"`
+a donné **42 fiches de mairie uniques** correspondantes (nom, statut et
+version officiels) ; **35 communes** disposent d'au moins une URL d'accueil
+municipale en HTTPS non ambiguë.
+
+Dans ces 35 communes se trouvent **60 lieux** représentant **116 des
+149 dossiers** : il s'agit d'un **périmètre potentiel de recherche
+institutionnelle**, aucunement d'un ensemble de lieux, GPS ou séances
+attestés. Le statut opérationnel reste `verified_venue_leads=0`,
+`publication_ready=false`, `public_writes=0`.
+
+**Défaut révélé par la source réelle et corrigé sur la PR** :
+`statut_de_diffusion` vaut `"true"` dans les réponses de l'API ;
+le texte `"Publiable"` appartient au champ `version_type`, qui doit
+être explicitement demandé. Le filtre exact sur `nom` est validé
+sur Villethierry et Montpellier : il supprime les résultats voisins
+du `LIKE` flou. Le tableau `site_internet` comprend parfois des
+liens profonds ou étiquetés ; seuls les sites d'accueil sans libellé
+peuvent établir la portée du domaine municipal.
+
+Sources officielles :
+- https://www.data.gouv.fr/dataservices/api-annuaire-de-ladministration-et-des-services-publics
+- https://api-lannuaire.service-public.gouv.fr/explore/dataset/api-lannuaire-administration/api/
+- https://developers.openagenda.com/lieux/structure/
+
+**Limite à ne pas effacer** : pour les 19 lieux dans des communes sans
+site d'accueil municipal qualifié, pour les établissements associatifs
+ou privés, les événements éphémères sur place publique et les lieux sans
+numéro de rue, il faut de nouvelles voies de preuve indépendante,
+sans jamais assimiler « absent de DILA » à « événement inexistant ».
+
+## Audit de couverture DILA quotidien, en lecture privée et sans publication
+
+`scripts/ptitesondes_municipal_domain_coverage.py` rend reproductible
+l'étude nationale : le module recalcule les groupes `venue_gps_unverified`
+sur le **backlog privé courant**, regroupe les lieux par commune et interroge
+uniquement `fetch_dila(commune)` sur une sélection tournante. Chaque cycle
+est limité à 12 communes par défaut, au maximum 60 en revue ponctuelle.
+
+Le programme fonctionne **hors réseau par défaut** ; `--live-dila` est
+obligatoire pour lancer des lectures de l'annuaire officiel. Il n'envoie à
+l'annuaire que les noms des communes, jamais les noms des lieux, les fiches
+familiales, les UID OA ni les dates de séance. Les détails individuels du
+rapport restent dans l'espace privé ; la console publique ne produit que
+des compteurs. Aucun cron n'a été créé ni activé.
+
+Exemple de contrôle isolé sans réseau :
+```bash
+python scripts/ptitesondes_municipal_domain_coverage.py \
+  --private-backlog /espace-prive/automation-intake/ptitesondes/backlog.json \
+  --private-report /espace-prive/dila-coverage.json \
+  --day 2026-11-20
+```
+Avec ajout explicite de `--live-dila --max-cities 12`, un runner privé
+peut contrôler la source institutionnelle réelle. La sortie distingue les
+communes dont l'annuaire est indisponible de celles dont aucune page
+municipale d'accueil exploitable n'est prouvée. L'état positif ne vaut
+qu'**un site municipal source potentiel** ; les champs de publication
+restent bloqués par construction.
+
+Les **160 tests adversariaux hors réseau** de la branche, y compris les
+7 scénarios spécifiques à cet audit, ont réussi dans la CI ciblée
+du 20/11. Le synchroniseur global doit également être vert avant fusion.
+
+Contrôle complémentaire en lecture réelle du miroir ODS (20/11) :
+sur un échantillon de 8 lieux distincts actuellement non homologués,
+8 UID uniques, 8 couples lieu/commune cohérents et 8 ensembles de
+coordonnées présents. Ces points ODS ne constituent **pas** des GPS
+attestés de façon indépendante. Pour l'admission finale il faut
+réconcilier source et identité d'établissement sur une page autorisée,
+puis vérifier date, heure, public familial, droit de reprise et doublons.
+
+**Précision sur le champ « site officiel » :** la documentation OpenAgenda
+distingue le champ facultatif `location.website` (auto-déclaré)
+de la preuve d'identité et de provenance du lieu :
+https://developers.openagenda.com/lieux/structure/.
+
+## Découverte municipale en un seul lien nommé
+
+`scripts/ptitesondes_municipal_venue_link_discovery.py` traite un
+cas fréquent : `location.website` d'OpenAgenda pointe vers la **page
+d'accueil du site municipal**, alors que la fiche du lieu se trouve
+une page plus loin. Après vérification du domaine par DILA, le lecteur
+`MunicipalOfficialPageReader` peut proposer une **seule navigation
+interne** à partir d'un accueil municipal, et uniquement si le HTML
+contient **un unique lien visible dont le texte normalisé correspond
+exactement au nom du lieu**.
+
+Le traitement refuse les liens cachés, les scripts, les redirections,
+les sites externes ou ressemblants, les URL à paramètres, les liens
+ambigus vers plusieurs destinations, les ancres partielles et la
+navigation de niveau supérieur. La seconde page ne constitue
+qu'une **preuve candidate**, soumise aux contrôles indépendants
+du lieu, de l'adresse IGN/BAN et des séances.
+
+Aucune recherche Internet libre, aucun crawling d'un annuaire de
+pages municipales entier, aucune adaptation d'une liste de communes
+ou de spectacles. Sans correspondance unique, le lecteur conserve
+la page initiale et laisse le dossier non homologué.
+
+**Aucune vérification réelle des pages des 60 lieux** n'est revendiquée
+à ce stade ; les cas de navigation valides ont des tests hors réseau,
+et l'option réseau demeure inactive dans les workflows du projet.
+
+## Nouveau lot : pont OpenDataSoft UID et voie officielle sans OSM
+
+Le backlog du 20 novembre contient **149 dossiers** `venue_gps_unverified`,
+dont **94 issus d'OpenDataSoft** répartis sur 58 groupes géographiques,
+et **55 issus directement d'OpenAgenda**. Le premier lecteur des sites
+municipaux ne considérait que la seconde catégorie : cela constituait
+une vraie limite de couverture.
+
+Le module `ptitesondes_ods_oa_source_binding.py` traite les URL
+OpenAgenda « humaines » (sans préfixe UID). Il ne leur attribue jamais
+un UID par déduction : il exige une **lecture séparée ODS par UID immuable**,
+une égalité exacte entre l'URL d'origine et `canonicalurl`, une
+coïncidence exacte du nom du lieu et de la commune, un statut programmé
+(`status` ODS fourni sous forme JSON avec `id=1`), un pays français
+et des coordonnées source finies. Le lecteur officiel exige ensuite
+une **deuxième lecture directe OpenAgenda v2** de l'UID sur un agenda
+figurant dans le registre de configuration privée.
+
+Sur les 94 dossiers ODS bloqués par lieu/GPS, **92 URL** suivent le
+format humain strict attendu par ce lecteur. Un échantillon en lecture
+réelle de **10 fiches distinctes parmi les groupes bloqués** a donné
+**10/10 UID + URL canonique + commune + nom de lieu + statut + pays
+et coordonnées source concordants**. Ces 10 résultats sont des
+**liaisons de source**, pas une preuve géographique indépendante.
+
+Si `location.website` est absent dans OpenAgenda, le lecteur peut
+désormais rechercher **une seule page au nom exact du lieu** sur
+l'accueil du site de mairie authentifié indépendamment par DILA.
+Un site auto-déclaré mais **contradictoire** ne peut jamais être
+silencieusement remplacé par cette recherche municipale.
+
+### Deux voies de preuves géographiques, sans aucune homologation automatique
+
+1. **OSM → adresse explicite → IGN/BAN → page officielle** :
+   objet OSM nommé au lieu exact, adresse et coordonnées cohérentes
+   avec OpenAgenda/ODS, page sur hôte approuvé par DILA.
+2. **Page officielle municipale → adresse explicite → IGN/BAN** :
+   voie **indépendante d'OSM** ajoutée dans
+   `ptitesondes_generic_venue_official_geocode.py`. Elle ne repose
+   que sur un `schema.org/Place` au nom exact et à l'adresse complète,
+   ou sur **un seul H1 visible et un seul bloc HTML `<address>`**
+   contenant une adresse postale explicitement complète.
+   La réponse IGN/BAN doit être un unique numéro de rue, score ≥ 0,95,
+   même adresse et même commune, situé à 65 mètres maximum du centre
+   UID ODS/OA et des coordonnées officielles si elles sont publiées.
+
+Les informations `schema.org` contradictoires ne peuvent pas être
+neutralisées par une page HTML visuelle ; une adresse cachée, un pied
+de page municipal, une ambiguïté, un numéro de rue différent ou une
+erreur réseau font échouer la vérification.
+
+### Exécution isolée, après validation technique
+
+```bash
+# Utiliser un runner de prévisualisation disposant du checkout privé
+# src/ de Sarogal/PtitesOndes:main (sources.json), du backlog privé
+# state/ et de la clé OPENAGENDA_READ_KEY en secret d'environnement.
+python public/scripts/ptitesondes_generic_venue_osm_preflight.py \
+  --backlog state/automation-intake/ptitesondes/backlog.json \
+  --private-source-config src/automation/sources.json \
+  --output-private-report "${RUNNER_TEMP}/ptitesondes-private-venue-geocode.json" \
+  --day 2026-11-20 --live-probe --official-municipal-pages \
+  --official-address-geocode
+```
+
+Cette commande ne doit **pas** être incluse dans les workflows de
+production avant arbitrage. Elle exige l'accord explicite de lecture
+réseau, utilise des chemins de rapport privés, n'effectue aucun
+`git push`, n'active aucun cron, ne modifie ni le registre de lieux
+ni les fiches du catalogue, et n'approuve aucune séance.
+
+En cas de géocodage indépendant positif, le rapport sépare
+`independent_official_ban_address_matches` et
+`leads_with_official_ban_geo_private_review` des champs
+`verified_venue_leads=0`, `publication_ready=false`,
+`public_writes=0` qui restent verrouillés.
+
+**Attention :** ces corrections ont été validées par simulation hors
+réseau, mais aucune lecture complète du vrai backlog sur un runner
+privé avec accès OA+DILA+BAN n'a été effectuée. Aucune venue ni sortie
+supplémentaire homologuée ou publiée n'est revendiquée.

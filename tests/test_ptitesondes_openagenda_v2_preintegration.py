@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from ptitesondes_openagenda_v2_preintegration import (
     SCHEMA, agenda_identity_for_review, independently_linked_agenda,
-    group_multi_day, ods_fallback_preflight,
+    group_multi_day, ods_fallback_preflight, review_missing_mirror_source,
 )
 
 REGISTRY = {
@@ -249,6 +249,164 @@ class FallbackContract(unittest.TestCase):
         self.assertFalse(approved["publisher_connected"])
         self.assertEqual(approved["public_writes"], 0)
         self.assertNotIn("additions", approved)
+
+
+
+class MissingMirrorDirectRoutingContract(unittest.TestCase):
+    """Real routing code, offline providers; no publisher, files or secrets."""
+
+    def sample(self):
+        lead = {
+            "collector": "openagenda-v2",
+            "source_url":
+                "https://openagenda.com/fr/ville-test/events/12345678_spectacle",
+            "external_id": "12345678",
+            "date_start": "2026-12-05", "date_end": "2026-12-05",
+            "title": "Spectacle jeunesse",
+            "city": "Ville fictive", "venue": "Place des familles",
+        }
+        event = {
+            "uid": 12345678, "state": 2, "status": 1, "removed": False,
+            "attendanceMode": 1, "timezone": "Europe/Paris",
+            "title": {"fr": "Spectacle jeunesse"},
+            "description": {"fr": "Spectacle pour enfants et familles"},
+            "rights": {
+                "license": {"id": "etalab-2.0"},
+                "licensor": {"name": "Organisateur de test"},
+            },
+            "location": {
+                "name": "Place des familles", "adminLevel4": "Ville fictive",
+                "countryCode": "FR", "latitude": 45.75, "longitude": 4.90,
+            },
+            "timings": [{
+                "begin": "2026-12-05T14:30:00+0100",
+                "end": "2026-12-05T15:30:00+0100",
+            }],
+        }
+        # Independently documented location, not a closed list of venues.
+        venue = {
+            "city": "Ville fictive", "aliases": ["Place des familles"],
+            "lat": 45.75, "lng": 4.90,
+        }
+        return lead, event, venue
+
+    def route(self, *, lead=None, event=None, venue=None, state="uid_absent",
+              catalog=None, agenda=None, page=None):
+        s_lead, s_event, s_venue = self.sample()
+        lead = deepcopy(s_lead if lead is None else lead)
+        event = deepcopy(s_event if event is None else event)
+        venue = deepcopy(s_venue if venue is None else venue)
+        registry = dict(REGISTRY, agenda_slug="ville-test")
+        agenda = agenda if agenda is not None else {
+            "uid": 919191, "slug": "ville-test"}
+        page = page if page is not None else {
+            "url": REGISTRY["authority_reference_url"],
+            "text": '<a href="https://openagenda.com/fr/ville-test">Agenda officiel</a>',
+        }
+        return review_missing_mirror_source(
+            lead, registry, venue, date(2026, 11, 21), "dummy-test-read-key",
+            [] if catalog is None else catalog,
+            ods_probe=lambda uid: state,
+            agenda_reader=lambda uid, key: agenda,
+            event_reader=lambda uid, event_uid, key: event,
+            institutional_page=page,
+        )
+
+    def test_mirror_absent_direct_single_day_routes_without_approval(self):
+        routed = self.route()
+        self.assertEqual(routed["route"],
+                         "direct_source_candidate_for_remaining_gates")
+        self.assertFalse(routed["publisher_connected"])
+        self.assertFalse(routed["approval_granted"])
+        self.assertEqual(routed["public_writes"], 0)
+        self.assertNotIn("additions", routed)
+
+    def test_ods_outage_nonunique_or_contradiction_cannot_trigger_direct(self):
+        for state in ("uid_unique", "uid_nonunique", "network_error",
+                      "http_429", "http_500", "invalid_json_or_schema",
+                      "unexpected_uid", "probe_unavailable"):
+            with self.subTest(state=state):
+                self.assertEqual(self.route(state=state)["reason"],
+                                 "ods_unavailable_present_or_conflicting")
+
+    def test_cancelled_wrong_uid_place_and_source_never_route(self):
+        lead, event, venue = self.sample()
+        cases = [
+            {"event": dict(event, status=0)},
+            {"event": dict(event, removed=True)},
+            {"event": dict(event, uid=12345679)},
+            {"event": dict(event, location=dict(event["location"],
+                                                 latitude=10.0))},
+            {"event": dict(event, timings=[])},
+            {"lead": dict(lead, source_url=
+                          "https://openagenda.com.evil.test/fr/ville-test/events/12345678_spectacle")},
+            {"lead": dict(lead, collector="untrusted-source")},
+            {"agenda": {"uid": 919192, "slug": "ville-test"}},
+            {"page": {"url": "https://evil.test", "text":
+                       '<a href="https://openagenda.com/fr/ville-test">fake</a>'}},
+        ]
+        for data in cases:
+            with self.subTest(data=data):
+                self.assertEqual(self.route(**data)["route"], "hold")
+
+    def test_existing_published_uid_day_and_matching_range_are_held(self):
+        lead, event, venue = self.sample()
+        published = [{
+            "id": "openagenda-12345678-2026-12-05",
+            "title": "Spectacle jeunesse", "city": "Ville fictive",
+            "venue": "Place des familles",
+            "date_start": "2026-12-05", "date_end": "2026-12-06",
+        }]
+        self.assertEqual(self.route(catalog=published)["reason"],
+                         "already_published")
+        published[0]["id"] = "historic-show"
+        self.assertEqual(self.route(catalog=published)["reason"],
+                         "already_published")
+
+    def test_five_real_sessions_are_not_rejected_by_arbitrary_threshold(self):
+        _, event, _ = self.sample()
+        event["timings"] = [{
+            "begin": f"2026-12-05T{hour:02d}:00:00+0100",
+            "end": f"2026-12-05T{hour:02d}:30:00+0100",
+        } for hour in range(10, 15)]
+        self.assertEqual(self.route(event=event)["route"],
+                         "direct_source_candidate_for_remaining_gates")
+
+    def test_many_days_stay_grouping_review_not_daily_inventions(self):
+        _, event, _ = self.sample()
+        event["timings"].append({
+            "begin": "2026-12-06T14:30:00+0100",
+            "end": "2026-12-06T15:30:00+0100",
+        })
+        self.assertEqual(self.route(event=event)["reason"],
+                         "multi_day_requires_grouping")
+
+    def test_other_french_territory_clocks_have_full_preintegration_support(self):
+        # Same eight zones accepted by the direct OA proof's IANA audit.
+        cases = [
+            ("Pacific/Tahiti", "-1000"),
+            ("Pacific/Marquesas", "-0930"),
+            ("Pacific/Gambier", "-0900"),
+            ("Pacific/Noumea", "+1100"),
+            ("Pacific/Wallis", "+1200"),
+            ("America/Miquelon", "-0300"),
+            ("America/St_Barthelemy", "-0400"),
+            ("America/Marigot", "-0400"),
+        ]
+        for zone, offset in cases:
+            with self.subTest(zone=zone):
+                event = {
+                    "uid": 12345678, "timezone": zone,
+                    "timings": [{
+                        "begin": "2026-12-05T14:00:00" + offset,
+                        "end": "2026-12-05T15:00:00" + offset,
+                    }],
+                }
+                self.assertEqual(group_multi_day(event)["kind"],
+                                 "one_day_explicit_slots")
+                wrong = deepcopy(event)
+                wrong["timings"][0]["begin"] = "2026-12-05T14:00:00+0100"
+                self.assertEqual(group_multi_day(wrong)["kind"], "unverified")
 
 
 if __name__ == "__main__":
