@@ -56,6 +56,20 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(reason, "oa_direct_live_source_accepted")
         self.assertEqual(candidate["time"], "10:00 ; 15:00")
 
+    def test_other_openagenda_uid_url_cannot_publish(self):
+        ref = base()
+        patch = private_patch(ref, queue=[{
+            "lead": lead(), "date_start": DAY.isoformat(),
+            "official_event_url": "https://openagenda.com/agenda-nouveau-organisateur/events/123456",
+            "official_venue_url": "https://openagenda.com/agenda-nouveau-organisateur/events/123456",
+        }])
+        result, audit, report = merge_verified_open_world(
+            ref, ref, patch, TODAY,
+            "oa_pk_open_world_release_rehearsal_test", **readers())
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(report["held_reason_counts"],
+                         {"oa_direct_url_uid_or_slug_mismatch": 1})
+
     def test_cancellation_change_and_duplicate_are_held(self):
         ref = base()
         for modification in ({"status": 3}, {"removed": True},
