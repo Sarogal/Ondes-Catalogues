@@ -14,7 +14,17 @@ from __future__ import annotations
 
 import datetime as dt
 import re
+import sys
+from pathlib import Path
 from urllib.parse import urlsplit
+
+# The existing discovery modules have legacy top-level sibling imports.
+# One explicit local path supports both standalone CLI and package tests.
+_SOURCE_DIR = Path(__file__).resolve().parent
+_ROOT = Path(__file__).resolve().parents[2]
+for _path in (str(_ROOT), str(_SOURCE_DIR)):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
 
 from automation.concerts import discover
 from automation.concerts import official_rss_jsonld_bridge as bridge
