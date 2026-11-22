@@ -10,6 +10,7 @@ from private_intake import latest
 from ptitesondes_open_world_patch_bridge import (
     merge_verified_open_world, PUBLIC_REHEARSAL_REASONS,
 )
+from ptitesondes_oa_first_party_admission import PUBLIC_OA_DIRECT_REASONS
 
 # All statuses are internal, fixed codes. Unknown values collapse into one
 # aggregate and can never disclose source URLs, venue names or private IDs.
@@ -24,7 +25,8 @@ PUBLIC_INTAKE_REASONS = frozenset({
     "duplicate_private_open_world_id",
     "openagenda_public_read_key_unavailable",
     "live_publisher_evidence_not_confirmed",
-}) | frozenset("rehearsal_" + code for code in PUBLIC_REHEARSAL_REASONS)
+}) | PUBLIC_OA_DIRECT_REASONS | frozenset(
+    "rehearsal_" + code for code in PUBLIC_REHEARSAL_REASONS)
 
 
 def redacted_blocker_counts(value):
