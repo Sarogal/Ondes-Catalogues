@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-22",
+  "generatedAt": "2026-11-23",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -5088,13 +5088,13 @@
       "bands": 57,
       "days": "4",
       "capacity": null,
-      "price": "Pass 4 jours : 228 € (Early Bird 3)",
+      "price": "Pass 4 jours : 239 € ; Pass 1 jour : 239 € — billetterie officielle ouverte",
       "organizer": "Association Motocultor Fest Prod",
       "officialSite": "https://www.motocultor-festival.com/",
       "social": null,
       "status": "Confirmé",
       "source": "https://feverup.com/m/706920?thm=16601",
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-23",
       "notes": "Billetterie officielle 2027 : pass 4 jours Early Bird 1 à 198 € et Early Bird 2 à 218 € (épuisés); Early Bird 3 à 228 € proposé à la vente au 9 octobre 2026; palier régulier affiché à 239 € (non encore disponible à cette vérification). Prix et disponibilités susceptibles d’évoluer. Programmation partielle, par jour, publiée sur la billetterie 2027 : d’autres groupes sont annoncés à venir. Ne pas confondre avec les prix 2026 encore présents sur la page Infos pratiques du site officiel.",
       "lat": 48.2708,
       "lon": -3.5654,
