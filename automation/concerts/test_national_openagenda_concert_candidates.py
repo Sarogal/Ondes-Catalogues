@@ -14,7 +14,7 @@ FUTURE = "2027-03-05T19:30:00+01:00"
 
 def row(**changes):
     val = {
-        "uid": 8675309,
+        "uid": 8675309, "originagenda_uid": 9969608,
         "canonicalurl": EXACT,
         "title_fr": "UNKNOWN GROUP A + UNKNOWN GROUP B",
         "description_fr": "Concert metalcore rock",
@@ -45,6 +45,8 @@ class NationalOpenAgendaResearchTests(unittest.TestCase):
         self.assertEqual(first["source"], "agenda_officiel_openagenda")
         self.assertEqual(first["eventDetailUrl"], EXACT)
         self.assertEqual(first["leadArtist"], "UNKNOWN GROUP A")
+        self.assertEqual(first["openAgendaEventUid"], "8675309")
+        self.assertEqual(first["openAgendaUid"], "9969608")
         self.assertFalse(first["publicationAllowed"])
         self.assertTrue(first["reviewRequired"])
         self.assertEqual(report["triageCounts"],
