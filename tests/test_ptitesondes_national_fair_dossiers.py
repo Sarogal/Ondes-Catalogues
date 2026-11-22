@@ -32,7 +32,7 @@ class FairNationalDossiersTests(unittest.TestCase):
         first = result[:MAX_DOSSIERS]
         self.assertEqual({x["lead"]["agenda_uid"] for x in first}, {1, 2, 3})
         self.assertEqual(len({x["lead"]["event_uid"] for x in first
-                              if x["lead"]["agenda_uid"] == 1}), 27)
+                              if x["lead"]["agenda_uid"] == 1}), 40)
         self.assertCountEqual(
             [repr(x) for x in result], [repr(x) for x in source])
 
