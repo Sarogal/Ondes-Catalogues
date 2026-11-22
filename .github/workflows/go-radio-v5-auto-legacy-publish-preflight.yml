@@ -6,6 +6,7 @@ on:
     paths:
       - 'radio-catalog-lab/tools/prepare_full_test_legacy_auto_admission.py'
       - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+      - 'radio-catalog-lab/schemas/radio_catalog_v1.schema.json'
       - '.github/workflows/go-radio-v5-auto-legacy-publish-preflight.yml'
   workflow_dispatch:
 permissions:
