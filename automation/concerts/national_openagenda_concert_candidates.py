@@ -16,8 +16,12 @@ import re
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
-import openagenda_official_concert as oa
-import source_evidence_probe as probe
+import sys
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from automation.concerts import openagenda_official_concert as oa
+from automation.concerts import source_evidence_probe as probe
 
 SCHEMA = "grossesondes.concert.discovery.v1"
 SOURCE = ("https://public.opendatasoft.com/api/explore/v2.1/catalog/"
