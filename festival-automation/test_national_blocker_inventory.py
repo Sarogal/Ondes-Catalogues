@@ -1,7 +1,7 @@
 """Regression tests for all-stage, nonpublishing, open-world festival inventory."""
 from copy import deepcopy
 from unittest import TestCase, main
-from national_blocker_inventory import build_inventory, SCHEMA
+from national_blocker_inventory import build_inventory, safe_failure_code, SCHEMA
 
 TODAY = "2026-11-21"
 
@@ -57,6 +57,33 @@ def fixture():
 
 
 class BlockerInventoryTests(TestCase):
+    def test_safe_diagnostics_never_echo_private_exceptions(self):
+        self.assertEqual(
+            safe_failure_code(ValueError(
+                "Invalid intermediate municipal lead for private "
+                "secret-festival-identity https://private.example/secret")),
+            "MUNICIPAL_LINK_INVALID")
+        self.assertEqual(
+            safe_failure_code(ValueError(
+                "Unsafe private patch slug private-sensitive-url")),
+            "PRIVATE_PATCH_SLUG_INVALID")
+        self.assertEqual(
+            safe_failure_code(RuntimeError(
+                "private raw URL and internal site vanished")),
+            "INVENTORY_UNEXPECTED_FAILURE")
+        self.assertEqual(
+            safe_failure_code(ValueError("unclassified secret marker")),
+            "INVENTORY_UNCLASSIFIED_INVALID_INPUT")
+        # Every public marker remains a closed-vocabulary uppercase token.
+        for error in (
+            ValueError("Publisher funnel/public snapshot mismatch"),
+            KeyError("private-api-token"),
+            OSError("https://private.example/"),
+        ):
+            result = safe_failure_code(error)
+            self.assertRegex(result, r"^[A-Z_]+$")
+            self.assertNotIn("private", result.lower())
+
     def test_unknown_names_survive_and_published_referrals_stay_separate(self):
         reports, catalogue = fixture()
         out = build_inventory(reports, catalogue, TODAY)
