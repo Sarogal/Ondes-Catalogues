@@ -199,8 +199,8 @@ def build_inventory(reports, catalogue, today, patch=None, municipal_history=())
                     and row.get("status") == "Dates à venir"
                     and isinstance(row.get("name"), str)
                     and isinstance(row.get("slug"), str)):
-                name_year = re.search(r"(?<!\\d)(20[2-4]\\d)$", row["name"])
-                slug_year = re.search(r"-(20[2-4]\\d)$", row["slug"])
+                name_year = re.search(r"(?<!\d)(20[2-4]\d)$", row["name"])
+                slug_year = re.search(r"-(20[2-4]\d)$", row["slug"])
                 if (name_year and slug_year and
                         name_year.group(1) == slug_year.group(1)):
                     existing.add((_name(row["name"]), int(name_year.group(1))))
