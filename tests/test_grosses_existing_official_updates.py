@@ -349,9 +349,30 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN:", workflow)
         self.assertIn("today.toordinal() * 2 +", publisher)
         self.assertIn("official_update_tick=rotation_tick", publisher)
-        self.assertIn("official_update_limit=24", publisher)
+        self.assertIn("official_update_limit=official_update_scan_limit(", publisher)
         self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ inputs.",
                          workflow)
+
+    def test_push_catches_up_all_47_signed_hosts_without_changing_daily_rotation(self):
+        from grossesondes_cloud_sync import official_update_scan_limit
+        self.assertEqual(official_update_scan_limit("push"), 48)
+        for event in ("schedule", "workflow_run", "workflow_dispatch", "pull_request", ""):
+            self.assertEqual(official_update_scan_limit(event), 24)
+        rows = [festival(f"host-{i}", f"https://signed-catchup-{i}.fr/")
+                for i in range(47)]
+        published = doc(*rows)
+        # A push run must catch up a previously unvisited host immediately.
+        all_sites = signed_rotation(
+            published, DAY, limit=official_update_scan_limit("push"), tick=0)
+        self.assertEqual(len(all_sites), 47)
+        # Normal Paris half-day slots remain complementary and exhaustive.
+        morning = signed_rotation(published, DAY, limit=24, tick=0)
+        evening = signed_rotation(published, DAY, limit=24, tick=1)
+        self.assertEqual(len(morning), 24)
+        self.assertEqual(len(evening), 23)
+        self.assertFalse(set(x[0] for x in morning) & set(x[0] for x in evening))
+        self.assertEqual(set(x[0] for x in all_sites),
+                         {x[0] for x in morning + evening})
 
     def test_twenty_four_hosts_cover_signed_festival_rotation_in_three_runs(self):
         # A realistic nationwide pool of 53 independent first-party sites

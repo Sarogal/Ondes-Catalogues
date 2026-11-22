@@ -103,6 +103,15 @@ PUBLISHED_HEAD=Path("reviews/grossesondes-published-head.json")
 GENESIS_BLOB_SHA="7fca36caba870d327ec5aadb504c46c251956c6d"
 
 
+def official_update_scan_limit(event_name):
+    """Recheck a broader bounded group after a trusted code rollout.
+
+    Regular morning/evening schedules retain their complementary rotation.
+    Every official update is still independently fetched and verified.
+    """
+    return 48 if event_name == "push" else 24
+
+
 def git_blob_sha(data):
     return sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
 
@@ -1123,7 +1132,8 @@ def main():
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
         official_update_tick=rotation_tick,
-        official_update_limit=24)
+        official_update_limit=official_update_scan_limit(
+            os.environ.get("GITHUB_EVENT_NAME", "")))
     report["patch"]=path
     report["patch_age_days"]=(today-datetime.strptime(patch["generated_at"],"%Y-%m-%d").date()).days
     report["stale_patch_reproved_live"]=report["patch_age_days"]>7
