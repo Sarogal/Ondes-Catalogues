@@ -61,8 +61,13 @@ def audit(network:bool)->dict:
     out=[]
     for goid,(title,slug,page,logo_url) in CHANNELS.items():
         st=byid[goid]
+        catalog_title=st["display_name"].casefold()
+        title_match=(title.casefold() in catalog_title
+                     or (slug=="ledzeppelinhits" and
+                         "exclusively led zeppelin" in catalog_title and
+                         "hits" in catalog_title))
         if (st["status"]["state"]!="active" or st["logo"] is not None
-                or title.casefold() not in st["display_name"].casefold()
+                or not title_match
                 or not any("/"+slug+"/" in u["url"].lower() and
                            "streaming.exclusive.radio" in u["url"].lower()
                            for u in st["streams"])):
