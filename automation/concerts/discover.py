@@ -665,14 +665,15 @@ def linked_first_party_event_urls(page_html, source_url, today):
 
 
 def select_generic_official_detail_links(links, day, scan_slot, limit=3,
-                                         known=None):
-    """Rotate bounded individual first-party pages, prioritizing unpublished URLs.
+                                         known=None, artist_names=()):
+    """Rotate bounded first-party details; give existing artists a discovery hint.
 
-    A published event's exact official URL is already in the public catalogue,
-    so discovery probes should inspect other pages first. The known set
-    changes ONLY scheduling; even unseen pages still require an independent
-    fresh official verification, genre and lineup checks and the Publisher.
-    The published-event watchdog remains responsible for change detection.
+    Already published official URLs never displace unseen pages. On an
+    independently reviewed first-party venue, at most two of six probes
+    may be reserved for URLs naming *known catalogue artists*. The remaining
+    capacity rotates across all other unseen shows, including unknown bands.
+    Artist URLs only alter fetch order; they NEVER establish genre, event
+    identity, venue authority or publication eligibility.
     """
     if (not isinstance(day, dt.date) or isinstance(day, dt.datetime)
             or scan_slot not in (0, 1, 2)
@@ -683,10 +684,11 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
     if not ordered or not limit:
         return []
 
-    def rotate(pool, quota):
+    def rotate(pool, quota, stride=None):
         if not pool or not quota:
             return []
-        offset = ((day.toordinal() * 3 + scan_slot) * limit) % len(pool)
+        offset = ((day.toordinal() * 3 + scan_slot)
+                  * (stride if stride is not None else limit)) % len(pool)
         return [pool[(offset + i) % len(pool)]
                 for i in range(min(quota, len(pool)))]
 
@@ -694,13 +696,53 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
         return rotate(ordered, limit)
     unseen = [link for link in ordered if ("officialUrl", link) not in known]
     published = [link for link in ordered if ("officialUrl", link) in known]
-    # Already-published URLs fill unused budget, but cannot consume the quota
-    # before an unlisted event has had a chance to be independently inspected.
-    selected = rotate(unseen, limit)
+
+    # An index may list 40+ shows with an important far-future date at its
+    # end. Use the public artist catalogue as a *navigation hint* only. Keep
+    # four of six first-party reads for other artists so the national motor
+    # remains open to previously unknown performers.
+    hints = set()
+    if (limit >= 3 and isinstance(artist_names, (list, tuple, set, frozenset))):
+        for name in artist_names:
+            if not isinstance(name, str):
+                continue
+            slug = re.sub(
+                r"[^a-z0-9]+", "-",
+                unicodedata.normalize("NFKD", name.casefold())
+                .encode("ascii", "ignore").decode("ascii")
+            ).strip("-")
+            if len(slug) >= 4:
+                hints.add("-" + slug + "-")
+    priority, ordinary = [], []
+    for link in unseen:
+        path = urllib.parse.unquote(urllib.parse.urlsplit(link).path)
+        path_slug = "-" + re.sub(
+            r"[^a-z0-9]+", "-",
+            unicodedata.normalize("NFKD", path.casefold())
+            .encode("ascii", "ignore").decode("ascii")
+        ).strip("-") + "-"
+        (priority if hints and any(h in path_slug for h in hints)
+         else ordinary).append(link)
+
+    if priority and ordinary:
+        # Each lane advances by its own quota, without fixed-position
+        # starvation or reading the same page twice within a scan slot.
+        hinted = rotate(priority, min(2, limit), stride=min(2, limit))
+        others = rotate(ordinary, limit - len(hinted),
+                        stride=limit - len(hinted))
+        selected = hinted + others
+        if len(selected) < limit:
+            remaining = [link for link in unseen if link not in set(selected)]
+            selected += rotate(remaining, limit - len(selected))
+    else:
+        selected = rotate(unseen, limit)
+
+    # Published pages can fill any remainder; the separate published-watch
+    # workflow is still responsible for ongoing change detection.
     return selected + rotate(published, limit - len(selected))
 
-
-def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
+def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
+                artist_names=()):
     if scan_slot not in (0, 1, 2):
         raise ValueError("Only the three bounded local scan windows are allowed")
     sites = sources.get("venues") or []
@@ -780,7 +822,9 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                          else select_generic_official_detail_links(
                              links, day, scan_slot,
                              limit=6 if reviewed_generic_source else 3,
-                             known=known if reviewed_generic_source else None)):
+                             known=known if reviewed_generic_source else None,
+                             artist_names=artist_names if reviewed_generic_source
+                             else ())):
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)
@@ -2665,7 +2709,9 @@ def main():
     scan_slot = scan_slot_for_hour(
         dt.datetime.now(ZoneInfo("Europe/Paris")).hour)
     venue_candidates = scan_venues(
-        source_file, known, day, venues_checks, scan_slot=scan_slot)
+        source_file, known, day, venues_checks, scan_slot=scan_slot,
+        artist_names=[a.get("name") for a in catalog.get("artists", [])
+                      if isinstance(a, dict)])
     partner_checks = []
     partner_candidates = scan_partner_ics(partner_sources, known, day, partner_checks)
     api_candidates = scan_ticketmaster(os.environ.get("TICKETMASTER_API_KEY", "").strip(), known, day, ticket_checks)

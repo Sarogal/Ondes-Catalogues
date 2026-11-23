@@ -118,6 +118,66 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
                 limit=6, known=known)
             self.assertEqual(selected[0], links[0])
 
+    def test_known_artist_tail_url_is_inspected_without_extra_quota(self):
+        # The official index may have 47 unrelated entries and one distant
+        # show by a catalogue artist. This only changes discovery ordering.
+        day = dt.date(2026, 11, 23)
+        urls = [
+            "https://venue.example/evenement/synthetic-unknown-%02d/" % n
+            for n in range(47)
+        ] + ["https://venue.example/evenement/eisbrecher/"]
+        before = list(urls)
+        known = set()
+        selected = discover.select_generic_official_detail_links(
+            urls, day, 1, limit=6, known=known,
+            artist_names=["Eisbrecher", "Unrelated Artist"])
+        self.assertEqual(len(selected), 6)
+        self.assertEqual(len(selected), len(set(selected)))
+        self.assertEqual(selected[0], urls[-1])
+        self.assertEqual(urls, before)
+        self.assertFalse(any(("officialUrl", url) in known for url in selected))
+
+    def test_known_artist_hints_never_starve_unknown_musicians(self):
+        day = dt.date(2026, 11, 23)
+        known_bands = [
+            "https://venue.example/evenement/famous-band-%02d/" % n
+            for n in range(12)
+        ]
+        unknown_bands = [
+            "https://venue.example/evenement/new-artist-%02d/" % n
+            for n in range(44)
+        ]
+        links = known_bands + unknown_bands
+        original = list(links)
+        covered_known, covered_unknown = set(), set()
+        for delta in range(5):
+            for slot in (0, 1, 2):
+                selected = discover.select_generic_official_detail_links(
+                    links, day + dt.timedelta(days=delta), slot,
+                    limit=6, known=set(),
+                    artist_names=["Famous Band", "Unrelated Artist"])
+                self.assertEqual(len(selected), 6)
+                self.assertEqual(len(set(selected)), 6)
+                self.assertLessEqual(len(set(selected) & set(known_bands)), 2)
+                covered_known.update(set(selected) & set(known_bands))
+                covered_unknown.update(set(selected) & set(unknown_bands))
+        self.assertEqual(covered_known, set(known_bands))
+        self.assertEqual(covered_unknown, set(unknown_bands))
+        self.assertEqual(links, original)
+
+    def test_published_artist_url_cannot_preempt_unknown_gig(self):
+        day = dt.date(2026, 11, 23)
+        published = "https://venue.example/evenement/eisbrecher/"
+        unknown = [
+            "https://venue.example/evenement/first-show-%02d/" % n
+            for n in range(12)
+        ]
+        selected = discover.select_generic_official_detail_links(
+            [published] + unknown, day, 0, limit=6,
+            known={("officialUrl", published)}, artist_names=["Eisbrecher"])
+        self.assertEqual(len(selected), 6)
+        self.assertNotIn(published, selected)
+
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
         self.assertEqual(
