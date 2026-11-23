@@ -119,6 +119,51 @@ class SignedTourismRenewalTests(unittest.TestCase):
             "<p>Le 09 octobre</p>", "<p>Le 09 novembre</p>")
         self.assertIsNone(current_edition_dates(contradictory, HIST, 2027))
 
+    def test_push_catches_up_signed_tourism_without_changing_daily_budget(self):
+        from grossesondes_cloud_sync import (
+            signed_tourism_scan_limit, collect_signed_tourism_renewals)
+        self.assertEqual(signed_tourism_scan_limit("push"), 20)
+        for event in ("workflow_run", "schedule", "pull_request",
+                      "workflow_dispatch", ""):
+            self.assertEqual(signed_tourism_scan_limit(event), 4)
+        parents = []
+        for i in range(15):
+            row = deepcopy(HIST)
+            row["slug"] = f"historic-music-fest-{i:02d}"
+            row["name"] = f"Historic Music Fest {i:02d}"
+            row["auditSources"] = [
+                f"https://www.tourisme-exemple.fr/agenda/music-fest-{i:02d}/"]
+            parents.append(row)
+        reference, catalogue = history(*parents), published()
+        daily = candidates_from_signed_history(
+            reference, catalogue, DAY, limit=4, tick=0)
+        second = candidates_from_signed_history(
+            reference, catalogue, DAY, limit=4, tick=1)
+        catchup = candidates_from_signed_history(
+            reference, catalogue, DAY,
+            limit=signed_tourism_scan_limit("push"), tick=10)
+        self.assertEqual(len(daily), 4)
+        self.assertEqual(len(second), 4)
+        self.assertFalse({x[0]["slug"] for x in daily} &
+                         {x[0]["slug"] for x in second})
+        self.assertEqual(len(catchup), 15)
+        self.assertEqual(len({x[0]["slug"] for x in catchup}), 15)
+
+        fetched = []
+        def reject_current_dates(url):
+            fetched.append(url)
+            return "<main><h1>Previous edition only</h1></main>"
+        additions, sources, checked = collect_signed_tourism_renewals(
+            reference, catalogue, DAY, fetcher=reject_current_dates,
+            tick=10, limit=20)
+        self.assertEqual(checked, 15)
+        self.assertEqual(len(fetched), 15)
+        self.assertEqual(additions, [])
+        self.assertEqual(sources, {})
+        with self.assertRaises(ValueError):
+            candidates_from_signed_history(
+                reference, catalogue, DAY, limit=21)
+
     def test_several_signed_tourism_pages_never_create_duplicate_slugs(self):
         alternative = "https://mairie-example.fr/agenda/mauges-pit-fest/"
         parent = deepcopy(HIST)
