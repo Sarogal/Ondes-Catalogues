@@ -712,6 +712,79 @@ def _city_from_current_edition_image_alt(html, row):
     return next(iter(towns)) if len(towns) == 1 else None
 
 
+def _signed_tourism_current_postal_city(html, row):
+    """Only an edition-dated postal commune beside a signed tourism event.
+
+    Tourism providers often print the one-day teaser and a two-day schedule
+    separately. Reprove the exact visible full current-edition dates first;
+    never use the old archive's city, venue, department, or coordinates.
+    A city here is only a proof candidate: the real publisher independently
+    re-fetches the signed page and verifies the unique commune via the fixed
+    government API before using a *commune-centre* map marker.
+    """
+    if (not isinstance(row, dict) or not isinstance(html, str)
+            or row.get("sourceConfidence") !=
+                "Office de tourisme historiquement signé + relecture Publisher"
+            or row.get("source") != row.get("officialSite")
+            or safe_public_url(row.get("officialSite")) is None):
+        return None
+    start = iso_day(row.get("startDate"))
+    end = iso_day(row.get("endDate"))
+    name = row.get("name")
+    if (start is None or end is None or start.year != end.year
+            or not isinstance(name, str)
+            or not name.endswith(" " + str(start.year))
+            or (end - start).days > 7):
+        return None
+    base = name[:-(len(str(start.year)) + 1)].strip()
+    if len(_normal(base)) < 8:
+        return None
+    # The identical independent admission proof must be current on the
+    # *live* tourist page. A JSON-LD or HTML contradiction remains a veto.
+    from grossesondes_signed_institutional_renewal import current_edition_dates
+    if current_edition_dates(html, {"name": base}, start.year) != (start, end):
+        return None
+    from grossesondes_institutional_edition import VisibleInstitutionHeadings
+    parser = VisibleInstitutionHeadings()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    titles = [i for i, title in enumerate(parser.headings)
+              if _normal(title) == _normal(base)]
+    if len(titles) != 1:
+        return None
+    i = titles[0]
+    begin = parser.heading_starts[i]
+    end_offset = (parser.heading_starts[i + 1]
+                  if i + 1 < len(parser.headings) else len(parser.parts))
+    # Only the bounded event introduction, not the footer, other events, or
+    # an unrelated geolocation widget on the same 100 kB tourist page.
+    intro = " ".join(" ".join(parser.parts[begin:end_offset]).split())[:500]
+    date_label = re.search(r"\b" + str(start.year) + r"\b", intro)
+    if date_label is None:
+        return None
+    postcodes = []
+    postal = re.compile(
+        r"(?<!\d)(?:0[1-9]|[1-9][0-9])\d{3}\s+"
+        # Each uppercase word must contain >=2 letters. A following
+        # paragraph beginning 'Programmation' must not append a stray 'P'.
+        r"([A-ZÀ-ÖØ-Þ]{2,}(?:[ '-][A-ZÀ-ÖØ-Þ]{2,}){0,5})")
+    for match in postal.finditer(intro):
+        # The postal town must describe THIS visible dated event, not a
+        # neighbouring venue card or a historical office address.
+        if not 0 <= match.start() - date_label.start() <= 200:
+            continue
+        town = re.sub(r"\s+", " ", match.group(1)).strip(" -'’")
+        if not 3 <= len(town) <= 65 or not re.search(r"[A-ZÀ-ÖØ-Þ]{3}", town):
+            continue
+        postcodes.append(town.title())
+    if len({_normal(city) for city in postcodes}) != 1:
+        return None
+    return postcodes[0]
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -740,12 +813,13 @@ def exact_edition_city(html, row):
     evergreen = _current_edition_evergreen_commune(html, row)
     title_place = _city_from_official_title_plus_named_current_dates(html, row)
     image_alt_place = _city_from_current_edition_image_alt(html, row)
+    tourism_place = _signed_tourism_current_postal_city(html, row)
     evidence = [c for c in (structured, visible, title, evergreen, title_place,
-                            image_alt_place) if c is not None]
+                            image_alt_place, tourism_place) if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
     city = (structured or visible or title or evergreen or title_place
-            or image_alt_place)
+            or image_alt_place or tourism_place)
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}

@@ -80,6 +80,74 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertEqual(lost["findings"][0]["status"], "CITY_NOT_PROVEN")
         self.assertNotIn(ROW["slug"], saved[STATE_KEY])
 
+    def test_signed_tourism_full_edition_and_postal_commune_on_realistic_page(self):
+        source = "https://www.tourisme-exemple.fr/agenda/festival-rock/"
+        row = dict(
+            ROW, slug="festival-rock-2027", name="Festival Rock 2027",
+            startDate="2027-10-08", endDate="2027-10-09",
+            officialSite=source, source=source,
+            sourceConfidence=(
+                "Office de tourisme historiquement signé + relecture Publisher"))
+        html = (
+            "<main><h1>Festival Rock</h1>"
+            "<p>Agenda, SEVREMOINE</p><p>Le 08 octobre 2027</p>"
+            "<p>Festival</p>"
+            "<p>Salle Thomas Dupouet, 49450 SEVREMOINE</p>"
+            "<p>Programmation 2027 en cours, pass 2 jours</p>"
+            "<h2>Date</h2><p>Le 08 octobre</p><p>Le 09 octobre</p>"
+            "<h2>Situation</h2><p>Localisation actuelle</p>"
+            "<footer>Office administratif : 49000 ANGERS</footer></main>")
+        claim = exact_edition_city(html, row)
+        self.assertEqual(claim, {
+            "slug": row["slug"], "city": "Sevremoine", "source": source})
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = review(state, catalogue(row), "2026-11-23",
+                       fetcher=lambda _: html, limit=1)
+        self.assertEqual(first["first_day"], 1)
+        self.assertEqual(first["two_day_stable"], 0)
+        repeated = review(state, catalogue(row), "2026-11-23",
+                          fetcher=lambda _: html, limit=1)
+        self.assertEqual(repeated["two_day_stable"], 0)
+        next_day = review(state, catalogue(row), "2026-11-24",
+                          fetcher=lambda _: html, limit=1)
+        self.assertEqual(next_day["two_day_stable"], 1)
+        self.assertFalse(next_day["publication_authorized"])
+
+    def test_signed_tourism_postal_city_requires_current_dates_and_provenance(self):
+        source = "https://www.tourisme-exemple.fr/agenda/festival-rock/"
+        row = dict(
+            ROW, slug="festival-rock-2027", name="Festival Rock 2027",
+            startDate="2027-10-08", endDate="2027-10-09",
+            officialSite=source, source=source,
+            sourceConfidence=(
+                "Office de tourisme historiquement signé + relecture Publisher"))
+        html = (
+            "<main><h1>Festival Rock</h1><p>Le 08 octobre 2027</p>"
+            "<p>Salle Thomas Dupouet, 49450 SEVREMOINE</p>"
+            "<p>Programmation pass 2 jours</p>"
+            "<h2>Date</h2><p>Le 08 octobre</p><p>Le 09 octobre</p>"
+            "<h2>Situation</h2><p>Autre ville : 49000 ANGERS</p></main>")
+        self.assertIsNotNone(exact_edition_city(html, row))
+        cases = [
+            (dict(row, sourceConfidence="third party"), html),
+            (dict(row, source="https://untrusted.example.org/"), html),
+            (dict(row, startDate="2027-10-07"), html),
+            (dict(row, endDate="2027-10-10"), html),
+            (dict(row, city="Nantes"), html),
+            (row, html.replace("2027", "2026")),
+            (row, html.replace("Le 09 octobre", "Le 10 octobre")),
+            (row, html.replace("49450 SEVREMOINE", "Salle des fêtes")),
+            (row, html.replace("49450 SEVREMOINE", "Salle des fêtes")
+             .replace("49000 ANGERS", "49450 SEVREMOINE")),
+            (row, html.replace("49450 SEVREMOINE",
+                               "49450 SEVREMOINE et 44000 NANTES")),
+        ]
+        for candidate, document in cases:
+            with self.subTest(candidate=candidate.get("sourceConfidence"),
+                              dates=(candidate["startDate"], candidate["endDate"]),
+                              html=document[:80]):
+                self.assertIsNone(exact_edition_city(document, candidate))
+
     def test_signed_current_edition_date_and_department_locality_hero(self):
         # Realistic official event-site structure: year and municipality in
         # one paragraph; edition branding elsewhere in the same homepage.
