@@ -458,11 +458,13 @@ def process(registry, catalogue, approvals, today, fetch=download_official,
         if a.get("reviewDecision") == "approved" and isinstance(a.get("event"), dict)
     }
     items = list(registry.get("items", {}).values())
-    # Historical rows without a stability counter stay quarantined until
-    # reobserved with the SAME identity on two distinct UTC calendar days.
-    # Raw observations can be dozens of same-day duplicate scans.
+    # First observed identity is only a request for independent verification.
+    # No approval follows from the registry or same-day repeat sightings:
+    # the first-party event, date, full bill, genre and venue are freshly
+    # rechecked, then the production Publisher validates before publication.
+    # Legacy entries without a stable identity are still quarantined.
     candidates = [i for i in items if
-                  i.get("stableObservations", 0) >= 2 and
+                  i.get("stableObservations", 0) >= 1 and
                   isinstance(i.get("candidate", {}).get("source"), str) and
                   ((i.get("candidate", {}).get("source") in VERIFIER_SPECS
                     and i.get("candidate", {}).get("reviewBucket") == "genre_tag_review")

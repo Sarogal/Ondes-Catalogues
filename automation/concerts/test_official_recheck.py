@@ -289,18 +289,38 @@ class OfficialRecheckTests(unittest.TestCase):
         self.assertEqual(report["evaluated"], 0)
         self.assertEqual(report["decidedSkipped"], 3)
 
-    def test_raw_multiple_same_day_sightings_are_not_sufficient(self):
+    def test_first_day_official_detail_is_independently_rechecked(self):
+        # Observation creates only a request to verify the original source.
         approvals = {"schema": "grossesondes.concert.approvals.v1",
                      "approvals": []}
         registry = {"items": {"same_day": {
             "candidate": record(), "observations": 99,
             "stableObservations": 1, "status": "pending_review"}}}
-        def forbidden(*args):
-            self.fail("Same-day repeat must not trigger network verification")
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return PAGE
         out, report = v.process(
             registry, catalogue(), approvals, dt.date(2026, 11, 9),
-            fetch=forbidden)
-        self.assertEqual(report["evaluated"], 0)
+            fetch=fetch)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
+        self.assertEqual(len(out["approvals"]), 1)
+
+    def test_first_day_forged_date_is_still_held(self):
+        approvals = {"schema": "grossesondes.concert.approvals.v1",
+                     "approvals": []}
+        registry = {"items": {"same_day": {
+            "candidate": record(), "observations": 1,
+            "stableObservations": 1, "status": "pending_review"}}}
+        wrong_date_page = PAGE.replace("6 mai 2027", "7 mai 2027")
+        out, report = v.process(
+            registry, catalogue(), approvals, dt.date(2026, 11, 9),
+            fetch=lambda url, cache: wrong_date_page)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(report["newApprovals"], [])
+        self.assertTrue(report["held"])
         self.assertEqual(out, approvals)
 
     def test_legacy_raw_sightings_without_day_proof_are_never_promoted(self):
