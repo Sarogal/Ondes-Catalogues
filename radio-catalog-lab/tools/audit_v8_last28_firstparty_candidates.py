@@ -37,8 +37,11 @@ SOURCES = {
         "image_urls": [
             "https://media2.ntslive.co.uk/resize/1600x1600/9c9efb53-ce34-4a5e-997b-f8251be464a1_1668038400.jpeg",
             "https://media.ntslive.co.uk/crop/128x128/8c638d1c-8728-4f9b-9ae2-2f1975d61cf6_1668038400.png",
+            "https://media.ntslive.co.uk/crop/128x128/069b6b6c-dd48-4ee2-8e35-2c2ca6b831cc_1668038400.png",
+            "https://media.ntslive.co.uk/resize/400x400/9c9efb53-ce34-4a5e-997b-f8251be464a1_1668038400.jpeg",
+            "https://media3.ntslive.co.uk/resize/200x200/9c9efb53-ce34-4a5e-997b-f8251be464a1_1668038400.jpeg",
         ],
-        "allowed_hosts": ["media.ntslive.co.uk", "media2.ntslive.co.uk"],
+        "allowed_hosts": ["media.ntslive.co.uk", "media2.ntslive.co.uk", "media3.ntslive.co.uk"],
         "association": "owner The Pit page OpenGraph image / mixtape channel icon",
     },
     "go-station-000216": {
@@ -110,6 +113,23 @@ def audit(network: bool) -> dict:
                 page_info["page_content_sha256"] = hashlib.sha256(payload).hexdigest()
             except Exception as exc:
                 page_info["page_error"] = type(exc).__name__
+        api_media = set()
+        api_stream_verified = False
+        if sid == "go-station-000042" and network:
+            try:
+                api_data, _, api_final = _request(
+                    "https://www.nts.live/api/v2/mixtapes/the-pit", max_bytes=MAX_HTML,
+                    accept="application/json")
+                obj = json.loads(api_data)
+                api_stream_verified = (
+                    obj["mixtape_alias"] == "the-pit" and
+                    obj["title"] == "The Pit" and
+                    obj["audio_stream_endpoint"] == "https://stream-mixtape-geo.ntslive.net/mixtape34" and
+                    urlsplit(api_final).hostname == "www.nts.live")
+                if api_stream_verified:
+                    api_media = {v for v in obj["media"].values() if isinstance(v, str)}
+            except Exception:
+                pass
         for url in spec["image_urls"]:
             host = urlsplit(url).hostname
             if urlsplit(url).scheme != "https" or host not in spec["allowed_hosts"]:
@@ -118,10 +138,12 @@ def audit(network: bool) -> dict:
             # on a third-party aggregator. Page read failures do not imply a match.
             token = urlsplit(url).path.rsplit("/", 1)[-1]
             referenced = bool(page_html and token in page_html)
+            official_api_match = api_stream_verified and url in api_media
             row = {
                 "id": sid, "name": spec["name"], "image_url": url,
                 "source_page": page_info, "source_association": spec["association"],
                 "referenced_on_owner_html": referenced,
+                "matched_exact_station_owner_api": official_api_match,
                 "image_bytes_verified_twice": False,
                 "eligible_for_staging": False,
                 "signed": False, "published": False,
@@ -142,7 +164,7 @@ def audit(network: bool) -> dict:
                     row.update(inspections[0])
                     row["image_bytes_verified_twice"] = True
                     row["status"] = "STABLE_ORIGINAL_SHA"
-                    row["eligible_for_staging"] = referenced and sid != "go-station-000155"
+                    row["eligible_for_staging"] = (referenced or official_api_match) and sid != "go-station-000155"
                 except Exception as exc:
                     row["status"] = "ORIGINAL_IMAGE_UNVERIFIED"
                     row["image_error"] = type(exc).__name__
