@@ -1,0 +1,38 @@
+name: GO TEST radio v8 — QA full 57 original logo SHA files vs signed v7
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/test_go_radio_v8_57_official_sha_gate.py'
+      - 'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-57-official-sha-logos-20261123.json'
+      - 'grossesondes/radio-test-v2/artwork/staging-iheart-alternativa-v8/**'
+      - '.github/workflows/go-radio-v8-fiftyseven-final-qa-20261123.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  full-signed-v7-continuity-and-firstparty-image-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded decoded image, schema and real Ed25519 signature checks
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Test all 57 SHA originals, 320 GO IDs, 363 favorite UUIDs and 24 redirects
+        run: python radio-catalog-lab/tools/test_go_radio_v8_57_official_sha_gate.py
+      - name: Enforce TEST v7 unchanged and no v8 publication
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("grossesondes/radio-test-v2")
+          cur=json.loads((p/"current.json").read_text())
+          assert cur["release_sequence"]==7
+          assert cur["content_sha256"]=="f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa"
+          assert not (p/"current-v8.json").exists()
+          print("GO_V8_57_ORIGINAL_SHA_IMAGES_UNSIGNED_TEST_V7_UNCHANGED")
+          PY
