@@ -1,0 +1,43 @@
+name: GO TEST radio v8 — safe local signer CLI syntax and canonical preflight only
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/publish_go_radio_v8_test.py'
+      - '.github/workflows/go-radio-v8-local-signer-readonly-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  local-key-offline-signer-preflight-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install only image, schema and Ed25519 verification libs, no secret
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Compile publisher code and display its offline-only CLI help
+        run: |
+          python -B -m ast radio-catalog-lab/tools/publish_go_radio_v8_test.py
+          python radio-catalog-lab/tools/publish_go_radio_v8_test.py --help
+      - name: Verify 70 immutable SHA files on TEST branch with no signing key
+        run: |
+          git fetch --no-tags --depth=1 origin '+refs/heads/feature/go-radio-test-v2-isolated-20261123:refs/remotes/origin/feature/go-radio-test-v2-isolated-20261123'
+          python radio-catalog-lab/tools/test_go_radio_v8_70_canonical_test_release_gate.py --verify-test-assets
+      - name: Verify TEST pointer v7 intact and no workspace mutation
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          current=json.loads(Path("grossesondes/radio-test-v2/current.json").read_bytes())
+          assert current["release_sequence"] == 7
+          assert current["content_sha256"] == "f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa"
+          print("GO_TEST_V8_LOCAL_SIGNING_PIPELINE_READY_V7_PRESERVED")
+          PY
+          test -z "$(git status --porcelain)"
