@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 
 from ptitesondes_open_world_private_dossier_intake import (
-    MAX_DOSSIERS, attach_research_dossiers,
+    MAX_DOSSIERS, MAX_PRIVATE_PATCH_BYTES, attach_research_dossiers,
 )
 from ptitesondes_national_backlog_bridge import _atomic_json, _read
 
@@ -59,8 +59,10 @@ def main():
             raise ValueError("private_research_carry_must_not_write_public_checkout")
     if args.output == args.existing or args.output == args.fresh:
         raise ValueError("private_carry_requires_distinct_output")
-    existing, _ = _read(args.existing, 1_500_000)
-    fresh, _ = _read(args.fresh, 1_500_000)
+    # Same secure bound as the pinned Git Blob reader and dossier intake.
+    # Previously 1.5 MiB rejected the 80-slot private research patch.
+    existing, _ = _read(args.existing, MAX_PRIVATE_PATCH_BYTES)
+    fresh, _ = _read(args.fresh, MAX_PRIVATE_PATCH_BYTES)
     combined = carry_same_day_research(existing, fresh, args.day)
     _atomic_json(args.output, combined)
     # Never log the private candidate IDs, titles, URLs or venues.
