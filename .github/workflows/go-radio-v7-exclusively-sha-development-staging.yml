@@ -1,0 +1,111 @@
+name: GO TEST v7 — stage 5 broadcaster-original Exclusively logos (4 SHAs)
+on:
+  push:
+    branches:
+      - feature/go-radio-v7-13-dedupe-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v7_exclusively_official_sha.py'
+      - '.github/workflows/go-radio-v7-exclusively-sha-development-staging.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-five-only-on-feature-branch:
+    if: github.ref == 'refs/heads/feature/go-radio-v7-13-dedupe-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install first-party image and signed release verifier dependencies
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Download original station page/URL/SHA evidence (read-only CI)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/exclusive-official"
+          gh run download 45129545617 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v7-exclusively-four-original-station-logo-sha \
+            --dir "$RUNNER_TEMP/exclusive-official"
+      - name: Re-download original station logo bytes and stage 5 separate logos
+        run: |
+          python radio-catalog-lab/tools/stage_v7_exclusively_official_sha.py \
+            --artifact-root "$RUNNER_TEMP/exclusive-official"
+      - name: Verify audited signed v6, strict v7 schema and 5-logos-only diff
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,sys
+          from jsonschema import Draft202012Validator,FormatChecker
+          root=Path('.')
+          src=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json'
+          out=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-exclusive-5-20261123.json'
+          was=json.loads(src.read_text())
+          now=json.loads(out.read_text())
+          sys.path.insert(0,str(root/'radio-catalog-lab/tools'))
+          from radio_catalog_release_packager import load_verified_predecessor,read_public_key
+          from radio_catalog_guard import validate_catalog
+          signed=root/'grossesondes/radio-test-v2'
+          previous=load_verified_predecessor(signed,read_public_key(signed/'TEST_PUBLIC_KEY.b64'))
+          assert previous['release_sequence']==6
+          schema=json.loads((root/'radio-catalog-lab/schemas/radio_catalog_v1.schema.json').read_text())
+          issues=list(Draft202012Validator(schema,format_checker=FormatChecker()).iter_errors(now))
+          assert not issues,[(x.json_path,x.message) for x in issues[:5]]
+          assert not validate_catalog(now,mode='publish',previous=previous,
+                                      trusted_signed_history=True)
+          assert now['release_sequence']==7
+          assert len(now['stations'])==296
+          assert len(now['tombstones'])==24 and now['tombstones']==was['tombstones']
+          assert sum(x['status']['state']=='active' for x in now['stations'])==285
+          assert sum(x['logo'] is not None for x in now['stations'])==194
+          assert sum(x['status']['state']=='active' and x['logo'] is not None
+                     for x in now['stations'])==189
+          byold={x['go_station_id']:x for x in was['stations']}
+          bynew={x['go_station_id']:x for x in now['stations']}
+          assert byold.keys()==bynew.keys()
+          modified=[id_ for id_ in byold if byold[id_]!=bynew[id_]]
+          assert len(modified)==5
+          assert set(modified)=={
+            'go-station-000204','go-station-000272','go-station-000274',
+            'go-station-000299','go-station-000311'}
+          for id_ in modified:
+              assert byold[id_]['logo'] is None
+              assert byold[id_]=={**bynew[id_],'logo':None}
+          objects=list((signed/'artwork/staging-exclusive-v7').glob('*'))
+          assert len(objects)==4
+          for blob in objects:
+              assert blob.is_file()
+              assert hashlib.sha256(blob.read_bytes()).hexdigest()==blob.name.split('.')[0]
+          led={bynew[x]['logo']['sha256'] for x in
+              ['go-station-000204','go-station-000274']}
+          assert len(led)==1
+          assert json.loads((signed/'current.json').read_text())['release_sequence']==6
+          print('GO_V7_EXCLUSIVE_5_LOGOS_4_SHA_SIGNABLE_GUARD_OK')
+          PY
+      - name: Commit only 4 verified SHA blobs + one unsigned v7 candidate
+        run: |
+          test "$GITHUB_REF_NAME" = 'feature/go-radio-v7-13-dedupe-20261123'
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-exclusive-5-20261123.json \
+            grossesondes/radio-test-v2/artwork/staging-exclusive-v7/
+          python - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          catalog='radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-exclusive-5-20261123.json'
+          logo='grossesondes/radio-test-v2/artwork/staging-exclusive-v7/'
+          assert len(changed)==5,changed
+          assert changed.count(catalog)==1
+          assert all(x==catalog or (x.startswith(logo) and x.endswith(('.webp','.png','.jpg')))
+                     for x in changed)
+          assert len([x for x in changed if x.startswith(logo)])==4
+          print('ALLOWLIST_V7_4_SHA_PLUS_UNSIGNED_CATALOG_ONLY')
+          PY
+          git -c user.name='Grosses Ondes TEST Logo Auditor' \
+            -c user.email='go-logo-audit@localhost.invalid' \
+            -c commit.gpgsign=false commit \
+            -m 'test(artwork): add 5 broadcaster-original Exclusively logos using 4 verified SHA objects'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          echo "V7_EXCLUSIVELY_SHA_OBJECTS_PUBLISHED_DEV_BRANCH_ONLY"

@@ -1,0 +1,156 @@
+{
+  "purpose": "unsigned-test-v7-dedupe-candidate",
+  "source_signed_v6_sha256": "40215a58967a8b7a83b322c9f02645a9bc2bf319385442e5d89277e0b0d6d861",
+  "source_sequence": 6,
+  "target_sequence": 7,
+  "signature": "NONE",
+  "publication": "NONE",
+  "counts": {
+    "stationRecords": 296,
+    "active": 285,
+    "quarantined": 11,
+    "tombstones": 24,
+    "logoDescriptors": 175,
+    "activeLogoDescriptors": 170,
+    "retiredActive": 19,
+    "groups": 13
+  },
+  "mapping": [
+    {
+      "program": "radiobob:metalcore",
+      "primary_go_id": "go-station-000290",
+      "retired": [
+        "go-station-000003",
+        "go-station-000139"
+      ],
+      "member_count": 3,
+      "stream_variants": 3,
+      "primary_stream_url": "http://streams.radiobob.de/metalcore/mp3-192/streams.radiobob.de/"
+    },
+    {
+      "program": "radiobob:bob-metal",
+      "primary_go_id": "go-station-000159",
+      "retired": [
+        "go-station-000013",
+        "go-station-000253"
+      ],
+      "member_count": 3,
+      "stream_variants": 3,
+      "primary_stream_url": "http://streams.radiobob.de/bob-metal/mp3-192/streams.radiobob.de/"
+    },
+    {
+      "program": "radiobob:2000er",
+      "primary_go_id": "go-station-000131",
+      "retired": [
+        "go-station-000106"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://streams.radiobob.de/2000er/mp3-192/mediaplayer/"
+    },
+    {
+      "program": "radiobob:bob-hartesaite",
+      "primary_go_id": "go-station-000158",
+      "retired": [
+        "go-station-000238"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "https://streams.radiobob.de/bob-hartesaite/mp3-192/streams.radiobob.de/"
+    },
+    {
+      "program": "radiobob:metallica",
+      "primary_go_id": "go-station-000250",
+      "retired": [
+        "go-station-000276"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://streams.radiobob.de/metallica/mp3-192/mediaplayer/"
+    },
+    {
+      "program": "radcap:thrashheavy",
+      "primary_go_id": "go-station-000049",
+      "retired": [
+        "go-station-000231"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://213.141.131.10:8004/thrashheavy"
+    },
+    {
+      "program": "radcap:numetal",
+      "primary_go_id": "go-station-000300",
+      "retired": [
+        "go-station-000061"
+      ],
+      "member_count": 2,
+      "stream_variants": 3,
+      "primary_stream_url": "http://79.111.14.76:8000/numetal"
+    },
+    {
+      "program": "radcap:rockballads",
+      "primary_go_id": "go-station-000119",
+      "retired": [
+        "go-station-000072"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://79.120.77.11:8000/rockballads"
+    },
+    {
+      "program": "radcap:melodicmetalcore",
+      "primary_go_id": "go-station-000288",
+      "retired": [
+        "go-station-000112"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://79.111.14.76:8004/melodicmetalcore"
+    },
+    {
+      "program": "soma:metal",
+      "primary_go_id": "go-station-000185",
+      "retired": [
+        "go-station-000060",
+        "go-station-000097",
+        "go-station-000149"
+      ],
+      "member_count": 4,
+      "stream_variants": 4,
+      "primary_stream_url": "https://ice2.somafm.com/metal-128-mp3"
+    },
+    {
+      "program": "flux:metalfm",
+      "primary_go_id": "go-station-000177",
+      "retired": [
+        "go-station-000143",
+        "go-station-000208",
+        "go-station-000269"
+      ],
+      "member_count": 4,
+      "stream_variants": 4,
+      "primary_stream_url": "https://fluxfm.streamabc.net/flx-metalfm-mp3-320-9154971?sABC=61s83r32%230%2389nqs1p1q8rrq2q126260sp7877or6oo%23fgernzf.syhksz.qr&amsparams=playerid:streams.fluxfm.de;skey:1643658802"
+    },
+    {
+      "program": "antenne:heavy-metal",
+      "primary_go_id": "go-station-000073",
+      "retired": [
+        "go-station-000148"
+      ],
+      "member_count": 2,
+      "stream_variants": 3,
+      "primary_stream_url": "http://mp3channels.webradio.rockantenne.de/heavy-metal"
+    },
+    {
+      "program": "rtbf:c21-metal",
+      "primary_go_id": "go-station-000150",
+      "retired": [
+        "go-station-000105"
+      ],
+      "member_count": 2,
+      "stream_variants": 2,
+      "primary_stream_url": "http://radio.rtbf.be/c21-metal/aac-128/fl"
+    }
+  ]
+}

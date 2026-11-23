@@ -1,0 +1,52 @@
+name: GO radio TEST v7 — identify 14 official laut.fm station logos (read only)
+on:
+  push:
+    branches:
+      - feature/go-radio-v7-13-dedupe-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v7_lautfm_official_logos.py'
+      - '.github/workflows/go-radio-v7-lautfm-official-logo-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe-lautfm-14-official-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install first-party image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Offline check exact set of 14 v7 radio identities
+        run: |
+          python radio-catalog-lab/tools/audit_v7_lautfm_official_logos.py \
+            --output "$RUNNER_TEMP/lautfm-v7-offline.json"
+      - name: Probe official laut.fm API + source image bytes and SHA-256
+        run: |
+          python radio-catalog-lab/tools/audit_v7_lautfm_official_logos.py \
+            --network --output "$RUNNER_TEMP/lautfm-v7-verified-evidence.json"
+      - name: Publish read-only evidence summary, never a logo into catalog
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'lautfm-v7-verified-evidence.json').read_text())
+          assert r['stations']==14 and r['catalog_modified'] is False
+          assert r['publication_allowed'] is False
+          print('VERIFIED_LAUTFM_LOGO_SHA',r['logo_bytes_verified'],'/14')
+          for station in r['records']:
+              print('LAUTFM_STATION',station['go_station_id'],
+                    station['verified_stream_slug'],station['status'],
+                    station['verified_sha256'] or '',
+                    station.get('error_type',''))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v7-lautfm-14-official-logo-sha-evidence-only
+          path: |
+            ${{ runner.temp }}/lautfm-v7-offline.json
+            ${{ runner.temp }}/lautfm-v7-verified-evidence.json
+          retention-days: 14
