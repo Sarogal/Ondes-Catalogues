@@ -59,6 +59,63 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(candidate["category"], "eveil-musical")
         self.assertEqual(candidate["date_start"], DAY.isoformat())
 
+    def test_generic_youth_age_text_and_invalid_adult_age(self):
+        from ptitesondes_oa_first_party_admission import explicit_child_age_text
+        for positive in (
+            "Les plus jeunes jusqu'' à 11 ans",
+            "Atelier de 3 à 12 ans",
+            "Pour les familles avec enfants de 0 à 6 ans",
+            "Pour les petits de moins de 8 ans",
+        ):
+            with self.subTest(positive=positive):
+                self.assertTrue(explicit_child_age_text(positive))
+        for negative in (
+            "Atelier pour les adultes jusqu'à 21 ans",
+            "Cours entre 16 et 45 ans",
+            "Réservation pour une conférence pour adultes",
+            "Sans indication sur le public",
+        ):
+            with self.subTest(negative=negative):
+                self.assertFalse(explicit_child_age_text(negative))
+
+    def test_overseas_french_first_party_youth_workshop_without_age_field(self):
+        """Generic Martinique/MQ contract, based on a real wording from OA.
+
+        Only test metadata and synthetic coordinates are used; NO live event
+        is published or geolocated by this test.
+        """
+        from ptitesondes_oa_first_party_admission import explicit_child_age_text
+        desc = "Éveil musical et cours de musique pour les plus jeunes jusqu'' à 11 ans."
+        self.assertTrue(explicit_child_age_text(desc))
+        event = deepcopy(oa_event())
+        event["title"] = {"fr": "ATELIER D'EVEIL MUSICAL"}
+        event["description"] = {"fr": desc}
+        event["conditions"] = {"fr": "Atelier culturel familial"}
+        event["age"] = None
+        event["timezone"] = "America/Martinique"
+        event["timings"] = [
+            {"begin": "2026-12-05T09:00:00-04:00",
+             "end": "2026-12-05T11:00:00-04:00"}
+        ]
+        event["location"] = {
+            "name": "Centre culturel fictif", "adminLevel4": "Commune fictive",
+            "adminLevel1": "Martinique", "adminLevel2": "Martinique",
+            "countryCode": "MQ", "latitude": 14.7, "longitude": -61.0,
+        }
+        item = dict(lead(), title="ATELIER D'EVEIL MUSICAL",
+                    city_unverified="Commune fictive",
+                    venue_unverified="Centre culturel fictif",
+                    explicit_source_session_intervals=event["timings"])
+        ref = base()
+        ref["events"][0]["category"] = "eveil-musical"
+        ref["events"][0]["category_label"] = "Éveil musical"
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, event, ref, ref, TODAY)
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["region"], "Martinique")
+        self.assertEqual(candidate["time"], "09:00")
+        self.assertEqual(candidate["category"], "eveil-musical")
+
     def test_live_oa_conditions_restrict_adults_only_even_when_title_is_child(self):
         source = dict(oa_event(), conditions={
             "fr": "Réservé aux adultes uniquement. Pas d'accès familial."})
