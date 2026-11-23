@@ -1,0 +1,60 @@
+name: Grosses Ondes — diagnostic tourisme signé (lecture seule)
+
+on:
+  push:
+    branches:
+      - diagnostic/festivals-tourism-renewal-20261123
+    paths:
+      - .github/workflows/grossesondes-tourism-readonly-probe.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Vérifier la fiche touristique historique depuis GitHub
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path.cwd() / "scripts"))
+          sys.path.insert(0, str(Path.cwd() / "festival-automation"))
+          from dns_pinned_https import fetch_public_html
+          from grossesondes_signed_institutional_renewal import (
+              signed_tourism_urls, current_edition_dates,
+              private_proposal, validate_verified_row,
+          )
+          hist=json.loads(Path("docs/grossesondes/festival-history.json").read_text(encoding="utf-8"))
+          parent=next(x for x in hist["knownFestivals"] if x.get("slug") == "mauges-pit-fest")
+          urls=signed_tourism_urls(parent)
+          print("TOURISM_SIGNED_SOURCES",len(urls))
+          assert len(urls) == 1, "Unexpected number of vetted URLs"
+          html=fetch_public_html(urls[0])
+          print("TOURISM_HTML_LENGTH",len(html))
+          dates=current_edition_dates(html,parent,2027)
+          print("TOURISM_REAL_DATES",tuple(d.isoformat() for d in dates) if dates else "NOT_PROVEN")
+          if dates:
+              row=private_proposal(parent,urls[0],2027,html,"2026-11-23")
+              proven=validate_verified_row(row,parent,html,"2026-11-23") if row else None
+              print("TOURISM_REAL_PROPOSAL",bool(row))
+              print("TOURISM_REAL_PUBLISHER_PROOF",bool(proven))
+          if dates is None:
+              from grossesondes_institutional_edition import VisibleInstitutionHeadings
+              from grossesondes_official_html_edition import fold,explicit_ranges
+              p=VisibleInstitutionHeadings()
+              p.feed(html)
+              p.close()
+              print("TOURISM_VISIBLE_HEADERS",repr(p.headings[:14]))
+              text=fold(" ".join(p.parts))
+              print("TOURISM_VISIBLE_2027_DATE_RANGES",len(list(explicit_ranges(text,2027))))
+          assert dates is not None and [x.isoformat() for x in dates] == ["2027-10-08","2027-10-09"]
+          assert proven is not None
+          PY
