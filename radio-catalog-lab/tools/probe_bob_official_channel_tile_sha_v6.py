@@ -85,6 +85,10 @@ def collect(rows: dict[str, list[str]], *, network: bool, folder: Path) -> dict:
             "publication_allowed": False,
         }
         if network:
+            # The RADIO BOB! website may render stream artwork via JS; its
+            # plain HTML therefore cannot always prove an image/slug match.
+            # Independently obtain exact image SHA bytes even if that happens.
+            # In that case DO NOT approve the image/station identity.
             try:
                 html, mime, destination = _request(
                     page, max_bytes=MAX_HTML, accept="text/html")
@@ -93,9 +97,16 @@ def collect(rows: dict[str, list[str]], *, network: bool, folder: Path) -> dict:
                 if urlsplit(destination).hostname not in ("www.radiobob.de", "radiobob.de"):
                     raise InventoryError("Official page redirected to another host")
                 raw = unescape(html.decode("utf-8", errors="replace"))
-                if image_path not in raw:
-                    raise InventoryError("Official named channel tile not embedded by source page")
-                info["page_embeds_tile"] = True
+                info["page_embeds_tile"] = image_path in raw
+                info["page_check_status"] = (
+                    "EMBEDDED_EXACT_TILE" if info["page_embeds_tile"]
+                    else "DYNAMIC_RENDERING_REQUIRES_INDEPENDENT_IDENTITY_REVIEW"
+                )
+            except (InventoryError, HTTPError, URLError, TimeoutError,
+                    OSError, ssl.SSLError, ValueError) as exc:
+                info["page_check_status"] = "OFFICIAL_PAGE_UNAVAILABLE"
+                info["page_error_type"] = type(exc).__name__
+            try:
                 data, image_mime, final = _request(
                     image, max_bytes=MAX_IMAGE, accept="image/png,image/jpeg,image/webp")
                 if urlsplit(final).hostname != "images.radiobob.de":
@@ -110,11 +121,15 @@ def collect(rows: dict[str, list[str]], *, network: bool, folder: Path) -> dict:
                     raise InventoryError("SHA object collision on disk")
                 path.write_bytes(data)
                 info["staged_object_name"] = "objects/" + path.name
-                info["status"] = "FIRST_PARTY_PAGE_AND_IMAGE_BYTES_VERIFIED_PENDING_EDITORIAL"
+                info["status"] = (
+                    "FIRST_PARTY_PAGE_AND_IMAGE_BYTES_VERIFIED_PENDING_EDITORIAL"
+                    if info["page_embeds_tile"]
+                    else "OFFICIAL_CDN_BYTES_VERIFIED_IDENTITY_REVIEW_REQUIRED"
+                )
             except (InventoryError, HTTPError, URLError, TimeoutError,
                     OSError, ssl.SSLError, ValueError) as exc:
-                info["status"] = "EVIDENCE_FAILED"
-                info["error_type"] = type(exc).__name__
+                info["status"] = "IMAGE_BYTE_VERIFICATION_FAILED"
+                info["image_error_type"] = type(exc).__name__
         records.append(info)
     return {
         "schema_version": 1,
@@ -123,6 +138,8 @@ def collect(rows: dict[str, list[str]], *, network: bool, folder: Path) -> dict:
         "station_ids_with_missing_logo": sum(map(len, rows.values())),
         "unique_official_channel_pages": len(rows),
         "verified_official_page_and_image_count": sum(
+            r["download_verified_sha"] and r["page_embeds_tile"] for r in records),
+        "verified_official_cdn_image_count": sum(
             r["download_verified_sha"] for r in records),
         "publication_allowed": False,
         "images_do_not_become_signed_until_separate_review": True,
@@ -149,7 +166,8 @@ def main() -> None:
         "status": "BOB_OFFICIAL_SHA_EVIDENCE_ONLY",
         "channels": report["unique_official_channel_pages"],
         "station_ids": report["station_ids_with_missing_logo"],
-        "verified_shas": report["verified_official_page_and_image_count"],
+        "verified_shas": report["verified_official_cdn_image_count"],
+        "source_identity_verified": report["verified_official_page_and_image_count"],
         "publication_allowed": False,
     }))
 
