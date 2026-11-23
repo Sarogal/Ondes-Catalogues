@@ -50,8 +50,8 @@ CHANNELS={
 
 def stations()->dict:
     obj=json.loads(SOURCE.read_text(encoding="utf-8"))
-    if obj["release_sequence"]!=7 or len(obj["stations"])!=296 or
-       sum(s["logo"] is not None for s in obj["stations"])!=189:
+    if (obj["release_sequence"]!=7 or len(obj["stations"])!=296 or
+            sum(s["logo"] is not None for s in obj["stations"])!=189):
         raise ValueError("Unexpected reviewed v7 + 14 LAUT logo source")
     return {s["go_station_id"]:s for s in obj["stations"]}
 
@@ -62,8 +62,7 @@ def audit(network:bool)->dict:
     for goid,(title,slug,page,logo_url) in CHANNELS.items():
         st=byid[goid]
         if (st["status"]["state"]!="active" or st["logo"] is not None
-                or title.lower() not in st["display_name"].lower().replace("only hits","only hits")
-                and not (slug=="ledzeppelinhits" and "only hits" in st["display_name"].lower())
+                or title.casefold() not in st["display_name"].casefold()
                 or not any("/"+slug+"/" in u["url"].lower() and
                            "streaming.exclusive.radio" in u["url"].lower()
                            for u in st["streams"])):
