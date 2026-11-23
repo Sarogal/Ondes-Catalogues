@@ -158,6 +158,56 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertEqual(counts["new_dossiers"], 0)
         self.assertEqual(len(again["open_world_research"]), 1)
 
+    def test_publications_from_other_cycles_reclaim_full_queue_capacity(self):
+        # A full private research queue may already have been published by
+        # reconciliation or another cloud sync. Historical prompts remain
+        # stored in the backlog but must not starve new first-party research.
+        prior = []
+        published = deepcopy(self.catalogue)
+        for i in range(80):
+            prior.append({
+                "lead": {
+                    "agenda_uid": AGENDA["uid"],
+                    "agenda_slug": AGENDA["slug"],
+                    "event_uid": 800000 + i,
+                },
+                "date_start": DAY.isoformat(),
+                "official_event_url":
+                    "https://openagenda.com/agenda-nouveau-organisateur/events/"
+                    + str(800000 + i),
+                "official_venue_url":
+                    "https://openagenda.com/agenda-nouveau-organisateur/events/"
+                    + str(800000 + i),
+            })
+            published["events"].append({
+                "id": "openagenda-" + str(800000 + i) + "-" + DAY.isoformat()
+            })
+        patch = dict(self.patch, open_world_research=prior)
+        result, counts = build_backlog_dossiers(
+            [clue()], patch, published, TODAY, self.key,
+            agenda_reader=lambda *_: AGENDA,
+            event_reader=lambda *_: oa_event())
+        self.assertEqual(counts["new_dossiers"], 1)
+        self.assertEqual(counts["queued_total"], 1)
+        self.assertEqual(result["open_world_research"][0]["lead"]["event_uid"],
+                         999401)
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(result["additions"], [])
+
+    def test_expired_queue_is_replaced_by_live_future_research(self):
+        stale = dict(
+            self.build([clue()])[0]["open_world_research"][0],
+            date_start=(TODAY-timedelta(days=1)).isoformat(),
+        )
+        patch = dict(self.patch, open_world_research=[stale])
+        result, counts = build_backlog_dossiers(
+            [clue()], patch, self.catalogue, TODAY, self.key,
+            agenda_reader=lambda *_: AGENDA,
+            event_reader=lambda *_: oa_event())
+        self.assertEqual(counts["queued_total"], 1)
+        self.assertEqual(result["open_world_research"][0]["date_start"],
+                         DAY.isoformat())
+
     def test_four_daily_slots_rotate_up_to_eighty_private_dossiers(self):
         # Existing 345+ future clues exceed 30/day. Four independently
         # selected same-day slots must not starve behind a queue of 30,
