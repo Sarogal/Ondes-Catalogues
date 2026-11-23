@@ -8,6 +8,8 @@ on:
     branches: [main]
     paths:
       - 'config/ptitesondes-named-venue-geo-sources.json'
+      - 'scripts/private_intake.py'
+      - 'scripts/ptitesondes_openagenda_backlog_private_dossiers.py'
 
 permissions:
   contents: read
