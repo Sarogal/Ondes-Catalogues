@@ -1,0 +1,61 @@
+name: GO radio v6 TEST — official RADIO BOB! channel artwork SHA evidence (not published)
+on:
+  push:
+    branches:
+      - feature/go-radio-v6-dedupe-logo-audit-20261123
+    paths:
+      - 'radio-catalog-lab/tools/probe_bob_official_channel_tile_sha_v6.py'
+      - '.github/workflows/go-radio-v6-bob-official-logo-sha.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-bob-official-image-bytes-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Image decoder and URL safety dependencies
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Validate exactly 14 official BOB channels / 19 missing station logos
+        run: |
+          python radio-catalog-lab/tools/probe_bob_official_channel_tile_sha_v6.py \
+            --output-dir "$RUNNER_TEMP/bob-offline"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'bob-offline/bob-official-channel-tile-evidence.json'
+          d=json.loads(p.read_text())
+          assert d['unique_official_channel_pages']==14
+          assert d['station_ids_with_missing_logo']==19
+          assert d['verified_official_page_and_image_count']==0
+          assert d['publication_allowed'] is False
+          print('BOB_14_STREAMS_19_MISSING_LOGOS_BASELINE_OK')
+          PY
+      - name: Probe 14 real official stream pages and stage exact verified images
+        run: |
+          python radio-catalog-lab/tools/probe_bob_official_channel_tile_sha_v6.py \
+            --network --output-dir "$RUNNER_TEMP/bob-official"
+      - name: Summarize exact SHA and missing evidence, but never approve/publish
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ['RUNNER_TEMP'])/'bob-official/bob-official-channel-tile-evidence.json').read_text())
+          assert d['publication_allowed'] is False
+          print('OFFICIAL_RADIO_BOB_CHANNEL_SHA_VERIFIED:',d['verified_official_page_and_image_count'],'/',d['unique_official_channel_pages'])
+          for item in d['records']:
+              print(item['channel_stream_slug'],
+                item['status'],
+                item.get('sha_evidence',{}).get('sha256',''),
+                item.get('sha_evidence',{}).get('mime_type',''))
+          assert all(not item['publication_allowed'] for item in d['records'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v6-bob-14-official-tiles-sha-unpublished
+          path: ${{ runner.temp }}/bob-official/
+          retention-days: 14
