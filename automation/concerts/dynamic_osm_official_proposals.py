@@ -41,7 +41,7 @@ from automation.concerts import openagenda_official_concert as openagenda
 from scripts import concert_dynamic_existing_venue as verified
 
 SCHEMA = "grossesondes.concert.single-official-osm-proposals.v1"
-MAX_CHECKS = 8  # requests per run, never a cap on sources or bands
+MAX_CHECKS = 12  # bounded network rechecks, never a cap on sources or bands
 REVIEW_BUCKETS = frozenset({"genre_tag_review", "genre_unknown"})
 
 
@@ -336,22 +336,28 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
     eligibility_rejections = Counter()
     selected = eligible(registry, catalogue, today,
                         diagnostics=eligibility_rejections)
-    # Keep the national queue fair while processing newly verified OpenAgenda
-    # exports promptly. A published first-party OA event must not wait through
-    # a hundred old leads. Reserve at most half of the bounded rechecks for
-    # fresh OA observations and rotate BOTH pools across all future dates.
-    # When one pool is short, spend the unused checks on the other.
+    # Rotate BOTH pools without leaving unvisited holes between scan slots.
+    # OpenAgenda receives a proportional share (at most half whenever there
+    # are other sources), while first-party venue pages keep the remainder.
+    # An unknown artist/venue is never excluded by this scheduling choice.
+    # When one lane is short, use the remaining network budget on the other.
     fast = [row for row in selected
             if row[3].get("source") == "agenda_officiel_openagenda"
             and row[3].get("openAgendaUid")
             and row[3].get("openAgendaEventUid")]
     regular = [row for row in selected if row not in fast]
     tick = (today - dt.date(2026, 11, 21)).days * 3 + slot
-    reserved = min(len(fast), max(1, limit // 2)) if fast else 0
-    fstart = (tick * max(1, reserved)) % len(fast) if fast else 0
+    reserved = (
+        min(len(fast), limit if not regular else max(
+            1, min(limit // 2, round(limit * len(fast) / len(selected)))))
+        if fast else 0)
+    fstart = (tick * reserved) % len(fast) if fast else 0
     window = [fast[(fstart + i) % len(fast)] for i in range(reserved)]
-    rstart = (tick * limit) % len(regular) if regular else 0
     take_regular = min(len(regular), limit - len(window))
+    # BUGFIX: advancing by full 'limit' skipped (limit - take_regular)
+    # unexamined venue leads on every mixed OA/venue cycle. The stride is
+    # exactly the number of ACTUALLY selected regular candidates.
+    rstart = (tick * take_regular) % len(regular) if regular else 0
     window.extend(regular[(rstart + i) % len(regular)]
                   for i in range(take_regular))
     while len(window) < min(limit, len(selected)) and len(window) < len(fast) + take_regular:
@@ -399,6 +405,8 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "scanSlot": slot,
         "eligibleQueue": len(selected),
         "examined": len(window),
+        "openAgendaExamined": min(reserved, len(window)),
+        "otherOfficialExamined": len(window) - min(reserved, len(window)),
         "stateCounts": dict(sorted(counts.items())),
         "eligibilityRejections": dict(sorted(eligibility_rejections.items())),
         "candidateChecks": checks,
