@@ -1,0 +1,113 @@
+name: GO radio TEST v6 — audit des 98 sources de logos SHA-256 (lecture seule)
+on:
+  push:
+    branches:
+      - audit/go-radio-v6-304-artwork-dedup-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v6_304_artwork_link_health.py'
+      - '.github/workflows/go-radio-v6-304-logo-link-health.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-logos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install read-only image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Check the TEST v6 SHA image URLs without publishing
+        run: |
+          python radio-catalog-lab/tools/audit_v6_304_artwork_link_health.py \
+            --shard-count 8 --shard-index ${{ matrix.shard }} --network \
+            --output "$RUNNER_TEMP/GO-v6-logo-health-shard-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-v6-logo-health-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/GO-v6-logo-health-shard-${{ matrix.shard }}.json
+          retention-days: 14
+  consolidate-read-only:
+    if: always()
+    needs: [check-logos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: GO-v6-logo-health-shard-*
+          path: audit-outputs
+          merge-multiple: true
+      - name: Combine all verified SHA statuses and cross-check published inventory CSV
+        run: |
+          python - <<'PY'
+          import csv
+          import json
+          from collections import Counter
+          from pathlib import Path
+          files=sorted(Path('audit-outputs').glob('GO-v6-logo-health-shard-*.json'))
+          assert len(files)==8,f'Expected 8 read-only shard reports, got {len(files)}'
+          docs=[json.loads(f.read_text()) for f in files]
+          assert set(d['shard_index'] for d in docs)==set(range(8))
+          assert all(d['shard_count']==8 and d['station_count']==304
+                     and d['radio_without_descriptor']==119
+                     and d['radio_with_descriptor']==185
+                     and d['distinct_sha_count']==98
+                     and d['publication_allowed'] is False
+                     for d in docs)
+          records=[r for d in docs for r in d['records']]
+          assert len(records)==98
+          assert len({r['sha256'] for r in records})==98
+          assert sum(r['station_count'] for r in records)==185
+          statuses=Counter(
+            x['status'] for rec in records for x in rec['tested_urls'])
+          verified=sum(rec['any_source_verified'] for rec in records)
+          broken=[rec for rec in records if not rec['any_source_verified']]
+          root=Path('radio-catalog-lab/audits/2026-11-23')
+          with (root/'inventaire-304-radios-actives-v6.csv').open(newline='',encoding='utf-8') as f:
+            full=list(csv.DictReader(f,delimiter=';'))
+          with (root/'119-radios-sans-logo-v6.csv').open(newline='',encoding='utf-8') as f:
+            missing=list(csv.DictReader(f,delimiter=';'))
+          assert len(full)==304 and len({r['go_station_id'] for r in full})==304
+          assert len(missing)==119
+          assert {r['go_station_id'] for r in missing}=={
+            r['go_station_id'] for r in full if r['logo_present']=='FALSE'}
+          report={
+            'scope':'GO_RADIO_304_V6_LOGO_LINK_HEALTH_READ_ONLY',
+            'unique_signed_sha':98,'active_radio':304,
+            'active_radio_logo_descriptor_present':185,
+            'active_radio_logo_descriptor_missing':119,
+            'signed_sha_sources_verified_now':verified,
+            'signed_sha_sources_unverified_now':len(broken),
+            'statuses':dict(statuses),
+            'unverified_sources':broken,
+            'publication_allowed':False,
+          }
+          Path('GO-v6-304-logo-health-summary.json').write_text(
+             json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          print('READ_ONLY_GO_RADIO_304_SHA_LOGO_AUDIT_COMPLETE',
+                f'verified_unique_sha={verified}/98',
+                f'unverified_unique_sha={len(broken)}',
+                f'missing_logo_descriptors=119')
+          print('FETCH_STATES',dict(statuses))
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as out:
+            out.write('# Grosses Ondes — Audit v6 des logos SHA\n\n')
+            out.write('- Radios actives : **304**\n')
+            out.write('- Sans référence de logo : **119**\n')
+            out.write(f'- Sources SHA distinctes validées en direct : **{verified}/98**\n')
+            out.write(f'- Sources SHA non vérifiées en direct : **{len(broken)}**\n')
+            out.write('- Aucun catalogue modifié ni publié\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GO-v6-logo-health-summary-read-only
+          path: GO-v6-304-logo-health-summary.json
+          retention-days: 14
