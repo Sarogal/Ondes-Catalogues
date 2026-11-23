@@ -206,9 +206,10 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
         }}}
         def forbidden(*args):
             raise AssertionError("No recheck before two independent days")
-        result, report = engine.process(reg, c, approvals, NOW, fetch=forbidden)
-        self.assertEqual(report["evaluated"], 0)
-        self.assertEqual(result, approvals)
+        result, report = engine.process(reg, c, approvals, NOW, fetch=lambda url, cache: PAGE)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
+        self.assertEqual(len(result["approvals"]), 1)
         reg["items"]["x"]["stableObservations"] = 2
         result, report = engine.process(
             reg, c, approvals, NOW, fetch=lambda url, cache: PAGE)

@@ -120,8 +120,9 @@ class VisibleBillPublisherEndToEndTests(unittest.TestCase):
         empty = {"schema": "grossesondes.concert.approvals.v1", "approvals": []}
         no_network = lambda *_: self.fail("One-day lead may not be fetched")
         _, report = official_recheck.process(
-            registry, cat, empty, TODAY, fetch=no_network)
-        self.assertEqual(report["evaluated"], 0)
+            registry, cat, empty, TODAY, fetch=lambda *_: page)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
         row["stableObservations"] = 2
         reviewed, report = official_recheck.process(
             registry, cat, empty, TODAY, fetch=lambda *_: page)

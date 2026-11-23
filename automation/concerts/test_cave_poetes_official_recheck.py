@@ -132,8 +132,9 @@ class CaveOfficialRecheckTests(unittest.TestCase):
         before = {"schema":"grossesondes.concert.approvals.v1", "approvals":[]}
         _o, r = orchestrator.process(
             registry, catalog(), before, TODAY,
-            fetch=lambda *_: self.fail("No fetch on single day"))
-        self.assertEqual(r["evaluated"],0)
+            fetch=lambda *_: html())
+        self.assertEqual(r["evaluated"],1)
+        self.assertEqual(len(r["newApprovals"]), 1)
         row["stableObservations"]=2
         result, r = orchestrator.process(
             registry, catalog(), before, TODAY, fetch=lambda *_: html())

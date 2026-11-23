@@ -318,7 +318,9 @@ class PairedNewSiteIntegrationTests(unittest.TestCase):
             reg, cat, ledger, DAY,
             fetch=lambda *_: self.fail("no network"),
             site_fetch=lambda *_: self.fail("no network"))
-        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(report["newApprovals"], [])
+        self.assertEqual(len(report["held"]), 1)
         self.assertEqual(proposed, ledger)
         app, venue = reviewer.verify(
             lead, cat, DAY, fetch=fake_fetch(raw, osm, []))

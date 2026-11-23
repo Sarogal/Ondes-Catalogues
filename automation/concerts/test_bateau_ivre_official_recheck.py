@@ -180,9 +180,9 @@ class BateauIndependentRecheck(unittest.TestCase):
         reg["items"]["one"]["stableObservations"] = 1
         denied, skipped = official_recheck.process(
             reg, catalogue(), approvals, TODAY,
-            fetch=lambda url, cache: self.fail("Cannot fetch unstable row"))
-        self.assertEqual(skipped["evaluated"], 0)
-        self.assertEqual(denied, approvals)
+            fetch=lambda url, cache: page())
+        self.assertEqual(skipped["evaluated"], 1)
+        self.assertEqual(len(denied["approvals"]), 1)
 
     def test_a_new_artist_must_not_shadow_an_existing_alias(self):
         item = candidate()

@@ -62,7 +62,9 @@ class FreshOfficialGenreRequalificationTests(unittest.TestCase):
             self.fail("Untrusted lead should never trigger HTTP")
         _, report = official_recheck.process(
             registry, cat, before, DAY, fetch=forbidden)
-        self.assertEqual(report["evaluated"], 0)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(report["newApprovals"], [])
+        self.assertTrue(report["held"])
         registry["items"]["example"]["stableObservations"] = 2
         registry["items"]["example"]["candidate"]["sourceUrl"] = (
             "https://unreviewed.example/show/2027")

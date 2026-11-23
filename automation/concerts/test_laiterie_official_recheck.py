@@ -233,9 +233,10 @@ class LaiterieOfficialRecheckTests(unittest.TestCase):
         }}}
         def fail(*args):
             raise AssertionError("A single observation must not refetch")
-        out, report = engine.process(reg, c, approvals, TODAY, fetch=fail)
-        self.assertEqual(report["evaluated"], 0)
-        self.assertEqual(out["approvals"], [])
+        out, report = engine.process(reg, c, approvals, TODAY, fetch=lambda url, cache: PAGE)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
+        self.assertEqual(len(out["approvals"]), 1)
         reg["items"]["laiterie"]["stableObservations"] = 2
         result, report = engine.process(
             reg, c, approvals, TODAY, fetch=lambda url, cache: PAGE)

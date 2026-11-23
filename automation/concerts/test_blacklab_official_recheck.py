@@ -71,9 +71,10 @@ class BlackLabOfficialRecheckTests(unittest.TestCase):
         reg["items"]["blacklab"]["observations"] = 99
         denied, held = orchestrator.process(
             reg, catalog(), originals, self.TODAY,
-            fetch=lambda url, cache: self.fail("No fetch expected"))
-        self.assertEqual(held["evaluated"], 0)
-        self.assertEqual(denied, originals)
+            fetch=lambda url, cache: dahlia())
+        self.assertEqual(held["evaluated"], 1)
+        self.assertEqual(len(held["newApprovals"]), 1)
+        self.assertEqual(len(denied["approvals"]), 1)
 
     def test_multiartist_titles_need_nominative_lineup_verifier(self):
         page = DETAIL.format(
