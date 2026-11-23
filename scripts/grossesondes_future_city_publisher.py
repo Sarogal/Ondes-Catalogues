@@ -10,6 +10,7 @@ import base64
 from copy import deepcopy
 from datetime import date
 import json
+import re
 from pathlib import Path
 import sys
 from urllib.error import HTTPError
@@ -88,11 +89,18 @@ def ready_city_reviews(report, today):
             proof = item.get("candidate_city")
             if (item.get("publication_authorized") is not False
                     or not isinstance(proof, dict)
-                    or set(proof) != {"slug", "city", "source"}
+                    or set(proof) not in (
+                        {"slug", "city", "source"},
+                        {"slug", "city", "source", "departmentLabel"})
                     or proof.get("slug") != slug
                     or not isinstance(proof.get("city"), str)
                     or not 2 <= len(proof["city"]) <= 160
                     or not isinstance(proof.get("source"), str)
+                    or (proof.get("departmentLabel") is not None and
+                        (not isinstance(proof["departmentLabel"], str)
+                         or not re.fullmatch(
+                             r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’\- ]{1,79}",
+                             proof["departmentLabel"])))
                     or not isinstance(item.get("first_seen"), str)
                     or not date.fromisoformat(item["first_seen"]) < day):
                 return [], "invalid_or_stale"
@@ -151,11 +159,15 @@ def apply_independently_verified_city(target, published, review, today,
             fresh = None
         if (fresh is None or fresh.get("slug") != slug
                 or fresh.get("source") != old["officialSite"]
-                or _normal(fresh.get("city")) != _normal(private_claim["city"])):
+                or _normal(fresh.get("city")) != _normal(private_claim["city"])
+                or _normal(fresh.get("departmentLabel", "")) !=
+                   _normal(private_claim.get("departmentLabel", ""))):
             counters["held_city"] += 1
             continue
         args = {"reader": admin_reader} if admin_reader is not None else {}
-        national = verified_commune(fresh["city"], old.get("department"), **args)
+        national = verified_commune(
+            fresh["city"], old.get("department"),
+            department_label=fresh.get("departmentLabel"), **args)
         if national is None or _normal(national["city"]) != _normal(fresh["city"]):
             counters["held_city"] += 1
             continue

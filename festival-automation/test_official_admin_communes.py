@@ -62,6 +62,31 @@ class AdminCommuneTests(unittest.TestCase):
         self.assertEqual(got["markerMeaning"], "centre_indicatif_de_commune")
         self.assertEqual(got["geoSource"], calls[0])
 
+    def test_official_department_label_resolves_homonymous_towns(self):
+        items = [
+            {**feature("Sainte-Hélène", "33417", "33"),
+             "properties": {"nom": "Sainte-Hélène", "code": "33417",
+                            "codeDepartement": "33",
+                            "departement": {"code": "33", "nom": "Gironde"}}},
+            {**feature("Sainte-Hélène", "56220", "56"),
+             "properties": {"nom": "Sainte-Hélène", "code": "56220",
+                            "codeDepartement": "56",
+                            "departement": {"code": "56", "nom": "Morbihan"}}},
+        ]
+        data = response(*items)
+        self.assertIsNone(verified_commune(
+            "Sainte-Hélène", None, lambda _: data))
+        chosen = verified_commune(
+            "Sainte-Hélène", None, lambda _: data, department_label="Gironde")
+        self.assertEqual(chosen["codeInsee"], "33417")
+        self.assertIsNone(verified_commune(
+            "Sainte-Hélène", "56", lambda _: data, department_label="Gironde"))
+        self.assertIsNone(verified_commune(
+            "Sainte-Hélène", None, lambda _: data, department_label="Paris"))
+        self.assertIsNone(verified_commune(
+            "Sainte-Hélène", None, lambda _: response(feature(
+                "Sainte-Hélène", "33417", "33")), department_label="Gironde"))
+
     def test_corsica_and_overseas_allowed_without_mainland_bbox(self):
         for name, code, dep, lon, lat in (
             ("Ajaccio", "2A004", "2A", 8.7386, 41.9220),
