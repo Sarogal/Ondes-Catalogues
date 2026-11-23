@@ -36,5 +36,5 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: go-v8-seven-exact-channel-broadcaster-logos-audit
-          path: \${{ runner.temp }}/online.json
+          path: ${{ runner.temp }}/online.json
           retention-days: 14
