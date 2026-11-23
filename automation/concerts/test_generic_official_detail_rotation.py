@@ -71,6 +71,53 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
             discover.select_generic_official_detail_links(
                 links, day, 0, limit=True)
 
+    def test_unpublished_urls_take_precedence_over_forty_five_published(self):
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://official.example/evenement/band-%02d/" % i
+            for i in range(48)]
+        known = {("officialUrl", url) for url in links[:45]}
+        original_links, original_known = list(links), set(known)
+        selected = discover.select_generic_official_detail_links(
+            links, day, 1, limit=6, known=known)
+        self.assertEqual(len(selected), 6)
+        self.assertEqual(len(set(selected)), 6)
+        self.assertEqual(set(selected[:3]), set(links[45:]))
+        self.assertTrue(all(("officialUrl", link) in known
+                            for link in selected[3:]))
+        self.assertEqual(links, original_links)
+        self.assertEqual(known, original_known)
+
+    def test_unpublished_programmes_rotate_without_published_slot_starvation(self):
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://official.example/evenement/metal-night-%02d/" % i
+            for i in range(40)]
+        known = {("officialUrl", url) for url in links[:10]}
+        visited = set()
+        for delta in range(2):
+            for slot in range(3):
+                selection = discover.select_generic_official_detail_links(
+                    links, day + dt.timedelta(days=delta), slot,
+                    limit=6, known=known)
+                self.assertLessEqual(len(selection), 6)
+                self.assertEqual(len(selection), len(set(selection)))
+                self.assertFalse(any(("officialUrl", url) in known
+                                     for url in selection))
+                visited.update(selection)
+        self.assertEqual(visited, set(links[10:]))
+
+    def test_single_unlisted_official_page_remains_eligible_next_day(self):
+        day = dt.date(2026, 11, 23)
+        links = ["https://official.example/evenement/show-%d/" % i
+                 for i in range(48)]
+        known = {("officialUrl", url) for url in links[1:]}
+        for delta in (0, 1):
+            selected = discover.select_generic_official_detail_links(
+                links, day + dt.timedelta(days=delta), 0,
+                limit=6, known=known)
+            self.assertEqual(selected[0], links[0])
+
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
         self.assertEqual(
