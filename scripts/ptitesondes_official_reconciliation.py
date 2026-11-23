@@ -22,6 +22,7 @@ from proof import norm, meters
 from merge_policy import valid
 from ptitesondes_openagenda_reuse_rights import review_event_rights
 from ptitesondes_oa_first_party_admission import admit_live_openagenda
+from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
 from ptitesondes_openagenda_v2_direct_evidence import _french_location, _valid_public_read_key
 from ptitesondes_published_oa_drift_watch import (
     index_published, choose_groups, _timings, MAX_SCAN,
@@ -110,49 +111,6 @@ def _identity(source, uid, slug):
     return (type(source) is dict
             and type(source.get("uid")) is int and source["uid"] == uid
             and type(source.get("slug")) is str and source["slug"] == slug)
-
-
-def _official_text(value):
-    if isinstance(value, dict):
-        value = value.get("fr")
-    return value if isinstance(value, str) else ""
-
-
-def ambiguous_on_demand_studio_series(source, sessions):
-    """Hold extensions of an evergreen bookable commercial studio service.
-
-    This is NOT a limit on repetitions: a 50-performance children's show or
-    weekly youth workshop remains eligible. A review is needed only when a
-    long, continuous *daily* calendar accompanies simultaneous clues of
-    paid/request-based studio booking and bespoke adult/corporate services.
-    Neither venue names nor named organisers are encoded as restrictions.
-    """
-    if not isinstance(source, dict) or not isinstance(sessions, dict):
-        return False
-    try:
-        days = sorted(date.fromisoformat(day) for day in sessions)
-    except (TypeError, ValueError):
-        return False
-    consecutive = longest = 0
-    last = None
-    for day in days:
-        consecutive = consecutive + 1 if last and day - last == timedelta(days=1) else 1
-        longest = max(longest, consecutive)
-        last = day
-    if longest < 14:
-        return False
-    content = norm(" ".join(_official_text(source.get(key)) for key in (
-        "title", "description", "longDescription", "conditions")))
-    studio = any(part in content for part in (
-        "studio enregistrement", "enregistrement en studio",
-        "studio professionnel", "louer un studio", "reservation studio"))
-    on_demand = any(part in content for part in (
-        "contactez nous", "sur reservation", "reservez", "reservation",
-        "payant", "prendre rendez vous"))
-    corporate = any(part in content for part in (
-        "team building", "entreprises", "particuliers",
-        "professionnels", "public adulte", "adultes"))
-    return studio and on_demand and corporate
 
 
 def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
