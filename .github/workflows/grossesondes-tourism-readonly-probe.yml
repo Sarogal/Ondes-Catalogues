@@ -51,6 +51,12 @@ jobs:
                   from official_admin_communes import verified_commune
                   claim=exact_edition_city(html, proven)
                   print("TOURISM_CURRENT_CITY_CLAIM",claim["city"] if claim else "NOT_PROVEN")
+                  assert claim is not None, "Current tourist city not proven"
+                  from official_admin_communes import normalize
+                  assert normalize(claim["city"]) == normalize("Sèvremoine"), "Unexpected city"
+                  direct_geocode=verified_commune(claim["city"])
+                  print("TOURISM_CURRENT_CITY_GOVERNMENT",bool(direct_geocode))
+                  assert direct_geocode is not None and direct_geocode["codeInsee"] == "49301"
                   from grossesondes_institutional_edition import VisibleInstitutionHeadings
                   from source_qualification import normalized
                   import re
