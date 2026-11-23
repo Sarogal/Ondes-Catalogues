@@ -51,6 +51,21 @@ jobs:
                   from official_admin_communes import verified_commune
                   claim=exact_edition_city(html, proven)
                   print("TOURISM_CURRENT_CITY_CLAIM",claim["city"] if claim else "NOT_PROVEN")
+                  from grossesondes_institutional_edition import VisibleInstitutionHeadings
+                  from source_qualification import normalized
+                  import re
+                  parser=VisibleInstitutionHeadings()
+                  parser.feed(html)
+                  parser.close()
+                  exact=[i for i,h in enumerate(parser.headings)
+                         if normalized(h) == normalized(parent["name"])]
+                  if exact:
+                      i=exact[0]
+                      begin=parser.heading_starts[i]
+                      end=parser.heading_starts[i+1] if i+1 < len(parser.headings) else len(parser.parts)
+                      intro=" ".join(parser.parts[begin:end])
+                      print("TOURISM_EVENT_INTRO",repr(intro[:340]))
+                      print("TOURISM_EVENT_POSTAL_CLAIMS",re.findall(r"\\b([0-9]{5})\\s+([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ '-]{2,55})",intro[:500]))
                   # Diagnostics only: the actual current tourism page visibly
                   # labels the administrative commune SÈVREMOINE (postal 49450).
                   # This call cannot authorize a public marker by itself.
