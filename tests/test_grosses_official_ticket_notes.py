@@ -56,6 +56,9 @@ class OfficialTicketNotesTests(unittest.TestCase):
         self.assertIn("218 €", updated)
         self.assertIn("228 €", updated)
         self.assertNotIn("non encore disponible", updated)
+        self.assertNotIn("proposé à la vente", updated)
+        self.assertIn("228 € (désormais épuisé", updated)
+        self.assertIn("9 octobre 2026", updated)
         self.assertIn("les trois paliers Early Bird", updated)
         self.assertIn("sont épuisés", updated)
         self.assertEqual(
