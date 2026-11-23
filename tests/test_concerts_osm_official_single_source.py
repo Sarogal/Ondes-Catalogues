@@ -842,6 +842,76 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                     (rotated[(offset+i) % len(rotated)] for i in range(8)))
         self.assertEqual(len(seen), 43)
 
+    def test_mixed_openagenda_and_venue_queue_has_no_rotational_gaps(self):
+        # Regression: the old step multiplied each slot by the FULL budget
+        # (8) even when only FOUR non-OA rows were read. Half the first-party
+        # pages stayed unexamined for days despite successive scan windows.
+        # The corrected 12-check rotation must reach 50 OA and 148 first-party
+        # leads across 3 daily slots for at most six stable dates.
+        queue = []
+        for group, count in (("oa", 50), ("venue", 148)):
+            for index in range(count):
+                candidate = {
+                    "candidateId": f"{group}-{index:03d}",
+                    "source": ("agenda_officiel_openagenda" if group == "oa"
+                               else "agenda_officiel_structuré"),
+                }
+                if group == "oa":
+                    candidate.update(openAgendaUid=111,
+                                     openAgendaEventUid=index + 1)
+                queue.append((
+                    f"https://official.example/{group}/{index}/",
+                    "2027-05-01", fixture.VENUE_ID, candidate,
+                ))
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        seen_oa, seen_other = set(), set()
+        with mock.patch.object(pipeline, "eligible", return_value=queue), \
+             mock.patch.object(pipeline, "propose",
+                               side_effect=ValueError("no live verification")):
+            for offset in range(6):
+                day = TODAY + dt.timedelta(days=offset)
+                for slot in (0, 1, 2):
+                    result, report = pipeline.build(
+                        {}, BASE, before, day, slot=slot, limit=12)
+                    self.assertEqual(result["approvals"], [])
+                    self.assertEqual(report["eligibleQueue"], 198)
+                    self.assertEqual(report["examined"], 12)
+                    self.assertEqual(report["openAgendaExamined"], 3)
+                    self.assertEqual(report["otherOfficialExamined"], 9)
+                    for check in report["candidateChecks"]:
+                        identifier = check["candidateId"]
+                        (seen_oa if identifier.startswith("oa-") else
+                         seen_other).add(identifier)
+        self.assertEqual(len(seen_oa), 50)
+        self.assertEqual(len(seen_other), 148)
+
+    def test_only_openagenda_or_only_venue_uses_entire_budget(self):
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        for kind in ("agenda_officiel_openagenda",
+                     "agenda_officiel_structuré"):
+            leads = []
+            for i in range(30):
+                c = {"candidateId": f"only-{i:02d}", "source": kind}
+                if kind == "agenda_officiel_openagenda":
+                    c.update(openAgendaUid=321, openAgendaEventUid=i + 1)
+                leads.append((f"https://venue.example/{i}", "2027-05-01",
+                              fixture.VENUE_ID, c))
+            with self.subTest(kind=kind), \
+                 mock.patch.object(pipeline, "eligible", return_value=leads), \
+                 mock.patch.object(pipeline, "propose",
+                                   side_effect=ValueError("fake")):
+                _, report = pipeline.build(
+                    {}, BASE, before, TODAY, slot=0, limit=12)
+                self.assertEqual(report["examined"], 12)
+                self.assertEqual(len({row["candidateId"]
+                                      for row in report["candidateChecks"]}), 12)
+                self.assertEqual(
+                    report["openAgendaExamined"],
+                    12 if kind == "agenda_officiel_openagenda" else 0)
+                self.assertEqual(
+                    report["otherOfficialExamined"],
+                    0 if kind == "agenda_officiel_openagenda" else 12)
+
     def test_scan_budget_rotates_across_any_number_of_candidate_events(self):
         cases = registry()
         proto = next(iter(cases["items"].values()))
