@@ -23,7 +23,7 @@ import tempfile
 from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
 from zoneinfo import ZoneInfo
 
-from dns_pinned_https import fetch_public_html, safe_public_url
+from dns_pinned_https import OfficialHTTPStatusError, fetch_public_html, safe_public_url
 
 SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
 if SCRIPTS not in sys.path:
@@ -41,6 +41,8 @@ MAX_ANCHORS_PER_PAGE = 250
 
 
 def safe_fetch_failure_code(error):
+    if isinstance(error, OfficialHTTPStatusError) and error.status_code is not None:
+        return "HTTP_" + str(error.status_code)
     """Static, private-only diagnostics: never expose exception messages/URLs.
 
     Official sites may fail DNS-pinned TLS, serve a redirect or return an

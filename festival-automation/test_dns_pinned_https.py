@@ -3,7 +3,7 @@ import socket
 from unittest import TestCase, mock
 
 from dns_pinned_https import (
-    DNSPinnedHTTPSConnection, fetch_public_html,
+    DNSPinnedHTTPSConnection, OfficialHTTPStatusError, fetch_public_html,
     resolve_global_ips, safe_public_url,
 )
 
@@ -91,6 +91,22 @@ class PinnedOrganizerHTTPSTests(TestCase):
                 with self.assertRaises(ValueError):
                     fetch_public_html("https://rockfest.fr/", opener=opener)
                 self.assertEqual(visited, ["https://rockfest.fr/"])
+
+    def test_http_status_is_available_without_disclosing_url_or_body(self):
+        for status in (403, 404, 429, 503):
+            with self.subTest(status=status):
+                with self.assertRaises(OfficialHTTPStatusError) as captured:
+                    fetch_public_html(
+                        "https://rockfest.fr/secret-path",
+                        opener=lambda _: (status,
+                                          {"content-type": "text/html",
+                                           "server": "hidden-host"},
+                                          b"secret response body"))
+                failure = captured.exception
+                self.assertEqual(failure.status_code, status)
+                self.assertEqual(str(failure), "HTTPS response not successful")
+                self.assertNotIn("rockfest", str(failure))
+                self.assertNotIn("secret", str(failure))
 
     def test_same_host_redirect_then_bounded_html(self):
         seen = []
