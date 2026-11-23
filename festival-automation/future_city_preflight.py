@@ -233,6 +233,70 @@ def undated_future_year(row, today=None):
     return year
 
 
+
+class _VisibleEditionSections(VisibleParagraphs):
+    """Maintain visible same-section boundaries without joining old editions."""
+    SECTION = "\x1e"
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "section" and not self.hidden():
+            self.parts.append(self.SECTION)
+        super().handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag == "section" and not self.hidden():
+            self.parts.append(self.SECTION)
+        super().handle_endtag(tag)
+
+
+def _section_undated_city(html, row, year, name):
+    """Current-edition banner + festival genre + town + department, in one section.
+
+    Stronger than a loose homepage contact address: the municipality and its
+    département label must follow this edition's own explicit future banner
+    inside ONE visible section. Government resolves the label independently.
+    """
+    parser = _VisibleEditionSections()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    if not name.search(" ".join(fold(" ".join(parser.parts)).split())):
+        return None
+    found = set()
+    heading = re.compile(
+        rf"\bedition(?:\s+[0-9]{{1,2}})?\s*(?:[·—–-]\s*)?"
+        rf"(?:(?:ete|hiver|printemps|automne)\s+)?{year}\b")
+    locality = re.compile(
+        r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+        r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+){0,3}")
+    for chunk in " ".join(parser.parts).split(parser.SECTION):
+        parts = [p.strip() for p in chunk.split(VisibleParagraphs.SEP) if p.strip()]
+        if not 4 <= len(parts) <= 40:
+            continue
+        folded = " ".join(fold(" ".join(parts)).split())
+        years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", folded))
+        if (years != {str(year)} or CANCEL.search(folded)
+                or any(explicit_ranges(folded, year))):
+            continue
+        for i in range(len(parts) - 3):
+            if not heading.search(" ".join(fold(parts[i]).split())):
+                continue
+            genre, raw_city, raw_dept = parts[i + 1:i + 4]
+            if not re.search(r"\bfestival\b", fold(genre)):
+                continue
+            if not locality.fullmatch(raw_city) or not locality.fullmatch(raw_dept):
+                continue
+            city, department = _name(raw_city), _name(raw_dept)
+            if (not city or not department or
+                    _normal(city) in {"france", "festival", "billetterie",
+                                      "programmation", "prochainement"}):
+                continue
+            found.add((city, department))
+    return next(iter(found)) if len(found) == 1 else None
+
+
 def _city_visible_undated(html, row, year):
     """Same-block organizer claim: edition identity + future year + city.
 
@@ -277,7 +341,12 @@ def _city_visible_undated(html, row, year):
                     r"\b(?:Festival|France|Parisien|Vente|Billetterie)\b",
                     city):
                 cities.add(city)
-    return next(iter(cities)) if len(cities) == 1 else None
+    section = _section_undated_city(html, row, year, name)
+    if len(cities) > 1 or (cities and section and
+                           _normal(next(iter(cities))) != _normal(section[0])):
+        return None
+    return section if section is not None else (
+        next(iter(cities)) if len(cities) == 1 else None)
 
 
 def eligible_undated(calendar, today):
@@ -375,11 +444,15 @@ def exact_edition_city(html, row):
     if start is not None and start.year not in range(2026, 2050):
         return None
     if undated_year is not None:
-        city = _city_visible_undated(html, row, undated_year)
+        clue = _city_visible_undated(html, row, undated_year)
+        city = clue[0] if isinstance(clue, tuple) else clue
         if not city or (row.get("city")
                         and _normal(city) != _normal(row["city"])):
             return None
-        return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
+        proof = {"slug": row["slug"], "city": city, "source": row["officialSite"]}
+        if isinstance(clue, tuple):
+            proof["departmentLabel"] = clue[1]
+        return proof
     structured = _city_jsonld(html, row)
     if structured is False:
         return None
@@ -509,9 +582,18 @@ def exact_city_from_official_site(row, fetcher=fetch_public_html):
             continue
         if claim is not None:
             facts.append(claim)
-    return (facts[0] if facts and
-            all(_normal(x["city"]) == _normal(facts[0]["city"]) for x in facts)
-            else None)
+    if not facts or any(
+            _normal(x["city"]) != _normal(facts[0]["city"]) for x in facts):
+        return None
+    labels = {_normal(x["departmentLabel"]) for x in facts
+              if x.get("departmentLabel")}
+    if len(labels) > 1:
+        return None
+    result = dict(facts[0])
+    if labels:
+        result["departmentLabel"] = next(
+            x["departmentLabel"] for x in facts if x.get("departmentLabel"))
+    return result
 
 
 def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
