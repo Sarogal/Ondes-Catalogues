@@ -747,18 +747,7 @@ def apply_independently_verified_updates(
                             if (f in old) != (f in new)
                             or old.get(f) != new.get(f)}
             if prior_fields - {"ticketAvailability"}:
-                # Reconcile old ticket-status prose only after the signed
-            # current edition has been freshly checked on its own homepage.
-            # This runs even when the canonical price is already correct.
-            if root_ok and prices:
-                fresh_ticket_notes = reconcile_obsolete_ticket_notes(
-                    new.get("notes"), prices, root.blocks)
-                if fresh_ticket_notes != new.get("notes"):
-                    new["notes"] = fresh_ticket_notes
-                    if "notes" not in fields:
-                        fields.append("notes")
-                    sources.append(site)
-            if len(report["official_edition_diagnostics"]) < 75:
+                if len(report["official_edition_diagnostics"]) < 75:
                     report["official_edition_diagnostics"].append({
                         "slug": slug, "official_site": site,
                         "reason": "different_from_current_signed_edition"})
@@ -957,6 +946,17 @@ def apply_independently_verified_updates(
                         new["notes"] = fresh_notes
                         fields.append("notes")
                         sources.extend(official_date_urls)
+            # Reconcile old ticket-status prose only after the signed
+            # current edition has been freshly checked on its own homepage.
+            # This runs even when the canonical price is already correct.
+            if root_ok and prices:
+                fresh_ticket_notes = reconcile_obsolete_ticket_notes(
+                    new.get("notes"), prices, root.blocks)
+                if fresh_ticket_notes != new.get("notes"):
+                    new["notes"] = fresh_ticket_notes
+                    if "notes" not in fields:
+                        fields.append("notes")
+                    sources.append(site)
             if len(report["official_edition_diagnostics"]) < 75:
                 report["official_edition_diagnostics"].append({
                     "slug": slug, "official_site": site,
