@@ -920,7 +920,11 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
             result["status"] = "OFFICIAL_FETCH_UNAVAILABLE"
             result["fetch_failure_code"] = safe_fetch_failure_code(exc)
         if claim is None:
-            observations.pop(slug, None)
+            # A network/TLS/HTTP outage is not contradictory evidence.
+            # Keep a real previous observation intact, without advancing
+            # lastSeen or marking this failed civil day as a second proof.
+            if result["status"] != "OFFICIAL_FETCH_UNAVAILABLE":
+                observations.pop(slug, None)
             findings.append(result)
             continue
         digest = sha256(json.dumps(
