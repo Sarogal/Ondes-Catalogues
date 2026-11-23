@@ -109,7 +109,7 @@ def main()->None:
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",
                            encoding="utf-8")
-    print(json.dumps({"result":"GO_V7_EXCLUSIVELY_OFFICIAL_FOUR_SHA_EVIDENCE",
+    print(json.dumps({"result":"GO_V7_EXCLUSIVELY_OFFICIAL_FIVE_SHA_EVIDENCE",
                       "verified_distinct":report["verified_distinct_official_image_sha"],
                       "requested":report["requested_stations"],
                       "publication_allowed":False},sort_keys=True))
