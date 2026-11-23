@@ -58,6 +58,8 @@ def clean_checkout() -> None:
     root = Path(git("rev-parse", "--show-toplevel", capture=True)).resolve()
     if root != ROOT.resolve():
         raise ValueError("Run this script from the expected public repository checkout")
+    if git("symbolic-ref", "--quiet", "--short", "HEAD", capture=True) != "feature/go-radio-v8-metalon-3-logos-20261123":
+        raise ValueError("Sign only from the dedicated reviewed v8 feature checkout")
     if git("status", "--porcelain", "--untracked-files=no", capture=True):
         raise ValueError("Local checkout is not clean; never overwrite existing user files")
     remote = git("remote", "get-url", "origin", capture=True)
@@ -192,8 +194,16 @@ def main() -> int:
     old_pointer = (ROOTDIR / "current.json").read_bytes()
     predecessor = load_verified_predecessor(ROOTDIR, public)
     published_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    # On Windows, Git may transform worktree text line endings. ALWAYS
+    # sign the precise blob bytes committed to Git, not a CRLF checkout.
+    catalog_bytes = subprocess.check_output(
+        ["git", "show", "HEAD:radio-catalog-lab/full-staging/UNSIGNED-radio-v8-70-CANONICAL-TEST-SHA-20261123.json"],
+        cwd=ROOT, timeout=45,
+    )
+    if json.loads(catalog_bytes) != json.loads(CANONICAL.read_bytes()):
+        raise ValueError("Local v8 working copy is not the reviewed Git content")
     bundle = create_bundle(
-        CANONICAL.read_bytes(), key, key_id=KEY_ID,
+        catalog_bytes, key, key_id=KEY_ID,
         published_at=published_at, previous=predecessor
     )
     verify_bundle(bundle.pointer_bytes, bundle.catalog_bytes, public, previous=predecessor)
