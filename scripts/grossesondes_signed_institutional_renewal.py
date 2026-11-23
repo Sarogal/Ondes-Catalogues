@@ -23,7 +23,10 @@ from grossesondes_structured_edition import (
 )
 
 PROOF_MODE = "signed-tourism-renewal.v1"
-MAX_PROBES = 4
+DAILY_PROBES = 4
+# A bounded catch-up after a trusted code push may recheck all currently
+# signed historical tourism references, without admitting new network roots.
+MAX_PROBES = 20
 MAX_HTML = 650_000
 REVIEW_MARKERS = (
     "office de tourisme", "tourisme", "mairie", "collectivite",
@@ -64,7 +67,7 @@ def signed_tourism_urls(parent):
     return sorted(accepted)
 
 
-def candidates_from_signed_history(history, published, today, limit=MAX_PROBES,
+def candidates_from_signed_history(history, published, today, limit=DAILY_PROBES,
                                    tick=0):
     """Bounded deterministic rotation; signed historical data is the sole seed."""
     if (not isinstance(history, dict) or history.get("schema") != 2
@@ -103,7 +106,8 @@ def candidates_from_signed_history(history, published, today, limit=MAX_PROBES,
     choices.sort(key=lambda row: (row[0]["slug"], row[1]))
     if not choices or not limit:
         return []
-    # At most four selected signed references; no network-derived discovery.
+    # At most the bounded per-run budget, drawn exclusively from signed
+    # historical references. Daily passes remain limited to four.
     start = (tick * limit) % len(choices)
     return [choices[(start + i) % len(choices)]
             for i in range(min(limit, len(choices)))]
