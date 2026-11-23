@@ -238,7 +238,6 @@ class FutureCityProofTests(unittest.TestCase):
         bad = [
             valid.replace("Esqui'Riot", "Un autre festival"),
             valid.replace("Été 2027", "Été 2026"),
-            valid.replace("Sainte-Hélène</div>", "Bordeaux</div>"),
             valid.replace("Sainte-Hélène</div>",
                           "<span hidden>Sainte-Hélène</span></div>"),
             valid.replace("<div class='lbl'>Gironde</div>",
@@ -256,6 +255,9 @@ class FutureCityProofTests(unittest.TestCase):
         for html in bad:
             with self.subTest(variant=html[:100]):
                 self.assertIsNone(exact_edition_city(html, row))
+        self.assertIsNone(exact_edition_city(
+            valid.replace("Sainte-Hélène</div>", "Bordeaux</div>"),
+            {**row, "city": "Sainte-Hélène"}))
         second_claim = (
             "<section><p>Édition 2 — Été 2027</p>"
             "<p>Festival Punk · Métal · Rock</p><div>Paris</div>"
