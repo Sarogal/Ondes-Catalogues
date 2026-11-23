@@ -31,9 +31,12 @@ EXPECTED_NEW_LOGOS = 190
 
 
 def checked_artifact(root: Path) -> tuple[dict, dict[str, bytes]]:
-    manifest_file = root / "bob-official-channel-tile-evidence.json"
-    if not manifest_file.is_file() or manifest_file.is_symlink():
-        raise ValueError("Expected single official BOB artifact manifest")
+    manifests = [p for p in root.rglob("bob-official-channel-tile-evidence.json")
+                 if p.is_file() and not p.is_symlink()]
+    if len(manifests) != 1:
+        raise ValueError("Expected exactly one official BOB artifact manifest")
+    manifest_file = manifests[0]
+    artifact_root = manifest_file.parent
     if manifest_file.stat().st_size > 128 * 1024:
         raise ValueError("BOB image evidence oversized")
     report = json.loads(manifest_file.read_text(encoding="utf-8"))
@@ -76,7 +79,7 @@ def checked_artifact(root: Path) -> tuple[dict, dict[str, bytes]]:
                     "image/jpeg":"jpg", "image/png":"png",
                     "image/webp":"webp"}[meta["mime_type"]]):
             raise ValueError("Untrusted staged SHA object path")
-        raw_path = root / path
+        raw_path = artifact_root / path
         if raw_path.is_symlink() or not raw_path.is_file() or raw_path.stat().st_size > 2*1024*1024:
             raise ValueError("Missing original SHA object bytes")
         raw = raw_path.read_bytes()
