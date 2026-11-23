@@ -275,7 +275,7 @@ class NationalPrivateDossierTests(unittest.TestCase):
     def test_private_carry_reads_realistic_80_dossier_patch_above_old_limit(self):
         from ptitesondes_private_research_carry_forward import MAX_PRIVATE_PATCH_BYTES
         from ptitesondes_national_backlog_bridge import _read
-        self.assertEqual(MAX_PRIVATE_PATCH_BYTES, 4_000_000)
+        self.assertEqual(MAX_PRIVATE_PATCH_BYTES, 5_000_000)
         ref = {"updated_at": "unchanged", "events": []}
         patch = private_patch(ref, queue=[])
         patch["deferred"] = [{"private_note": "x" * 19_000} for _ in range(80)]

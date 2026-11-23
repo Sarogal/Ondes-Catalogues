@@ -10,6 +10,7 @@ from merge_policy import valid, PUBLISHABLE_CHILD_ARTS
 from official_organizer_proof import canonical_event_title
 from proof import norm
 from ptitesondes_primary_editorial import primary_out_of_scope
+from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
 from ptitesondes_candidate_promotion import category_for
 from ptitesondes_family_activity_classification import propose_family_activity
 from ptitesondes_openagenda_national_event_research import _french_text
@@ -36,6 +37,7 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
     "oa_direct_invalid_timings",
     "oa_direct_location_missing",
     "oa_direct_city_only_location",
+    "oa_direct_evergreen_on_demand_review",
     "oa_direct_missing_live_source",
     "oa_direct_no_exact_session",
     "oa_direct_not_public_or_identity_changed",
@@ -159,6 +161,17 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     times, days, error = _sessions(event, event["timezone"], day, today)
     if error or not times:
         return fail("oa_direct_invalid_times")
+    # The standard Publisher and the already-published reconciliation MUST
+    # apply the same source-based hold: otherwise ordinary cloud sync can
+    # flood the map with hundreds of daily bookable studio availabilities
+    # that the reconciliation correctly refused to extend. No hard cap on
+    # sessions: all three first-party textual signals are required.
+    source_days = {
+        x["begin"][:10]: True for x in event["timings"]
+        if isinstance(x, dict) and isinstance(x.get("begin"), str)
+    }
+    if ambiguous_on_demand_studio_series(event, source_days):
+        return fail("oa_direct_evergreen_on_demand_review")
     # A recurring UID may have several days: each observed exact day is
     # separately eligible, and duplicate day IDs remain guarded by Publisher.
     age = event.get("age")

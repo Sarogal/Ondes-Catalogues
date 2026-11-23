@@ -27,6 +27,9 @@ from ptitesondes_delegated_source_authority import _url_host
 
 SCHEMA = "ptitesondes.private_open_world_dossier_intake.v1"
 MAX_DOSSIERS = 80
+# Matches the 5 MiB integrity-checked private Git Blob reader; input is
+# bounded but cannot remain capped at the old 1.5 MiB after 80 live dossiers.
+MAX_PRIVATE_PATCH_BYTES = 5_000_000
 MAX_PRIVATE_REPORTS = 10000
 # Recent PRIVATE research is a rotating hint cache, never a cached approval.
 # The Publisher always re-reads all official evidence before an addition.
@@ -400,7 +403,7 @@ def main():
             raise ValueError("private_dossier_inputs_must_not_be_in_public_checkout")
     if args.output_file == args.patch_file:
         raise ValueError("publisher_patch_requires_separate_atomic_output")
-    patch, _ = _read(args.patch_file, 1_500_000)
+    patch, _ = _read(args.patch_file, MAX_PRIVATE_PATCH_BYTES)
     rows, report = collect_research_dossiers(
         args.observation_root, args.research_root, args.day,
         batch_index=args.batch_index)

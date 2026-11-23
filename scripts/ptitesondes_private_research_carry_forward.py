@@ -13,13 +13,9 @@ from datetime import date
 from pathlib import Path
 
 from ptitesondes_open_world_private_dossier_intake import (
-    MAX_DOSSIERS, attach_research_dossiers,
+    MAX_DOSSIERS, MAX_PRIVATE_PATCH_BYTES, attach_research_dossiers,
 )
 from ptitesondes_national_backlog_bridge import _atomic_json, _read
-
-# Bounded private patch: 80 detailed research dossiers can exceed 1.5 MB.
-# Keep a finite limit; never truncate or discard the unapproved queue.
-MAX_PRIVATE_PATCH_BYTES = 4_000_000
 
 
 def carry_same_day_research(previous, fresh, today):
@@ -63,6 +59,8 @@ def main():
             raise ValueError("private_research_carry_must_not_write_public_checkout")
     if args.output == args.existing or args.output == args.fresh:
         raise ValueError("private_carry_requires_distinct_output")
+    # Same secure bound as the pinned Git Blob reader and dossier intake.
+    # Previously 1.5 MiB rejected the 80-slot private research patch.
     existing, _ = _read(args.existing, MAX_PRIVATE_PATCH_BYTES)
     fresh, _ = _read(args.fresh, MAX_PRIVATE_PATCH_BYTES)
     combined = carry_same_day_research(existing, fresh, args.day)
