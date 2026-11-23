@@ -668,6 +668,33 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(set(x[0] for x in all_sites),
                          {x[0] for x in morning + evening})
 
+    def test_push_tail_batch_wraps_to_full_signed_budget(self):
+        from grossesondes_cloud_sync import official_update_scan_limit
+        limit = official_update_scan_limit("push")
+        self.assertEqual(limit, 48)
+        # In production a 48-host catch-up scanned only one site when the
+        # signed pool had 49 hosts and the Paris tick selected the final
+        # partial batch. It must still check the full bounded budget.
+        for count in (49, 53, 59, 95):
+            with self.subTest(count=count):
+                rows = [festival(
+                    f"festival-{i:03d}",
+                    f"https://official-wrap-{i:03d}.example.fr/")
+                    for i in range(count)]
+                signed = doc(*rows)
+                first = signed_rotation(signed, DAY, limit=limit, tick=0)
+                tail = signed_rotation(signed, DAY, limit=limit, tick=1)
+                first_urls = [url for url, _ in first]
+                tail_urls = [url for url, _ in tail]
+                self.assertEqual(len(first_urls), limit)
+                self.assertEqual(len(tail_urls), limit)
+                self.assertEqual(len(set(tail_urls)), limit)
+                self.assertEqual(set(first_urls + tail_urls),
+                                 {r["officialSite"] for r in rows})
+                self.assertTrue(all(
+                    len(signed_rotation(signed, DAY, limit=24, tick=t)) <= 24
+                    for t in range(4)))
+
     def test_twenty_four_hosts_cover_signed_festival_rotation_in_three_runs(self):
         # A realistic nationwide pool of 53 independent first-party sites
         # must be completely visited in <= 3 successful cloud passes.
