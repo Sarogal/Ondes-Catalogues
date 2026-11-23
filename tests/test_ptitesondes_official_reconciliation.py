@@ -239,6 +239,67 @@ class OfficialReconciliationTests(unittest.TestCase):
         self.assertEqual(sum(x["action"] == "add" for x in audit["operations"]), 40)
         self.assertEqual(len({x["id"] for x in after["events"]}), 41)
 
+    def test_bookable_daily_studio_is_held_without_erasing_existing_sessions(self):
+        """Paid, book-on-demand, mixed corporate studio calendar is NOT a
+        confirmed set of daily child performances. Keep published row intact.
+        """
+        original = document(row())
+        official = live()
+        official["description"] = {
+            "fr": "Atelier en studio professionnel et studio d'enregistrement"
+        }
+        official["longDescription"] = {
+            "fr": "Enfants, team buildings, entreprises et particuliers"
+        }
+        official["conditions"] = {
+            "fr": "Payant. Contactez-nous pour votre réservation"
+        }
+        official["timings"] = [
+            {
+                "begin": f"2026-12-{day:02d}T10:00:00+01:00",
+                "end": f"2026-12-{day:02d}T12:00:00+01:00",
+            }
+            for day in range(5, 27)
+        ]
+        source_pkg = {
+            "event": official,
+            "agenda": {"uid": 901131, "slug": "agenda-generique"},
+        }
+        result, audit, reasons = check(original, source_pkg)
+        self.assertEqual(result, original)
+        self.assertEqual(audit["operations"], [])
+        self.assertEqual(reasons["official_new_session_on_demand_review"], 1)
+        self.assertNotIn("official_new_session_admitted", reasons)
+
+    def test_no_session_cap_or_generic_reservation_blacklist(self):
+        """A real 21-day series without corporate studio-service cues may
+        publish its dates; legitimate reserved performances are allowed.
+        """
+        original = document(row())
+        official = live()
+        official["title"] = {"fr": "Atelier musical pour enfants"}
+        official["description"] = {
+            "fr": "Véritable atelier musical jeunesse à date et heure fixes."
+        }
+        official["conditions"] = {
+            "fr": "Payant, sur réservation. Places limitées pour familles."
+        }
+        official["timings"] = [
+            {
+                "begin": f"2026-12-{day:02d}T10:00:00+01:00",
+                "end": f"2026-12-{day:02d}T12:00:00+01:00",
+            }
+            for day in range(5, 26)
+        ]
+        after, audit, reasons = check(original, {
+            "event": official,
+            "agenda": {"uid": 901131, "slug": "agenda-generique"},
+        })
+        self.assertEqual(len(after["events"]), 21)
+        self.assertEqual(sum(x["action"] == "add"
+                             for x in audit["operations"]), 20)
+        self.assertNotIn("official_new_session_on_demand_review", reasons)
+
     def test_cannot_self_approve_new_date_without_live_agenda_identity(self):
         original = document(row())
         official = live()
