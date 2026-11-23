@@ -30,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           mkdir -p "$RUNNER_TEMP/channel-proof"
-          gh run download 45170511954 --repo "$GITHUB_REPOSITORY" --pattern go-v8-seven-exact-channel-broadcaster-logos-audit --dir "$RUNNER_TEMP/channel-proof"
+          gh run download 45170997463 --repo "$GITHUB_REPOSITORY" --pattern go-v8-seven-exact-channel-broadcaster-logos-audit --dir "$RUNNER_TEMP/channel-proof"
       - name: Re-download source images and stage 6 exact SHA assets without publication
         run: |
           python radio-catalog-lab/tools/stage_v8_six_exact_channel_originals.py --artifact-root "$RUNNER_TEMP/channel-proof"
