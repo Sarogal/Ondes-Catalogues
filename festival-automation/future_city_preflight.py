@@ -31,7 +31,8 @@ from grossesondes_structured_roster import (
     JsonLD, SENSITIVE_STATUSES, edition_name, iso_day, walk,
 )
 from grossesondes_official_html_edition import (
-    CANCEL, VisibleParagraphs, dominant_visible_range, explicit_ranges, fold,
+    CANCEL, VisibleText, VisibleParagraphs, MONTHS as OFFICIAL_MONTHS,
+    dominant_visible_range, explicit_ranges, fold,
 )
 
 SCHEMA = "grossesondes.future-festival-city-private.v1"
@@ -628,6 +629,89 @@ def _city_from_official_title_plus_named_current_dates(html, row):
     return next(iter(cities)) if found else None
 
 
+class _VisibleOfficialImageAlts(VisibleText):
+    """Read only visible alt attributes; never load image URLs or other hosts."""
+    def __init__(self):
+        super().__init__()
+        self.alts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "img" and not self.hidden() and len(self.alts) < 40:
+            attributes = dict(attrs)
+            style = fold(attributes.get("style") or "")
+            if (not any(k in attributes for k in ("hidden",))
+                    and attributes.get("aria-hidden") != "true"
+                    and not re.search(
+                        r"(?:display\s*:\s*none|visibility\s*:\s*hidden)",
+                        style)):
+                alt = attributes.get("alt")
+                if isinstance(alt, str) and 12 <= len(alt) <= 220:
+                    self.alts.append(alt)
+        super().handle_starttag(tag, attrs)
+
+
+def _city_from_current_edition_image_alt(html, row):
+    """An explicit exact-year, exact-date and single-town image description.
+
+    First-party editors may use their current edition's main banner image
+    with a complete textual alt while the homepage SEO title gives only an
+    adjacent city. Never infer a town from an image file or a previous edition.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if (start is None or end is None or start.year != end.year
+            or start.month != end.month):
+        return None
+    words = re.findall(
+        r"[a-z0-9]+",
+        re.sub(r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    name = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+        + r"(?![a-z0-9])")
+    parser = _VisibleOfficialImageAlts()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (TypeError, ValueError, UnicodeError):
+        return None
+    date_location = re.compile(
+        r"\b(?:le|les)\s+"
+        r"(?P<days>[0-3]?\d(?:\s*(?:[,/&–—-]|\bet\b|\bau\b|\band\b)"
+        r"\s*[0-3]?\d){0,6})"
+        r"\s+(?P<month>[A-Za-zÀ-ÿ]+)\s+à\s+"
+        r"(?P<city>[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]{1,75}?)"
+        r"(?:\s*\((?P<dep>\d{2,3}|2[AB])\))?\s*$",
+        re.IGNORECASE)
+    towns = set()
+    for alt in parser.alts:
+        if not name.search(fold(alt)) or CANCEL.search(fold(alt)):
+            continue
+        years = re.findall(r"(?<!\d)20[2-4]\d(?!\d)", alt)
+        if set(years) != {str(start.year)}:
+            continue
+        matched = date_location.search(alt)
+        if matched is None:
+            continue
+        month = OFFICIAL_MONTHS.get(fold(matched.group("month")))
+        days = [int(x) for x in re.findall(
+            r"\b\d{1,2}\b", matched.group("days"))]
+        if (month != start.month or not days
+                or days[0] != start.day or days[-1] != end.day
+                or (len(days) > 1 and
+                    "au" not in fold(matched.group("days"))
+                    and days != list(range(start.day, end.day + 1)))):
+            continue
+        city = _name(matched.group("city").strip())
+        department = matched.group("dep")
+        if (not city or
+                row.get("department") not in (None, "", department)
+                and department is not None):
+            continue
+        towns.add(city)
+    return next(iter(towns)) if len(towns) == 1 else None
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -655,11 +739,13 @@ def exact_edition_city(html, row):
     title = _city_from_dated_title(html, row) if start is not None else None
     evergreen = _current_edition_evergreen_commune(html, row)
     title_place = _city_from_official_title_plus_named_current_dates(html, row)
-    evidence = [c for c in (structured, visible, title, evergreen, title_place)
-                if c is not None]
+    image_alt_place = _city_from_current_edition_image_alt(html, row)
+    evidence = [c for c in (structured, visible, title, evergreen, title_place,
+                            image_alt_place) if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
-    city = structured or visible or title or evergreen or title_place
+    city = (structured or visible or title or evergreen or title_place
+            or image_alt_place)
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
