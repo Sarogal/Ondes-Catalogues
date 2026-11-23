@@ -98,6 +98,13 @@ jobs:
                 f'unverified_unique_sha={len(broken)}',
                 f'missing_logo_descriptors=119')
           print('FETCH_STATES',dict(statuses))
+          for rec in broken:
+            print('UNVERIFIED_SHA', rec['sha256'],
+                  'station_ids='+','.join(rec['go_station_ids']))
+            for item in rec['tested_urls']:
+              print('UNVERIFIED_SOURCE',item['status'],
+                    item['details'].get('reason',''),
+                    item['url'])
           with open(__import__('os').environ['GITHUB_STEP_SUMMARY'],'a') as out:
             out.write('# Grosses Ondes — Audit v6 des logos SHA\n\n')
             out.write('- Radios actives : **304**\n')
