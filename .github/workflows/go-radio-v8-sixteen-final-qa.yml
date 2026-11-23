@@ -1,4 +1,5 @@
 name: GO radio TEST v8 — 16 original publisher logo SHAs full preflight
+# Re-run after the staged SHA objects arrived in the isolated development branch.
 on:
   push:
     branches:
