@@ -33,10 +33,14 @@ jobs:
           import json,os
           from pathlib import Path
           d=json.loads((Path(os.environ['RUNNER_TEMP'])/'exclusive-four-network.json').read_text())
-          assert d['scope']=='TEST_V7_EXCLUSIVELY_4_BROADCASTER_ORIGINAL_TILES'
+          assert d['scope']=='TEST_V7_EXCLUSIVELY_5_BROADCASTER_ORIGINAL_TILES'
           assert d['requested_stations']==5
           assert d['publication_allowed'] is False
-          print('EXCLUSIVELY_BROADCASTER_ORIGINAL_SHA',d['verified_distinct_official_image_sha'],'/5')
+          assert d['verified_station_logo_count']==5
+          assert d['verified_unique_sha_count']==4
+          assert d['shared_artist_pair_only'] is True
+          print('EXCLUSIVELY_BROADCASTER_STATION_LOGOS_VERIFIED',d['verified_station_logo_count'],'/5',
+                'unique_sha='+str(d['verified_unique_sha_count']))
           for r in d['records']:
               print('OFFICIAL_EXCLUSIVE_IMAGE',r['go_station_id'],r['status'],
                     r.get('sha256',''),r.get('mime_type',''),r.get('error',''))
