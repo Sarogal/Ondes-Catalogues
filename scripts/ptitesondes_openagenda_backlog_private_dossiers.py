@@ -252,7 +252,12 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         (x["lead"]["event_uid"], x["date_start"])
         for x in combined["open_world_research"]
     }
-    while visited < min(MAX_ATTEMPTS, len(identities)):
+    # Preserve the established append-only queue behavior while ordinary
+    # free capacity exists. Only a genuinely saturated queue may fairly
+    # preempt old research requests from durable source inventories.
+    review_budget = capacity if capacity > 0 else MAX_ATTEMPTS
+    while (len(proposals) < review_budget
+           and visited < min(MAX_ATTEMPTS, len(identities))):
         slug, uid, day, title = identity = identities[(start + visited) % len(identities)]
         visited += 1
         if ("openagenda-" + str(uid) + "-" + day) in already or (uid, day) in queue_keys:
