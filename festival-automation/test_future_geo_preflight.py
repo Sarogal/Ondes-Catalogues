@@ -78,6 +78,13 @@ class FutureGeoTests(unittest.TestCase):
             with self.subTest(code=code):
                 self.assertEqual(safe_fetch_failure_code(exc), code)
                 self.assertNotIn("secret", safe_fetch_failure_code(exc))
+        from dns_pinned_https import OfficialHTTPStatusError
+        self.assertEqual(
+            safe_fetch_failure_code(OfficialHTTPStatusError(403)), "HTTP_403")
+        self.assertEqual(
+            safe_fetch_failure_code(OfficialHTTPStatusError(429)), "HTTP_429")
+        self.assertEqual(
+            safe_fetch_failure_code(OfficialHTTPStatusError(503)), "HTTP_503")
         def blocked(_):
             raise ValueError("HTTPS response not successful")
         report = review(state(), catalogue(ROW), "2026-11-23", blocked)
