@@ -18,13 +18,19 @@ from zoneinfo import ZoneInfo
 
 SCHEMA = "ptitesondes.reviewed_retractions.v1"
 REASONS = frozenset(("school_support_primary",
-                     "non_performance_gathering_primary"))
+                     "non_performance_gathering_primary",
+                     "evergreen_commercial_studio_availability"))
 EVENT_ID = re.compile(r"openagenda-[1-9][0-9]{0,11}-20[0-9]{2}-[0-9]{2}-[0-9]{2}\Z")
 TITLE_CLUES = {
     "school_support_primary": re.compile(
         r"(?:accompagnement|soutien) scolaire|aide aux devoirs|revisions scolaires", re.I),
     "non_performance_gathering_primary": re.compile(
         r"^\s*(?:forum|conference|colloque|table ronde)\b", re.I),
+    # Review is restricted to an EXACT already-published snapshot and
+    # source-verified studio-service title, not a general filter on
+    # events at studios or on concerts with many performances.
+    "evergreen_commercial_studio_availability": re.compile(
+        r"enregistrez votre musique en studio|enregistrement en studio", re.I),
 }
 
 
@@ -65,11 +71,11 @@ def reviewed_retraction(document, manifest):
            and len({e["id"] for e in events}) == len(events),
            "catalogue_invalid_or_duplicate_ids")
     reject(type(manifest) is dict and manifest.get("schema") == SCHEMA
-           and manifest.get("reviewed_on") == "2026-11-22"
+           and manifest.get("reviewed_on") in ("2026-11-22", "2026-11-23")
            and type(manifest.get("catalogue_min_count")) is int
            and manifest["catalogue_min_count"] >= 1
            and type(manifest.get("approvals")) is list
-           and 1 <= len(manifest["approvals"]) <= 20,
+           and 1 <= len(manifest["approvals"]) <= 80,
            "invalid_reviewed_manifest")
     approvals = manifest["approvals"]
     targets = {}
@@ -90,7 +96,10 @@ def reviewed_retraction(document, manifest):
                and TITLE_CLUES[row["reason_code"]].search(expected["title"])
                and type(expected.get("source_url")) is str
                and https(expected["source_url"])
-               and urlsplit(expected["source_url"]).hostname == "openagenda.com",
+               and urlsplit(expected["source_url"]).hostname == "openagenda.com"
+               and (row["reason_code"] != "evergreen_commercial_studio_availability"
+                    or (manifest["reviewed_on"] == "2026-11-23"
+                        and row["evidence_url"] == expected["source_url"])),
                "invalid_approval_identity_or_reason")
         targets[eid] = row
     original = {e["id"]: e for e in events}
