@@ -1,9 +1,10 @@
-"""Independent Rockstore Montpellier proof: one directly named artist.
+"""Rockstore first-party recheck: directly named complete artist bills.
 
-Discovery remains quarantined. A fresh exact first-party detail page must
-match the original dated URL, sole named artist, music tag and venue.
-A previously unknown act may be added with the name printed in the official
-heading; no venue, start time or unannounced support act may be invented.
+A fresh, individually dated first-party H1 is required. Explicit ' + '
+headliners may include known and unknown artists without a count ceiling;
+a whole-event genre is kept on the event and is NEVER copied to each band.
+Unknown guests, incomplete bills, festivals and fabricated venues or times
+remain quarantined. The independent Publisher verifies the whole bill.
 """
 from __future__ import annotations
 
@@ -17,6 +18,7 @@ SOURCE = "agenda_officiel_rockstore_detail_review"
 VENUE_ID = "rockstore-montpellier"
 SOURCE_URL = adapter.AGENDA
 PROOF_STRUCTURE = "rockstore-single-artist-official-heading-date-genre"
+MULTI_PROOF_STRUCTURE = "rockstore-full-bill-official-heading-date-genre"
 UNKNOWN = re.compile(
     r"(?<![a-z0-9])(?:guest|special guest|premiere partie|premieres parties|"
     r"support band|support act|opening act|invite|invites|tba|"
@@ -89,13 +91,20 @@ def verify(candidate, html_text, catalogue, today):
     if fresh["date"] <= today.isoformat() or fresh.get("localTime") is not None:
         raise ValueError("Rockstore: date pas future ou heure presumee")
     title = fresh["name"].strip()
-    if (MULTI.search(title) or UNKNOWN.search(triage.words(title))
-            or not 3 <= len(title) <= 120):
-        raise ValueError("Rockstore: plusieurs artistes ou affiche incomplete")
+    if UNKNOWN.search(triage.words(title)) or not 3 <= len(title) <= 210:
+        raise ValueError("Rockstore: affiche officielle incomplete")
+    # Only an explicit, separated '+' between complete names is an
+    # unambiguous multi-band lineup. '&', '/' and 'feat' remain ambiguous.
+    parts = [part.strip() for part in re.split(r"\s+\+\s+", title)]
+    if (not parts or any(not 3 <= len(part) <= 120 or MULTI.search(part)
+                         or UNKNOWN.search(triage.words(part))
+                         for part in parts)
+            or len({triage.words(part) for part in parts}) != len(parts)):
+        raise ValueError("Rockstore: noms de groupes incomplets ou repetes")
     parsed = adapter._Html()
     parsed.feed(html_text)
-    # A secondary headliner may be named in the event body rather than H1.
-    # Treat such pages as ambiguous, never as single-band approvals.
+    # A secondary band or unnamed guest in the body is ambiguous even
+    # when the H1 itself names one or several groups.
     nearby = triage.words(" ".join(
         parsed.visible[(parsed.heading_end or 0)+2:
                        (parsed.heading_end or 0)+42]))
@@ -106,45 +115,50 @@ def verify(candidate, html_text, catalogue, today):
         for key in ("artists", "venues", "events")
     ):
         raise ValueError("Rockstore: catalogue invalide")
-    matches = [a for a in catalogue["artists"]
-               if isinstance(a, dict)
-               and triage.words(a.get("name")) == triage.words(title)
-               and isinstance(a.get("id"), str)]
-    if len(matches) > 1:
-        raise ValueError("Rockstore: identite d'artiste canonique ambigue")
-    # A first-party heading can name a band not yet present in the catalog.
-    # Do not overwrite an existing band's alias or reuse a conflicting ID.
-    normalized_title = triage.words(title)
     aliases = {triage.words(alias)
                for a in catalogue["artists"] if isinstance(a, dict)
                for alias in (a.get("aliases") or [])
                if isinstance(alias, str)}
-    if not matches and normalized_title in aliases:
-        raise ValueError("Rockstore: collision avec un alias d'artiste")
-    act_name = matches[0]["name"] if matches else title
-    aid = (matches[0]["id"] if matches else
-           normalized_title.replace(" ", "-")[:72].strip("-"))
-    new_artists = [] if matches else [{"id": aid, "name": act_name}]
-    if not matches and any(a.get("id") == aid
-                           for a in catalogue["artists"]
-                           if isinstance(a, dict)):
-        raise ValueError("Rockstore: collision d'identifiant artiste")
+    ids, official_names, new_artists = [], [], []
+    for part in parts:
+        normalized_name = triage.words(part)
+        matches = [a for a in catalogue["artists"]
+                   if isinstance(a, dict)
+                   and triage.words(a.get("name")) == normalized_name
+                   and isinstance(a.get("id"), str)]
+        if len(matches) > 1:
+            raise ValueError("Rockstore: identite d'artiste canonique ambigue")
+        if not matches and normalized_name in aliases:
+            raise ValueError("Rockstore: collision avec un alias d'artiste")
+        artist_name = matches[0]["name"] if matches else part
+        ident = (matches[0]["id"] if matches else
+                 normalized_name.replace(" ", "-")[:72].strip("-"))
+        if not re.fullmatch(r"[a-z0-9-]{3,100}", ident):
+            raise ValueError("Rockstore: identifiant artiste non canonique")
+        if not matches and any(a.get("id") == ident
+                               for a in catalogue["artists"]
+                               if isinstance(a, dict)):
+            raise ValueError("Rockstore: collision d'identifiant artiste")
+        ids.append(ident)
+        official_names.append(artist_name)
+        if not matches:
+            new_artists.append({"id": ident, "name": artist_name})
+    if len(set(ids)) != len(ids):
+        raise ValueError("Rockstore: artistes ambigus ou repetes")
     venues = [v for v in catalogue["venues"] if v.get("id") == VENUE_ID]
     if (len(venues) != 1 or triage.words(venues[0].get("city")) != "montpellier"
             or not all(venues[0].get(k) is not None
                        for k in ("latitude", "longitude"))):
         raise ValueError("Rockstore: salle connue geolocalisee obligatoire")
-    if not re.fullmatch(r"[a-z0-9-]{3,100}", aid):
-        raise ValueError("Rockstore: identifiant artiste non canonique")
     if any(
         row.get("officialUrl") == url or
         (row.get("date") == fresh["date"] and
          row.get("venueId") == VENUE_ID and
-         aid in row.get("artistIds", []))
+         set(ids) & set(row.get("artistIds", [])))
         for row in catalogue["events"]
     ):
         raise ValueError("Rockstore: concert deja publie ou meme artiste/jour/salle")
-    event_id = "go-c-" + fresh["date"].replace("-", "") + "-montpellier-" + aid
+    event_id = "go-c-" + fresh["date"].replace("-", "") + "-montpellier-" + ids[0]
     if len(event_id) > 150 or any(
         row.get("id") == event_id for row in catalogue["events"]
     ):
@@ -159,14 +173,16 @@ def verify(candidate, html_text, catalogue, today):
             "proofType": "official-organizer-or-venue",
             "checkedAt": today.isoformat(),
             "checkedFields": ["artists", "date", "venue", "genre"],
-            "officialArtistNames": [act_name],
-            "sourceStructure": PROOF_STRUCTURE,
-            **({"verifiedNewArtists": [act_name]} if new_artists else {}),
+            "officialArtistNames": official_names,
+            "sourceStructure": (MULTI_PROOF_STRUCTURE if len(ids) > 1
+                                else PROOF_STRUCTURE),
+            **({"verifiedNewArtists": [a["name"] for a in new_artists]}
+               if new_artists else {}),
         }],
         "event": {
-            "id": event_id, "title": act_name,
+            "id": event_id, "title": " + ".join(official_names),
             "date": fresh["date"], "time": None,
-            "artistIds": [aid], "venueId": VENUE_ID,
+            "artistIds": ids, "venueId": VENUE_ID,
             "genres": [tag], "status": "confirmed",
             "officialUrl": url, "sourceType": "salle",
             "organizer": "Rockstore",
