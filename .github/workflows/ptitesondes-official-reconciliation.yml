@@ -1,0 +1,150 @@
+name: "P'tites Ondes — réconciliation officielle des sorties publiées"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_official_reconciliation.py'
+      - 'tests/test_ptitesondes_official_reconciliation.py'
+      - '.github/workflows/ptitesondes-official-reconciliation.yml'
+      - 'scripts/ptitesondes_published_oa_drift_watch.py'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_official_reconciliation.py'
+      - '.github/workflows/ptitesondes-official-reconciliation.yml'
+  schedule:
+    - cron: '13 08 * * *'
+    - cron: '13 12 * * *'
+    - cron: '13 16 * * *'
+    - cron: '13 21 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ondes-cloud-publication
+  queue: max
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Offline no-network transactional checks
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m py_compile scripts/ptitesondes_official_reconciliation.py
+          python -m unittest -v test_ptitesondes_official_reconciliation
+
+  apply:
+    needs: validate
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    permissions:
+      contents: write
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Re-fetch official OpenAgenda sources; never trust collector approvals
+        id: changes
+        shell: bash
+        env:
+          OPENAGENDA_READ_KEY: ${{ secrets.OPENAGENDA_READ_KEY }}
+          AUDIT_FILE: docs/ptitesondes/reconciliations/run-${{ github.run_id }}.json
+        run: |
+          set -euo pipefail
+          DAY="$(TZ=Europe/Paris date +%Y-%m-%d)"
+          HOUR="$(date -u +%H)"
+          SLOT=3
+          if [ "$HOUR" -lt 10 ]; then SLOT=0
+          elif [ "$HOUR" -lt 14 ]; then SLOT=1
+          elif [ "$HOUR" -lt 19 ]; then SLOT=2
+          fi
+          python scripts/ptitesondes_official_reconciliation.py \
+            --catalogue docs/ptitesondes/sorties.json \
+            --date "$DAY" --slot "$SLOT" \
+            --audit-out "$AUDIT_FILE" --apply \
+            | tee "$RUNNER_TEMP/ptitesondes-official-reconciliation-summary.txt"
+          if grep -qx 'changed=true' "$RUNNER_TEMP/ptitesondes-official-reconciliation-summary.txt"; then
+            test -s "$AUDIT_FILE"
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- docs/ptitesondes/sorties.json "$AUDIT_FILE"
+            test "$(git diff --cached --name-only | wc -l)" -eq 2
+            git commit -m "data(ptitesondes): official OA status and showtime reconciliation"
+            git push origin HEAD:main
+          else
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          fi
+          echo "### Réconciliation des sorties déjà publiées" >> "$GITHUB_STEP_SUMMARY"
+          grep -E '^(source_series_checked|withdrawn|corrected|changed|reason_counts)=' \
+            "$RUNNER_TEMP/ptitesondes-official-reconciliation-summary.txt" \
+            >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    needs: apply
+    if: needs.apply.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.pages.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/
+      - uses: actions/deploy-pages@v5
+        id: pages
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Compare *complete* public JSON, not workflow success alone
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json,sys,time
+          from pathlib import Path
+          from urllib.request import Request,urlopen
+          sys.path.insert(0,"scripts")
+          from ptitesondes_official_reconciliation import digest
+          current=json.loads(Path("docs/ptitesondes/sorties.json").read_text(encoding="utf-8"))
+          target=digest(current)
+          url="https://sarogal.github.io/Ondes-Catalogues/ptitesondes/sorties.json"
+          for attempt in range(15):
+              try:
+                  request=Request(url,headers={"User-Agent":"PO-Official-Reconciliation-Check/1.0"})
+                  with urlopen(request,timeout=20) as response:
+                      served=json.loads(response.read(9_000_001))
+                  if digest(served)==target:
+                      print("PUBLIC_JSON_EXACT_MATCH",len(served["events"]),target)
+                      break
+              except (OSError,ValueError,KeyError):
+                  pass
+              time.sleep(10)
+          else:
+              raise SystemExit("GitHub Pages did not match full corrected catalogue")
+          PY
