@@ -266,15 +266,23 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
             and type(limit) is int and 1 <= limit <= 6,
             "private approval ledger or bounded scan invalid")
     selected = eligible(registry, catalogue, today)
-    # Spend half the scarce live verification budget on clearly signalled
-    # metal/punk shows without starving genre-unknown acts: both pools get
-    # daily/slot rotation. Neither pool is a fixed list or admission authority.
+    # Prefer leads already carrying an event-scoped metal/punk hint: the
+    # broad OpenAgenda index also contains many nonmusic "metal" matches.
+    # At the normal four-check budget use 3 priority + 1 unknown. The
+    # unknown pool still rotates on every scheduled slot, so unknown bands
+    # are never permanently excluded. This is scheduling ONLY: neither pool
+    # grants trust and Publisher independently verifies every original event.
     priority = [x for x in selected
                 if x[2]["reviewBucket"] == "genre_tag_review"]
     unknown = [x for x in selected
                if x[2]["reviewBucket"] != "genre_tag_review"]
     tick = (today - dt.date(2026, 11, 22)).days * 3 + slot
-    priority_count = min(len(priority), max(1, limit // 2))
+    if limit == 1 and priority and unknown:
+        priority_quota = 0 if tick % 4 == 3 else 1
+    else:
+        priority_quota = (limit if not unknown else
+                          max(1, limit - max(1, limit // 4)))
+    priority_count = min(len(priority), priority_quota)
     unknown_count = min(len(unknown), limit - priority_count)
     chosen = (
         [priority[(tick * max(1, priority_count) + i) % len(priority)]

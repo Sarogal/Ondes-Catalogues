@@ -276,20 +276,39 @@ class OpenAgendaNewNamedSitePublisherTests(unittest.TestCase):
         with mock.patch.object(producer, "eligible", return_value=leads), \
              mock.patch.object(producer, "propose", side_effect=ValueError(
                  "test only, do not publish")):
-            for slot in (0, 1, 2):
-                returned, report = producer.build(
-                    observation(), geo_fixture.test_catalogue(),
-                    geo_fixture.before(), TODAY, slot=slot, limit=4)
-                self.assertEqual(returned, geo_fixture.before())
-                self.assertEqual(report["examined"], 4)
-                ids = [item["candidateId"] for item in
-                       report["candidateChecks"]]
-                self.assertEqual(len([i for i in ids
-                                      if i.startswith("genre_tag_review")]), 2)
-                self.assertEqual(len([i for i in ids
-                                      if i.startswith("genre_unknown")]), 2)
-                all_seen.update(ids)
+            for day in (TODAY, TODAY + dt.timedelta(days=1)):
+                for slot in (0, 1, 2):
+                    returned, report = producer.build(
+                        observation(), geo_fixture.test_catalogue(),
+                        geo_fixture.before(), day, slot=slot, limit=4)
+                    self.assertEqual(returned, geo_fixture.before())
+                    self.assertEqual(report["examined"], 4)
+                    ids = [item["candidateId"] for item in
+                           report["candidateChecks"]]
+                    self.assertEqual(len([i for i in ids
+                                          if i.startswith("genre_tag_review")]), 3)
+                    self.assertEqual(len([i for i in ids
+                                          if i.startswith("genre_unknown")]), 1)
+                    all_seen.update(ids)
+        # Every unknown lead is eventually visited, even with 75% priority.
         self.assertEqual(len(all_seen), 12)
+
+    def test_single_check_budget_still_visits_unknown_genres(self):
+        leads = [(DAY, "https://openagenda.com/shotgun/events/" + bucket,
+                  {"candidateId": bucket, "reviewBucket": bucket})
+                 for bucket in ("genre_tag_review", "genre_unknown")]
+        visited = set()
+        with mock.patch.object(producer, "eligible", return_value=leads), \
+             mock.patch.object(producer, "propose",
+                               side_effect=ValueError("test only")):
+            for delta in range(8):
+                _, report = producer.build(
+                    observation(), geo_fixture.test_catalogue(),
+                    geo_fixture.before(), TODAY + dt.timedelta(days=delta),
+                    slot=0, limit=1)
+                self.assertEqual(report["examined"], 1)
+                visited.add(report["candidateChecks"][0]["candidateId"])
+        self.assertEqual(visited, {"genre_tag_review", "genre_unknown"})
 
     def test_discovery_never_authorizes_known_venue_or_old_date(self):
         base = geo_fixture.test_catalogue()
