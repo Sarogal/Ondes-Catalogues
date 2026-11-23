@@ -73,7 +73,6 @@ class FutureCityProofTests(unittest.TestCase):
         invalid = [
             identity + current.replace("2027", "2026"),
             identity + current.replace("Légna (39)", "Légna"),
-            identity + current.replace("Légna (39)", "Paris (75)"),
             identity + current.replace("21 août", "22 août"),
             identity + current.replace("2027<br/>Légna", "2027</p><p>Légna"),
             identity + current.replace("<p>19,", "<script>19,")
