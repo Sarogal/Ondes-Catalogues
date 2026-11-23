@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Read-only SHA-256 qualification of four broadcaster-original Exclusively tiles.
+"""Read-only SHA-256 qualification of five broadcaster-original Exclusively tiles.
 
-The four exact image URLs were obtained via a live DOM inspection of the
+The five exact image URLs were obtained via a live DOM inspection of the
 corresponding you.radio station pages (23 Nov 2026), NOT guessed from names
 or generic genre logos. Exact browser-observed station page and image path
 are pinned. Verify actual image bytes and distinct SHA before any staging.
-One separate Led Zeppelin HITS channel is intentionally not included here.
+The Led Zeppelin HITS channel is separate from regular Led Zeppelin.
 """
 from __future__ import annotations
 
@@ -19,6 +19,10 @@ from audit_open_radio_artwork_inventory import probe_image
 ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/"radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json"
 BROADCASTER={
+ "go-station-000204":(
+    "ledzeppelinhits",
+    "https://you.radio/station/exclusivehits-led-zeppelin-hits",
+    "https://manager.uber.radio/static/uploads/station/068f1883-27ae-4e57-98d5-bd6e8cc9a10a.jpg"),
  "go-station-000272":(
     "deeppurple",
     "https://you.radio/station/exclusiveradio-deep-purple",
@@ -88,7 +92,7 @@ def verify(network:bool)->dict:
     valid=[r for r in records if r["status"]=="OFFICIAL_IMAGE_BYTES_VERIFIED"
            and r["width"]>=100 and r["height"]>=100]
     return {"scope":"TEST_V7_EXCLUSIVELY_4_BROADCASTER_ORIGINAL_TILES",
-            "requested_stations":4,
+            "requested_stations":5,
             "verified_distinct_official_image_sha":len(valid),
             "all_unique":len(hashes)==len([r for r in records if r.get("sha256")]),
             "main_or_test_pointer_edited":False,
