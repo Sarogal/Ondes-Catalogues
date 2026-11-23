@@ -1,0 +1,122 @@
+name: GO radio v8 — survey 90 missing radios' publisher-site logos (READ ONLY)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_missing_90_official_website_icons.py'
+      - '.github/workflows/go-radio-v8-90-official-homepage-probe.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publisher-homepage-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image parser
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Check exactly the 90 missing signed-source stations offline
+        run: |
+          python radio-catalog-lab/tools/audit_v8_missing_90_official_website_icons.py \
+            --shard ${{ matrix.shard }} --shards 8 \
+            --output "$RUNNER_TEMP/homepage-offline-${{ matrix.shard }}.json"
+      - name: Inspect first-party radio homepages, fetch image bytes and calculate SHA-256
+        run: |
+          python radio-catalog-lab/tools/audit_v8_missing_90_official_website_icons.py \
+            --shard ${{ matrix.shard }} --shards 8 --network \
+            --output "$RUNNER_TEMP/homepage-online-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-homepage-logos-${{ matrix.shard }}
+          path: ${{ runner.temp }}/homepage-online-${{ matrix.shard }}.json
+          retention-days: 14
+  aggregate-publisher-review-candidates:
+    needs: [publisher-homepage-images]
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: go-v8-homepage-logos-*
+          path: reports
+          merge-multiple: true
+      - name: Reconcile all 90 station IDs and reject generic repeated image SHA
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import defaultdict,Counter
+          import os,json
+          files=list(Path('reports').glob('homepage-online-*.json'))
+          assert len(files)==8,files
+          docs=[json.loads(p.read_text()) for p in files]
+          assert {d['shard'] for d in docs}==set(range(8))
+          assert all(d['scope']=='GO_V8_MISSING_90_OFFICIAL_HOMEPAGE_LOGO_DISCOVERY_READ_ONLY'
+                     and d['catalog_modified'] is False and d['publication_allowed'] is False
+                     and d['predecessor_signed_v7_sha']=='f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa'
+                     for d in docs)
+          stations=[s for d in docs for s in d['records']]
+          assert len(stations)==90 and len({s['go_station_id'] for s in stations})==90
+          sha_owners=defaultdict(set)
+          for station in stations:
+            for img in station['image_candidates']:
+              if img.get('sha_verified'):
+                sha_owners[img['sha256']].add(station['go_station_id'])
+          qualified=[]
+          for st in stations:
+            for candidate in st['image_candidates']:
+              if (candidate.get('sha_verified') is True and
+                  candidate['same_publisher_host'] is True and
+                  candidate.get('purpose')=='POSSIBLE_STATION_BRAND_LOGO' and
+                  candidate.get('width',0)>=100 and candidate.get('height',0)>=100 and
+                  len(sha_owners[candidate['sha256']])==1):
+                  qualified.append({
+                    'go_station_id':st['go_station_id'],
+                    'station_name':st['catalog_station_name'],
+                    'homepage':st['catalog_homepage'],
+                    'logo_url':candidate['image_url'],
+                    'sha256':candidate['sha256'],
+                    'byte_size':candidate['byte_size'],
+                    'width':candidate['width'],
+                    'height':candidate['height'],
+                    'mime_type':candidate['mime_type'],
+                    'status':'FIRSTPARTY_BRAND_IMAGE_SHA_NEEDS_FINAL_IDENTITY_REVIEW',
+                    'signed':False,'published':False})
+          out={'scope':'GO_V8_90_OFFICIAL_SITE_BRAND_IMAGE_TRIAGE',
+               'missing_stations':90,
+               'pages_verified':sum(st['source_page_verified'] for st in stations),
+               'unique_firstparty_logo_candidates':qualified,
+               'not_auto_approved':True,
+               'homepage_reasons':dict(Counter(st.get('homepage_probe_status','')
+                                                for st in stations)),
+               'publish_allowed':False,
+               'all_records':stations}
+          Path('GO-v8-90-firstparty-images-audit.json').write_text(
+            json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('GO_V8_OFFICIAL_HOMEPAGE_IMAGE_AUDIT',
+                'pages_verified='+str(out['pages_verified']),
+                'brand_candidates='+str(len(qualified)),
+                'missing_stations=90')
+          for x in qualified:
+            print('VERIFIED_FIRSTPARTY_BRAND_CANDIDATE',x['go_station_id'],
+                  x['station_name'],x['sha256'],x['logo_url'])
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as f:
+            f.write('# GO v8 : 90 radios sans logo, vérification des sources officielles\n\n')
+            f.write(f'- Sites d’origine vérifiés : **{out["pages_verified"]}/90**\n')
+            f.write(f'- Images de marque de première partie avec SHA à examiner : **{len(qualified)}**\n')
+            f.write('- **Pas de publication de catalogue.**\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-90-firstparty-website-image-triage-read-only
+          path: GO-v8-90-firstparty-images-audit.json
+          retention-days: 14
