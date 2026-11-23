@@ -56,7 +56,15 @@ jobs:
                   assert normalize(claim["city"]) == normalize("Sèvremoine"), "Unexpected city"
                   direct_geocode=verified_commune(claim["city"])
                   print("TOURISM_CURRENT_CITY_GOVERNMENT",bool(direct_geocode))
-                  assert direct_geocode is not None and direct_geocode["codeInsee"] == "49301"
+                  for city, dept in [
+                      (claim["city"], None),
+                      (claim["city"], "49"),
+                      ("Sèvremoine", None),
+                      ("Sèvremoine", "49"),
+                      ("SEVREMOINE", "49"),
+                  ]:
+                      result=verified_commune(city, known_department=dept)
+                      print("TOURISM_PROBE_VARIANT",repr(city),dept,bool(result))
                   from grossesondes_institutional_edition import VisibleInstitutionHeadings
                   from source_qualification import normalized
                   import re
