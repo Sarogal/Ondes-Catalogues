@@ -56,6 +56,27 @@ def digest(value):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def unwrap_exact_public_v2_event(payload, uid):
+    """Handle either documented raw event or exact event envelope, not both.
+
+    A wrapper grants no approval. Accept only a single, unambiguous event UID
+    equal to the independently resolved official requested UID.
+    """
+    if type(uid) is not int or not 0 < uid < 10**12:
+        raise ValueError("invalid_requested_source_event_uid")
+    if type(payload) is not dict:
+        raise ValueError("invalid_official_v2_event_envelope")
+    if type(payload.get("uid")) is int:
+        if payload["uid"] != uid or "event" in payload:
+            raise ValueError("conflicting_official_v2_event_uid")
+        return payload
+    nested = payload.get("event")
+    if (type(nested) is not dict or type(nested.get("uid")) is not int
+            or nested["uid"] != uid or "uid" in payload):
+        raise ValueError("untrusted_official_v2_event_envelope")
+    return nested
+
+
 def _status(source):
     if not isinstance(source, dict):
         return None
@@ -433,7 +454,9 @@ def main():
         row = agendas[slug]
         if row.get("slug") != slug or type(row.get("uid")) is not int:
             raise ValueError("official_agenda_identity_changed")
-        return {"agenda": row, "event": read_direct_v2(row["uid"], uid, api_key)}
+        live_record = read_direct_v2(row["uid"], uid, api_key)
+        return {"agenda": row,
+                "event": unwrap_exact_public_v2_event(live_record, uid)}
     result, audit, _ = reconcile(
         base, args.date, args.slot, read_event=live)
     changed = bool(audit["operations"])
