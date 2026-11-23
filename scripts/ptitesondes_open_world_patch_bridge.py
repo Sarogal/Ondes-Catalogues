@@ -125,6 +125,7 @@ def _safe_dossier(dossier, today):
 
 def prepare_open_world_patch(
         reference, published, private_patch, today, public_key, *,
+        as_of_utc=None,
         agenda_reader=read_direct_agenda_v2,
         event_reader=read_direct_v2,
         directory_reader=fetch_dila,
@@ -271,7 +272,8 @@ def prepare_open_world_patch(
                                 longitude=verified_place["longitude"]))
                 direct, reason = admit_live_openagenda(
                     admission_lead, dossier["date_start"], agenda,
-                    admission_event, reference, published, today)
+                    admission_event, reference, published, today,
+                    as_of_utc=as_of_utc)
                 if direct is None:
                     held(reason)
                     continue
