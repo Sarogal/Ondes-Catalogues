@@ -39,6 +39,54 @@ def catalogue(row=ROW):
 
 
 class FutureCityProofTests(unittest.TestCase):
+    def test_signed_current_edition_date_and_department_locality_hero(self):
+        # Realistic official event-site structure: year and municipality in
+        # one paragraph; edition branding elsewhere in the same homepage.
+        row = dict(ROW, slug="les-gueules-de-bois-2027",
+                   name="Les Gueules de Bois 2027",
+                   startDate="2027-08-19", endDate="2027-08-21",
+                   officialSite="https://festivalgueulesdebois.com/",
+                   department=None)
+        site = row["officialSite"]
+        html = (
+            "<main><p>7e édition</p>"
+            "<h2>Et cet été, on remet ça.</h2>"
+            "<p>19, 20 &amp; 21 AOÛT 2027<br/>Légna (39) · Jura</p>"
+            "<section><p>Les Gueules de Bois célèbrent le punk et le metal."
+            "</p></section></main>")
+        self.assertEqual(exact_edition_city(html, row), {
+            "slug": row["slug"], "city": "Légna", "source": site})
+        self.assertEqual(exact_city_from_official_site(
+            row, fetcher=lambda _: html)["city"], "Légna")
+        self.assertIsNone(exact_edition_city(
+            html, dict(row, department="75")))
+        self.assertIsNone(exact_edition_city(
+            html, dict(row, city="Paris")))
+
+    def test_dated_locality_hero_never_copies_historic_or_loose_town(self):
+        row = dict(ROW, slug="les-gueules-de-bois-2027",
+                   name="Les Gueules de Bois 2027",
+                   startDate="2027-08-19", endDate="2027-08-21",
+                   officialSite="https://festivalgueulesdebois.com/")
+        current = "<p>19, 20 &amp; 21 août 2027<br/>Légna (39) · Jura</p>"
+        identity = "<h1>Les Gueules de Bois</h1>"
+        invalid = [
+            identity + current.replace("2027", "2026"),
+            identity + current.replace("Légna (39)", "Légna"),
+            identity + current.replace("Légna (39)", "Paris (75)"),
+            identity + current.replace("21 août", "22 août"),
+            identity + current.replace("2027<br/>Légna", "2027</p><p>Légna"),
+            identity + current.replace("<p>19,", "<script>19,")
+            .replace("Jura</p>", "Jura</script>"),
+            current,  # no festival identity anywhere on the same official page
+        ]
+        for html in invalid:
+            with self.subTest(html=html[:100]):
+                self.assertIsNone(exact_edition_city(html, row))
+        two_towns = identity + current.replace(
+            "Légna (39)", "Légna (39) ou Dole (39)")
+        self.assertIsNone(exact_edition_city(two_towns, row))
+
     def test_confirmed_future_edition_without_dates_can_prove_a_city(self):
         from future_city_preflight import (
             undated_future_year, eligible_undated,
