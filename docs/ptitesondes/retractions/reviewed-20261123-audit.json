@@ -1,0 +1,317 @@
+{
+  "schema": "ptitesondes.reviewed_retraction_audit.v1",
+  "reviewed_on": "2026-11-23",
+  "applied_at": "2026-11-23T12:56:27+01:00",
+  "before_count": 723,
+  "after_count": 672,
+  "catalogue_before_sha256": "327de78c6543ec843c2d0604b869905c87e7a23d915fb2c68bcbecaf3b9fa1cc",
+  "catalogue_after_sha256": "766bbe65fcbb3720c03f4b9adf1780e5d798a478e4208bed743a919db9702e85",
+  "withdrawn": [
+    {
+      "id": "openagenda-94896721-2026-12-19",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-20",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-21",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-22",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-23",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-24",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-25",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-26",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-27",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-28",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-29",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-30",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2026-12-31",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-01",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-02",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-03",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-04",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-05",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-06",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-07",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-08",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-09",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-10",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-11",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-12",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-13",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-14",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-15",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-16",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-17",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-18",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-19",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-20",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-21",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-22",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-23",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-24",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-25",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-26",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-27",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-28",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-29",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-30",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-01-31",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-01",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-02",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-03",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-04",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-05",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-06",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    },
+    {
+      "id": "openagenda-94896721-2027-02-07",
+      "reason_code": "evergreen_commercial_studio_availability",
+      "evidence_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio",
+      "original_source_url": "https://openagenda.com/que-faire-a-paris/events/94896721_creez-et-enregistrez-votre-musique-en-studio"
+    }
+  ]
+}
