@@ -762,19 +762,19 @@ def _signed_tourism_current_postal_city(html, row):
     # Only the bounded event introduction, not the footer, other events, or
     # an unrelated geolocation widget on the same 100 kB tourist page.
     intro = " ".join(" ".join(parser.parts[begin:end_offset]).split())[:500]
-    date_label = re.search(r"\\b" + str(start.year) + r"\\b", intro)
+    date_label = re.search(r"\b" + str(start.year) + r"\b", intro)
     if date_label is None:
         return None
     postcodes = []
     postal = re.compile(
-        r"(?<!\\d)(?:0[1-9]|[1-9][0-9])\\d{3}\\s+"
+        r"(?<!\d)(?:0[1-9]|[1-9][0-9])\d{3}\s+"
         r"([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{2,65})")
     for match in postal.finditer(intro):
         # The postal town must describe THIS visible dated event, not a
         # neighbouring venue card or a historical office address.
         if not 0 <= match.start() - date_label.start() <= 200:
             continue
-        town = re.sub(r"\\s+", " ", match.group(1)).strip(" -'’")
+        town = re.sub(r"\s+", " ", match.group(1)).strip(" -'’")
         if not 3 <= len(town) <= 65 or not re.search(r"[A-ZÀ-ÖØ-Þ]{3}", town):
             continue
         postcodes.append(town.title())
