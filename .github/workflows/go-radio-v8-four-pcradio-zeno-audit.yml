@@ -1,0 +1,39 @@
+name: GO v8 — PCRadio and Zeno original channel image SHA audit (read-only)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_four_pcradio_zeno_art.py'
+      - '.github/workflows/go-radio-v8-four-pcradio-zeno-audit.yml'
+permissions:
+  contents: read
+jobs:
+  check-four-artist-and-platform-channel-logos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Verify exact radio identity and streams against v8 catalogue offline
+        run: python radio-catalog-lab/tools/audit_v8_four_pcradio_zeno_art.py --output "$RUNNER_TEMP/offline.json"
+      - name: Fetch publisher station art from exact channel URLs and SHA bytes
+        run: python radio-catalog-lab/tools/audit_v8_four_pcradio_zeno_art.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Assert no signing or publication
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          d=json.loads((Path(os.environ['RUNNER_TEMP'])/'online.json').read_text())
+          assert d['scope']=='GO_V8_FOUR_PCRADIO_ZENO_CHANNEL_IMAGES_READ_ONLY'
+          assert d['count']==4 and not d['published'] and not d['signed']
+          print('GO_V8_FOUR_PLATFORM_CHANNEL_ART_ORIGINAL_SHA_AUDITED')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-four-pcradio-zeno-sha-source-artifacts
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
