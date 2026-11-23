@@ -41,7 +41,8 @@ PUBLISHED_NOTES = (
 # Positive future-edition phrases, not loose year hints or future speculation.
 # These are structural phrases valid for ANY festival, never a named roster.
 FUTURE = (
-    r"\b(?:edition(?:\s+[0-9]{1,2})?\s+"
+    r"\b(?:edition(?:\s+[0-9]{1,2})?\s*"
+    r"(?:[-–—·•:]\s*)?"
     r"(?:(?:en|ete|printemps|automne|hiver)\s+)?YEAR_HERE"
     r"|prochaine\s+edition\s+(?:en\s+)?YEAR_HERE"
     r"|rendez\s+vous\s+en\s+YEAR_HERE"
