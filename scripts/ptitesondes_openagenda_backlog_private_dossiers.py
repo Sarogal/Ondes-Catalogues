@@ -17,6 +17,7 @@ from urllib.request import Request, build_opener
 
 from proof import norm
 from ptitesondes_openagenda_national_event_research import _french_text
+from ptitesondes_oa_evergreen_on_demand import ambiguous_on_demand_studio_series
 from ptitesondes_openagenda_public_agenda_index import NoRedirect
 from ptitesondes_openagenda_v2_direct_evidence import (
     _valid_public_read_key, read_direct_v2,
@@ -33,6 +34,7 @@ MAX_BACKLOG = 4000
 MAX_ATTEMPTS = 24  # network budget, never an editorial whitelist
 MAX_RESPONSE = 120_000
 MAX_TIMINGS = 800
+MAX_EVERGREEN_RECHECKS = 8  # live UID reads per saturated cycle, not a session limit
 SOURCE_PATH = re.compile(
     r"^/(?:fr/)?([a-z0-9][a-z0-9-]{0,100})/events/"
     r"([a-z0-9][a-z0-9_-]{0,220})/?$"
@@ -175,6 +177,68 @@ def live_research_dossier(identity, today, agenda, event):
             "official_event_url": exact, "official_venue_url": exact}
 
 
+def reclaim_live_confirmed_on_demand(queue, public_key, agenda_reader, event_reader):
+    """Free bounded Publisher slots only for live-confirmed commercial booking series.
+
+    The private patch is a temporary research queue, not the durable backlog.
+    Re-read the official agenda and UID before dropping any queued request;
+    failures or ambiguous evidence preserve every request. No organizer, venue,
+    territory or number-of-performances denylist is involved. A genuinely
+    scheduled fifty-session youth event remains eligible.
+    """
+    grouped = {}
+    for item in queue:
+        lead = item.get("lead") if type(item) is dict else None
+        if type(lead) is not dict:
+            continue
+        identity = (lead.get("agenda_slug"), lead.get("agenda_uid"),
+                    lead.get("event_uid"))
+        if (type(identity[0]) is not str or type(identity[1]) is not int
+                or type(identity[2]) is not int):
+            continue
+        grouped[identity] = grouped.get(identity, 0) + 1
+    confirmed = set()
+    # High-volume UIDs first: one official read can reclaim dozens of slots.
+    # The eight-read bound limits network work, never an event's sessions.
+    ranked = sorted(grouped, key=lambda x: (-grouped[x], x))
+    for slug, agenda_uid, event_uid in ranked[:MAX_EVERGREEN_RECHECKS]:
+        try:
+            agenda = agenda_reader(slug, public_key)
+            if (type(agenda) is not dict
+                    or agenda.get("slug") != slug
+                    or agenda.get("uid") != agenda_uid):
+                continue
+            event = event_reader(agenda_uid, event_uid, public_key)
+            if (type(event) is dict and "uid" not in event
+                    and type(event.get("event")) is dict
+                    and event["event"].get("uid") == event_uid):
+                event = event["event"]
+            if (type(event) is not dict or event.get("uid") != event_uid
+                    or event.get("state") != 2
+                    or event.get("removed") is True
+                    or type(event.get("timings")) is not list):
+                continue
+            source_days = {
+                slot["begin"][:10]: True for slot in event["timings"]
+                if type(slot) is dict and type(slot.get("begin")) is str
+            }
+            if ambiguous_on_demand_studio_series(event, source_days):
+                confirmed.add((slug, agenda_uid, event_uid))
+        except (OSError, TimeoutError, ValueError, KeyError,
+                TypeError, UnicodeError, OverflowError):
+            continue
+
+    if not confirmed:
+        return queue, 0
+    remaining = [
+        item for item in queue
+        if (item.get("lead", {}).get("agenda_slug"),
+            item.get("lead", {}).get("agenda_uid"),
+            item.get("lead", {}).get("event_uid")) not in confirmed
+    ]
+    return remaining, len(queue) - len(remaining)
+
+
 def fair_backlog_identity_order(identities):
     """Rotate between agendas and original event UIDs before bounded API reads.
 
@@ -227,6 +291,14 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             or type(item.get("date_start")) is not str
             or item["date_start"] >= today.isoformat())
     ]
+    # The old patch may be saturated by already-refused commercial booking
+    # availabilities. Reclaim capacity only after fresh exact UID-bound
+    # OpenAgenda evidence confirms the SAME generic Publisher hold. This
+    # changes no published data and never deletes the durable private leads.
+    reclaimed = 0
+    if len(future_pending) >= MAX_DOSSIERS:
+        future_pending, reclaimed = reclaim_live_confirmed_on_demand(
+            future_pending, key, agenda_reader, event_reader)
     current = dict(patch, open_world_research=future_pending)
     combined = attach_research_dossiers(
         current, [], today, published_ids=already)
@@ -303,6 +375,7 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             0, len(pending) + len(proposals) - MAX_DOSSIERS),
         "source_read_proposals": len(proposals),
         "queued_total": len(result["open_world_research"]),
+        "live_confirmed_commercial_slots_reclaimed": reclaimed,
         "held_for_publisher_or_network": holds, "public_writes": 0,
     }
 
