@@ -908,21 +908,21 @@ jobs:
             -f mode=publish
           echo 'Publication demandée après contrôle du stockage privé ; la synchronisation décide seule des ajouts.' >> "$GITHUB_STEP_SUMMARY"
 
-  # One-off, exact-SHA offline gate for the private discovery PR. PR workflows
-  # never receive private read tokens; this only runs after trusted MAIN push.
-  # The source checkout has no persisted credentials and tests get no secrets.
-  test-private-ods-pr:
+  # Keep PRIVATE main collector tests working despite private runner
+  # billing/availability issues. Secrets are used solely for read-only checkout
+  # on trusted PUBLIC main pushes, never on PR code or inside test processes.
+  test-private-ods-main:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     permissions:
       contents: read
     steps:
-      - name: Check out exact reviewed private discovery commit without persisting credentials
+      - name: Read approved private main collector without persisting credentials
         uses: actions/checkout@v4
         with:
           repository: Sarogal/PtitesOndes
-          ref: e80cbda64511de144f50c4d3d5edb7bfb9ff9287
+          ref: main
           token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
           path: private-ods-test
           sparse-checkout: |
@@ -936,7 +936,7 @@ jobs:
         run: |
           set -euo pipefail
           if python -m unittest discover -s private-ods-test/automation -p 'test_outings_intake.py' -v > "$RUNNER_TEMP/ods-private-test.log" 2>&1; then
-            echo "Private ODS discovery tests passed on the exact reviewed commit." >> "$GITHUB_STEP_SUMMARY"
+            echo "Private ODS discovery tests passed on private main." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "::error::Private ODS discovery offline tests failed; confidential diagnostics withheld."
             exit 1
