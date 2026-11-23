@@ -538,6 +538,70 @@ def _current_edition_evergreen_commune(html, row):
     return next(iter(facts)) if len(facts) == 1 else None
 
 
+
+def _city_from_official_title_plus_named_current_dates(html, row):
+    """A title identifying a festival's town plus a named current-date claim.
+
+    Some official festival homepages use a site-wide SEO title saying that
+    the festival takes place in Town (département), while their visible
+    announcement identifies the next edition and exact dates. Neither the
+    title alone nor an archive's dates can authorize the location.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if start is None or end is None or start.year != end.year:
+        return None
+    words = re.findall(r"[a-z0-9]+", re.sub(
+        r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    identity = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+        + r"(?![a-z0-9])")
+    title = _EditionTitle()
+    parser = VisibleParagraphs()
+    try:
+        title.feed(html)
+        title.close()
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    raw_title = " ".join(" ".join(title.parts).split())
+    if (not 20 <= len(raw_title) <= 250
+            or re.search(r"\bfestivals?\b", fold(raw_title)) is None
+            or re.search(r"(?<!\d)20[2-4]\d(?!\d)", raw_title)):
+        return None
+    cities = set()
+    for m in re.finditer(
+            r"\bà\s+([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+){0,3})"
+            r"\s*\((\d{2,3}|2[AB])(?:-[^)]{1,48})?\)", raw_title):
+        city = _name(m.group(1))
+        code = m.group(2)
+        if city and row.get("department") in (None, "", code):
+            cities.add(city)
+    if len(cities) != 1:
+        return None
+    found = False
+    for raw in " ".join(parser.parts).split(VisibleParagraphs.SEP):
+        if not 0 < len(raw) <= 1100:
+            continue
+        paragraph = " ".join(fold(raw).split())
+        if not identity.search(paragraph):
+            continue
+        if (CANCEL.search(paragraph) or
+                {int(x) for x in re.findall(r"(?<!\d)20[2-4]\d(?!\d)",
+                                              paragraph)} != {start.year}):
+            continue
+        ranges = {(a, b) for _, _, a, b in
+                  explicit_ranges(paragraph, start.year)}
+        if ranges and dominant_visible_range(ranges) != (start, end):
+            return None
+        if dominant_visible_range(ranges) == (start, end):
+            found = True
+    return next(iter(cities)) if found else None
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -564,11 +628,12 @@ def exact_edition_city(html, row):
     visible = _city_visible(html, row)
     title = _city_from_dated_title(html, row) if start is not None else None
     evergreen = _current_edition_evergreen_commune(html, row)
-    evidence = [c for c in (structured, visible, title, evergreen)
+    title_place = _city_from_official_title_plus_named_current_dates(html, row)
+    evidence = [c for c in (structured, visible, title, evergreen, title_place)
                 if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
-    city = structured or visible or title or evergreen
+    city = structured or visible or title or evergreen or title_place
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
