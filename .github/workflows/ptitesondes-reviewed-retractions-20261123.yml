@@ -8,9 +8,8 @@ on:
       - 'tests/test_ptitesondes_oa_evergreen_on_demand.py'
       - 'scripts/ptitesondes_oa_evergreen_on_demand.py'
       - 'scripts/ptitesondes_oa_first_party_admission.py'
-      - 'scripts/ptitesondes_reviewed_retractions.py'
       - 'config/ptitesondes-reviewed-retractions-20261123.json'
-      - '.github/workflows/ptitesondes-reviewed-retractions.yml'
+      - '.github/workflows/ptitesondes-reviewed-retractions-20261123.yml'
   push:
     branches: [main]
     paths:
