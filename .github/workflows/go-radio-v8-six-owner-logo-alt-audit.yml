@@ -1,0 +1,40 @@
+name: GO TEST radio v8 — six alternate owner logo HTTPS routes read-only audit
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_six_owner_image_alt_routes.py'
+      - '.github/workflows/go-radio-v8-six-owner-logo-alt-audit.yml'
+permissions:
+  contents: read
+jobs:
+  six-broadcaster-image-retries-with-safe-url-checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded original image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Validate six immutable station identities offline
+        run: python radio-catalog-lab/tools/audit_v8_six_owner_image_alt_routes.py --output "$RUNNER_TEMP/offline.json"
+      - name: Attempt verified broadcaster image sources via standard browser User-Agent
+        run: python radio-catalog-lab/tools/audit_v8_six_owner_image_alt_routes.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Guard read-only experimental report and six exact stations
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"])/"online.json").read_text())
+          assert r["scope"]=="GO_V8_SIX_RETRY_OWNER_LOGOS_READ_ONLY"
+          assert r["count"]==6 and len(r["records"])==6
+          assert r["signed"] is False and r["published"] is False
+          print("SIX_ALTERNATE_BROADCASTER_IMAGE_ROUTES_READ_ONLY")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-six-owner-image-alternate-https-sha-evidence
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
