@@ -1,0 +1,41 @@
+name: GO radio v8 — verify BeGood and BloodStream original owner imagery
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_begood_bloodstream_owner_images.py'
+      - '.github/workflows/go-radio-v8-begood-bloodstream-source.yml'
+permissions:
+  contents: read
+jobs:
+  read-only-station-brand-source-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned safe SVG, PNG decoders
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1'
+      - name: Verify publisher station identity and stream before networking
+        run: python radio-catalog-lab/tools/audit_v8_begood_bloodstream_owner_images.py --output "$RUNNER_TEMP/offline.json"
+      - name: Fetch exact owner-brand image bytes and derived PNG SHA
+        run: python radio-catalog-lab/tools/audit_v8_begood_bloodstream_owner_images.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Assert signed and public releases remain unchanged
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'])/'online.json'
+          x=json.loads(p.read_text())
+          assert x['scope']=='GO_V8_TWO_OWNER_BRAND_BEG0OD_BLOODSTREAM_READ_ONLY'
+          assert x['targets']==2 and len(x['rows'])==2
+          assert x['signed'] is False and x['published'] is False
+          print('GO_V8_TWO_OWNER_BRAND_READ_ONLY_PASS')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-two-owner-brands-original-sha-evidence
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
