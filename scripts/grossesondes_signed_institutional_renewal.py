@@ -168,6 +168,10 @@ def current_edition_dates(html, parent, year):
                 or not any(a <= schedule[0] <= b for a, b in visible_ranges)):
             return None
         start, end = schedule[0], schedule[-1]
+        # A first-day teaser plus an advertised two-day pass is not an
+        # independently proven single-day edition.
+        if start == end and TWO_DAYS.search(section):
+            return None
         # Any other fully specified date range must be contained in this
         # explicit schedule, not silently accepted as a contradiction.
         if any(a < start or b > end for a, b in visible_ranges):
