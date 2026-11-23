@@ -157,7 +157,13 @@ def _city_visible(html, row):
                     r"\s*\((\d{2,3}|2[AB])\)",
                     raw):
                 candidate, department = match.group(1), match.group(2)
-                if (row.get("department") not in (None, "", department)
+                # Two different locality/dept annotations in the same
+                # date hero are contradictory: never pick the first match.
+                locality_count = len(re.findall(
+                    r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+                    r"\s*\((?:\d{2,3}|2[AB])\)", raw))
+                if (locality_count != 1
+                        or row.get("department") not in (None, "", department)
                         or re.search(
                             r"\b(?:Festival|France|Vente|Billetterie|"
                             r"Programmation)\b", candidate)):
