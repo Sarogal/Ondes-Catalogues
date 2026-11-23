@@ -1,0 +1,40 @@
+name: GO radio TEST v8 — four exact original metal logos read-only SHA audit
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_four_further_metal_logos.py'
+      - '.github/workflows/go-radio-v8-four-further-metal-audit.yml'
+permissions:
+  contents: read
+jobs:
+  inspect-four-original-broadcaster-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install safe bounded image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Check all station names, homepages and stream identities offline
+        run: python radio-catalog-lab/tools/audit_v8_four_further_metal_logos.py --output "$RUNNER_TEMP/offline.json"
+      - name: Independently download official image files and record original SHA-256
+        run: python radio-catalog-lab/tools/audit_v8_four_further_metal_logos.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Assert experiment remains entirely read-only
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ["RUNNER_TEMP"])/"online.json").read_text())
+          assert d["scope"]=="GO_V8_FOUR_FURTHER_METAL_STATION_ORIGINALS_READ_ONLY"
+          assert d["count"]==4 and len(d["records"])==4
+          assert d["signed"] is False and d["published"] is False
+          print("GO_V8_NEXT_FOUR_ORIGINAL_RADIO_LOGOS_READ_ONLY")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-four-further-original-metal-radio-logo-shas
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
