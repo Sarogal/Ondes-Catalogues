@@ -43,6 +43,7 @@ def main() -> None:
         logo = station["logo"]
         sha = spec["sha256"]
         assert sha == logo["sha256"] and logo["asset_id"] == "sha256:" + sha
+        assert (logo["width"], logo["height"]) == ((1600, 900) if sid == "go-station-000042" else (1024, 1024))
         suffix = EXT[logo["mime_type"]]
         assert logo["url"] == PREFIX + sha + suffix
         content = (ART / (sha + suffix)).read_bytes()
