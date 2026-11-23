@@ -1,0 +1,86 @@
+name: GO radio v6 TEST — stage 14 verified BOB SHA images in development ONLY
+on:
+  push:
+    branches:
+      - feature/go-radio-v6-dedupe-logo-audit-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_verified_bob_official_sha_v6.py'
+      - '.github/workflows/go-radio-v6-bob-sha-development-staging.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-unsigned-in-development-branch:
+    if: github.ref == 'refs/heads/feature/go-radio-v6-dedupe-logo-audit-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image and catalog validators
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Retrieve exactly the SHA-verified official images from prior read-only CI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/bob-official"
+          gh run download 45113298003 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-radio-v6-bob-14-official-tiles-sha-unpublished \
+            --dir "$RUNNER_TEMP/bob-official"
+      - name: Validate source, decoded image SHA and 19 exact channel associations
+        run: |
+          python radio-catalog-lab/tools/stage_verified_bob_official_sha_v6.py \
+            --artifact-root "$RUNNER_TEMP/bob-official"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from jsonschema import Draft202012Validator, FormatChecker
+          root=Path(".")
+          orig=json.loads((root/"radio-catalog-lab/full-staging/UNSIGNED-radio-v6-radcap-3-duplicate-families-20261123.json").read_text())
+          path=root/"radio-catalog-lab/full-staging/UNSIGNED-radio-v6-radcap-bob-3-duplicate-families-20261123.json"
+          new=json.loads(path.read_text())
+          schema=json.loads((root/"radio-catalog-lab/schemas/radio_catalog_v1.schema.json").read_text())
+          errors=list(Draft202012Validator(schema,format_checker=FormatChecker()).iter_errors(new))
+          assert not errors,[(x.json_path,x.message) for x in errors[:3]]
+          assert [s["go_station_id"] for s in orig["stations"]]==[s["go_station_id"] for s in new["stations"]]
+          assert orig["tombstones"]==new["tombstones"]
+          before={s["go_station_id"]:s for s in orig["stations"]}
+          after={s["go_station_id"]:s for s in new["stations"]}
+          changed=[id_ for id_ in before if before[id_] != after[id_]]
+          assert len(changed)==19
+          assert all(before[id_]["logo"] is None and after[id_]["logo"] is not None for id_ in changed)
+          for id_ in changed:
+              old=dict(before[id_]); fresh=dict(after[id_]); fresh["logo"]=None
+              assert old==fresh,id_
+          assert len(list((root/"grossesondes/radio-test-v2/artwork/staging-unpublished").glob("*.webp")))==14
+          assert not (root/"grossesondes/radio-test-v2/current-v6.json").exists()
+          assert json.loads((root/"grossesondes/radio-test-v2/current.json").read_text())["release_sequence"]==5
+          print("GO_BOB_OFFICIAL_IMAGES_STAGE_SCHEMA_AND_IDENTITY_OK")
+          PY
+      - name: Commit to ONLY the new unsigned audit branch (never TEST v5 or main)
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        run: |
+          test "$GITHUB_REF_NAME" = 'feature/go-radio-v6-dedupe-logo-audit-20261123'
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v6-radcap-bob-3-duplicate-families-20261123.json \
+            grossesondes/radio-test-v2/artwork/staging-unpublished/
+          python - <<'PY'
+          import subprocess
+          allowed="radio-catalog-lab/full-staging/UNSIGNED-radio-v6-radcap-bob-3-duplicate-families-20261123.json"
+          assets="grossesondes/radio-test-v2/artwork/staging-unpublished/"
+          files=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          assert len(files)==15,files
+          assert files.count(allowed)==1
+          assert all(f==allowed or (f.startswith(assets) and f.endswith(".webp")) for f in files)
+          assert len({f for f in files if f.startswith(assets)})==14
+          print("ALLOWLIST_ONLY_14_SHA_OBJECTS_PLUS_UNSIGNED_DRAFT")
+          PY
+          git -c user.name='Grosses Ondes CI TEST Auditor' \
+            -c user.email='radio-audit@localhost.invalid' \
+            -c commit.gpgsign=false commit -m 'test(artwork): stage 14 official BOB SHA objects and unsigned 19-logo v6 candidate'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          echo "BOB_SHA_OBJECTS_STAGED_IN_DEV_BRANCH_ONLY"

@@ -1,0 +1,39 @@
+name: GO radio v6 TEST — RadCap SHA logo + signed-identity dedupe preflight
+on:
+  push:
+    branches:
+      - feature/go-radio-v6-dedupe-logo-audit-20261123
+    paths:
+      - 'radio-catalog-lab/full-staging/UNSIGNED-radio-v6-radcap-3-duplicate-families-20261123.json'
+      - 'radio-catalog-lab/schemas/radio_catalog_v1.schema.json'
+      - 'radio-catalog-lab/tools/radio_catalog_guard.py'
+      - 'radio-catalog-lab/tools/test_go_radio_v6_dedupe_logo_audit.py'
+      - '.github/workflows/go-radio-v6-dedupe-logo-preflight.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-draft-v6-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install schema and Ed25519 verification dependencies
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Verify REAL signed v5 predecessor then validate UNSIGNED v6 draft
+        run: python radio-catalog-lab/tools/test_go_radio_v6_dedupe_logo_audit.py
+      - name: Confirm the active TEST pointer was never changed on this branch
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('grossesondes/radio-test-v2')
+          pointer = json.loads((root/'current.json').read_text(encoding='utf-8'))
+          assert pointer['release_sequence'] == 5
+          assert pointer['content_sha256'] == 'dfa7543e33cfe4a1937acc78ba78fa388b019fa9de2e514ec856df1be38637e0'
+          assert not (root/'current-v6.json').exists()
+          print('TEST_ACTIVE_V5_POINTER_UNTOUCHED; NO v6 SIGNATURE OR PUBLICATION')
+          PY
