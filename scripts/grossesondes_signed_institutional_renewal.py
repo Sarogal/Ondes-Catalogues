@@ -94,8 +94,12 @@ def candidates_from_signed_history(history, published, today, limit=MAX_PROBES,
         year = max(current.year + 1, old_year + 1)
         if year > current.year + 2 or base + "-" + str(year) in published_slugs:
             continue
-        for url in signed_tourism_urls(parent):
-            choices.append((parent, url, year))
+        urls = signed_tourism_urls(parent)
+        if urls:
+            # One source per historical festival per run. Several signed
+            # institutional citations cannot create duplicate additions;
+            # rotate their alternatives instead of privileging one forever.
+            choices.append((parent, urls[tick % len(urls)], year))
     choices.sort(key=lambda row: (row[0]["slug"], row[1]))
     if not choices or not limit:
         return []
