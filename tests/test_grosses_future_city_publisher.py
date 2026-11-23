@@ -74,6 +74,31 @@ class CityPublisherTests(unittest.TestCase):
         self.assertIsNone(private_city_report("TOKEN",
                           lambda *_: {"encoding": "base64", "content": "badbase64"}))
 
+    def test_github_api_line_wrapped_base64_reports_are_decoded_strictly(self):
+        raw = json.dumps(review()).encode("utf-8")
+        encoded = base64.b64encode(raw).decode("ascii")
+        # Real GitHub Contents responses add transport newlines. A single
+        # wrapped line must not make the Publisher report unavailable.
+        wrapped = "\n".join(
+            encoded[i:i + 60] for i in range(0, len(encoded), 60)) + "\n"
+        for value in (wrapped, wrapped.replace("\n", "\r\n")):
+            with self.subTest(wrapped=value.count("\n")):
+                report = private_city_report(
+                    "TOKEN", lambda *_: {
+                        "encoding": "base64", "content": value,
+                    })
+                self.assertEqual(report, review())
+        for corrupted in (
+            wrapped.replace("\n", "\t", 1),
+            wrapped.replace("\n", "!", 1),
+            "A" * 40 + "\r" + "B" * 40,
+        ):
+            with self.subTest(corrupted=repr(corrupted[:50])):
+                self.assertIsNone(private_city_report(
+                    "TOKEN", lambda *_: {
+                        "encoding": "base64", "content": corrupted,
+                    }))
+
     def test_undated_future_edition_can_get_signed_town_centre_pin(self):
         from grossesondes_cloud_sync import safe_target
         undated = {
