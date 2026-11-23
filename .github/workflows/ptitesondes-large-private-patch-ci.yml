@@ -9,6 +9,10 @@ on:
       - 'scripts/ptitesondes_openagenda_backlog_private_dossiers.py'
       - 'tests/test_private_intake_large_blob.py'
       - 'tests/test_ptitesondes_large_private_research_carry.py'
+      - 'tests/test_ptitesondes_oa_evergreen_on_demand.py'
+      - 'tests/test_ptitesondes_reviewed_retractions_20261123.py'
+      - 'scripts/ptitesondes_oa_evergreen_on_demand.py'
+      - 'scripts/ptitesondes_reviewed_retractions.py'
       - 'tests/test_ptitesondes_openagenda_backlog_private_dossiers.py'
       - '.github/workflows/ptitesondes-large-private-patch-ci.yml'
   push:
@@ -40,6 +44,10 @@ jobs:
         run: |
           python -m unittest -v test_private_intake_large_blob
           python -m unittest -v test_ptitesondes_large_private_research_carry
+          python -m unittest -v test_ptitesondes_oa_evergreen_on_demand
+          python -m unittest -v test_ptitesondes_reviewed_retractions_20261123
+          python -m unittest -v test_ptitesondes_reviewed_retractions
+          python -m unittest -v test_ptitesondes_official_reconciliation
           python -m unittest -v test_ptitesondes_openagenda_backlog_private_dossiers
           python -m unittest -v test_ptitesondes_open_world_private_dossier_intake
           echo "PUBLIC_CATALOGUE: NOT_TOUCHED"
