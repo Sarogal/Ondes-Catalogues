@@ -319,7 +319,11 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
         result["updated_at"] = datetime.now(
             ZoneInfo("Europe/Paris")).isoformat(timespec="seconds")
         expected = [e for e in catalogue["events"] if e["id"] not in planned]
-        actual = [e for e in result["events"] if e["id"] not in planned]
+        inserted_ids = {row["id"] for row in new_rows}
+        if len(inserted_ids) != len(new_rows) or inserted_ids.intersection(ids):
+            raise ValueError("new_session_identity_not_unique")
+        actual = [e for e in result["events"] if (
+            e["id"] not in planned and e["id"] not in inserted_ids)]
         if expected != actual:
             raise ValueError("unrelated_public_event_mutated")
         if (len(catalogue["events"]) + len(new_rows) - len(result["events"])
