@@ -26,7 +26,7 @@ ROOT=Path(__file__).resolve().parents[2]
 SOURCE=ROOT/"radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json"
 CHANNELS={
  "go-station-000204":(
-    "Exclusively Led Zeppelin - Only Hits","ledzeppelinhits",
+    "Exclusively Led Zeppelin - HITS","ledzeppelinhits",
     "https://mytuner-radio.com/fr/radio/exclusively-led-zeppelin-hits-498210/",
     "https://static2.mytuner.mobi/media/tvos_radios/ewuxpkuyy27s.png"),
  "go-station-000272":(
@@ -86,26 +86,52 @@ def audit(network:bool)->dict:
                         or logo_url.split("/")[-1] not in text):
                     raise ValueError("Station-specific directory logo not on expected page")
                 row["page_provenance_verified"]=True
+                # The HTML uses static2.mytuner.mobi, whose edge sometimes
+                # serves the SAME placeholder bytes for unrelated radios.
+                # Also query the established alternative Fastly media CDN for
+                # this EXACT page image basename; NEVER approve shared blobs.
+                filename=logo_url.rsplit("/",1)[-1]
+                fastly="https://mytuner.global.ssl.fastly.net/media/tvos_radios/"+filename
                 data,image_mime,final_image=_request(
-                    logo_url,max_bytes=MAX_IMAGE,accept="image/png,image/jpeg,image/webp")
-                if urlparse(final_image).hostname!="static2.mytuner.mobi":
-                    raise ValueError("Directory logo redirected outside trusted host")
+                    fastly,max_bytes=MAX_IMAGE,accept="image/png,image/jpeg,image/webp")
+                if urlparse(final_image).hostname!="mytuner.global.ssl.fastly.net":
+                    raise ValueError("Alternative image CDN redirected off trusted host")
                 meta=inspect_bytes(data,content_type=image_mime)
                 if meta["width"]<80 or meta["height"]<80:
                     raise ValueError("Too small to be a station logo")
-                row.update({"status":"STATION_PAGE_IMAGE_SHA_VERIFIED",
+                row.update({"status":"STATION_PAGE_FASTLY_SHA_VERIFIED_PENDING_UNIQUENESS",
                             "download_verified_sha":True,
+                            "actual_logo_source":fastly,
                             "sha_evidence":meta})
             except (ValueError,HTTPError,URLError,TimeoutError,
                     OSError,ssl.SSLError) as err:
                 row["status"]="PROVENANCE_OR_IMAGE_NOT_VERIFIED"
                 row["error_type"]=type(err).__name__
         out.append(row)
+    # Same SHA for different station pages is a classic generic-placeholder
+    # indicator, not five independent station logos. Fail closed.
+    hashes={}
+    for r in out:
+        if not r["download_verified_sha"]:
+            continue
+        sha=r["sha_evidence"]["sha256"]
+        hashes.setdefault(sha,[]).append(r["go_station_id"])
+    for r in out:
+        if not r["download_verified_sha"]:
+            continue
+        sha=r["sha_evidence"]["sha256"]
+        if len(hashes[sha])>1:
+            r["status"]="DUPLICATED_GENERIC_IMAGE_SHA_UNSAFE"
+            r["image_identity_verified"]=False
+        else:
+            r["status"]="UNIQUE_STATION_PAGE_IMAGE_SHA_VERIFIED"
+            r["image_identity_verified"]=True
     return {"scope":"TEST_V7_EXCLUSIVELY_5_STATION_LOGOS_READ_ONLY",
             "catalog_seq":7,
             "missing_source_stations":5,
-            "verified_page_and_image_count":sum(r["download_verified_sha"] and
+            "verified_page_and_image_count":sum(r.get("image_identity_verified",False) and
                 r["page_provenance_verified"] for r in out),
+            "distinct_fetched_sha_count":len(hashes),
             "publication_allowed":False,
             "records":out}
 
