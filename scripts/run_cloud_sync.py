@@ -1,5 +1,5 @@
 """Entrée GitHub Actions. Ne déploie rien : le workflow décide après validation."""
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -80,7 +80,8 @@ def main():
     secret=os.getenv("PRIVATE_INTAKE_READ_TOKEN","")
     if not secret:
         raise RuntimeError("PRIVATE_INTAKE_READ_TOKEN absent : publication bloquée")
-    today=datetime.now(ZoneInfo("Europe/Paris")).date()
+    as_of_utc=datetime.now(timezone.utc)
+    today=as_of_utc.astimezone(ZoneInfo("Europe/Paris")).date()
     req=Request(ORIGIN,headers={"User-Agent":"OndesCatalogues/1.0","Accept":"application/json"})
     with urlopen(req,timeout=30) as response:
         data=response.read(9_000_001)
@@ -93,7 +94,8 @@ def main():
         # re-reads OpenAgenda, DILA, municipal events and independent GPS.
         candidate,report,bridge=merge_verified_open_world(
             reference,current,patch,today,
-            os.getenv("OPENAGENDA_READ_KEY",""))
+            os.getenv("OPENAGENDA_READ_KEY",""),
+            as_of_utc=as_of_utc)
         report["open_world_counts"]={
             "research_dossiers":bridge["dossiers"],
             "reviewed_for_merge":bridge["admitted_to_merge"],
