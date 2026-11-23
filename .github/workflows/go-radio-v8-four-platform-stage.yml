@@ -1,0 +1,53 @@
+name: GO radio v8 — stage four PCRadio and Zeno channel artworks DEV only
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_four_pcradio_zeno_art.py'
+      - '.github/workflows/go-radio-v8-four-platform-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-three-new-originals-without-publication:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image and signed-v7 Ed25519 verifiers
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Require full 49-logo continuity gate to signed TEST v7
+        run: python radio-catalog-lab/tools/test_go_radio_v8_49_official_sha_gate.py
+      - name: Download audited original logo sources pinned to successful read-only run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/three-more-proof"
+          gh run download 45192143936 --repo "$GITHUB_REPOSITORY" --pattern go-v8-four-pcradio-zeno-sha-source-artifacts --dir "$RUNNER_TEMP/three-more-proof"
+      - name: Independently re-download exact three original logo SHAs into unsigned TEST v8
+        run: |
+          python radio-catalog-lab/tools/stage_v8_four_pcradio_zeno_art.py --artifact-root "$RUNNER_TEMP/three-more-proof"
+      - name: Verify strict allowlist before any experimental commit
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-53-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-four-platform-v8/
+          python - <<'PY'
+          import subprocess
+          files=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          name='radio-catalog-lab/full-staging/UNSIGNED-radio-v8-53-official-sha-logos-20261123.json'
+          prefix='grossesondes/radio-test-v2/artwork/staging-four-platform-v8/'
+          assert len(files)==5 and name in files,files
+          assert len([x for x in files if x.startswith(prefix) and x.endswith((".png",".jpg",".webp"))])==4
+          assert all(x==name or x.startswith(prefix) for x in files)
+          print('GO_V8_4_PLATFORM_CHANNELS_UNSIGNED_ALLOWLIST_PASS')
+          PY
+      - name: Commit only content-addressed channel images and unsigned JSON to DEV
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage 4 verified original channel artwork SHAs unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
