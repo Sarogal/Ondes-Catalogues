@@ -31,7 +31,7 @@ def github(path, token, *, blob=False):
             raise ValueError("Empreinte Git Blob invalide")
         endpoint = "git/blobs/" + path
     else:
-        if not path.startswith(PATH + ("/", "?")):
+        if not path.startswith((PATH + "/", PATH + "?")):
             raise ValueError("Chemin de veille privée invalide")
         endpoint = "contents/" + path
     req = Request(ROOT + endpoint, headers={
