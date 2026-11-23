@@ -261,6 +261,45 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
         self.assertEqual(result, [])
         self.assertEqual(requested, [unreviewed["url"], *chosen])
 
+    def test_discovery_fetches_unpublished_bill_before_known_forty_seven(self):
+        # Real intake supplies these (officialUrl, URL) keys from the public
+        # catalogue. Independent source authority is unchanged; this test
+        # verifies that its six probes reach the as-yet-unlisted concert.
+        links = [
+            "https://larayonne.org/evenement/synthetic-show-%02d/" % i
+            for i in range(48)]
+        unseen_url = links[-1]
+        known = {("officialUrl", url) for url in links[:-1]}
+        homepage = "".join(
+            '<a href="' + url + '">Concert</a>' for url in links)
+        selected = discover.select_generic_official_detail_links(
+            links, TODAY, 1, limit=6, known=known)
+        self.assertEqual(selected[0], unseen_url)
+        requests = []
+        def fetch(url, *args, **kwargs):
+            requests.append(url)
+            if url == SOURCE["url"]:
+                return homepage, url
+            if url == unseen_url:
+                return page(), url
+            if url in links:
+                return "<html><body>Already published show</body></html>", url
+            raise AssertionError("Unexpected network request")
+
+        with (
+            mock.patch.object(discover, "download", side_effect=fetch),
+            mock.patch.object(discover, "robots_allow", return_value=True),
+            mock.patch.object(discover.feeds, "feed_links",
+                              return_value={"rss": [], "ics": []})
+        ):
+            found = discover.scan_venues(
+                {"venues": [SOURCE]}, known, TODAY, [], scan_slot=1)
+        self.assertEqual(requests, [SOURCE["url"], *selected])
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["sourceUrl"], unseen_url)
+        self.assertEqual(found[0]["reviewRequired"], True)
+        self.assertEqual(found[0]["publicationAllowed"], False)
+
     def test_unreviewed_sources_cannot_use_generic_event_trust(self):
         unknown = {**SOURCE, "name": "Unreviewed Hall",
                    "url": "https://unreviewed.example/"}
