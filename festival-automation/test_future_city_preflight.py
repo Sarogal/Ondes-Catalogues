@@ -270,6 +270,51 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertLessEqual(next_day["two_day_stable"], 1)
         self.assertTrue(next_day["publication_authorized"] is False)
 
+    def test_festival_title_location_and_named_future_dates_stay_tied(self):
+        # Real first-party design: the homepage SEO title has the declared
+        # festival town and département, while the exact 2027 edition dates
+        # are announced in a separately branded visible paragraph.
+        row = {**ROW, "slug": "colomb-in-rock-festival-2027",
+               "name": "Colomb'in Rock Festival 2027",
+               "startDate": "2027-08-13", "endDate": "2027-08-14",
+               "officialSite": "https://www.colombin-rock.fr/"}
+        title = (
+            "<head><title>Un des plus grands festivals tributes de France "
+            "mettant en scène des Tribute Bands nationaux et internationaux "
+            "à Colombe-lès-Vesoul (70-Haute-Saône).</title></head>")
+        body = (
+            "<main><p>Le Colomb’in Rock Festival est organisé "
+            "tous les 13 Août et 14 Août.</p>"
+            "<p>La prochaine édition anniversaire du "
+            "Colomb’in Rock Festival aura lieu les 13 et 14 Août 2027.</p>"
+            "<p>Retrouvez la programmation 2027</p></main>")
+        expected = {"slug": row["slug"], "city": "Colombe-lès-Vesoul",
+                    "source": row["officialSite"]}
+        self.assertEqual(exact_edition_city(title + body, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: title + body), expected)
+        invalid = (
+            title + body.replace("13 et 14 Août 2027", "14 et 15 Août 2027"),
+            title + body.replace("13 et 14 Août 2027", "13 et 14 Août 2026"),
+            title.replace("à Colombe-lès-Vesoul", "près de Colombe-lès-Vesoul")
+                + body,
+            title.replace("(70-Haute-Saône)", "(75)") +
+                body.replace("13 et 14 Août 2027", "13 et 14 Août 2026"),
+            title.replace("festivals tributes", "salles de spectacles") + body,
+            title + body.replace("Colomb’in Rock Festival aura lieu",
+                                 "Un autre festival aura lieu"),
+            title.replace("</title>", " et à Paris (75)</title>") + body,
+            title + body.replace("13 et 14 Août 2027",
+                                 "13 et 14 Août 2027 annulée"),
+        )
+        for html in invalid:
+            with self.subTest(variant=html[:135]):
+                self.assertIsNone(exact_edition_city(html, row))
+        self.assertIsNone(exact_edition_city(
+            title + body, {**row, "department": "75"}))
+        self.assertIsNone(exact_edition_city(
+            title + body, {**row, "city": "Paris"}))
+
     def test_official_current_dates_and_venue_directions_prove_town(self):
         row = dict(ROW, slug="helixfest-2027", name="HelixFest 2027",
                    startDate="2027-04-23", endDate="2027-04-24",
