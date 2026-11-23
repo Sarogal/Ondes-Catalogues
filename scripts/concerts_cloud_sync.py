@@ -4544,8 +4544,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
             not parsed_url.username and not parsed_url.password and
             not parsed_url.port and not parsed_url.query and
             not parsed_url.fragment and
-            event.get("time") is None and
-            not (approval.get("newArtists") or [])
+            event.get("time") is None
         )
         # New source-wide generic first-party branch. Only code-reviewed
         # venue/hostname pairs can ever pass; an external source list or a
@@ -5906,7 +5905,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
         # Historic individually signed Rockstore dossiers remain untouchable.
         require(rockstore_auto and event.get("status") == "confirmed"
                 and event.get("organizer") == "Rockstore"
-                and len(ids) == 1 and new_artists == []
+                and len(ids) == 1 and len(new_artists) <= 1
                 and len(evidence) == 1 and isinstance(evidence[0], dict),
                 "Rockstore automatique : date ou artiste hors profil")
         proof = evidence[0]
@@ -5919,13 +5918,35 @@ def validate_approval(approval, venues, known_artist_ids, today):
                     "rockstore-single-artist-official-heading-date-genre"
                 and proof.get("officialArtistNames") == [event.get("title")],
                 "Rockstore automatique : justificatif nominatif absent")
-        performer = known_artist_ids.get(ids[0])
+        performer = known_artist_ids.get(ids[0]) or added.get(ids[0])
         require(isinstance(performer, dict)
                 and norm(performer.get("name")) == norm(event.get("title"))
                 and event_id == (
                     "go-c-" + event["date"].replace("-", "") +
                     "-montpellier-" + ids[0]),
                 "Rockstore automatique : identite ou ID non canonique")
+        base_proof_fields = {"url", "proofType", "checkedAt",
+                             "checkedFields", "officialArtistNames",
+                             "sourceStructure"}
+        if new_artists:
+            # An unknown artist is not an untrusted placeholder: the exact
+            # official event heading must name it and its deterministic ID
+            # must not collide with a known artist or an existing alias.
+            existing_aliases = {norm(alias)
+                                for artist in known_artist_ids.values()
+                                for alias in (artist.get("aliases") or [])
+                                if isinstance(alias, str)}
+            require(
+                new_artists == [{"id": ids[0], "name": event["title"]}]
+                and ids[0] == norm(event["title"]).replace(" ", "-")[:72].strip("-")
+                and norm(event["title"]) not in existing_aliases
+                and proof.get("verifiedNewArtists") == [event["title"]]
+                and set(proof) == base_proof_fields | {"verifiedNewArtists"},
+                "Rockstore automatique : nouvel artiste non corroboré")
+        else:
+            require(ids[0] in known_artist_ids
+                    and set(proof) == base_proof_fields,
+                    "Rockstore automatique : artiste connu non authentifié")
         # Match the month/day/year printed in the OFFICIAL URL to the
         # event's own date (a backstop if the source-page parser changes).
         rockstore_months = {

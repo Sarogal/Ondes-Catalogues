@@ -1,4 +1,4 @@
-"""Rockstore Montpellier: official single known act and REAL publisher contract.
+"""Rockstore Montpellier: official single named act and REAL publisher contract.
 
 Fictitious HTML fixture, official-shaped first party path, no network or
 private candidate material. Existing manual signed IDs stay protected.
@@ -58,6 +58,22 @@ def signed():
     return recheck.verify(candidate(), PAGE, catalogue(), NOW)
 
 
+NEW_URL = "https://rockstore.fr/feral-bands-21-mai-2027/"
+NEW_PAGE = PAGE.replace("VULVES ASSASSINES", "FERAL BANDS")
+
+
+def new_candidate():
+    item = source.detail_candidate(NEW_PAGE, NEW_URL, SOURCE, NOW.isoformat())
+    item.update({"reviewBucket": "genre_tag_review",
+                 "possibleExistingConcert": False})
+    return item
+
+
+def new_signed(reference=None):
+    return recheck.verify(new_candidate(), NEW_PAGE,
+                          catalogue() if reference is None else reference, NOW)
+
+
 def publish_gate(approval):
     c = catalogue()
     return publisher.validate_approval(
@@ -105,11 +121,59 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
             with self.subTest(page=page[:100]), self.assertRaises(ValueError):
                 recheck.verify(candidate(), page, catalogue(), NOW)
 
-    def test_unknown_band_and_multi_artist_bill_are_held(self):
+    def test_unknown_artist_is_added_by_the_real_publisher(self):
+        approval = new_signed()
+        self.assertEqual(approval["event"]["title"], "FERAL BANDS")
+        self.assertEqual(approval["event"]["artistIds"], ["feral-bands"])
+        self.assertEqual(approval["newArtists"],
+                         [{"id": "feral-bands", "name": "FERAL BANDS"}])
+        self.assertEqual(approval["officialEvidence"][0]["verifiedNewArtists"],
+                         ["FERAL BANDS"])
+        event, new = publish_gate(approval)
+        self.assertEqual(event, approval["event"])
+        self.assertEqual(new["feral-bands"]["name"], "FERAL BANDS")
+
+    def test_unknown_artist_alias_and_id_collisions_are_held(self):
         c = catalogue()
-        c["artists"] = c["artists"][1:]
-        with self.assertRaisesRegex(ValueError, "canonique"):
-            recheck.verify(candidate(), PAGE, c, NOW)
+        c["artists"][0]["aliases"] = ["Feral Bands"]
+        with self.assertRaisesRegex(ValueError, "alias"):
+            new_signed(c)
+        c = catalogue()
+        c["artists"].append({"id": "feral-bands", "name": "Different Act",
+                             "aliases": []})
+        with self.assertRaisesRegex(ValueError, "identifiant"):
+            new_signed(c)
+
+    def test_unknown_artist_publisher_rejects_tampering(self):
+        for field, value in [
+            ("id", "fake-act"), ("name", "Another Band"),
+        ]:
+            signed_new = new_signed()
+            signed_new["newArtists"][0][field] = value
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                publish_gate(signed_new)
+        for key, value in [
+            ("verifiedNewArtists", ["Fabricated Band"]),
+            ("officialArtistNames", ["Fabricated Band"]),
+        ]:
+            signed_new = new_signed()
+            signed_new["officialEvidence"][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                publish_gate(signed_new)
+        signed_new = new_signed()
+        signed_new["officialEvidence"][0].pop("verifiedNewArtists")
+        with self.assertRaises(ValueError):
+            publish_gate(signed_new)
+        c = catalogue()
+        c["artists"][0]["aliases"] = ["Feral Bands"]
+        signed_new = new_signed()
+        with self.assertRaisesRegex(ValueError, "artiste"):
+            publisher.validate_approval(
+                signed_new,
+                {v["id"]: v for v in c["venues"]},
+                {a["id"]: a for a in c["artists"]}, NOW)
+
+    def test_multi_artist_bill_is_held_when_not_proven(self):
         page = PAGE.replace(
             "<h1>VULVES ASSASSINES</h1>",
             "<h1>VULVES ASSASSINES + UNKNOWN SUPPORT</h1>")
