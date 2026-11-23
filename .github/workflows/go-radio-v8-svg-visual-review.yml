@@ -1,0 +1,40 @@
+name: GO v8 — visually review two official SVG station marks READ ONLY
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - .github/workflows/go-radio-v8-svg-visual-review.yml
+permissions:
+  contents: read
+jobs:
+  two-vector-logo-previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned safe SVG rasterizer
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1'
+      - name: Render tiny previews from exact firstparty assets read only
+        run: |
+          python - <<'PY'
+          import io,sys,base64
+          from PIL import Image
+          sys.path.insert(0,"radio-catalog-lab/tools")
+          from audit_v8_two_official_svg_logos import SOURCES,safe_svg_to_png
+          from audit_open_radio_artwork_inventory import _request,MAX_IMAGE
+          for sid,label in (("go-station-000038","ROCK_UA"),("go-station-000157","TANGRA")):
+            name,home,stream,page,url,host=SOURCES[sid]
+            raw,mime,final=_request(url,max_bytes=MAX_IMAGE,accept="image/svg+xml")
+            png=safe_svg_to_png(raw)
+            image=Image.open(io.BytesIO(png)).convert("RGBA")
+            background=Image.new("RGB",image.size,"#242424")
+            background.paste(image,mask=image.getchannel("A"))
+            background.thumbnail((460,220))
+            buf=io.BytesIO();background.save(buf,format="JPEG",quality=70)
+            assert len(buf.getvalue())<100000
+            print("GO_VECTOR_PREVIEW_"+label+"="+base64.b64encode(buf.getvalue()).decode())
+          print("SAFE_READ_ONLY_VECTOR_LOGO_VISUAL_REVIEW_COMPLETE")
+          PY
