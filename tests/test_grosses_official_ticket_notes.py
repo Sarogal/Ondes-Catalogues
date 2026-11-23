@@ -33,6 +33,14 @@ HOME = """<html><head><title>Motocultor Festival 2027</title></head>
 </main></html>"""
 
 
+ASTRO_NEWS = (
+    HOME.replace("<h2>Les Pass 4J", "<h4>Les Pass 4J")
+        .replace("sont SOLD OUT !</h2>", "sont SOLD OUT !</h4>")
+        .replace("<p>Les trois paliers", "<div>Les trois paliers")
+        .replace("sont épuisés.</p>", "sont épuisés.</div>")
+)
+
+
 def signed():
     row = {
         "slug": "motocultor-festival",
@@ -77,6 +85,38 @@ class OfficialTicketNotesTests(unittest.TestCase):
         self.assertIn("non encore disponible",
                       reconcile_obsolete_ticket_notes(
                           OLD_NOTE, {4: "228 €"}, page(HOME).blocks))
+
+    def test_astrolike_first_party_news_needs_visible_html_fallback(self):
+        parsed = page(ASTRO_NEWS)
+        # The roster parser deliberately does not scan h4/div.
+        self.assertEqual(
+            reconcile_obsolete_ticket_notes(
+                OLD_NOTE, {4: "239 €"}, parsed.blocks), OLD_NOTE)
+        updated = reconcile_obsolete_ticket_notes(
+            OLD_NOTE, {4: "239 €"}, parsed.blocks, ASTRO_NEWS)
+        self.assertNotEqual(updated, OLD_NOTE)
+        self.assertNotIn("proposé à la vente", updated)
+        self.assertNotIn("non encore disponible", updated)
+        self.assertIn("désormais épuisé", updated)
+        hidden = ASTRO_NEWS.replace(
+            "<article><h4>Les Pass", "<script><h4>Les Pass"
+        ).replace("</div></article>", "</div></script>")
+        self.assertEqual(
+            reconcile_obsolete_ticket_notes(
+                OLD_NOTE, {4: "239 €"}, page(hidden).blocks, hidden),
+            OLD_NOTE)
+
+    def test_publisher_accepts_current_visible_astrolike_markup(self):
+        baseline = signed()
+        candidate, report = apply_independently_verified_updates(
+            baseline, deepcopy(baseline), "2026-11-23",
+            fetch=lambda _: ASTRO_NEWS, limit=1, tick=0)
+        row = candidate["festivals"][0]
+        self.assertIn("notes", report["accepted_changes"][0]["fields"])
+        self.assertEqual(row["price"], CURRENT_PRICE)
+        self.assertEqual(len(row["lineup"]), 57)
+        self.assertTrue(_verified_official_update_delta(
+            baseline["festivals"][0], row))
 
     def test_publisher_applies_reconciliation_without_price_or_artist_change(self):
         baseline = signed()
