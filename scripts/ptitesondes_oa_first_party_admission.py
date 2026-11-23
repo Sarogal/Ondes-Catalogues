@@ -35,6 +35,7 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
     "oa_direct_invalid_times",
     "oa_direct_invalid_timings",
     "oa_direct_location_missing",
+    "oa_direct_city_only_location",
     "oa_direct_missing_live_source",
     "oa_direct_no_exact_session",
     "oa_direct_not_public_or_identity_changed",
@@ -134,6 +135,12 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
             or norm(city) != norm(lead.get("city_unverified"))
             or norm(venue) != norm(lead.get("venue_unverified"))):
         return fail("oa_direct_venue_changed")
+    # A city-name-only OA location cannot prove a venue pin. A named event
+    # place (including an unnumbered public square) remains admissible; an
+    # entire municipality cannot be published as geo_precision="venue".
+    # Requeue these events for independent, exact named-place resolution.
+    if norm(city) == norm(venue):
+        return fail("oa_direct_city_only_location")
     title = _french_text(event, "title")
     if not title or norm(title) != norm(lead.get("title")):
         return fail("oa_direct_title_changed")
