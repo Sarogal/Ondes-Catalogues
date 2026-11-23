@@ -1,0 +1,40 @@
+name: GO v8 — four further official station images original SHA read-only
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_four_next_publisher_logos.py'
+      - '.github/workflows/go-radio-v8-four-next-audit.yml'
+permissions:
+  contents: read
+jobs:
+  independently-inspect-four-firstparty-artworks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded firstparty image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Confirm existing station identities without network
+        run: python radio-catalog-lab/tools/audit_v8_four_next_publisher_logos.py --output "$RUNNER_TEMP/offline.json"
+      - name: Read broadcaster pages and verify original SHA bytes
+        run: python radio-catalog-lab/tools/audit_v8_four_next_publisher_logos.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Preserve exact evidence and reject release changes
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads((Path(os.environ['RUNNER_TEMP'])/'online.json').read_text())
+          assert r['scope']=='GO_V8_FOUR_NEXT_BROADCASTER_ARTWORK_SOURCES_READ_ONLY'
+          assert r['count']==4 and len(r['records'])==4
+          assert r['published'] is False and r['signed'] is False
+          print('FOUR_BROADCASTER_LOGO_SOURCES_READ_ONLY_NO_PUBLISH')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-four-next-original-firstparty-logo-source-shas
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
