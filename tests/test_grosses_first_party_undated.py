@@ -153,6 +153,7 @@ class DirectUndatedNationalTests(unittest.TestCase):
         self.assertFalse(new["showOnMap"])
         existing = dict(new)
         cal2 = dict(cal, festivals=cal["festivals"] + [existing])
+        patch["source"]["festivals"]["count"] = len(cal2["festivals"])
         rejected, report2 = stage(
             cal2, history, patch, sources, TODAY,
             production_calendar=cal2, production_history=history)
