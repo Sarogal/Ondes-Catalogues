@@ -1,0 +1,42 @@
+name: GO v8 — inspect Hotmix Metal 214 and HuilaGeek exact source art
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths: [.github/workflows/go-radio-v8-hotmix-huila-visual.yml]
+permissions:
+  contents: read
+jobs:
+  exact-two-channel-image-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image decoder
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Preview image with verified channel SHA, without publication
+        run: |
+          python - <<'PY'
+          import io,sys,hashlib,base64
+          from PIL import Image
+          sys.path.insert(0,"radio-catalog-lab/tools")
+          from audit_v8_hotmix_metal_huila_exact_logos import HOTMIX_ORIGINAL,HUILA_IMAGE
+          from audit_open_radio_artwork_inventory import _request,MAX_IMAGE
+          checks={
+            "HOTMIX_METAL_214":(HOTMIX_ORIGINAL,"2ac3bbbd753682f6ea4ce4b4e7f2ea23fb13a9c576262eb10f5941ddea58687e"),
+            "HUILAGEEK_EXACT":(HUILA_IMAGE,"69dff8e0cbec6e21d17948bbfaeb564adc404a7c669d5503bc94805413e20276"),
+          }
+          for label,(url,sha) in checks.items():
+            blob,mime,final=_request(url,max_bytes=MAX_IMAGE,accept="image/png,image/jpeg,image/webp")
+            assert hashlib.sha256(blob).hexdigest()==sha
+            image=Image.open(io.BytesIO(blob)).convert("RGBA")
+            canvas=Image.new("RGB",image.size,(45,45,45))
+            canvas.paste(image,mask=image.getchannel("A"))
+            canvas.thumbnail((360,360))
+            out=io.BytesIO();canvas.save(out,format="JPEG",quality=72)
+            assert len(out.getvalue())<145000
+            print("GO_CHANNEL_PREVIEW_"+label+"="+base64.b64encode(out.getvalue()).decode())
+          print("EXACT_HOTMIX_HUILAGEEK_CHANNELS_VISUALLY_REVIEWABLE")
+          PY
