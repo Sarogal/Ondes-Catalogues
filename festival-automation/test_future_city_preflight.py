@@ -610,4 +610,4 @@ class FutureCityProofTests(unittest.TestCase):
             review({}, catalogue(), "2026-11-20", lambda _: MESSAGE)
         with self.assertRaises(ValueError):
             review({"schema": "grossesondes.source-watch.v1"},
-                   catalogue(), "2026-11-20", lambda _: MESSAGE, limit=5)
+                   catalogue(), "2026-11-20", lambda _: MESSAGE, limit=9)
