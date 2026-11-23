@@ -6040,9 +6040,9 @@
     {
       "bands": 0,
       "endDate": "2027-05-08",
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-23",
       "slug": "le-gros-tonneau-2027",
-      "lon": null,
+      "lon": 3.1489,
       "officialSite": "https://legrostonneau-festival.fr/",
       "venue": null,
       "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
@@ -6050,19 +6050,30 @@
       "price": null,
       "region": null,
       "department": null,
-      "city": null,
+      "city": "Artonne",
       "status": "Annoncé",
       "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
       "dateRangeIsContinuous": false,
       "name": "Le Gros Tonneau 2027",
       "source": "https://legrostonneau-festival.fr/",
       "lineup": [],
-      "showOnMap": false,
+      "showOnMap": true,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null,
+      "lat": 46.0061,
       "auditSources": [
         "https://legrostonneau-festival.fr/"
-      ]
+      ],
+      "geoCity": "Artonne",
+      "geoPrecision": "commune",
+      "geoInsee": "63012",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Artonne&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-23",
+        "officialSite": "https://legrostonneau-festival.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "bands": 0,
