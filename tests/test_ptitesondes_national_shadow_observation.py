@@ -120,6 +120,59 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(third["public_writes"], 0)
         self.assertFalse(third["publication_ready"])
 
+    def test_recently_active_index_uses_independent_cursor_and_resumes(self):
+        self.invoke()
+        self.invoke(batch_id="second")
+        first_legacy = json.loads((self.root / "index" / "cursor.json")
+                                  .read_text())
+        self.assertEqual(first_legacy["after"], [1, 778899])
+        active = Mock(return_value=index_doc(998877))
+        third, _ = self.invoke(day=DAY + timedelta(days=1),
+                               batch_id="third", index=active)
+        self.assertEqual(third["new_index_census"], 1)
+        self.assertEqual(active.call_args.kwargs["sort"],
+                         "recentlyAddedEvents.desc")
+        self.assertEqual(active.call_args.kwargs["start_cursor"], None)
+        recent = json.loads((self.root / "index" / "recent-cursor.json")
+                            .read_text())
+        self.assertEqual(recent["after"], [1, 998877])
+        self.assertEqual(json.loads((self.root / "index" / "cursor.json")
+                                    .read_text()), first_legacy)
+        names = [p.name for p, _ in available_index_reports(
+            self.root / "index" / "reports")]
+        self.assertEqual(len(names), 2)
+        self.assertTrue(any("-recent.json" in name for name in names))
+        self.invoke(day=DAY + timedelta(days=1), batch_id="fourth")
+        old = Mock(return_value=index_doc(445566))
+        self.invoke(day=DAY + timedelta(days=2), batch_id="fifth",
+                    index=old)
+        # Both cursors remain independent, even after another observation.
+        self.assertTrue((self.root / "index" / "cursor.json").exists())
+        self.assertTrue((self.root / "index" / "recent-cursor.json").exists())
+
+    def test_recent_index_interrupted_write_recovery_is_idempotent(self):
+        self.invoke()
+        self.invoke(batch_id="second")
+        with patch("ptitesondes_national_shadow_observation._write_state_atomic",
+                   side_effect=OSError("power loss")):
+            with self.assertRaises(OSError):
+                self.invoke(day=DAY + timedelta(days=1),
+                            batch_id="third", index=Mock(
+                                return_value=index_doc(20261234)))
+        index_dir = self.root / "index"
+        self.assertTrue((index_dir /
+                         "pending-recent-index-transaction.json").is_file())
+        self.assertFalse((index_dir / "recent-cursor.json").exists())
+        reader = Mock(return_value=index_doc(111222))
+        resumed, _ = self.invoke(day=DAY + timedelta(days=1),
+                                 batch_id="recovery", index=reader)
+        reader.assert_not_called()
+        self.assertFalse((index_dir /
+                          "pending-recent-index-transaction.json").exists())
+        self.assertEqual(json.loads((index_dir / "recent-cursor.json")
+                                    .read_text())["after"], [1, 20261234])
+        self.assertEqual(resumed["new_index_census"], 0)
+
     def test_later_new_report_joins_rotation_without_erasing_old(self):
         self.invoke()
         original = list((self.root / "index" / "reports").iterdir())[0]
