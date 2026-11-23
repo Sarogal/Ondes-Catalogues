@@ -1,4 +1,4 @@
-"""Rockstore Montpellier: official single named act and REAL publisher contract.
+"""Rockstore Montpellier: official complete bill and REAL publisher contract.
 
 Fictitious HTML fixture, official-shaped first party path, no network or
 private candidate material. Existing manual signed IDs stay protected.
@@ -74,14 +74,41 @@ def new_signed(reference=None):
                           catalogue() if reference is None else reference, NOW)
 
 
-def publish_gate(approval):
-    c = catalogue()
+def publish_gate(approval, reference=None):
+    c = catalogue() if reference is None else reference
     return publisher.validate_approval(
         approval,
         {v["id"]: v for v in c["venues"]},
         {a["id"]: a for a in c["artists"]},
         NOW,
     )
+
+
+MULTI_URL = "https://rockstore.fr/shaarghot-solitaris-ghost-dance-01-decembre-2026/"
+MULTI_PAGE = """<html><head><title>Rockstore</title></head><body>
+<nav>Concerts</nav><main>
+<h1>SHAÂRGHOT + SOLITARIS + GHOST DANCE</h1>
+<p>Mardi 01 Décembre 2026 à 20h</p><p>Metal/</p>
+<p>SHAÂRGHOT, SOLITARIS et GHOST DANCE en concert.</p>
+</main><footer>Rockstore Montpellier</footer></body></html>"""
+
+
+def multi_catalogue():
+    c = catalogue()
+    c["artists"].extend([
+        {"id": "shaarghot", "name": "Shaârghot", "aliases": []},
+        {"id": "solitaris", "name": "Solitaris", "aliases": []},
+        {"id": "ghost-dance", "name": "Ghost Dance", "aliases": []},
+    ])
+    return c
+
+
+def multi_signed(page=MULTI_PAGE, url=MULTI_URL, reference=None):
+    c = multi_catalogue() if reference is None else reference
+    entry = source.detail_candidate(page, url, SOURCE, NOW.isoformat())
+    entry.update({"reviewBucket": "genre_tag_review",
+                  "possibleExistingConcert": False})
+    return recheck.verify(entry, page, c, NOW)
 
 
 class RockstoreOfficialRecheckTests(unittest.TestCase):
@@ -179,6 +206,90 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
             "<h1>VULVES ASSASSINES + UNKNOWN SUPPORT</h1>")
         with self.assertRaises(ValueError):
             recheck.verify(candidate(), page, catalogue(), NOW)
+
+    def test_three_named_known_bands_pass_real_publisher(self):
+        c = multi_catalogue()
+        proposal = multi_signed(reference=c)
+        self.assertEqual(proposal["event"]["id"],
+                         "go-c-20261201-montpellier-shaarghot")
+        self.assertEqual(proposal["event"]["artistIds"],
+                         ["shaarghot", "solitaris", "ghost-dance"])
+        self.assertEqual(proposal["event"]["title"],
+                         "Shaârghot + Solitaris + Ghost Dance")
+        self.assertEqual(proposal["event"]["genres"], ["Metal"])
+        self.assertEqual(proposal["newArtists"], [])
+        self.assertEqual(proposal["officialEvidence"][0]["sourceStructure"],
+                         recheck.MULTI_PROOF_STRUCTURE)
+        self.assertIsNone(proposal["event"]["time"])
+        published, added = publish_gate(proposal, c)
+        self.assertEqual(published, proposal["event"])
+        self.assertEqual(added, {})
+
+    def test_complete_mixed_known_and_new_bill_passes_publisher(self):
+        c = multi_catalogue()
+        page = MULTI_PAGE.replace("SHAÂRGHOT + SOLITARIS + GHOST DANCE",
+                                  "SHAÂRGHOT + SOLITARIS + GHOST DANCE + NEW VOX")
+        url = ("https://rockstore.fr/shaarghot-solitaris-ghost-dance-"
+               "new-vox-01-decembre-2026/")
+        proposal = multi_signed(page, url, c)
+        self.assertEqual(proposal["event"]["artistIds"],
+                         ["shaarghot", "solitaris", "ghost-dance", "new-vox"])
+        self.assertEqual(proposal["newArtists"],
+                         [{"id": "new-vox", "name": "NEW VOX"}])
+        published, added = publish_gate(proposal, c)
+        self.assertEqual(published["artistIds"], proposal["event"]["artistIds"])
+        self.assertEqual(added["new-vox"]["name"], "NEW VOX")
+
+    def test_more_than_five_unknown_bands_are_not_artificially_blocked(self):
+        names = ["Red Drone", "Blue Signal", "Glass Wrath",
+                 "Bad Star", "Static Rites", "Night Signal"]
+        title = " + ".join(names)
+        url = ("https://rockstore.fr/red-drone-blue-signal-glass-wrath-"
+               "bad-star-static-rites-night-signal-01-decembre-2026/")
+        page = MULTI_PAGE.replace("SHAÂRGHOT + SOLITARIS + GHOST DANCE", title)
+        c = catalogue()
+        proposal = multi_signed(page, url, c)
+        self.assertEqual(len(proposal["event"]["artistIds"]), 6)
+        self.assertEqual(len(proposal["newArtists"]), 6)
+        event, added = publish_gate(proposal, c)
+        self.assertEqual(event["title"], title)
+        self.assertEqual(len(added), 6)
+
+    def test_multi_bill_identity_alias_duplicates_and_forgery_are_rejected(self):
+        c = multi_catalogue()
+        proposal = multi_signed(reference=c)
+        for field, value in [
+            ("artistIds", ["shaarghot", "ghost-dance", "solitaris"]),
+            ("artistIds", ["shaarghot"]),
+            ("title", "Shaârghot + Ghost Dance"),
+        ]:
+            altered = copy.deepcopy(proposal)
+            altered["event"][field] = value
+            with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                publish_gate(altered, c)
+        altered = copy.deepcopy(proposal)
+        altered["officialEvidence"][0]["officialArtistNames"] = ["Shaârghot"]
+        with self.assertRaises(ValueError):
+            publish_gate(altered, c)
+        altered = copy.deepcopy(proposal)
+        altered["officialEvidence"][0]["sourceStructure"] = recheck.PROOF_STRUCTURE
+        with self.assertRaises(ValueError):
+            publish_gate(altered, c)
+        page = MULTI_PAGE.replace("SHAÂRGHOT + SOLITARIS + GHOST DANCE",
+                                  "SHAÂRGHOT + SHAÂRGHOT")
+        with self.assertRaises(ValueError):
+            multi_signed(page, MULTI_URL, c)
+        page = MULTI_PAGE.replace("en concert.", "avec SPECIAL GUEST inconnu.")
+        with self.assertRaises(ValueError):
+            multi_signed(page, MULTI_URL, c)
+        c["events"].append({
+            "id": "other", "date": "2026-12-01",
+            "venueId": "rockstore-montpellier",
+            "artistIds": ["solitaris"],
+            "officialUrl": "https://rockstore.fr/other-01-decembre-2026/",
+        })
+        with self.assertRaisesRegex(ValueError, "deja publie"):
+            multi_signed(reference=c)
 
     def test_candidate_from_other_source_or_review_bucket_cannot_pass(self):
         for key, value in [
