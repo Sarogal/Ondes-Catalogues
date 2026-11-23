@@ -101,6 +101,73 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
         self.assertGreaterEqual(len(observed), 3)
         self.assertEqual(set(observed), {EXPORT})
 
+    def test_unknown_historical_postcode_and_address_do_not_block_official_oa(self):
+        # Historical public map placeholders are not known physical data.
+        # The official original OA export still binds UID + slug, venue,
+        # municipality, programme date, named artists and relevant genre.
+        venue = next(v for v in self.catalogue["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        venue["postalCode"] = "À vérifier"
+        venue["address"] = "Adresse exacte à vérifier"
+        calls = []
+        def get(url, cache):
+            self.assertEqual(url, EXPORT)
+            calls.append(url)
+            return official_export()
+        before = {"schema": publisher.SCHEMA, "approvals": []}
+        with mock.patch.object(identity, "safe_fetch", side_effect=get):
+            proposed, report = producer.build(
+                registry(), self.catalogue, before, TODAY, fetch=get)
+            self.assertEqual(len(proposed["approvals"]), 1, report)
+            self.assertEqual(
+                proposed["approvals"][0]["event"]["officialUrl"], URL)
+            self.assertEqual(len(approval_preflight.check_append_only(
+                before, proposed, TODAY)), 1)
+            merged, stats = publisher.merge(
+                self.catalogue, self.catalogue, proposed, TODAY)
+            self.assertEqual(stats["newEvents"], 1, stats["held"])
+            self.assertEqual(merged["events"][-1]["officialUrl"], URL)
+        self.assertGreaterEqual(len(calls), 3)
+
+    def test_placeholder_never_overrides_actual_venue_identity_or_real_address(self):
+        venue = next(v for v in self.catalogue["venues"]
+                     if v["id"] == fixture.VENUE_ID)
+        placeholder = copy.deepcopy(venue)
+        placeholder["postalCode"] = "À vérifier"
+        placeholder["address"] = "Adresse exacte à vérifier"
+        # Unknown catalogue fields are not a licence to change the
+        # venue/city, cancellation state or original first-party source.
+        altered = json.loads(official_export())["events"][0]
+        for name, city in (("Other Venue", venue["city"]),
+                           (venue["name"], "Paris")):
+            bad = copy.deepcopy(altered)
+            bad["location"]["name"] = name
+            bad["location"]["city"] = city
+            with self.subTest(name=name, city=city), self.assertRaises(ValueError):
+                oa.verified_export(
+                    json.dumps({"total": 1, "events": [bad]}),
+                    URL, DAY, placeholder, agenda_uid=9969608,
+                    event_uid=87654321)
+
+        # Once a real postcode is known, disagreement is a fatal conflict.
+        known_postcode = copy.deepcopy(venue)
+        known_postcode["postalCode"] = "31520"
+        wrong_postcode = copy.deepcopy(altered)
+        wrong_postcode["location"]["postalCode"] = "75001"
+        with self.assertRaisesRegex(ValueError, "postal code mismatch"):
+            oa.verified_export(
+                json.dumps({"total": 1, "events": [wrong_postcode]}),
+                URL, DAY, known_postcode, agenda_uid=9969608,
+                event_uid=87654321)
+        # Real stored street details retain strict existing reconciliation.
+        wrong_street = copy.deepcopy(altered)
+        wrong_street["location"]["address"] = "99 rue imaginaire"
+        with self.assertRaisesRegex(ValueError, "street location mismatch"):
+            oa.verified_export(
+                json.dumps({"total": 1, "events": [wrong_street]}),
+                URL, DAY, venue, agenda_uid=9969608,
+                event_uid=87654321)
+
     def test_fresh_official_openagenda_is_not_starved_by_old_queue(self):
         huge = registry()
         for i in range(32):
