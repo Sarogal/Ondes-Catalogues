@@ -22,7 +22,6 @@ from radio_catalog_release_packager import (
     create_bundle,
 )
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from test_go_radio_v8_70_owner_sha_gate import main as verify_all_staged_70
 
 ROOT = Path(__file__).resolve().parents[2]
 ROOTDIR = ROOT / "grossesondes/radio-test-v2"
@@ -45,6 +44,11 @@ def git_show(path: str) -> bytes:
 
 def preflight(remote: bool = False, prior_qa: bool = True) -> dict:
     if prior_qa:
+        # The exhaustive *historical staging* audit imports the SVG rendering
+        # toolchain (CairoSVG -> native libcairo). On Windows publishing only
+        # immutable already-audited image bytes, native Cairo is not required.
+        # Keep the full historical QA in CI, import it only when asked.
+        from test_go_radio_v8_70_owner_sha_gate import main as verify_all_staged_70
         verify_all_staged_70()
     before = json.loads(SOURCE.read_bytes())
     after = json.loads(CANONICAL.read_bytes())
@@ -100,8 +104,16 @@ def preflight(remote: bool = False, prior_qa: bool = True) -> dict:
                 }
         else:
             assert station["logo"] == earlier["logo"] == historical["logo"]
-        assert station["status"] == historical["status"]
-        assert station["streams"] == historical["streams"]
+        # The signed v7 is authoritative for every non-logo station field.
+        # The local Windows path must be at least as strict as the CI gate,
+        # even without the historical SVG-rendering dependency.
+        historical_without_logo = deepcopy(historical)
+        historical_without_logo["logo"] = None
+        station_without_logo = deepcopy(station)
+        station_without_logo["logo"] = None
+        assert station_without_logo == historical_without_logo, (
+            "Only logo changes are authorized: " + sid
+        )
 
     assert changed == 70 and len(sha_index) == 70
     active = [s for s in after["stations"] if s["status"]["state"] == "active"]
