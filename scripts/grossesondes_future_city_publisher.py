@@ -49,7 +49,13 @@ def private_city_report(token, reader=fetch_json):
                 or not isinstance(data.get("content"), str)
                 or len(data["content"]) > MAX_BYTES * 2):
             return None
-        raw = base64.b64decode(data["content"], validate=True)
+        # GitHub's Contents API line-wraps base64 (usually every 60 chars).
+        # Keep strict alphabet/padding checks; discard ONLY transport newlines.
+        # The independent report-schema and signed-edition gates remain intact.
+        wrapped = data["content"].replace("\r\n", "\n")
+        if "\r" in wrapped:
+            return None
+        raw = base64.b64decode(wrapped.replace("\n", ""), validate=True)
         if not 0 < len(raw) <= MAX_BYTES:
             return None
         return json.loads(raw)
