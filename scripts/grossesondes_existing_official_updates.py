@@ -156,6 +156,15 @@ def expected_ticket_notes_after_official_sale(notes, four_day_price):
         r"\1", notes, flags=re.I)
     if count != 1:
         return notes
+    # A stale note may describe the final Early Bird as "offered for sale"
+    # at a dated historical checkpoint. Preserve the historical amount/date,
+    # but do not continue presenting that exhausted tier as for sale today.
+    updated = re.sub(
+        r"(Early\s+Bird\s+[1-3]\s+[aà]\s+\d{2,4}\s*€)"
+        r"\s+propos[eé]\s+[aà]\s+la\s+vente\s+au\s+"
+        r"(\d{1,2}\s+[a-zA-ZÀ-ÿ]+\s+20\d{2})",
+        r"\1 (désormais épuisé ; annonce initiale du \2)",
+        updated, flags=re.I)
     if TICKET_EARLY_BIRD_CURRENT not in updated:
         updated = updated.rstrip() + " | " + TICKET_EARLY_BIRD_CURRENT
     return updated
