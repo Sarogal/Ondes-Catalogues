@@ -170,20 +170,59 @@ def expected_ticket_notes_after_official_sale(notes, four_day_price):
     return updated
 
 
-def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
-    """Update obsolete ticket notes only on fresh same-site current proof."""
+def _current_official_early_bird_sold_out(visible_words):
+    """Require both related current statements in ONE visible document.
+
+    A headline mentioning one expired tier is insufficient. The sentence
+    declaring ALL three tiers exhausted must be adjacent to that headline.
+    No claims from other pages or old catalogue text can be stitched together.
+    """
+    if not isinstance(visible_words, str) or not visible_words:
+        return False
+    headline = re.search(
+        r"\bpass\s*4\s*(?:j|jours)\s+early\s+birds?\s+sont\s+sold\s+out\b",
+        visible_words)
+    exhausted = re.search(
+        r"\btrois\s+paliers\s+d\s+early\s+birds?\s+sont\s+epuises\b",
+        visible_words)
+    return bool(headline and exhausted and
+                0 <= exhausted.start() - headline.end() <= 450)
+
+
+def _ticket_visible_words_from_html(official_html):
+    """Read visible same-host HTML, not only h1/h2/h3/p/li blocks.
+
+    Official Astro news teasers may use div/h4 spans. The existing bounded
+    VisibleText parser rejects script, template and hidden DOM content.
+    """
+    if not isinstance(official_html, str) or not 0 < len(official_html) <= 650_000:
+        return ""
+    p = VisibleText()
+    try:
+        p.feed(official_html)
+        p.close()
+        return fold(" ".join(p.parts))
+    except (TypeError, ValueError, UnicodeError):
+        return ""
+
+
+def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks,
+                                    current_official_html=None):
+    """Reconcile old ticket statuses using newly fetched first-party proof.
+
+    The old block extraction is kept for compatibility. The additional
+    visible-HTML channel covers actual dynamic first-party markup that doesn't
+    use the tags recognized by the roster/ticket extractor.
+    """
     if (not isinstance(notes, str) or not isinstance(prices, dict)
             or 4 not in prices or not isinstance(current_official_blocks, list)):
         return notes
-    text = fold(" ".join(
+    blocks_text = fold(" ".join(
         block.get("text", "") for block in current_official_blocks
         if isinstance(block, dict) and isinstance(block.get("text"), str)))
-    if (not re.search(
-            r"\bpass\s*4\s*(?:j|jours)\s+early\s+birds?\s+sont\s+sold\s+out\b",
-            text)
-            or not re.search(
-                r"\btrois\s+paliers\s+d\s+early\s+birds?\s+sont\s+epuises\b",
-                text)):
+    current_text = _ticket_visible_words_from_html(current_official_html)
+    if not (_current_official_early_bird_sold_out(blocks_text)
+            or _current_official_early_bird_sold_out(current_text)):
         return notes
     return expected_ticket_notes_after_official_sale(notes, prices[4])
 
@@ -970,7 +1009,7 @@ def apply_independently_verified_updates(
             # This runs even when the canonical price is already correct.
             if root_ok and prices:
                 fresh_ticket_notes = reconcile_obsolete_ticket_notes(
-                    new.get("notes"), prices, root.blocks)
+                    new.get("notes"), prices, root.blocks, root_html)
                 if fresh_ticket_notes != new.get("notes"):
                     new["notes"] = fresh_ticket_notes
                     if "notes" not in fields:
@@ -985,6 +1024,19 @@ def apply_independently_verified_updates(
                     "artist_names_new": len(new_names),
                     "open_pass_categories_found": sorted(prices),
                     "fields_proposed": list(fields),
+                    "ticket_note_proof": ({
+                        "old_note_outdated": (
+                            expected_ticket_notes_after_official_sale(
+                                old["notes"], prices[4]) != old["notes"]),
+                        "visible_html_sold_out": (
+                            _current_official_early_bird_sold_out(
+                                _ticket_visible_words_from_html(root_html))),
+                        "parsed_blocks_sold_out": (
+                            _current_official_early_bird_sold_out(fold(" ".join(
+                                b["text"] for b in root.blocks)))),
+                    } if root_ok and 4 in prices and
+                    isinstance(old.get("notes"), str) and
+                    "early bird" in fold(old["notes"]) else None),
                     **({"undated_page_proof": undated_page_proof}
                        if old.get("startDate") is None and
                           old.get("endDate") is None and
