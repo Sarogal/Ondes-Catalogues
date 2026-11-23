@@ -16,6 +16,8 @@ from math import isfinite
 import os
 from pathlib import Path
 import re
+import socket
+import ssl
 import sys
 import tempfile
 from urllib.parse import unquote, urljoin, urlsplit, urlunsplit
@@ -36,6 +38,44 @@ CURSOR_KEY = "future_edition_geo_rotation_cursor"
 MAX_CHECKS = 4
 MAX_LINKS_PER_ORGANIZER = 2
 MAX_ANCHORS_PER_PAGE = 250
+
+
+def safe_fetch_failure_code(error):
+    """Static, private-only diagnostics: never expose exception messages/URLs.
+
+    Official sites may fail DNS-pinned TLS, serve a redirect or return an
+    HTTP error even when the user browser works. The category helps distinguish
+    these cases without relaxing domain, DNS, certificate or body protections.
+    """
+    if isinstance(error, ssl.SSLError):
+        return "TLS_HANDSHAKE"
+    if isinstance(error, socket.gaierror):
+        return "DNS_RESOLUTION"
+    if isinstance(error, TimeoutError):
+        return "NETWORK_TIMEOUT"
+    if isinstance(error, ValueError):
+        return {
+            "Untrusted candidate URL": "URL_REJECTED",
+            "Unsafe host": "DNS_REJECTED",
+            "DNS answer absent or excessive": "DNS_NO_SAFE_ANSWER",
+            "Unexpected DNS socket family": "DNS_REJECTED",
+            "Non-global or IPv4-embedded DNS address": "DNS_REJECTED",
+            "IPv4-mapped address forbidden": "DNS_REJECTED",
+            "Forbidden or excessive redirect": "REDIRECT_REJECTED",
+            "Redirect left original HTTPS host": "REDIRECT_OTHER_HOST",
+            "Redirect budget exhausted": "REDIRECT_LIMIT",
+            "HTTPS response not successful": "HTTP_NON_200",
+            "Compressed HTML not allowed": "CONTENT_ENCODING_REJECTED",
+            "Non-HTML response": "CONTENT_TYPE_REJECTED",
+            "Unbounded HTML body": "BODY_TOO_LARGE",
+            "Invalid bounded HTML body": "BODY_INVALID",
+            "Unknown HTML encoding": "CHARSET_REJECTED",
+        }.get(str(error), "VALIDATION_REJECTED")
+    if isinstance(error, OSError):
+        return "NETWORK_IO"
+    if isinstance(error, UnicodeError):
+        return "CHARSET_REJECTED"
+    return "UNCLASSIFIED"
 
 
 def _coord(value, bound):
@@ -329,9 +369,10 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
         result = {"slug": slug, "status": "OFFICIAL_GEO_NOT_PROVEN"}
         try:
             claim = exact_geo_from_official_site(row, fetcher)
-        except (OSError, ValueError, TimeoutError, UnicodeError):
+        except (OSError, ValueError, TimeoutError, UnicodeError) as exc:
             claim = None
             result["status"] = "OFFICIAL_FETCH_UNAVAILABLE"
+            result["fetch_failure_code"] = safe_fetch_failure_code(exc)
         if claim is None:
             obs.pop(slug, None)
             findings.append(result)
