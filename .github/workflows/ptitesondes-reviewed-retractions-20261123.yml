@@ -100,6 +100,7 @@ jobs:
       contents: read
       pages: write
       id-token: write
+      actions: write
     environment:
       name: github-pages
       url: ${{ steps.publication.outputs.page_url }}
@@ -143,3 +144,20 @@ jobs:
           else:
               raise SystemExit('Public GitHub Pages did not match the corrected catalogue')
           PY
+
+      - name: Reconstruire les dossiers privés depuis le catalogue corrigé
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This is a research dispatch, never a direct publication.
+          # It happens ONLY after complete GitHub Pages equality was proven.
+          # A patch prepared against the former 715-event catalogue is stale
+          # once the reviewed 51 withdrawals were committed. The scheduled
+          # private collector must refresh against the surviving catalogue
+          # before the normal Publisher can consider new overseas sessions.
+          gh workflow run ptitesondes-private-intake-on-public-runners.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f cycle=outings -f mode=write -f recovery=none
+          echo 'Fresh private national intake requested after verified retraction.'
