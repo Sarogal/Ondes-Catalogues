@@ -33,6 +33,7 @@ def live_case(title, description, *, category=None):
             "atelier-musical": "Atelier musical",
             "concert": "Concert",
             "lecture-jeunesse": "Lecture jeunesse",
+            "spectacle-jeunesse": "Spectacle jeune public",
         }[category]
     return admit_live_openagenda(item, DAY.isoformat(), AGENDA,
                                  source, ref, ref, TODAY)
@@ -96,6 +97,37 @@ class PrimaryEditorialTests(unittest.TestCase):
         self.assertIsNone(primary_out_of_scope(
             "Spectacle de marionnettes pour enfants",
             "Le spectacle évoque le forum du quartier."))
+
+    def test_official_children_storytelling_title_without_child_word_is_publishable(self):
+        # Event title is a named performance; the same official source
+        # explicitly says it is "pour enfants de tous âges".
+        title = "Contes avec Aïdée"
+        desc = "Association culturelle. Pour enfants de tous âges."
+        proposed = propose_family_activity(title, desc)
+        self.assertEqual(proposed["category_proposal"], "lecture-jeunesse")
+        self.assertEqual(proposed["decision"],
+                         "read_only_proposal_requires_full_proof")
+        candidate, reason = live_case(
+            title, desc, category="lecture-jeunesse")
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "lecture-jeunesse")
+        self.assertEqual(candidate["title"], title)
+
+    def test_named_youth_show_and_adult_only_storytelling_keep_scope_guards(self):
+        title = "Spectacle des marionnettes de l'hiver"
+        desc = "Un moment de spectacle pour les familles et les enfants."
+        candidate, reason = live_case(
+            title, desc, category="spectacle-jeunesse")
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["category"], "spectacle-jeunesse")
+        for text in ("Réservé aux adultes uniquement.",
+                     "Sans enfants, événement pour adultes."):
+            with self.subTest(text=text):
+                self.assertIsNone(propose_family_activity(
+                    "Contes avec Aïdée", text)["category_proposal"])
+        self.assertIsNone(propose_family_activity(
+            "Atelier d'échecs", "Pour enfants de tous âges."
+        )["category_proposal"])
 
     def test_incidental_school_word_in_genuine_performance_does_not_veto(self):
         self.assertIsNone(primary_out_of_scope(
