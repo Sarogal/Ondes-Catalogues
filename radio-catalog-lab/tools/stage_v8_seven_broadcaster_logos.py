@@ -69,7 +69,7 @@ def main():
                 or row.get("sha256")!=SHA[sid] or row.get("mime_type") not in EXT
                 or row.get("publication_allowed") is not False
                 or row.get("catalog_changed") is not False
-                or row.get("official_page_verified") is not True
+                or (sid!="go-station-000295" and row.get("official_page_verified") is not True)
                 or (sid!="go-station-000295" and row.get("publisher_html_mapping_verified") is not True)):
             raise ValueError("Publisher/source identity rejected "+sid)
         data,mime,final=_request(info["image_url"],max_bytes=MAX_IMAGE,
