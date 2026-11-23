@@ -21,6 +21,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+sys.dont_write_bytecode = True  # Never create pycache files in the user's checkout.
 import tempfile
 import time
 import urllib.error
@@ -57,7 +58,7 @@ def clean_checkout() -> None:
     root = Path(git("rev-parse", "--show-toplevel", capture=True)).resolve()
     if root != ROOT.resolve():
         raise ValueError("Run this script from the expected public repository checkout")
-    if git("status", "--porcelain", capture=True):
+    if git("status", "--porcelain", "--untracked-files=no", capture=True):
         raise ValueError("Local checkout is not clean; never overwrite existing user files")
     remote = git("remote", "get-url", "origin", capture=True)
     if not (remote.startswith(REPO_URL) or remote.startswith("git@github.com:Sarogal/Ondes-Catalogues")):
