@@ -29,6 +29,32 @@ Aucune compilation Android, aucune modification de `main` ou du Play Store.
 - Le test n'a pas signé avec une clé TEST réelle et n'a rien publié. La clé
   éphémère de CI ne peut pas devenir celle de l'APK.
 
+## Correctif Windows — CairoSVG / libcairo absente (23/11)
+
+La conversion de sources SVG historiques fait partie de l'audit effectué dans
+GitHub Actions, mais **la publication locale v8 ne convertit aucun SVG** :
+les 70 objets SHA-256 finaux existent déjà en PNG, JPEG ou WebP sur la branche
+TEST. L'import de l'audit SVG est désormais différé et absent du parcours
+`publish_go_radio_v8_test.py`. Il ne faut **pas installer CairoSVG, GTK ou
+libcairo sous Windows** pour publier ce catalogue.
+
+Si le clone propre `D:\KL_Softwares\Ondes-Catalogues-v8-sign` a déjà été créé,
+il suffit d'y récupérer le correctif par `git pull --ff-only`, sans supprimer
+ni réinitialiser le répertoire. N'exécuter la publication qu'après le
+contrôle préliminaire avec la même clé TEST v2.
+
+```powershell
+cd D:\KL_Softwares\Ondes-Catalogues-v8-sign
+git pull --ff-only origin feature/go-radio-v8-metalon-3-logos-20261123
+py -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'Pillow==11.3.0'
+$seed = Join-Path $env:LOCALAPPDATA 'GrossesOndes\RadioTestSigningV2\GO_CENTRAL_TEST_SIGNING_SEED_20261122_V2.b64'
+py .\radio-catalog-lab\tools\publish_go_radio_v8_test.py --signing-key-file $seed
+```
+
+Une fois cet aperçu signé hors ligne réussi, ajouter `--publish-test` à la
+dernière commande pour demander la publication TEST contrôlée. Ne jamais
+coller la clé dans PowerShell ni l'envoyer dans le chat.
+
 ## Signature locale et publication TEST en un seul processus contrôlé
 
 Cette opération requiert la **graine privée Ed25519 TEST v2 qui a déjà servi à signer la v7**.
@@ -42,7 +68,7 @@ cd D:\KL_Softwares
 git -c core.autocrlf=false clone --branch feature/go-radio-v8-metalon-3-logos-20261123 https://github.com/Sarogal/Ondes-Catalogues.git Ondes-Catalogues-v8-sign
 cd .\Ondes-Catalogues-v8-sign
 git config core.autocrlf false
-py -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'Pillow==11.3.0' 'defusedxml==0.7.1' 'CairoSVG==2.8.2'
+py -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'Pillow==11.3.0'
 $seed = Join-Path $env:LOCALAPPDATA 'GrossesOndes\RadioTestSigningV2\GO_CENTRAL_TEST_SIGNING_SEED_20261122_V2.b64'
 py .\radio-catalog-lab\tools\publish_go_radio_v8_test.py --signing-key-file $seed --publish-test
 ```
