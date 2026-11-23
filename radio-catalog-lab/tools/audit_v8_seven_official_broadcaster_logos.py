@@ -64,9 +64,9 @@ TARGETS={
   "name":"TotalRock Radio",
   "homepage":"https://totalrock.com/",
   "official_page":"https://totalrock.com/",
-  "image_url":"https://totalrock.com/wp-content/uploads/2025/05/TR-logo-25.V2.124x68-96dpi-.jpg",
+  "image_url":"https://totalrock.com/wp-content/uploads/2018/04/New-TR-Icon-170x170.jpg",
   "stream_fragment":"s3.citrus3.com:8056/stream",
-  "identity":"station brand wordmark",
+  "identity":"official square station logo image",
  },
  "go-station-000138":{
   "name":"Radio Diabolus",
