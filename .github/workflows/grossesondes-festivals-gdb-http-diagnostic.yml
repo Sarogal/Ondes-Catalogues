@@ -1,0 +1,61 @@
+name: Grosses Ondes Festivals — GDB HTTPS 403 diagnostic (read only)
+
+on:
+  push:
+    branches:
+      - diagnostic/festivals-gdb-http403-20261123
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Compare safe DNS-pinned TLS responses (no credentials or body output)
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+          PYTHONPATH: festival-automation
+        run: |
+          python - <<'PY'
+          import ssl
+          from urllib.parse import urlsplit
+          from dns_pinned_https import (
+              DNSPinnedHTTPSConnection, safe_public_url,
+          )
+
+          # One fixed public first-party domain, no arbitrary or private URL.
+          site = "https://festivalgueulesdebois.com/"
+          assert safe_public_url(site) == site
+          domain = urlsplit(site).hostname
+          assert domain == "festivalgueulesdebois.com"
+          variants = [
+              ("current", "GrossesOndesOrganizerDomainResearch/1.0"),
+              ("identified", "GrossesOndesFestivalWatch/1.0 (+https://grosses-ondes.fr/)"),
+              ("compatible", "Mozilla/5.0 (compatible; GrossesOndesFestivalWatch/1.0; +https://grosses-ondes.fr/)"),
+          ]
+          for name, agent in variants:
+              conn = DNSPinnedHTTPSConnection(
+                  domain, port=443, timeout=9,
+                  context=ssl.create_default_context())
+              try:
+                  conn.request("GET", "/", headers={
+                      "User-Agent": agent,
+                      "Accept": "text/html,application/xhtml+xml",
+                      "Accept-Encoding": "identity",
+                  })
+                  response = conn.getresponse()
+                  # Never print or persist pages, headers, cookies, or URLs.
+                  print("GDB_HTTPS_PROBE", name, "HTTP_" + str(response.status))
+                  response.close()
+              except (OSError, ValueError, TimeoutError, UnicodeError) as error:
+                  print("GDB_HTTPS_PROBE", name, "NETWORK_ERROR_" +
+                        type(error).__name__)
+              finally:
+                  conn.close()
+          PY
