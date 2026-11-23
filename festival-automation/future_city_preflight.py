@@ -313,15 +313,20 @@ def _section_undated_city(html, row, year, name):
         parts = [p.strip() for p in chunk.split(VisibleParagraphs.SEP) if p.strip()]
         if not 4 <= len(parts) <= 40:
             continue
-        folded = " ".join(fold(" ".join(parts)).split())
-        years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", folded))
-        if (years != {str(year)} or CANCEL.search(folded)
-                or any(explicit_ranges(folded, year))):
-            continue
         for i in range(len(parts) - 3):
-            if not heading.search(" ".join(fold(parts[i]).split())):
+            # Keep edition, genre, town and department adjacent. HTML sites
+            # sometimes wrap their 2027 hero and a 2026 photo recap in the
+            # same outer section; that unrelated old year is NOT proof about
+            # the current edition. However an old year inside the exact
+            # four-element claim still vetoes the whole candidate.
+            local = parts[i:i + 4]
+            folded = " ".join(fold(" ".join(local)).split())
+            years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", folded))
+            if (years != {str(year)} or CANCEL.search(folded)
+                    or any(explicit_ranges(folded, year))
+                    or not heading.search(" ".join(fold(parts[i]).split()))):
                 continue
-            genre, raw_city, raw_dept = parts[i + 1:i + 4]
+            genre, raw_city, raw_dept = local[1:]
             if not re.search(r"\bfestival\b", fold(genre)):
                 continue
             if not locality.fullmatch(raw_city) or not locality.fullmatch(raw_dept):
