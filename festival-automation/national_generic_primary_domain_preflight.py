@@ -48,6 +48,12 @@ from grossesondes_first_party_direct_edition import (
     private_proposal as direct_private_proposal,
     validate_private_proposal as validate_direct_private_proposal,
 )
+from grossesondes_first_party_undated_edition import (
+    confirmed_future_without_dates,
+    private_proposal as undated_direct_private_proposal,
+    validate_private_proposal as validate_undated_direct_proposal,
+)
+from grossesondes_undated_edition import conflicting_undated_edition
 
 SCHEMA = "grossesondes.national-generic-domain-dates-private.v1"
 QUEUE_SCHEMA = "grossesondes.national-festival-discovery-private.v1"
@@ -967,6 +973,79 @@ def append_direct_first_party_proposals(
 
 
 
+
+
+def append_direct_first_party_undated_proposals(
+        folder, catalog, history, queue, today,
+        fetch=fetch_public_html, limit=5):
+    """Nominate newly discovered UNDATED editions from current first-party HTML.
+
+    A branded, genre-compatible festival-owned domain with a clear year
+    announcement suffices: no other website must repeat it. This is ONLY a
+    private candidate; the public Publisher must independently fetch and
+    prove the future edition again before it can publish anything.
+
+    A whole-date event is left to the existing dated pathway. No historic
+    city, line-up or venue is copied into this private proposal.
+    """
+    if (not isinstance(history, dict) or history.get("schema") != 2
+            or not isinstance(history.get("knownFestivals"), list)
+            or type(limit) is not int or not 0 <= limit <= 8):
+        raise ValueError("Unsafe national undated private proposal input")
+    options = [x for x in _eligible(queue, catalog, today)
+               if x.get("kind") == "CURATED_PRIMARY_CANDIDATE"]
+    if not options or not limit:
+        return 0, []
+    # Deterministic rotating bounded sample: new national domains are not
+    # excluded by an organizer whitelist or by prior unsuccessful attempts.
+    offset = date.fromisoformat(today).toordinal() % len(options)
+    selected = (options[offset:] + options[:offset])[:limit]
+    patch = latest_patch(folder, date.fromisoformat(today))
+    used = {r.get("slug") for r in patch["additions"]
+            if isinstance(r, dict)}
+    report, added = [], 0
+    for source in selected:
+        host = urlsplit(source["url"]).hostname
+        site = "https://" + host + "/" if host else None
+        code = "PRIMARY_HOST_UNREACHABLE"
+        if site is None or safe_venue_root(site) is None:
+            code = "OFFICIAL_ROOT_NOT_SAFE"
+        else:
+            try:
+                html = fetch(site)
+                if not confirmed_future_without_dates(
+                        site, source["title"], html, today):
+                    code = "NO_UNDATED_PRIMARY_ANNOUNCEMENT"
+                else:
+                    proposal = undated_direct_private_proposal(
+                        source["title"], site, today)
+                    if (proposal is None or
+                            validate_undated_direct_proposal(
+                                proposal, today) is None):
+                        code = "PRIVATE_UNDATED_PROPOSAL_INVALID"
+                    elif proposal["slug"] in used or conflicting_undated_edition(
+                            proposal, catalog["festivals"],
+                            history["knownFestivals"]):
+                        code = "ALREADY_PUBLISHED_OR_DUPLICATE"
+                    elif len(patch["additions"]) >= 100:
+                        code = "PRIVATE_PATCH_CAPACITY"
+                    else:
+                        patch["additions"].append(proposal)
+                        used.add(proposal["slug"])
+                        added += 1
+                        code = "PRIVATE_UNDATED_PROPOSAL_CREATED"
+            except (OSError, TimeoutError, UnicodeError, ValueError, TypeError):
+                code = "PRIMARY_HOST_UNREACHABLE"
+        report.append({
+            "dossier_id": source["dossier_id"], "gate": code,
+            "publication_authorized": False,
+        })
+    if added:
+        patch["generated_at"] = today
+        atomic_json(folder / ("patch-" + today + ".json"), patch)
+    return added, report
+
+
 def stable_reciprocal_venue_proposals(state, queue, catalog, report, today,
                                        fetch=fetch_public_html, limit=2):
     """Rescue primary editions whose first-party domain lacks a directory.
@@ -1089,6 +1168,11 @@ def main():
         folder, catalog, history, state, queue, report, today)
     direct_added = append_direct_first_party_proposals(
         folder, catalog, history, state, queue, report, today)
+    undated_direct_added, undated_direct_diagnostics = (
+        append_direct_first_party_undated_proposals(
+            folder, catalog, history, queue, today))
+    report["direct_undated_first_party_gate_private"] = undated_direct_diagnostics
+    report["direct_undated_first_party_staged_count_private"] = undated_direct_added
     venue_added = append_venue_proposals(
         folder, catalog, history, state, queue, report, today)
     state_path.write_text(
@@ -1101,6 +1185,7 @@ def main():
           + str(report["checked_count"]) + ", two-day="
           + str(report["two_day_dates_count"]) + ", directory_private_additions=" + str(added)
           + ", direct_first_party_private_additions=" + str(direct_added)
+          + ", direct_undated_first_party_private_additions=" + str(undated_direct_added)
           + ", venue_reciprocal_private_additions=" + str(venue_added)
           + ", publications=0")
 
