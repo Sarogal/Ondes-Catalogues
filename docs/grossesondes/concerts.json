@@ -2451,6 +2451,21 @@
       "id": "didier-super",
       "name": "DIDIER SUPER",
       "aliases": []
+    },
+    {
+      "id": "sylosis",
+      "name": "SYLOSIS",
+      "aliases": []
+    },
+    {
+      "id": "200-stab-wounds",
+      "name": "200 STAB WOUNDS",
+      "aliases": []
+    },
+    {
+      "id": "tribal-gaze",
+      "name": "TRIBAL GAZE",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15482,6 +15497,40 @@
       "time": "19:00",
       "timeMeaning": "début du concert",
       "organizer": "Le Ferrailleur",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-23",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-23",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270207-villeurbanne-whitechapel",
+      "title": "WHITECHAPEL + SYLOSIS + 200 STAB WOUNDS + TRIBAL GAZE",
+      "date": "2027-02-07",
+      "artistIds": [
+        "whitechapel",
+        "sylosis",
+        "200-stab-wounds",
+        "tribal-gaze"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "Deathcore",
+        "Metal moderne",
+        "Death Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://larayonne.org/evenement/whitechapel-sylosis-200-stab-wounds-tribal-gaze/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Rayonne",
       "ticketUrl": null,
       "lastVerified": "2026-11-23",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
