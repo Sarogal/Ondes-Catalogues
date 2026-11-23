@@ -1,0 +1,53 @@
+name: GO radio v8 — stage six verified channel logos (UNSIGNED DEV)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_six_exact_channel_originals.py'
+      - '.github/workflows/go-radio-v8-six-exact-channel-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-only-six-original-logo-shas:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install safe original image decoder and signed Ed25519 validator
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Verify full previous 29 SHA source from genuine signed TEST v7
+        run: python radio-catalog-lab/tools/test_go_radio_v8_29_official_sha_gate.py
+      - name: Fetch immutable evidence for six successful original publisher assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/channel-proof"
+          gh run download 45170511954 --repo "$GITHUB_REPOSITORY" --pattern go-v8-seven-exact-channel-broadcaster-logos-audit --dir "$RUNNER_TEMP/channel-proof"
+      - name: Re-download source images and stage 6 exact SHA assets without publication
+        run: |
+          python radio-catalog-lab/tools/stage_v8_six_exact_channel_originals.py --artifact-root "$RUNNER_TEMP/channel-proof"
+      - name: Strict allowlist six image objects plus one unsigned JSON
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-35-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-exact-six-v8/
+          python - <<'PY'
+          import subprocess
+          files=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          prefix="grossesondes/radio-test-v2/artwork/staging-exact-six-v8/"
+          candidate="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-35-official-sha-logos-20261123.json"
+          assert len(files)==7 and candidate in files,files
+          assert len([f for f in files if f.startswith(prefix) and f.endswith((".jpg",".png",".webp"))])==6
+          assert all(f==candidate or f.startswith(prefix) for f in files)
+          print("GO_V8_EXACT_SIX_SHA_UNSIGNED_STAGING_ALLOWLIST_PASS")
+          PY
+      - name: Commit to experimental branch only; never sign TEST or modify main
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage six exact official channel logos unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
