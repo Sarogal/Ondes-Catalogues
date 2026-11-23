@@ -254,8 +254,8 @@ class OfficialReconciliationTests(unittest.TestCase):
         official = live()
         far = (TODAY + timedelta(days=185)).isoformat()
         official["timings"].append({
-            "begin": far+"T10:00:00+01:00",
-            "end": far+"T12:00:00+01:00",
+            "begin": far+"T10:00:00+02:00",
+            "end": far+"T12:00:00+02:00",
         })
         after, audit, counts = check(document(row()), {
             "event": official, "agenda": {"uid": 901131,
