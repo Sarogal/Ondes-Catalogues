@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-23T12:57:48+01:00",
+  "updated_at": "2026-11-23T13:22:17+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -14163,6 +14163,66 @@
       "geo_precision": "venue",
       "lat": 50.535173,
       "lng": 2.950559
+    },
+    {
+      "id": "openagenda-80666775-2027-04-07",
+      "title": "Spectacle musical dès 6 ans « L’Épatante Épopée » au TNP",
+      "category": "spectacle-musical",
+      "category_label": "Spectacle musical",
+      "date_start": "2027-04-07",
+      "date_end": "2027-04-07",
+      "time": "15:30",
+      "city": "Villeurbanne",
+      "department": "Rhône",
+      "region": "Auvergne-Rhône-Alpes",
+      "venue": "Théâtre National Populaire (TNP) - Petit théâtre",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/80666775_spectacle-musical-des-6-ans-lepatante-epopee-au-tnp",
+      "source_label": "Villeurbanne - Agenda culturel — Licence Ouverte 2.0 — données mises à jour le 01/09/2026",
+      "verified_at": "2026-11-23",
+      "geo_verified_at": "2026-11-23",
+      "geo_precision": "venue",
+      "lat": 45.765273,
+      "lng": 4.879855
+    },
+    {
+      "id": "openagenda-41836706-2026-12-05",
+      "title": "Spectacle \"Mon arbre de Noël\" avec la Cie Les Passagers du Vent",
+      "category": "spectacle-musical",
+      "category_label": "Spectacle musical",
+      "date_start": "2026-12-05",
+      "date_end": "2026-12-05",
+      "time": "10:30",
+      "city": "Bordeaux",
+      "department": "Gironde",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Bibliothèque Bordeaux-Lac",
+      "source_url": "https://openagenda.com/bordeaux-bibliotheques/events/41836706_mon-arbre-de-noel",
+      "source_label": "Bibliothèques de Bordeaux — Licence Ouverte 2.0 — données mises à jour le 21/11/2026",
+      "verified_at": "2026-11-23",
+      "geo_verified_at": "2026-11-23",
+      "geo_precision": "venue",
+      "lat": 44.874018,
+      "lng": -0.572724
+    },
+    {
+      "id": "openagenda-49498596-2027-01-14",
+      "title": "Éveil musical",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2027-01-14",
+      "date_end": "2027-01-14",
+      "time": "10:00",
+      "city": "Marseille",
+      "department": "Bouches-du-Rhône",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "venue": "Bibliothèque de Castellane",
+      "source_url": "https://openagenda.com/bibliotheques-de-marseille/events/49498596_eveil-musical-9273040",
+      "source_label": "Bibliothèques de territoire - Ville de Marseille — Licence Ouverte 2.0 — données mises à jour le 23/11/2026",
+      "verified_at": "2026-11-23",
+      "geo_verified_at": "2026-11-23",
+      "geo_precision": "venue",
+      "lat": 43.285918,
+      "lng": 5.383738
     }
   ]
 }
