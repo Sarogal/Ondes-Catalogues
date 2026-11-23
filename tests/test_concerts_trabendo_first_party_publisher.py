@@ -99,12 +99,19 @@ class TrabendoOfficialPublisherTests(unittest.TestCase):
                 p["officialEvidence"][0]["proofType"] ==
                 identity.OFFICIAL_SOURCE_PROFILE
                 for p in proposed["approvals"]))
+            # The immutable historic baseline and the current catalogue
+            # are distinct. Replaying a current catalogue AS the immutable
+            # reference would falsely classify already-signed historical
+            # corrections (Ramoneurs etc.) as unapproved mutations.
+            reference = json.loads(
+                (ROOT / "docs/grossesondes/concerts-reference.json")
+                .read_text("utf-8"))
             published, stats = publisher.merge(
-                self.catalogue, self.catalogue, proposed, TODAY)
+                reference, self.catalogue, proposed, TODAY)
             self.assertEqual(stats["newEvents"], 2, stats.get("held"))
             self.assertEqual(published["events"][-2]["venueId"], VENUE)
             again, second = publisher.merge(
-                self.catalogue, published, proposed, TODAY)
+                reference, published, proposed, TODAY)
             self.assertEqual(second["newEvents"], 0)
             self.assertEqual(published, again)
         self.assertGreaterEqual(len(calls), 6)
