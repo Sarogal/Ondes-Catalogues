@@ -125,6 +125,51 @@ class CityPublisherTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             safe_target(baseline, forged, signed)
 
+    def test_undated_section_department_label_rechecked_by_publisher(self):
+        undated = {**ROW, "slug": "esqui-riot-2027",
+                   "name": "Esqui'Riot 2027", "startDate": None,
+                   "endDate": None, "status": "Dates à venir",
+                   "department": None, "officialSite": "https://esquiriot.fr/",
+                   "source": "https://esquiriot.fr/"}
+        future = ("<h1>Esqui'Riot</h1><section>"
+                  "<p>Édition 2 — Été 2027</p>"
+                  "<p>Festival Punk · Métal · Rock</p>"
+                  "<p>Sainte-Hélène</p><p>Gironde</p></section>")
+        report = review()
+        report["findings"][0]["slug"] = undated["slug"]
+        report["findings"][0]["candidate_city"] = {
+            "slug": undated["slug"], "city": "Sainte-Hélène",
+            "source": undated["officialSite"], "departmentLabel": "Gironde",
+        }
+        features = [
+            {"type": "Feature", "properties": {
+                "nom": "Sainte-Hélène", "code": code,
+                "codeDepartement": dep,
+                "departement": {"code": dep, "nom": label}},
+             "geometry": {"type": "Point", "coordinates": [lon, lat]}}
+            for code, dep, label, lon, lat in [
+                ("33417", "33", "Gironde", -0.9071, 44.9653),
+                ("56220", "56", "Morbihan", -3.1879, 47.7158)]
+        ]
+        government = {"type": "FeatureCollection", "features": features}
+        result, state = apply_independently_verified_city(
+            catalog(undated), catalog(undated), report, "2026-11-21",
+            fetcher=lambda _: future, admin_reader=lambda _: government)
+        self.assertEqual(state["accepted_city_updates"], [undated["slug"]])
+        pin = result["festivals"][0]
+        self.assertEqual(pin["geoInsee"], "33417")
+        self.assertEqual(pin["city"], "Sainte-Hélène")
+        self.assertEqual(pin["geoPrecision"], "commune")
+        self.assertIsNone(pin["startDate"])
+        self.assertIsNone(pin["venue"])
+        forged = deepcopy(report)
+        forged["findings"][0]["candidate_city"]["departmentLabel"] = "Morbihan"
+        held, counters = apply_independently_verified_city(
+            catalog(undated), catalog(undated), forged, "2026-11-21",
+            fetcher=lambda _: future, admin_reader=lambda _: government)
+        self.assertEqual(held, catalog(undated))
+        self.assertEqual(counters["accepted_city_updates"], [])
+
     def test_undated_city_not_inferred_from_old_edition(self):
         undated = {**ROW, "startDate": None, "endDate": None,
                    "status": "Dates à venir"}
