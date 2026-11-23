@@ -54,6 +54,32 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
 })
 
 
+# Explicit ages in first-party descriptions and participation conditions are
+# valid audience evidence even if no structured OpenAgenda age.max is present.
+# E.g. "pour les plus jeunes jusqu'à 11 ans" or "de 3 à 12 ans".
+# These patterns make no assumption about the city, agenda, venue or organiser.
+AGE_UPPER_TEXT = re.compile(
+    r"\\b(?:jusqu a|moins de)\\s+(\\d{1,2})\\s+ans\\b"
+)
+AGE_RANGE_TEXT = re.compile(
+    r"\\b(?:de|entre|pour les)\\s+(\\d{1,2})\\s+(?:a|et)\\s+(\\d{1,2})\\s+ans\\b"
+)
+
+
+def explicit_child_age_text(value):
+    if not isinstance(value, str):
+        return False
+    text = _norm(value)
+    for match in AGE_UPPER_TEXT.finditer(text):
+        if int(match[1]) <= 17:
+            return True
+    for match in AGE_RANGE_TEXT.finditer(text):
+        low, high = int(match[1]), int(match[2])
+        if low <= high <= 17:
+            return True
+    return False
+
+
 def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, today):
     """Return (candidate, stable_reason). No network or catalogue writes."""
     def fail(reason):
@@ -151,7 +177,7 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     if EXCLUSIVELY_ADULT.search(audience) or NOT_PUBLIC_ACCESS.search(audience):
         return fail("oa_direct_restricted_access")
     child_age = isinstance(age, dict) and type(age.get("max")) is int and age["max"] <= 17
-    if not CHILD.search(audience) and not child_age:
+    if not CHILD.search(audience) and not child_age and not explicit_child_age_text(source_text):
         return fail("oa_direct_child_audience_missing")
     category = category_for(title, source_text)
     if category is None:
