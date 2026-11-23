@@ -6182,24 +6182,36 @@
       "department": null,
       "bands": 0,
       "region": null,
-      "showOnMap": false,
-      "city": null,
-      "lat": null,
+      "showOnMap": true,
+      "city": "Colombe-lès-Vesoul",
+      "lat": 47.612,
       "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
       "slug": "colomb-in-rock-festival-2027",
       "status": "Annoncé",
       "venue": null,
       "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
       "name": "Colomb'in Rock Festival 2027",
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-23",
       "lineup": [],
       "officialSite": "https://www.colombin-rock.fr/",
       "endDate": "2027-08-14",
       "price": "Pass 2 jours : 10 € — billetterie officielle ouverte",
-      "lon": null,
+      "lon": 6.2204,
       "auditSources": [
-        "https://www.colombin-rock.fr/billetterie/"
-      ]
+        "https://www.colombin-rock.fr/billetterie/",
+        "https://www.colombin-rock.fr/"
+      ],
+      "geoCity": "Colombe-lès-Vesoul",
+      "geoPrecision": "commune",
+      "geoInsee": "70162",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Colombe-l%C3%A8s-Vesoul&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-23",
+        "officialSite": "https://www.colombin-rock.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "venue": null,
