@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from future_geo_preflight import (
-    MAX_CHECKS, _VisibleOrganizerLinks, _matching_event, _name, _country,
+    _VisibleOrganizerLinks, _matching_event, _name, _country,
     _atomic, eligible, official_access_links,
 )
 SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
@@ -37,6 +37,9 @@ SCHEMA = "grossesondes.future-festival-city-private.v1"
 STATE_KEY = "future_edition_city_observations_private"
 CURSOR_KEY = "future_edition_city_rotation_cursor"
 MAX_INTERNAL_PAGES = 2
+# 13 currently eligible editions; 8 per run covers them across both daily cycles.
+# Keep a bounded, auditable budget; geo research retains its own cap of four.
+MAX_CHECKS = 8
 MAX_NESTED_NEWS_PAGES = 2
 CITY_PATTERN = re.compile(
     r"\b(?:à|au|in|at)\s+([A-ZÀ-ÖØ-Ý][a-zà-öø-ÿ]+"
@@ -448,6 +451,73 @@ def _city_from_dated_title(html, row):
     return city
 
 
+
+def _current_edition_evergreen_commune(html, row):
+    """Official dated homepage + explicit present-tense branded festival town.
+
+    A current edition can be announced in a hero while the organizer describes
+    the festival's permanent commune in its official overview. No inherited
+    archive address is allowed: exact signed date and event identity must occur
+    together near the top of this SAME first-party homepage, and the location
+    sentence must independently name this same festival in present tense.
+    """
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if start is None or end is None or start.year != end.year:
+        return None
+    words = re.findall(r"[a-z0-9]+", re.sub(
+        r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    identity = re.compile(
+        r"(?<![a-z0-9])" + r"[\W_]+".join(map(re.escape, words))
+        + r"(?![a-z0-9])")
+    parser = VisibleParagraphs()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return None
+    blocks = [raw for raw in
+              " ".join(parser.parts).split(VisibleParagraphs.SEP)
+              if 0 < len(raw) <= 1100]
+    # The event's branded hero must announce its OWN exact current interval.
+    # Reject inconsistent 2027 ranges; a ticket-sale date is not event proof.
+    date_blocks = []
+    for i, raw in enumerate(blocks):
+        folded = " ".join(fold(raw).split())
+        ranges = {(a, b) for _, _, a, b in explicit_ranges(folded, start.year)}
+        if not ranges:
+            continue
+        if CANCEL.search(folded) or dominant_visible_range(ranges) != (start, end):
+            return None
+        if (i < 6 and any(identity.search(" ".join(fold(x).split()))
+                          for x in blocks[max(0, i - 2):i + 1])):
+            date_blocks.append(i)
+    if not date_blocks:
+        return None
+    # An old recap, organizer address, unrelated event or generic site
+    # geography never qualifies. Require a current indicative festival
+    # statement naming the exact brand and the town explicitly.
+    facts = set()
+    for raw in blocks:
+        paragraph = " ".join(fold(raw).split())
+        if (not identity.search(paragraph) or CANCEL.search(paragraph)
+                or re.search(r"(?<!\d)20[2-4]\d(?!\d)", paragraph)
+                or not re.search(
+                    r"\b(?:se\s+deroule|aura\s+lieu|a\s+lieu)\s+a\b",
+                    paragraph)):
+            continue
+        candidates = [city for match in CITY_PATTERN.finditer(raw)
+                      if (city := _name(match.group(1))) is not None]
+        if len(candidates) != 1:
+            continue
+        city = candidates[0]
+        if _normal(city) not in {"france", "festival", "programmation",
+                                 "billetterie", "prochainement"}:
+            facts.add(city)
+    return next(iter(facts)) if len(facts) == 1 else None
+
+
 def exact_edition_city(html, row):
     """One city of one 2027 edition, or nothing. Never infer from old years."""
     if not isinstance(html, str) or not 0 < len(html) <= 650_000:
@@ -473,10 +543,12 @@ def exact_edition_city(html, row):
         return None
     visible = _city_visible(html, row)
     title = _city_from_dated_title(html, row) if start is not None else None
-    evidence = [c for c in (structured, visible, title) if c is not None]
+    evergreen = _current_edition_evergreen_commune(html, row)
+    evidence = [c for c in (structured, visible, title, evergreen)
+                if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
-    city = structured or visible or title
+    city = structured or visible or title or evergreen
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}
@@ -654,7 +726,8 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
             findings.append(result)
             continue
         digest = sha256(json.dumps(
-            {"city": _normal(claim["city"]), "source": claim["source"]},
+            {"city": _normal(claim["city"]), "source": claim["source"],
+             "department": _normal(claim.get("departmentLabel", ""))},
             sort_keys=True).encode("utf-8")).hexdigest()
         previous = observations.get(slug)
         stable = (isinstance(previous, dict) and previous.get("digest") == digest
