@@ -19,7 +19,7 @@ PATH = "automation-intake/ptitesondes"
 ROOT = "https://api.github.com/repos/Sarogal/PtitesOndes/"
 MAX_JSON_RESPONSE = 8_000_000
 MAX_PRIVATE_PATCH = 5_000_000
-BLOB_SHA = re.compile(r"[0-9a-f]{40}\\Z")
+BLOB_SHA = re.compile(r"[0-9a-f]{40}\Z")
 
 
 def github(path, token, *, blob=False):
@@ -59,7 +59,7 @@ def latest(token, today):
         if not isinstance(f, dict):
             raise ValueError("Entrée GitHub invalide")
         name = f.get("name", "")
-        m = re.fullmatch(r"patch-(\\d{4}-\\d{2}-\\d{2})\\.json", name)
+        m = re.fullmatch(r"patch-(\d{4}-\d{2}-\d{2})\.json", name)
         if f.get("type") != "file" or m is None:
             continue
         day = date.fromisoformat(m.group(1))
@@ -92,7 +92,7 @@ def latest(token, today):
     if len(raw) != size or len(raw) > MAX_PRIVATE_PATCH:
         raise ValueError("Taille du Git Blob incorrecte")
     actual_sha = hashlib.sha1(
-        b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw
+        b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw
     ).hexdigest()
     if actual_sha != sha:
         raise ValueError("Intégrité du Git Blob incorrecte")
