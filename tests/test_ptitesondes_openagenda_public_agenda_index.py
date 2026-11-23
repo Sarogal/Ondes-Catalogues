@@ -85,6 +85,31 @@ class NationalOpenAgendaIndexTests(unittest.TestCase):
         self.assertFalse(result["publisher_connected"])
         self.assertEqual(result["public_writes"], 0)
 
+    def test_recently_added_events_sort_uses_its_own_explicit_api_order(self):
+        urls = []
+        def fetch(request, timeout):
+            urls.append(request.full_url)
+            return Response(request, page([554, 555], after=[1, 555]))
+        result = read_index_page(KEY, None, size=2, opener=fetch,
+                                 sort="recentlyAddedEvents.desc")
+        self.assertEqual(result["after"], [1, 555])
+        self.assertEqual(urls, [API +
+            "?size=2&sort=recentlyAddedEvents.desc"])
+        with self.assertRaisesRegex(ValueError, "invalid_oa_index_request"):
+            read_index_page(KEY, sort="createdAt.desc", opener=fetch)
+
+    def test_recent_index_scan_preserves_unfiltered_source_fairness(self):
+        def fresh(key, cursor, *, size, sort):
+            self.assertEqual(sort, "recentlyAddedEvents.desc")
+            self.assertIsNone(cursor)
+            return page([987654, 445566], after=[1, 445566])
+        result = scan_index_pages([], pages=1, reader=fresh,
+                                  sort="recentlyAddedEvents.desc")
+        self.assertEqual([x["agenda_uid"] for x in
+                          result["new_agenda_candidates"]], [987654, 445566])
+        with self.assertRaisesRegex(ValueError, "invalid_oa_index_scan"):
+            scan_index_pages([], sort="unknown", reader=fresh)
+
     def test_pagination_can_resume_without_reusing_previous_page(self):
         def first(key, cursor, *, size):
             self.assertIsNone(cursor)
