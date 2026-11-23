@@ -19,7 +19,9 @@ from urllib.parse import urlsplit
 from audit_open_radio_artwork_inventory import inspect_bytes
 from radio_catalog_release_packager import (
     load_verified_predecessor, read_public_key, validate_release_content,
+    create_bundle,
 )
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from test_go_radio_v8_70_owner_sha_gate import main as verify_all_staged_70
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -48,6 +50,15 @@ def preflight(remote: bool = False, prior_qa: bool = True) -> dict:
     after = json.loads(CANONICAL.read_bytes())
     signed = load_verified_predecessor(ROOTDIR, read_public_key(ROOTDIR / "TEST_PUBLIC_KEY.b64"))
     validate_release_content(CANONICAL.read_bytes(), previous=signed)
+    # Exercise the exact REAL local packager with throwaway CI-only signing key.
+    # No signed output or private seed is stored or published.
+    synthetic = create_bundle(
+        CANONICAL.read_bytes(), Ed25519PrivateKey.generate(),
+        key_id="go-v8-ephemeral-ci-only-never-publish",
+        published_at="2026-11-23T21:00:00Z",
+        previous=signed,
+    )
+    assert synthetic.sequence == 8 and synthetic.station_count == 296
     assert signed["release_sequence"] == 7 and before["release_sequence"] == after["release_sequence"] == 8
     assert len(after["stations"]) == 296 and len(signed["stations"]) == 296
     assert after["tombstones"] == before["tombstones"] == signed["tombstones"]
