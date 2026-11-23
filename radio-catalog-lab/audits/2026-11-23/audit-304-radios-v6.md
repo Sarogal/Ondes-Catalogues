@@ -195,6 +195,24 @@ Les fiches suivantes ont `logo = null` dans la v6. Les 185 fiches disposant d’
 | `go-station-000310` | Heavy Music Atmospheric Radio |
 | `go-station-000313` | REAL PUNK RADIO |
 
+## État réel des 98 sources d'images SHA (deux vérifications réseau)
+
+Parmi les 185 fiches actives qui ont un logo, il existe 98 empreintes SHA distinctes. Deux passages de GitHub Actions ont téléchargé les images et comparé les **octets réels, empreintes SHA-256, dimensions et formats** aux descripteurs signés.
+
+- [Passe 1 — 96/98 SHA vérifiés](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/45116042897) : une discordance de descripteur et une URL indisponible.
+- [Passe 2 — 94/98 SHA vérifiés](https://github.com/Sarogal/Ondes-Catalogues/actions/runs/45116208670) : deux discordances de descripteur et deux URL indisponibles.
+
+| Station | Anomalie observée en seconde passe |
+|---|---|
+| 011.fm – House of Hair (`000211`) | Image renvoyée non conforme au SHA/format/dimensions signé |
+| Rock The World - Heavy Metal (`000030`) | Image renvoyée non conforme au SHA/format/dimensions signé |
+| Radio ROCKS Kyiv 103.6FM HD (`000068`) | Erreur HTTP sur l'image Wikimedia |
+| Megarock Radio 320k (`000289`) | Erreur de récupération de l'image du site diffuseur |
+
+Les erreurs HTTP/réseau peuvent être **temporaires** : elles ne prouvent pas que le logo est absent sur tous les téléphones. Le cache SHA local peut également contenir une image précédemment validée. Les discordances de SHA doivent être corrigées avec une **nouvelle révision signée**, jamais en contournant le contrôle cryptographique.
+
+[CSV — les quatre sources de logos à revoir](./4-sources-logo-a-revoir-v6.csv)
+
 ## Priorités et précautions
 
 - **Exclusively : 5 manquants** — Deep Purple, Iron Maiden, Led Zeppelin, Led Zeppelin Only Hits, Ramones. La chaîne « Only Hits » doit conserver une identité séparée.
