@@ -112,6 +112,44 @@ class FutureCityProofTests(unittest.TestCase):
         })
         self.assertEqual(calls, [SITE])
 
+    def test_official_future_edition_hero_owns_town_and_department(self):
+        row = {
+            "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": "https://esquiriot.fr/", "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        future = ("<section><p>Édition 2 — Été 2027</p>"
+                  "<p>Festival Punk · Métal · Rock</p>"
+                  "<p>Sainte-Hélène</p><p>Gironde</p>"
+                  "<p>499</p><p>Places</p></section>")
+        past = ("<section><p>Édition 2026</p><h2>Retour en images</h2>"
+                "<p>La première édition en quelques clichés.</p></section>")
+        html = "<h1>Esqui'Riot</h1>" + future + past
+        claim = {"slug": row["slug"], "city": "Sainte-Hélène",
+                 "source": row["officialSite"], "departmentLabel": "Gironde"}
+        self.assertEqual(exact_edition_city(html, row), claim)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: html), claim)
+        invalid = [
+            future + past,
+            "<h1>Esqui'Riot</h1>" +
+                future.replace("2027", "2026") + past,
+            "<h1>Esqui'Riot</h1>" + future.replace(
+                "<p>Gironde</p>", "</section><section><p>Gironde</p>") + past,
+            "<h1>Esqui'Riot</h1>" +
+                future.replace("<p>Sainte-Hélène</p>",
+                               "<p hidden>Sainte-Hélène</p>") + past,
+            "<h1>Esqui'Riot</h1>" +
+                future.replace("<p>Édition 2 — Été 2027</p>",
+                               "<p>Édition 2 — Été 2027 annulée</p>") + past,
+            "<h1>Esqui'Riot</h1>" + future +
+                future.replace("Sainte-Hélène", "Bordeaux") + past,
+        ]
+        for sample in invalid:
+            with self.subTest(sample=sample[:120]):
+                self.assertIsNone(exact_edition_city(sample, row))
+
     def test_undated_city_must_be_on_explicit_future_edition_paragraph(self):
         row = {
             "slug": "festival-exemple-2027",
