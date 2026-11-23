@@ -768,7 +768,9 @@ def _signed_tourism_current_postal_city(html, row):
     postcodes = []
     postal = re.compile(
         r"(?<!\d)(?:0[1-9]|[1-9][0-9])\d{3}\s+"
-        r"([A-ZÀ-ÖØ-Þ][A-ZÀ-ÖØ-Þ'’ -]{2,65})")
+        # Each uppercase word must contain >=2 letters. A following
+        # paragraph beginning 'Programmation' must not append a stray 'P'.
+        r"([A-ZÀ-ÖØ-Þ]{2,}(?:[ '-][A-ZÀ-ÖØ-Þ]{2,}){0,5})")
     for match in postal.finditer(intro):
         # The postal town must describe THIS visible dated event, not a
         # neighbouring venue card or a historical office address.
