@@ -30,7 +30,7 @@ ASSETS=RELEASE/"artwork/staging-metalon-v8"
 EXPECTED={
     "go-station-000218":"64b499012b0e6f64ff0eca85ef69772e6e9c800c3661d4d73dad7e0b99e41503",
     "go-station-000046":"c17784a27ff5972c60ea10c716f2921f8a60b4af9e9d2015d13da5952389a31f",
-    "go-station-000024":"ca6c81dc2248f5d04c93d0e7270ec7470503295604ccccd48c8ad5",
+    "go-station-000024":"ca6c81dc2248f5d04c93d0e7270ec7470503295604ccccd48c8d45545c7c8ad5",
 }
 EXT={"image/png":".png","image/jpeg":".jpg","image/webp":".webp"}
 
