@@ -133,18 +133,38 @@ def clean_obsolete_date_notes(notes):
 
 
 
-def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
-    """Update OLD ticket-status commentary only on fresh first-party proof.
+TICKET_EARLY_BIRD_CURRENT = (
+    "Actualisation officielle : les trois paliers Early Bird "
+    "du pass 4 jours sont épuisés."
+)
 
-    Preserve all historical early-bird prices, dates and editorial notes.
-    A current official homepage must explicitly say all three four-day
-    early-bird tiers are sold out AND offer the normal four-day pass.
-    The price value itself is supplied by the separately verified parser.
-    No brand or festival name is hard-coded in this rule.
+
+def expected_ticket_notes_after_official_sale(notes, four_day_price):
+    """Deterministic, narrowly scoped note delta for the signed-head guard.
+
+    This function is NOT evidence that a ticket is sold out. Only the
+    separate first-party Publisher HTML recheck supplies that evidence.
     """
+    if (not isinstance(notes, str) or "early bird" not in fold(notes)
+            or not isinstance(four_day_price, str)
+            or re.fullmatch(r"\d{2,4}(?:,\d{2})? €", four_day_price) is None):
+        return notes
+    amount = re.escape(four_day_price[:-2].strip())
+    updated, count = re.subn(
+        rf"(palier\s+(?:r[eé]gulier|normal)\s+affich[eé]\s+[aà]\s+"
+        rf"{amount}\s*€)\s*\(non encore disponible à cette vérification\)",
+        r"\1", notes, flags=re.I)
+    if count != 1:
+        return notes
+    if TICKET_EARLY_BIRD_CURRENT not in updated:
+        updated = updated.rstrip() + " | " + TICKET_EARLY_BIRD_CURRENT
+    return updated
+
+
+def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
+    """Update obsolete ticket notes only on fresh same-site current proof."""
     if (not isinstance(notes, str) or not isinstance(prices, dict)
-            or 4 not in prices or "early bird" not in fold(notes)
-            or not isinstance(current_official_blocks, list)):
+            or 4 not in prices or not isinstance(current_official_blocks, list)):
         return notes
     text = fold(" ".join(
         block.get("text", "") for block in current_official_blocks
@@ -156,17 +176,7 @@ def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
                 r"\btrois\s+paliers\s+d\s+early\s+birds?\s+sont\s+epuises\b",
                 text)):
         return notes
-    updated = notes
-    amount = re.escape(str(prices[4]).split(" ", 1)[0])
-    updated = re.sub(
-        rf"(palier\s+(?:r[eé]gulier|normal)\s+affich[eé]\s+[aà]\s+"
-        rf"{amount}\s*€)\s*\(non encore disponible à cette vérification\)",
-        r"\1", updated, flags=re.I)
-    summary = ("Actualisation officielle : les trois paliers Early Bird "
-               "du pass 4 jours sont épuisés.")
-    if summary not in updated:
-        updated = updated.rstrip() + " | " + summary
-    return updated
+    return expected_ticket_notes_after_official_sale(notes, prices[4])
 
 
 class Page(HTMLParser):
