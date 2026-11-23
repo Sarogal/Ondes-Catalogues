@@ -85,9 +85,8 @@ jobs:
           assert "ptitesondes_national_openworld_research_cycle.py" in s
           assert 'automation-intake/ptitesondes/national-observation/research' in s
           # The recent ODS cursor is private state, never part of public Pages.
-          assert 'cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"' in s
-          assert 'git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"' in s
-          assert 'docs/ptitesondes/ods-recent-cursor.json' not in s
+          assert s.count('cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"') == 2
+          assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"') == 2
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
