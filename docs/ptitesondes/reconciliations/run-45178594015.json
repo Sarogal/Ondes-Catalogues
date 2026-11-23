@@ -1,0 +1,62 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-23",
+  "slot": 1,
+  "source_series_checked": 30,
+  "total_source_series": 38,
+  "before_count": 679,
+  "after_count": 685,
+  "source_summary": {
+    "official_new_session_admitted": 2,
+    "official_new_session_held": 1,
+    "official_unavailable": 2,
+    "official_unchanged": 26
+  },
+  "catalogue_before_sha256": "0b1ee88cd8faeac9f62a23e655fbc8b4e35f5a50355ffea28dc225e44f5d8b01",
+  "catalogue_after_sha256": "f7770ff3a1d029f15efb18aaa51b9609a925629a26ec0b349baf935c34cc2023",
+  "operations": [
+    {
+      "id": "openagenda-80666775-2027-04-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/80666775_spectacle-musical-des-6-ans-lepatante-epopee-au-tnp",
+      "new_event_sha256": "32eb216c197108251d57b2de6599b8683eb1acd2eda72ed274ae0a2f9174b7f1"
+    },
+    {
+      "id": "openagenda-80666775-2027-04-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/villeurbanne2022/events/80666775_spectacle-musical-des-6-ans-lepatante-epopee-au-tnp",
+      "new_event_sha256": "7d4ae51f5791d16ca15446615f13f967099763e5d5aabd60ec67f09df48b888e"
+    },
+    {
+      "id": "openagenda-8419718-2026-11-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/plakatak/events/8419718_atelier-deveil-musical-5043750",
+      "new_event_sha256": "f0c8adfeb7d50bf5683862a1dfb139e803492eabf24f2e1f78cd8523e0742d8c"
+    },
+    {
+      "id": "openagenda-8419718-2026-12-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/plakatak/events/8419718_atelier-deveil-musical-5043750",
+      "new_event_sha256": "2a34fb057b90bf94179023b2ad26d08954653d04b0e1112c1ec9671fa51012b4"
+    },
+    {
+      "id": "openagenda-8419718-2026-12-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/plakatak/events/8419718_atelier-deveil-musical-5043750",
+      "new_event_sha256": "47157a7ce56978b1cacc1a7ba337b8205d666752c01ce0a32d169c68b7f440b0"
+    },
+    {
+      "id": "openagenda-8419718-2026-12-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/plakatak/events/8419718_atelier-deveil-musical-5043750",
+      "new_event_sha256": "d8146ebc8452bf9360ae6c52e984c91f3de03d256f2ee779c7280330e13114b7"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
