@@ -153,9 +153,8 @@ def main()->None:
         check([x["priority"] for x in current["streams"]]==
               list(range(len(current["streams"]))),
               "stream priorities not a dense stable sequence in "+goid)
-        check(current["display_name"]==rec["program"].replace(
-            "radiobob:", "RADIO BOB! ") if False else
-            current["display_name"].strip()!= "", "invalid retained station name")
+        check(current["display_name"].strip() != "",
+              "invalid retained station name")
         check(current["logo"]==old["logo"],"survivor logo replaced without review")
         check(current["status"]==old["status"],"survivor status changed")
         check(current["legacy_aliases"]==old["legacy_aliases"],
