@@ -180,6 +180,63 @@ class MultiSlotRecheckTests(unittest.TestCase):
             self.assertEqual(proposed, APPROVALS)
         self.assertEqual(rows, before)
 
+    def test_late_new_official_lead_uses_only_spare_last_slot_capacity(self):
+        # A first-party concert found in the evening may belong to the first
+        # daily cohort. A spare slot must independently review it the SAME day,
+        # even when it was discovered after that cohort ran. No special artist
+        # or URL is authorized, and the original last-slot rows remain covered.
+        entries = [indexed_row(i) for i in range(21)]
+        fresh = entries[4]
+        fresh["stableObservations"] = 1
+        fresh["candidate"]["source"] = "agenda_officiel_visible_bill"
+        fresh["candidate"]["reviewBucket"] = "genre_tag_review"
+        fresh["firstSeenAt"] = TODAY.isoformat() + "T19:32:42+00:00"
+        before = copy.deepcopy(entries)
+
+        chosen = official_recheck.scheduled_review_cohort(
+            entries, TODAY, scan_slot=2, limit=16)
+        ids = [row["candidate"]["candidateId"] for row in chosen]
+        self.assertEqual(len(ids), 8)  # 7 normal + 1 unused-budget probe
+        self.assertEqual(len(set(ids)), len(ids))
+        self.assertIn("synthetic-site-004", ids)
+        self.assertEqual(set(ids[:7]), {
+            f"synthetic-site-{i:03d}" for i in range(14, 21)})
+        self.assertEqual(entries, before)
+
+        registry = {row["candidate"]["candidateId"]: row for row in entries}
+        proposed, report = self.process(registry, 2)
+        self.assertEqual(report["evaluated"], 8)
+        self.assertIn("synthetic-site-004",
+                      {row["candidateId"] for row in report["results"]})
+        # Scheduling never signs a show from an incomplete fake official page.
+        self.assertEqual(report["newApprovals"], [])
+        self.assertEqual(proposed, APPROVALS)
+        self.assertEqual(entries, before)
+
+    def test_spare_review_slots_do_not_recheck_stale_or_malformed_leads(self):
+        entries = [indexed_row(i) for i in range(21)]
+        fresh = entries[4]
+        for when in ("2026-11-19T19:32:42+00:00", "not-a-timestamp",
+                     "2026-11-20T19:32:42"):
+            with self.subTest(when=when):
+                fresh["firstSeenAt"] = when
+                rows = official_recheck.scheduled_review_cohort(
+                    entries, TODAY, scan_slot=2, limit=16)
+                self.assertEqual([x["candidate"]["candidateId"]
+                                  for x in rows], [
+                    f"synthetic-site-{i:03d}" for i in range(14, 21)])
+
+    def test_oversubscribed_cohort_never_exceeds_existing_review_limit(self):
+        entries = [indexed_row(i) for i in range(100)]
+        for row in entries:
+            row["firstSeenAt"] = TODAY.isoformat() + "T12:00:00+00:00"
+        slots = [official_recheck.scheduled_review_cohort(
+            entries, TODAY, slot, 16) for slot in (0, 1, 2)]
+        self.assertEqual([len(slot) for slot in slots], [16, 16, 16])
+        ids = [r["candidate"]["candidateId"]
+               for slot in slots for r in slot]
+        self.assertEqual(len(set(ids)), 48)
+
     def test_capacity_and_slot_cannot_be_unbounded(self):
         for bad in (-1, 0, 41, True, "16"):
             with self.subTest(limit=bad), self.assertRaises(ValueError):
