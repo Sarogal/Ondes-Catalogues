@@ -177,14 +177,14 @@ def _city_visible(html, row):
         # Do not borrow a historic venue: the date interval must already
         # match this SAME visible paragraph; two place claims are ambiguous.
         dated_visit = (not named and not hero and branded
-                       and re.search(r"\\brendez[\\W_]+vous\\b", paragraph)
-                       and re.search(r"\\bdans\\s+la\\s+salle\\b", paragraph))
+                       and re.search(r"\brendez[\W_]+vous\b", paragraph)
+                       and re.search(r"\bdans\s+la\s+salle\b", paragraph))
         if dated_visit:
             towns = [city for match in CITY_PATTERN.finditer(raw)
                      if (city := _name(match.group(1))) is not None]
             if len(towns) == 1 and not re.search(
-                    r"\\b(?:Festival|France|Vente|Billetterie|"
-                    r"Programmation)\\b", towns[0]):
+                    r"\b(?:Festival|France|Vente|Billetterie|"
+                    r"Programmation)\b", towns[0]):
                 facts.add(towns[0])
         if not (named or hero):
             continue
