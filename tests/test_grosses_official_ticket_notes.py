@@ -12,6 +12,7 @@ from grossesondes_existing_official_updates import (
     page,
     reconcile_obsolete_ticket_notes,
 )
+from grossesondes_cloud_sync import _verified_official_update_delta
 
 SITE = "https://www.motocultor-festival.com/"
 CURRENT_PRICE = "Pass 4 jours : 239 € ; Pass 1 jour : 82 € — billetterie officielle ouverte"
@@ -91,6 +92,15 @@ class OfficialTicketNotesTests(unittest.TestCase):
         self.assertEqual(row["bands"], 57)
         self.assertEqual(row["lineup"], baseline["festivals"][0]["lineup"])
         self.assertNotIn("non encore disponible", row["notes"])
+        self.assertTrue(_verified_official_update_delta(
+            baseline["festivals"][0], row))
+        malicious = dict(row, notes=row["notes"] + " | Prix VIP offert")
+        self.assertFalse(_verified_official_update_delta(
+            baseline["festivals"][0], malicious))
+        malicious_price = dict(row, price="Pass 4 jours : 250 € — billetterie officielle ouverte")
+        self.assertFalse(_verified_official_update_delta(
+            baseline["festivals"][0], malicious_price))
+
 
 
 if __name__ == "__main__":
