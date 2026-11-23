@@ -206,6 +206,43 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertIsNone(exact_edition_city(
             title + body.replace("2027", "2026"), row))
 
+    def test_undated_future_local_hero_isolated_from_sibling_archive_recap(self):
+        row = {
+            "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": "https://esquiriot.fr/", "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        identity = ("<head><title>Esqui'Riot — édition 2026"
+                    "</title></head>")
+        current = ("<p>Édition 2 — Été 2027</p>"
+                   "<p>Festival Punk · Métal · Rock</p>"
+                   "<p>Sainte-Hélène</p><p>Gironde</p>")
+        archive = ("<h2>Édition 2026 — Retour en images</h2>"
+                   "<p>La programmation 2026 a réuni plusieurs groupes.</p>")
+        html = identity + "<section>" + current + archive + "</section>"
+        expected = {"slug": row["slug"], "city": "Sainte-Hélène",
+                    "source": row["officialSite"],
+                    "departmentLabel": "Gironde"}
+        self.assertEqual(exact_edition_city(html, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: html), expected)
+        for invalid in (
+            identity + "<section>" + current.replace(
+                "Été 2027", "Été 2026") + archive + "</section>",
+            identity + "<section>" + current.replace(
+                "Festival Punk", "Festival Punk 2026") + archive + "</section>",
+            identity + "<section>" + current.replace(
+                "Sainte-Hélène", "Sainte-Hélène 2026") + archive + "</section>",
+            identity + "<section>" + current.replace(
+                "Gironde", "Gironde 2026") + archive + "</section>",
+            identity + "<section><p>Édition 2 — Été 2027</p>"
+                + archive + "<p>Festival Punk · Métal · Rock</p>"
+                "<p>Sainte-Hélène</p><p>Gironde</p></section>",
+        ):
+            with self.subTest(sample=invalid[:130]):
+                self.assertIsNone(exact_edition_city(invalid, row))
+
     def test_undated_city_must_be_on_explicit_future_edition_paragraph(self):
         row = {
             "slug": "festival-exemple-2027",
