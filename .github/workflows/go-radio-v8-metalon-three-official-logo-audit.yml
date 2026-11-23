@@ -1,0 +1,51 @@
+name: GO radio v8 — three official Metal ON channel images, read only
+on:
+  push:
+    branches:
+      - audit/go-radio-v7-96-missing-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_metalon_official_artwork.py'
+      - '.github/workflows/go-radio-v8-metalon-three-official-logo-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-station-identity-and-sha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded source image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Verify three original catalog program identities offline
+        run: |
+          python radio-catalog-lab/tools/audit_v8_metalon_official_artwork.py \
+            --output "$RUNNER_TEMP/metalon-offline.json"
+      - name: Verify official publisher HTML and 3 unique image SHA-256
+        run: |
+          python radio-catalog-lab/tools/audit_v8_metalon_official_artwork.py \
+            --network --output "$RUNNER_TEMP/metalon-verified.json"
+      - name: Print no-publication evidence
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          data=json.loads((Path(os.environ['RUNNER_TEMP'])/'metalon-verified.json').read_text())
+          assert data['scope']=='GO_V8_METALON_OFFICIAL_3_CHANNEL_SHA_AUDIT'
+          assert data['expected_station_count']==3
+          assert data['publication_allowed'] is False
+          print('METALON_FIRSTPARTY_IMAGE_SHA_VERIFIED',data['verified_distinct_channel_logos'],'/3')
+          for row in data['records']:
+              print('METALON_STATION_IMAGE',row['go_station_id'],row['station_name'],
+                    row['status'],row.get('sha256',''),row.get('image_error',''))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-metalon-three-firstparty-logo-evidence
+          path: |
+            ${{ runner.temp }}/metalon-offline.json
+            ${{ runner.temp }}/metalon-verified.json
+          retention-days: 14
