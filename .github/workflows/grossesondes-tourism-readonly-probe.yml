@@ -51,6 +51,14 @@ jobs:
                   from official_admin_communes import verified_commune
                   claim=exact_edition_city(html, proven)
                   print("TOURISM_CURRENT_CITY_CLAIM",claim["city"] if claim else "NOT_PROVEN")
+                  # Diagnostics only: the actual current tourism page visibly
+                  # labels the administrative commune SÈVREMOINE (postal 49450).
+                  # This call cannot authorize a public marker by itself.
+                  city_probe=verified_commune("Sèvremoine", known_department="49")
+                  print("TOURISM_FIXED_ADMIN_PROBE",bool(city_probe))
+                  if city_probe:
+                      print("TOURISM_FIXED_ADMIN_CITY",city_probe["city"])
+                      print("TOURISM_FIXED_ADMIN_CODE",city_probe["codeInsee"])
                   if claim:
                       geocode=verified_commune(claim["city"], known_department=parent.get("department"))
                       print("TOURISM_ADMIN_CENTRE_OK",bool(geocode))
