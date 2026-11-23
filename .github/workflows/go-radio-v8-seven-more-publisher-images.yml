@@ -1,0 +1,41 @@
+name: GO radio v8 — seven additional station logos official source audit (READ ONLY)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_seven_more_publisher_logos.py'
+      - '.github/workflows/go-radio-v8-seven-more-publisher-images.yml'
+permissions:
+  contents: read
+jobs:
+  original-seven-publisher-image-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install safe image parser
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Check exact catalogue station and existing logo counts offline
+        run: python radio-catalog-lab/tools/audit_v8_seven_more_publisher_logos.py --output "$RUNNER_TEMP/offline.json"
+      - name: Inspect verified first-party image bytes and publisher HTML
+        run: python radio-catalog-lab/tools/audit_v8_seven_more_publisher_logos.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Protect unsigned candidate and public v7 pointer
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ['RUNNER_TEMP'])/'online.json').read_bytes())
+          assert d['scope']=='GO_V8_7_MORE_FIRSTPARTY_RADIO_LOGOS_READ_ONLY'
+          assert d['target_count']==7 and len(d['records'])==7
+          assert d['catalog_modified'] is False and d['publication_allowed'] is False
+          print('GO_RADIO_V8_EXTRA_SOURCE_READ_ONLY',d['verified_count'])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-seven-more-original-first-party-image-shas
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
