@@ -33,7 +33,7 @@ HUILA_IMAGE=("https://images.zeno.fm/Wxzk-aa8aGVjeBSnx-fpKhDcaFYCKXZ6DmWY20NCvKY
 STREAM_ID="8smiwwvtfxxvv"
 def get_html(url):
     b,m,f=_request(url,max_bytes=2*1024*1024,accept="text/html")
-    if m not in ("text/html","application/xhtml+xml",""):raise ValueError("Not official HTML")
+    if m not in ("text/html","application/xhtml+xml","application/xml","text/xml","text/plain",""):raise ValueError("Not publisher HTML or stream status XML")
     return b.decode("utf-8",errors="replace")
 def metal_tile_ids(data):
     found=[]
@@ -114,6 +114,6 @@ def main():
     a.output.write_text(json.dumps(r,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({"scope":r["scope"],"owner_channels_verified":r["owner_channels_verified"],"images_verified":r["images_verified"]},sort_keys=True))
     for x in r["records"]:
-        print(x["go_station_id"],x["status"],x["verified_owner_channel"],
+        print(x["go_station_id"],x["status"],x["verified_owner_channel"],x.get("proof_error",""),
               [(y["image_url"],y.get("sha256","NOT_VERIFIED"),y.get("error","")) for y in x["possible_original_images"]])
 if __name__=="__main__":main()
