@@ -393,7 +393,7 @@ class FutureCityProofTests(unittest.TestCase):
             "Colomb'in Rock Festival aura lieu les 13 et 14 août 2027.</p>")
         exact = ("Colomb'in Rock Festival 2027, les 13 et 14 août "
                  "à Colombe-lès-Vesoul")
-        pic = "<img src='/images/affiche.jpg' alt='" + exact + "'>"
+        pic = '<img src="/images/affiche.jpg" alt="' + exact + '">'
         html = "<html>" + seo + "<body>" + dated + pic + "</body></html>"
         expected = {"slug": row["slug"], "city": "Colombe-lès-Vesoul",
                     "source": row["officialSite"]}
@@ -406,9 +406,9 @@ class FutureCityProofTests(unittest.TestCase):
             html.replace("13 et 14 août à", "13 et 16 août à"),
             html.replace("Colomb'in Rock Festival 2027, les",
                          "Autre Festival 2027, les"),
-            html.replace("alt='" + exact + "'", "alt=''"),
-            html.replace("src='/images/affiche.jpg'",
-                         "src='/images/affiche.jpg' hidden"),
+            html.replace('alt="' + exact + '"', 'alt=""'),
+            html.replace('src="/images/affiche.jpg"',
+                         'src="/images/affiche.jpg" hidden'),
             html.replace(pic, "<div hidden>" + pic + "</div>"),
             html.replace(pic, "<div style='display:none'>" + pic + "</div>"),
             html.replace(pic, pic.replace("Colombe-lès-Vesoul", "Paris") +
