@@ -213,7 +213,22 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             or type(published) is not dict or type(published.get("events")) is not list
             or not _valid_public_read_key(key)):
         raise ValueError("invalid_backlog_first_party_inputs")
-    combined = attach_research_dossiers(patch, [], today)
+    already = {x.get("id") for x in published["events"] if type(x) is dict}
+    # Old private research may refer to occurrences now published by another
+    # successful cloud cycle. Prune these BEFORE measuring queue capacity;
+    # the normal Publisher also rejects duplicates, but a full queue of
+    # already-published requests can starve all newly discovered places.
+    # Expired sessions are still historical backlog leads, not actionable
+    # future research slots; preserve the backlog file, not the stale queue.
+    future_pending = [
+        item for item in patch.get("open_world_research", [])
+        if (type(item) is not dict
+            or type(item.get("date_start")) is not str
+            or item["date_start"] >= today.isoformat())
+    ]
+    current = dict(patch, open_world_research=future_pending)
+    combined = attach_research_dossiers(
+        current, [], today, published_ids=already)
     capacity = MAX_DOSSIERS - len(combined["open_world_research"])
     identities = fair_backlog_identity_order(set(
         identity for row in backlog
@@ -226,7 +241,6 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     visited = attempts = holds = 0
     proposals = []
     cache = {}
-    already = {x.get("id") for x in published["events"] if type(x) is dict}
     queue_keys = {
         (x["lead"]["event_uid"], x["date_start"])
         for x in combined["open_world_research"]
@@ -254,7 +268,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
             capacity -= 1
         except (OSError, ValueError, TimeoutError, KeyError, TypeError, UnicodeError):
             holds += 1
-    result = attach_research_dossiers(combined, proposals, today)
+    result = attach_research_dossiers(
+        combined, proposals, today, published_ids=already)
     return result, {
         "backlog_candidates": len(identities), "clues_examined": visited,
         "live_events_read": attempts, "new_dossiers": len(proposals),

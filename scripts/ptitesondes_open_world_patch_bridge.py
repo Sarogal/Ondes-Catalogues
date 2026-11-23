@@ -32,6 +32,7 @@ from ptitesondes_open_world_release_rehearsal import (
     rehearse_open_world_municipal_event,
 )
 from ptitesondes_oa_first_party_admission import admit_live_openagenda
+from ptitesondes_named_venue_geo_resolver import resolve_named_city_only_venue
 from ptitesondes_openagenda_v2_direct_evidence import (
     read_direct_agenda_v2, read_direct_v2, _valid_public_read_key,
 )
@@ -130,7 +131,8 @@ def prepare_open_world_patch(
         official_reader=read_unknown_https,
         ign_reader=fetch_ign,
         osm_reader=fetch_overpass,
-        legacy_checker=legacy_verify_event):
+        legacy_checker=legacy_verify_event,
+        named_venue_resolver=resolve_named_city_only_venue):
     """Return an expanded private patch plus its *ephemeral* live checker.
 
     This can be passed directly to the existing append-only merge() but must
@@ -168,7 +170,8 @@ def prepare_open_world_patch(
         raise ValueError("invalid_private_open_world_dossier")
     research = active_research
     for reader in (agenda_reader, event_reader, directory_reader,
-                   official_reader, ign_reader, osm_reader, legacy_checker):
+                   official_reader, ign_reader, osm_reader, legacy_checker,
+                   named_venue_resolver):
         if not callable(reader):
             raise ValueError("missing_independent_source_reader")
     if not isinstance(private_patch.get("additions"), list):
@@ -248,9 +251,27 @@ def prepare_open_world_patch(
                     held("oa_direct_url_uid_or_slug_mismatch")
                     continue
                 agenda = agenda_reader(lead["agenda_uid"], public_key)
+                admission_lead, admission_event = lead, api_event
+                # OA may name only the commune as its 'venue'. In this case
+                # an independent named-site page can supply an EXACT map pin,
+                # but not event/session authority. The page is read LIVE;
+                # no static cached coordinates or caller dossier claims pass.
+                loc = api_event.get("location")
+                if (isinstance(loc, dict) and
+                        norm(loc.get("name")) == norm(loc.get("adminLevel4"))):
+                    verified_place = named_venue_resolver(
+                        api_event, source_reader=official_reader)
+                    if verified_place is not None:
+                        admission_lead = dict(
+                            lead, venue_unverified=verified_place["name"])
+                        admission_event = dict(
+                            api_event, location=dict(
+                                loc, name=verified_place["name"],
+                                latitude=verified_place["latitude"],
+                                longitude=verified_place["longitude"]))
                 direct, reason = admit_live_openagenda(
-                    lead, dossier["date_start"], agenda, api_event,
-                    reference, published, today)
+                    admission_lead, dossier["date_start"], agenda,
+                    admission_event, reference, published, today)
                 if direct is None:
                     held(reason)
                     continue

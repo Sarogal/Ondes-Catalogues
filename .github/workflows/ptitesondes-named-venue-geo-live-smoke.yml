@@ -1,0 +1,51 @@
+name: "P'tites Ondes — vérification réseau des lieux sans numéro"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/ptitesondes_named_venue_geo_resolver.py'
+      - 'scripts/ptitesondes_open_world_patch_bridge.py'
+      - 'tests/test_ptitesondes_named_venue_geo_resolver.py'
+      - 'config/ptitesondes-named-venue-geo-sources.json'
+      - '.github/workflows/ptitesondes-named-venue-geo-live-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-named-place:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Offline named-venue protection and publisher contract
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m unittest -v test_ptitesondes_named_venue_geo_resolver
+          python -m unittest -v test_ptitesondes_oa_first_party_admission
+      - name: Live independent venue point (never event approval)
+        env:
+          PYTHONPATH: scripts
+        run: |
+          python - <<'PY'
+          from ptitesondes_named_venue_geo_resolver import (
+              read_source_cache, _page_pin,
+          )
+          from ptitesondes_unlisted_source_safe_recheck import read_unknown_https
+          rows = read_source_cache()
+          assert rows, "geo_source_registry_empty"
+          for row in rows:
+              html = read_unknown_https(row["official_url"])
+              point = _page_pin(html, row)
+              assert point is not None, "live_named_site_geometry_unavailable"
+          print("LIVE_NAMED_SITE_COORDINATES: VERIFIED")
+          print("PUBLIC_CATALOGUE: NOT_TOUCHED")
+          print("EVENT_PUBLICATION: NOT_CLAIMED")
+          PY

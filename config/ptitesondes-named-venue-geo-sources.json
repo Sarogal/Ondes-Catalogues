@@ -1,0 +1,12 @@
+{
+  "schema": "ptitesondes.named_venue_geoevidence_sources.v1",
+  "documentation": "Growing open-world venue evidence hints. NOT a venue/source allowlist or an event approval. Publisher fetches every named official page live and obtains coordinates only from that page's exact map link. Missing sources remain discoverable, never blocked by registry membership.",
+  "sources": [
+    {
+      "city": "Basse-Pointe",
+      "region": "Martinique",
+      "venue_name": "Centre Culturel Antoine TANGAMEN dit « ZWAZO »",
+      "official_url": "https://www.martinique-tour.com/decouvrir-la-martinique/sites-a-visiter-en-martinique/centre-culturel-antoine-tangamen-dit-zwazo-basse-pointe-fr-3223066/"
+    }
+  ]
+}

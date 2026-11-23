@@ -1,0 +1,32 @@
+name: "P'tites Ondes — actualisation autonome après nouvelle preuve de lieu"
+
+# Publishing new independently verified venue hints must cause the already
+# secured PRIVATE intake to recheck candidate source and dates. This workflow
+# never approves a source, writes a catalogue or bypasses the Publisher.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'config/ptitesondes-named-venue-geo-sources.json'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  recheck-private-intake:
+    if: github.repository == 'Sarogal/Ondes-Catalogues' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Request the normal fully verified private outings cycle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run ptitesondes-private-intake-on-public-runners.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f cycle=outings -f mode=write -f recovery=none
+          echo 'Source hint changed: standard private intake requested.'
+          echo 'Publisher and Pages outcomes must be verified separately.'
