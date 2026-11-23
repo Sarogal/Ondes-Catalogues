@@ -96,6 +96,16 @@ def propose_family_activity(title, description):
         outcome["decision"] = "existing_musical_path_only"
         return outcome
     found = _category_matches(name) or _category_matches(body)
+    if not found:
+        # An exact child-audience claim elsewhere in the same official event
+        # can establish the youth scope. The title need not literally say
+        # "conte pour enfants" or "spectacle pour enfants": e.g. "Contes
+        # avec Aïdée" with a description "pour enfants de tous âges".
+        # Use the main TITLE here, not an incidental body reference.
+        if re.search(r"\bcontes?\b", name):
+            found = ["lecture-jeunesse"]
+        elif re.search(r"\bspectacles?\b", name):
+            found = ["spectacle-jeunesse"]
     if len(found) != 1:
         outcome["decision"] = (
             "ambiguous_activity_category" if found else
