@@ -69,13 +69,16 @@ def _validated_page(payload, size, old_cursor):
 
 
 def read_index_page(public_read_key, after=None, *,
-                    size=PAGE_SIZE, opener=None):
+                    size=PAGE_SIZE, opener=None, sort=None):
     """Public API reader with pinned origin, no redirects, bounded JSON."""
     if (not _valid_public_read_key(public_read_key)
             or type(size) is not int or not 1 <= size <= PAGE_SIZE
-            or after is not None and not valid_cursor(after)):
+            or after is not None and not valid_cursor(after)
+            or sort not in (None, "recentlyAddedEvents.desc")):
         raise ValueError("invalid_oa_index_request")
     params = [("size", str(size))]
+    if sort is not None:
+        params.append(("sort", sort))
     if after is not None:
         params.extend([("after[]", str(n)) for n in after])
     url = API + "?" + urlencode(params)
@@ -104,7 +107,7 @@ def read_index_page(public_read_key, after=None, *,
 
 
 def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
-                     reader=read_index_page, public_read_key=""):
+                     reader=read_index_page, public_read_key="", sort=None):
     """Scan all types of agendas; return a private list of source leads.
 
     For each invocation, at most MAX_PAGES requests and PAGE_SIZE rows per
@@ -117,6 +120,7 @@ def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
             or len(set(configured)) != len(configured)
             or (start_cursor is not None and not valid_cursor(start_cursor))
             or type(pages) is not int or not 1 <= pages <= MAX_PAGES
+            or sort not in (None, "recentlyAddedEvents.desc")
             or not callable(reader)):
         raise ValueError("invalid_oa_index_scan")
     configured_set = set(configured)
@@ -129,7 +133,10 @@ def scan_index_pages(configured, *, start_cursor=None, pages=MAX_PAGES,
     candidates = []
     exhausted = False
     for _ in range(pages):
-        payload = reader(public_read_key, current, size=PAGE_SIZE)
+        kwargs = {"size": PAGE_SIZE}
+        if sort is not None:
+            kwargs["sort"] = sort
+        payload = reader(public_read_key, current, **kwargs)
         rows, after = _validated_page(payload, PAGE_SIZE, current)
         counts["pages_read"] += 1
         for record in rows:
