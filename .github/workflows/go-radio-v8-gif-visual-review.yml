@@ -1,0 +1,40 @@
+name: GO radio v8 — visually inspect original owner GIF artwork (READ ONLY)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - .github/workflows/go-radio-v8-gif-visual-review.yml
+permissions:
+  contents: read
+jobs:
+  render-preview-for-identity-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Image decoder with repeatable preview
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Emit tiny read-only PNG previews for human attribution
+        run: |
+          python - <<'PY'
+          import sys,io,base64
+          from PIL import Image
+          sys.path.insert(0,'radio-catalog-lab/tools')
+          from audit_open_radio_artwork_inventory import _request,MAX_IMAGE
+          items={
+            "HARDRADIO":"https://www.hardradio.com/logos/hardradio_chrome_375.gif",
+            "DRACHENBLUT":"https://radio-drachenblut.ch/top11.gif",
+          }
+          for key,url in items.items():
+            blob,mime,final=_request(url,max_bytes=MAX_IMAGE,accept="image/gif")
+            img=Image.open(io.BytesIO(blob)).convert("RGB")
+            img.thumbnail((440,320))
+            buf=io.BytesIO();img.save(buf,format="PNG",optimize=True)
+            assert len(buf.getvalue())<150000
+            print("GO_IMAGE_PREVIEW_"+key+"="+base64.b64encode(buf.getvalue()).decode())
+            print("GO_IMAGE_PREVIEW_DIM_"+key+"="+str(img.size))
+          print("READ_ONLY_ORIGINAL_GIF_VISUAL_REVIEW")
+          PY
