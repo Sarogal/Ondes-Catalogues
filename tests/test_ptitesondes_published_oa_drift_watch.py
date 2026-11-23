@@ -25,7 +25,7 @@ def published(uid=111, day="2026-12-05", time="10:00", venue="Salle ouverte",
 def source(uid=111, day="2026-12-05", time="10:00", venue="Salle ouverte",
            slug="musique-jeunesse", status=1):
     return {"uid": uid, "slug": slug, "state": 2, "status": status,
-            "removed": False,
+            "removed": False, "timezone": "Europe/Paris",
             "timings": [
                 {"begin": f"{day}T{time}:00+01:00",
                  "end": f"{day}T12:00:00+01:00"}],
@@ -50,6 +50,64 @@ class PublishedDriftWatchTests(unittest.TestCase):
                       compare_official_source(changed, g, TODAY))
         self.assertIn("source_new_future_session",
                       compare_official_source(changed, g, TODAY))
+
+    def test_openagenda_distinguishes_cancelled_postponed_and_sold_out(self):
+        group = next(iter(index_published(
+            {"events": [published()]}, TODAY).values()))
+        for number, expected in (
+            (3, ["source_moved_online"]),
+            (4, ["source_postponed"]),
+            (5, ["source_sold_out"]),
+            (6, ["cancelled_or_removed"]),
+        ):
+            with self.subTest(status=number):
+                self.assertEqual(compare_official_source(
+                    source(status=number), group, TODAY), expected)
+        unpublished = source()
+        unpublished["state"] = 0
+        self.assertEqual(compare_official_source(
+            unpublished, group, TODAY), ["source_unpublished"])
+
+    def test_timezone_offset_is_checked_against_actual_venue_zone(self):
+        group = next(iter(index_published(
+            {"events": [published()]}, TODAY).values()))
+        bad = source()
+        bad["timings"][0]["begin"] = "2026-12-05T10:00:00+02:00"
+        self.assertEqual(compare_official_source(
+            bad, group, TODAY), ["unusable_source_timings"])
+        bad = source()
+        bad["timezone"] = "Pacific/Kiritimati"
+        self.assertEqual(compare_official_source(
+            bad, group, TODAY), ["unusable_source_timings"])
+
+    def test_a_malformed_or_ambiguous_session_cannot_infer_cancellation(self):
+        group = next(iter(index_published(
+            {"events": [published()]}, TODAY).values()))
+        for bad_timing in (
+            {"begin": "not-a-date", "end": "2026-12-05T12:00:00+01:00"},
+            {"begin": "2026-12-05T10:00:00+01:00"},
+            {"begin": "2026-12-05T10:00:00+01:00",
+             "end": "2026-12-07T12:00:00+01:00"},
+        ):
+            invalid = source()
+            invalid["timings"].append(bad_timing)
+            with self.subTest(timing=bad_timing):
+                self.assertEqual(compare_official_source(
+                    invalid, group, TODAY), ["unusable_source_timings"])
+
+    def test_overseas_local_timezone_is_not_interpreted_as_paris(self):
+        event = published()
+        event["time"] = "10:00"
+        group = next(iter(index_published(
+            {"events": [event]}, TODAY).values()))
+        observed = source()
+        observed["timezone"] = "America/Martinique"
+        observed["timings"] = [{
+            "begin": "2026-12-05T10:00:00-04:00",
+            "end": "2026-12-05T11:00:00-04:00",
+        }]
+        self.assertEqual(compare_official_source(
+            observed, group, TODAY), [])
 
     def test_precise_showtime_and_venue_changes_are_detected(self):
         g = next(iter(index_published({"events": [published()]}, TODAY).values()))
