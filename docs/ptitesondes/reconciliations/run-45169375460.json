@@ -1,0 +1,50 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-23",
+  "slot": 1,
+  "source_series_checked": 30,
+  "total_source_series": 35,
+  "before_count": 672,
+  "after_count": 676,
+  "source_summary": {
+    "official_new_session_admitted": 3,
+    "official_new_session_held": 1,
+    "official_new_session_on_demand_review": 1,
+    "official_unavailable": 2,
+    "official_unchanged": 23,
+    "official_venue_gps_unconfirmed": 1
+  },
+  "catalogue_before_sha256": "766bbe65fcbb3720c03f4b9adf1780e5d798a478e4208bed743a919db9702e85",
+  "catalogue_after_sha256": "78cb77ad0d81171d3c7cd7cd6305d9b22a60286217a88cf1f9cb3a05af29bb85",
+  "operations": [
+    {
+      "id": "openagenda-25603859-2027-01-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/25603859_jeune-public-concert-quand-le-chat-nest-pas-laca-part-en-live",
+      "new_event_sha256": "561b1e977a0d9fd1f5854f8d932d6d915d5020dc10329ccfc7ba3cdd0fafca16"
+    },
+    {
+      "id": "openagenda-77081258-2027-02-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots",
+      "new_event_sha256": "3dcd0eddc58e7e134d441120dd7c552a178c04fdd06e49e60c3b60fd6e704f0b"
+    },
+    {
+      "id": "openagenda-77081258-2027-02-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/contributions-evenements-culturels-nantes-et-metropole-nantaise/events/77081258_jeune-public-concertconte-musical-un-animal-des-amis-mots",
+      "new_event_sha256": "7c974d6dc1c37e71c54b63d5705c4d63d49d4b1fd3043f5fd3445ebaff6569dd"
+    },
+    {
+      "id": "openagenda-21999713-2026-12-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/mediatheques-de-la-haute-deule/events/21999713_bebes-lecteurs-1113114",
+      "new_event_sha256": "8d721dadbe0495eca9e0ea8d580b205722b266a762851db7196e159c33cc8611"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
