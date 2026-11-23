@@ -8,7 +8,7 @@ never remove a published outing. All operations are auditable, ID-scoped.
 """
 from collections import Counter
 from copy import deepcopy
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 import math
@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from proof import norm, meters
 from merge_policy import valid
 from ptitesondes_openagenda_reuse_rights import review_event_rights
+from ptitesondes_oa_first_party_admission import admit_live_openagenda
 from ptitesondes_openagenda_v2_direct_evidence import _french_location, _valid_public_read_key
 from ptitesondes_published_oa_drift_watch import (
     index_published, choose_groups, _timings, MAX_SCAN,
@@ -42,7 +43,9 @@ REASON_CODES = frozenset({
     "official_venue_or_title_changed", "official_venue_gps_unconfirmed",
     "official_rights_unconfirmed", "updated_public_schema_invalid",
     "official_unchanged", "official_rescheduled_old_date_removed",
-    "official_time_corrected", *AUTO_WITHDRAWAL.values(),
+    "official_time_corrected", "official_new_session_admitted",
+    "official_new_session_held", "official_new_session_agenda_unavailable",
+    *AUTO_WITHDRAWAL.values(),
 })
 
 
@@ -112,6 +115,7 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
     chosen = choose_groups(groups, today, slot, limit)
     count = Counter()
     planned = {}
+    new_rows = []
     evidence = []
     cats = {e.get("category") for e in catalogue["events"]}
     for agenda_slug, uid in chosen:
@@ -124,8 +128,10 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
 
         try:
             source = read_event(uid, agenda_slug)
+            agenda = None
             if (type(source) is dict and "uid" not in source
                     and type(source.get("event")) is dict):
+                agenda = source.get("agenda")
                 source = source["event"]
         except (OSError, ValueError, TypeError, TimeoutError, KeyError,
                 UnicodeError):
@@ -232,29 +238,91 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
                 "source_url": old["source_url"],
                 "expected_event_sha256": digest(old),
                 "new_time": new["time"]})
+        # New sessions from a series already present on the map follow the
+        # SAME first-party admission gate as newly discovered programs.
+        # Source, agenda UID, rights, category, age, venue, GPS, timing and
+        # duplicate evidence are all rechecked; this is never an implicit
+        # approval of every date from an old program.
+        existing = {x["date_start"] for x in rows}
+        fresh_days = sorted(day for day in sessions
+                            if today.isoformat() <= day <=
+                               (today + timedelta(days=184)).isoformat()
+                            and day not in existing)
+        accepted = 0
+        if fresh_days:
+            if (not isinstance(agenda, dict)
+                    or agenda.get("slug") != agenda_slug
+                    or type(agenda.get("uid")) is not int
+                    or not 0 < agenda["uid"] < 10**12):
+                hold("official_new_session_agenda_unavailable")
+            else:
+                location = source.get("location")
+                raw_title = source.get("title")
+                title = (raw_title.get("fr") if isinstance(raw_title, dict)
+                         else raw_title if isinstance(raw_title, str)
+                         else None)
+                if (not isinstance(location, dict)
+                        or not isinstance(title, str)
+                        or not isinstance(source.get("timings"), list)):
+                    hold("official_new_session_held")
+                else:
+                    lead = {
+                        "agenda_uid": agenda["uid"],
+                        "agenda_slug": agenda_slug, "event_uid": uid,
+                        "title": title,
+                        "city_unverified": location.get("adminLevel4"),
+                        "venue_unverified": location.get("name"),
+                        "explicit_source_session_intervals": [
+                            {"begin": t["begin"], "end": t["end"]}
+                            for t in source["timings"]],
+                        "publication_ready": False, "public_writes": 0,
+                    }
+                    for day in fresh_days:
+                        view = dict(catalogue, events=[
+                            *catalogue["events"], *new_rows])
+                        candidate, reason = admit_live_openagenda(
+                            lead, day, agenda, source, catalogue, view, today)
+                        if candidate is None:
+                            hold("official_new_session_held")
+                            continue
+                        if candidate["id"] in planned or any(
+                                x["id"] == candidate["id"] for x in new_rows):
+                            hold("official_new_session_held")
+                            continue
+                        new_rows.append(candidate)
+                        accepted += 1
+                        evidence.append({
+                            "id": candidate["id"], "action": "add",
+                            "reason": "official_new_session_admitted",
+                            "source_url": candidate["source_url"],
+                            "new_event_sha256": digest(candidate),
+                        })
+                    if accepted:
+                        hold("official_new_session_admitted")
         if missing:
             hold("official_rescheduled_old_date_removed")
         if proposal:
             hold("official_time_corrected")
-        if not missing and not proposal:
+        if not missing and not proposal and not accepted:
             hold("official_unchanged")
 
-    if len(planned) != len(evidence):
+    if len(planned) + len(new_rows) != len(evidence):
         raise ValueError("reconciliation_plan_not_unique")
     result = deepcopy(catalogue)
-    if planned:
+    if planned or new_rows:
         result["events"] = [
             (planned[e["id"]] if e["id"] in planned else e)
             for e in result["events"]
             if e["id"] not in planned or planned[e["id"]] is not None
         ]
+        result["events"].extend(new_rows)
         result["updated_at"] = datetime.now(
             ZoneInfo("Europe/Paris")).isoformat(timespec="seconds")
         expected = [e for e in catalogue["events"] if e["id"] not in planned]
         actual = [e for e in result["events"] if e["id"] not in planned]
         if expected != actual:
             raise ValueError("unrelated_public_event_mutated")
-        if (len(catalogue["events"]) - len(result["events"])
+        if (len(catalogue["events"]) + len(new_rows) - len(result["events"])
                 != sum(value is None for value in planned.values())):
             raise ValueError("incorrect_reconciliation_count")
     audit = {
@@ -310,7 +378,7 @@ def main():
         row = agendas[slug]
         if row.get("slug") != slug or type(row.get("uid")) is not int:
             raise ValueError("official_agenda_identity_changed")
-        return read_direct_v2(row["uid"], uid, api_key)
+        return {"agenda": row, "event": read_direct_v2(row["uid"], uid, api_key)}
     result, audit, _ = reconcile(
         base, args.date, args.slot, read_event=live)
     changed = bool(audit["operations"])
@@ -323,6 +391,8 @@ def main():
         p["action"] == "withdraw" for p in audit["operations"])))
     print("corrected=" + str(sum(
         p["action"] == "correct_time" for p in audit["operations"])))
+    print("added=" + str(sum(
+        p["action"] == "add" for p in audit["operations"])))
     print("changed=" + str(bool(changed and args.apply)).lower())
     print("reason_counts=" + json.dumps(audit["source_summary"], sort_keys=True))
 
