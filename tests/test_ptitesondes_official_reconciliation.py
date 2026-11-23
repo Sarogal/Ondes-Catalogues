@@ -49,6 +49,9 @@ def live(day=DAY, time="10:00", status=1):
     s["location"]["adminLevel1"] = "Bretagne"
     s["location"]["adminLevel2"] = "Finistère"
     s["title"] = {"fr": "Atelier musical pour enfants"}
+    s["description"] = {"fr": "Atelier musical pour enfants et familles."}
+    s["age"] = {"min": 4, "max": 13}
+    s["attendanceMode"] = 1
     s["updatedAt"] = "2026-11-22T12:00:00+01:00"
     s["rights"] = {
         "license": {"id": "etalab-2.0"},
@@ -186,6 +189,79 @@ class OfficialReconciliationTests(unittest.TestCase):
         self.assertEqual(len(after["events"]), 37)
         self.assertTrue(all(e["time"] == "11:00" for e in after["events"]))
         self.assertEqual(len(audit["operations"]), 37)
+
+    def test_new_official_session_from_known_program_uses_full_live_publisher_gate(self):
+        first = row()
+        original = document(first)
+        official = live()
+        official["timings"].append({
+            "begin": "2026-12-12T10:00:00+01:00",
+            "end": "2026-12-12T12:00:00+01:00",
+        })
+        package = {
+            "event": official,
+            "agenda": {"uid": 901131, "slug": "agenda-generique"},
+        }
+        after, audit, counts = check(original, package)
+        self.assertEqual(counts["official_new_session_admitted"], 1)
+        self.assertEqual(len(after["events"]), 2)
+        self.assertEqual(after["events"][0], first)
+        self.assertEqual(after["events"][1]["id"], "openagenda-111-2026-12-12")
+        self.assertEqual(after["events"][1]["time"], "10:00")
+        self.assertEqual(after["events"][1]["category"], "atelier-musical")
+        self.assertEqual(audit["operations"][0]["action"], "add")
+        self.assertEqual(original["events"], [first])
+        self.assertTrue(audit["unrelated_public_records_preserved"])
+        again, repeated, _ = check(after, package)
+        self.assertEqual(again, after)
+        self.assertEqual(repeated["operations"], [])
+
+    def test_cannot_self_approve_new_date_without_live_agenda_identity(self):
+        original = document(row())
+        official = live()
+        official["timings"].append({
+            "begin": "2026-12-12T10:00:00+01:00",
+            "end": "2026-12-12T12:00:00+01:00",
+        })
+        for source in (
+            official,  # event only: monitoring is not approval
+            {"event": official, "agenda": {
+                "uid": 901131, "slug": "wrong-agenda"}},
+        ):
+            after, audit, counts = check(original, source)
+            self.assertEqual(after, original)
+            self.assertEqual(audit["operations"], [])
+            self.assertEqual(counts["official_new_session_agenda_unavailable"], 1)
+
+    def test_new_date_must_still_confirm_child_audience_and_licensed_reuse(self):
+        original = document(row())
+        official = live()
+        official["timings"].append({
+            "begin": "2026-12-12T10:00:00+01:00",
+            "end": "2026-12-12T12:00:00+01:00",
+        })
+        official["title"] = {"fr": "Atelier musical"}
+        official["description"] = {"fr": "Pour les adultes"}
+        official["age"] = None
+        # Existing event has a different child title, so do not alter it.
+        after, audit, counts = check(original, {
+            "event": official, "agenda": {"uid": 901131,
+                                         "slug": "agenda-generique"}})
+        self.assertEqual(after, original)
+        self.assertEqual(audit["operations"], [])
+
+    def test_future_outside_publication_horizon_is_not_a_session_cap(self):
+        official = live()
+        far = (TODAY + timedelta(days=185)).isoformat()
+        official["timings"].append({
+            "begin": far+"T10:00:00+01:00",
+            "end": far+"T12:00:00+01:00",
+        })
+        after, audit, counts = check(document(row()), {
+            "event": official, "agenda": {"uid": 901131,
+                                         "slug": "agenda-generique"}})
+        self.assertEqual(len(after["events"]), 1)
+        self.assertEqual(audit["operations"], [])
 
     def test_untrusted_duplicate_ids_are_rejected(self):
         with self.assertRaisesRegex(ValueError, "duplicate_public_ids"):
