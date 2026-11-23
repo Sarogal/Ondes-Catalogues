@@ -1,0 +1,61 @@
+name: GO radio v6 TEST — identify missing BOB and Exclusively artwork SHA (evidence only)
+on:
+  push:
+    branches:
+      - feature/go-radio-v6-dedupe-logo-audit-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_bob_exclusively_missing_v6_artwork.py'
+      - '.github/workflows/go-radio-v6-missing-logo-discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  missing-logo-evidence-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: First-party safety dependencies
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'pillow>=10,<12'
+      - name: Confirm the registered Radio Browser UUID API safety tests
+        run: python radio-catalog-lab/tools/test_discover_radio_browser_logo_candidates.py
+      - name: Offline baseline — no false-positive verified logos
+        run: |
+          python radio-catalog-lab/tools/audit_bob_exclusively_missing_v6_artwork.py \
+            --output "$RUNNER_TEMP/missing-bob-exclusively-offline.json"
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          j=json.loads((Path(os.environ['RUNNER_TEMP'])/'missing-bob-exclusively-offline.json').read_text())
+          assert j['provider_counts']=={'RADIO_BOB':19,'EXCLUSIVELY':5}, j['provider_counts']
+          assert j['download_verified_sha_candidates']==0
+          assert j['publication_allowed'] is False
+          print('GO_RADIO_V6_BOB_EXCLUSIVE_MISSING_LOGO_BASELINE_OK')
+          PY
+      - name: Collect current historical UUID favicon and actual bounded SHA evidence
+        run: |
+          python radio-catalog-lab/tools/audit_bob_exclusively_missing_v6_artwork.py \
+            --network --output "$RUNNER_TEMP/missing-bob-exclusively-evidence.json"
+      - name: Guarantee no image was accepted for automatic publication
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          j=json.loads((Path(os.environ['RUNNER_TEMP'])/'missing-bob-exclusively-evidence.json').read_text())
+          assert j['publication_allowed'] is False
+          assert j['target_missing_logo_count']==24
+          assert all(not r['publication_allowed'] for r in j['entries'])
+          assert all(not v['publication_allowed'] and not v['identity_approved']
+            for r in j['entries'] for v in r['artwork_candidates'])
+          print('GO_RADIO_V6_MISSING_LOGO_EVIDENCE_ONLY_SAFE')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-v6-missing-bob-exclusively-sha-evidence-unsigned
+          path: |
+            ${{ runner.temp }}/missing-bob-exclusively-evidence.json
+            ${{ runner.temp }}/missing-bob-exclusively-offline.json
+          retention-days: 14
