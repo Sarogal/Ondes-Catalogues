@@ -82,7 +82,7 @@ def confirmed_future_without_dates(site, title, html, today):
         return False
     # An actual dated edition must use the ordinary dated Publisher, not
     # a misleading "dates to confirm" fallback.
-    if explicit_ranges(visible, year):
+    if any(explicit_ranges(visible, year)):
         return False
     candidates = list(re.finditer(
         FUTURE.replace("YEAR_HERE", str(year)), visible))
