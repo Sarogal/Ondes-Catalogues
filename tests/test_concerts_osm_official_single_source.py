@@ -129,6 +129,62 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
             self.assertTrue(seen)
             self.assertEqual(set(seen), {URL})
 
+    def test_registered_official_site_works_with_approximate_old_geolocation(self):
+        # The already-published venue may still have approximate map
+        # coordinates and an incomplete historical street address. This is
+        # NOT grounds to reject its separately registered official origin.
+        # The Publisher still independently verifies the exact event.
+        catalogue = copy.deepcopy(BASE)
+        site = next(v for v in catalogue["venues"]
+                    if v["id"] == fixture.VENUE_ID)
+        site["geoSource"] = "Géolocalisation indicative par commune"
+        site["address"] = ""
+        site["postalCode"] = ""
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{
+                    "kind": "official_venue_agenda_candidate",
+                    "name": "Le Bikini", "city": "Ramonville-Saint-Agne",
+                    "url": "https://nouveau-domaine-independant.fr/"
+                }]
+            }), encoding="utf-8")
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources):
+                eligible = pipeline.eligible(
+                    registry(stable=1), catalogue, TODAY)
+                self.assertEqual(len(eligible), 1)
+                self.assertEqual(eligible[0][2], fixture.VENUE_ID)
+                self.assertEqual(eligible[0][0], URL)
+
+    def test_unknown_site_does_not_bypass_geography_via_candidate_claim(self):
+        catalogue = copy.deepcopy(BASE)
+        site = next(v for v in catalogue["venues"]
+                    if v["id"] == fixture.VENUE_ID)
+        site["geoSource"] = "Géolocalisation indicative par commune"
+        site["address"] = ""
+        site["postalCode"] = ""
+        different = "https://unregistered-venue.fr/2027/03/05/metal-event/"
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{
+                    "kind": "official_venue_agenda_candidate",
+                    "name": "Le Bikini", "city": "Ramonville-Saint-Agne",
+                    "url": "https://nouveau-domaine-independant.fr/"
+                }]
+            }), encoding="utf-8")
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources):
+                diagnostic = {}
+                from collections import Counter
+                reasons = Counter()
+                self.assertEqual(
+                    pipeline.eligible(registry(stable=2, url=different),
+                                      catalogue, TODAY, diagnostics=reasons),
+                    [])
+                self.assertEqual(reasons["no_unique_published_venue"], 1)
+
     def test_official_venue_source_is_not_a_lead_controlled_origin(self):
         with tempfile.TemporaryDirectory() as directory:
             source_file = Path(directory) / "sources.json"
