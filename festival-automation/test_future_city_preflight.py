@@ -381,6 +381,50 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertLessEqual(next_day["two_day_stable"], 1)
         self.assertTrue(next_day["publication_authorized"] is False)
 
+    def test_current_edition_named_image_alt_can_prove_town_without_old_title(self):
+        row = {**ROW, "slug": "colomb-in-rock-festival-2027",
+               "name": "Colomb'in Rock Festival 2027",
+               "startDate": "2027-08-13", "endDate": "2027-08-14",
+               "officialSite": "https://www.colombin-rock.fr/"}
+        seo = ("<head><title>Colomb'in Rock Festival 2027 – "
+               "Festival tribute rock, 13 et 14 août, Vesoul</title></head>")
+        dated = (
+            "<p>La prochaine édition anniversaire du "
+            "Colomb'in Rock Festival aura lieu les 13 et 14 août 2027.</p>")
+        exact = ("Colomb'in Rock Festival 2027, les 13 et 14 août "
+                 "à Colombe-lès-Vesoul")
+        pic = "<img src='/images/affiche.jpg' alt='" + exact + "'>"
+        html = "<html>" + seo + "<body>" + dated + pic + "</body></html>"
+        expected = {"slug": row["slug"], "city": "Colombe-lès-Vesoul",
+                    "source": row["officialSite"]}
+        self.assertEqual(exact_edition_city(html, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: html), expected)
+        invalid = [
+            html.replace("Festival 2027, les", "Festival 2026, les"),
+            html.replace("les 13 et 14 août à", "les 14 et 15 août à"),
+            html.replace("13 et 14 août à", "13 et 16 août à"),
+            html.replace("Colomb'in Rock Festival 2027, les",
+                         "Autre Festival 2027, les"),
+            html.replace("alt='" + exact + "'", "alt=''"),
+            html.replace("src='/images/affiche.jpg'",
+                         "src='/images/affiche.jpg' hidden"),
+            html.replace(pic, "<div hidden>" + pic + "</div>"),
+            html.replace(pic, "<div style='display:none'>" + pic + "</div>"),
+            html.replace(pic, pic.replace("Colombe-lès-Vesoul", "Paris") +
+                         pic),
+        ]
+        for altered in invalid:
+            with self.subTest(page=altered[:130]):
+                self.assertIsNone(exact_edition_city(altered, row))
+        self.assertIsNone(exact_edition_city(
+            html.replace("Colombe-lès-Vesoul", "Paris"),
+            {**row, "city": "Colombe-lès-Vesoul"}))
+        # A historical or generic image alone cannot prove the future site.
+        self.assertIsNone(exact_edition_city(
+            "<img alt=\"Colomb'in Rock Festival 2026, les 13 et 14 août "
+            "à Colombe-lès-Vesoul\">", row))
+
     def test_festival_title_location_and_named_future_dates_stay_tied(self):
         # Real first-party design: the homepage SEO title has the declared
         # festival town and département, while the exact 2027 edition dates
