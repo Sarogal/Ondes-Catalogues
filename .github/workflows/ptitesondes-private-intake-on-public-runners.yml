@@ -84,6 +84,10 @@ jobs:
           assert "ptitesondes_schedule_catchup.py" in s
           assert "ptitesondes_national_openworld_research_cycle.py" in s
           assert 'automation-intake/ptitesondes/national-observation/research' in s
+          # The recent ODS cursor is private state, never part of public Pages.
+          assert 'cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"' in s
+          assert 'git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"' in s
+          assert 'docs/ptitesondes/ods-recent-cursor.json' not in s
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
@@ -279,6 +283,13 @@ jobs:
           fi
           test -s "$OUT/backlog.json"
           test -s "$OUT/patch-$DAY.json"
+          # The private collector now discovers unfiltered, recently updated
+          # ODS records in a 14-day sliding window. Carry its cursor only if
+          # the additional scan completed and emitted a valid checkpoint.
+          # Never substitute an assumed offset after an API failure.
+          if [[ -s "$OUT/ods-recent-cursor.json" && "$RUN_MODE" == "write" ]]; then
+            cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"
+          fi
           # Consume existing national observations ONLY as unverified private
           # leads. The historical candidate preflight and merge are unchanged.
           # A fresh OpenAgenda read is mandatory; failure stops private intake.
@@ -328,6 +339,9 @@ jobs:
           cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
+            if [[ -s "$STATE/ods-recent-cursor.json" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"
+            fi
             if [[ -f "$STATE/national-observation/backlog-bridge-cursor.json" ]]; then
               git -C state add -- "automation-intake/ptitesondes/national-observation/backlog-bridge-cursor.json"
             fi
