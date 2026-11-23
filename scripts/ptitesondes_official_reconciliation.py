@@ -28,6 +28,7 @@ from ptitesondes_published_oa_drift_watch import (
     index_published, choose_groups, _timings, MAX_SCAN,
 )
 from ptitesondes_openagenda_backlog_private_dossiers import read_agenda_by_slug
+from ptitesondes_named_venue_geo_resolver import resolve_named_city_only_venue
 from ptitesondes_openagenda_v2_direct_evidence import read_direct_v2
 
 SCHEMA = "ptitesondes.official_reconciliation.v1"
@@ -113,7 +114,8 @@ def _identity(source, uid, slug):
             and type(source.get("slug")) is str and source["slug"] == slug)
 
 
-def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
+def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN,
+              resolve_city_venue=resolve_named_city_only_venue):
     """Return (new_catalogue, audit, counters); never mutates input.
 
     Eligible withdrawals: a first-party status explicitly cancelled, moved
@@ -127,7 +129,8 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
             or type(catalogue.get("events")) is not list
             or not 1 <= len(catalogue["events"]) <= 100000
             or type(catalogue.get("updated_at")) is not str
-            or type(today) is not date or not callable(read_event)):
+            or type(today) is not date or not callable(read_event)
+            or not callable(resolve_city_venue)):
         raise ValueError("invalid_public_reconciliation_input")
     ids = [e.get("id") for e in catalogue["events"] if type(e) is dict]
     if (len(ids) != len(catalogue["events"])
@@ -195,6 +198,39 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
         if sessions is None:
             hold("official_timings_invalid")
             continue
+
+        # Some official OA series publish only the commune as their venue,
+        # while an earlier Publisher cycle already resolved and mapped the
+        # precise named site through a freshly read official venue page.
+        # The reconciliation must independently renew EXACTLY that proof;
+        # otherwise new sessions of the same series can never be admitted.
+        # Do not substitute the municipality centroid, trust old coordinates
+        # as new proof, or bypass the normal child-audience/date gates.
+        location = source.get("location")
+        if (isinstance(location, dict)
+                and norm(location.get("name")) == norm(location.get("adminLevel4"))
+                and any(norm(row.get("venue")) != norm(row.get("city"))
+                        for row in rows)):
+            try:
+                verified_venue = resolve_city_venue(source)
+            except (OSError, ValueError, TypeError, TimeoutError, KeyError,
+                    UnicodeError, OverflowError):
+                verified_venue = None
+            if (type(verified_venue) is dict
+                    and type(verified_venue.get("name")) is str
+                    and norm(verified_venue["name"])
+                    and all(type(verified_venue.get(field)) in (int, float)
+                            for field in ("latitude", "longitude"))):
+                checked = dict(source, location=dict(
+                    location, name=verified_venue["name"],
+                    latitude=verified_venue["latitude"],
+                    longitude=verified_venue["longitude"]))
+                # Preserve the original immutable first-party identity and
+                # permit resolution only when it reproduces the previously
+                # published exact physical site to within 65 m.
+                if all(_unchanged_location(checked, old) for old in rows):
+                    source = checked
+
         old_days = {e["date_start"] for e in rows}
         missing = [row for row in rows if row["date_start"] not in sessions]
         if missing and status != 2:
