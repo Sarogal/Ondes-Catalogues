@@ -223,8 +223,8 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
             raise AssertionError("Unexpected network destination: " + str(url))
 
         report = []
-        with mock.patch.object(discover, "download", side_effect=fetch), \\
-             mock.patch.object(discover, "robots_allow", return_value=True), \\
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
              mock.patch.object(discover.feeds, "feed_links",
                                return_value={"rss": [], "ics": []}):
             rows = discover.scan_venues(
@@ -252,8 +252,8 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
             if url == unreviewed["url"]:
                 return "".join('<a href="' + u + '">show</a>' for u in urls), url
             return "<html><body>Not independently approved</body></html>", url
-        with mock.patch.object(discover, "download", side_effect=fetch), \\
-             mock.patch.object(discover, "robots_allow", return_value=True), \\
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
              mock.patch.object(discover.feeds, "feed_links",
                                return_value={"rss": [], "ics": []}):
             result = discover.scan_venues(
