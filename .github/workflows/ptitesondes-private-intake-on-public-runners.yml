@@ -84,6 +84,11 @@ jobs:
           assert "ptitesondes_schedule_catchup.py" in s
           assert "ptitesondes_national_openworld_research_cycle.py" in s
           assert 'automation-intake/ptitesondes/national-observation/research' in s
+          # The recent ODS cursor is private state, never part of public Pages.
+          assert s.count('cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"') == 2
+          assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"') == 2
+          assert s.count('cp "$OUT/ods-territory-cursor.json" "$STATE/ods-territory-cursor.json"') == 2
+          assert s.count('git -C state add -- "automation-intake/ptitesondes/ods-territory-cursor.json"') == 2
           assert "queue: max" in s
           assert 'mapfile -t REVIEW_SLOTS' in s
           assert "vars.PTITESONDES_HTML_QUEUE == 'enabled'" in s
@@ -279,6 +284,18 @@ jobs:
           fi
           test -s "$OUT/backlog.json"
           test -s "$OUT/patch-$DAY.json"
+          # The private collector now discovers unfiltered, recently updated
+          # ODS records in a 14-day sliding window. Carry its cursor only if
+          # the additional scan completed and emitted a valid checkpoint.
+          # Never substitute an assumed offset after an API failure.
+          if [[ -s "$OUT/ods-recent-cursor.json" && "$RUN_MODE" == "write" ]]; then
+            cp "$OUT/ods-recent-cursor.json" "$STATE/ods-recent-cursor.json"
+          fi
+          # Fair, independently resumable per-territory probes complement
+          # the open nationwide cursor; never replace or restrict it.
+          if [[ -s "$OUT/ods-territory-cursor.json" && "$RUN_MODE" == "write" ]]; then
+            cp "$OUT/ods-territory-cursor.json" "$STATE/ods-territory-cursor.json"
+          fi
           # Consume existing national observations ONLY as unverified private
           # leads. The historical candidate preflight and merge are unchanged.
           # A fresh OpenAgenda read is mandatory; failure stops private intake.
@@ -328,6 +345,12 @@ jobs:
           cp "$OUT/daily-report.json" "$STATE/reports/$DAY.json"
           if [[ "$RUN_MODE" == "write" ]]; then
             git -C state add -- "automation-intake/ptitesondes/backlog.json" "automation-intake/ptitesondes/patch-$DAY.json" "automation-intake/ptitesondes/reports/$DAY.json"
+            if [[ -s "$STATE/ods-recent-cursor.json" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/ods-recent-cursor.json"
+            fi
+            if [[ -s "$STATE/ods-territory-cursor.json" ]]; then
+              git -C state add -- "automation-intake/ptitesondes/ods-territory-cursor.json"
+            fi
             if [[ -f "$STATE/national-observation/backlog-bridge-cursor.json" ]]; then
               git -C state add -- "automation-intake/ptitesondes/national-observation/backlog-bridge-cursor.json"
             fi
@@ -884,3 +907,37 @@ jobs:
             --repo Sarogal/Ondes-Catalogues --ref main \
             -f mode=publish
           echo 'Publication demandée après contrôle du stockage privé ; la synchronisation décide seule des ajouts.' >> "$GITHUB_STEP_SUMMARY"
+
+  # One-off, exact-SHA offline gate for the private discovery PR. PR workflows
+  # never receive private read tokens; this only runs after trusted MAIN push.
+  # The source checkout has no persisted credentials and tests get no secrets.
+  test-private-ods-pr:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'Sarogal/Ondes-Catalogues'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Check out exact reviewed private discovery commit without persisting credentials
+        uses: actions/checkout@v4
+        with:
+          repository: Sarogal/PtitesOndes
+          ref: e80cbda64511de144f50c4d3d5edb7bfb9ff9287
+          token: ${{ secrets.PRIVATE_INTAKE_READ_TOKEN }}
+          path: private-ods-test
+          sparse-checkout: |
+            automation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Offline private ODS source and cursor tests (no publication)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if python -m unittest discover -s private-ods-test/automation -p 'test_outings_intake.py' -v > "$RUNNER_TEMP/ods-private-test.log" 2>&1; then
+            echo "Private ODS discovery tests passed on the exact reviewed commit." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::Private ODS discovery offline tests failed; confidential diagnostics withheld."
+            exit 1
+          fi
