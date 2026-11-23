@@ -39,6 +39,47 @@ def catalogue(row=ROW):
 
 
 class FutureCityProofTests(unittest.TestCase):
+
+    def test_transient_http_403_preserves_real_j1_but_never_counts_as_j2(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        def blocked(_):
+            raise OfficialHTTPStatusError(403)
+        saved = {"schema": "grossesondes.source-watch.v1"}
+        first = review(saved, catalogue(), "2026-11-23",
+                       lambda _: MESSAGE)
+        self.assertEqual(first["first_day"], 1)
+        before = dict(saved[STATE_KEY][ROW["slug"]])
+        failed = review(saved, catalogue(), "2026-11-23", blocked)
+        self.assertEqual(failed["findings"][0]["status"],
+                         "OFFICIAL_FETCH_UNAVAILABLE")
+        self.assertEqual(failed["findings"][0]["fetch_failure_code"], "HTTP_403")
+        self.assertEqual(failed["two_day_stable"], 0)
+        self.assertNotIn("candidate_city", failed["findings"][0])
+        self.assertEqual(saved[STATE_KEY][ROW["slug"]], before)
+        next_day = review(saved, catalogue(), "2026-11-24",
+                          lambda _: MESSAGE)
+        self.assertEqual(next_day["two_day_stable"], 1)
+        self.assertEqual(next_day["findings"][0]["first_seen"], "2026-11-23")
+        self.assertFalse(next_day["publication_authorized"])
+
+    def test_failed_j2_is_not_observation_and_accessible_no_proof_resets(self):
+        from dns_pinned_https import OfficialHTTPStatusError
+        def blocked(_):
+            raise OfficialHTTPStatusError(503)
+        saved = {"schema": "grossesondes.source-watch.v1"}
+        review(saved, catalogue(), "2026-11-23", lambda _: MESSAGE)
+        failed = review(saved, catalogue(), "2026-11-24", blocked)
+        self.assertEqual(failed["two_day_stable"], 0)
+        self.assertEqual(saved[STATE_KEY][ROW["slug"]]["lastSeen"], "2026-11-23")
+        third = review(saved, catalogue(), "2026-11-25", lambda _: MESSAGE)
+        self.assertEqual(third["first_day"], 1)
+        self.assertEqual(third["two_day_stable"], 0)
+        self.assertEqual(third["findings"][0]["first_seen"], "2026-11-25")
+        lost = review(saved, catalogue(), "2026-11-25",
+                      lambda _: "<p>Programme à venir</p>")
+        self.assertEqual(lost["findings"][0]["status"], "CITY_NOT_PROVEN")
+        self.assertNotIn(ROW["slug"], saved[STATE_KEY])
+
     def test_signed_current_edition_date_and_department_locality_hero(self):
         # Realistic official event-site structure: year and municipality in
         # one paragraph; edition branding elsewhere in the same homepage.
