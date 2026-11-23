@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from ptitesondes_official_reconciliation import reconcile, digest, unwrap_exact_public_v2_event
+from ptitesondes_official_reconciliation import reconcile, digest, unwrap_exact_public_v2_event, assert_live_source_health
 from test_ptitesondes_candidate_promotion import base
 from test_ptitesondes_published_oa_drift_watch import source
 
@@ -82,6 +82,26 @@ class OfficialReconciliationTests(unittest.TestCase):
                 with self.assertRaisesRegex(
                     ValueError, "official_v2"):
                     unwrap_exact_public_v2_event(invalid, 111)
+
+    def test_all_sources_mismatch_must_fail_instead_of_green_noop(self):
+        for code in ("official_identity_mismatch", "official_unavailable"):
+            with self.subTest(code=code):
+                with self.assertRaisesRegex(
+                        RuntimeError, "all_first_party_oa_reads_failed"):
+                    assert_live_source_health({
+                        "source_series_checked": 27,
+                        "source_summary": {code: 27},
+                    })
+        assert_live_source_health({
+            "source_series_checked": 27,
+            "source_summary": {
+                "official_identity_mismatch": 3,
+                "official_unchanged": 24,
+            },
+        })
+        assert_live_source_health({
+            "source_series_checked": 0, "source_summary": {},
+        })
 
     def test_normalized_live_v2_envelope_passes_regular_reconciliation(self):
         wrapped = {"event": live(time="11:00", status=2)}
