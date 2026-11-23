@@ -665,16 +665,18 @@ def linked_first_party_event_urls(page_html, source_url, today):
 
 
 def select_generic_official_detail_links(links, day, scan_slot, limit=3):
-    """Rotate filtered same-host event links without increasing probes.
+    """Rotate a bounded cohort of first-party event details.
 
     The previous fixed first-three selection reread the same front-page
     URLs each day and permanently starved later individual events.
-    Three daily slots now visit distinct cohorts; later days complete
-    the queue. Discovery only, never a publisher approval.
+    Three daily slots visit distinct cohorts. Independently reviewed generic
+    first-party venues can inspect six instead of three pages per slot, so
+    larger programmes are covered sooner. This is discovery only, never
+    approval or additional publisher trust.
     """
     if (not isinstance(day, dt.date) or isinstance(day, dt.datetime)
             or scan_slot not in (0, 1, 2)
-            or not isinstance(limit, int) or not 0 <= limit <= 3):
+            or type(limit) is not int or not 0 <= limit <= 6):
         raise ValueError("Invalid official venue detail rotation")
     ordered = list(dict.fromkeys(link for link in links
                                   if isinstance(link, str) and link))
@@ -763,7 +765,8 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     "laiterie_official_detail_review",
                     "echonova_official_detail_review")
                          else select_generic_official_detail_links(
-                             links, day, scan_slot, limit=3)):
+                             links, day, scan_slot,
+                             limit=6 if reviewed_generic_source else 3)):
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)

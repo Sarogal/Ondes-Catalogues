@@ -37,6 +37,40 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
         self.assertEqual(len(short), 2)
         self.assertEqual(set(short), {"one", "two"})
 
+    def test_six_page_reviewed_venue_rotation_covers_forty_eight_links(self):
+        # One independently trusted first-party venue with a large agenda.
+        # Six distinct reads in each of three daily slots cover all 48
+        # event URLs within three calendar days. No artist/date whitelist.
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://venue.example/evenement/official-show-%02d/" % i
+            for i in range(48)]
+        visited = []
+        for delta in range(3):
+            for slot in (0, 1, 2):
+                selected = discover.select_generic_official_detail_links(
+                    links, day + dt.timedelta(days=delta), slot, limit=6)
+                self.assertEqual(len(selected), 6)
+                self.assertEqual(len(set(selected)), 6)
+                visited.extend(selected)
+        self.assertEqual(set(visited), set(links))
+
+    def test_reviewed_venue_still_has_strict_bounded_budget(self):
+        day = dt.date(2026, 11, 23)
+        links = [str(i) for i in range(70)]
+        for slot in range(3):
+            selected = discover.select_generic_official_detail_links(
+                links, day, slot, limit=6)
+            self.assertEqual(len(selected), 6)
+            self.assertEqual(selected, discover.select_generic_official_detail_links(
+                links, day, slot, limit=6))
+        with self.assertRaises(ValueError):
+            discover.select_generic_official_detail_links(
+                links, day, 0, limit=7)
+        with self.assertRaises(ValueError):
+            discover.select_generic_official_detail_links(
+                links, day, 0, limit=True)
+
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
         self.assertEqual(
@@ -49,7 +83,7 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
             (dt.datetime(2026, 11, 19), 0, 3),
             (day, 3, 3),
             (day, -1, 3),
-            (day, 0, 4),
+            (day, 0, 7),
             (day, 0, -1),
         ):
             with self.subTest(args=(bad_day, bad_slot, bad_limit)):
