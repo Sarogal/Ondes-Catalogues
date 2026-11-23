@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-22",
+  "updatedAt": "2026-11-23",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2426,6 +2426,16 @@
       "id": "parents-in-denial",
       "name": "Parents in Denial",
       "aliases": []
+    },
+    {
+      "id": "perp-walk-hardcore-uk",
+      "name": "PERP WALK (Hardcore - UK)",
+      "aliases": []
+    },
+    {
+      "id": "feints-fr",
+      "name": "FEINTS (FR)",
+      "aliases": []
     }
   ],
   "venues": [
@@ -3585,6 +3595,19 @@
       "longitude": -1.6969548714285716,
       "geoPrecision": "named-site-area",
       "id": "go-site-77a4cea44b8b383434f8"
+    },
+    {
+      "name": "Le Klub",
+      "city": "Paris",
+      "address": "14 Rue Saint Denis",
+      "postalCode": "75001",
+      "department": "75",
+      "region": "Île-de-France",
+      "geoSource": "https://www.openstreetmap.org/node/2003145863",
+      "latitude": 48.8591148,
+      "longitude": 2.3478378,
+      "geoPrecision": "named-site-point",
+      "id": "go-site-c0d126726d645ccd0d5a"
     }
   ],
   "events": [
@@ -15300,6 +15323,37 @@
       "history": [
         {
           "date": "2026-11-22",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20261128-paris-perp-walk-hardcore-uk",
+      "title": "PERP WALK (Hardcore - UK) + FEINTS (FR)",
+      "date": "2026-11-28",
+      "artistIds": [
+        "perp-walk-hardcore-uk",
+        "feints-fr"
+      ],
+      "venueId": "go-site-c0d126726d645ccd0d5a",
+      "genres": [
+        "punk",
+        "hardcore"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://openagenda.com/shotgun/events/perp-walk-hardcore-uk-feints-fr",
+      "sourceType": "organisateur",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Le Klub",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-23",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-23",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
