@@ -4,6 +4,16 @@ on:
   pull_request:
     paths:
       - 'scripts/ptitesondes_published_oa_drift_watch.py'
+      - 'scripts/ptitesondes_official_reconciliation.py'
+      - 'tests/test_ptitesondes_official_reconciliation.py'
+      - 'tests/test_ptitesondes_published_oa_drift_watch.py'
+      - '.github/workflows/ptitesondes-published-oa-watch.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_published_oa_drift_watch.py'
+      - 'scripts/ptitesondes_official_reconciliation.py'
+      - 'tests/test_ptitesondes_official_reconciliation.py'
       - 'tests/test_ptitesondes_published_oa_drift_watch.py'
       - '.github/workflows/ptitesondes-published-oa-watch.yml'
   push:
@@ -39,6 +49,8 @@ jobs:
         run: |
           python -m py_compile scripts/ptitesondes_published_oa_drift_watch.py
           python -m unittest -v test_ptitesondes_published_oa_drift_watch
+          python -m py_compile scripts/ptitesondes_official_reconciliation.py
+          python -m unittest -v test_ptitesondes_official_reconciliation
       - name: Recheck current official OA series without writing to catalogue
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
