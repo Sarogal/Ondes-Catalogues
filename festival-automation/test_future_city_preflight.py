@@ -244,6 +244,93 @@ class FutureCityProofTests(unittest.TestCase):
             with self.subTest(html=html[:100]):
                 self.assertIsNone(exact_edition_city(html, row))
 
+    def test_official_current_homepage_dates_and_present_tense_town(self):
+        """A current festival homepage can separate its dates from its town."""
+        row = dict(ROW, slug="le-gros-tonneau-2027",
+                   name="Le Gros Tonneau 2027",
+                   startDate="2027-05-07", endDate="2027-05-08",
+                   officialSite="https://legrostonneau-festival.fr/")
+        hero = ("<main><h1>Le Gros Tonneau Festival</h1>"
+                "<p>.07.08 Mai 2027</p>"
+                "<h2>Replonge dans le millésime 2026 du GROS TONNEAU</h2>"
+                "<h2>Le Gros Tonneau, festival Punk, Hardcore &amp; Métal</h2>")
+        venue = (
+            "<p>Le Gros Tonneau est un festival indépendant consacré "
+            "aux musiques Punk, Hardcore et Metal qui se déroule "
+            "à Artonne, proche de Clermont-Ferrand, en Auvergne.</p></main>")
+        expected = {"slug": row["slug"], "city": "Artonne",
+                    "source": row["officialSite"]}
+        self.assertEqual(exact_edition_city(hero + venue, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: hero + venue), expected)
+        for invalid in (
+            hero.replace("2027", "2026", 1) + venue,
+            hero.replace("07.08", "07.09") + venue,
+            hero.replace("Le Gros Tonneau Festival",
+                         "Le festival sans rapport") + venue,
+            hero.replace("07.08 Mai 2027", "Billetterie 2027") + venue,
+            hero + venue.replace("se déroule", "se déroulait"),
+            hero + venue.replace("à Artonne", "à Artonne et à Limoges"),
+            hero + venue.replace("qui se déroule", "qui en 2026 se déroule"),
+            hero + venue.replace("<p>Le Gros Tonneau",
+                                 "<p hidden>Le Gros Tonneau"),
+            hero + venue.replace("</main>", "") +
+                "<p>Le Gros Tonneau se déroule à Bordeaux.</p></main>",
+        ):
+            with self.subTest(variant=invalid[:120]):
+                self.assertIsNone(exact_edition_city(invalid, row))
+
+    def test_city_rotation_covers_thirteen_dossiers_in_two_daily_runs(self):
+        from future_city_preflight import MAX_CHECKS
+        self.assertEqual(MAX_CHECKS, 8)
+        rows = [
+            {**ROW, "slug": "festival-exemple-" + str(i) + "-2027",
+             "name": "Festival Exemple " + str(i) + " 2027",
+             "officialSite": "https://festival-exemple" + str(i) + ".fr/"}
+            for i in range(13)
+        ]
+        # Use a valid signed city row shape but no proof on an empty site.
+        report_catalogue = {"schema": 1, "festivals": rows}
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = review(state, report_catalogue, "2026-11-23",
+                       lambda _: "<p>Informations à venir</p>", limit=8)
+        second = review(state, report_catalogue, "2026-11-23",
+                        lambda _: "<p>Informations à venir</p>", limit=8)
+        self.assertEqual(first["checked"], 8)
+        self.assertEqual(second["checked"], 8)
+        self.assertEqual(len({x["slug"] for x in first["findings"] +
+                              second["findings"]}), 13)
+        with self.assertRaises(ValueError):
+            review(state, report_catalogue, "2026-11-23",
+                   lambda _: "", limit=9)
+
+    def test_department_change_resets_two_day_city_proof(self):
+        row = {
+            "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": "https://esquiriot.fr/", "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        def official(department):
+            return ("<h1>Esqui'Riot</h1><section>"
+                    "<p>Édition 2 — Été 2027</p>"
+                    "<p>Festival Punk · Métal · Rock</p>"
+                    "<p>Sainte-Hélène</p><p>" + department + "</p></section>")
+        state = {"schema": "grossesondes.source-watch.v1"}
+        first = review(state, catalogue(row), "2026-11-23",
+                       lambda _: official("Gironde"))
+        changed = review(state, catalogue(row), "2026-11-24",
+                         lambda _: official("Morbihan"))
+        self.assertEqual(first["first_day"], 1)
+        self.assertEqual(changed["first_day"], 1)
+        self.assertEqual(changed["two_day_stable"], 0)
+        self.assertEqual(changed["findings"][0]["first_seen"], "2026-11-24")
+        confirmed = review(state, catalogue(row), "2026-11-25",
+                           lambda _: official("Morbihan"))
+        self.assertEqual(confirmed["two_day_stable"], 1)
+        self.assertEqual(confirmed["findings"][0]
+                         ["candidate_city"]["departmentLabel"], "Morbihan")
+
     def test_current_festival_city_in_separate_official_edition_hero(self):
         """Real-world first-party layout: title in brand, city after dates."""
         row = {
