@@ -560,7 +560,15 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     # All slots are reached even when total source count is divisible by 8.
     batch = (date.fromisoformat(today).toordinal() * 2 if tick is None else tick)
     offset = batch % ceil(len(urls) / limit) * limit
-    return [(url, grouped[url]) for url in urls[offset:offset + limit]]
+    selected = urls[offset:offset + limit]
+    # A push-triggered catch-up scans up to 48 signed hosts. If the last
+    # slice holds only one host (e.g. 49 sites), fill the unused slots by
+    # wrapping to the beginning. Never repeat one source in the same run,
+    # exceed the configured limit, or change the complementary 24-host
+    # morning/evening scheduled rotation.
+    if limit >= 48 and len(urls) > limit and len(selected) < limit:
+        selected += urls[:limit - len(selected)]
+    return [(url, grouped[url]) for url in selected]
 
 
 class _OfficialImageEditionIdentity(HTMLParser):
