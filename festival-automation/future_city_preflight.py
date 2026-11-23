@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo
 from dns_pinned_https import fetch_public_html, safe_public_url
 from future_geo_preflight import (
     _VisibleOrganizerLinks, _matching_event, _name, _country,
+    safe_fetch_failure_code,
     _atomic, eligible, official_access_links,
 )
 SCRIPTS = str(Path(__file__).resolve().parents[1] / "scripts")
@@ -828,9 +829,10 @@ def review(state, calendar, today, fetcher=fetch_public_html, limit=MAX_CHECKS):
         result = {"slug": slug, "status": "CITY_NOT_PROVEN"}
         try:
             claim = exact_city_from_official_site(row, fetcher)
-        except (OSError, ValueError, TimeoutError, UnicodeError):
+        except (OSError, ValueError, TimeoutError, UnicodeError) as exc:
             claim = None
             result["status"] = "OFFICIAL_FETCH_UNAVAILABLE"
+            result["fetch_failure_code"] = safe_fetch_failure_code(exc)
         if claim is None:
             observations.pop(slug, None)
             findings.append(result)
