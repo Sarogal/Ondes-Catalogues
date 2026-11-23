@@ -23,7 +23,8 @@ from ptitesondes_openagenda_v2_direct_evidence import (
 )
 from ptitesondes_open_world_municipal_bootstrap import _safe_research_lead
 from ptitesondes_open_world_private_dossier_intake import (
-    MAX_DOSSIERS, attach_research_dossiers, review_batch_for_cron,
+    MAX_DOSSIERS, attach_research_dossiers, fair_dossier_order,
+    review_batch_for_cron,
 )
 
 API = "https://api.openagenda.com/v2/agendas"
@@ -229,6 +230,12 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     current = dict(patch, open_world_research=future_pending)
     combined = attach_research_dossiers(
         current, [], today, published_ids=already)
+    # A research queue can be filled entirely by a single agenda's long
+    # series before this independent historical OA backlog is examined.
+    # A full queue is a *per-run work budget*, never a permanent exclusion
+    # of other first-party sources. Recheck one bounded backlog batch even
+    # when no free slot remains, then fairly interleave ALL source agendas
+    # before applying the existing 80-dossier Publisher budget.
     capacity = MAX_DOSSIERS - len(combined["open_world_research"])
     identities = fair_backlog_identity_order(set(
         identity for row in backlog
@@ -245,7 +252,12 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
         (x["lead"]["event_uid"], x["date_start"])
         for x in combined["open_world_research"]
     }
-    while capacity and visited < min(MAX_ATTEMPTS, len(identities)):
+    # Preserve the established append-only queue behavior while ordinary
+    # free capacity exists. Only a genuinely saturated queue may fairly
+    # preempt old research requests from durable source inventories.
+    review_budget = capacity if capacity > 0 else MAX_ATTEMPTS
+    while (len(proposals) < review_budget
+           and visited < min(MAX_ATTEMPTS, len(identities))):
         slug, uid, day, title = identity = identities[(start + visited) % len(identities)]
         visited += 1
         if ("openagenda-" + str(uid) + "-" + day) in already or (uid, day) in queue_keys:
@@ -265,14 +277,31 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
                 continue
             proposals.append(dossier)
             queue_keys.add((uid, day))
-            capacity -= 1
         except (OSError, ValueError, TimeoutError, KeyError, TypeError, UnicodeError):
             holds += 1
-    result = attach_research_dossiers(
-        combined, proposals, today, published_ids=already)
+    pending = combined["open_world_research"]
+    if len(pending) + len(proposals) <= MAX_DOSSIERS:
+        result = attach_research_dossiers(
+            combined, proposals, today, published_ids=already)
+    else:
+        # The original national observation and historical source backlog
+        # remain the durable discovery stores. No source, agenda or UID is
+        # permanently blacklisted; later rotations can resubmit unattended
+        # series. Round-robin across agendas and UIDs before truncation
+        # prevents a single everyday booking series from consuming 60/80
+        # slots while new territories remain unreviewed.
+        balanced = fair_dossier_order([*pending, *proposals])
+        result = attach_research_dossiers(
+            dict(combined, open_world_research=[]),
+            balanced[:MAX_DOSSIERS], today, published_ids=already)
     return result, {
         "backlog_candidates": len(identities), "clues_examined": visited,
-        "live_events_read": attempts, "new_dossiers": len(proposals),
+        "live_events_read": attempts,
+        "new_dossiers": sum(
+            1 for row in result["open_world_research"] if row in proposals),
+        "reviewed_not_selected_this_cycle": max(
+            0, len(pending) + len(proposals) - MAX_DOSSIERS),
+        "source_read_proposals": len(proposals),
         "queued_total": len(result["open_world_research"]),
         "held_for_publisher_or_network": holds, "public_writes": 0,
     }

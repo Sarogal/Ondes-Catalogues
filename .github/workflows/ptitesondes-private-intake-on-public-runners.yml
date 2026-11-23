@@ -119,6 +119,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
+      actions: write
     env:
       RUN_MODE: ${{ github.event_name == 'schedule' && 'write' || inputs.mode || 'preview' }}
       CYCLE: ${{ github.event_name == 'schedule' && github.event.schedule == '37 21 * * *' && 'places' || github.event_name == 'schedule' && 'outings' || inputs.cycle || 'all' }}
@@ -867,3 +868,19 @@ jobs:
           set -euo pipefail
           git -C public diff --exit-code -- docs/ptitesondes/sorties.json docs/ptitesondes/lieux.json
           echo "Aucune écriture vers le catalogue public ; synchronisation et publication autonomes restent indépendantes." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Demander la synchronisation publique après écriture privée validée
+        if: ${{ success() && env.RUN_MODE == 'write' && env.CYCLE != 'places' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # A dispatch initiated with GITHUB_TOKEN may not emit a chained
+          # workflow_run event. Explicit workflow_dispatch IS supported.
+          # The Publisher must still independently re-read official UID,
+          # coordinates, rights, age, timing and duplicates.
+          gh workflow run ptitesondes-cloud-sync.yml \
+            --repo Sarogal/Ondes-Catalogues --ref main \
+            -f mode=publish
+          echo 'Publication demandée après contrôle du stockage privé ; la synchronisation décide seule des ajouts.' >> "$GITHUB_STEP_SUMMARY"

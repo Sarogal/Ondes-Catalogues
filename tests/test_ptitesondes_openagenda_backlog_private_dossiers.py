@@ -208,6 +208,68 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertEqual(result["open_world_research"][0]["date_start"],
                          DAY.isoformat())
 
+    def test_full_80_from_one_source_cannot_starve_an_unlisted_agenda(self):
+        # No venue/territory allowlist: a completely unknown OA agenda
+        # is eligible for a live check even when the 80-place request queue
+        # is already filled by one recurring series in another agenda.
+        from datetime import date
+        prior = []
+        for day_offset in range(80):
+            day = (TODAY + timedelta(days=day_offset)).isoformat()
+            old_uid = 441100
+            prior.append({
+                "lead": {
+                    "agenda_uid": 20001,
+                    "agenda_slug": "high-volume-calendar",
+                    "event_uid": old_uid,
+                    "title": TITLE,
+                    "city_unverified": "Ville artistique",
+                    "venue_unverified": "Studio",
+                },
+                "date_start": day,
+                "official_event_url":
+                    "https://openagenda.com/high-volume-calendar/events/441100",
+                "official_venue_url":
+                    "https://openagenda.com/high-volume-calendar/events/441100",
+            })
+        saturated = dict(self.patch, open_world_research=prior)
+        calls = []
+        def live_agenda(slug, key):
+            calls.append(slug)
+            return AGENDA
+        result, counts = build_backlog_dossiers(
+            [clue()], saturated, self.catalogue, TODAY, self.key,
+            agenda_reader=live_agenda,
+            event_reader=lambda *_: oa_event())
+        self.assertEqual(len(result["open_world_research"]), 80)
+        self.assertEqual(counts["new_dossiers"], 1)
+        self.assertEqual(calls, [AGENDA["slug"]])
+        self.assertEqual(
+            len([x for x in result["open_world_research"]
+                 if x["lead"]["event_uid"] == 999401]), 1)
+        self.assertGreater(counts["reviewed_not_selected_this_cycle"], 0)
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(result["additions"], [])
+
+    def test_full_queue_without_valid_live_backlog_is_preserved(self):
+        prior = [{
+            "lead": {
+                "agenda_uid": 20001, "agenda_slug": "a-new-calendar",
+                "event_uid": 11100 + i,
+            },
+            "date_start": DAY.isoformat(),
+            "official_event_url": "https://openagenda.com/a-new-calendar/events/11100",
+            "official_venue_url": "https://openagenda.com/a-new-calendar/events/11100",
+        } for i in range(80)]
+        old_patch = dict(self.patch, open_world_research=prior)
+        result, counts = build_backlog_dossiers(
+            [clue()], old_patch, self.catalogue, TODAY, self.key,
+            agenda_reader=lambda *args: AGENDA,
+            event_reader=lambda *_: dict(oa_event(), uid=999402))
+        self.assertEqual(result["open_world_research"], prior)
+        self.assertEqual(counts["new_dossiers"], 0)
+        self.assertEqual(counts["held_for_publisher_or_network"], 1)
+
     def test_four_daily_slots_rotate_up_to_eighty_private_dossiers(self):
         # Existing 345+ future clues exceed 30/day. Four independently
         # selected same-day slots must not starve behind a queue of 30,
