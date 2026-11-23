@@ -63,9 +63,22 @@ def _individual_event(html, url, when, venue, *, accept_generic=False):
     Every alternative still needs named performers and a relevant genre
     on its own individual record. Bad JSON-LD cannot be hidden by microdata.
     """
+    nodes = dynamic.individual_event_nodes(
+        html, accept_generic=accept_generic)
+    # A first-party site can publish its precise date, named bill and music
+    # category as visible HTML rather than schema.org. Only an independently
+    # registered official venue/host with a separately tested, source-wide
+    # detail parser can use this route. NEVER mask conflicting JSON-LD.
+    if accept_generic and not nodes:
+        from automation.concerts import trabendo_official_single_source as visible
+        if visible.supports(venue, url):
+            evidence = visible.verified_bill(
+                html, url, venue, dt.date.fromisoformat(when))
+            require(evidence["date"] == when,
+                    "official visible event date changed")
+            return evidence["names"], evidence["genres"]
     matches = []
-    for node in dynamic.individual_event_nodes(
-            html, accept_generic=accept_generic):
+    for node in nodes:
         if not isinstance(node, dict):
             continue
         types = bridge._event_types(node.get("@type"))
