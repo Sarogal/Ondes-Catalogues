@@ -57,8 +57,28 @@ def private_queue():
 
 class DirectUndatedNationalTests(unittest.TestCase):
     def test_realistic_2027_first_party_announcement(self):
+        from grossesondes_first_party_direct_edition import (
+            branded_official_site, safe_root)
+        from grossesondes_institutional_edition import slug_for
+        from grossesondes_first_party_undated_edition import FUTURE
+        from grossesondes_official_html_edition import (
+            VisibleText, fold, explicit_ranges)
+        import re
+        vis = VisibleText()
+        vis.feed(HTML)
+        vis.close()
+        txt = " ".join(fold(" ".join(vis.parts)).split())
+        diagnostics = {
+            "safe_root": safe_root(SITE),
+            "slug": slug_for(TITLE),
+            "branded": branded_official_site(SITE, TITLE, HTML),
+            "visible": txt[:550],
+            "date_ranges": explicit_ranges(txt, 2027),
+            "future_match": [m.group() for m in re.finditer(
+                FUTURE.replace("YEAR_HERE", "2027"), txt)],
+        }
         self.assertTrue(confirmed_future_without_dates(
-            SITE, TITLE, HTML, TODAY))
+            SITE, TITLE, HTML, TODAY), repr(diagnostics))
         proposal = private_proposal(TITLE, SITE, TODAY)
         self.assertEqual(proposal["proofMode"], PROOF_MODE)
         self.assertEqual(proposal["slug"], "esqui-riot-2027")
