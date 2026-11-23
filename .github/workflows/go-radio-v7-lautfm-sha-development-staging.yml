@@ -1,0 +1,103 @@
+name: GO radio TEST v7 — stage 14 original laut.fm SHA logos in dev only
+on:
+  push:
+    branches:
+      - feature/go-radio-v7-13-dedupe-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v7_lautfm_sha_assets.py'
+      - '.github/workflows/go-radio-v7-lautfm-sha-development-staging.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-exact-sha-images-only:
+    if: github.ref == 'refs/heads/feature/go-radio-v7-13-dedupe-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install release contract and decoder dependencies
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Retrieve immutable 14-station laut.fm SHA evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/verified-laut-fm"
+          gh run download 45127799794 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-radio-v7-lautfm-14-official-logo-sha-evidence-only \
+            --dir "$RUNNER_TEMP/verified-laut-fm"
+      - name: Download and byte-verify each official image again; stage ONLY unsigned files
+        run: |
+          python radio-catalog-lab/tools/stage_v7_lautfm_sha_assets.py \
+            --artifact-root "$RUNNER_TEMP/verified-laut-fm"
+      - name: Verify signed v6 predecessor and unsigned v7 schema/publish guard
+        run: |
+          python - <<'PY'
+          import hashlib,json,sys
+          from pathlib import Path
+          from jsonschema import Draft202012Validator,FormatChecker
+          root=Path('.')
+          source=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-dedupe-20261123.json'
+          enriched=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json'
+          old=json.loads(source.read_text())
+          new=json.loads(enriched.read_text())
+          schema=json.loads((root/'radio-catalog-lab/schemas/radio_catalog_v1.schema.json').read_text())
+          errs=list(Draft202012Validator(schema,format_checker=FormatChecker()).iter_errors(new))
+          assert not errs,[(e.json_path,e.message) for e in errs[:4]]
+          sys.path.insert(0,str(root/'radio-catalog-lab/tools'))
+          from radio_catalog_release_packager import load_verified_predecessor,read_public_key
+          from radio_catalog_guard import validate_catalog
+          signed=root/'grossesondes/radio-test-v2'
+          previous=load_verified_predecessor(signed,read_public_key(signed/'TEST_PUBLIC_KEY.b64'))
+          assert previous['release_sequence']==6
+          assert not validate_catalog(new,mode='publish',previous=previous,
+                                      trusted_signed_history=True)
+          assert new['release_sequence']==7
+          assert new['tombstones']==old['tombstones']
+          assert len(new['stations'])==296
+          assert sum(s['status']['state']=='active' for s in new['stations'])==285
+          assert sum(s['logo'] is not None for s in new['stations'])==189
+          assert sum(s['status']['state']=='active' and s['logo'] is not None
+                     for s in new['stations'])==184
+          before={s['go_station_id']:s for s in old['stations']}
+          after={s['go_station_id']:s for s in new['stations']}
+          assert before.keys()==after.keys()
+          changed=[id_ for id_ in before if before[id_]!=after[id_]]
+          assert len(changed)==14
+          for id_ in changed:
+              assert before[id_]['logo'] is None and after[id_]['logo'] is not None
+              assert before[id_]=={**after[id_],'logo':None}
+          objects=list((signed/'artwork/staging-lautfm-v7').glob('*'))
+          assert len(objects)==14
+          for obj in objects:
+              assert obj.is_file() and hashlib.sha256(obj.read_bytes()).hexdigest()==obj.name.split('.')[0]
+          assert json.loads((signed/'current.json').read_text())['release_sequence']==6
+          print('LAUTFM_14_FIRST_PARTY_SHA_LOGOS_GUARD_VALIDATED_SIGNED_V6_UNCHANGED')
+          PY
+      - name: Commit only 14 SHA objects and unsigned catalog on experimental branch
+        run: |
+          test "$GITHUB_REF_NAME" = 'feature/go-radio-v7-13-dedupe-20261123'
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json \
+            grossesondes/radio-test-v2/artwork/staging-lautfm-v7/
+          python - <<'PY'
+          import subprocess
+          files=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          exact='radio-catalog-lab/full-staging/UNSIGNED-radio-v7-13-programs-lautfm-14-20261123.json'
+          prefix='grossesondes/radio-test-v2/artwork/staging-lautfm-v7/'
+          assert len(files)==15,files
+          assert files.count(exact)==1
+          assert all(x==exact or (x.startswith(prefix) and x.endswith(('.png','.jpg','.webp'))) for x in files)
+          assert len({x for x in files if x.startswith(prefix)})==14
+          print('ALLOWLIST_UNPUBLISHED_V7_CANDIDATE_PLUS_14_LOGO_OBJECTS_ONLY')
+          PY
+          git -c user.name='Grosses Ondes TEST Logo Auditor' \
+            -c user.email='go-logo-audit@localhost.invalid' \
+            -c commit.gpgsign=false commit \
+            -m 'test(artwork): stage 14 official laut.fm SHAs and enriched unsigned v7'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          echo "LAUTFM_14_SHA_OBJECTS_COMMITTED_DEV_BRANCH_ONLY"
