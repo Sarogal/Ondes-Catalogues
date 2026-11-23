@@ -272,6 +272,26 @@ class NationalPrivateDossierTests(unittest.TestCase):
         self.assertEqual(rows[0]["official_event_url"], rows[0]["official_venue_url"])
         self.assertFalse(rows[0]["lead"]["publication_ready"])
 
+    def test_private_carry_reads_realistic_80_dossier_patch_above_old_limit(self):
+        from ptitesondes_private_research_carry_forward import MAX_PRIVATE_PATCH_BYTES
+        from ptitesondes_national_backlog_bridge import _read
+        self.assertEqual(MAX_PRIVATE_PATCH_BYTES, 4_000_000)
+        ref = {"updated_at": "unchanged", "events": []}
+        patch = private_patch(ref, queue=[])
+        patch["deferred"] = [{"private_note": "x" * 19_000} for _ in range(80)]
+        raw = json.dumps(patch).encode("utf-8")
+        self.assertGreater(len(raw), 1_500_000)
+        self.assertLess(len(raw), MAX_PRIVATE_PATCH_BYTES)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "patch.json"
+            path.write_bytes(raw)
+            recovered, _ = _read(path, MAX_PRIVATE_PATCH_BYTES)
+            self.assertEqual(len(recovered["deferred"]), 80)
+            self.assertFalse(recovered["safe_to_publish"])
+            path.write_bytes(b"x" * (MAX_PRIVATE_PATCH_BYTES + 1))
+            with self.assertRaises(ValueError):
+                _read(path, MAX_PRIVATE_PATCH_BYTES)
+
     def test_research_queue_survives_an_entire_new_collector_run(self):
         ref = {"updated_at": "unchanged", "events": []}
         old = private_patch(ref, queue=[])
