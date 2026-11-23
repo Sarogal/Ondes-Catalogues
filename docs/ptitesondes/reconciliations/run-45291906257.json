@@ -1,0 +1,1050 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-24",
+  "slot": 3,
+  "source_series_checked": 30,
+  "total_source_series": 46,
+  "before_count": 706,
+  "after_count": 853,
+  "source_summary": {
+    "official_new_session_admitted": 1,
+    "official_new_session_held": 1,
+    "official_new_session_on_demand_review": 1,
+    "official_unavailable": 1,
+    "official_unchanged": 27
+  },
+  "catalogue_before_sha256": "df66365a03041e6dbdcd31b8ff0d58b654c62716a825576c225953ff7964025d",
+  "catalogue_after_sha256": "4e2f50655e64e96359d420cd97e27d5b07dc4eeac6fa680abd2d39fa4738f622",
+  "operations": [
+    {
+      "id": "openagenda-38483269-2026-11-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "8ccadb8c141760298eb340bbb69886393d69e3a7b3fd7701e2b07a7b94b73f5e"
+    },
+    {
+      "id": "openagenda-38483269-2026-11-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "cdf2a2652f8709de1ff27767d8d25f84ab0c3c8bbc820ce917a40874ce62e7cf"
+    },
+    {
+      "id": "openagenda-38483269-2026-11-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "894d0a59bd733c59d9abdd18fd0ace0410bd3b9b9ab1bbc33e986bee95ab6d3c"
+    },
+    {
+      "id": "openagenda-38483269-2026-11-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "f593d8ab0a93546ec64eab8bea2879f500131f095b045e10cea1f5ad8a8edb4f"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "6cd0ef77ce599f48cf85ef436eec22b619d608ed6f6386b8812a6d2567b866c3"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5ef08219fc57af8e60f8ce15fc4ca265a75afcd9b7bb5d34cb69125c7923956a"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "0f75cfee0ba425af98b583f3e6a3b44ca8e18474e524e61899b83e4d91582813"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "33900a791f0a10851c82beee160be6118191f599957ae7683ea528ab9b02ac5c"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "63541db7c98e6977317c717d3e4ba2a6660065aabf33692a1f399fdce0be882b"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "7511e2e842ee73f05e337bc69c3a524ca02f2dcc7a4a687a44e07645e2a77a1a"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4feb90e397572155072ae5e847119f44a713c16e7a25ac68ba6f1690bd1cf82a"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "77ac31ce817815e21e8da39430f3e91ee0ce42984b362b1335f0305de14d028d"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "328bedc61875708d96f141e04797d1610ba942f899d877346ca3bba660df98a2"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "275f6bbdbce7e89acabfc26bbd89bb158d74ed402d62afb360b4eea7d553afd3"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "461ca57cac1a439221c2f3fd03609935fd6d96fab6c3c95346b8c1b2d04ecac9"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "f20879ca609cf283eaf3c8e74974520a4a8866722dfacdf1f7c8bd49b1a56a39"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "71880627ab112d2b3616683c0122b5dc7d5b3519c881cb6d87e8a955cb13dec7"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "fbb89b044eebb0f0f39944a30bcb152ef82dd2b2c7e0996e8c825c05faacd671"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "1d51fe0bec84f5224303d3ffb6e420c52d3b3dbacd8f74cdc8fe066cbc9feb18"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "c6a1d7671eafcdd7c2d5e88e7de85c45190b654f7057bebae9f5707945c8980b"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "bb3f734f5546ae52202218db5775b7b5323749e0afa016432427aac08a0b2374"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "2aac7868f0b8d3dfc9398899ccc840aa8ef48937c3b5de2254d29c5f9db4e334"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "46eae902c04592cf72fa8af2711bf76941b2d16dd59527225fea3d4c22a0d726"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a364b3167a0d453cf72fe3785a01e201b3698798bd1e6ad183f1e283ce3561b0"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "fa9e51420b3d595bf2c9f54764f3256b9ca4888ca4d365d52d7c10d0215906de"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "440435c2dc8ce9bfe291d27db404a9516c33f06e5bbdbccf5d6b6dbccb2c58df"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "6158b4a6030832a4eaa3862967d97d0d91190c2e440c3c6d3a3508ea2ac6b644"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "08e085b80eb0942015649c591a1564182eac4e796f23b6042da47480de3eac51"
+    },
+    {
+      "id": "openagenda-38483269-2026-12-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "bcfa250d1d91bc2864a71171ebd9d4b42d48d7b95019cd5f5943fb9ad8f148ce"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "d476a5d6299e498b8fa3309c1ea0c66ac34a5400eda5f265c3ff14d78ddb1e16"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "13f07e62710f8490d5fcb1e576ce8170e880f23a4fc2710be617860d5ff502fa"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "9b836a860cda54760a69a8ab65669e0f82355b73f27c3dbfa851a105bd2d0549"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e8f3926697d506e3494d95934c2200bb8ff2f94e265e31f23c398db2d2ae5500"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "575a39b5a1d2478bf9e4df42e7c9f2a0f6bbb974513ff714c0a672d0b6c6a38d"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "883c8ff88a1cb1d2667011b37f3d48076b1af3198b2aa84c9d7ea40e120d9255"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "60a7ca2b6557484cc2184ed6f36270fc75f9caa6cebfa3fde5d1ba2748a10480"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e075e2a5175050aebe42005ce7686530d181f48dd3f929e9a0ed0dcd4fe45968"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5ef785a0a139d770a79e79f0051066b6856cde4a465e997bb37a50328d7e56b4"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a0ef0c8015db5a288dec426632b3857d46b895651ba71d12c64ee9591f58b55a"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "afa5a44909e1c181290b9e30cb8eeb83cc6b9968dfcf553782f8c1f215c2e109"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "335b215b780eddb549082e05e88eda15f6e815bfb9303621086c8ffcc40e57d1"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "30a9a83f2c891cd62f539be9a5abc44f667b60210320114588b2b2867bdda504"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "c375ac57aac71aa96711c532fcb72dfde5107e48e39547beb348baea4392361c"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4b01eca4459a24df0d90ee7eae6c2f318e3b92785e2ba4070efdc8fc84783492"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3b16c4d8779f18371e256b337eacf24fc404f0d0a096c9dbdbe10402745dc460"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "dfdd8fd21ab94d9b075b71987266a0abdf6ce468660d69e24bcd0898a80a084f"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "28fed04b4ba27a3433d99cf1738fc057e5c43e8a475de9e06c3b26ec444a5a66"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "814f860d0ede9d349158c0d1755933034a2069937ad8c6ddc204ea0bf98d0b53"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "b9bc0e21d5a8f955498bee33245b22b77077650889a041f1ed86519293c5aa80"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3871e6c3eafc406469848d5b78138151de25e77b26e969a5bace4a7e55382d6a"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a5f0c5b4aa809c8c362ef42f723d8ddc22d88dd9e3c147d2f25ef0933cdb19f5"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "30333e30abddd9cf8f68b87085a03524d6ed89b6c3ed7f7bf366a3bb070490ab"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "973aa9f98c94482e87d5efacd8f7caaf6e60d3fabff9c64e81e411a1808df426"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "28fdf42ded4adcaf9088a00d0e22554bf5c70c15d11250dbe04ce8c7be17baaa"
+    },
+    {
+      "id": "openagenda-38483269-2027-01-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3f16d53ef08947dcedd5f88579c6b2d21d8069729aa35c8df115430c88da0b8b"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "175af81b6bd56f95ff01d26b11e8447f26b1340c75a72b025379a4081bfbfee7"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5bf2079157eec181ff7c79d51e805e97baa27014a60b283d92e6def2f6f0fa51"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "2b6abd2b11b3455ceae6937f1a70089d74d6e1d67032d6cf542034e58db15bf2"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "71415ee761d98abbf98f0046b08eeb668ab6c9ae15613a21027fb0498fff7ca6"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "f2bf99a02857567549fe5bb92740bb95dae7b79e51897e867d961a88b029a090"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e32ccfd172bc0ed27a7febb1b988fb16dc264cf6560f659160f1080bb97ba3bb"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "9eda1af6fcd81b208298e2cf6ab99d2e775997b8cfb233a64350579b223e433f"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4a9953cc11be880ceb27ca5ef9e30b3e9570a6bf62cbf9ebbb015dae9e212a0e"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "16855f3c2021b82f231a1c118a92a93491a451fd1d7d3f3a60cb2a3eea5d7fbb"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3d667322f9859415ea2f07ffd65008256846e4ad7a925113a050d7439fb3b1c5"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "53d09bfb06954bd270dc793641c202fa525b98482e3c47f77cd4145b93bbd844"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3e64f568f75c71a3d4fbf705853fe66923cfaa36038bd841309123e690fc80c8"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "48d1ad8a122d429f512bed7cba68c8a864dea7e9f4827efa629d87da794c5b6a"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "052156cb5b89dc19bff61eee60d4e529589cc897e7fdc3a87983eacf1cf8f79b"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "295355a83cc9ce8002e629929a6e364e1c519758d49b0a2aea9b6570ba5acf7d"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "250fa4e5e90d93db9da585e3f0818fb64a6561f0571e500e331482ea131d37bf"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4231d6ed5ab7f13babc760084f35e03e8190f1cb2a26c54089cc6f6bfc09bb9f"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "041af8f8e14d088d28bc3f4bd2837f04ce51dc8e09c0831b7a0d6e13ca53ce1d"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "dd8c8f2a0757645be6e253b069b4cacfd25905359a580ce6b1853c1865ddee24"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "76013a0a8f745271acb70898548d7431e0a719bfb0187cfc7b8f18f9913f602b"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5e8ed9e718182f82ccb93fa73813a69dfb3fdd5a36f5a7e55e4fd08061b3dc8f"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "1c6f979ddcf3195cb99cdf65f96ad09a9f363b43e16f0ce8041616e3e5b756d8"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a72a8f99c542081ea6eacd7a4a849f64df6c7f17f7b8fcc8e0300389c2bfc31c"
+    },
+    {
+      "id": "openagenda-38483269-2027-02-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "65c21583c820db9ab0dda15f44f2336c6130e1b0e9dd502e2c27253c707cb76f"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a03d42ef5737465f22a41d977ed33f6cff1681cd29df8a3b80d9659766ca830c"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "2a9293979b1e71de12386a1601caf19d55589e5de67e628eeae794642c55b7c8"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "b8f6460bf9508bc2cf98423938b144f8c143e4df30f5e843ae7a5dd4a617b29c"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "74e03a19edc6638ff840e6d8bb0311ef316d1c10dc40113875c2ff0057783c70"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "79a6f77fa697a72823c373396669b15f833be5503aceb458ec5fb76b0da7396d"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "7a056043c16e048c88cd773816ab0456b2e753a64a3c8bccbc43d7be4ab2429a"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "52c9aacb55f6f5a34bc1202faecbd701a2543a1d90a5dea617cd7a2f0e2d69cf"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "0a30e40e178562e3b421db7bfaf21781d75cc4ba8afe6691a611920be84a375d"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "00bb02913c10cc0a04f80164d16895a18dae4430885330c2718b2d46e942cbb9"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a9272c346d878ba23dac78756520952426e0d30797c2d2ddaf1ac49293a1bbfa"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "d784f545a182706d3fc1a63439394adc8f68c4a46878052cc6a9c3510c7b0489"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "966424bc834461b15eeda7e56c57fd49fd104f8f3ac1f4490815ad9166a6887e"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a1bab7e3baedaf908392b54ae49c51330a47bf95cfd9e6fdaa72b306b67cae22"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4fcb631705729d9eafcc78d1be6d87ba4ced52890fc75fcaf470feec5d27cbbd"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a4ca939f992b8177ef1dbad5dd6413031314141e87fd5f094fc77597ec918211"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e68c5455bd5d6ee7038d14db274ccd1f19d0094637e37724b1785bbbfe807e8e"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e390e897a10201e0d97c6102e8016dfe115264334951ca4e5faf11c818f7b950"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e2274c047ec8debb2e2cf598a6222242aeb8baf79b26124e20b83bb19c95d40d"
+    },
+    {
+      "id": "openagenda-38483269-2027-03-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "0584ac86bf34429e66fac334ddde99466113c38d3bb4c74104d9a72dbed0f869"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5c1302fa8fc6edaf3fca164a941e48687daff2d7c71538e04ba53255a6e0fa88"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "92c09bbeff4f90e71fb53c0aaf672d94d7303652f311e81b7ad55852dab5df50"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "d2391882c7608200c10d089c8d67d0663ef55d8e468c8cc269fa7e36723fbb73"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4eee45b8cef847c4f9c0efc30ce67242d184389d6eada12d599198b545c2facf"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a52add0271909aaa61533b72ae1365aa77b58972286d2b6b104c055ac0c05c8d"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "daf24c106193f431c2f1bb1bc9709161f8b8a9c616409b27b02d89f66dde75c6"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "bb0428afe0e8372d9b600d7452da6092456caf3bc014b0b3f3f5d5a8484e569c"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "44ecf73a678687790646422b9c5e967585dca15d776e94ba086f034c80e09edc"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "6e074ddfe9afc051717796e22dd5103a5739ad3550fc6b7a54998a10f310aad3"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "51ff1c4ac24886f3d1f79fb758cbcdbd7a31c584e6889ec352a293adae9f5adb"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "518a4ece51c16e7d1aaf04f0ac54bca56446fbb397eda3e8b379eedf0e892ba0"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "d0837610d46ddfa3e7585c2171dfb03fe28db3156ff0df86ce1ca8f78648935d"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "722713eca257d6f7ecf0ab366374aeae9497a1faaf5a15ab0c6142fa2a198b3c"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-16",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4316508cc09f9ad6fb31a118c3fb5b56d9e3b35954a6db5b3750a5626e3630cd"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "b38f931304bb286bf67bcc1e6b8064803d428f5fb27761cc92af41f198573138"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "151b20c0960527c241e089698db1c3923fa4adef690b226b8328ea9374618c29"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4afdea966f9565222adc0fd899e91964ab3c91c723fd8b8c9747603a6278e63d"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "5e3dd10a350eaa5e5e23832e23d7c2a6e66fe72392d39a46ef7270f9705adda9"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "996d3561f50890bcb3b4f55f2978c9c8314b15620c5ed5ec25d0fe49a156a1db"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3a024c8d3229a3273f8b93f37e1df5c9eb06d2f202f6ae9d9ca26015092c1cee"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e486f66936c4f2fde0aaca76edcff51bbe260111ac98c9c189d52cf7bd2471b8"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "eb1b535bbcff4083262456a61ef5d901e278d36e752217304a7d4c6ac9571780"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e18c929a0bdfddc322f7f0aca03ca50df57ac08494873cb25c3e95a73b9397cf"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "87f82d40187b20f51f688ef95f5b37cb01d3c674d84e1d900328bf200cfda835"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-29",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "12b117f20dc4a18b056bc3abf1c8eaf186e6c19d41c0afb7550584d7d98b758c"
+    },
+    {
+      "id": "openagenda-38483269-2027-04-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "122cc5a2883a25829e950772600a10911f81e2e4fd0a0e725ebb7d563667e4b4"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-01",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "792d5a0355b32b9b30a7c7987ea636fb51bc1e5b958d2b1cd8ea659fefd442b0"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "85de7b980ee4deb9f5a2f5d197c23258e45c41b753169285e864ef93074ae4b6"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-04",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a19824c3b78b6a67a9fc7ab97ff84c90e9599a6fb1080141ce1e3531679d7186"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "996a61f40e5a1eb77aa05bd27cfd72034c0603c93b640c58c3fd0c645dc1450f"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-06",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e5eb3afb7b76da18a549712f6ada320d8cb7117f67b07bb5e0aa06115298a1c0"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "2d66f8ce4ae9115d06762b0f21efb3b3e00ac8f0b5049c068f8b615c0d7511f0"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-08",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "d3e4587a6c8294ec165d35e69e1bbe082335ae1084f5b5932fbb9ec9eb3c8d56"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3a5aee59ec3fb24027aa1ae7b40c99efb5b76f02aabbd27474604fd9706816e6"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-11",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "7c56f913ebd89f42c4a893c8a1dd4f22155de9ac00e5cd092ae8199f125c959f"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "c7f9d91e679831d077c2c9eed42ab835bd2f606eeabf9be9c6dd39a340ea953b"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-13",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "7244b03ea5ee38f4b240a51d049702788f6252f5edcdccda784fa67fc55113b7"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "652d7ba56c773728ae5944ff9539e65d1c81d7d80a94f1f98e76260e47a02986"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-15",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a93e2eb2f4deceb1b18efbe0b325f686a4318deded392986b228a3fbea83b656"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "4653a43a945e81a5d7415a7c8932db2bb26c94a9791e9ea4798813a2d6b2fffa"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-18",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "8102e3bd021ce9b01118d0866ec0369e73d9b62e86ebea0ff0dc0e12c39cde55"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "1b4264d5b4db8a7899b934c4bf0b62a6bb68ac609f6c248204592636eeb41fdc"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-20",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "93a5be3eb1a1811e1d2e05365f9d6c35bf64e981975a46c9a6cba5b47c1895fb"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "f19d47d3ff2409faad7eaffbfd1bd118ba6ffed6c0a499f8d462a6d030f441fd"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-22",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "3a0e26c66321d6e096c66a2a3a03e4a07fe4d40d4d11107356d59f7f57e5395f"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "1a81d64bd4c9580828e4f28ad0337da3d7ce08f9adab5376bbc84308e3458d25"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "ff7da52202b7bfdaa6eb5238794494e825acf056e54b630582463b440f05ac2a"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "a38d83398b1152e017b14df5cb40f2ab52cfcf5e20aa3aeb6ba61fc207caca8a"
+    },
+    {
+      "id": "openagenda-38483269-2027-05-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/bicentenaire-photographie-fr/events/38483269_contes-en-lumiere",
+      "new_event_sha256": "e332c7992357330b9fd60f5dd2bcef9dbf516cec7076e301ebec698d84438fa8"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
