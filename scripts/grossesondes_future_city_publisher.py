@@ -31,7 +31,7 @@ from official_admin_communes import verified_commune
 
 PROOF_MODE = "current-edition-commune-two-day.v1"
 MAX_BYTES = 200_000
-MAX_CHECKS = 4
+MAX_CHECKS = 8
 GEO_FIELDS = frozenset({
     "city", "lat", "lon", "showOnMap", "geoCity", "geoPrecision",
     "geoSource", "geoVerification", "geoInsee",
