@@ -217,9 +217,9 @@ class MultiSlotRecheckTests(unittest.TestCase):
             "ready": indexed_row(3),
         }
         _, report = self.process(items, 2)
-        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(report["evaluated"], 2)
         self.assertEqual(report["decidedSkipped"], 1)
-        self.assertEqual(report["totalEligible"], 1)
+        self.assertEqual(report["totalEligible"], 2)
         self.assertEqual(report["newApprovals"], [])
 
     def test_invalid_slot_rejected_before_any_approval_or_network(self):

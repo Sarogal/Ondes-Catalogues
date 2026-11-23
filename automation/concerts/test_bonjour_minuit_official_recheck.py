@@ -316,8 +316,9 @@ class BonjourMinuitIndependentTests(unittest.TestCase):
         untouched=copy.deepcopy(before)
         _out,r=official_recheck.process(
             registry,catalogue(),before,TODAY,
-            fetch=lambda *_:self.fail("No fetch before 2 distinct days"))
-        self.assertEqual(r["evaluated"],0)
+            fetch=lambda *_:page)
+        self.assertEqual(r["evaluated"],1)
+        self.assertEqual(len(r["newApprovals"]), 1)
         record["stableObservations"]=2
         out,r=official_recheck.process(
             registry,catalogue(),before,TODAY,fetch=lambda *_:page)

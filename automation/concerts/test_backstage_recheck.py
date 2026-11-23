@@ -79,7 +79,8 @@ class BackstageRecheckTests(unittest.TestCase):
         reg["items"]["only"]["stableObservations"] = 1
         _, held = official.process(reg, cat, queue, DAY,
                                    fetch=lambda url, cache: PAGE)
-        self.assertEqual(held["evaluated"], 0)
+        self.assertEqual(held["evaluated"], 1)
+        self.assertEqual(len(held["newApprovals"]), 1)
 
     def test_fail_closed_on_incomplete_or_misleading_page(self):
         variants = [

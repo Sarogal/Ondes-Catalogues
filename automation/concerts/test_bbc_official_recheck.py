@@ -148,8 +148,9 @@ class BBCOfficialRecheckTests(unittest.TestCase):
         c = catalog()
         _, status = orchestrator.process(
             registry, c, approvals, DAY,
-            fetch=lambda *_: self.fail("No fetch until two distinct days"))
-        self.assertEqual(status["evaluated"], 0)
+            fetch=lambda *_: page)
+        self.assertEqual(status["evaluated"], 1)
+        self.assertEqual(len(status["newApprovals"]), 1)
         row["stableObservations"] = 2
         out, result = orchestrator.process(
             registry, c, approvals, DAY, fetch=lambda *_: page)

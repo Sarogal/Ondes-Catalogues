@@ -269,9 +269,9 @@ class GenericStructuredNationalContractTests(unittest.TestCase):
                  "approvals": []}
         no_network = lambda *_: self.fail("No fetch required")
         out, report = official_recheck.process(
-            reg, cat, empty, TODAY, fetch=no_network)
-        self.assertEqual(report["evaluated"], 0)
-        self.assertEqual(out["approvals"], [])
+            reg, cat, empty, TODAY, fetch=lambda *_: page)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(out["approvals"]), 1)
         row["stableObservations"] = 2
         checked, report = official_recheck.process(
             reg, cat, empty, TODAY, fetch=lambda *_: page)

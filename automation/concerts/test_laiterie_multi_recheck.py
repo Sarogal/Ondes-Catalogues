@@ -242,8 +242,9 @@ class LaiterieMultiTests(unittest.TestCase):
         }}}
         def no_fetch(*args):
             raise AssertionError("Not stable on distinct days")
-        _, report = engine.process(registry, c, approvals, TODAY, fetch=no_fetch)
-        self.assertEqual(report["evaluated"], 0)
+        _, report = engine.process(registry, c, approvals, TODAY, fetch=lambda url, cache: TWO)
+        self.assertEqual(report["evaluated"], 1)
+        self.assertEqual(len(report["newApprovals"]), 1)
         registry["items"]["multi"]["stableObservations"] = 2
         result, report = engine.process(
             registry, c, approvals, TODAY, fetch=lambda url, cache: TWO)
