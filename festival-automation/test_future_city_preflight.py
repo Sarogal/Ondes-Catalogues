@@ -150,6 +150,62 @@ class FutureCityProofTests(unittest.TestCase):
             with self.subTest(sample=sample[:120]):
                 self.assertIsNone(exact_edition_city(sample, row))
 
+    def test_logo_only_festival_name_can_be_verified_in_official_html_title(self):
+        # The real Esqui'Riot site renders its brand as a logo. Its SEO title
+        # still contains an OLD 2026 date, which must never become 2027 proof.
+        row = {
+            "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": "https://esquiriot.fr/", "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        head = ("<head><title>Esqui'Riot — 11 Juillet 2026 — "
+                "18€ en prévente</title></head>")
+        banner = ("<section><p>Édition 2 — Été 2027</p>"
+                  "<p>Festival Punk · Métal · Rock</p>"
+                  "<p>Sainte-Hélène</p><p>Gironde</p>"
+                  "<p>499</p><p>Places</p></section>")
+        history = ("<section><h2>Édition 2026</h2>"
+                   "<p>Retour en images de la première édition.</p></section>")
+        html = ("<html>" + head + "<body><header>"
+                "<img src='/images/logo-blanc.png' alt='Logo du festival'/>"
+                "</header><main>" + banner + history + "</main></body></html>")
+        expected = {"slug": row["slug"], "city": "Sainte-Hélène",
+                    "source": row["officialSite"],
+                    "departmentLabel": "Gironde"}
+        self.assertEqual(exact_edition_city(html, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: html), expected)
+        bad = [
+            html.replace("Esqui'Riot —", "Un autre festival —"),
+            html.replace("Édition 2 — Été 2027", "Édition 2 — Été 2026"),
+            html.replace("<p>Gironde</p>", "</section><section><p>Gironde</p>"),
+            html.replace("<p>Sainte-Hélène</p>", "<p hidden>Sainte-Hélène</p>"),
+            html.replace("Sainte-Hélène", "Sainte-Hélène et Bordeaux"),
+            "<html>" + head + "<body><p>Édition 2027</p>"
+            "<p>Ancien lieu : Sainte-Hélène en Gironde</p></body></html>",
+        ]
+        for snippet in bad:
+            with self.subTest(html=snippet[:110]):
+                self.assertIsNone(exact_edition_city(snippet, row))
+
+    def test_dated_city_hero_can_use_festival_identity_in_html_title(self):
+        row = {**ROW, "slug": "les-gueules-de-bois-2027",
+               "name": "Les Gueules de Bois 2027",
+               "startDate": "2027-08-19", "endDate": "2027-08-21"}
+        title = ("<head><title>Festival Les Gueules de Bois — "
+                 "billetterie officielle</title></head>")
+        body = ("<main><section><p>7ᵉ édition</p>"
+                "<p>19, 20 &amp; 21 AOÛT 2027<br/>Légna (39) · Jura</p>"
+                "</section></main>")
+        got = exact_edition_city(title + body, row)
+        self.assertEqual(got["city"], "Légna")
+        self.assertIsNone(exact_edition_city(
+            title.replace("Les Gueules de Bois", "Un Autre Festival") + body,
+            row))
+        self.assertIsNone(exact_edition_city(
+            title + body.replace("2027", "2026"), row))
+
     def test_undated_city_must_be_on_explicit_future_edition_paragraph(self):
         row = {
             "slug": "festival-exemple-2027",

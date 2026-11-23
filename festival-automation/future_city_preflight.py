@@ -98,6 +98,24 @@ def _city_jsonld(html, row):
     return next(iter(facts)) if len(facts) == 1 else (False if facts else None)
 
 
+
+def _title_identifies_official_festival(html, name):
+    """Title confirms ONLY the host's festival identity, never dates or town.
+
+    Some official festival websites display their name solely as an image logo
+    rather than visible text. A stale SEO year in <title> must NOT be borrowed
+    as evidence for this year's dates or municipality.
+    """
+    title = _EditionTitle()
+    try:
+        title.feed(html)
+        title.close()
+    except (ValueError, TypeError, UnicodeError):
+        return False
+    raw = " ".join(" ".join(title.parts).split())
+    return 8 <= len(raw) <= 250 and name.search(fold(raw)) is not None
+
+
 def _city_visible(html, row):
     """A named dated edition, or a first-party edition/date/city hero.
 
@@ -127,7 +145,8 @@ def _city_visible(html, row):
               if 0 < len(raw) <= 1100]
     # Another event's generic date + city can never be attributed to the
     # published festival unless this SAME official page names its festival.
-    branded = any(name.search(" ".join(fold(raw).split())) for raw in blocks)
+    branded = (_title_identifies_official_festival(html, name) or
+               any(name.search(" ".join(fold(raw).split())) for raw in blocks))
     facts = set()
     for raw in blocks:
         paragraph = " ".join(fold(raw).split())
@@ -280,7 +299,8 @@ def _section_undated_city(html, row, year, name):
         parser.close()
     except (ValueError, TypeError, UnicodeError):
         return None
-    if not name.search(" ".join(fold(" ".join(parser.parts)).split())):
+    if (not name.search(" ".join(fold(" ".join(parser.parts)).split()))
+            and not _title_identifies_official_festival(html, name)):
         return None
     found = set()
     heading = re.compile(
