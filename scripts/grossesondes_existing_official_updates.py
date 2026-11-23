@@ -132,6 +132,43 @@ def clean_obsolete_date_notes(notes):
     return " | ".join(sections) if removed_obsolete_claim else notes
 
 
+
+def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
+    """Update OLD ticket-status commentary only on fresh first-party proof.
+
+    Preserve all historical early-bird prices, dates and editorial notes.
+    A current official homepage must explicitly say all three four-day
+    early-bird tiers are sold out AND offer the normal four-day pass.
+    The price value itself is supplied by the separately verified parser.
+    No brand or festival name is hard-coded in this rule.
+    """
+    if (not isinstance(notes, str) or not isinstance(prices, dict)
+            or 4 not in prices or "early bird" not in fold(notes)
+            or not isinstance(current_official_blocks, list)):
+        return notes
+    text = fold(" ".join(
+        block.get("text", "") for block in current_official_blocks
+        if isinstance(block, dict) and isinstance(block.get("text"), str)))
+    if (not re.search(
+            r"\bpass\s*4\s*(?:j|jours)\s+early\s+birds?\s+sont\s+sold\s+out\b",
+            text)
+            or not re.search(
+                r"\btrois\s+paliers\s+d\s+early\s+birds?\s+sont\s+epuises\b",
+                text)):
+        return notes
+    updated = notes
+    amount = re.escape(str(prices[4]).split(" ", 1)[0])
+    updated = re.sub(
+        rf"(palier\s+(?:r[eé]gulier|normal)\s+affich[eé]\s+[aà]\s+"
+        rf"{amount}\s*€)\s*\(non encore disponible à cette vérification\)",
+        r"\1", updated, flags=re.I)
+    summary = ("Actualisation officielle : les trois paliers Early Bird "
+               "du pass 4 jours sont épuisés.")
+    if summary not in updated:
+        updated = updated.rstrip() + " | " + summary
+    return updated
+
+
 class Page(HTMLParser):
     """Visible heading, paragraph, bullet, bold bullet and anchor evidence."""
     def __init__(self):
@@ -710,7 +747,18 @@ def apply_independently_verified_updates(
                             if (f in old) != (f in new)
                             or old.get(f) != new.get(f)}
             if prior_fields - {"ticketAvailability"}:
-                if len(report["official_edition_diagnostics"]) < 75:
+                # Reconcile old ticket-status prose only after the signed
+            # current edition has been freshly checked on its own homepage.
+            # This runs even when the canonical price is already correct.
+            if root_ok and prices:
+                fresh_ticket_notes = reconcile_obsolete_ticket_notes(
+                    new.get("notes"), prices, root.blocks)
+                if fresh_ticket_notes != new.get("notes"):
+                    new["notes"] = fresh_ticket_notes
+                    if "notes" not in fields:
+                        fields.append("notes")
+                    sources.append(site)
+            if len(report["official_edition_diagnostics"]) < 75:
                     report["official_edition_diagnostics"].append({
                         "slug": slug, "official_site": site,
                         "reason": "different_from_current_signed_edition"})
