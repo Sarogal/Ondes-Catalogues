@@ -1,0 +1,39 @@
+name: "P'tites Ondes — gros patch privé et équité des dossiers"
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/private_intake.py'
+      - 'scripts/ptitesondes_openagenda_backlog_private_dossiers.py'
+      - 'tests/test_private_intake_large_blob.py'
+      - 'tests/test_ptitesondes_openagenda_backlog_private_dossiers.py'
+      - '.github/workflows/ptitesondes-large-private-patch-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/private_intake.py'
+      - 'scripts/ptitesondes_openagenda_backlog_private_dossiers.py'
+      - '.github/workflows/ptitesondes-large-private-patch-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verified-blob-and-fairness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Validate >1MiB immutable Github blob contract and first-party fairness
+        env:
+          PYTHONPATH: scripts:tests
+        run: |
+          python -m unittest -v test_private_intake_large_blob
+          python -m unittest -v test_ptitesondes_openagenda_backlog_private_dossiers
+          python -m unittest -v test_ptitesondes_open_world_private_dossier_intake
+          echo "PUBLIC_CATALOGUE: NOT_TOUCHED"
