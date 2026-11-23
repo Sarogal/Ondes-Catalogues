@@ -451,6 +451,27 @@ def validate(approval, venues, artists, today, *, fetch=None):
         return True
     events = individual_event_nodes(
         html, accept_generic=(is_single_osm or is_address or is_official))
+    # A formally registered first-party source with no Event/JSON-LD can
+    # prove a visible event via its own strict, independently re-fetched
+    # source-wide contract. Do not fall back when contradictory structured
+    # Event data exists, or when a candidate controls the host/venue binding.
+    if is_official and not events:
+        from automation.concerts import trabendo_official_single_source as visible
+        if visible.supports(venue, event["officialUrl"]):
+            fresh = visible.verified_bill(
+                html, event["officialUrl"], venue, today)
+            names, genres = fresh["names"], fresh["genres"]
+            require(fresh["date"] == event.get("date")
+                    and names == proof["officialArtistNames"]
+                    and genres == proof["officialGenreLabels"]
+                    and [normal(x) for x in names] ==
+                        [normal(resolved[aid]["name"])
+                         for aid in event.get("artistIds", [])]
+                    and normal(" + ".join(names)) == normal(event.get("title"))
+                    and [normal(g) for g in genres] ==
+                        [normal(g) for g in event.get("genres", [])],
+                    "fresh official visible concert differs from signed proof")
+            return True
     # Reconstruct the same first-party visible evidence during the LIVE
     # Publisher recheck, AFTER OSM attribution was verified afresh.
     if is_single_osm or is_address or is_official:
