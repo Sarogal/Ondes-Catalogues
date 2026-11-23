@@ -39,8 +39,9 @@ Depuis PowerShell :
 
 ```powershell
 cd D:\KL_Softwares
-git clone --branch feature/go-radio-v8-metalon-3-logos-20261123 https://github.com/Sarogal/Ondes-Catalogues.git Ondes-Catalogues-v8-sign
+git -c core.autocrlf=false clone --branch feature/go-radio-v8-metalon-3-logos-20261123 https://github.com/Sarogal/Ondes-Catalogues.git Ondes-Catalogues-v8-sign
 cd .\Ondes-Catalogues-v8-sign
+git config core.autocrlf false
 py -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'Pillow==11.3.0' 'defusedxml==0.7.1' 'CairoSVG==2.8.2'
 $seed = Join-Path $env:LOCALAPPDATA 'GrossesOndes\RadioTestSigningV2\GO_CENTRAL_TEST_SIGNING_SEED_20261122_V2.b64'
 py .\radio-catalog-lab\tools\publish_go_radio_v8_test.py --signing-key-file $seed --publish-test
