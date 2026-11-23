@@ -362,15 +362,38 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         if fast else 0)
     fstart = (tick * reserved) % len(fast) if fast else 0
     window = [fast[(fstart + i) % len(fast)] for i in range(reserved)]
-    take_regular = min(len(regular), limit - len(window))
-    # BUGFIX: advancing by full 'limit' skipped (limit - take_regular)
-    # unexamined venue leads on every mixed OA/venue cycle. The stride is
-    # exactly the number of ACTUALLY selected regular candidates.
-    rstart = (tick * take_regular) % len(regular) if regular else 0
-    window.extend(regular[(rstart + i) % len(regular)]
+    # A venue with one explicitly labelled first-party metal/punk show
+    # should not wait through dozens of unrelated genre-unknown cards.
+    # Reserve at most TWO of the remaining daily probes for genre-tagged
+    # official leads. The rest still rotates across EVERY other venue and
+    # previously unknown group; registry tags are NAVIGATION ONLY.
+    tagged = [row for row in regular
+              if row[3].get("reviewBucket") == "genre_tag_review"]
+    other = [row for row in regular
+             if row[3].get("reviewBucket") != "genre_tag_review"]
+    spare = limit - len(window)
+    take_tagged = min(len(tagged), spare if not other else min(2, spare))
+    tstart = (tick * take_tagged) % len(tagged) if tagged else 0
+    window.extend(tagged[(tstart + i) % len(tagged)]
+                  for i in range(take_tagged))
+    take_regular = min(len(other), limit - len(window))
+    # Rotating by the ACTUAL per-lane number read avoids holes across slots.
+    rstart = (tick * take_regular) % len(other) if other else 0
+    window.extend(other[(rstart + i) % len(other)]
                   for i in range(take_regular))
-    while len(window) < min(limit, len(selected)) and len(window) < len(fast) + take_regular:
-        window.append(fast[(fstart + len(window) - take_regular) % len(fast)])
+    # Return any unused capacity to the other pools without repeating a lead.
+    # This preserves the existing all-OpenAgenda or all-venue budgets.
+    picked = {id(row) for row in window}
+    for pool, start in ((fast, fstart), (tagged, tstart), (other, rstart)):
+        if len(window) >= min(limit, len(selected)):
+            break
+        for i in range(len(pool)):
+            if len(window) >= min(limit, len(selected)):
+                break
+            lead = pool[(start + i) % len(pool)]
+            if id(lead) not in picked:
+                window.append(lead)
+                picked.add(id(lead))
     output = copy.deepcopy(before)
     working = copy.deepcopy(catalogue)
     known = {row["event"]["id"] for row in output["approvals"]
@@ -414,8 +437,16 @@ def build(registry, catalogue, before, today, *, slot=0, limit=MAX_CHECKS,
         "scanSlot": slot,
         "eligibleQueue": len(selected),
         "examined": len(window),
-        "openAgendaExamined": min(reserved, len(window)),
-        "otherOfficialExamined": len(window) - min(reserved, len(window)),
+        "openAgendaExamined": sum(
+            row[3].get("source") == "agenda_officiel_openagenda"
+            for row in window),
+        "officialGenreTaggedExamined": sum(
+            row[3].get("source") != "agenda_officiel_openagenda"
+            and row[3].get("reviewBucket") == "genre_tag_review"
+            for row in window),
+        "otherOfficialExamined": sum(
+            row[3].get("source") != "agenda_officiel_openagenda"
+            for row in window),
         "stateCounts": dict(sorted(counts.items())),
         "eligibilityRejections": dict(sorted(eligibility_rejections.items())),
         "candidateChecks": checks,
