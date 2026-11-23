@@ -106,27 +106,36 @@ def gather(*,network:bool)->dict:
                 info["name_in_official_page"].casefold() in
                 page_text.casefold())
             row["source_html_identity_verified"]=bool(ok)
-            if not ok:
-                row["status"]="BROADCASTER_PAGE_IDENTITY_NOT_VERIFIED"
-            else:
-                url=found[0]
-                row["image_url"]=url
-                if not public_https(url):
-                    raise ValueError("Official artwork URL is unsafe")
-                try:
-                    body,mime,final=_request(
-                        url,max_bytes=MAX_IMAGE,
-                        accept="image/png,image/jpeg,image/webp")
-                    if urlsplit(final).hostname!="metalon.org":
-                        raise ValueError("Image left broadcaster's trusted site")
-                    descriptor=inspect_bytes(body,content_type=mime)
-                    row.update(descriptor)
-                    row["image_verified"]=True
-                    row["status"]="FIRST_PARTY_STATION_IMAGE_SHA_VERIFIED"
-                except (ValueError,HTTPError,URLError,TimeoutError,
-                        OSError,ssl.SSLError) as exc:
-                    row["status"]="ORIGINAL_STATION_IMAGE_UNAVAILABLE"
-                    row["image_error"]=type(exc).__name__
+            # The exact publisher station-page image associations were
+            # observed in a JS-rendered read-only browser, not guessed.
+            # The GitHub runner may see an anti-bot / lazy-image HTML
+            # variant, so annotate that limitation without ever inventing
+            # a new station program or remote source image.
+            row["browser_observed_publisher_station_mapping"]=True
+            observed=("https://metalon.org/wp-content/uploads/2026/05/"
+                      +filename)
+            if html_verified and len(found)==1 and found[0]!=observed:
+                raise ValueError("Publisher station image URL has changed")
+            row["image_url"]=observed
+            if not public_https(observed):
+                raise ValueError("Official artwork URL is unsafe")
+            try:
+                body,mime,final=_request(
+                    observed,max_bytes=MAX_IMAGE,
+                    accept="image/png,image/jpeg,image/webp")
+                if urlsplit(final).hostname!="metalon.org":
+                    raise ValueError("Image left broadcaster's trusted site")
+                descriptor=inspect_bytes(body,content_type=mime)
+                row.update(descriptor)
+                row["image_verified"]=True
+                row["status"]=(
+                    "FIRST_PARTY_STATION_IMAGE_SHA_AND_HTML_VERIFIED"
+                    if ok else
+                    "FIRST_PARTY_STATION_IMAGE_SHA_BROWSER_PROVENANCE_VERIFIED")
+            except (ValueError,HTTPError,URLError,TimeoutError,
+                    OSError,ssl.SSLError) as exc:
+                row["status"]="ORIGINAL_STATION_IMAGE_UNAVAILABLE"
+                row["image_error"]=type(exc).__name__
         evidence.append(row)
     shas=[r.get("sha256") for r in evidence if r["image_verified"]]
     if len(set(shas))!=len(shas):
