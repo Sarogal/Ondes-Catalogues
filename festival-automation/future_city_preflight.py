@@ -272,17 +272,30 @@ def undated_future_year(row, today=None):
 
 
 class _VisibleEditionSections(VisibleParagraphs):
-    """Maintain visible same-section boundaries without joining old editions."""
+    """Isolate visible blocks of an edition hero within its own section.
+
+    Official sites frequently use <div> for town/department stats alongside
+    <p> for the next-edition headline. Merely inserting a space between divs
+    merged two distinct fields into one unparseable 'town department' string.
+    The additional separators apply only to this strict 4-field proof parser,
+    not to the rest of the site's date or identity extractors.
+    """
     SECTION = "\x1e"
 
     def handle_starttag(self, tag, attrs):
-        if tag == "section" and not self.hidden():
-            self.parts.append(self.SECTION)
+        if not self.hidden():
+            if tag == "section":
+                self.parts.append(self.SECTION)
+            elif tag == "div":
+                self.parts.append(self.SEP)
         super().handle_starttag(tag, attrs)
 
     def handle_endtag(self, tag):
-        if tag == "section" and not self.hidden():
-            self.parts.append(self.SECTION)
+        if not self.hidden():
+            if tag == "section":
+                self.parts.append(self.SECTION)
+            elif tag == "div":
+                self.parts.append(self.SEP)
         super().handle_endtag(tag)
 
 
@@ -330,6 +343,13 @@ def _section_undated_city(html, row, year, name):
             if not re.search(r"\bfestival\b", fold(genre)):
                 continue
             if not locality.fullmatch(raw_city) or not locality.fullmatch(raw_dept):
+                continue
+            # Reject an extra adjacent place-like field. For instance, a
+            # misleading "Town A / Town B / Département" sequence must not
+            # turn Town B into the department of Town A. This also protects
+            # generic nested div grids without hardcoding French communes.
+            if (i + 4 < len(parts)
+                    and locality.fullmatch(parts[i + 4])):
                 continue
             city, department = _name(raw_city), _name(raw_dept)
             if (not city or not department or

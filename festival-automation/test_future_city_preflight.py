@@ -206,6 +206,65 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertIsNone(exact_edition_city(
             title + body.replace("2027", "2026"), row))
 
+    def test_actual_future_edition_city_and_department_in_nested_divs(self):
+        """Realistic official hero: paragraphs for edition, divs for locality."""
+        row = {
+            "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
+            "startDate": None, "endDate": None, "status": "Dates à venir",
+            "officialSite": "https://esquiriot.fr/", "showOnMap": False,
+            "lat": None, "lon": None, "city": None,
+        }
+        head = ("<head><title>Esqui'Riot — Festival Punk / Métal / Rock"
+                "</title></head>")
+        hero = (
+            "<section aria-label='En-tête du festival'><div class='hero'>"
+            "<img src='/images/logo-blanc.png' alt='Logo'/>"
+            "<p class='heroDate'>Édition 2 — Été 2027</p>"
+            "<p class='heroSubtitle'>Festival Punk · Métal · Rock</p>"
+            "<div class='heroInfo'>"
+            "<div class='val'>Sainte-Hélène</div><div class='lbl'>Gironde</div>"
+            "<div class='val'>499</div><div class='lbl'>Places</div>"
+            "</div></div></section>")
+        archive = ("<section><p>Édition 2026</p><h2>Retour en images"
+                   "</h2></section>")
+        valid = "<html>" + head + "<body>" + hero + archive + "</body></html>"
+        expected = {
+            "slug": row["slug"], "city": "Sainte-Hélène",
+            "source": row["officialSite"], "departmentLabel": "Gironde",
+        }
+        self.assertEqual(exact_edition_city(valid, row), expected)
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: valid), expected)
+        bad = [
+            valid.replace("Esqui'Riot", "Un autre festival"),
+            valid.replace("Été 2027", "Été 2026"),
+            valid.replace("Sainte-Hélène</div>",
+                          "<span hidden>Sainte-Hélène</span></div>"),
+            valid.replace("<div class='lbl'>Gironde</div>",
+                          "</div></section><section>"
+                          "<div class='lbl'>Gironde</div>"),
+            valid.replace("<div class='lbl'>Gironde</div>",
+                          "<div class='lbl'>Gironde 2026</div>"),
+            valid.replace("<div class='val'>Sainte-Hélène</div>",
+                          "<div class='val'>Sainte-Hélène</div>"
+                          "<div class='val'>Bordeaux</div>"),
+            valid.replace("<p class='heroDate'>Édition 2 — Été 2027</p>",
+                          "<p class='heroDate'>Édition 2 — Été 2027 "
+                          "annulée</p>"),
+        ]
+        for html in bad:
+            with self.subTest(variant=html[:100]):
+                self.assertIsNone(exact_edition_city(html, row))
+        self.assertIsNone(exact_edition_city(
+            valid.replace("Sainte-Hélène</div>", "Bordeaux</div>"),
+            {**row, "city": "Sainte-Hélène"}))
+        second_claim = (
+            "<section><p>Édition 2 — Été 2027</p>"
+            "<p>Festival Punk · Métal · Rock</p><div>Paris</div>"
+            "<div>Paris</div></section>")
+        self.assertIsNone(exact_edition_city(
+            valid.replace("</body>", second_claim + "</body>"), row))
+
     def test_undated_future_local_hero_isolated_from_sibling_archive_recap(self):
         row = {
             "slug": "esqui-riot-2027", "name": "Esqui'Riot 2027",
