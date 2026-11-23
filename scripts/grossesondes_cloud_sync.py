@@ -57,6 +57,11 @@ from grossesondes_institutional_edition import (
     validate_independent as validate_independent_institutional,
     validate_private_proposal as validate_private_institutional,
 )
+from grossesondes_signed_institutional_renewal import (
+    candidates_from_signed_history as signed_tourism_rotation,
+    private_proposal as signed_tourism_proposal,
+    validate_verified_row as validate_signed_tourism_row,
+)
 from grossesondes_institutional_linked_edition import (
     PROOF_MODE as LINKED_PROOF_MODE,
     independently_verify as independently_verify_linked,
@@ -773,6 +778,34 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
     return sources
 
 
+def collect_signed_tourism_renewals(history, published, today, *,
+                                    fetcher=fetch_public_html, tick=0):
+    """Publisher-owned candidates from immutable signed historical sources.
+
+    A private dossier does not supply a network target, source status, place,
+    lineup, price or publication authority. Each HTTPS URL was already signed
+    in a historical audit, and the publisher fetches and reproves the current
+    edition itself before it can reach the normal stage() collision gate.
+    """
+    selected = signed_tourism_rotation(
+        history, published, today, limit=4, tick=tick)
+    additions, sources = [], {}
+    for parent, url, year in selected:
+        try:
+            html = fetcher(url)
+            row = signed_tourism_proposal(parent, url, year, html, today)
+            if row is None or validate_signed_tourism_row(
+                    row, parent, html, today) is None:
+                continue
+        except (OSError, TypeError, ValueError, UnicodeError, KeyError):
+            continue
+        slug = row["slug"]
+        additions.append(row)
+        sources["registered-tourism:" + slug] = html
+        sources["registered-tourism-verified:" + slug] = True
+    return additions, sources, len(selected)
+
+
 def collect_registered_institutional_sources(patch, published_slugs,
                                              today, fetcher=None):
     """Independent first-party index recheck for never-before-published events.
@@ -1218,6 +1251,28 @@ def main():
     sources.update(collect_registered_edition_sources(
         patch, original, archived=registered_archives,
         published_slugs=signed_published_slugs))
+    # Current editions on previously signed tourism pages are independently
+    # rechecked by this publisher, even if the organizer still shows last
+    # year's edition. These are not private discoveries or arbitrary URLs.
+    tourism_tick = (today.toordinal() * 2 +
+                    (1 if datetime.now(ZoneInfo("Europe/Paris")).hour >= 15 else 0))
+    tourism_additions, tourism_sources, tourism_probes = (
+        collect_signed_tourism_renewals(
+            published["festival-history.json"],
+            published["festivals.json"], today.isoformat(),
+            tick=tourism_tick))
+    existing_additions = {
+        r.get("slug") for r in patch["additions"] if isinstance(r, dict)}
+    if len(patch["additions"]) < 100:
+        for addition in tourism_additions:
+            if addition["slug"] not in existing_additions:
+                patch["additions"].append(addition)
+                existing_additions.add(addition["slug"])
+                sources["registered-tourism:" + addition["slug"]] = (
+                    tourism_sources["registered-tourism:" + addition["slug"]])
+                sources["registered-tourism-verified:" + addition["slug"]] = True
+    print("signed_tourism_checked=" + str(tourism_probes))
+    print("signed_tourism_candidates=" + str(len(tourism_additions)))
     sources.update(collect_registered_institutional_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_linked_sources(

@@ -34,6 +34,10 @@ from grossesondes_institutional_edition import (
     validate_independent as validate_institutional_independent,
     conflicts_with_signed_catalogue as institutional_conflicts,
 )
+from grossesondes_signed_institutional_renewal import (
+    PROOF_MODE as SIGNED_TOURISM_PROOF_MODE,
+    validate_verified_row as validate_signed_tourism_row,
+)
 from grossesondes_institutional_linked_edition import (
     PROOF_MODE as INSTITUTIONAL_LINKED_PROOF_MODE,
     validate_verified_row as validate_institutional_linked_row,
@@ -417,6 +421,32 @@ def stage(calendar,history,patch,sources,today,production_calendar=None,producti
             rows.append(accepted)
             report["accepted_additions"].append(slug)
             report["source_proofs"].extend(e["evidence"][:3] + [accepted["officialSite"]])
+        elif e.get("proofMode") == SIGNED_TOURISM_PROOF_MODE:
+            # The sole network destination was taken from an already signed
+            # historical tourism reference, never from this proposed row.
+            signed_history = history["knownFestivals"] + (
+                published_history.get("knownFestivals", [])
+                if published_history else [])
+            parent = next((
+                h for h in signed_history
+                if h.get("slug") == e.get("originSlug")), None)
+            known_rows = rows + (
+                published_calendar.get("festivals", [])
+                if published_calendar else [])
+            verified = (validate_signed_tourism_row(
+                e, parent, sources.get("registered-tourism:" + slug), today)
+                if parent is not None else None)
+            if (sources.get("registered-tourism-verified:" + slug) is not True
+                    or verified is None
+                    or institutional_conflicts(e, known_rows, signed_history)):
+                report["held"].append({
+                    "slug": slug,
+                    "reason": "édition touristique sans preuve signée revérifiée "
+                              "ou collision avec l'édition publiée"})
+                continue
+            rows.append(verified)
+            report["accepted_additions"].append(slug)
+            report["source_proofs"].append(verified["source"])
         elif e.get("proofMode") == INSTITUTIONAL_PROOF_MODE:
             known_rows = rows + (
                 published_calendar.get("festivals", []) if published_calendar else [])
