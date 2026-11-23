@@ -56,6 +56,27 @@ def digest(value):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def unwrap_exact_public_v2_event(payload, uid):
+    """Handle either documented raw event or exact event envelope, not both.
+
+    A wrapper grants no approval. Accept only a single, unambiguous event UID
+    equal to the independently resolved official requested UID.
+    """
+    if type(uid) is not int or not 0 < uid < 10**12:
+        raise ValueError("invalid_requested_source_event_uid")
+    if type(payload) is not dict:
+        raise ValueError("invalid_official_v2_event_envelope")
+    if type(payload.get("uid")) is int:
+        if payload["uid"] != uid or "event" in payload:
+            raise ValueError("conflicting_official_v2_event_uid")
+        return payload
+    nested = payload.get("event")
+    if (type(nested) is not dict or type(nested.get("uid")) is not int
+            or nested["uid"] != uid or "uid" in payload):
+        raise ValueError("untrusted_official_v2_event_envelope")
+    return nested
+
+
 def _status(source):
     if not isinstance(source, dict):
         return None
@@ -395,6 +416,22 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
     return result, audit, count
 
 
+def assert_live_source_health(audit):
+    """Treat total loss of official identities or the OA API as a failure.
+
+    A green workflow is not proof of successful verification if every official
+    UID mismatched or every source was unavailable. Abort before writing Git.
+    """
+    checked = audit.get("source_series_checked")
+    counts = audit.get("source_summary")
+    if type(checked) is not int or checked < 0 or type(counts) is not dict:
+        raise ValueError("invalid_reconciliation_health_report")
+    if checked >= 3 and (
+            counts.get("official_identity_mismatch", 0) >= checked
+            or counts.get("official_unavailable", 0) >= checked):
+        raise RuntimeError("all_first_party_oa_reads_failed_verification")
+
+
 def atomic_json(path, document):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -433,9 +470,14 @@ def main():
         row = agendas[slug]
         if row.get("slug") != slug or type(row.get("uid")) is not int:
             raise ValueError("official_agenda_identity_changed")
-        return {"agenda": row, "event": read_direct_v2(row["uid"], uid, api_key)}
+        live_record = read_direct_v2(row["uid"], uid, api_key)
+        return {"agenda": row,
+                "event": unwrap_exact_public_v2_event(live_record, uid)}
     result, audit, _ = reconcile(
         base, args.date, args.slot, read_event=live)
+    # A complete provider/identity failure must never be reported as a
+    # successful no-op; it is an operational failure demanding inspection.
+    assert_live_source_health(audit)
     changed = bool(audit["operations"])
     if changed and args.apply:
         # Both files are committed to the same Git commit by the workflow.
