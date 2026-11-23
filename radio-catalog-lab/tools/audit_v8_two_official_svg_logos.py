@@ -42,6 +42,10 @@ def identity(u):
 def safe_svg_to_png(data:bytes):
     if len(data)<128 or len(data)>850000 or b"\x00" in data:raise ValueError("SVG file size/content rejected")
     lower=data.lower()
+    # Standard SVG and XLink XML namespace declarations are not remote fetches.
+    # Keep banning all other HTTP references, including CSS and external hrefs.
+    lower=lower.replace(b"http://www.w3.org/2000/svg",b"")
+    lower=lower.replace(b"http://www.w3.org/1999/xlink",b"")
     # Do not execute scripts, embed HTML, or allow external files/network references.
     for word in (b"<!doctype",b"<!entity",b"<script",b"<foreignobject",b"javascript:",b"@import",b"<image",b"<use ",b"file://",b"http://",b"https://"):
         if word in lower:raise ValueError("Unsafe SVG markup reference")
