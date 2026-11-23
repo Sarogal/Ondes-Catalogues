@@ -38,7 +38,7 @@ def search_url(city):
         raise ValueError("Invalid administrative commune search")
     query = urlencode({
         "nom": city.strip(),
-        "fields": "nom,code,codeDepartement,centre",
+        "fields": "nom,code,codeDepartement,departement,centre",
         "format": "geojson",
         "geometry": "centre",
         "zone": "metro,drom,com",
@@ -89,7 +89,8 @@ def search_url_from_existing(url):
         raise ValueError("Unapproved API query") from exc
 
 
-def verified_commune(city, known_department=None, reader=fetch_admin_communes):
+def verified_commune(city, known_department=None, reader=fetch_admin_communes,
+                     *, department_label=None):
     """Return a UNIQUE exact administrative commune centre or None.
 
     Department codes in signed rows disambiguate same-name communes. A
@@ -104,6 +105,12 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes):
         if not isinstance(features, list) or len(features) > MAX_RESULTS:
             return None
         expected = normalize(city)
+        if department_label is not None and (
+                not isinstance(department_label, str)
+                or not re.fullmatch(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’\- ]{1,79}",
+                                    department_label)
+                or len(normalize(department_label)) < 3):
+            return None
         if known_department not in (None, ""):
             if (not isinstance(known_department, str)
                     or DEPT.fullmatch(known_department.strip().upper()) is None):
@@ -121,6 +128,13 @@ def verified_commune(city, known_department=None, reader=fetch_admin_communes):
             nom, code, dep = (props.get("nom"), props.get("code"),
                               props.get("codeDepartement"))
             coords = geometry.get("coordinates")
+            department = props.get("departement")
+            if department_label is not None and (
+                    not isinstance(department, dict)
+                    or not isinstance(department.get("nom"), str)
+                    or department.get("code") != dep
+                    or normalize(department["nom"]) != normalize(department_label)):
+                continue
             if (not isinstance(nom, str) or normalize(nom) != expected
                     or not isinstance(code, str) or INSEE.fullmatch(code) is None
                     or not isinstance(dep, str) or DEPT.fullmatch(dep) is None
