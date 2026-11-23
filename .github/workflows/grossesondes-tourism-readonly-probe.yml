@@ -46,6 +46,16 @@ jobs:
               proven=validate_verified_row(row,parent,html,"2026-11-23") if row else None
               print("TOURISM_REAL_PROPOSAL",bool(row))
               print("TOURISM_REAL_PUBLISHER_PROOF",bool(proven))
+              if proven:
+                  from future_city_preflight import exact_edition_city
+                  from official_admin_communes import verified_commune
+                  claim=exact_edition_city(html, proven)
+                  print("TOURISM_CURRENT_CITY_CLAIM",claim["city"] if claim else "NOT_PROVEN")
+                  if claim:
+                      geocode=verified_commune(claim["city"], known_department=parent.get("department"))
+                      print("TOURISM_ADMIN_CENTRE_OK",bool(geocode))
+                      if geocode:
+                          print("TOURISM_ADMIN_CODE",geocode["codeInsee"])
           if dates is None:
               from grossesondes_institutional_edition import VisibleInstitutionHeadings
               from grossesondes_official_html_edition import fold,explicit_ranges
