@@ -6002,9 +6002,9 @@
     {
       "bands": 0,
       "endDate": "2027-04-24",
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-23",
       "slug": "helixfest-2027",
-      "lon": null,
+      "lon": 6.2151,
       "officialSite": "https://helixfest.fr/",
       "venue": null,
       "notes": "Édition annoncée sur une page du site officiel; dates visibles revérifiées. Lieu, séances, tarifs et coordonnées à confirmer.",
@@ -6012,19 +6012,30 @@
       "price": null,
       "region": null,
       "department": null,
-      "city": null,
+      "city": "La Bâtie-Neuve",
       "status": "Annoncé",
       "verificationStatus": "Édition vérifiée sur le site officiel de l'archive ; lieu et coordonnées 2027 non confirmés",
       "dateRangeIsContinuous": false,
       "name": "HelixFest 2027",
       "source": "https://helixfest.fr/",
       "lineup": [],
-      "showOnMap": false,
+      "showOnMap": true,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null,
+      "lat": 44.5817,
       "auditSources": [
         "https://helixfest.fr/"
-      ]
+      ],
+      "geoCity": "La Bâtie-Neuve",
+      "geoPrecision": "commune",
+      "geoInsee": "05017",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=La+B%C3%A2tie-Neuve&fields=nom%2Ccode%2CcodeDepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-23",
+        "officialSite": "https://helixfest.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "bands": 0,
