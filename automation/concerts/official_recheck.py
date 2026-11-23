@@ -414,10 +414,11 @@ SITE_RECHECK_SOURCES = frozenset({
 def scheduled_review_cohort(eligible, today, scan_slot, limit):
     """Bounded, non-overlapping cohorts across the three daily runs.
 
-    At most 3 * limit distinct candidates are rechecked on a given day.
-    When a day's queue fits, ALL eligible concerts get one review that day.
-    For larger queues, the next day starts after yesterday's window, so no
-    fixed suffix is starved. This is scheduling ONLY, never source approval.
+    The regular cohorts are disjoint and cover up to 3 * limit candidates
+    daily. Spare per-slot capacity may also recheck just-discovered same-day
+    leads outside their assigned slot, making late first-party discovery
+    actionable without weakening the independent verifier or Publisher.
+    For larger queues, the daily window advances to avoid starvation.
     """
     if (not isinstance(today, dt.date) or type(scan_slot) is not int
             or scan_slot not in (0, 1, 2) or type(limit) is not int
@@ -434,7 +435,34 @@ def scheduled_review_cohort(eligible, today, scan_slot, limit):
     anchor = dt.date(2026, 11, 20)
     offset = ((today - anchor).days * window) % n
     start, end = scan_slot * window // 3, (scan_slot + 1) * window // 3
-    return [eligible[(offset + i) % n] for i in range(start, end)]
+    indices = [(offset + i) % n for i in range(start, end)]
+    # The daily baseline remains disjoint. If a late intake adds a first-party
+    # lead AFTER its designated daily slot, spend otherwise unused capacity on
+    # a same-day independent recheck instead of waiting until tomorrow.
+    # Registry timestamps grant scheduling priority ONLY: source authority,
+    # fresh detail proof, duplicates and Publisher validation are unchanged.
+    if len(indices) < limit:
+        selected = set(indices)
+        for i in range(end, end + n):
+            index = (offset + i) % n
+            if index in selected:
+                continue
+            row = eligible[index]
+            first_seen = row.get("firstSeenAt") if isinstance(row, dict) else None
+            if not isinstance(first_seen, str):
+                continue
+            try:
+                instant = dt.datetime.fromisoformat(
+                    first_seen.replace("Z", "+00:00"))
+            except ValueError:
+                continue
+            if instant.tzinfo is None or instant.date() != today:
+                continue
+            indices.append(index)
+            selected.add(index)
+            if len(indices) == limit:
+                break
+    return [eligible[index] for index in indices]
 
 
 def process(registry, catalogue, approvals, today, fetch=download_official,
