@@ -238,6 +238,15 @@ def propose(row, catalogue, today, *, fetch=verified.safe_fetch):
             "missing individual official OpenAgenda evidence")
     try:
         if official_export:
+            # The national index can link to a municipality's syndicated
+            # OpenAgenda page while the immutable event UID belongs to the
+            # venue's originating agenda. Derive the actual published URL
+            # only from a freshly fetched, UID-bound official export.
+            # The independent verifier and Publisher then validate that
+            # original URL, never the discovery alias.
+            url = openagenda.original_event_url_from_export(
+                body, url, agenda_uid=export_ids[0],
+                event_uid=export_ids[1])
             names, genres = openagenda.verified_export(
                 body, url, date, venue, agenda_uid=export_ids[0],
                 event_uid=export_ids[1])

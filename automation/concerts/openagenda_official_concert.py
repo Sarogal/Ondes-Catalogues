@@ -218,6 +218,72 @@ def official_export_url(agenda_uid, event_uid):
             f"?oaq%5Buids%5D%5B%5D={event_uid}&limit=1")
 
 
+
+def original_event_url_from_export(raw_json, discovered_url, *,
+                                   agenda_uid, event_uid):
+    """Bind a syndicated OpenAgenda hint to its ACTUAL originating event.
+
+    A city's public agenda can legitimately republish a concert whose origin
+    is the venue's own OpenAgenda agenda. The public index must not authorize
+    that origin: only a freshly fetched OpenAgenda export may establish its
+    original UID, event UID, full slug and canonical permalink. On a genuine
+    syndication we publish the *origin* URL, never the unbound index alias.
+    No other host, guessed organizer website or secondary source is trusted.
+    The regular verifier and Publisher still independently replay the export.
+    """
+    if not is_openagenda_event_url(discovered_url):
+        raise ValueError("OpenAgenda: invalid syndicated event URL")
+    origin_id = _numeric_uid(agenda_uid)
+    record_id = _numeric_uid(event_uid)
+    if not isinstance(raw_json, str) or not 20 <= len(raw_json) <= 400_000:
+        raise ValueError("OpenAgenda: invalid syndication export")
+    try:
+        doc = json.loads(raw_json)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("OpenAgenda: invalid syndication JSON") from exc
+    if (not isinstance(doc, dict) or doc.get("total") != 1
+            or not isinstance(doc.get("events"), list)
+            or len(doc["events"]) != 1
+            or not isinstance(doc["events"][0], dict)):
+        raise ValueError("OpenAgenda: ambiguous syndicated event")
+    record = doc["events"][0]
+    origin = record.get("origin")
+    if ("originAgenda" in record and record["originAgenda"] != origin):
+        raise ValueError("OpenAgenda: contradictory syndicated origins")
+    parts = [part for part in urlsplit(discovered_url).path.split("/") if part]
+    if parts and parts[0] in ("fr", "en"):
+        parts = parts[1:]
+    if len(parts) != 3 or parts[1] != "events":
+        raise ValueError("OpenAgenda: invalid syndicated event path")
+    event_slug = record.get("slug")
+    originating_slug = origin.get("slug") if isinstance(origin, dict) else None
+    discovered_slug = re.sub(r"^[0-9]{1,12}[_-]", "", parts[2])
+    if (type(record.get("uid")) is not int or record["uid"] != record_id
+            or not isinstance(origin, dict)
+            or type(origin.get("uid")) is not int
+            or origin["uid"] != origin_id
+            or not isinstance(event_slug, str)
+            or re.fullmatch(r"[a-z0-9][a-z0-9_-]{2,160}", event_slug) is None
+            or discovered_slug != event_slug
+            or not isinstance(originating_slug, str)
+            or re.fullmatch(r"[a-z0-9][a-z0-9-]{1,119}",
+                            originating_slug) is None):
+        raise ValueError("OpenAgenda: syndicated original identity not authenticated")
+    if normalized(originating_slug) == normalized(parts[0]):
+        return discovered_url
+    # Mismatched agenda slugs are syndication ONLY when the same exact
+    # original UID pair is confirmed by OpenAgenda's own canonical permalink.
+    expected = (f"https://openagenda.com/agendas/{origin_id}/events/"
+                f"{record_id}")
+    if record.get("permalink") != expected:
+        raise ValueError("OpenAgenda: syndicated origin permalink not authenticated")
+    original_url = (f"https://openagenda.com/{originating_slug}/events/"
+                    f"{record_id}_{event_slug}")
+    if not is_openagenda_event_url(original_url):
+        raise ValueError("OpenAgenda: invalid originating event URL")
+    return original_url
+
+
 def _known_catalogue_postcode(venue):
     """Only a concrete 5-digit postal code can contradict official OA data."""
     value = venue.get("postalCode") if isinstance(venue, dict) else None

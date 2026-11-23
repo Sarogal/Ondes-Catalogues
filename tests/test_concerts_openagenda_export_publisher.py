@@ -268,6 +268,81 @@ class OpenAgendaFirstPartyExportContract(unittest.TestCase):
             self.assertEqual(names, fixture.NAMES)
             self.assertIn("punk", genres)
 
+    def test_syndicated_openagenda_public_url_reconciles_to_true_origin(self):
+        # A municipal agenda can republish a venue-origin event. Only the
+        # original OpenAgenda event UID+agenda UID+slug+canonical permalink
+        # may supply publisher authority; the index alias is never signed.
+        syndicated = ("https://openagenda.com/ville-de-bordeaux/events/"
+                      "87654321_eight-unknown-metal-bands")
+        original = ("https://openagenda.com/shotgun/events/"
+                    "87654321_eight-unknown-metal-bands")
+        permalink = "https://openagenda.com/agendas/9969608/events/87654321"
+        payload = official_export(permalink=permalink)
+        self.assertEqual(
+            oa.original_event_url_from_export(
+                payload, syndicated, agenda_uid=9969608,
+                event_uid=87654321), original)
+        self.assertEqual(
+            oa.original_event_url_from_export(
+                payload, URL, agenda_uid=9969608,
+                event_uid=87654321), URL)
+        reg = registry()
+        candidate = reg["items"]["from-openagenda"]["candidate"]
+        for field in ("sourceUrl", "sourcePage", "eventDetailUrl"):
+            candidate[field] = syndicated
+        requests = []
+        def get(url, cache):
+            requests.append(url)
+            self.assertEqual(url, EXPORT)
+            return payload
+        initial = {"schema": publisher.SCHEMA, "approvals": []}
+        with mock.patch.object(identity, "safe_fetch", side_effect=get):
+            proposals, report = producer.build(
+                reg, self.catalogue, initial, TODAY, fetch=get)
+            self.assertEqual(report["stateCounts"],
+                             {"independently_verified_proposal": 1}, report)
+            signed = proposals["approvals"][0]
+            self.assertEqual(signed["event"]["officialUrl"], original)
+            self.assertEqual(
+                signed["officialEvidence"][0]["officialOpenAgendaEventUrl"],
+                original)
+            self.assertEqual(len(approval_preflight.check_append_only(
+                initial, proposals, TODAY)), 1)
+            merged, stats = publisher.merge(
+                self.catalogue, self.catalogue, proposals, TODAY)
+            self.assertEqual(stats["newEvents"], 1, stats["held"])
+            self.assertEqual(merged["events"][-1]["officialUrl"], original)
+        self.assertGreaterEqual(len(requests), 3)
+        self.assertEqual(set(requests), {EXPORT})
+
+    def test_syndicated_origin_is_not_trusted_from_discovery_alone(self):
+        syndicated = ("https://openagenda.com/ville-de-bordeaux/events/"
+                      "87654321_eight-unknown-metal-bands")
+        permalink = "https://openagenda.com/agendas/9969608/events/87654321"
+        cases = (
+            ({"permalink": None}, syndicated),
+            ({"permalink": "https://evil.example/copy"}, syndicated),
+            ({"permalink": "https://openagenda.com/agendas/999/events/87654321"},
+             syndicated),
+            ({"permalink": permalink, "uid": 87654322}, syndicated),
+            ({"permalink": permalink, "slug": "different-concert"}, syndicated),
+            ({"permalink": permalink,
+              "origin": {"uid": 9969609, "slug": "shotgun"}}, syndicated),
+            ({"permalink": permalink,
+              "originAgenda": {"uid": 9969608, "slug": "forged"}}, syndicated),
+            ({"permalink": permalink},
+             "https://untrusted.example/ville-de-bordeaux/events/"
+             "87654321_eight-unknown-metal-bands"),
+            ({"permalink": permalink},
+             "https://openagenda.com/ville-de-bordeaux/events/other-event"),
+        )
+        for changes, candidate_url in cases:
+            with self.subTest(changes=changes, url=candidate_url):
+                with self.assertRaises(ValueError):
+                    oa.original_event_url_from_export(
+                        official_export(**changes), candidate_url,
+                        agenda_uid=9969608, event_uid=87654321)
+
     def test_named_lineup_does_not_contain_the_venue_suffix(self):
         venue = next(v for v in fixture.BASE["venues"]
                      if v["id"] == fixture.VENUE_ID)
