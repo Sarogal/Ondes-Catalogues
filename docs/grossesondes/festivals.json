@@ -6173,9 +6173,9 @@
       "sourceConfidence": "Domaine du festival + annonce officielle revérifiée",
       "dateRangeIsContinuous": false,
       "name": "La Sainte Rock Festival 2027",
-      "showOnMap": false,
+      "showOnMap": true,
       "lineup": [],
-      "lon": null,
+      "lon": 5.3879,
       "bands": 0,
       "slug": "la-sainte-rock-festival-2027",
       "verificationStatus": "Site et édition officielle revérifiés",
@@ -6185,12 +6185,26 @@
       "startDate": "2027-04-23",
       "region": null,
       "endDate": "2027-04-24",
-      "lat": null,
+      "lat": 43.536,
       "notes": "Édition et dates revérifiées directement sur le site officiel du festival. Aucun recoupement extérieur des dates n'est requis. Adresse exacte et GPS à compléter.",
       "officialSite": "https://lasainterockfestival.fr/",
       "city": "Aix-en-Provence",
       "price": null,
-      "lastVerified": "2026-11-23"
+      "lastVerified": "2026-11-23",
+      "geoCity": "Aix-en-Provence",
+      "geoPrecision": "commune",
+      "geoInsee": "13001",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Aix-en-Provence&fields=nom%2Ccode%2CcodeDepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-23",
+        "officialSite": "https://lasainterockfestival.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      },
+      "auditSources": [
+        "https://lasainterockfestival.fr/"
+      ]
     }
   ]
 }
