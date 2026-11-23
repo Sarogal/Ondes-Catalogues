@@ -1,0 +1,33 @@
+name: GO TEST radio v8 — signed-v7 to canonical-v8 70 SHA TEST asset gate
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-70-CANONICAL-TEST-SHA-20261123.json'
+      - 'radio-catalog-lab/tools/test_go_radio_v8_70_canonical_test_release_gate.py'
+      - '.github/workflows/go-radio-v8-70-canonical-test-signing-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  verify-all-70-test-hosted-shas-before-signing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install signed predecessor and decoded image verifiers
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Fetch TEST asset branch into refs only, no checkout or mutation
+        run: git fetch --no-tags --depth=1 origin '+refs/heads/feature/go-radio-test-v2-isolated-20261123:refs/remotes/origin/feature/go-radio-test-v2-isolated-20261123'
+      - name: Confirm active Ed25519 v7 and all 70 canonical v8 logo bytes
+        run: python radio-catalog-lab/tools/test_go_radio_v8_70_canonical_test_release_gate.py --verify-test-assets
+      - name: Require no working tree mutation, no private signing material
+        run: |
+          test -z "$(git status --porcelain)"
+          test ! -e grossesondes/radio-test-v2/current-v8.json
