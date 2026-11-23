@@ -58,6 +58,36 @@ def state():
 
 
 class FutureGeoTests(unittest.TestCase):
+    def test_private_fetch_failures_have_only_allowlisted_diagnostic_codes(self):
+        from future_geo_preflight import safe_fetch_failure_code
+        import socket
+        import ssl
+        samples = [
+            (ValueError("Redirect left original HTTPS host"),
+             "REDIRECT_OTHER_HOST"),
+            (ValueError("HTTPS response not successful"), "HTTP_NON_200"),
+            (ValueError("Compressed HTML not allowed"),
+             "CONTENT_ENCODING_REJECTED"),
+            (ValueError("Non-HTML response"), "CONTENT_TYPE_REJECTED"),
+            (ValueError("other.example/?private=secret"), "VALIDATION_REJECTED"),
+            (socket.gaierror("host secret"), "DNS_RESOLUTION"),
+            (ssl.SSLError("certificate error with secret"), "TLS_HANDSHAKE"),
+            (TimeoutError("secret timeout"), "NETWORK_TIMEOUT"),
+        ]
+        for exc, code in samples:
+            with self.subTest(code=code):
+                self.assertEqual(safe_fetch_failure_code(exc), code)
+                self.assertNotIn("secret", safe_fetch_failure_code(exc))
+        def blocked(_):
+            raise ValueError("HTTPS response not successful")
+        report = review(state(), catalogue(ROW), "2026-11-23", blocked)
+        self.assertEqual(report["findings"][0]["status"],
+                         "OFFICIAL_FETCH_UNAVAILABLE")
+        self.assertEqual(report["findings"][0]["fetch_failure_code"],
+                         "HTTP_NON_200")
+        self.assertFalse(report["publication_authorized"])
+        self.assertNotIn("candidate_geo", report["findings"][0])
+
     def test_exact_edition_requires_full_date_identity_and_place(self):
         claim = exact_edition_geo(html(event()), ROW)
         self.assertEqual(claim["city"], "Colonne")
