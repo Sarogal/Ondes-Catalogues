@@ -1,0 +1,40 @@
+name: GO v8 — original GIF station logos converted to SHA PNG (read-only)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_two_gif_station_logos.py'
+      - '.github/workflows/go-radio-v8-two-gif-station-logo-audit.yml'
+permissions:
+  contents: read
+jobs:
+  original-gif-png-conversion-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install stable Pillow converter
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Verify exact station metadata before retrieving sources
+        run: python radio-catalog-lab/tools/audit_v8_two_gif_station_logos.py --output "$RUNNER_TEMP/offline.json"
+      - name: Read only owners first-party GIF assets and canonical PNG SHA
+        run: python radio-catalog-lab/tools/audit_v8_two_gif_station_logos.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Verify no signed or public production changes
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          report=json.loads((Path(os.environ["RUNNER_TEMP"])/"online.json").read_text())
+          assert report["scope"]=="GO_V8_HARDRADIO_DRACHENBLUT_GIF_PNG_READ_ONLY"
+          assert report["targets"]==2 and len(report["rows"])==2
+          assert report["signed"] is False and report["published"] is False
+          print("GIF_ORIGINAL_AND_CONVERTED_PNG_EVIDENCE_READ_ONLY")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-radio-two-owner-gif-original-to-png-shas
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14
