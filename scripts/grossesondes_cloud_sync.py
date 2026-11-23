@@ -211,7 +211,8 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             }
             or proof.get("proofMode") not in (
                 ("current-edition-commune-two-day.v1",) +
-                (("current-edition-commune-direct-official.v1",)
+                (("current-edition-commune-direct-official.v1",
+                  "signed-city-current-edition-centre.v1")
                  if allow_direct else ())
             )
             or proof.get("markerMeaning") != "centre_indicatif_de_commune"
@@ -238,6 +239,20 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False
+    if proof["proofMode"] == "signed-city-current-edition-centre.v1":
+        # This special direct route can only locate an ALREADY signed town
+        # of a dated edition. It cannot invent or replace the municipality,
+        # extrapolate one from an archive, or claim an exact venue entrance.
+        if (not allow_direct
+                or not isinstance(old.get("city"), str)
+                or not old["city"].strip()
+                or not isinstance(old.get("department"), str)
+                or re.fullmatch(r"(?:\d{2,3}|2[AB])",
+                                 old["department"].upper()) is None
+                or not isinstance(old.get("startDate"), str)
+                or not isinstance(old.get("endDate"), str)
+                or norm(new.get("city")) != norm(old["city"])):
+            return False
     for key, lower, upper in (("lat", -90, 90), ("lon", -180, 180)):
         value = new.get(key)
         if type(value) not in (int, float) or not isfinite(value):
