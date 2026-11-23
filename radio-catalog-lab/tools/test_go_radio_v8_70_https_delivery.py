@@ -14,9 +14,11 @@ import time
 import urllib.error
 import urllib.request
 
-from test_go_radio_v8_70_canonical_test_release_gate import (
-    CANONICAL, TEST_PREFIX,
-)
+ROOT = Path(__file__).resolve().parents[2]
+CANONICAL = ROOT / "radio-catalog-lab/full-staging/UNSIGNED-radio-v8-70-CANONICAL-TEST-SHA-20261123.json"
+TEST_PREFIX = ("https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/"
+               "feature/go-radio-test-v2-isolated-20261123/"
+               "grossesondes/radio-test-v2/artwork/sha256/")
 
 MIME = {"image/jpeg", "image/png", "image/webp"}
 
