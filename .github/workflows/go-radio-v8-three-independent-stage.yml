@@ -1,0 +1,99 @@
+name: GO radio v8 — stage 3 more independent publisher station logos (DEV only)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_three_additional_publisher_logos.py'
+      - '.github/workflows/go-radio-v8-three-independent-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-exact-three-new-verified-firstparty-images:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install original image, signed release, schema verifiers
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Download original SHA evidence for Rockaxis, RSTLSS, Rock FM and rejected NTS
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/firstparty-evidence"
+          gh run download 45163309601 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-four-official-station-logos-sha-evidence \
+            --dir "$RUNNER_TEMP/firstparty-evidence"
+      - name: Download the three verified first-party images again and stage unsigned v8
+        run: |
+          python radio-catalog-lab/tools/stage_v8_three_additional_publisher_logos.py \
+            --artifact-root "$RUNNER_TEMP/firstparty-evidence"
+      - name: Verify signed v7 predecessor and 6 exact only-logo changes
+        run: |
+          python - <<'PY'
+          import json,sys,hashlib
+          from pathlib import Path
+          from jsonschema import Draft202012Validator,FormatChecker
+          root=Path('.')
+          signed=root/'grossesondes/radio-test-v2'
+          base=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-official-logos-20261123.json'
+          next_=root/'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-20261123.json'
+          original=json.loads(base.read_bytes())
+          candidate=json.loads(next_.read_bytes())
+          sys.path.insert(0,str(root/'radio-catalog-lab/tools'))
+          from radio_catalog_release_packager import load_verified_predecessor,read_public_key
+          from radio_catalog_guard import validate_catalog
+          previous=load_verified_predecessor(signed,read_public_key(signed/'TEST_PUBLIC_KEY.b64'))
+          assert previous['release_sequence']==7
+          schema=json.loads((root/'radio-catalog-lab/schemas/radio_catalog_v1.schema.json').read_text())
+          assert not list(Draft202012Validator(schema,format_checker=FormatChecker()).iter_errors(candidate))
+          assert not validate_catalog(candidate,mode='publish',previous=previous,trusted_signed_history=True)
+          assert original['release_sequence']==8 and candidate['release_sequence']==8
+          assert candidate['tombstones']==original['tombstones']
+          assert len(candidate['stations'])==296
+          active=[s for s in candidate['stations'] if s['status']['state']=='active']
+          assert len(active)==285
+          assert sum(s['logo'] is None for s in active)==90
+          byold={s['go_station_id']:s for s in original['stations']}
+          bynew={s['go_station_id']:s for s in candidate['stations']}
+          assert byold.keys()==bynew.keys()
+          changed=[id_ for id_ in byold if byold[id_]!=bynew[id_]]
+          assert set(changed)=={'go-station-000006','go-station-000091','go-station-000101'}
+          for id_ in changed:
+            assert byold[id_]['logo'] is None
+            assert byold[id_]=={**bynew[id_],'logo':None}
+          blobs=list((signed/'artwork/staging-independent-v8').glob('*'))
+          assert len(blobs)==3
+          for f in blobs:
+            assert hashlib.sha256(f.read_bytes()).hexdigest()==f.stem
+          assert json.loads((signed/'current.json').read_text())['release_sequence']==7
+          print('GO_RADIO_V8_6_LOGO_SIGNED_V7_GUARD_VALIDATED')
+          PY
+      - name: Commit only 3 SHA images plus an unsigned candidate on development branch
+        run: |
+          test "$GITHUB_REF_NAME" = 'feature/go-radio-v8-metalon-3-logos-20261123'
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-20261123.json \
+            grossesondes/radio-test-v2/artwork/staging-independent-v8/
+          python - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          cat='radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-20261123.json'
+          pref='grossesondes/radio-test-v2/artwork/staging-independent-v8/'
+          assert len(changed)==4 and cat in changed,changed
+          assert sum(x.startswith(pref) and x.endswith(('.jpg','.png','.webp')) for x in changed)==3
+          assert all(x==cat or x.startswith(pref) for x in changed)
+          print('GO_V8_ONLY_FOUR_DEV_FILES_STAGED')
+          PY
+          git -c user.name='Grosses Ondes TEST Logo Auditor' \
+            -c user.email='go-logo-audit@localhost.invalid' \
+            -c commit.gpgsign=false commit \
+            -m 'test(radio v8): stage 3 more first-party SHA logos in unsigned v8'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"
+          echo "V8_THREE_EXTRA_LOGOS_COMMITTED_DEV_ONLY"
