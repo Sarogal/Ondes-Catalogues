@@ -122,6 +122,42 @@ def artist_name(event, artists):
     return event.get("title", "")
 
 
+def published_venue_artist_hints(catalogue, day):
+    """Public future bills by physical venue, for scheduling only.
+
+    A promoter's canonical URL can differ from the venue's own detail URL.
+    Both may announce the very same published show; do not spend scarce
+    priority slots repeatedly rediscovering an already known artist at that
+    venue. Such pages remain in the ordinary rotating pool (never excluded).
+    This is NOT an approval, duplicate verdict or official-source signal.
+    """
+    if not isinstance(catalogue, dict) or not isinstance(day, dt.date):
+        return {}
+    artists = {str(a.get("id")): a.get("name")
+               for a in catalogue.get("artists", []) if isinstance(a, dict)}
+    venues = {str(v.get("id")): v
+              for v in catalogue.get("venues", []) if isinstance(v, dict)}
+    results = {}
+    for event in catalogue.get("events", []):
+        if (not isinstance(event, dict)
+                or not isinstance(event.get("date"), str)
+                or event["date"] < day.isoformat()
+                or event.get("status") == "cancelled"):
+            continue
+        venue = venues.get(str(event.get("venueId")))
+        if not venue:
+            continue
+        key = (norm(venue.get("name")), norm(venue.get("city")),
+               str(venue.get("department")))
+        if not key[0] or not key[1]:
+            continue
+        names = [artists.get(str(aid))
+                 for aid in (event.get("artistIds") or [])]
+        results.setdefault(key, set()).update(
+            name for name in names if isinstance(name, str) and name.strip())
+    return {key: frozenset(names) for key, names in results.items()}
+
+
 def make_known_keys(catalogue):
     venues = {str(x["id"]): x for x in catalogue.get("venues", [])}
     artists = {str(x["id"]): x for x in catalogue.get("artists", [])}
@@ -665,7 +701,8 @@ def linked_first_party_event_urls(page_html, source_url, today):
 
 
 def select_generic_official_detail_links(links, day, scan_slot, limit=3,
-                                         known=None, artist_names=()):
+                                         known=None, artist_names=(),
+                                         already_published_artist_names=()):
     """Rotate bounded first-party details; give existing artists a discovery hint.
 
     Already published official URLs never displace unseen pages. On an
@@ -673,7 +710,9 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
     may be reserved for URLs naming *known catalogue artists*. The remaining
     capacity rotates across all other unseen shows, including unknown bands.
     Artist URLs only alter fetch order; they NEVER establish genre, event
-    identity, venue authority or publication eligibility.
+    identity, venue authority or publication eligibility. Already published
+    artist/venue pairs can also be announced under a different promoter URL;
+    their first-party venue URLs stay in the rotating ordinary pool.
     """
     if (not isinstance(day, dt.date) or isinstance(day, dt.datetime)
             or scan_slot not in (0, 1, 2)
@@ -713,6 +752,22 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
             ).strip("-")
             if len(slug) >= 4:
                 hints.add("-" + slug + "-")
+    # A prior official event from another domain may already be published
+    # at this same venue. Avoid elevating its alternative URL above missing
+    # shows. Demotion is not rejection: ordinary rotation still covers it.
+    published_hints = set()
+    if isinstance(already_published_artist_names,
+                  (list, tuple, set, frozenset)):
+        for name in already_published_artist_names:
+            if not isinstance(name, str):
+                continue
+            slug = re.sub(
+                r"[^a-z0-9]+", "-",
+                unicodedata.normalize("NFKD", name.casefold())
+                .encode("ascii", "ignore").decode("ascii")
+            ).strip("-")
+            if len(slug) >= 4:
+                published_hints.add("-" + slug + "-")
     priority, ordinary = [], []
     for link in unseen:
         path = urllib.parse.unquote(urllib.parse.urlsplit(link).path)
@@ -722,6 +777,7 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
             .encode("ascii", "ignore").decode("ascii")
         ).strip("-") + "-"
         (priority if hints and any(h in path_slug for h in hints)
+         and not any(h in path_slug for h in published_hints)
          else ordinary).append(link)
 
     if priority and ordinary:
@@ -742,7 +798,7 @@ def select_generic_official_detail_links(links, day, scan_slot, limit=3,
     return selected + rotate(published, limit - len(selected))
 
 def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
-                artist_names=()):
+                artist_names=(), published_artists_by_venue=None):
     if scan_slot not in (0, 1, 2):
         raise ValueError("Only the three bounded local scan windows are allowed")
     sites = sources.get("venues") or []
@@ -824,7 +880,14 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0,
                              limit=6 if reviewed_generic_source else 3,
                              known=known if reviewed_generic_source else None,
                              artist_names=artist_names if reviewed_generic_source
-                             else ())):
+                             else (),
+                             already_published_artist_names=(
+                                 (published_artists_by_venue or {}).get(
+                                     (norm(source.get("name")),
+                                      norm(source.get("city")),
+                                      str(source.get("department"))), ()
+                                 ) if reviewed_generic_source else ()
+                             ))):
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)
@@ -2711,7 +2774,8 @@ def main():
     venue_candidates = scan_venues(
         source_file, known, day, venues_checks, scan_slot=scan_slot,
         artist_names=[a.get("name") for a in catalog.get("artists", [])
-                      if isinstance(a, dict)])
+                      if isinstance(a, dict)],
+        published_artists_by_venue=published_venue_artist_hints(catalog, day))
     partner_checks = []
     partner_candidates = scan_partner_ics(partner_sources, known, day, partner_checks)
     api_candidates = scan_ticketmaster(os.environ.get("TICKETMASTER_API_KEY", "").strip(), known, day, ticket_checks)
