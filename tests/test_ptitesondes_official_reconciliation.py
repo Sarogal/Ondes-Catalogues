@@ -45,6 +45,9 @@ def document(*events):
 
 def live(day=DAY, time="10:00", status=1):
     s = source(day=day, time=time, status=status)
+    s["location"]["countryCode"] = "FR"
+    s["location"]["adminLevel1"] = "Bretagne"
+    s["location"]["adminLevel2"] = "Finistère"
     s["title"] = {"fr": "Atelier musical pour enfants"}
     s["updatedAt"] = "2026-11-22T12:00:00+01:00"
     s["rights"] = {
