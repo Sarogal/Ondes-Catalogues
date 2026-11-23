@@ -1,5 +1,6 @@
 """OA-only admission must work without any municipal or venue web reader."""
 from copy import deepcopy
+from datetime import datetime, timezone
 from pathlib import Path
 import tempfile
 import unittest
@@ -23,6 +24,7 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         from ptitesondes_oa_first_party_admission import PUBLIC_OA_DIRECT_REASONS
         self.assertIn("oa_direct_reuse_rights_missing", PUBLIC_OA_DIRECT_REASONS)
         self.assertIn("oa_direct_invalid_coordinates", PUBLIC_OA_DIRECT_REASONS)
+        self.assertIn("oa_direct_session_already_started", PUBLIC_OA_DIRECT_REASONS)
         counts = redacted_blocker_counts({
             "oa_direct_invalid_coordinates": 2,
             "oa_direct_reuse_rights_missing": 3,
@@ -196,6 +198,86 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
         self.assertEqual(candidate["source_url"],
                          "https://openagenda.com/agenda-nouveau-organisateur/events/999401_conte-musical")
         self.assertEqual(candidate["time"], "10:00 ; 15:00")
+
+    def test_same_day_session_already_started_is_not_newly_published(self):
+        reference = base()
+        # OA sessions are 10:00 and 15:00 in Europe/Paris, +01:00 in
+        # December. At 15:30 local both starts are already past.
+        candidate, reason = admit_live_openagenda(
+            lead(), DAY.isoformat(), AGENDA, oa_event(),
+            reference, reference, TODAY,
+            as_of_utc=datetime(2026, 12, 5, 14, 30, tzinfo=timezone.utc))
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_session_already_started")
+
+    def test_same_day_partially_elapsed_has_only_upcoming_times(self):
+        reference = base()
+        candidate, reason = admit_live_openagenda(
+            lead(), DAY.isoformat(), AGENDA, oa_event(),
+            reference, reference, TODAY,
+            as_of_utc=datetime(2026, 12, 5, 10, 0, tzinfo=timezone.utc))
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(candidate["time"], "15:00")
+        self.assertEqual(candidate["date_start"], DAY.isoformat())
+        self.assertEqual(candidate["source_url"],
+                         "https://openagenda.com/agenda-nouveau-organisateur/events/999401_conte-musical")
+
+    def test_same_day_overseas_uses_event_local_timezone_not_paris(self):
+        source = deepcopy(oa_event())
+        source["timezone"] = "America/Martinique"
+        source["timings"] = [
+            {"begin": "2026-12-05T09:00:00-04:00",
+             "end": "2026-12-05T10:00:00-04:00"}
+        ]
+        source["location"] = {
+            "name": "Bibliothèque fictive",
+            "adminLevel4": "Ville fictive",
+            "adminLevel1": "Martinique", "adminLevel2": "Martinique",
+            "countryCode": "MQ", "latitude": 14.7, "longitude": -61.0,
+        }
+        item = dict(
+            lead(), city_unverified="Ville fictive",
+            venue_unverified="Bibliothèque fictive",
+            explicit_source_session_intervals=source["timings"])
+        ref = base()
+        future, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, source, ref, ref, TODAY,
+            as_of_utc=datetime(2026, 12, 5, 12, 59, tzinfo=timezone.utc))
+        self.assertEqual(reason, "oa_direct_live_source_accepted")
+        self.assertEqual(future["time"], "09:00")
+        started, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, source, ref, ref, TODAY,
+            as_of_utc=datetime(2026, 12, 5, 13, 1, tzinfo=timezone.utc))
+        self.assertIsNone(started)
+        self.assertEqual(reason, "oa_direct_session_already_started")
+
+    def test_untrusted_naive_publication_clock_never_admits(self):
+        item, reason = admit_live_openagenda(
+            lead(), DAY.isoformat(), AGENDA, oa_event(),
+            base(), base(), TODAY,
+            as_of_utc=datetime(2026, 12, 5, 14, 30))
+        self.assertIsNone(item)
+        self.assertEqual(reason, "oa_direct_invalid_publisher_clock")
+
+    def test_real_bridge_respects_publication_instant(self):
+        reference = base()
+        dossier = {
+            "lead": lead(), "date_start": DAY.isoformat(),
+            "official_event_url":
+                "https://openagenda.com/agenda-nouveau-organisateur/events/999401",
+            "official_venue_url":
+                "https://openagenda.com/agenda-nouveau-organisateur/events/999401",
+        }
+        result, audit, report = merge_verified_open_world(
+            reference, reference, private_patch(reference, queue=[dossier]),
+            TODAY, "oa_pk_open_world_release_rehearsal_test",
+            as_of_utc=datetime(2026, 12, 5, 14, 30, tzinfo=timezone.utc),
+            **readers())
+        self.assertEqual(audit["ajoutes"], 0)
+        self.assertEqual(report["admitted_to_merge"], 0)
+        self.assertEqual(report["held_reason_counts"],
+                         {"oa_direct_session_already_started": 1})
+        self.assertEqual(result["events"], reference["events"])
 
     def test_real_merge_uses_only_openagenda_readers(self):
         reference = base()

@@ -3,7 +3,7 @@
 Only live public API v2 records can produce a candidate. The intake dossier
 cannot supply approval, coordinates, category, timings or attribution.
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 import re
 
 from merge_policy import valid, PUBLISHABLE_CHILD_ARTS
@@ -16,7 +16,7 @@ from ptitesondes_family_activity_classification import propose_family_activity
 from ptitesondes_openagenda_national_event_research import _french_text
 from ptitesondes_openagenda_reuse_rights import review_event_rights
 from ptitesondes_openagenda_v2_direct_evidence import (
-    _sessions, _calendar_review, _norm, CHILD, EXCLUSIVELY_ADULT, FR_TZ,
+    _sessions, _time, _calendar_review, _norm, CHILD, EXCLUSIVELY_ADULT, FR_TZ,
     ADDITIONAL_TERRITORY_ZONES, OVERSEAS_ADMIN,
 )
 from ptitesondes_open_world_release_rehearsal import _sessions_for_day, NOT_PUBLIC_ACCESS
@@ -50,6 +50,8 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
     "oa_direct_reuse_rights_missing",
     "oa_direct_semantic_duplicate",
     "oa_direct_session_changed",
+    "oa_direct_session_already_started",
+    "oa_direct_invalid_publisher_clock",
     "oa_direct_territory_timezone_mismatch",
     "oa_direct_title_changed",
     "oa_direct_url_uid_or_slug_mismatch",
@@ -83,13 +85,21 @@ def explicit_child_age_text(value):
     return False
 
 
-def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, today):
+def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
+                          today, *, as_of_utc=None):
     """Return (candidate, stable_reason). No network or catalogue writes."""
     def fail(reason):
         return None, reason
 
     if not isinstance(lead, dict) or type(today) is not date:
         return fail("oa_direct_invalid_lead")
+    # The real Publisher supplies one UTC instant for the entire review batch;
+    # tests can inject a fixed instant without trusting timestamps in dossiers.
+    if as_of_utc is None:
+        as_of_utc = datetime.now(timezone.utc)
+    if (not isinstance(as_of_utc, datetime) or as_of_utc.tzinfo is None
+            or as_of_utc.utcoffset() is None):
+        return fail("oa_direct_invalid_publisher_clock")
     try:
         day = date.fromisoformat(day_text)
     except (TypeError, ValueError):
@@ -161,6 +171,17 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published, to
     times, days, error = _sessions(event, event["timezone"], day, today)
     if error or not times:
         return fail("oa_direct_invalid_times")
+    # The existing validator has checked every exact OA offset against its
+    # IANA timezone. The calendar *date* alone is not enough: a 10:00
+    # performance must not first appear on the family map at 21:00.
+    # Keep only future starts when a UID has multiple sessions that day.
+    starts = [_time(slot["begin"], event["timezone"]) for slot in actual]
+    if any(start is None for start in starts):
+        return fail("oa_direct_invalid_times")
+    times = sorted({start.strftime("%H:%M") for start in starts
+                    if start > as_of_utc})
+    if not times:
+        return fail("oa_direct_session_already_started")
     # The standard Publisher and the already-published reconciliation MUST
     # apply the same source-based hold: otherwise ordinary cloud sync can
     # flood the map with hundreds of daily bookable studio availabilities
