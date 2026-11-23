@@ -54,11 +54,11 @@ def main():
                     import html as html_tools
                     from urllib.parse import unquote
                     tiles=[]
-                    for match in re.finditer(r'<button\\b(?=[^>]*aria-label=["\\\']Metal["\\\'])[^>]*>(.{0,6000}?)</button>',data,re.I|re.S):
+                    for match in re.finditer('<button(?=[^>]*aria-label="Metal")[^>]*>(.{0,6000}?)</button>',data,re.I|re.S):
                         block=html_tools.unescape(match.group(1))
-                        src=re.search(r'<img\\b[^>]*>',block,re.I|re.S)
+                        src=re.search(r"<img[^>]*>",block,re.I|re.S)
                         tag=unquote(src.group(0)) if src else unquote(block[:1600])
-                        ids=list(dict.fromkeys(re.findall(r'hotmix\\.radio/(\\d+)/image_large',tag,re.I)))
+                        ids=list(dict.fromkeys(re.findall(r"hotmix[.]radio/([0-9]+)/image_large",tag,re.I)))
                         tiles.append({"station_name":"Metal","channel_ids":ids,"source_image_tag":tag[:800]})
                     r["metal_tile_source_evidence"]=tiles[:5]
                     r["channel_art_identified"]=bool(tiles) and all(len(item["channel_ids"])==1 for item in tiles) and len(set(item["channel_ids"][0] for item in tiles))==1
