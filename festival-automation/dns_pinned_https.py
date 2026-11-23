@@ -31,6 +31,14 @@ HOST_PATTERN = re.compile(
 )
 
 
+class OfficialHTTPStatusError(ValueError):
+    """Safe status-only error: no URL, headers, response body or IP are stored."""
+
+    def __init__(self, status):
+        self.status_code = status if type(status) is int and 100 <= status <= 599 else None
+        super().__init__("HTTPS response not successful")
+
+
 def safe_public_url(value):
     """Canonical HTTPS URL, without userinfo, IP literal, query or fragments."""
     if (not isinstance(value, str) or not 12 <= len(value) <= MAX_URL
@@ -150,7 +158,7 @@ def fetch_public_html(url, *, opener=None, max_redirects=2):
             current = next_url
             continue
         if status != 200:
-            raise ValueError("HTTPS response not successful")
+            raise OfficialHTTPStatusError(status)
         if headers.get("content-encoding", "identity").lower() != "identity":
             raise ValueError("Compressed HTML not allowed")
         mime = headers.get("content-type", "").split(";", 1)[0].strip().lower()
