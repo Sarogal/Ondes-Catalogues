@@ -416,6 +416,22 @@ def reconcile(catalogue, today, slot, *, read_event, limit=MAX_SCAN):
     return result, audit, count
 
 
+def assert_live_source_health(audit):
+    """Treat total loss of official identities or the OA API as a failure.
+
+    A green workflow is not proof of successful verification if every official
+    UID mismatched or every source was unavailable. Abort before writing Git.
+    """
+    checked = audit.get("source_series_checked")
+    counts = audit.get("source_summary")
+    if type(checked) is not int or checked < 0 or type(counts) is not dict:
+        raise ValueError("invalid_reconciliation_health_report")
+    if checked >= 3 and (
+            counts.get("official_identity_mismatch", 0) >= checked
+            or counts.get("official_unavailable", 0) >= checked):
+        raise RuntimeError("all_first_party_oa_reads_failed_verification")
+
+
 def atomic_json(path, document):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -459,6 +475,9 @@ def main():
                 "event": unwrap_exact_public_v2_event(live_record, uid)}
     result, audit, _ = reconcile(
         base, args.date, args.slot, read_event=live)
+    # A complete provider/identity failure must never be reported as a
+    # successful no-op; it is an operational failure demanding inspection.
+    assert_live_source_health(audit)
     changed = bool(audit["operations"])
     if changed and args.apply:
         # Both files are committed to the same Git commit by the workflow.
