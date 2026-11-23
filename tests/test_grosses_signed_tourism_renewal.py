@@ -119,6 +119,48 @@ class SignedTourismRenewalTests(unittest.TestCase):
             "<p>Le 09 octobre</p>", "<p>Le 09 novembre</p>")
         self.assertIsNone(current_edition_dates(contradictory, HIST, 2027))
 
+    def test_publisher_collects_only_signed_source_and_stage_reproves(self):
+        from grossesondes_cloud_sync import collect_signed_tourism_renewals
+        from grossesondes_stage import stage
+        from test_grosses_stage import fixtures
+
+        cal, hist, patch = fixtures()
+        # Substitute one historical archive record but keep immutable count
+        # and the ordinary source manifest in this isolated fixture.
+        hist["knownFestivals"][0] = deepcopy(HIST)
+        probe_urls = []
+
+        def signed_fetch(url):
+            probe_urls.append(url)
+            self.assertEqual(url, OFFICE)
+            return OFFICIAL_2027
+
+        additions, sources, checks = collect_signed_tourism_renewals(
+            hist, cal, DAY, fetcher=signed_fetch, tick=0)
+        self.assertEqual(checks, 1)
+        self.assertEqual(probe_urls, [OFFICE])
+        self.assertEqual(len(additions), 1)
+        proposal = additions[0]
+        patch["additions"] = [proposal]
+        patch["updates"] = []
+        out, report = stage(
+            cal, hist, patch, sources, DAY,
+            published_calendar=cal, published_history=hist)
+        self.assertEqual(report["accepted_additions"],
+                         ["mauges-pit-fest-2027"])
+        row = out["festivals"][-1]
+        self.assertEqual(row["lineup"], [])
+        self.assertIsNone(row["city"])
+        self.assertIsNone(row["price"])
+        self.assertEqual(len(out["festivals"]), len(cal["festivals"]) + 1)
+
+        # A private patch cannot manufacture the publisher's trust marker.
+        untrusted, held = stage(
+            cal, hist, patch, {}, DAY,
+            published_calendar=cal, published_history=hist)
+        self.assertEqual(held["accepted_additions"], [])
+        self.assertEqual(len(untrusted["festivals"]), len(cal["festivals"]))
+
     def test_not_an_open_registry(self):
         rows = []
         for i in range(9):
