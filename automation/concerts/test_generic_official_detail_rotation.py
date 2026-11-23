@@ -37,6 +37,87 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
         self.assertEqual(len(short), 2)
         self.assertEqual(set(short), {"one", "two"})
 
+    def test_six_page_reviewed_venue_rotation_covers_forty_eight_links(self):
+        # One independently trusted first-party venue with a large agenda.
+        # Six distinct reads in each of three daily slots cover all 48
+        # event URLs within three calendar days. No artist/date whitelist.
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://venue.example/evenement/official-show-%02d/" % i
+            for i in range(48)]
+        visited = []
+        for delta in range(3):
+            for slot in (0, 1, 2):
+                selected = discover.select_generic_official_detail_links(
+                    links, day + dt.timedelta(days=delta), slot, limit=6)
+                self.assertEqual(len(selected), 6)
+                self.assertEqual(len(set(selected)), 6)
+                visited.extend(selected)
+        self.assertEqual(set(visited), set(links))
+
+    def test_reviewed_venue_still_has_strict_bounded_budget(self):
+        day = dt.date(2026, 11, 23)
+        links = [str(i) for i in range(70)]
+        for slot in range(3):
+            selected = discover.select_generic_official_detail_links(
+                links, day, slot, limit=6)
+            self.assertEqual(len(selected), 6)
+            self.assertEqual(selected, discover.select_generic_official_detail_links(
+                links, day, slot, limit=6))
+        with self.assertRaises(ValueError):
+            discover.select_generic_official_detail_links(
+                links, day, 0, limit=7)
+        with self.assertRaises(ValueError):
+            discover.select_generic_official_detail_links(
+                links, day, 0, limit=True)
+
+    def test_unpublished_urls_take_precedence_over_forty_five_published(self):
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://official.example/evenement/band-%02d/" % i
+            for i in range(48)]
+        known = {("officialUrl", url) for url in links[:45]}
+        original_links, original_known = list(links), set(known)
+        selected = discover.select_generic_official_detail_links(
+            links, day, 1, limit=6, known=known)
+        self.assertEqual(len(selected), 6)
+        self.assertEqual(len(set(selected)), 6)
+        self.assertEqual(set(selected[:3]), set(links[45:]))
+        self.assertTrue(all(("officialUrl", link) in known
+                            for link in selected[3:]))
+        self.assertEqual(links, original_links)
+        self.assertEqual(known, original_known)
+
+    def test_unpublished_programmes_rotate_without_published_slot_starvation(self):
+        day = dt.date(2026, 11, 23)
+        links = [
+            "https://official.example/evenement/metal-night-%02d/" % i
+            for i in range(40)]
+        known = {("officialUrl", url) for url in links[:10]}
+        visited = set()
+        for delta in range(2):
+            for slot in range(3):
+                selection = discover.select_generic_official_detail_links(
+                    links, day + dt.timedelta(days=delta), slot,
+                    limit=6, known=known)
+                self.assertLessEqual(len(selection), 6)
+                self.assertEqual(len(selection), len(set(selection)))
+                self.assertFalse(any(("officialUrl", url) in known
+                                     for url in selection))
+                visited.update(selection)
+        self.assertEqual(visited, set(links[10:]))
+
+    def test_single_unlisted_official_page_remains_eligible_next_day(self):
+        day = dt.date(2026, 11, 23)
+        links = ["https://official.example/evenement/show-%d/" % i
+                 for i in range(48)]
+        known = {("officialUrl", url) for url in links[1:]}
+        for delta in (0, 1):
+            selected = discover.select_generic_official_detail_links(
+                links, day + dt.timedelta(days=delta), 0,
+                limit=6, known=known)
+            self.assertEqual(selected[0], links[0])
+
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
         self.assertEqual(
@@ -49,7 +130,7 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
             (dt.datetime(2026, 11, 19), 0, 3),
             (day, 3, 3),
             (day, -1, 3),
-            (day, 0, 4),
+            (day, 0, 7),
             (day, 0, -1),
         ):
             with self.subTest(args=(bad_day, bad_slot, bad_limit)):

@@ -664,25 +664,40 @@ def linked_first_party_event_urls(page_html, source_url, today):
     return links
 
 
-def select_generic_official_detail_links(links, day, scan_slot, limit=3):
-    """Rotate filtered same-host event links without increasing probes.
+def select_generic_official_detail_links(links, day, scan_slot, limit=3,
+                                         known=None):
+    """Rotate bounded individual first-party pages, prioritizing unpublished URLs.
 
-    The previous fixed first-three selection reread the same front-page
-    URLs each day and permanently starved later individual events.
-    Three daily slots now visit distinct cohorts; later days complete
-    the queue. Discovery only, never a publisher approval.
+    A published event's exact official URL is already in the public catalogue,
+    so discovery probes should inspect other pages first. The known set
+    changes ONLY scheduling; even unseen pages still require an independent
+    fresh official verification, genre and lineup checks and the Publisher.
+    The published-event watchdog remains responsible for change detection.
     """
     if (not isinstance(day, dt.date) or isinstance(day, dt.datetime)
             or scan_slot not in (0, 1, 2)
-            or not isinstance(limit, int) or not 0 <= limit <= 3):
+            or type(limit) is not int or not 0 <= limit <= 6):
         raise ValueError("Invalid official venue detail rotation")
     ordered = list(dict.fromkeys(link for link in links
                                   if isinstance(link, str) and link))
     if not ordered or not limit:
         return []
-    offset = ((day.toordinal() * 3 + scan_slot) * limit) % len(ordered)
-    return [ordered[(offset + i) % len(ordered)]
-            for i in range(min(limit, len(ordered)))]
+
+    def rotate(pool, quota):
+        if not pool or not quota:
+            return []
+        offset = ((day.toordinal() * 3 + scan_slot) * limit) % len(pool)
+        return [pool[(offset + i) % len(pool)]
+                for i in range(min(quota, len(pool)))]
+
+    if not isinstance(known, (set, frozenset)):
+        return rotate(ordered, limit)
+    unseen = [link for link in ordered if ("officialUrl", link) not in known]
+    published = [link for link in ordered if ("officialUrl", link) in known]
+    # Already-published URLs fill unused budget, but cannot consume the quota
+    # before an unlisted event has had a chance to be independently inspected.
+    selected = rotate(unseen, limit)
+    return selected + rotate(published, limit - len(selected))
 
 
 def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
@@ -763,7 +778,9 @@ def scan_venues(sources, known, day, report, max_p2=7, scan_slot=0):
                     "laiterie_official_detail_review",
                     "echonova_official_detail_review")
                          else select_generic_official_detail_links(
-                             links, day, scan_slot, limit=3)):
+                             links, day, scan_slot,
+                             limit=6 if reviewed_generic_source else 3,
+                             known=known if reviewed_generic_source else None)):
                 if robots_allow(link, robot_cache):
                     try:
                         text, url = download(link)

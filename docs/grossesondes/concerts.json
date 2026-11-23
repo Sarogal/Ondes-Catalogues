@@ -2446,6 +2446,11 @@
       "id": "michael-schenker",
       "name": "MICHAEL SCHENKER",
       "aliases": []
+    },
+    {
+      "id": "didier-super",
+      "name": "DIDIER SUPER",
+      "aliases": []
     }
   ],
   "venues": [
@@ -15415,6 +15420,68 @@
       "time": null,
       "timeMeaning": "non confirmé",
       "organizer": "La Rayonne",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-23",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-23",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20271009-montpellier-didier-super",
+      "title": "DIDIER SUPER",
+      "date": "2027-10-09",
+      "artistIds": [
+        "didier-super"
+      ],
+      "venueId": "rockstore-montpellier",
+      "genres": [
+        "Punk"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://rockstore.fr/didier-super-09-octobre-2027/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "Rockstore",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-23",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-23",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270307-nantes-arkona",
+      "title": "Arkona + Seth + The Great Old Ones",
+      "date": "2027-03-07",
+      "artistIds": [
+        "arkona",
+        "seth",
+        "the-great-old-ones"
+      ],
+      "venueId": "le-ferrailleur-nantes",
+      "genres": [
+        "Black Metal",
+        "Folk",
+        "Pagan"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.leferrailleur.fr/evenement/arkona-seth-the-great-old-ones-1/5419",
+      "sourceType": "salle",
+      "time": "19:00",
+      "timeMeaning": "début du concert",
+      "organizer": "Le Ferrailleur",
       "ticketUrl": null,
       "lastVerified": "2026-11-23",
       "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",

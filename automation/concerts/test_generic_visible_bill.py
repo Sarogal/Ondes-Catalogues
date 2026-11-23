@@ -199,6 +199,107 @@ class FirstPartyVisibleBillDiscoveryTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["source"], "agenda_officiel_visible_bill")
 
+    def test_large_reviewed_programme_fetches_six_details_and_keeps_trust_boundary(self):
+        # The real La Rayonne index recently exposed dozens of show URLs but
+        # the generic three-page quota was too slow to cover them. Increasing
+        # reads applies ONLY to independently verified venue manifests.
+        urls = [
+            "https://larayonne.org/evenement/synthetic-%02d/" % n
+            for n in range(48)]
+        chosen = discover.select_generic_official_detail_links(
+            urls, TODAY, 0, limit=6)
+        target = chosen[-1]
+        homepage = "".join(
+            '<a href="' + u + '">Individual concert</a>' for u in urls)
+        requested = []
+        def fetch(url, *args, **kwargs):
+            requested.append(url)
+            if url == SOURCE["url"]:
+                return homepage, url
+            if url == target:
+                return page(), url
+            if url in urls:
+                return "<html><body>Page non musicale</body></html>", url
+            raise AssertionError("Unexpected network destination: " + str(url))
+
+        report = []
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
+             mock.patch.object(discover.feeds, "feed_links",
+                               return_value={"rss": [], "ics": []}):
+            rows = discover.scan_venues(
+                {"venues": [SOURCE]}, set(), TODAY, report, scan_slot=0)
+        self.assertEqual(requested, [SOURCE["url"], *chosen])
+        self.assertEqual(report[0]["eventDetailLinksFound"], 48)
+        self.assertEqual(report[0]["eventDetailPagesFetched"], 6)
+        self.assertEqual(report[0]["htmlVisibleBillLeads"], 1)
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0]["publicationAllowed"])
+        self.assertTrue(rows[0]["reviewRequired"])
+        self.assertEqual(rows[0]["sourceUrl"], target)
+
+    def test_unreviewed_venue_stays_on_three_page_limit(self):
+        unreviewed = {**SOURCE, "name": "Different Hall",
+                      "url": "https://another.example/"}
+        urls = [
+            "https://another.example/evenement/synthetic-%02d/" % n
+            for n in range(48)]
+        chosen = discover.select_generic_official_detail_links(
+            urls, TODAY, 1, limit=3)
+        requested = []
+        def fetch(url, *args, **kwargs):
+            requested.append(url)
+            if url == unreviewed["url"]:
+                return "".join('<a href="' + u + '">show</a>' for u in urls), url
+            return "<html><body>Not independently approved</body></html>", url
+        with mock.patch.object(discover, "download", side_effect=fetch), \
+             mock.patch.object(discover, "robots_allow", return_value=True), \
+             mock.patch.object(discover.feeds, "feed_links",
+                               return_value={"rss": [], "ics": []}):
+            result = discover.scan_venues(
+                {"venues": [unreviewed]}, set(), TODAY, [], scan_slot=1)
+        self.assertEqual(result, [])
+        self.assertEqual(requested, [unreviewed["url"], *chosen])
+
+    def test_discovery_fetches_unpublished_bill_before_known_forty_seven(self):
+        # Real intake supplies these (officialUrl, URL) keys from the public
+        # catalogue. Independent source authority is unchanged; this test
+        # verifies that its six probes reach the as-yet-unlisted concert.
+        links = [
+            "https://larayonne.org/evenement/synthetic-show-%02d/" % i
+            for i in range(48)]
+        unseen_url = links[-1]
+        known = {("officialUrl", url) for url in links[:-1]}
+        homepage = "".join(
+            '<a href="' + url + '">Concert</a>' for url in links)
+        selected = discover.select_generic_official_detail_links(
+            links, TODAY, 1, limit=6, known=known)
+        self.assertEqual(selected[0], unseen_url)
+        requests = []
+        def fetch(url, *args, **kwargs):
+            requests.append(url)
+            if url == SOURCE["url"]:
+                return homepage, url
+            if url == unseen_url:
+                return page(), url
+            if url in links:
+                return "<html><body>Already published show</body></html>", url
+            raise AssertionError("Unexpected network request")
+
+        with (
+            mock.patch.object(discover, "download", side_effect=fetch),
+            mock.patch.object(discover, "robots_allow", return_value=True),
+            mock.patch.object(discover.feeds, "feed_links",
+                              return_value={"rss": [], "ics": []})
+        ):
+            found = discover.scan_venues(
+                {"venues": [SOURCE]}, known, TODAY, [], scan_slot=1)
+        self.assertEqual(requests, [SOURCE["url"], *selected])
+        self.assertEqual(len(found), 1)
+        self.assertEqual(found[0]["sourceUrl"], unseen_url)
+        self.assertEqual(found[0]["reviewRequired"], True)
+        self.assertEqual(found[0]["publicationAllowed"], False)
+
     def test_unreviewed_sources_cannot_use_generic_event_trust(self):
         unknown = {**SOURCE, "name": "Unreviewed Hall",
                    "url": "https://unreviewed.example/"}

@@ -4876,11 +4876,11 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://www.festivaldelapoutre.fr/",
-      "lastVerified": "2026-11-22",
+      "lastVerified": "2026-11-23",
       "notes": "4e édition officiellement annoncée les 11 et 12 juin 2027. La page « Infos pratiques » du site officiel indique « Rue des Acacias, 39800 Colonne », sans préciser pour quelle édition. L’adresse est donc conservée à titre INDICATIF, sans géolocalisation ni confirmation d’un site 2027. Association organisatrice On part en live; artistes, billetterie, camping 2027 non identifiés.",
-      "lat": null,
-      "lon": null,
-      "geoPrecision": null,
+      "lat": 46.8783,
+      "lon": 5.5732,
+      "geoPrecision": "commune",
       "futureVenueConfirmed": false,
       "auditSources": [
         "https://www.helloasso.com/associations/on-part-en-live",
@@ -4889,7 +4889,18 @@
       ],
       "venue": "Rue des Acacias, 39800 Colonne (adresse générale du site officiel, affectation à l’édition 2027 à confirmer)",
       "verificationStatus": "Adresse générale du festival identifiée ; implantation de l’édition 2027 non spécifiquement confirmée",
-      "sourceConfidence": "Site officiel : annonce de dates et adresse générale, non liée explicitement à l’édition"
+      "sourceConfidence": "Site officiel : annonce de dates et adresse générale, non liée explicitement à l’édition",
+      "geoCity": "Colonne",
+      "geoInsee": "39159",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Colonne&fields=nom%2Ccode%2CcodeDepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "showOnMap": true,
+      "geoVerification": {
+        "proofMode": "signed-city-current-edition-centre.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-23",
+        "officialSite": "https://www.festivaldelapoutre.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "slug": "hellfest",
@@ -6205,6 +6216,30 @@
       "auditSources": [
         "https://lasainterockfestival.fr/"
       ]
+    },
+    {
+      "lineup": [],
+      "city": null,
+      "sourceConfidence": "Site officiel (annonce future revérifiée sans dates)",
+      "showOnMap": false,
+      "officialSite": "https://esquiriot.fr/",
+      "dateRangeIsContinuous": false,
+      "startDate": null,
+      "slug": "esqui-riot-2027",
+      "status": "Dates à venir",
+      "verificationStatus": "Édition future confirmée sur le site officiel ; dates à confirmer",
+      "endDate": null,
+      "lon": null,
+      "lastVerified": "2026-11-23",
+      "region": null,
+      "source": "https://esquiriot.fr/",
+      "price": null,
+      "venue": null,
+      "bands": 0,
+      "name": "Esqui'Riot 2027",
+      "notes": "Édition future annoncée et revérifiée directement sur le site officiel. Dates à confirmer ; lieu précis, artistes et coordonnées non établis.",
+      "department": null,
+      "lat": null
     }
   ]
 }

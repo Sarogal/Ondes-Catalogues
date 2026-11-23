@@ -139,6 +139,38 @@ def _city_visible(html, row):
         named = name.search(paragraph) is not None
         hero = (not named and branded
                 and re.search(r"\bedition\b", paragraph) is not None)
+        # Current official festival pages can print a unique EXACT date span
+        # and "Légna (39)" in the same hero <p>, while the branded festival
+        # identity is in a different heading. The already signed first-party
+        # root supplies provenance, not the identity of an unrelated event.
+        # Requiring a printed department after the year prevents accepting
+        # bare generic town words or an archive/footer contact address.
+        dated_locality = (not named and not hero and branded
+                          and row.get("startDate") is not None
+                          and row.get("endDate") is not None)
+        if dated_locality:
+            for match in re.finditer(
+                    rf"(?<!\d){start.year}(?!\d)\s*"
+                    r"(?:[·•:–—\-]\s*)?"
+                    r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+                    r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+){0,2})"
+                    r"\s*\((\d{2,3}|2[AB])\)",
+                    raw):
+                candidate, department = match.group(1), match.group(2)
+                # Two different locality/dept annotations in the same
+                # date hero are contradictory: never pick the first match.
+                locality_count = len(re.findall(
+                    r"[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]+"
+                    r"\s*\((?:\d{2,3}|2[AB])\)", raw))
+                if (locality_count != 1
+                        or row.get("department") not in (None, "", department)
+                        or re.search(
+                            r"\b(?:Festival|France|Vente|Billetterie|"
+                            r"Programmation)\b", candidate)):
+                    continue
+                city = _name(candidate)
+                if city:
+                    facts.add(city)
         if not (named or hero):
             continue
         # Existing strict path: exact named festival, current dates and city

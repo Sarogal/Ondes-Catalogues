@@ -82,6 +82,11 @@ from grossesondes_first_party_direct_edition import (
     independently_verify as independently_verify_direct_first_party,
     validate_private_proposal as validate_private_direct_first_party,
 )
+from grossesondes_first_party_undated_edition import (
+    PROOF_MODE as DIRECT_UNDATED_PROOF_MODE,
+    independently_verify as independently_verify_direct_undated,
+    validate_private_proposal as validate_private_direct_undated,
+)
 from grossesondes_structured_tickets import PROOF_MODE as TICKET_PROOF_MODE
 from grossesondes_field_proof import (
     CERNUNNOS_HOME_URL,CERNUNNOS_GROUPS_URL,CERNUNNOS_INFO_URL,
@@ -206,7 +211,8 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             }
             or proof.get("proofMode") not in (
                 ("current-edition-commune-two-day.v1",) +
-                (("current-edition-commune-direct-official.v1",)
+                (("current-edition-commune-direct-official.v1",
+                  "signed-city-current-edition-centre.v1")
                  if allow_direct else ())
             )
             or proof.get("markerMeaning") != "centre_indicatif_de_commune"
@@ -233,6 +239,20 @@ def _certified_new_commune_delta(old, new, *, allow_direct=False):
             or not isinstance(new.get("geoInsee"), str)
             or re.fullmatch(r"[0-9AB]{5}", new["geoInsee"]) is None):
         return False
+    if proof["proofMode"] == "signed-city-current-edition-centre.v1":
+        # This special direct route can only locate an ALREADY signed town
+        # of a dated edition. It cannot invent or replace the municipality,
+        # extrapolate one from an archive, or claim an exact venue entrance.
+        if (not allow_direct
+                or not isinstance(old.get("city"), str)
+                or not old["city"].strip()
+                or not isinstance(old.get("department"), str)
+                or re.fullmatch(r"(?:\d{2,3}|2[AB])",
+                                 old["department"].upper()) is None
+                or not isinstance(old.get("startDate"), str)
+                or not isinstance(old.get("endDate"), str)
+                or norm(new.get("city")) != norm(old["city"])):
+            return False
     for key, lower, upper in (("lat", -90, 90), ("lon", -180, 180)):
         value = new.get(key)
         if type(value) not in (int, float) or not isfinite(value):
@@ -983,6 +1003,51 @@ def collect_registered_direct_first_party_sources(
     return sources
 
 
+
+
+def collect_registered_direct_undated_sources(
+        patch, published_slugs, today, fetch=None):
+    """Publisher re-check for a NEW officially announced undated edition.
+
+    Patch data does not authorize a new host by itself; it must match the
+    deterministic exact first-party proposal contract. The Publisher then
+    independently downloads the festival root, checks its open-world
+    branded identity, genre, future-edition announcement and missing dates.
+    """
+    if not isinstance(published_slugs, (set, frozenset)):
+        raise ValueError("Signed published festival identities required")
+    try:
+        ordinal = date.fromisoformat(today).toordinal()
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Actual Publisher date required") from exc
+    candidates = sorted((
+        row for row in patch.get("additions", [])
+        if (isinstance(row, dict)
+            and row.get("proofMode") == DIRECT_UNDATED_PROOF_MODE
+            and row.get("slug") not in published_slugs
+            and validate_private_direct_undated(row, today) is not None)
+    ), key=lambda row: row["slug"])
+    if not candidates:
+        return {}
+    offset = ordinal % len(candidates)
+    selected = [candidates[(offset + i) % len(candidates)]
+                for i in range(min(4, len(candidates)))]
+    sources = {}
+    for row in selected:
+        try:
+            opts = {"fetch": fetch} if fetch is not None else {}
+            checked = independently_verify_direct_undated(
+                row, today, **opts)
+            if checked is None:
+                continue
+            slug = row["slug"]
+            sources["registered-direct-undated:" + slug] = checked
+            sources["registered-direct-undated-verified:" + slug] = True
+        except (OSError, TimeoutError, ValueError, TypeError, UnicodeError):
+            print("First-party undated festival edition not confirmed.")
+    return sources
+
+
 def collect_registered_venue_reciprocal_sources(
         patch, published_slugs, today, fetch=None):
     """Independently recheck two-site reciprocal festival proof on Publisher.
@@ -1162,6 +1227,8 @@ def main():
     sources.update(collect_registered_openagenda_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_direct_first_party_sources(
+        patch, signed_published_slugs, today.isoformat()))
+    sources.update(collect_registered_direct_undated_sources(
         patch, signed_published_slugs, today.isoformat()))
     sources.update(collect_registered_venue_reciprocal_sources(
         patch, signed_published_slugs, today.isoformat()))

@@ -24,6 +24,7 @@ from grossesondes_archived_html_intake import (
 )
 from grossesondes_official_html_edition import (
     VisibleText, MONTHS as OFFICIAL_MONTHS, CANCEL as OFFICIAL_CANCELLATION,
+    explicit_ranges as current_visible_ranges,
 )
 
 MAX_LINKS = 5
@@ -897,6 +898,78 @@ def apply_independently_verified_updates(
                             "showOnMap": True,
                             "geoVerification": {
                                 "proofMode": "current-edition-commune-direct-official.v1",
+                                "firstObserved": today,
+                                "verifiedAt": today,
+                                "officialSite": site,
+                                "markerMeaning": "centre_indicatif_de_commune",
+                            },
+                        })
+                        fields.extend(sorted(COMMUNE_FIELDS))
+                        sources.append(site)
+            # A published, SIGNED future-edition city is already an accepted
+            # municipality, but not proof of this year's exact entrance.
+            # When the same official homepage independently reaffirms the
+            # exact future weekend, the government's unique administrative
+            # centre can become an APPROXIMATE marker (never copied venue GPS).
+            # This is a *city* fallback only; don't infer the town from an
+            # archive, a private discovery hint or unlabelled other-event text.
+            if (root_ok
+                    and isinstance(old.get("city"), str) and old["city"].strip()
+                    and isinstance(old.get("department"), str)
+                    and re.fullmatch(r"(?:\d{2,3}|2[AB])",
+                                     old["department"].upper())
+                    and old.get("startDate") is not None
+                    and old.get("endDate") is not None
+                    and old.get("lat") is None and old.get("lon") is None
+                    and new.get("lat") is None and new.get("lon") is None
+                    and new.get("showOnMap") is not True
+                    and old.get("futureVenueConfirmed") is not True
+                    and new.get("geoVerification") is None
+                    and new.get("geoPrecision") is None):
+                try:
+                    begin = date.fromisoformat(old["startDate"])
+                    end = date.fromisoformat(old["endDate"])
+                    first_party = VisibleText()
+                    first_party.feed(root_html)
+                    first_party.close()
+                    current_words = " ".join(
+                        fold(" ".join(first_party.parts)).split())
+                    intervals = {
+                        (a, b) for _from, _to, a, b
+                        in current_visible_ranges(current_words, begin.year)
+                    }
+                    # Reject multiple competing event weekends: one signed
+                    # municipality cannot rescue ambiguous first-party dates.
+                    exact_current_weekend = (
+                        begin >= date.fromisoformat(today)
+                        and begin.year == end.year
+                        and intervals == {(begin, end)}
+                        and not OFFICIAL_CANCELLATION.search(current_words))
+                except (TypeError, ValueError, UnicodeError, KeyError):
+                    exact_current_weekend = False
+                if exact_current_weekend:
+                    try:
+                        commune = commune_resolver(
+                            old["city"], old["department"])
+                    except (OSError, TimeoutError, ValueError, UnicodeError):
+                        commune = None
+                    if (commune
+                            and normal_city(commune.get("city"))
+                                == normal_city(old["city"])
+                            and type(commune.get("lat")) in (float, int)
+                            and type(commune.get("lon")) in (float, int)
+                            and isinstance(commune.get("codeInsee"), str)
+                            and isinstance(commune.get("geoSource"), str)):
+                        new.update({
+                            "city": commune["city"],
+                            "lat": commune["lat"], "lon": commune["lon"],
+                            "geoCity": commune["city"],
+                            "geoPrecision": "commune",
+                            "geoInsee": commune["codeInsee"],
+                            "geoSource": commune["geoSource"],
+                            "showOnMap": True,
+                            "geoVerification": {
+                                "proofMode": "signed-city-current-edition-centre.v1",
                                 "firstObserved": today,
                                 "verifiedAt": today,
                                 "officialSite": site,
