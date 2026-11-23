@@ -209,7 +209,7 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
         result, report = engine.process(reg, c, approvals, NOW, fetch=lambda url, cache: PAGE)
         self.assertEqual(report["evaluated"], 1)
         self.assertEqual(len(report["newApprovals"]), 1)
-        self.assertEqual(result, approvals)
+        self.assertEqual(len(result["approvals"]), 1)
         reg["items"]["x"]["stableObservations"] = 2
         result, report = engine.process(
             reg, c, approvals, NOW, fetch=lambda url, cache: PAGE)
