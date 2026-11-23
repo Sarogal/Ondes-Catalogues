@@ -119,6 +119,19 @@ class SignedTourismRenewalTests(unittest.TestCase):
             "<p>Le 09 octobre</p>", "<p>Le 09 novembre</p>")
         self.assertIsNone(current_edition_dates(contradictory, HIST, 2027))
 
+    def test_several_signed_tourism_pages_never_create_duplicate_slugs(self):
+        alternative = "https://mairie-example.fr/agenda/mauges-pit-fest/"
+        parent = deepcopy(HIST)
+        parent["auditSources"] = [ORGANIZER, OFFICE, alternative]
+        source0 = candidates_from_signed_history(
+            history(parent), published(), DAY, tick=0)
+        source1 = candidates_from_signed_history(
+            history(parent), published(), DAY, tick=1)
+        self.assertEqual(len(source0), 1)
+        self.assertEqual(len(source1), 1)
+        self.assertEqual(source0[0][0]["slug"], source1[0][0]["slug"])
+        self.assertNotEqual(source0[0][1], source1[0][1])
+
     def test_publisher_collects_only_signed_source_and_stage_reproves(self):
         from grossesondes_cloud_sync import collect_signed_tourism_renewals
         from grossesondes_stage import stage
