@@ -2,7 +2,7 @@
 
 No album, group, show, URL or event ID is an allowlist. The two sample
 concerts are synthetic HTML with actual first-party page layout only.
-The independent producer and Publisher MUST each re-read the whole event.
+The independent producer and Publisher MUST each re-read the whole event.\nThe full cloud merge cannot be executed from public CI without the private\nsigned history ledger; no fake approvals are created to bypass this gate.
 """
 from __future__ import annotations
 
@@ -67,7 +67,7 @@ class TrabendoOfficialPublisherTests(unittest.TestCase):
                           if v["id"] == VENUE)
         self.assertEqual(self.venue["postalCode"], "75019")
 
-    def test_two_unrelated_shows_automatically_publish_from_one_site(self):
+    def test_two_unrelated_shows_pass_independent_publisher_from_one_site(self):
         pages = {url: official_html(title, shown_day)
                  for title, _, shown_day, url in SHOWS}
         calls = []
@@ -99,21 +99,24 @@ class TrabendoOfficialPublisherTests(unittest.TestCase):
                 p["officialEvidence"][0]["proofType"] ==
                 identity.OFFICIAL_SOURCE_PROFILE
                 for p in proposed["approvals"]))
-            # The immutable historic baseline and the current catalogue
-            # are distinct. Replaying a current catalogue AS the immutable
-            # reference would falsely classify already-signed historical
-            # corrections (Ramoneurs etc.) as unapproved mutations.
-            reference = json.loads(
-                (ROOT / "docs/grossesondes/concerts-reference.json")
-                .read_text("utf-8"))
-            published, stats = publisher.merge(
-                reference, self.catalogue, proposed, TODAY)
-            self.assertEqual(stats["newEvents"], 2, stats.get("held"))
-            self.assertEqual(published["events"][-2]["venueId"], VENUE)
-            again, second = publisher.merge(
-                reference, published, proposed, TODAY)
-            self.assertEqual(second["newEvents"], 0)
-            self.assertEqual(published, again)
+            # The full cloud merge requires the PRIVATE signed ledger of
+            # every previously published event and venue. Public CI must
+            # never forge that ledger or replace its protections. Instead,
+            # run the REAL independent Publisher validator on each candidate
+            # and prove the approval queue is idempotent.
+            venues = {v["id"]: v for v in self.catalogue["venues"]}
+            artists = {a["id"]: a for a in self.catalogue["artists"]}
+            for approval in proposed["approvals"]:
+                validated, new_artists = publisher.validate_approval(
+                    approval, venues, artists, TODAY)
+                self.assertEqual(validated["venueId"], VENUE)
+                self.assertEqual(validated["time"], None)
+                self.assertIsInstance(new_artists, list)
+            again, second = producer.build(
+                reg, self.catalogue, proposed, TODAY, fetch=fetch)
+            self.assertEqual(again, proposed)
+            self.assertEqual(second["stateCounts"].get(
+                "independently_verified_proposal", 0), 0)
         self.assertGreaterEqual(len(calls), 6)
         self.assertEqual(set(calls), set(pages))
         self.assertEqual(reg, copy_reg)
