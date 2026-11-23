@@ -1,0 +1,37 @@
+name: GO radio TEST v8 — six original first-party logos final pre-signing QA
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/test_go_radio_v8_six_logo_full_gate.py'
+      - 'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-20261123.json'
+      - 'grossesondes/radio-test-v2/artwork/staging-independent-v8/**'
+      - '.github/workflows/go-radio-v8-six-logo-full-gate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audited-original-signed-v7-predecessor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Ed25519, JSON Schema and image decoder
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'pillow>=10,<12'
+      - name: Audit all six first-party original logo sources and exact SHA-256 byte data
+        run: python radio-catalog-lab/tools/test_go_radio_v8_six_logo_full_gate.py
+      - name: No signed pointer or active TEST publication allowed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root=Path('grossesondes/radio-test-v2')
+          metadata=json.loads((root/'current.json').read_text())
+          assert metadata['release_sequence']==7
+          assert metadata['content_sha256']=='f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa'
+          print('GO_V8_TEST_V7_SIGNED_POINTER_UNCHANGED')
+          PY
