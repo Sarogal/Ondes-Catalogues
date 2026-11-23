@@ -43,10 +43,17 @@ def official_origin(venue, event_url, sources_path=None):
     for row in sources["venues"]:
         if not isinstance(row, dict) or row.get("kind") != "official_venue_agenda_candidate":
             continue
-        if (intake.normalized(row.get("name")) !=
-                intake.normalized(venue.get("name")) or
-                intake.normalized(row.get("city")) !=
-                intake.normalized(venue.get("city"))):
+        venue_name = intake.normalized(venue.get("name"))
+        venue_city = intake.normalized(venue.get("city"))
+        source_name = intake.normalized(row.get("name"))
+        # A published room "Le Forum" can be registered under the explicit
+        # official title "Le Forum de Vauréal". This precise city suffix is
+        # not a fuzzy name match: the registered city must ALSO match, and
+        # the HTTPS host must still be exactly the one recorded in sources.
+        if (not venue_name or not venue_city
+                or source_name not in {
+                    venue_name, venue_name + " de " + venue_city}
+                or intake.normalized(row.get("city")) != venue_city):
             continue
         trusted = row.get("url")
         other_host = intake.valid_https(trusted)
