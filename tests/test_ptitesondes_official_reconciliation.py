@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from ptitesondes_official_reconciliation import reconcile, digest
+from ptitesondes_official_reconciliation import reconcile, digest, unwrap_exact_public_v2_event
 from test_ptitesondes_candidate_promotion import base
 from test_ptitesondes_published_oa_drift_watch import source
 
@@ -66,6 +66,31 @@ def check(doc, event, *, day=TODAY):
 
 
 class OfficialReconciliationTests(unittest.TestCase):
+    def test_official_direct_v2_exact_uid_envelope_and_raw_event(self):
+        v = live()
+        self.assertEqual(unwrap_exact_public_v2_event(v, 111), v)
+        self.assertEqual(unwrap_exact_public_v2_event({"event": v}, 111), v)
+        for invalid in (
+            {"event": dict(v, uid=999)},
+            {"uid": 999, "event": v},
+            {"uid": 111, "event": v},
+            {"events": [v]},
+            {"event": {"event": v}},
+            {},
+        ):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(
+                    ValueError, "official_v2"):
+                    unwrap_exact_public_v2_event(invalid, 111)
+
+    def test_normalized_live_v2_envelope_passes_regular_reconciliation(self):
+        wrapped = {"event": live(time="11:00", status=2)}
+        ready = unwrap_exact_public_v2_event(wrapped, 111)
+        result, audit, counts = check(document(row()), ready)
+        self.assertEqual(counts["official_time_corrected"], 1)
+        self.assertEqual(result["events"][0]["time"], "11:00")
+        self.assertEqual(audit["operations"][0]["action"], "correct_time")
+
     def test_real_source_cancellation_withdraws_only_exact_uid_and_future_days(self):
         other = dict(row(), id="historical-other-entry", source_url="https://ville.example/events/7")
         initial = document(row(), other)
