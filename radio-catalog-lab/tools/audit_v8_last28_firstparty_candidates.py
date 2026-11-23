@@ -48,6 +48,15 @@ SOURCES = {
         "allowed_hosts": ["mmo.aiircdn.com"],
         "association": "owner site favicon CDN (publisher branding, not a show image)",
     },
+    "go-station-000090": {
+        "name": "Femmetal Classics Radio",
+        "homepage": "https://femmetal.net/",
+        "stream": "cast2.my-control-panel.com/proxy/femmetal/stream",
+        "page": "https://femmetal.net/",
+        "image_urls": ["https://cast2.my-control-panel.com/static/femmetal/covers/rsz_emb_femmetalguy_femmetal_classics_id1_67d851f2.jpg"],
+        "allowed_hosts": ["cast2.my-control-panel.com"],
+        "association": "owner radio page embeds candidate Femmetal Classics ID1 image; inspect if artwork vs cover before staging",
+    },
     "go-station-000067": {
         "name": "True Black Metal Radio",
         "homepage": "http://trueblackmetalradio.com/#/home",
