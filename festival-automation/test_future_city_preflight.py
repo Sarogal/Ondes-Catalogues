@@ -176,6 +176,36 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertLessEqual(next_day["two_day_stable"], 1)
         self.assertTrue(next_day["publication_authorized"] is False)
 
+    def test_official_current_dates_and_venue_directions_prove_town(self):
+        row = dict(ROW, slug="helixfest-2027", name="HelixFest 2027",
+                   startDate="2027-04-23", endDate="2027-04-24",
+                   officialSite="https://helixfest.fr/")
+        identity = "<h1>HELIXFEST</h1>"
+        current = (
+            "<section><h2>INFORMATIONS</h2><p>On vous donne rendez-vous "
+            "les 23 &amp; 24 avril 2027, dans la salle<br/>"
+            " le 750 à La Bâtie-Neuve</p></section>")
+        old = "<section><p>HelixFest 2026, c'était ça !</p></section>"
+        got = exact_edition_city(identity + old + current, row)
+        self.assertEqual(got, {
+            "slug": row["slug"], "city": "La Bâtie-Neuve",
+            "source": row["officialSite"],
+        })
+        self.assertEqual(exact_city_from_official_site(
+            row, lambda _: identity + old + current), got)
+        invalid = [
+            current,  # no festival identity on the first-party page
+            identity + current.replace("24 avril", "25 avril"),
+            identity + current.replace("2027", "2026"),
+            identity + current.replace("dans la salle", "pour le concert"),
+            identity + current.replace("à La Bâtie-Neuve", "à La Bâtie-Neuve et à Gap"),
+            identity + current.replace("salle<br/> le 750 à", "salle</p><p>le 750 à"),
+            identity + current.replace("<p>On vous", "<p hidden>On vous"),
+        ]
+        for html in invalid:
+            with self.subTest(html=html[:100]):
+                self.assertIsNone(exact_edition_city(html, row))
+
     def test_current_festival_city_in_separate_official_edition_hero(self):
         """Real-world first-party layout: title in brand, city after dates."""
         row = {

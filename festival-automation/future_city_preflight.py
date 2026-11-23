@@ -171,6 +171,21 @@ def _city_visible(html, row):
                 city = _name(candidate)
                 if city:
                     facts.add(city)
+        # A first-party current-edition practical-info block may state the
+        # exact signed dates and a single "dans la salle ... à Commune" even
+        # when the festival name appears only in the homepage heading.
+        # Do not borrow a historic venue: the date interval must already
+        # match this SAME visible paragraph; two place claims are ambiguous.
+        dated_visit = (not named and not hero and branded
+                       and re.search(r"\brendez[\W_]+vous\b", paragraph)
+                       and re.search(r"\bdans\s+la\s+salle\b", paragraph))
+        if dated_visit:
+            towns = [city for match in CITY_PATTERN.finditer(raw)
+                     if (city := _name(match.group(1))) is not None]
+            if len(towns) == 1 and not re.search(
+                    r"\b(?:Festival|France|Vente|Billetterie|"
+                    r"Programmation)\b", towns[0]):
+                facts.add(towns[0])
         if not (named or hero):
             continue
         # Existing strict path: exact named festival, current dates and city
