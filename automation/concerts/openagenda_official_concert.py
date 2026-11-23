@@ -218,6 +218,30 @@ def official_export_url(agenda_uid, event_uid):
             f"?oaq%5Buids%5D%5B%5D={event_uid}&limit=1")
 
 
+def _known_catalogue_postcode(venue):
+    """Only a concrete 5-digit postal code can contradict official OA data."""
+    value = venue.get("postalCode") if isinstance(venue, dict) else None
+    return value.strip() if isinstance(value, str) and re.fullmatch(
+        r"[0-9]{5}", value.strip()) else None
+
+
+def _known_catalogue_address(venue):
+    """A provisional historical map placeholder is NOT a street address.
+
+    Never turn 'Adresse exacte à vérifier' into a real location constraint.
+    Concrete stored streets remain protected by the existing exact check.
+    """
+    value = venue.get("address") if isinstance(venue, dict) else None
+    if not isinstance(value, str):
+        return None
+    text = normalized(value)
+    if (not text or len(text) < 6 or any(phrase in text for phrase in (
+            "a verifier", "a preciser", "adresse inconnue",
+            "non renseigne", "geolocalisation indicative"))):
+        return None
+    return value
+
+
 def _verified_street(street, venue, place):
     """Match an official numbered street to an unnumbered map entry safely.
 
@@ -327,11 +351,12 @@ def verified_export(raw_json, url, when, venue, *, agenda_uid, event_uid):
             or normalized(place.get("name")) != normalized(venue.get("name"))
             or normalized(place.get("city")) != normalized(venue.get("city"))):
         raise ValueError("OpenAgenda: official physical venue mismatch")
-    if (place.get("postalCode") and venue.get("postalCode")
-            and str(place["postalCode"]) != str(venue["postalCode"])):
+    published_postcode = _known_catalogue_postcode(venue)
+    if (place.get("postalCode") and published_postcode
+            and str(place["postalCode"]).strip() != published_postcode):
         raise ValueError("OpenAgenda: postal code mismatch")
     street = place.get("address")
-    if (street and venue.get("address")
+    if (street and _known_catalogue_address(venue)
             and not _verified_street(street, venue, place)):
         raise ValueError("OpenAgenda: official street location mismatch")
     if str(place.get("countryCode") or "").lower() not in ("fr", "gp",
@@ -414,8 +439,9 @@ def verified_bill(html, url, when, venue):
             if (addr.get("addressLocality") and normalized(
                     addr["addressLocality"]) != normalized(venue.get("city"))):
                 continue
-            if (addr.get("postalCode") and str(addr["postalCode"]) != str(
-                    venue.get("postalCode"))):
+            published_postcode = _known_catalogue_postcode(venue)
+            if (addr.get("postalCode") and published_postcode and
+                    str(addr["postalCode"]).strip() != published_postcode):
                 continue
             street = addr.get("streetAddress")
         elif isinstance(addr, str):
@@ -425,7 +451,7 @@ def verified_bill(html, url, when, venue):
         # The Opendata event is venue-scoped: an explicitly contradictory
         # postal/street address fails. If absent, the already published venue
         # supplies the map point, never a fabricated city-centre coordinate.
-        if (street and venue.get("address") and
+        if (street and _known_catalogue_address(venue) and
                 normalized(street) != normalized(venue["address"])):
             continue
         genre = row.get("genre")
