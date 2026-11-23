@@ -5959,7 +5959,7 @@ def validate_approval(approval, venues, known_artist_ids, today):
                 and proof.get("verifiedNewArtists") ==
                     [a["name"] for a in new_artists]
                 and set(proof) == base_proof_fields | {"verifiedNewArtists"},
-                "Rockstore automatique : groupes nouveaux non corroborés")
+                "Rockstore automatique : artistes nouveaux non corroborés")
         else:
             require(all(ident in known_artist_ids for ident in ids)
                     and set(proof) == base_proof_fields,

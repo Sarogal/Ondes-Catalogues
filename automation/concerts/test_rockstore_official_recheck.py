@@ -84,11 +84,11 @@ def publish_gate(approval, reference=None):
     )
 
 
-MULTI_URL = "https://rockstore.fr/shaarghot-solitaris-ghost-dance-01-decembre-2026/"
+MULTI_URL = "https://rockstore.fr/shaarghot-solitaris-ghost-dance-01-juin-2027/"
 MULTI_PAGE = """<html><head><title>Rockstore</title></head><body>
 <nav>Concerts</nav><main>
 <h1>SHAÂRGHOT + SOLITARIS + GHOST DANCE</h1>
-<p>Mardi 01 Décembre 2026 à 20h</p><p>Metal/</p>
+<p>Mardi 01 Juin 2027 à 20h</p><p>Metal/</p>
 <p>SHAÂRGHOT, SOLITARIS et GHOST DANCE en concert.</p>
 </main><footer>Rockstore Montpellier</footer></body></html>"""
 
@@ -211,7 +211,7 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
         c = multi_catalogue()
         proposal = multi_signed(reference=c)
         self.assertEqual(proposal["event"]["id"],
-                         "go-c-20261201-montpellier-shaarghot")
+                         "go-c-20270601-montpellier-shaarghot")
         self.assertEqual(proposal["event"]["artistIds"],
                          ["shaarghot", "solitaris", "ghost-dance"])
         self.assertEqual(proposal["event"]["title"],
@@ -230,7 +230,7 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
         page = MULTI_PAGE.replace("SHAÂRGHOT + SOLITARIS + GHOST DANCE",
                                   "SHAÂRGHOT + SOLITARIS + GHOST DANCE + NEW VOX")
         url = ("https://rockstore.fr/shaarghot-solitaris-ghost-dance-"
-               "new-vox-01-decembre-2026/")
+               "new-vox-01-juin-2027/")
         proposal = multi_signed(page, url, c)
         self.assertEqual(proposal["event"]["artistIds"],
                          ["shaarghot", "solitaris", "ghost-dance", "new-vox"])
@@ -245,7 +245,7 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
                  "Bad Star", "Static Rites", "Night Signal"]
         title = " + ".join(names)
         url = ("https://rockstore.fr/red-drone-blue-signal-glass-wrath-"
-               "bad-star-static-rites-night-signal-01-decembre-2026/")
+               "bad-star-static-rites-night-signal-01-juin-2027/")
         page = MULTI_PAGE.replace("SHAÂRGHOT + SOLITARIS + GHOST DANCE", title)
         c = catalogue()
         proposal = multi_signed(page, url, c)
@@ -283,10 +283,10 @@ class RockstoreOfficialRecheckTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             multi_signed(page, MULTI_URL, c)
         c["events"].append({
-            "id": "other", "date": "2026-12-01",
+            "id": "other", "date": "2027-06-01",
             "venueId": "rockstore-montpellier",
             "artistIds": ["solitaris"],
-            "officialUrl": "https://rockstore.fr/other-01-decembre-2026/",
+            "officialUrl": "https://rockstore.fr/other-01-juin-2027/",
         })
         with self.assertRaisesRegex(ValueError, "deja publie"):
             multi_signed(reference=c)
