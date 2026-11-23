@@ -344,6 +344,13 @@ def _section_undated_city(html, row, year, name):
                 continue
             if not locality.fullmatch(raw_city) or not locality.fullmatch(raw_dept):
                 continue
+            # Reject an extra adjacent place-like field. For instance, a
+            # misleading "Town A / Town B / Département" sequence must not
+            # turn Town B into the department of Town A. This also protects
+            # generic nested div grids without hardcoding French communes.
+            if (i + 4 < len(parts)
+                    and locality.fullmatch(parts[i + 4])):
+                continue
             city, department = _name(raw_city), _name(raw_dept)
             if (not city or not department or
                     _normal(city) in {"france", "festival", "billetterie",
