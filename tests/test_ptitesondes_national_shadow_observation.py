@@ -135,7 +135,7 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertEqual(active.call_args.kwargs["start_cursor"], None)
         recent = json.loads((self.root / "index" / "recent-cursor.json")
                             .read_text())
-        self.assertEqual(recent["after"], [1, 778899])
+        self.assertEqual(recent["after"], [1, 998877])
         self.assertEqual(json.loads((self.root / "index" / "cursor.json")
                                     .read_text()), first_legacy)
         names = [p.name for p, _ in available_index_reports(
@@ -170,7 +170,7 @@ class NationalShadowObservationTests(unittest.TestCase):
         self.assertFalse((index_dir /
                           "pending-recent-index-transaction.json").exists())
         self.assertEqual(json.loads((index_dir / "recent-cursor.json")
-                                    .read_text())["after"], [1, 778899])
+                                    .read_text())["after"], [1, 20261234])
         self.assertEqual(resumed["new_index_census"], 0)
 
     def test_later_new_report_joins_rotation_without_erasing_old(self):
