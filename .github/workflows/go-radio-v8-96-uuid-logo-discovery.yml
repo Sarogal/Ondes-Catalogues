@@ -1,0 +1,149 @@
+name: GO radio v8 — discover 96 missing station logos by exact UUID (READ ONLY)
+on:
+  push:
+    branches:
+      - audit/go-radio-v7-96-missing-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_missing_logos_radiobrowser_uuid.py'
+      - '.github/workflows/go-radio-v8-96-uuid-logo-discovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe-radio-browser-station-uuids:
+    runs-on: ubuntu-latest
+    timeout-minutes: 14
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install safe image decoder
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Inspect signed v7 radio aliases without web access
+        run: |
+          python radio-catalog-lab/tools/audit_v8_missing_logos_radiobrowser_uuid.py \
+            --shard ${{ matrix.shard }} --shards 8 \
+            --output "$RUNNER_TEMP/uuid-offline-${{ matrix.shard }}.json"
+      - name: Fetch Radio Browser exact UUID matches and verify favicon bytes SHA-256
+        run: |
+          python radio-catalog-lab/tools/audit_v8_missing_logos_radiobrowser_uuid.py \
+            --shard ${{ matrix.shard }} --shards 8 --network \
+            --output "$RUNNER_TEMP/uuid-online-${{ matrix.shard }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-radio-browser-uuid-logo-shard-${{ matrix.shard }}
+          path: ${{ runner.temp }}/uuid-online-${{ matrix.shard }}.json
+          retention-days: 14
+  consolidate-no-publication:
+    needs: [probe-radio-browser-station-uuids]
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: go-v8-radio-browser-uuid-logo-shard-*
+          path: reports
+          merge-multiple: true
+      - name: Join the 96 station results and reject duplicate generic image SHAs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import defaultdict,Counter
+          import csv,json,os
+          files=sorted(Path('reports').glob('uuid-online-*.json'))
+          assert len(files)==8,files
+          docs=[json.loads(f.read_text(encoding='utf-8')) for f in files]
+          assert {d['shard'] for d in docs}==set(range(8))
+          assert all(d['scope']=='GO_TEST_V7_96_MISSING_LOGOS_RB_UUID_PROVENANCE_ONLY' and
+                     d['shards']==8 and
+                     d['catalog_content_sha256']=='f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa' and
+                     d['modified_catalog'] is False and
+                     d['publication_allowed'] is False for d in docs)
+          stations=[s for d in docs for s in d['records']]
+          assert len(stations)==96
+          assert len({s['go_station_id'] for s in stations})==96
+          prior_risk={}
+          sha_owners=defaultdict(set)
+          for s in stations:
+              for e in s['candidate_logos']:
+                  if e.get('image_sha256'):
+                      sha_owners[e['image_sha256']].add(s['go_station_id'])
+          status=Counter()
+          strict=[]
+          for s in stations:
+              for e in s['candidate_logos']:
+                  status[e['identity_gate']]+=1
+                  if (e['image_bytes_verified'] is True and
+                      e['confidence']=='first_party' and
+                      e['identity_gate']=='FIRST_PARTY_LOGO_SOURCE_CANDIDATE' and
+                      e.get('image_sha256') and
+                      e.get('width',0)>=100 and e.get('height',0)>=100 and
+                      len(sha_owners[e['image_sha256']])==1 and
+                      not e.get('existing_logo_sha_already_used_by')):
+                      strict.append({
+                          'go_station_id':s['go_station_id'],
+                          'station_name':s['station_name'],
+                          'rb_uuid':e['radio_browser_uuid'],
+                          'rb_station_name':e['radio_browser_name'],
+                          'image_url':e['directory_favicon'],
+                          'sha256':e['image_sha256'],
+                          'mime_type':e['mime_type'],
+                          'byte_size':e['byte_size'],
+                          'width':e['width'],'height':e['height'],
+                          'eligible_for_second_byte_identical_validation':True,
+                          'catalog_published':False})
+          unique={x['go_station_id']:x for x in strict}
+          issues=[{'go_station_id':s['go_station_id'],
+                   'name':s['station_name'],
+                   'candidates':s['candidate_logos']}
+                  for s in stations if s['go_station_id'] not in unique]
+          report={'scope':'GO_V8_96_UUID_LOGO_DISCOVERY_CONSOLIDATED_READ_ONLY',
+                  'source_signed_catalog_sha256':'f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa',
+                  'active_radios':285,
+                  'missing_logo_descriptors':96,
+                  'station_uuid_entries_found':sum(d['directory_entries_found'] for d in docs),
+                  'strict_first_party_unique_sha_station_count':len(unique),
+                  'first_party_candidates':sorted(unique.values(),key=lambda x:x['go_station_id']),
+                  'not_automatically_approved':issues,
+                  'source_hosts_status':dict(status),
+                  'api_status':dict(Counter(x['state'] for d in docs for x in d['api_calls'])),
+                  'catalog_modified':False,
+                  'publication_allowed':False}
+          assert len(unique)+len(issues)==96
+          Path('GO-v8-96-uuid-logo-source-report.json').write_text(
+              json.dumps(report,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
+          with open('GO-v8-strict-firstparty-candidates.csv','w',encoding='utf-8',newline='') as f:
+              cols=['go_station_id','station_name','rb_uuid','rb_station_name','image_url',
+                    'sha256','mime_type','byte_size','width','height']
+              w=csv.DictWriter(f,fieldnames=cols,extrasaction='ignore')
+              w.writeheader()
+              w.writerows(report['first_party_candidates'])
+          print('GO_V8_UUID_LOGO_DISCOVERY_CONSOLIDATED',
+                'station_uuid_entries_found='+str(report['station_uuid_entries_found']),
+                'firstparty_unique_sha='+str(len(unique))+'/96',
+                'api_states='+str(report['api_status']),
+                'status='+str(report['source_hosts_status']))
+          for c in report['first_party_candidates']:
+              print('STRICT_FIRST_PARTY_STATION',c['go_station_id'],c['station_name'],
+                    c['sha256'],c['image_url'])
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('# Grosses Ondes : 96 logos manquants, audit UUID\n\n')
+              out.write('- Catalogue source : TEST v7 signé, 285 radios actives\n')
+              out.write('- Stations sans logo : **96**\n')
+              out.write(f'- Images uniques de source station/diffuseur qualifiées pour second passage : **{len(unique)}**\n')
+              out.write(f'- Entrées UUID renvoyées par l’annuaire : {report["station_uuid_entries_found"]}\n')
+              out.write('- **Aucun catalogue édité ou publié.**\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-96-missing-logo-uuid-consolidated-read-only
+          path: |
+            GO-v8-96-uuid-logo-source-report.json
+            GO-v8-strict-firstparty-candidates.csv
+          retention-days: 14
