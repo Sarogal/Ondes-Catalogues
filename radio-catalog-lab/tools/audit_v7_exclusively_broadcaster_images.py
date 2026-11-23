@@ -85,16 +85,31 @@ def verify(network:bool)->dict:
         sha=rec.get("sha256")
         if sha:
             hashes.setdefault(sha,[]).append(rec["go_station_id"])
+    # The broadcaster intentionally uses the same artist tile for Led
+    # Zeppelin regular and HITS. Their station IDs and stream slugs remain
+    # DISTINCT; shared image SHA is safe *only* for this exact pair and not
+    # for unrelated artists or a generic fallback.
+    allowed_shared={"go-station-000204","go-station-000274"}
     for rec in records:
-        if rec.get("sha256") and len(hashes[rec["sha256"]])!=1:
+        sha=rec.get("sha256")
+        if not sha or len(hashes[sha])==1:
+            continue
+        owners=set(hashes[sha])
+        if owners==allowed_shared:
+            rec["status"]="OFFICIAL_SHARED_ARTIST_STATION_TILE_VERIFIED"
+        else:
             rec["status"]="DUPLICATED_GENERIC_IMAGE_UNSAFE"
             rec["editorial_publication_approved"]=False
-    valid=[r for r in records if r["status"]=="OFFICIAL_IMAGE_BYTES_VERIFIED"
-           and r["width"]>=100 and r["height"]>=100]
-    return {"scope":"TEST_V7_EXCLUSIVELY_4_BROADCASTER_ORIGINAL_TILES",
+    valid=[r for r in records if r["status"] in {
+        "OFFICIAL_IMAGE_BYTES_VERIFIED",
+        "OFFICIAL_SHARED_ARTIST_STATION_TILE_VERIFIED"} and
+        r["width"]>=100 and r["height"]>=100]
+    return {"scope":"TEST_V7_EXCLUSIVELY_5_BROADCASTER_ORIGINAL_TILES",
             "requested_stations":5,
-            "verified_distinct_official_image_sha":len(valid),
-            "all_unique":len(hashes)==len([r for r in records if r.get("sha256")]),
+            "verified_station_logo_count":len(valid),
+            "verified_unique_sha_count":len({r["sha256"] for r in valid}),
+            "shared_artist_pair_only":all(
+                set(v)==allowed_shared for v in hashes.values() if len(v)>1),
             "main_or_test_pointer_edited":False,
             "publication_allowed":False,
             "records":records}
@@ -110,7 +125,8 @@ def main()->None:
     args.output.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",
                            encoding="utf-8")
     print(json.dumps({"result":"GO_V7_EXCLUSIVELY_OFFICIAL_FIVE_SHA_EVIDENCE",
-                      "verified_distinct":report["verified_distinct_official_image_sha"],
+                      "verified_stations":report["verified_station_logo_count"],
+                      "unique_sha":report["verified_unique_sha_count"],
                       "requested":report["requested_stations"],
                       "publication_allowed":False},sort_keys=True))
 
