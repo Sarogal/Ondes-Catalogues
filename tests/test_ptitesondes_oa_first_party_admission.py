@@ -159,6 +159,34 @@ class OpenAgendaFirstPartyAdmissionTests(unittest.TestCase):
             "Accueil des enfants pendant les horaires d'ouverture"
         )["category_proposal"])
 
+    def test_city_only_openagenda_coordinates_are_not_falsely_venue_precision(self):
+        # Some OA events use the municipality as the location name and its
+        # generic GPS pin while the description names a separate exact site.
+        # Do not silently present that town pin as the cultural venue.
+        source = deepcopy(oa_event())
+        city = source["location"]["adminLevel4"]
+        source["location"]["name"] = city
+        item = dict(lead(), venue_unverified=city)
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, source, base(), base(), TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_city_only_location")
+
+    def test_overseas_city_only_point_requires_exact_named_venue_resolution(self):
+        source = deepcopy(oa_event())
+        source["location"] = {
+            "name": "Commune fictive", "adminLevel4": "Commune fictive",
+            "adminLevel1": "Martinique", "adminLevel2": "Martinique",
+            "countryCode": "MQ", "latitude": 14.7, "longitude": -61.0,
+        }
+        source["timezone"] = "America/Martinique"
+        item = dict(lead(), city_unverified="Commune fictive",
+                    venue_unverified="Commune fictive")
+        candidate, reason = admit_live_openagenda(
+            item, DAY.isoformat(), AGENDA, source, base(), base(), TODAY)
+        self.assertIsNone(candidate)
+        self.assertEqual(reason, "oa_direct_city_only_location")
+
     def test_live_public_event_admitted_without_municipal_proof(self):
         reference = base()
         candidate, reason = admit_live_openagenda(
