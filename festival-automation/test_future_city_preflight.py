@@ -206,6 +206,21 @@ class FutureCityProofTests(unittest.TestCase):
         self.assertIsNone(exact_edition_city(
             title + body.replace("2027", "2026"), row))
 
+    def test_failed_city_source_records_private_transport_class_only(self):
+        row = {**ROW, "slug": "un-festival-2027",
+               "officialSite": SITE}
+        def broken(_):
+            raise ValueError("Redirect left original HTTPS host")
+        state = {"schema": "grossesondes.source-watch.v1"}
+        result = review(state, catalogue(row), "2026-11-23", broken)
+        self.assertEqual(result["findings"][0]["status"],
+                         "OFFICIAL_FETCH_UNAVAILABLE")
+        self.assertEqual(result["findings"][0]["fetch_failure_code"],
+                         "REDIRECT_OTHER_HOST")
+        self.assertEqual(result["two_day_stable"], 0)
+        self.assertEqual(state[STATE_KEY], {})
+        self.assertNotIn("candidate_city", result["findings"][0])
+
     def test_actual_future_edition_city_and_department_in_nested_divs(self):
         """Realistic official hero: paragraphs for edition, divs for locality."""
         row = {
