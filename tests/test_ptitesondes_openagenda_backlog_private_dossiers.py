@@ -16,7 +16,7 @@ from test_ptitesondes_open_world_release_rehearsal import TODAY, DAY, AGENDA, TI
 from test_ptitesondes_open_world_patch_bridge import private_patch, readers
 from ptitesondes_openagenda_backlog_private_dossiers import (
     backlog_identity, live_research_dossier, read_agenda_by_slug,
-    build_backlog_dossiers, MAX_ATTEMPTS,
+    build_backlog_dossiers, MAX_ATTEMPTS, reclaim_live_confirmed_on_demand,
 )
 from ptitesondes_open_world_patch_bridge import merge_verified_open_world
 
@@ -243,7 +243,9 @@ class BacklogFirstPartyTests(unittest.TestCase):
             event_reader=lambda *_: oa_event())
         self.assertEqual(len(result["open_world_research"]), 80)
         self.assertEqual(counts["new_dossiers"], 1)
-        self.assertEqual(calls, [AGENDA["slug"]])
+        self.assertIn(AGENDA["slug"], calls)
+        # Eight bounded source rechecks may precede backlog admission.
+        self.assertLessEqual(len(calls), 9)
         self.assertEqual(
             len([x for x in result["open_world_research"]
                  if x["lead"]["event_uid"] == 999401]), 1)
@@ -269,6 +271,83 @@ class BacklogFirstPartyTests(unittest.TestCase):
         self.assertEqual(result["open_world_research"], prior)
         self.assertEqual(counts["new_dossiers"], 0)
         self.assertEqual(counts["held_for_publisher_or_network"], 1)
+
+    def test_live_confirmed_commercial_series_reclaims_real_queue_capacity(self):
+        """One high-volume commercial UID must not crowd out new agendas."""
+        from test_ptitesondes_oa_evergreen_on_demand import studio_bookings
+        old_uid = 777001
+        prior = []
+        for i in range(45):
+            prior.append({
+                "lead": {
+                    "agenda_uid": 20001, "agenda_slug": "commercial-calendar",
+                    "event_uid": old_uid,
+                },
+                "date_start": (DAY + timedelta(days=i)).isoformat(),
+                "official_event_url":
+                    "https://openagenda.com/commercial-calendar/events/777001",
+                "official_venue_url":
+                    "https://openagenda.com/commercial-calendar/events/777001",
+            })
+        for i in range(35):
+            uid = 780000 + i
+            prior.append({
+                "lead": {
+                    "agenda_uid": 20001, "agenda_slug": "commercial-calendar",
+                    "event_uid": uid,
+                },
+                "date_start": DAY.isoformat(),
+                "official_event_url":
+                    "https://openagenda.com/commercial-calendar/events/" + str(uid),
+                "official_venue_url":
+                    "https://openagenda.com/commercial-calendar/events/" + str(uid),
+            })
+        patch = dict(self.patch, open_world_research=prior)
+        def agenda_reader(slug, _key):
+            return ({"uid": 20001, "slug": "commercial-calendar"}
+                    if slug == "commercial-calendar" else AGENDA)
+        def event_reader(_agenda_uid, uid, _key):
+            return (dict(studio_bookings(), uid=uid) if uid == old_uid
+                    else dict(oa_event(), uid=uid))
+        result, metrics = build_backlog_dossiers(
+            [clue()], patch, self.catalogue, TODAY, self.key,
+            agenda_reader=agenda_reader, event_reader=event_reader)
+        self.assertEqual(metrics["live_confirmed_commercial_slots_reclaimed"], 45)
+        self.assertEqual(metrics["new_dossiers"], 1)
+        self.assertEqual(len(result["open_world_research"]), 36)
+        self.assertFalse(any(x["lead"]["event_uid"] == old_uid
+                             for x in result["open_world_research"]))
+        self.assertTrue(any(x["lead"]["event_uid"] == 999401
+                            for x in result["open_world_research"]))
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(result["additions"], [])
+
+    def test_unavailable_or_real_musical_series_is_never_pruned(self):
+        from test_ptitesondes_oa_evergreen_on_demand import long_days
+        row = {
+            "lead": {
+                "agenda_uid": 20001, "agenda_slug": "family-calendar",
+                "event_uid": 777002,
+            },
+            "date_start": DAY.isoformat(),
+            "official_event_url": "https://openagenda.com/family-calendar/events/777002",
+            "official_venue_url": "https://openagenda.com/family-calendar/events/777002",
+        }
+        repeated = [dict(row, date_start=(DAY + timedelta(days=i)).isoformat())
+                    for i in range(50)]
+        agenda = lambda *_: {"uid": 20001, "slug": "family-calendar"}
+        real = dict(oa_event(), uid=777002,
+                    title={"fr": "Conte musical jeunesse"},
+                    description={"fr": "Spectacle musical pour enfants."},
+                    conditions={"fr": "Sur réservation."},
+                    timings=long_days())
+        for reader in (lambda *_: real,
+                       lambda *_: (_ for _ in ()).throw(OSError("unavailable"))):
+            with self.subTest(reader=reader):
+                remaining, reclaimed = reclaim_live_confirmed_on_demand(
+                    repeated, self.key, agenda, reader)
+                self.assertEqual(remaining, repeated)
+                self.assertEqual(reclaimed, 0)
 
     def test_four_daily_slots_rotate_up_to_eighty_private_dossiers(self):
         # Existing 345+ future clues exceed 30/day. Four independently
