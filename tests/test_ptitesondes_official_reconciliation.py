@@ -216,6 +216,29 @@ class OfficialReconciliationTests(unittest.TestCase):
         self.assertEqual(again, after)
         self.assertEqual(repeated["operations"], [])
 
+    def test_forty_new_scheduled_sessions_are_not_artificially_capped(self):
+        source_event = live()
+        for number in range(6, 32):
+            day = f"2026-12-{number:02d}"
+            source_event["timings"].append({
+                "begin": day+"T10:00:00+01:00",
+                "end": day+"T12:00:00+01:00",
+            })
+        for number in range(1, 15):
+            day = f"2027-01-{number:02d}"
+            source_event["timings"].append({
+                "begin": day+"T10:00:00+01:00",
+                "end": day+"T12:00:00+01:00",
+            })
+        response = {
+            "event": source_event,
+            "agenda": {"uid": 901131, "slug": "agenda-generique"},
+        }
+        after, audit, counters = check(document(row()), response)
+        self.assertEqual(len(after["events"]), 41)
+        self.assertEqual(sum(x["action"] == "add" for x in audit["operations"]), 40)
+        self.assertEqual(len({x["id"] for x in after["events"]}), 41)
+
     def test_cannot_self_approve_new_date_without_live_agenda_identity(self):
         original = document(row())
         official = live()
