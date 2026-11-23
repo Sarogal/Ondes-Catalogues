@@ -1,0 +1,5 @@
+"go_station_id";"station_name";"second_run_status";"source_url";"diagnostic"
+"go-station-000211";"011.fm – House of Hair";"SIGNED_DESCRIPTOR_MISMATCH";"https://cdn-profiles.tunein.com/s296038/images/logoq.jpg";"Image retournée ne correspond pas à l'empreinte SHA, la taille ou le format signé"
+"go-station-000030";"Rock The World - Heavy Metal";"SIGNED_DESCRIPTOR_MISMATCH";"https://manager.uber.radio/static/uploads/station/9f9e3c8f-59ee-47dd-ab88-32bbd1547223.png";"Image retournée ne correspond pas à l'empreinte SHA, la taille ou le format signé"
+"go-station-000068";"Radio ROCKS Kyiv 103.6FM HD";"UNAVAILABLE_OR_BLOCKED";"https://upload.wikimedia.org/wikipedia/uk/b/be/Logo_radio_roks.png";"Erreur HTTP depuis le runner GitHub, possiblement temporaire"
+"go-station-000289";"Megarock Radio 320k";"UNAVAILABLE_OR_BLOCKED";"https://megarockradio.net/ozoolree/2024/12/rock-gesture-2-1-hand-gestures-rock-love-you-sign-of-the-horns-metal-wristband-bracelet-music-back-512-150x150.webp";"Erreur URL/réseau depuis le runner GitHub, possiblement temporaire"
