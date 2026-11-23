@@ -6,6 +6,12 @@ on:
       - 'scripts/ptitesondes_published_oa_drift_watch.py'
       - 'tests/test_ptitesondes_published_oa_drift_watch.py'
       - '.github/workflows/ptitesondes-published-oa-watch.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/ptitesondes_published_oa_drift_watch.py'
+      - 'tests/test_ptitesondes_published_oa_drift_watch.py'
+      - '.github/workflows/ptitesondes-published-oa-watch.yml'
   schedule:
     - cron: '31 06 * * *'
     - cron: '31 10 * * *'

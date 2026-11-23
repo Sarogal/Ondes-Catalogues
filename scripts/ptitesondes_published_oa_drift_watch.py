@@ -8,13 +8,13 @@ sources are dynamically derived from current public records.
 """
 import argparse
 from collections import Counter
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone as dt_timezone
 import json
 from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-from ptitesondes_openagenda_v2_direct_evidence import read_direct_v2
+from ptitesondes_openagenda_v2_direct_evidence import (read_direct_v2, FR_TZ, MAX_TIMINGS, _time)
 
 EVENT_ID = re.compile(r"openagenda-([1-9][0-9]{0,11})-(20[0-9]{2}-[0-9]{2}-[0-9]{2})\Z")
 EVENT_SOURCE = re.compile(
@@ -23,7 +23,8 @@ MAX_SCAN = 30
 MAX_INPUT = 12_000_000
 MAX_EVENTS = 20000
 ALLOWED_REASONS = frozenset((
-    "cancelled_or_removed", "postponed_or_moved_online",
+    "cancelled_or_removed", "source_unpublished", "source_moved_online",
+    "source_postponed", "source_sold_out",
     "source_session_missing", "source_session_time_changed",
     "source_new_future_session", "venue_name_changed", "city_changed",
     "venue_coordinates_changed", "source_identity_changed",
@@ -93,24 +94,40 @@ def choose_groups(groups, today, slot, limit=MAX_SCAN):
 
 
 def _timings(event):
-    """Parse only exact source showtimes with explicit UTC offsets."""
-    rows = event.get("timings")
-    if not isinstance(rows, list) or len(rows) > 1000:
+    """Use only valid exact local times in the official event timezone.
+
+    A malformed or ambiguously offset session does not mean that a published
+    occurrence was cancelled. Reject the whole timing comparison in that case.
+    """
+    rows, timezone = event.get("timings"), event.get("timezone")
+    if not isinstance(rows, list) or not rows or len(rows) > MAX_TIMINGS:
+        return None
+    if timezone not in FR_TZ:
         return None
     sessions = {}
     for timing in rows:
-        if not isinstance(timing, dict):
-            continue
-        first, last = timing.get("begin"), timing.get("end")
-        if type(first) is not str or type(last) is not str:
-            continue
+        if (not isinstance(timing, dict)
+                or type(timing.get("begin")) is not str
+                or type(timing.get("end")) is not str):
+            return None
+        begin, end = _time(timing["begin"], timezone), _time(timing["end"], timezone)
+        if begin is None or end is None or not begin < end:
+            return None
+        if (end.astimezone(dt_timezone.utc)
+                - begin.astimezone(dt_timezone.utc)
+                > timedelta(hours=24)):
+            return None
+        # OA timings must claim the real local UTC offset, not merely a valid
+        # timestamp at some other timezone/season.
         try:
-            begin, end = datetime.fromisoformat(first), datetime.fromisoformat(last)
+            raw_begin = datetime.fromisoformat(timing["begin"].replace("Z", "+00:00"))
+            raw_end = datetime.fromisoformat(timing["end"].replace("Z", "+00:00"))
         except ValueError:
-            continue
-        if (begin.utcoffset() is None or end.utcoffset() is None
-                or begin >= end or end-begin > timedelta(days=2)):
-            continue
+            return None
+        if (begin.utcoffset() != raw_begin.utcoffset()
+                or end.utcoffset() != raw_end.utcoffset()
+                or begin.date() != end.date()):
+            return None
         day = begin.date().isoformat()
         sessions.setdefault(day, set()).add(begin.strftime("%H:%M"))
     return sessions
@@ -130,14 +147,20 @@ def compare_official_source(source, group, today):
         status = status.get("id")
     if source.get("removed") is True or status == 6:
         return ["cancelled_or_removed"]
-    if source.get("state") != 2 or status in (3, 4, 5):
-        return ["postponed_or_moved_online"]
-    if type(status) is not int or status not in (1, 2):
+    if source.get("state") != 2:
+        return ["source_unpublished"]
+    if type(status) is not int:
+        return ["source_identity_changed"]
+    if status == 3:
+        return ["source_moved_online"]
+    if status == 4:
+        return ["source_postponed"]
+    if status not in (1, 2, 5):
         return ["source_identity_changed"]
     timings = _timings(source)
     if timings is None:
         return ["unusable_source_timings"]
-    out = set()
+    out = {"source_sold_out"} if status == 5 else set()
     location = source.get("location")
     if not isinstance(location, dict):
         return ["source_identity_changed"]
