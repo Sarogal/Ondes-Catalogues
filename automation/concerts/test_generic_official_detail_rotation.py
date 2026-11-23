@@ -178,6 +178,71 @@ class GenericVenueLinkRotationTests(unittest.TestCase):
         self.assertEqual(len(selected), 6)
         self.assertNotIn(published, selected)
 
+    def test_cross_source_already_published_venue_bill_is_not_priority(self):
+        # A promoter may be the catalogue's canonical source, while the
+        # venue publishes the same show under a separate exact first-party URL.
+        day = dt.date(2026, 11, 23)
+        published_venue_page = "https://venue.example/evenement/orden-ogan/"
+        unlisted_new_show = "https://venue.example/evenement/eisbrecher/"
+        urls = [
+            published_venue_page, unlisted_new_show
+        ] + ["https://venue.example/evenement/unknown-%02d/" % i
+             for i in range(10)]
+        selected = discover.select_generic_official_detail_links(
+            urls, day, 1, limit=6, known=set(),
+            artist_names=["Orden Ogan", "Eisbrecher"],
+            already_published_artist_names={"Orden Ogan"})
+        self.assertEqual(selected[0], unlisted_new_show)
+        self.assertEqual(len(selected), 6)
+        self.assertEqual(len(selected), len(set(selected)))
+        # 'Already published elsewhere' changes order, not eligibility:
+        # the alternate venue page still receives ordinary rotation.
+        eventual = set()
+        for delta in range(4):
+            for slot in (0, 1, 2):
+                eventual.update(discover.select_generic_official_detail_links(
+                    urls, day + dt.timedelta(days=delta), slot,
+                    limit=6, known=set(),
+                    artist_names=["Orden Ogan", "Eisbrecher"],
+                    already_published_artist_names={"Orden Ogan"}))
+        self.assertIn(published_venue_page, eventual)
+
+    def test_existing_venue_artist_hint_derived_only_from_public_future_shows(self):
+        today = dt.date(2026, 11, 23)
+        catalogue = {
+            "artists": [
+                {"id": "already", "name": "Orden Ogan"},
+                {"id": "cancelled", "name": "Cancelled Artist"},
+                {"id": "old", "name": "Old Act"},
+            ],
+            "venues": [
+                {"id": "room1", "name": "La Rayonne",
+                 "city": "Villeurbanne", "department": "69"},
+                {"id": "room2", "name": "Other Hall",
+                 "city": "Paris", "department": "75"},
+            ],
+            "events": [
+                {"date": "2027-01-20", "venueId": "room1",
+                 "artistIds": ["already"], "status": "confirmed",
+                 "officialUrl": "https://promoter.example/agenda/ordenogan/"},
+                {"date": "2026-11-12", "venueId": "room1",
+                 "artistIds": ["old"], "status": "confirmed"},
+                {"date": "2027-04-30", "venueId": "room1",
+                 "artistIds": ["cancelled"], "status": "cancelled"},
+                {"date": "2027-04-30", "venueId": "room2",
+                 "artistIds": ["old"], "status": "confirmed"},
+            ],
+        }
+        hints = discover.published_venue_artist_hints(catalogue, today)
+        self.assertEqual(
+            hints[("larayonne", "villeurbanne", "69")],
+            frozenset({"Orden Ogan"}))
+        self.assertEqual(
+            hints[("otherhall", "paris", "75")],
+            frozenset({"Old Act"}))
+        self.assertNotIn("Cancelled Artist",
+                         hints[("larayonne", "villeurbanne", "69")])
+
     def test_empty_duplicate_and_invalid_inputs(self):
         day = dt.date(2026, 11, 19)
         self.assertEqual(
