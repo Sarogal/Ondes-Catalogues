@@ -50,7 +50,20 @@ def main():
                         fragment=data[max(0,m.start()-280):min(len(data),m.end()+340)]
                         # Strip control characters and keep bounded source evidence only.
                         r["station_references"].append(re.sub(r"[\r\n\t]+"," ",fragment)[:650])
-                r["channel_art_identified"]=False
+                if label.startswith("hotmix"):
+                    import html as html_tools
+                    from urllib.parse import unquote
+                    tiles=[]
+                    for match in re.finditer(r'<button\\b(?=[^>]*aria-label=["\\\']Metal["\\\'])[^>]*>(.{0,6000}?)</button>',data,re.I|re.S):
+                        block=html_tools.unescape(match.group(1))
+                        src=re.search(r'<img\\b[^>]*>',block,re.I|re.S)
+                        tag=unquote(src.group(0)) if src else unquote(block[:1600])
+                        ids=list(dict.fromkeys(re.findall(r'hotmix\\.radio/(\\d+)/image_large',tag,re.I)))
+                        tiles.append({"station_name":"Metal","channel_ids":ids,"source_image_tag":tag[:800]})
+                    r["metal_tile_source_evidence"]=tiles[:5]
+                    r["channel_art_identified"]=bool(tiles) and all(len(item["channel_ids"])==1 for item in tiles) and len(set(item["channel_ids"][0] for item in tiles))==1
+                else:
+                    r["channel_art_identified"]=r["stream_uuid_matches"] is True
             except Exception as e:
                 r["reason"]=type(e).__name__+":"+str(e)[:180]
         rows.append(r)
@@ -58,5 +71,5 @@ def main():
             "published":False,"signed":False,"rows":rows}
     p.output.parent.mkdir(parents=True,exist_ok=True)
     p.output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    print(json.dumps({"scope":result["scope"],"network":p.network,"pages":[{"label":r["label"],"html_verified":r["html_verified"],"html_size":r.get("original_html_size"),"metal_word_count":r.get("metal_word_count"),"stream_matches":r.get("stream_uuid_matches"),"channel_image_ids":r.get("hotmix_image_product_ids"),"reason":r.get("reason"),"samples":r.get("station_references",[])[:3]} for r in rows]},ensure_ascii=False)[:11500])
+    print(json.dumps({"scope":result["scope"],"network":p.network,"pages":[{"label":r["label"],"html_verified":r["html_verified"],"html_size":r.get("original_html_size"),"metal_word_count":r.get("metal_word_count"),"stream_matches":r.get("stream_uuid_matches"),"channel_image_ids":r.get("hotmix_image_product_ids"),"metal_tile_evidence":r.get("metal_tile_source_evidence"),"channel_identity_verified":r.get("channel_art_identified"),"reason":r.get("reason"),"samples":r.get("station_references",[])[:3]} for r in rows]},ensure_ascii=False)[:11500])
 if __name__=="__main__":main()
