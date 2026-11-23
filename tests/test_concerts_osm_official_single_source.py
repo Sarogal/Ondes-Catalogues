@@ -185,6 +185,82 @@ class SingleOSMOfficialPublisherTests(unittest.TestCase):
                     [])
                 self.assertEqual(reasons["no_unique_published_venue"], 1)
 
+    def test_registered_venue_city_suffix_is_valid_publisher_source(self):
+        # The public room may be known as "Le Forum" and its registered
+        # official agenda as "Le Forum de Vauréal". This exact suffix
+        # never changes its independently checked HTTPS origin.
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [{
+                    "kind": "official_venue_agenda_candidate",
+                    "name": "Le Bikini de Ramonville-Saint-Agne",
+                    "city": "Ramonville-Saint-Agne",
+                    "url": "https://nouveau-domaine-independant.fr/"
+                }]
+            }), encoding="utf-8")
+            seen = []
+            def first_party(url, cache):
+                seen.append(url)
+                self.assertEqual(url, URL)
+                return fixture.fake_fetch()(url, cache)
+            before = {"schema": publisher.SCHEMA, "approvals": []}
+            with mock.patch.object(pipeline.official_source, "SOURCES", sources), \
+                 mock.patch.object(identity.official_source, "SOURCES", sources), \
+                 mock.patch.object(identity, "safe_fetch",
+                                   side_effect=first_party):
+                candidate = registry(stable=1)
+                self.assertEqual(len(pipeline.eligible(
+                    candidate, BASE, TODAY)), 1)
+                proposals, outcome = pipeline.build(
+                    candidate, BASE, before, TODAY, fetch=first_party)
+                self.assertEqual(len(proposals["approvals"]), 1, outcome)
+                self.assertEqual(
+                    proposals["approvals"][0]["officialEvidence"][0]["proofType"],
+                    identity.OFFICIAL_SOURCE_PROFILE)
+                self.assertEqual(len(approval_preflight.check_append_only(
+                    before, proposals, TODAY)), 1)
+                published, stats = publisher.merge(
+                    BASE, BASE, proposals, TODAY)
+                self.assertEqual(stats["newEvents"], 1, stats["held"])
+                self.assertEqual(published["events"][-1]["officialUrl"], URL)
+            self.assertEqual(set(seen), {URL})
+
+    def test_city_suffix_does_not_trust_nearby_name_or_foreign_host(self):
+        venue = next(v for v in BASE["venues"] if v["id"] == fixture.VENUE_ID)
+        source = {
+            "kind": "official_venue_agenda_candidate",
+            "name": "Le Bikini de Ramonville-Saint-Agne",
+            "city": "Ramonville-Saint-Agne",
+            "url": "https://nouveau-domaine-independant.fr/"
+        }
+        for name, city, url, allowed in (
+                (source["name"], source["city"], URL, True),
+                ("Le Bikini de Toulouse", source["city"], URL, False),
+                (source["name"] + " Est", source["city"], URL, False),
+                (source["name"], "Toulouse", URL, False),
+                (source["name"], source["city"],
+                 "https://forged-venue.fr/2027/03/05/metal/", False)):
+            with tempfile.TemporaryDirectory() as directory:
+                sources = Path(directory) / "sources.json"
+                sources.write_text(json.dumps({
+                    "schema": "grossesondes.concert.sourcelist.v1",
+                    "venues": [dict(source, name=name, city=city)]
+                }), encoding="utf-8")
+                with self.subTest(name=name, city=city, url=url):
+                    actual = pipeline.official_source.official_origin(
+                        venue, url, sources_path=sources)
+                    self.assertEqual(actual is not None, allowed)
+        with tempfile.TemporaryDirectory() as directory:
+            sources = Path(directory) / "sources.json"
+            sources.write_text(json.dumps({
+                "schema": "grossesondes.concert.sourcelist.v1",
+                "venues": [source, source]
+            }), encoding="utf-8")
+            self.assertIsNone(pipeline.official_source.official_origin(
+                venue, URL, sources_path=sources))
+
     def test_official_venue_source_is_not_a_lead_controlled_origin(self):
         with tempfile.TemporaryDirectory() as directory:
             source_file = Path(directory) / "sources.json"
