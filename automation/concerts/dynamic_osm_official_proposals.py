@@ -63,7 +63,15 @@ def _site(catalogue, c):
                     str(venue.get("geoSource", "")))
                     or address_osm.eligible_address(venue)
                     or openagenda.is_openagenda_event_url(
-                        c.get("eventDetailUrl") or c.get("sourceUrl")))]
+                        c.get("eventDetailUrl") or c.get("sourceUrl"))
+                    # An EXISTING venue can have only indicative historical
+                    # geolocation. Its separately registered first-party
+                    # agenda remains a valid source-identity anchor, with the
+                    # whole bill independently re-fetched by the Publisher.
+                    # Never derive this trust from the candidate itself.
+                    or official_source.official_origin(
+                        venue, c.get("eventDetailUrl") or
+                        c.get("sourceUrl")) is not None)]
     require(len(matching) == 1,
             "exact published venue with independently verifiable geography required")
     return matching[0]
