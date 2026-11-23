@@ -1,0 +1,173 @@
+{
+  "schema": "ptitesondes.official_reconciliation.v1",
+  "checked_on": "2026-11-23",
+  "slot": 0,
+  "source_series_checked": 27,
+  "total_source_series": 27,
+  "before_count": 642,
+  "after_count": 664,
+  "source_summary": {
+    "official_new_session_admitted": 3,
+    "official_new_session_on_demand_review": 1,
+    "official_unchanged": 23
+  },
+  "catalogue_before_sha256": "bec7b4e4c6558651dc089e76d2260c9a80158a520ca7455c269a2e0b70b9f4b1",
+  "catalogue_after_sha256": "ca86c698ebcd13fae001514a6fef9d0a7ac8fcdd2780255a767fe54dcf9c42f2",
+  "operations": [
+    {
+      "id": "openagenda-32792402-2027-02-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "015ce0bf0c6b43077a258896801f03a396ad7fefffa254675cc0107ef82ce0d2"
+    },
+    {
+      "id": "openagenda-32792402-2027-02-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "6967bcac92921f431e2141ebc9700a8e8b90d8459c778c64cacef71b70b33fcf"
+    },
+    {
+      "id": "openagenda-32792402-2027-03-03",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "fc21ed94621aac392a508db535541439458fb9d7506fbd28d2753e8c8b60e19e"
+    },
+    {
+      "id": "openagenda-32792402-2027-03-10",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "2c5027a9abda4f6ed828357eff4e95d1f24d5c280e1e47d2ff43a4ab7012c45f"
+    },
+    {
+      "id": "openagenda-32792402-2027-03-17",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "2d1c620e7be2820ddb64099e963ce8281f57652f802247b404e2ad318563971b"
+    },
+    {
+      "id": "openagenda-32792402-2027-03-24",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "876c1d03eded2e0d08e6422bf629762662d1f748f43d3380d08123ea21f0f23a"
+    },
+    {
+      "id": "openagenda-32792402-2027-03-31",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "938e1e4aa6f7fed8f16c7fc093bd1d1bdd0e3e74fe0279dcffb0d5857aa17b69"
+    },
+    {
+      "id": "openagenda-32792402-2027-04-07",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "105abf1e82ac044b5e8788c7b6d4f97d38f94ac34a6f2d5c94634906dfee074c"
+    },
+    {
+      "id": "openagenda-32792402-2027-04-14",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "2e9759350cfe98eb39aaf25b16a1f94e3354a98cca93826c6ad11c89aa69f2c3"
+    },
+    {
+      "id": "openagenda-32792402-2027-04-21",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "abb25e25a5e01dd3211c78471344f2fec73075da3db288b556c70be419ac5c87"
+    },
+    {
+      "id": "openagenda-32792402-2027-04-28",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "a5f47c396a4a37a579295017907e807749d9fc42e7794862997ea04dc624992c"
+    },
+    {
+      "id": "openagenda-32792402-2027-05-05",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "1dc68f24aa992e7c6de3551a4000e462efd2626bc3e79197c45c2e2ee498d5d0"
+    },
+    {
+      "id": "openagenda-32792402-2027-05-12",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "f74a7aff4256b5364add6d1a02e03aca3d342cdf364b648ed098d2e0aef83b7c"
+    },
+    {
+      "id": "openagenda-32792402-2027-05-19",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "2155450ef9ebbe59e380aa5317e94981dcb8bda5d29e3d23d48787de9cd6b1f6"
+    },
+    {
+      "id": "openagenda-32792402-2027-05-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/que-faire-a-paris/events/32792402_mercredis-des-tout-petits",
+      "new_event_sha256": "e73610d871284b2e33c8e398c114b7df200b4d35a3117db62c0421ba78c8f5cd"
+    },
+    {
+      "id": "openagenda-84616996-2027-01-26",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/culture/events/84616996_bricolo-cine-concert-pour-les-tout-petits-au-theatre-paul-b-massy",
+      "new_event_sha256": "0d5485c34e040be88613bb7208104c24d845228969d639e71e2ff100a1a0c059"
+    },
+    {
+      "id": "openagenda-84616996-2027-01-27",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/culture/events/84616996_bricolo-cine-concert-pour-les-tout-petits-au-theatre-paul-b-massy",
+      "new_event_sha256": "37bfc6abfdcc642901a6f4575b3488b6ea1c46a34545c10eb01a151f936ebb53"
+    },
+    {
+      "id": "openagenda-83672166-2026-11-25",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/estevelles-direct/events/83672166_bebes-lecteurs-2184245",
+      "new_event_sha256": "0decab38fe2d18d5a022605672d39ff9773cee4407d9bc8be7ce3683d33a9b3f"
+    },
+    {
+      "id": "openagenda-83672166-2026-12-02",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/estevelles-direct/events/83672166_bebes-lecteurs-2184245",
+      "new_event_sha256": "03bc2cdb3424c61b8567f4b8ecfb8fb925500ca25aeb343b8a8fcf69e44826b1"
+    },
+    {
+      "id": "openagenda-83672166-2026-12-09",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/estevelles-direct/events/83672166_bebes-lecteurs-2184245",
+      "new_event_sha256": "5536905b37a135ca437d90639839db63aae69f2e171d04e9cb667012fe7caea1"
+    },
+    {
+      "id": "openagenda-83672166-2026-12-23",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/estevelles-direct/events/83672166_bebes-lecteurs-2184245",
+      "new_event_sha256": "ee2030effcf76672de2b46fd9557f8f9bd30d12d24f97ca7e0d0b7256d969a5d"
+    },
+    {
+      "id": "openagenda-83672166-2026-12-30",
+      "action": "add",
+      "reason": "official_new_session_admitted",
+      "source_url": "https://openagenda.com/estevelles-direct/events/83672166_bebes-lecteurs-2184245",
+      "new_event_sha256": "be4979923c482f879ea913797c718012e05c256ca5816066fd8dbb5785c64c5e"
+    }
+  ],
+  "unrelated_public_records_preserved": true
+}
