@@ -17,6 +17,7 @@ from test_ptitesondes_open_world_patch_bridge import private_patch, readers
 from ptitesondes_openagenda_backlog_private_dossiers import (
     backlog_identity, live_research_dossier, read_agenda_by_slug,
     build_backlog_dossiers, MAX_ATTEMPTS, reclaim_live_confirmed_on_demand,
+    deadline_aware_backlog_batch, fair_backlog_identity_order,
 )
 from ptitesondes_open_world_patch_bridge import merge_verified_open_world
 
@@ -387,6 +388,82 @@ class BacklogFirstPartyTests(unittest.TestCase):
         ids1 = {x["lead"]["event_uid"] for x in second["open_world_research"]}
         self.assertFalse(ids0 & ids1)
         self.assertFalse(first["safe_to_publish"])
+
+
+    def test_imminent_unlisted_session_is_reviewed_before_distant_backlog(self):
+        # The deadline lane is general: no source/venue/territory/UID exception.
+        # Hundreds of unrelated later events must not make a real family
+        # performance expire before the Publisher ever examines its UID.
+        soon = ("previously-unlisted-agenda", 990001,
+                (TODAY + timedelta(days=2)).isoformat(), "Contes jeunesse")
+        later = [("new-agenda-" + str(i), 910000 + i,
+                  (TODAY + timedelta(days=30)).isoformat(), "Atelier musical")
+                 for i in range(500)]
+        ordered = fair_backlog_identity_order(set([soon, *later]))
+        selected = deadline_aware_backlog_batch(ordered, TODAY, 0)
+        self.assertEqual(len(selected), MAX_ATTEMPTS)
+        self.assertEqual(len(set(selected)), MAX_ATTEMPTS)
+        self.assertIn(soon, selected)
+        self.assertLessEqual(
+            sum(row[2] <= (TODAY + timedelta(days=3)).isoformat()
+                for row in selected), 8)
+
+    def test_four_slots_cover_all_near_term_events_without_a_closed_list(self):
+        # A 28-event near-term backlog rotates completely within four daily
+        # checks even with 500 far-future leads. No named city is privileged.
+        imminent = [
+            ("unlisted-agenda-" + str(i), 900000 + i,
+             (TODAY + timedelta(days=2)).isoformat(), "Conte")
+            for i in range(28)
+        ]
+        distant = [
+            ("a-new-source-" + str(i), 800000 + i,
+             (TODAY + timedelta(days=35)).isoformat(), "Concert")
+            for i in range(500)
+        ]
+        ordered = fair_backlog_identity_order(set([*imminent, *distant]))
+        batches = [deadline_aware_backlog_batch(ordered, TODAY, slot)
+                   for slot in range(4)]
+        reached = {row for batch in batches for row in batch}
+        self.assertTrue(set(imminent).issubset(reached))
+        self.assertTrue(all(len(batch) == MAX_ATTEMPTS for batch in batches))
+        self.assertTrue(all(len(set(batch)) == MAX_ATTEMPTS
+                            for batch in batches))
+
+    def test_without_urgent_sessions_preserves_existing_rotation(self):
+        later = [
+            ("unlisted-organizer-" + str(i), 700000 + i,
+             (TODAY + timedelta(days=50)).isoformat(), "Youth concert")
+            for i in range(101)
+        ]
+        ordered = fair_backlog_identity_order(set(later))
+        for slot in range(4):
+            start = ((TODAY.toordinal() * 4 + slot)
+                     * MAX_ATTEMPTS % len(ordered))
+            expected = [ordered[(start + i) % len(ordered)]
+                        for i in range(MAX_ATTEMPTS)]
+            self.assertEqual(
+                deadline_aware_backlog_batch(ordered, TODAY, slot), expected)
+
+    def test_no_false_approval_or_network_dependency_from_priority_lane(self):
+        near = [clue(uid=900000 + i,
+                     day=(TODAY + timedelta(days=2)).isoformat())
+                for i in range(12)]
+        distant = [clue(uid=800000 + i,
+                        day=(TODAY + timedelta(days=40)).isoformat())
+                   for i in range(60)]
+        fetched = []
+        def fake_event(agenda_uid, uid, key):
+            fetched.append(uid)
+            # Wrong date is never silently repaired or authorized.
+            return dict(oa_event(), uid=uid)
+        result, counts = self.build(
+            [*near, *distant], event_reader=fake_event)
+        self.assertEqual(counts["clues_examined"], MAX_ATTEMPTS)
+        self.assertEqual(counts["new_dossiers"], 0)
+        self.assertEqual(result["additions"], [])
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(counts["queued_total"], 0)
 
 
 if __name__ == "__main__":
