@@ -32,6 +32,10 @@ API = "https://api.openagenda.com/v2/agendas"
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BACKLOG = 4000
 MAX_ATTEMPTS = 24  # network budget, never an editorial whitelist
+# Reserve bounded, source-neutral verification capacity for imminent sessions.
+# These are only untrusted leads; the Publisher still re-reads each live UID.
+URGENT_WINDOW_DAYS = 3
+URGENT_CYCLE_BUDGET = 8
 MAX_RESPONSE = 120_000
 MAX_TIMINGS = 800
 MAX_EVERGREEN_RECHECKS = 8  # live UID reads per saturated cycle, not a session limit
@@ -269,6 +273,49 @@ def fair_backlog_identity_order(identities):
     return result
 
 
+def deadline_aware_backlog_batch(identities, today, batch_index):
+    """Reserve eight of 24 reads for sessions expiring within three days.
+
+    Keep rotating every other identity fairly, regardless of geography,
+    organizer, venue or genre. If no urgent session exists, retain the
+    established 24-per-slot rotation unchanged. The private backlog keeps
+    all unselected leads for a later cycle; this is never an approval.
+    """
+    if (type(today) is not date or type(batch_index) is not int
+            or not 0 <= batch_index <= 3):
+        raise ValueError("invalid_deadline_aware_rotation")
+    if not identities:
+        return []
+    cycle = today.toordinal() * 4 + batch_index
+    threshold = (today + timedelta(days=URGENT_WINDOW_DAYS)).isoformat()
+    urgent = [row for row in identities if row[2] <= threshold]
+    if not urgent:
+        start = cycle * MAX_ATTEMPTS % len(identities)
+        return [identities[(start + i) % len(identities)]
+                for i in range(min(MAX_ATTEMPTS, len(identities)))]
+    ordinary = [row for row in identities if row[2] > threshold]
+    urgency_count = min(URGENT_CYCLE_BUDGET, len(urgent))
+    urgent_start = cycle * URGENT_CYCLE_BUDGET % len(urgent)
+    selected = [urgent[(urgent_start + i) % len(urgent)]
+                for i in range(urgency_count)]
+    if ordinary:
+        # Advance by the reserved non-urgent budget, not by total backlog:
+        # urgent and ordinary runs therefore progress independently.
+        ordinary_start = (cycle * (MAX_ATTEMPTS - URGENT_CYCLE_BUDGET)
+                          % len(ordinary))
+        selected.extend(
+            ordinary[(ordinary_start + i) % len(ordinary)]
+            for i in range(min(MAX_ATTEMPTS - len(selected), len(ordinary)))
+        )
+    # Small/empty ordinary lists must not waste the remaining read budget.
+    remaining = min(MAX_ATTEMPTS - len(selected), len(urgent) - urgency_count)
+    selected.extend(
+        urgent[(urgent_start + urgency_count + i) % len(urgent)]
+        for i in range(remaining)
+    )
+    return selected
+
+
 def build_backlog_dossiers(backlog, patch, published, today, key, *,
                            batch_index=0, agenda_reader=read_agenda_by_slug,
                            event_reader=read_direct_v2):
@@ -315,8 +362,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     ))
     # Rotate four independent time slots and successive days. No named
     # source whitelist and no permanent blacklist; all clues remain eligible.
-    start = ((today.toordinal() * 4 + batch_index) * MAX_ATTEMPTS
-             % len(identities)) if identities else 0
+    review_order = deadline_aware_backlog_batch(
+        identities, today, batch_index)
     visited = attempts = holds = 0
     proposals = []
     cache = {}
@@ -329,8 +376,8 @@ def build_backlog_dossiers(backlog, patch, published, today, key, *,
     # preempt old research requests from durable source inventories.
     review_budget = capacity if capacity > 0 else MAX_ATTEMPTS
     while (len(proposals) < review_budget
-           and visited < min(MAX_ATTEMPTS, len(identities))):
-        slug, uid, day, title = identity = identities[(start + visited) % len(identities)]
+           and visited < len(review_order)):
+        slug, uid, day, title = identity = review_order[visited]
         visited += 1
         if ("openagenda-" + str(uid) + "-" + day) in already or (uid, day) in queue_keys:
             continue
