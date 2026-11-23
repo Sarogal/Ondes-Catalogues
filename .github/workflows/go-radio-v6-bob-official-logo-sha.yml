@@ -50,6 +50,8 @@ jobs:
           for item in d['records']:
               print(item['channel_stream_slug'],
                 item['status'],
+                item.get('error_type',''),
+                'page_embeds_tile='+str(item['page_embeds_tile']),
                 item.get('sha_evidence',{}).get('sha256',''),
                 item.get('sha_evidence',{}).get('mime_type',''))
           assert all(not item['publication_allowed'] for item in d['records'])
