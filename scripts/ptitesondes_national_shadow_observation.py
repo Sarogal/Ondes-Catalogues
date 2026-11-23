@@ -92,13 +92,24 @@ def _cursor_state(state, after, completed):
             "completed_passes": completed}
 
 
-def _pending_index_path(index_dir):
-    return index_dir / "pending-index-transaction.json"
+def _index_cursor_path(index_dir, mode):
+    if mode not in ("legacy", "recent"):
+        raise ValueError("invalid_index_rotation_mode")
+    return index_dir / ("cursor.json" if mode == "legacy"
+                        else "recent-cursor.json")
 
 
-def recover_pending_index(index_dir, reports_dir):
+def _pending_index_path(index_dir, mode="legacy"):
+    if mode not in ("legacy", "recent"):
+        raise ValueError("invalid_index_rotation_mode")
+    return index_dir / ("pending-index-transaction.json" if mode == "legacy"
+                        else "pending-recent-index-transaction.json")
+
+
+def recover_pending_index(index_dir, reports_dir, *, mode="legacy"):
     """Finish an interrupted index/report commit, without skipping a page."""
-    pending = _pending_index_path(index_dir)
+    state_path = _index_cursor_path(index_dir, mode)
+    pending = _pending_index_path(index_dir, mode)
     if not pending.exists():
         if pending.is_symlink():
             raise ValueError("unsafe_pending_index_transaction")
@@ -120,7 +131,6 @@ def recover_pending_index(index_dir, reports_dir):
             or tx["target_passes"] not in (tx["source_passes"],
                                              tx["source_passes"] + 1)):
         raise ValueError("invalid_private_index_transaction")
-    state_path = index_dir / "cursor.json"
     source = _cursor_state(load_index_state(state_path),
                            tx["source_after"], tx["source_passes"])
     target = _cursor_state(source, tx["target_after"], tx["target_passes"])
@@ -149,9 +159,10 @@ def recover_pending_index(index_dir, reports_dir):
     return True
 
 
-def store_index_batch(index_dir, reports_dir, report_path, report, state):
+def store_index_batch(index_dir, reports_dir, report_path, report, state,
+                      *, mode="legacy"):
     """Write-ahead log protects the interval between report and index cursor."""
-    state_path = index_dir / "cursor.json"
+    state_path = _index_cursor_path(index_dir, mode)
     if report_path.exists() or report_path.is_symlink():
         raise ValueError("index_report_already_exists")
     target = _cursor_state(state, report["next_cursor"],
@@ -170,7 +181,7 @@ def store_index_batch(index_dir, reports_dir, report_path, report, state):
         "target_after": target["after"],
         "target_passes": target["completed_passes"],
     }
-    pending = _pending_index_path(index_dir)
+    pending = _pending_index_path(index_dir, mode)
     if pending.exists() or pending.is_symlink():
         raise ValueError("index_transaction_pending")
     _write_atomic_private(pending, (json.dumps(
@@ -427,27 +438,45 @@ def run_observation(root, day, batch_id, *,
     rotation_root = private_subdir(root / "rotations")
     control_path = root / "controller.json"
     controller = controller_read(control_path)
-    recovered_index = recover_pending_index(index_dir, reports_dir)
+    # Recover either cursor transaction before issuing another read. Neither
+    # sort order is allowed to advance past a report lost during a crash.
+    recovered_index = (recover_pending_index(index_dir, reports_dir)
+                       or recover_pending_index(index_dir, reports_dir,
+                                                mode="recent"))
 
     # No historical source list filters OpenAgenda's directory; all agenda
     # identities are merely research leads requiring independent evidence.
     # Keep each batch: adding a fresh index cannot destroy unfinished ones.
-    name = f"index-{day.isoformat()}-{batch_id}.json"
-    new_path = reports_dir / name
     index_scanned = False
     if (not recovered_index
             and controller["invocations"] % INDEX_EVERY_N_INVOCATIONS == 0):
+        # Legacy UID-ascending crawl guarantees exhaustive eventual coverage.
+        # A second independent cursor targets agendas with newly added events
+        # so recently active, previously unknown organizers need not wait for
+        # the complete historical directory crawl. No territorial/genre list.
+        legacy_started = _index_cursor_path(index_dir, "legacy").is_file()
+        recent_started = _index_cursor_path(index_dir, "recent").is_file()
+        turn = controller["invocations"] // INDEX_EVERY_N_INVOCATIONS
+        mode = ("recent" if (legacy_started and not recent_started)
+                or (legacy_started and turn % 2 == 1)
+                else "legacy")
+        suffix = "-recent" if mode == "recent" else ""
+        name = f"index-{day.isoformat()}-{batch_id}{suffix}.json"
+        new_path = reports_dir / name
         if not new_path.exists():
-            state_path = index_dir / "cursor.json"
+            state_path = _index_cursor_path(index_dir, mode)
             state = load_index_state(state_path)
-            result = index_reader(
-                [], start_cursor=state["after"], public_read_key=key,
-            )
+            arguments = {"start_cursor": state["after"],
+                         "public_read_key": key}
+            if mode == "recent":
+                arguments["sort"] = "recentlyAddedEvents.desc"
+            result = index_reader([], **arguments)
             if (result.get("schema") != "ptitesondes.private_national_oa_index.v1"
                     or result.get("publication_ready") is not False
                     or result.get("public_writes") != 0):
                 raise ValueError("untrusted_national_index_response")
-            store_index_batch(index_dir, reports_dir, new_path, result, state)
+            store_index_batch(index_dir, reports_dir, new_path, result, state,
+                              mode=mode)
             index_scanned = True
 
     reports = available_index_reports(reports_dir)
