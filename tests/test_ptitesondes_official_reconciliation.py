@@ -235,6 +235,91 @@ class OfficialReconciliationTests(unittest.TestCase):
         self.assertTrue(all(e["time"] == "11:00" for e in after["events"]))
         self.assertEqual(len(audit["operations"]), 37)
 
+    def test_city_only_overseas_series_renews_exact_place_and_adds_missing_dates(self):
+        """An official OA town centroid is not the already verified site."""
+        old = row("2026-12-23")
+        old.update({
+            "id": "openagenda-111-2026-12-23",
+            "city": "Basse-Pointe", "region": "Martinique",
+            "department": "Martinique",
+            "venue": "Centre Culturel Antoine Tangamen dit Zwazo",
+            "lat": 14.86740401, "lng": -61.11625135,
+            "time": "09:00",
+        })
+        official = live()
+        official["timezone"] = "America/Martinique"
+        official["location"] = {
+            "name": "Basse-Pointe", "adminLevel4": "Basse-Pointe",
+            "adminLevel1": "Martinique", "adminLevel2": "Martinique",
+            "countryCode": "MQ",
+            "latitude": 14.868227, "longitude": -61.113506,
+        }
+        official["timings"] = [{
+            "begin": f"{day}T09:00:00-04:00",
+            "end": f"{day}T11:00:00-04:00",
+        } for day in ("2026-11-25", "2026-12-02", "2026-12-09",
+                      "2026-12-16", "2026-12-23")]
+        package = {"event": official,
+                   "agenda": {"uid": 901131, "slug": "agenda-generique"}}
+        proof = {"name": old["venue"],
+                 "latitude": old["lat"], "longitude": old["lng"]}
+        calls = []
+        def resolve(source):
+            calls.append(source["uid"])
+            self.assertEqual(source["location"]["name"], "Basse-Pointe")
+            return proof
+        before = document(old)
+        after, audit, counts = reconcile(
+            before, TODAY, 0, read_event=lambda *_: package,
+            resolve_city_venue=resolve)
+        self.assertEqual(calls, [111])
+        self.assertEqual(counts["official_new_session_admitted"], 1)
+        self.assertEqual(len(after["events"]), 5)
+        self.assertEqual(after["events"][0], old)
+        self.assertEqual({x["date_start"] for x in after["events"][1:]},
+                         {"2026-11-25", "2026-12-02", "2026-12-09", "2026-12-16"})
+        self.assertTrue(all(x["venue"] == old["venue"] and
+                            x["lat"] == old["lat"] and x["lng"] == old["lng"]
+                            for x in after["events"]))
+        self.assertEqual(sum(x["action"] == "add" for x in audit["operations"]), 4)
+        self.assertEqual(before["events"], [old])
+
+    def test_city_only_reconciliation_rejects_missing_wrong_or_network_place(self):
+        old = row()
+        old.update({"venue": "Centre Culturel Antoine Tangamen dit Zwazo",
+                    "lat": 14.86740401, "lng": -61.11625135,
+                    "city": "Basse-Pointe", "region": "Martinique",
+                    "department": "Martinique"})
+        official = live()
+        official["location"] = dict(
+            official["location"], name="Basse-Pointe",
+            adminLevel4="Basse-Pointe", adminLevel1="Martinique",
+            adminLevel2="Martinique", countryCode="MQ",
+            latitude=14.868227, longitude=-61.113506)
+        official["timezone"] = "America/Martinique"
+        official["timings"] = [{
+            "begin": "2026-12-05T10:00:00-04:00",
+            "end": "2026-12-05T12:00:00-04:00"}, {
+            "begin": "2026-12-12T10:00:00-04:00",
+            "end": "2026-12-12T12:00:00-04:00"}]
+        envelope = {"event": official,
+                    "agenda": {"uid": 901131, "slug": "agenda-generique"}}
+        cases = [
+            lambda *_: None,
+            lambda *_: {"name": old["venue"],
+                        "latitude": 14.868227, "longitude": -61.113506},
+            lambda *_: (_ for _ in ()).throw(OSError("network offline")),
+        ]
+        for resolver in cases:
+            with self.subTest(resolver=resolver):
+                before = document(old)
+                after, audit, counts = reconcile(
+                    before, TODAY, 0, read_event=lambda *_: envelope,
+                    resolve_city_venue=resolver)
+                self.assertEqual(after, before)
+                self.assertEqual(audit["operations"], [])
+                self.assertEqual(counts["official_venue_gps_unconfirmed"], 1)
+
     def test_new_official_session_from_known_program_uses_full_live_publisher_gate(self):
         first = row()
         original = document(first)
