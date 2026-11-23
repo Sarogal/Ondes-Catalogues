@@ -15542,6 +15542,35 @@
           "change": "Ajout après revue des preuves officielles"
         }
       ]
+    },
+    {
+      "id": "go-c-20270918-villeurbanne-eisbrecher",
+      "title": "EISBRECHER",
+      "date": "2027-09-18",
+      "artistIds": [
+        "eisbrecher"
+      ],
+      "venueId": "la-rayonne",
+      "genres": [
+        "Metal Indus"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://larayonne.org/evenement/eisbrecher/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Rayonne",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-23",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-23",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
     }
   ],
   "dataPolicy": {
