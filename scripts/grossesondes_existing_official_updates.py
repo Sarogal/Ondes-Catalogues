@@ -132,6 +132,62 @@ def clean_obsolete_date_notes(notes):
     return " | ".join(sections) if removed_obsolete_claim else notes
 
 
+
+TICKET_EARLY_BIRD_CURRENT = (
+    "Actualisation officielle : les trois paliers Early Bird "
+    "du pass 4 jours sont épuisés."
+)
+
+
+def expected_ticket_notes_after_official_sale(notes, four_day_price):
+    """Deterministic, narrowly scoped note delta for the signed-head guard.
+
+    This function is NOT evidence that a ticket is sold out. Only the
+    separate first-party Publisher HTML recheck supplies that evidence.
+    """
+    if (not isinstance(notes, str) or "early bird" not in fold(notes)
+            or not isinstance(four_day_price, str)
+            or re.fullmatch(r"\d{2,4}(?:,\d{2})? €", four_day_price) is None):
+        return notes
+    amount = re.escape(four_day_price[:-2].strip())
+    updated, count = re.subn(
+        rf"(palier\s+(?:r[eé]gulier|normal)\s+affich[eé]\s+[aà]\s+"
+        rf"{amount}\s*€)\s*\(non encore disponible à cette vérification\)",
+        r"\1", notes, flags=re.I)
+    if count != 1:
+        return notes
+    # A stale note may describe the final Early Bird as "offered for sale"
+    # at a dated historical checkpoint. Preserve the historical amount/date,
+    # but do not continue presenting that exhausted tier as for sale today.
+    updated = re.sub(
+        r"(Early\s+Bird\s+[1-3]\s+[aà]\s+\d{2,4}\s*€)"
+        r"\s+propos[eé]\s+[aà]\s+la\s+vente\s+au\s+"
+        r"(\d{1,2}\s+[a-zA-ZÀ-ÿ]+\s+20\d{2})",
+        r"\1 (désormais épuisé ; annonce initiale du \2)",
+        updated, flags=re.I)
+    if TICKET_EARLY_BIRD_CURRENT not in updated:
+        updated = updated.rstrip() + " | " + TICKET_EARLY_BIRD_CURRENT
+    return updated
+
+
+def reconcile_obsolete_ticket_notes(notes, prices, current_official_blocks):
+    """Update obsolete ticket notes only on fresh same-site current proof."""
+    if (not isinstance(notes, str) or not isinstance(prices, dict)
+            or 4 not in prices or not isinstance(current_official_blocks, list)):
+        return notes
+    text = fold(" ".join(
+        block.get("text", "") for block in current_official_blocks
+        if isinstance(block, dict) and isinstance(block.get("text"), str)))
+    if (not re.search(
+            r"\bpass\s*4\s*(?:j|jours)\s+early\s+birds?\s+sont\s+sold\s+out\b",
+            text)
+            or not re.search(
+                r"\btrois\s+paliers\s+d\s+early\s+birds?\s+sont\s+epuises\b",
+                text)):
+        return notes
+    return expected_ticket_notes_after_official_sale(notes, prices[4])
+
+
 class Page(HTMLParser):
     """Visible heading, paragraph, bullet, bold bullet and anchor evidence."""
     def __init__(self):
@@ -909,6 +965,17 @@ def apply_independently_verified_updates(
                         new["notes"] = fresh_notes
                         fields.append("notes")
                         sources.extend(official_date_urls)
+            # Reconcile old ticket-status prose only after the signed
+            # current edition has been freshly checked on its own homepage.
+            # This runs even when the canonical price is already correct.
+            if root_ok and prices:
+                fresh_ticket_notes = reconcile_obsolete_ticket_notes(
+                    new.get("notes"), prices, root.blocks)
+                if fresh_ticket_notes != new.get("notes"):
+                    new["notes"] = fresh_ticket_notes
+                    if "notes" not in fields:
+                        fields.append("notes")
+                    sources.append(site)
             if len(report["official_edition_diagnostics"]) < 75:
                 report["official_edition_diagnostics"].append({
                     "slug": slug, "official_site": site,

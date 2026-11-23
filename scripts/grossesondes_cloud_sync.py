@@ -40,6 +40,7 @@ from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, CHANGEABLE as OFFICIAL_UPDATE_FIELDS,
     COMMUNE_FIELDS as COMMUNE_UPDATE_FIELDS,
     clean_obsolete_date_notes, verified_artist_alias_cleanup,
+    expected_ticket_notes_after_official_sale,
 )
 from grossesondes_structured_edition import (
     PROOF_MODE as EDITION_PROOF_MODE, ARCHIVED_PROOF_MODE,
@@ -288,14 +289,26 @@ def _verified_official_update_delta(old, new):
     elif changed & date_fields:
         return False
     if "notes" in changed:
-        # Editorial cleanup is deterministic and can only remove documented
-        # unknown-date statements from an already dated, signed edition.
-        # The caller must have freshly reverified its exact official range.
+        # A Publisher may remove an obsolete undated claim OR reconcile a
+        # specifically superseded ticket-status sentence. This guard verifies
+        # an exact deterministic text delta, NOT its factual authority:
+        # the Publisher must still independently fetch live first-party proof
+        # and explicitly whitelist this slug as a verified official update.
         if (not isinstance(old.get("startDate"), str)
                 or not isinstance(old.get("endDate"), str)
                 or not isinstance(old.get("notes"), str)
-                or new.get("notes") != clean_obsolete_date_notes(old["notes"])
+                or not isinstance(new.get("notes"), str)
                 or new["notes"] == old["notes"]):
+            return False
+        current_price = new.get("price")
+        match = (re.search(r"(?:^| ; )Pass 4 jours : (\d{2,4}(?:,\d{2})?) €",
+                           current_price)
+                 if isinstance(current_price, str) else None)
+        ticket_note = (expected_ticket_notes_after_official_sale(
+            old["notes"], match.group(1) + " €")
+            if match else old["notes"])
+        if (new["notes"] != clean_obsolete_date_notes(old["notes"])
+                and new["notes"] != ticket_note):
             return False
     if COMMUNE_UPDATE_FIELDS & changed:
         # Verify the certified marker IN ISOLATION so a price/roster update
