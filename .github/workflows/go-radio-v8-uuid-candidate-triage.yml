@@ -1,0 +1,54 @@
+name: GO radio v8 — triage 96 UUID logo candidates without new network probing
+on:
+  push:
+    branches:
+      - audit/go-radio-v7-96-missing-logos-20261123
+    paths:
+      - '.github/workflows/go-radio-v8-uuid-candidate-triage.yml'
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  summarize-previous-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download 8 original immutable UUID evidence artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/uuid-shards"
+          gh run download 45161182917 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-radio-browser-uuid-logo-shard-* \
+            --dir "$RUNNER_TEMP/uuid-shards"
+      - name: Print first-party candidates, picture failure reasons and working directory-only alternatives
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import json,os
+          base=Path(os.environ['RUNNER_TEMP'])/'uuid-shards'
+          files=list(base.rglob('uuid-online-*.json'))
+          assert len(files)==8,files
+          a=[json.loads(x.read_text()) for x in files]
+          assert sum(x['selected_station_count'] for x in a)==96
+          print('GO_UUID_OFFICIAL_FIRSTPARTY_DIAGNOSTIC')
+          kinds=Counter()
+          for data in a:
+            for station in data['records']:
+              for image in station['candidate_logos']:
+                kinds[(image['identity_gate'],image.get('image_problem',''))]+=1
+                if image['identity_gate']=='FIRST_PARTY_LOGO_SOURCE_CANDIDATE':
+                  print('FIRST_PARTY_UNVERIFIED',station['go_station_id'],
+                        station['station_name'], image['directory_favicon'],
+                        'bytes_verified='+str(image['image_bytes_verified']),
+                        'problem='+str(image.get('image_problem','')),
+                        'sha='+str(image.get('image_sha256','')))
+                if image['image_bytes_verified'] and image['confidence']=='third_party':
+                  print('THIRD_PARTY_IMAGE_VERIFIED_IDENTITY_REVIEW_REQUIRED',
+                        station['go_station_id'],station['station_name'],
+                        image['directory_favicon'],image.get('image_sha256',''))
+          print('GO_UUID_IMAGE_STATUS_COUNTS',dict(kinds))
+          PY
