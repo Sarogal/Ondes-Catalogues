@@ -59,10 +59,10 @@ PUBLIC_OA_DIRECT_REASONS = frozenset({
 # E.g. "pour les plus jeunes jusqu'à 11 ans" or "de 3 à 12 ans".
 # These patterns make no assumption about the city, agenda, venue or organiser.
 AGE_UPPER_TEXT = re.compile(
-    r"\\b(?:jusqu a|moins de)\\s+(\\d{1,2})\\s+ans\\b"
+    r"\b(?:jusqu a|moins de)\s+(\d{1,2})\s+ans\b"
 )
 AGE_RANGE_TEXT = re.compile(
-    r"\\b(?:de|entre|pour les)\\s+(\\d{1,2})\\s+(?:a|et)\\s+(\\d{1,2})\\s+ans\\b"
+    r"\b(?:de|entre|pour les)\s+(\d{1,2})\s+(?:a|et)\s+(\d{1,2})\s+ans\b"
 )
 
 
