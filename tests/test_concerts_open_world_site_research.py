@@ -87,6 +87,30 @@ class OpenWorldSiteResearchTests(unittest.TestCase):
         self.assertFalse(found["sourceAuthorityVerified"])
         self.assertTrue(found["reviewRequired"])
 
+    def test_venue_to_unknown_artist_to_new_venue(self):
+        room_url = "https://newroom.example.org/agenda"
+        artist_url = "https://newact.example.org/tour"
+        node = json.loads(music_event(room_url))
+        node["performer"][0]["url"] = artist_url
+        body = '<script type="application/ld+json">' + json.dumps(node) + '</script>'
+        first = research.scan(catalogue(), registry([lead()]), queue(), DAY,
+                              max_details=1, fetch=lambda u,c: body)
+        row = first["candidates"][0]
+        self.assertEqual(row["artistWebsiteHints"],
+                         [{"name": "New Act", "url": artist_url}])
+        nxt = frontier.build(catalogue(), registry([row]), DAY)
+        seeds = research.select_sources(nxt, registry([row]), DAY)
+        self.assertIn(artist_url, [x["url"] for x in seeds if x["kind"] == "artist"])
+        tour = '<script type="application/ld+json">' + music_event(
+            artist_url, room="Fresh Hall", city="Nantes") + '</script>'
+        out = research.scan(catalogue(), registry([row]), nxt, DAY,
+                            max_details=1, fetch=lambda u,c: tour if u == artist_url else body)
+        self.assertTrue(any(x["venue"] == "Fresh Hall" for x in out["candidates"]))
+        self.assertTrue(all(not x["publicationAllowed"] for x in out["candidates"]))
+        node["performer"][0]["url"] = "https://127.0.0.1/admin"
+        unsafe = '<script type="application/ld+json">' + json.dumps(node) + '</script>'
+        self.assertEqual(research.performer_links(unsafe, room_url, row), [])
+
     def test_unknown_artist_tour_reveals_another_city_and_venue(self):
         url = "https://newact.example.org/tour"
         page = '<script type="application/ld+json">' + music_event(
