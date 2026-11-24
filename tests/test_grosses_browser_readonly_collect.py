@@ -11,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "festival-automation"))
 
-from grossesondes_browser_readonly_collect import signed_targets, collect, SCHEMA
+from grossesondes_browser_readonly_collect import (
+    signed_targets, prioritize_unavailable, collect, SCHEMA,
+)
 from grossesondes_cloud_sync import load_isolated_browser_evidence
 
 HOME = "https://www.mozhell.fr/fr/"
@@ -65,6 +67,62 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         targets = signed_targets(pub, hist, date(2026, 11, 24), slot=0)
         self.assertNotIn("https://expired-festival.example/", targets)
         self.assertIn(HOME, targets)
+
+    def test_actual_https_failures_receive_browser_slots_outside_baseline(self):
+        pub, hist = fixtures()
+        pub["festivals"] = [
+            {"slug": f"festival-{i}-2027",
+             "name": f"Festival Exemple {i} 2027",
+             "officialSite": f"https://festival-exemple-{i}.fr/",
+             "startDate": "2027-08-19", "lat": 47.0, "lon": 2.0,
+             "showOnMap": True}
+            for i in range(14)]
+        baseline = signed_targets(pub, hist, date.fromisoformat(DAY), slot=0)
+        failed = next(r["officialSite"] for r in pub["festivals"]
+                      if r["officialSite"] not in baseline)
+        def fetch(url):
+            if url == failed:
+                raise OSError("HTTP unavailable")
+            return HTML
+        targets, probed, unavailable = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, event_name="push", fetch=fetch)
+        self.assertEqual(probed, 14)
+        self.assertEqual(unavailable, 1)
+        self.assertEqual(targets[0], failed)
+        self.assertIn(OTHER, targets)
+        self.assertLessEqual(len(targets), 8)
+        self.assertEqual(len(targets), len(set(targets)))
+
+    def test_no_https_failure_preserves_original_rotation(self):
+        pub, hist = fixtures()
+        targets, probed, unavailable = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 1, fetch=lambda url: HTML)
+        self.assertEqual(targets, signed_targets(pub, hist, date.fromisoformat(DAY), 1))
+        self.assertEqual(probed, 2)
+        self.assertEqual(unavailable, 0)
+
+    def test_failure_priority_remains_bounded_and_rotates(self):
+        pub, hist = fixtures()
+        pub["festivals"] = [
+            {"slug": f"festival-{i}-2027",
+             "name": f"Festival Exemple {i} 2027",
+             "officialSite": f"https://festival-exemple-{i}.fr/",
+             "startDate": "2027-08-19", "lat": None, "lon": None,
+             "showOnMap": False}
+            for i in range(10)]
+        def fetch(url):
+            raise OSError("HTTP unavailable")
+        first, probed, unavailable = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 0, fetch=fetch)
+        second, _, _ = prioritize_unavailable(
+            pub, hist, date.fromisoformat(DAY), 1, fetch=fetch)
+        self.assertEqual(probed, 10)
+        self.assertEqual(unavailable, 10)
+        self.assertFalse(set(first[:5]) & set(second[:5]))
+        self.assertIn(OTHER, first)
+        self.assertIn(OTHER, second)
+        self.assertLessEqual(len(first), 8)
+        self.assertLessEqual(len(second), 8)
 
     def test_failed_network_does_not_serialize_exception_or_html(self):
         urls = [HOME, OTHER]
