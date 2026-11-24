@@ -66,6 +66,22 @@ class OpenWorldVisibleCardTests(unittest.TestCase):
         unrelated = page("Klone", "Pop", "22 ― avril 2027")
         self.assertEqual(cards.extract(unrelated, "Trabendo", "Paris", DAY), [])
 
+    def test_primary_detail_is_not_a_listing(self):
+        listing = page("Klone", "Metal", "22 ― avril 2027")
+        detail = listing.replace("<h1>Trabendo</h1>", "<h1>Klone</h1>")
+        self.assertIsNone(cards.verified_detail(listing, "Trabendo", "Paris", "2027-04-22"))
+        self.assertEqual(cards.verified_detail(detail, "Le Trabendo", "Paris", "2027-04-22"),
+                         (["Klone"], ["Metal"]))
+        for variant in (
+            detail.replace("Paris", "Lyon"),
+            detail.replace("22 ― avril", "23 ― avril"),
+            detail.replace("concert ― Metal", "concert ― Pop"),
+            detail.replace("<p>Klone</p>", "<p>Autre Groupe</p>"),
+            detail.replace("→ Trabendo", "→ Autre Salle"),
+            detail.replace("<p>Ouverture", "<p>Concert annulé</p><p>Ouverture"),
+        ):
+            self.assertIsNone(cards.verified_detail(variant, "Trabendo", "Paris", "2027-04-22"))
+
     def test_strict_input_bounds(self):
         html = page("Klone", "Metal", "22 ― avril 2027")
         self.assertEqual(cards.extract(html, "Trabendo", "Paris",

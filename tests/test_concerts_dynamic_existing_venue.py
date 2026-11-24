@@ -121,6 +121,39 @@ class UnlistedExistingVenueTests(unittest.TestCase):
         self.addCleanup(lambda: publisher.NEW_REFERENCE_GEO_SOURCES.__setitem__(
             VENUE_ID, original))
 
+    def test_visible_detail_single_source_replayed_with_eight_unknown_artists(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        title = " + ".join(NAMES)
+        html = ("<h1>" + title + "</h1><p>5 mars 2027</p><p>" + title
+                + "</p><p>concert ― Black Metal</p>"
+                + "<p>→ Le Bikini - Salle de concert</p>"
+                + "<p>Ramonville-Saint-Agne</p>")
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        self.assertEqual(proposals._individual_event(
+            html, EVENT, "2027-03-05", venue, accept_generic=True),
+            (NAMES, ["Black Metal"]))
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+            fetch=fake_fetch({"primary": html})))
+        for changed in (
+            html.replace("5 mars", "6 mars"),
+            html.replace("Black Metal", "Pop"),
+            html.replace("→ Le Bikini", "→ Autre Salle"),
+            html + "<p>Concert annulé</p>",
+            html + page(EVENT, date="2027-03-06"),
+        ):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": changed}))
+        with self.assertRaises(ValueError):
+            dynamic.validate(signed, venues, artists, TODAY,
+                fetch=fake_fetch({"primary": html, "osm": osm(website="https://autre.fr")}))
+
     def test_signed_published_osm_api_node_sources_are_rechecked_without_allowlist(self):
         # Five real published venues use the API-node spelling; the old
         # validator rejected these even though it fetches that exact API.

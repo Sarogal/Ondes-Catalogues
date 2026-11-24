@@ -64,8 +64,14 @@ def _individual_event(html, url, when, venue, *, accept_generic=False):
     on its own individual record. Bad JSON-LD cannot be hidden by microdata.
     """
     matches = []
-    for node in dynamic.individual_event_nodes(
-            html, accept_generic=accept_generic):
+    nodes = dynamic.individual_event_nodes(html, accept_generic=accept_generic)
+    if accept_generic and not nodes:
+        from automation.concerts import open_world_visible_cards
+        detail = open_world_visible_cards.verified_detail(
+            html, venue['name'], venue['city'], when)
+        if detail is not None:
+            return detail
+    for node in nodes:
         if not isinstance(node, dict):
             continue
         types = bridge._event_types(node.get("@type"))
