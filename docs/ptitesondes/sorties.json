@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T19:56:14+01:00",
+  "updated_at": "2026-11-24T21:41:55+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18023,6 +18023,26 @@
       "geo_precision": "venue",
       "lat": 49.935872,
       "lng": 2.930697
+    },
+    {
+      "id": "openagenda-43419532-2026-11-28",
+      "title": "Éveil musical avec Pollyanna",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-11-28",
+      "date_end": "2026-11-28",
+      "time": "10:30",
+      "city": "Labouheyre",
+      "department": "Landes",
+      "region": "Nouvelle-Aquitaine",
+      "venue": "Médiathèque Jean-Louis Villenave",
+      "source_url": "https://openagenda.com/programme-mediatheque-labouheyre-2026/events/43419532_eveil-musical-avec-pollyanna-6640417",
+      "source_label": "Programme Médiathèque Labouheyre 2026 — Licence Ouverte 2.0 — données mises à jour le 29/10/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 44.213217,
+      "lng": -0.918952
     }
   ]
 }
