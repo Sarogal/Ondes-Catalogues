@@ -738,6 +738,49 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertNotIn("GROSSES_ONDES_OFFICIAL_UPDATE_RUN: ${{ inputs.",
                          workflow)
 
+    def test_browser_roots_outside_raw_batch_are_checked_in_same_cycle(self):
+        signed = doc(festival("mozhell-open-air", MOZHELL),
+                     festival("other-festival", "https://other-festival.example.fr/"))
+        ticks = [t for t in range(2)
+                 if signed_rotation(signed, DAY, limit=1, tick=t)[0][0] != MOZHELL]
+        self.assertEqual(len(ticks), 1)
+        tick = ticks[0]
+        base = signed_rotation(signed, DAY, limit=1, tick=tick)
+        rotation = signed_rotation(
+            signed, DAY, limit=1, tick=tick,
+            browser_sites=(MOZHELL, ARTICLE, "https://unsigned.example.fr/"))
+        self.assertEqual(rotation[0], base[0])
+        self.assertEqual([url for url, _ in rotation], [base[0][0], MOZHELL])
+        def fetch(url):
+            if url == ARTICLE:
+                return NEWS
+            raise OSError("HTTP unavailable")
+        def browser(url):
+            if url == MOZHELL:
+                return HOME
+            raise OSError("No isolated proof")
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=fetch, limit=1, tick=tick,
+            browser_fetch=browser, browser_sites=(MOZHELL, ARTICLE))
+        self.assertEqual(report["checked_official_hosts"], 2)
+        self.assertEqual(report["browser_roots_checked"], 1)
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(out["festivals"][0]["bands"], 3)
+
+    def test_browser_extra_budget_and_deduplication_are_bounded(self):
+        signed = doc(*[festival(f"festival-{i}", f"https://watch-{i}.example.fr/")
+                       for i in range(70)])
+        raw = signed_rotation(signed, DAY, limit=48, tick=0)
+        urls = [r["officialSite"] for r in signed["festivals"]]
+        combined = signed_rotation(
+            signed, DAY, limit=48, tick=0, browser_sites=tuple(urls + urls))
+        self.assertEqual(combined[:48], raw)
+        self.assertEqual(len(combined), 56)
+        self.assertEqual(len({url for url, _ in combined}), 56)
+        bounded = signed_rotation(
+            signed, DAY, limit=60, tick=0, browser_sites=tuple(urls))
+        self.assertEqual(len(bounded), 60)
+
     def test_push_catches_up_all_47_signed_hosts_without_changing_daily_rotation(self):
         from grossesondes_cloud_sync import official_update_scan_limit
         self.assertEqual(official_update_scan_limit("push"), 48)
