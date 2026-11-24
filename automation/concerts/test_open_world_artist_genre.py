@@ -63,6 +63,37 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
             self.assertEqual(out["memoryFactCount"], 0)
             self.assertEqual(out["reasonCounts"], {"profileHeld": 1})
 
+    def test_unknown_artist_linked_bio_is_research_only(self):
+        tour = ('<html><title>New Act tour</title>'
+                '<a href="/bio">Bio</a></html>')
+        biog = ('<html><title>Bio New Act</title><main><p>'
+                'New Act are a heavy rock group from France.'
+                '</p></main></html>')
+        calls = []
+        def fetch(url, cache):
+            calls.append(url)
+            return tour if url == URL else biog
+        out = research.build(registry(), DAY, fetch=fetch)
+        fact = next(iter(out["facts"].values()))
+        self.assertEqual(calls, [URL, "https://newact.example.org/bio"])
+        self.assertEqual(fact["genres"], ["Heavy Rock"])
+        self.assertEqual(fact["genreEvidenceUrl"],
+                         "https://newact.example.org/bio")
+        self.assertEqual(fact["evidenceKind"],
+                         "unverified-origin-artist-visible-linked-bio")
+        self.assertFalse(fact["officialDomainVerified"])
+        next_day = research.build(
+            {"schema": "grossesondes.concert.intake.v1", "items": {}},
+            DAY + dt.timedelta(days=1), prior=out)
+        self.assertEqual(next_day["memoryFactCount"], 1)
+
+    def test_linked_bio_cross_domain_does_not_leak_or_qualify(self):
+        page = '<a href="https://another.example.org/bio">Bio</a>'
+        result = research.build(registry(), DAY,
+                                fetch=lambda u, cache: page)
+        self.assertEqual(result["memoryFactCount"], 0)
+        self.assertEqual(result["reasonCounts"], {"profileHeld": 1})
+
     def test_unsafe_and_unattached_performer_urls_never_fetched(self):
         for hints in (
             [{"name": NAME, "url": "https://127.0.0.1/admin"}],
