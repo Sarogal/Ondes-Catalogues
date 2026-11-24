@@ -6086,9 +6086,9 @@
       }
     },
     {
-      "bands": 0,
+      "bands": 3,
       "endDate": "2027-08-21",
-      "lastVerified": "2026-11-20",
+      "lastVerified": "2026-11-24",
       "slug": "les-gueules-de-bois-2027",
       "lon": null,
       "officialSite": "https://festivalgueulesdebois.com/",
@@ -6104,10 +6104,17 @@
       "dateRangeIsContinuous": false,
       "name": "Les Gueules de Bois 2027",
       "source": "https://festivalgueulesdebois.com/",
-      "lineup": [],
+      "lineup": [
+        "The Casualties",
+        "Ludwig von 88",
+        "Dirty Old Mat"
+      ],
       "showOnMap": false,
       "sourceConfidence": "Site officiel (HTML visible vérifié indépendamment)",
-      "lat": null
+      "lat": null,
+      "auditSources": [
+        "https://festivalgueulesdebois.com/"
+      ]
     },
     {
       "lastVerified": "2026-11-22",
