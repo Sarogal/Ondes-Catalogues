@@ -1,0 +1,53 @@
+name: GO v8 — stage two owner SVG-derived SHA radio logos (DEV only)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_two_svg_original_pngs.py'
+      - '.github/workflows/go-radio-v8-two-owner-svg-png-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  verify-and-stage-two-immutable-vector-renders:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned vector and signature verifiers
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Preflight 62 signed TEST v7-compatible SHA logos
+        run: python radio-catalog-lab/tools/test_go_radio_v8_62_original_and_gif_sha_gate.py
+      - name: Download exact original SVG and PNG SHA proof from pinned successful read-only audit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/two-svg-proof"
+          gh run download 45215461171 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-two-official-svg-to-png-sha-audit \
+            --dir "$RUNNER_TEMP/two-svg-proof"
+      - name: Independently re-download SVGs and match exact original and PNG SHA
+        run: python radio-catalog-lab/tools/stage_v8_two_svg_original_pngs.py --artifact-root "$RUNNER_TEMP/two-svg-proof"
+      - name: Enforce allowlist of only two new SHA PNGs and one unsigned v8 draft
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-64-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-two-svg-rendered-v8/
+          python - <<'PY'
+          import subprocess
+          paths=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          prefix="grossesondes/radio-test-v2/artwork/staging-two-svg-rendered-v8/"
+          cand="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-64-official-sha-logos-20261123.json"
+          assert len(paths)==3 and cand in paths,paths
+          assert len([p for p in paths if p.startswith(prefix) and p.endswith(".png")])==2
+          assert all(p==cand or p.startswith(prefix) for p in paths)
+          print("GO_TEST_V8_64_EXPERIMENTAL_STAGING_ALLOWLIST_ONLY")
+          PY
+      - name: Commit only verified SHA image files plus one unsigned candidate to DEV
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage 2 original SVG-derived radio logo PNGs unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

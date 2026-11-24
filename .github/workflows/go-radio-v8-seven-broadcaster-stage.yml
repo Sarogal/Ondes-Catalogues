@@ -1,0 +1,60 @@
+name: GO radio v8 — stage 7 official broadcaster logos SHA-256 (DEV only)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_seven_broadcaster_logos.py'
+      - '.github/workflows/go-radio-v8-seven-broadcaster-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-seven-exact-first-party-images-and-unsigned-candidate:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded image decoder
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Verify previous 16-logo draft against real Ed25519 TEST v7
+        run: python radio-catalog-lab/tools/test_go_radio_v8_16_firstparty_sha_gate.py
+      - name: Retrieve pinned original source evidence, not arbitrary web query
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/broadcaster-evidence"
+          gh run download 45167550211 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-seven-broadcaster-logo-original-shas-read-only \
+            --dir "$RUNNER_TEMP/broadcaster-evidence"
+      - name: Re-download original exact images with SHA double check and stage unsigned only
+        run: |
+          python radio-catalog-lab/tools/stage_v8_seven_broadcaster_logos.py \
+            --artifact-root "$RUNNER_TEMP/broadcaster-evidence"
+      - name: Allow exactly 7 new SHA image blobs and one unsigned JSON on DEV
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-firstparty-7-maximum-3-broadcaster-7-20261123.json \
+            grossesondes/radio-test-v2/artwork/staging-broadcasters-v8/
+          python - <<'PY'
+          import subprocess
+          files=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          candidate='radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-independent-3-firstparty-7-maximum-3-broadcaster-7-20261123.json'
+          prefix='grossesondes/radio-test-v2/artwork/staging-broadcasters-v8/'
+          assert len(files)==8 and candidate in files,files
+          assert len([x for x in files if x.startswith(prefix) and x.endswith(('.png','.jpg','.webp'))])==7
+          assert all(x==candidate or x.startswith(prefix) for x in files)
+          print('GO_V8_BROADCASTER_7_SHA_STRICT_STAGING_ALLOWLIST_PASS')
+          PY
+      - name: Commit only unsigned v8 candidate and seven original content-addressed images
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' \
+            -c user.email='go-logo-audit@localhost.invalid' \
+            -c commit.gpgsign=false commit \
+            -m 'test(radio v8): stage 7 official broadcaster logos by SHA unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

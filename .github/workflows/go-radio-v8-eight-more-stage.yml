@@ -1,0 +1,56 @@
+name: GO v8 — stage 8 further firstparty SHA image originals (DEV only)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_eight_more_original_logos.py'
+      - '.github/workflows/go-radio-v8-eight-more-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-exact-publisher-sha-assets-unsigned-only:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Ed25519, schema and bounded image decoders
+        run: python -m pip install 'pillow>=10,<12' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Verify signed v7 continuity on all previous 35 SHA image originals
+        run: python radio-catalog-lab/tools/test_go_radio_v8_35_official_sha_gate.py
+      - name: Retrieve pinned 8-image source evidence from successful read-only run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/new-eight-proof"
+          gh run download 45177980618 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-eight-additional-firstparty-original-sha-evidence \
+            --dir "$RUNNER_TEMP/new-eight-proof"
+      - name: Independently download all 8 images again and compare exact sha files
+        run: |
+          python radio-catalog-lab/tools/stage_v8_eight_more_original_logos.py \
+            --artifact-root "$RUNNER_TEMP/new-eight-proof"
+      - name: Strict allowlist only eight new SHA files plus one unsigned candidate
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-43-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-eight-more-v8/
+          python - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          prefix="grossesondes/radio-test-v2/artwork/staging-eight-more-v8/"
+          candidate="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-43-official-sha-logos-20261123.json"
+          assert len(changed)==9 and candidate in changed,changed
+          assert len([p for p in changed if p.startswith(prefix) and p.endswith((".png",".jpg",".webp"))])==8
+          assert all(p==candidate or p.startswith(prefix) for p in changed)
+          print("GO_V8_EIGHT_MORE_SHA_DEV_ONLY_STAGING_ALLOWLIST_PASS")
+          PY
+      - name: Commit only original images and unsigned TEST v8 candidate
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage eight original station art SHAs unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

@@ -1,0 +1,39 @@
+name: GO radio v8 — 31 canonical SHA backups for 32 legacy staging logos (HTTPS QA)
+
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/test_go_radio_v8_31_staging_backups_https.py'
+      - '.github/workflows/go-radio-v8-31-canonical-staging-backups-https.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-immutable-artwork-31:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify every public HTTPS canonical image SHA and byte length
+        run: python radio-catalog-lab/tools/test_go_radio_v8_31_staging_backups_https.py
+      - name: Verify that this workflow did not change the signed pointer
+        run: |
+          python - <<'PY'
+          import json, urllib.request
+          u = ('https://raw.githubusercontent.com/Sarogal/Ondes-Catalogues/'
+               'feature/go-radio-test-v2-isolated-20261123/grossesondes/radio-test-v2/current.json')
+          with urllib.request.urlopen(u, timeout=20) as r:
+              p = json.load(r)
+          assert p['release_sequence'] == 8
+          assert p['content_sha256'] == 'f57e65f24f5ddd3a567907b28903fc309ea4c16747873b39f8d5a44348266f40'
+          print('GO_V8_ED25519_POINTER_UNCHANGED_QA_PASS')
+          PY

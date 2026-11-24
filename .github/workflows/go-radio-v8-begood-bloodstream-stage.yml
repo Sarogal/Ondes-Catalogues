@@ -1,0 +1,54 @@
+name: GO radio TEST v8 — stage BeGood & BloodStream SHA owner brands DEV only
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_begood_bloodstream_owner_brands.py'
+      - '.github/workflows/go-radio-v8-begood-bloodstream-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  independent-owner-brand-staging:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned PNG & SVG and signed v7 proof verifiers
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Require previous 64 logo SHA and historical favorite consistency
+        run: python radio-catalog-lab/tools/test_go_radio_v8_64_all_original_and_derived_sha_gate.py
+      - name: Download original publisher source evidence pinned to successful audit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/two-owner-evidence"
+          gh run download 45261679936 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-two-owner-brands-original-sha-evidence \
+            --dir "$RUNNER_TEMP/two-owner-evidence"
+      - name: Independently compare original source bytes and stage exact PNG artwork
+        run: python radio-catalog-lab/tools/stage_v8_begood_bloodstream_owner_brands.py --artifact-root "$RUNNER_TEMP/two-owner-evidence"
+      - name: Allowlist exactly two SHA PNG files plus unsigned v8 candidate
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-66-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-begood-bloodstream-v8/
+          python - <<'PY'
+          import subprocess
+          changed=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          prefix="grossesondes/radio-test-v2/artwork/staging-begood-bloodstream-v8/"
+          doc="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-66-official-sha-logos-20261123.json"
+          assert len(changed)==3 and doc in changed,changed
+          assert len([p for p in changed if p.startswith(prefix) and p.endswith(".png")])==2
+          assert all(p==doc or p.startswith(prefix) for p in changed)
+          print("GO_V8_66_TWO_OWNER_MARKS_UNSIGNED_ONLY_ALLOWLIST")
+          PY
+      - name: Commit exactly three experimental files; never touch signed TEST pointer
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): add 2 owner-brand image SHAs unsigned only'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

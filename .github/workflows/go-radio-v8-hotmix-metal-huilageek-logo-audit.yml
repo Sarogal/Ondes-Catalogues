@@ -1,0 +1,40 @@
+name: GO TEST v8 — Hotmix Metal 214 and HuilaGeek exact stream artwork SHA (read only)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_hotmix_metal_huila_exact_logos.py'
+      - '.github/workflows/go-radio-v8-hotmix-metal-huilageek-logo-audit.yml'
+permissions:
+  contents: read
+jobs:
+  owner-and-image-sha-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install image verifiers
+        run: python -m pip install 'Pillow==11.3.0'
+      - name: Verify original catalogue names and station streams offline
+        run: python radio-catalog-lab/tools/audit_v8_hotmix_metal_huila_exact_logos.py --output "$RUNNER_TEMP/offline.json"
+      - name: Verify live stream, owner-radio channel and original image SHA
+        run: python radio-catalog-lab/tools/audit_v8_hotmix_metal_huila_exact_logos.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Preserve live signed v7 and require read-only source proof
+        run: |
+          python - <<'PY'
+          import json,os
+          from pathlib import Path
+          d=json.loads((Path(os.environ['RUNNER_TEMP'])/'online.json').read_text())
+          assert d['scope']=='GO_TEST_V8_HOTMIX_METAL_214_HUILAGEEK_MATCHED_STATION_SHA_AUDIT'
+          assert d['stations']==2 and len(d['records'])==2
+          assert d['signed'] is False and d['published'] is False
+          print('HOTMIX_214_HUILAGEEK_STREAM_ID_READONLY_AUDIT')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-hotmix-metal-214-huilageek-original-logos-sha-evidence
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14

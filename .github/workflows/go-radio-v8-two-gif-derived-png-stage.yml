@@ -1,0 +1,53 @@
+name: GO v8 — stage two verified broadcaster GIF-derived SHA PNGs (DEV only)
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_two_original_gif_pngs.py'
+      - '.github/workflows/go-radio-v8-two-gif-derived-png-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  exact-sha-only-unsigned-staging:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install stable GIF converter, signed v7 Ed25519, and schema verification
+        run: python -m pip install 'Pillow==11.3.0' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Verify preceding 60 source files and actual signed v7 Ed25519 continuity
+        run: python radio-catalog-lab/tools/test_go_radio_v8_60_official_sha_gate.py
+      - name: Retrieve pinned read-only original GIF / derived PNG SHA audit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/gif-origin-evidence"
+          gh run download 45213808749 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-radio-two-owner-gif-original-to-png-shas \
+            --dir "$RUNNER_TEMP/gif-origin-evidence"
+      - name: Re-fetch original broadcaster GIFs and require exact PNG SHA bytes
+        run: python radio-catalog-lab/tools/stage_v8_two_original_gif_pngs.py --artifact-root "$RUNNER_TEMP/gif-origin-evidence"
+      - name: Whitelist two original-derived PNG SHA objects and one unsigned draft only
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-62-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-two-gif-rendered-v8/
+          python - <<'PY'
+          import subprocess
+          files=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          prefix="grossesondes/radio-test-v2/artwork/staging-two-gif-rendered-v8/"
+          draft="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-62-official-sha-logos-20261123.json"
+          assert len(files)==3 and draft in files,files
+          assert len([f for f in files if f.startswith(prefix) and f.endswith(".png")])==2
+          assert all(f==draft or f.startswith(prefix) for f in files)
+          print("GO_V8_GIF_TO_PNG_STAGE_ONLY_UNSIGNED_3_PATHS_OK")
+          PY
+      - name: Commit 3 allowed experimental paths ONLY
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage 2 broadcaster GIF-derived SHA PNG logos unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

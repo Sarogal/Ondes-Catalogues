@@ -1,0 +1,54 @@
+name: GO TEST v8 — stage Hotmix Metal & HuilaGeek original channel logos DEV only
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/stage_v8_hotmix_metal_huilageek.py'
+      - '.github/workflows/go-radio-v8-hotmix-huilageek-stage.yml'
+permissions:
+  contents: write
+  actions: read
+jobs:
+  stage-exact-publisher-channel-sha:
+    if: github.ref == 'refs/heads/feature/go-radio-v8-metalon-3-logos-20261123'
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install signed Ed25519, image and schema verifiers
+        run: python -m pip install 'Pillow==11.3.0' 'CairoSVG==2.8.2' 'defusedxml==0.7.1' 'cryptography>=42,<47' 'jsonschema>=4.21,<5'
+      - name: Require previous 66 logo SHA original files and signed v7 continuity
+        run: python radio-catalog-lab/tools/test_go_radio_v8_66_owner_images_sha_gate.py
+      - name: Retrieve successful owner-channel and original image evidence
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/exact-hotmix-huila-proof"
+          gh run download 45263940214 --repo "$GITHUB_REPOSITORY" \
+            --pattern go-v8-hotmix-metal-214-huilageek-original-logos-sha-evidence \
+            --dir "$RUNNER_TEMP/exact-hotmix-huila-proof"
+      - name: Re-fetch original Hotmix 214 and matched Zeno HuilaGeek bytes and stage only if SHA identical
+        run: python radio-catalog-lab/tools/stage_v8_hotmix_metal_huilageek.py --artifact-root "$RUNNER_TEMP/exact-hotmix-huila-proof"
+      - name: Guard exact write allowlist, no signed pointer, production or main changes
+        run: |
+          git add -- radio-catalog-lab/full-staging/UNSIGNED-radio-v8-68-official-sha-logos-20261123.json grossesondes/radio-test-v2/artwork/staging-hotmix-huilageek-v8/
+          python - <<'PY'
+          import subprocess
+          paths=subprocess.check_output(["git","diff","--cached","--name-only"],text=True).splitlines()
+          p="grossesondes/radio-test-v2/artwork/staging-hotmix-huilageek-v8/"
+          f="radio-catalog-lab/full-staging/UNSIGNED-radio-v8-68-official-sha-logos-20261123.json"
+          assert len(paths)==3 and f in paths,paths
+          assert len([a for a in paths if a.startswith(p) and a.endswith((".jpg",".png",".webp"))])==2
+          assert all(a==f or a.startswith(p) for a in paths)
+          print("GO_TEST_V8_68_HOTMIX_HUILAGEEK_ORIGINAL_SHA_STAGING_ALLOWLIST")
+          PY
+      - name: Commit only 2 original image assets and one unsigned v8 draft to feature branch
+        run: |
+          git -c user.name='Grosses Ondes TEST Logo Auditor' -c user.email='go-logo-audit@localhost.invalid' -c commit.gpgsign=false commit -m 'test(radio v8): stage Hotmix Metal 214 and matching HuilaGeek exact channel logos unsigned'
+          git push origin "HEAD:refs/heads/$GITHUB_REF_NAME"

@@ -1,0 +1,39 @@
+name: GO TEST v8 — four independent radios first-party artwork read-only probe
+on:
+  push:
+    branches: [feature/go-radio-v8-metalon-3-logos-20261123]
+    paths:
+      - 'radio-catalog-lab/tools/audit_v8_four_independent_more_art.py'
+      - '.github/workflows/go-radio-v8-four-independent-more-audit.yml'
+permissions:
+  contents: read
+jobs:
+  probe-four-official-station-logos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install bounded image verifier
+        run: python -m pip install 'pillow>=10,<12'
+      - name: Validate exact station identities and streams offline
+        run: python radio-catalog-lab/tools/audit_v8_four_independent_more_art.py --output "$RUNNER_TEMP/offline.json"
+      - name: Read publisher pages and verify source bytes with SHA-256
+        run: python radio-catalog-lab/tools/audit_v8_four_independent_more_art.py --network --output "$RUNNER_TEMP/online.json"
+      - name: Ensure all results are audit only
+        run: |
+          python - <<'PY'
+          import os,json
+          from pathlib import Path
+          result=json.loads((Path(os.environ['RUNNER_TEMP'])/'online.json').read_text())
+          assert result['scope']=='GO_V8_FOUR_INDEPENDENT_MORE_RADIOS_ORIGINAL_AUDIT'
+          assert result['count']==4 and not result['signed'] and not result['published']
+          print("FOUR_NEW_INDEPENDENT_RADIO_ORIGINAL_IMAGE_SHA_READ_ONLY")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: go-v8-four-independent-radio-image-original-sha-audit
+          path: ${{ runner.temp }}/online.json
+          retention-days: 14

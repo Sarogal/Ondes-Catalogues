@@ -1,0 +1,38 @@
+name: GO radio v8 — final verified Metal ON logo draft QA (not signed)
+on:
+  push:
+    branches:
+      - feature/go-radio-v8-metalon-3-logos-20261123
+    paths:
+      - 'radio-catalog-lab/tools/test_go_radio_v8_metalon_sha_qa.py'
+      - 'radio-catalog-lab/full-staging/UNSIGNED-radio-v8-metalon-3-official-logos-20261123.json'
+      - 'grossesondes/radio-test-v2/artwork/staging-metalon-v8/**'
+      - '.github/workflows/go-radio-v8-metalon-signable-qa.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-signed-v7-source-and-three-exact-new-logos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install signed catalogue and original image verifier
+        run: python -m pip install 'cryptography>=42,<47' 'jsonschema>=4.21,<5' 'pillow>=10,<12'
+      - name: Run full Ed25519 predecessor and unsigned candidate protection audit
+        run: python radio-catalog-lab/tools/test_go_radio_v8_metalon_sha_qa.py
+      - name: Ensure production and TEST current pointers unaffected
+        run: |
+          python - <<'PY'
+          import json,hashlib
+          from pathlib import Path
+          root=Path('grossesondes/radio-test-v2')
+          ptr=json.loads((root/'current.json').read_text())
+          assert ptr['release_sequence']==7
+          assert ptr['content_sha256']=='f735884aa0841a86d88aaafe406e62b7a826cf9cd60f6a70285a0894326841aa'
+          assert not (root/'current-v8.json').exists()
+          print('SIGNED_TEST_V7_UNCHANGED_V8_UNSIGNED_AND_UNPUBLISHED')
+          PY
