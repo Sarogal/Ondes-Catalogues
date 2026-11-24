@@ -13,6 +13,11 @@ from hashlib import sha256
 import json
 from pathlib import Path
 from zoneinfo import ZoneInfo
+import sys
+
+_AUTOMATION_DIR = str(Path(__file__).resolve().parents[1] / "festival-automation")
+if _AUTOMATION_DIR not in sys.path:
+    sys.path.insert(0, _AUTOMATION_DIR)
 
 from dns_pinned_https import safe_public_url
 from grossesondes_archived_html_intake import organizer_homepage
