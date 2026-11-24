@@ -22,7 +22,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 SCHEMA = "grossesondes.concert.open-world-frontier.v1"
-MAX_RESEARCH_TASKS = 64
+MAX_RESEARCH_TASKS = 96
 
 
 def normalized(text):
@@ -98,7 +98,7 @@ def rotating_cohort(rows, day, slot, limit):
     return selected
 
 
-def build(catalogue, registry, day, *, slot=0, artist_limit=24, venue_limit=24):
+def build(catalogue, registry, day, *, slot=0, artist_limit=96, venue_limit=96):
     if (not isinstance(catalogue, dict) or catalogue.get("schemaVersion") != 1
             or not all(isinstance(catalogue.get(k), list)
                        for k in ("events", "artists", "venues"))

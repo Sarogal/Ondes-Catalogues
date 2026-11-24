@@ -28,6 +28,7 @@ import discover
 import generic_visible_bill
 import official_rss_jsonld_bridge as bridge
 import open_world_frontier as frontier
+import open_world_visible_cards as cards
 import source_admission_intake as intake
 import source_evidence_probe as probe
 import triage
@@ -174,7 +175,34 @@ def venue_leads(body, url, seed, catalogue, today):
     # trusted-site manifest. It creates a RESEARCH lead, not official proof.
     visible = generic_visible_bill._visible_event(body, source, today)
     if not visible:
-        return []
+        # A second generic parser handles clearly associated paragraph cards
+        # (date -> named artists -> explicit concert genre -> room) without
+        # JSON-LD or venue-specific selectors. Cards are DISCOVERY ONLY.
+        card_rows = cards.extract(body, room["name"], room["city"], today)
+        discoveries = []
+        for card in card_rows:
+            lineup = " + ".join(card["artists"])
+            fingerprint = "|".join((
+                room["key"], card["date"], lineup, url))
+            candidate_id = "open-world-card:" + hashlib.sha256(
+                fingerprint.encode("utf-8")).hexdigest()[:24]
+            discoveries.append({
+                "candidateId": candidate_id,
+                "source": "open_world_visible_card_research",
+                "sourceUrl": url, "sourcePage": url,
+                "name": lineup, "date": card["date"],
+                "leadArtist": lineup,
+                "officialArtistNames": list(card["artists"]),
+                "classification": [card["genre"]],
+                "genreEvidenceScope": card["evidenceScope"],
+                "venue": room["name"], "city": room["city"],
+                "department": room.get("department", ""),
+                "officialDetailFound": False, "genreToConfirm": True,
+                "sourceAuthorityVerified": False,
+                "openWorldSourceUnverified": True,
+                "publicationAllowed": False, "reviewRequired": True,
+            })
+        return discoveries
     fingerprint = "|".join((room["key"], visible["date"], visible["title"]))
     cid = "open-world-visible:" + hashlib.sha256(
         fingerprint.encode("utf-8")).hexdigest()[:24]

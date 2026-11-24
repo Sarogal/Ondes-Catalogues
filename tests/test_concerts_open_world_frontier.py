@@ -152,6 +152,44 @@ class OpenWorldFrontierTests(unittest.TestCase):
         self.assertEqual(len(all_artist), 74)
         self.assertEqual(len(all_venue), 74)
 
+    def test_default_research_budget_scans_unlisted_national_pools(self):
+        # A real private run held 441 unlisted artists and 120 unlisted
+        # venues. The old 24/24 default was too slow to cover these names
+        # before the national autonomy target. This is ONLY an offline
+        # priority queue: no extra network request or approval.
+        known_artists = [
+            {"id": f"known-{i}", "name": f"Known Act {i}"}
+            for i in range(130)
+        ]
+        known_venues = [
+            {"id": f"known-room-{i}", "name": f"Known Room {i}",
+             "city": "Lille", "department": "59"}
+            for i in range(130)
+        ]
+        data = public(known_artists, known_venues, [])
+        leads = registry({
+            str(i): lead(str(i), "2027-09-10", f"New Act {i}",
+                         f"New Hall {i}", "Nantes", dept="44")
+            for i in range(110)
+        })
+        artist_seen, venue_seen = set(), set()
+        for tick in range(12):
+            report = frontier.build(
+                data, leads, TODAY + dt.timedelta(days=tick // 3),
+                slot=tick % 3)
+            self.assertEqual(len(report["artistResearch"]), 96)
+            self.assertEqual(len(report["venueResearch"]), 96)
+            self.assertEqual(report["networkRequests"], 0)
+            self.assertEqual(report["approvalsProposed"], 0)
+            artist_seen.update(
+                a["name"] for a in report["artistResearch"]
+                if a["firstSeen"] == "private_lead")
+            venue_seen.update(
+                v["name"] for v in report["venueResearch"]
+                if v["firstSeen"] == "private_lead")
+        self.assertEqual(len(artist_seen), 110)
+        self.assertEqual(len(venue_seen), 110)
+
     def test_determinism_and_invalid_schema_fail_closed(self):
         data = public()
         r = registry({"a": lead("a", "2027-01-01", "A New Band",

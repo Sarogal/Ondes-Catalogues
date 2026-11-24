@@ -215,6 +215,33 @@ class OpenWorldSiteResearchTests(unittest.TestCase):
             research.select_sources(nxt, registry([row]), DAY), [])
         self.assertFalse(row["sourceAuthorityVerified"])
 
+    def test_generic_visible_event_card_reaches_private_archive_without_adapters(self):
+        url = "https://newroom.example.org/programmation/new-act"
+        html = (
+            '<h1>New Room</h1>'
+            '<p>12 ― mars 2027</p><p>New Act + Opening Act</p>'
+            '<p>concert ― Thrash Metal</p>'
+            '<p>→ New Room - Salle de concert</p>'
+            '<p>Ouverture des portes 19:00</p>'
+            '<section>Place du Rock 69001 Lyon</section>'
+        )
+        found = research.scan(
+            catalogue(), registry([lead(source_page=url)]),
+            queue(), DAY, max_details=1,
+            fetch=lambda u, c: html)
+        self.assertEqual(len(found["candidates"]), 1)
+        row = found["candidates"][0]
+        self.assertEqual(row["source"], "open_world_visible_card_research")
+        self.assertEqual(row["officialArtistNames"],
+                         ["New Act", "Opening Act"])
+        self.assertEqual(row["date"], "2027-03-12")
+        self.assertEqual(row["classification"], ["Thrash Metal"])
+        self.assertNotIn("artistGenres", row)
+        self.assertFalse(row["officialDetailFound"])
+        self.assertFalse(row["sourceAuthorityVerified"])
+        self.assertFalse(row["publicationAllowed"])
+        self.assertTrue(row["reviewRequired"])
+
     def test_invalid_or_fake_frontier_cannot_approve_a_source(self):
         q = queue()
         q["publicationAllowed"] = True
