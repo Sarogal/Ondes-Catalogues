@@ -100,6 +100,25 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3):
         source = lead.get("source")
         if not isinstance(source, str):
             continue
+        # Performer-specific URLs from a venue event are navigation hints.
+        # Never use a venue's genre or website as an artist identity.
+        hints = lead.get("artistWebsiteHints")
+        if isinstance(hints, list):
+            named = {frontier.normalized(n) for n in frontier.observed_artists(lead)}
+            for hint in hints:
+                if not isinstance(hint, dict):
+                    continue
+                name = frontier.normalized(hint.get("name"))
+                row = artists.get(name)
+                target = safe_page(hint.get("url"))
+                if row and name in named and target:
+                    host = urlsplit(target).hostname
+                    if host == urlsplit(str(lead.get("sourceUrl") or "")).hostname:
+                        continue
+                    seeds.setdefault(("artist", row["key"], host), {
+                        "kind": "artist", "identity": row, "url": target,
+                        "host": host, "claimedOfficial": False,
+                    })
         # An artist's first-party MusicEvent may name a previously unseen
         # room and supply its own URL. This is ONLY an unverified website hint.
         # The NEXT cycle must visit the room separately, not infer ownership
@@ -147,6 +166,35 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3):
             for j in range(min(limit, len(ordered)))]
 
 
+def performer_links(body, url, lead):
+    """Only links attached to named individual performers of the same event."""
+    names = {frontier.normalized(n) for n in frontier.observed_artists(lead)}
+    links = {}
+    for node in discover.read_ld(body):
+        if not isinstance(node, dict) or "MusicEvent" not in bridge._event_types(node.get("@type")):
+            continue
+        if discover.iso_day(node.get("startDate")) != lead.get("date"):
+            continue
+        place = node.get("location")
+        if not isinstance(place, dict) or frontier.normalized(place.get("name")) != frontier.normalized(lead.get("venue")):
+            continue
+        bill = node.get("performer")
+        if isinstance(bill, dict):
+            bill = [bill]
+        if not isinstance(bill, list):
+            continue
+        if {frontier.normalized(p.get("name")) for p in bill if isinstance(p, dict)} != names:
+            continue
+        for p in bill:
+            if not isinstance(p, dict) or not bridge._event_types(p.get("@type")) & {"MusicGroup", "Person"}:
+                continue
+            target = safe_page(p.get("url"))
+            if target and urlsplit(target).hostname != urlsplit(url).hostname:
+                links.setdefault(p["name"], set()).add(target)
+    return [{"name": name, "url": next(iter(targets))}
+            for name, targets in sorted(links.items()) if len(targets) == 1]
+
+
 def venue_leads(body, url, seed, catalogue, today):
     room = seed["identity"]
     source = {
@@ -169,6 +217,9 @@ def venue_leads(body, url, seed, catalogue, today):
             lead["openWorldSourceUnverified"] = True
             lead["publicationAllowed"] = False
             lead["reviewRequired"] = True
+            hints = performer_links(body, url, lead)
+            if hints:
+                lead["artistWebsiteHints"] = hints
         return structured
 
     # Same generic visible-bill parser used by already known rooms, but no
