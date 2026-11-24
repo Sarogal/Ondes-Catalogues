@@ -16,6 +16,7 @@ from datetime import datetime
 from grossesondes_archived_html_intake import organizer_homepage, candidate, official_date
 from grossesondes_stage import official_text
 from grossesondes_structured_edition import pinned_parent_identity
+from dns_pinned_https import safe_public_url, resolve_global_ips
 
 SCHEMA = "grossesondes.official-browser-preflight.v1"
 
@@ -88,8 +89,18 @@ def rendered_html(official_site):
     """Browser is isolated: no secrets, off-origin requests or storage."""
     from playwright.sync_api import sync_playwright
 
+    # Browser DNS must resolve to the exact globally validated IP. Same-host
+    # request filtering alone would allow DNS rebinding to private addresses.
+    if safe_public_url(official_site) is None:
+        raise ValueError("Unsafe browser HTTPS origin")
+    host = urlsplit(official_site).hostname
+    addresses = resolve_global_ips(host)
+    pinned = next((ip for ip in addresses if ":" not in ip), addresses[0])
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=True)
+        browser = playwright.chromium.launch(
+            headless=True, chromium_sandbox=True,
+            args=["--host-resolver-rules=MAP " + host + " " + pinned])
+
         try:
             context = browser.new_context(
                 service_workers="block", accept_downloads=False,
