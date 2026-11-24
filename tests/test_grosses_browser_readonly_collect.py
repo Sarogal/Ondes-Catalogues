@@ -40,6 +40,21 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertEqual(set(sources), {HOME, OTHER})
         self.assertNotIn("https://evil.example/path", sources)
 
+    def test_already_located_future_editions_also_receive_browser_slots(self):
+        pub, hist = fixtures()
+        pub["festivals"][0]["lat"] = 46.1
+        pub["festivals"][0]["lon"] = 6.1
+        pub["festivals"][0]["showOnMap"] = True
+        sources = signed_targets(pub, hist, date(2026, 11, 24), slot=1)
+        self.assertIn(HOME, sources)
+        self.assertIn(OTHER, sources)
+
+    def test_undated_but_officially_announced_future_edition_not_ignored(self):
+        pub, hist = fixtures()
+        pub["festivals"][0]["startDate"] = None
+        sources = signed_targets(pub, hist, date(2026, 11, 24), slot=2)
+        self.assertIn(HOME, sources)
+
     def test_failed_network_does_not_serialize_exception_or_html(self):
         urls = [HOME, OTHER]
         def render(url):
