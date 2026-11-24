@@ -116,6 +116,11 @@ PUBLISHED_HEAD=Path("reviews/grossesondes-published-head.json")
 GENESIS_BLOB_SHA="7fca36caba870d327ec5aadb504c46c251956c6d"
 
 
+def signed_tourism_scan_limit(event_name):
+    """One trusted push rechecks the signed history; normal cycles stay small."""
+    return 20 if event_name == "push" else 4
+
+
 def official_update_scan_limit(event_name):
     """Recheck a broader bounded group after a trusted code rollout.
 
@@ -779,7 +784,8 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
 
 
 def collect_signed_tourism_renewals(history, published, today, *,
-                                    fetcher=fetch_public_html, tick=0):
+                                    fetcher=fetch_public_html, tick=0,
+                                    limit=4):
     """Publisher-owned candidates from immutable signed historical sources.
 
     A private dossier does not supply a network target, source status, place,
@@ -788,7 +794,7 @@ def collect_signed_tourism_renewals(history, published, today, *,
     edition itself before it can reach the normal stage() collision gate.
     """
     selected = signed_tourism_rotation(
-        history, published, today, limit=4, tick=tick)
+        history, published, today, limit=limit, tick=tick)
     additions, sources = [], {}
     for parent, url, year in selected:
         try:
@@ -1260,7 +1266,9 @@ def main():
         collect_signed_tourism_renewals(
             published["festival-history.json"],
             published["festivals.json"], today.isoformat(),
-            tick=tourism_tick))
+            tick=tourism_tick,
+            limit=signed_tourism_scan_limit(
+                os.environ.get("GITHUB_EVENT_NAME", ""))))
     existing_additions = {
         r.get("slug") for r in patch["additions"] if isinstance(r, dict)}
     if len(patch["additions"]) < 100:
