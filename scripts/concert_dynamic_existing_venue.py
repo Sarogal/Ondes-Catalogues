@@ -263,7 +263,62 @@ def individual_event_nodes(html, *, accept_generic=False):
     return nodes
 
 
-def _event(raw, event, venue, artists, *, accept_generic=False):
+def event_genres(raw, official_url, *, fetch=None, cache=None):
+    """Replay a venue-attributed performer profile, never a name-only match.
+
+    The authenticated individual MusicEvent must explicitly link its named
+    performer to the external profile. A fresh profile must describe that
+    same MusicGroup or musician and a relevant genre. No registry tags,
+    MusicBrainz match, unrelated Event, or general venue genre is authority.
+    """
+    genres, scope = bridge.event_genres_from_own_bill(raw)
+    if triage.genre_evidence({
+            "classification": genres, "genreEvidenceScope": scope,
+            "officialDetailFound": True}):
+        return genres, scope
+    if (fetch is None or "MusicEvent" not in bridge._event_types(raw.get("@type"))):
+        return genres, scope
+    from automation.concerts import open_world_artist_genre as profiles
+    bill = bridge.official_named_bill(raw.get("performer"))
+    if not bill:
+        return genres, scope
+    names = set(bill[0])
+    people = raw.get("performer")
+    people = people if isinstance(people, list) else [people]
+    linked = []
+    for person in people:
+        if not isinstance(person, dict):
+            continue
+        name = person.get("name")
+        if (not isinstance(name, str) or name.strip() not in names
+                or not bridge._event_types(person.get("@type")) & {"MusicGroup", "Person"}
+                or person.get("genre") not in (None, "", [])):
+            continue
+        target = person.get("url")
+        host = intake.valid_https(target)
+        if not host or host == intake.valid_https(official_url):
+            continue
+        try:
+            probe.checked_uri(target, host)
+        except (ValueError, TypeError):
+            continue
+        linked.append((name.strip(), target))
+    # Bound requests, not lineup size. Unlinked performers do not consume
+    # the budget; an eligible act can be anywhere on the official bill.
+    shared = cache if cache is not None else {}
+    for name, target in list(dict.fromkeys(linked))[:4]:
+        try:
+            html = fetch(target, shared)
+            labels = profiles.profile_genres(html, name)
+        except (ValueError, TypeError, KeyError, OSError, TimeoutError, RecursionError):
+            continue
+        if triage.genre_evidence({"classification": labels}):
+            return labels, "official_artist_in_event_detail"
+    return genres, scope
+
+
+def _event(raw, event, venue, artists, *, accept_generic=False,
+           fetch=None, cache=None):
     """Verify one complete first-party concert event; never join evidence."""
     types = bridge._event_types(raw.get("@type")) if isinstance(raw, dict) else set()
     require("MusicEvent" in types or (accept_generic and "Event" in types),
@@ -287,17 +342,6 @@ def _event(raw, event, venue, artists, *, accept_generic=False):
     require([normal(x) for x in names] ==
             [normal(artists[aid]["name"]) for aid in event.get("artistIds", [])],
             "artist IDs or names differ from individual official MusicEvent")
-    genres, scope = bridge.event_genres_from_own_bill(raw)
-    require(bool(triage.genre_evidence({
-        "classification": genres,
-        "genreEvidenceScope": scope,
-        "officialDetailFound": True,
-    })), "no explicit metal/rock/punk event-or-artist genre")
-    # Different support artists may have different styles. Do not infer that
-    # all performers belong to a single genre or require individual tags.
-    require(all(normal(g) in {normal(x) for x in genres}
-                for g in event.get("genres", [])),
-            "signed genre differs from first-party MusicEvent")
     location = raw.get("location")
     require(isinstance(location, dict) and
             normal(location.get("name")) == normal(venue["name"]),
@@ -315,6 +359,19 @@ def _event(raw, event, venue, artists, *, accept_generic=False):
     # Missing street number is acceptable. It must still identify the site.
     require(normal(addr.get("streetAddress")) == normal(venue.get("address")),
             "official street conflicts with published venue")
+    genres, scope = event_genres(raw, event["officialUrl"],
+                                 fetch=fetch if accept_generic else None,
+                                 cache=cache)
+    require(bool(triage.genre_evidence({
+        "classification": genres,
+        "genreEvidenceScope": scope,
+        "officialDetailFound": True,
+    })), "no explicit metal/rock/punk event-or-artist genre")
+    # Different support artists may have different styles. Do not infer that
+    # all performers belong to a single genre or require individual tags.
+    require(all(normal(g) in {normal(x) for x in genres}
+                for g in event.get("genres", [])),
+            "signed genre differs from first-party MusicEvent")
     return names, genres
 
 
@@ -481,7 +538,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
     for raw in events:
         try:
             valid.append(_event(raw, event, venue, resolved,
-                                accept_generic=(is_single_osm or is_address or is_official)))
+                                accept_generic=(is_single_osm or is_address or is_official),
+                                fetch=fetch, cache=cache))
         except (ValueError, KeyError, TypeError):
             continue
     require(len(valid) == 1, "no unique exact first-party MusicEvent")
