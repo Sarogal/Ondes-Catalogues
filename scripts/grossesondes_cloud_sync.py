@@ -1182,14 +1182,14 @@ def load_isolated_browser_evidence(path, published, archive, today):
     publisher parsers still check identity, year, conflicting ranges and fields.
     """
     p = Path(path)
-    if not p.is_file() or p.stat().st_size > 12_000_000:
+    if not p.is_file() or p.stat().st_size > 36_000_000:
         return {}
     data = json.loads(p.read_text(encoding="utf-8"))
     if (not isinstance(data, dict)
             or data.get("schema") != "grossesondes.browser-official-evidence.v1"
             or data.get("date") != today
             or not isinstance(data.get("entries"), list)
-            or len(data["entries"]) > 8):
+            or len(data["entries"]) > 24):
         raise ValueError("Invalid isolated browser report")
     allowed = {
         row["officialSite"] for batch in
@@ -1198,19 +1198,31 @@ def load_isolated_browser_evidence(path, published, archive, today):
         if isinstance(row, dict) and isinstance(row.get("officialSite"), str)
     }
     from grossesondes_archived_html_intake import organizer_homepage
+    from grossesondes_existing_official_updates import linked_pages, page
     from dns_pinned_https import safe_public_url
     result = {}
     for item in data["entries"]:
         if not isinstance(item, dict) or set(item) != {"officialSite", "sha256", "html"}:
             raise ValueError("Invalid browser entry")
         url, html = item["officialSite"], item["html"]
-        if (not isinstance(url, str) or url not in allowed
-                or safe_public_url(url) is None or not organizer_homepage(url)
-                or url in result or not isinstance(html, str)
+        if (not isinstance(url, str) or safe_public_url(url) is None
+                or not organizer_homepage(url) or url in result
+                or not isinstance(html, str)
                 or not 0 < len(html.encode("utf-8")) <= 1_400_000
                 or sha256(html.encode("utf-8")).hexdigest() != item["sha256"]):
             raise ValueError("Unverified browser entry")
         result[url] = html
+    # Sources that are not themselves signed roots must be directly linked
+    # in the SAME artifact's signed home DOM and pass the signed code's
+    # strict same-host link filter. No private patch may supply a URL.
+    admissible_links = set()
+    for home in allowed.intersection(result):
+        try:
+            admissible_links.update(linked_pages(home, page(result[home]))[:2])
+        except (ValueError, TypeError, UnicodeError):
+            continue
+    if any(url not in allowed and url not in admissible_links for url in result):
+        raise ValueError("Unsigned browser link not anchored to official DOM")
     return result
 
 
