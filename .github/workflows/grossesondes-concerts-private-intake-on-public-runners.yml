@@ -11,6 +11,7 @@ on:
       # execute with private credentials. Do not trigger on test-only changes.
       - 'automation/concerts/discover.py'
       - 'automation/concerts/open_world_frontier.py'
+      - 'automation/concerts/open_world_site_research.py'
       - 'automation/concerts/feeds.py'
       - 'automation/concerts/triage.py'
       - 'automation/concerts/sources.json'
@@ -459,6 +460,42 @@ jobs:
           else
             echo "Nouvelle file artistes et salles générée en privé ; aucune approbation automatique."
           fi
+
+      - name: Explorer les sites de salles inconnues et les tournées par lecteur générique
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/concerts-open-world"
+          # Candidate site links are untrusted hints, NEVER authority grants.
+          # DNS-pinned HTTPS + robots + no redirect, three hosts per cycle.
+          # This quarantined archive feeds tomorrow's open-world frontier.
+          if ! python public/automation/concerts/open_world_site_research.py \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --frontier confidential/automation/concerts/intake/open-world-frontier.json \
+              --day "$(TZ=Europe/Paris date +%F)" \
+              --scan-slot "$SCAN_SLOT" --max-sites 3 --max-details 3 \
+              --output "$RUNNER_TEMP/concerts-open-world/candidates.json" \
+              > "$RUNNER_TEMP/concerts-private-logs/open-world-site-research.log" 2>&1; then
+            echo "::warning::Recherche ouverte indisponible ; aucune source ni concert n'est approuvé."
+            python - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"concerts-open-world/candidates.json"
+          p.write_text(json.dumps({
+              "schema":"grossesondes.concert.discovery.v1",
+              "publicationAllowed":False, "automaticPublication":False,
+              "triageCounts":{}, "candidates":[]
+          }),encoding="utf-8")
+          PY
+          fi
+          python public/automation/concerts/intake_archive.py \
+              --source "$RUNNER_TEMP/concerts-open-world/candidates.json" \
+              --store confidential/automation/concerts/intake/registry.json \
+              --summary "$RUNNER_TEMP/concerts-open-world/archive-summary.json" \
+              > "$RUNNER_TEMP/concerts-private-logs/open-world-site-archive.log" 2>&1
+          echo "Recherche générique archivée en privé, aucune preuve de publication présumée."
 
       - name: Réconcilier les étapes de tournée et les pistes de salle sans approbation
         if: steps.access.outputs.ready == 'true'
