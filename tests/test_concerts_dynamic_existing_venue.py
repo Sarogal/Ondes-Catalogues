@@ -154,6 +154,39 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": html, "osm": osm(website="https://autre.fr")}))
 
+    def test_generic_leaf_divs_join_inline_date_and_isolate_recommendations(self):
+        from automation.concerts import open_world_visible_cards as cards
+        page = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"
+                "<p>Présentation musicale.</p><div><div>5 <span>―</span> mars 2027</div>"
+                "<div>New Act</div></div><div><div>concert ― Metal</div>"
+                "<div>→ La Salle - Salle de concert</div></div>"
+                "<div><div>5 <span>―</span> mars 2027</div>"
+                "<div>New Act</div><div>Ouverture des portes 19:00</div></div>"
+                "<section><div>Vous devriez aimer</div>"
+                "<h2>6 mars 2027</h2><h5>Metal</h5><h3>Other Act</h3></section>"
+                "<footer>12 rue des Fleurs<br>75019 Paris</footer>")
+        opts = {"address": "12 rue des Fleurs", "postal": "75019"}
+        self.assertEqual(cards.verified_detail(page, "La Salle", "Paris",
+                         "2027-03-05", **opts), (["New Act"], ["Metal"]))
+        for bad in (
+            page.replace("5 <span>―</span> mars 2027", "6 <span>―</span> mars 2027", 1),
+            page.replace("concert ― Metal", "concert ― Jazz"),
+            page.replace("→ La Salle - Salle de concert", "→ Autre Salle"),
+            page.replace("<h2>La Salle présente :</h2>", "<h2>Programmation</h2>"),
+            page.replace("Présentation musicale.", "Concert annulé."),
+            page.replace("Vous devriez aimer", "Autre date"),
+        ):
+            self.assertIsNone(cards.verified_detail(bad, "La Salle", "Paris",
+                              "2027-03-05", **opts))
+        # A recommendation-only card cannot authorize the primary event.
+        related_only = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"
+                        "<div>Vous devriez aimer</div><div>5 mars 2027</div>"
+                        "<div>New Act</div><div>concert ― Metal</div>"
+                        "<div>→ La Salle - Salle de concert</div>"
+                        "<footer>12 rue des Fleurs<br>75019 Paris</footer>")
+        self.assertIsNone(cards.verified_detail(related_only, "La Salle", "Paris",
+                          "2027-03-05", **opts))
+
     def test_footer_can_corroborate_only_exact_physical_address(self):
         from automation.concerts import open_world_visible_cards as cards
         page = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"
