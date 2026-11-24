@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-23",
+  "generatedAt": "2026-11-24",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -6274,6 +6274,30 @@
       "notes": "Édition future annoncée et revérifiée directement sur le site officiel. Dates à confirmer ; lieu précis, artistes et coordonnées non établis.",
       "department": null,
       "lat": null
+    },
+    {
+      "city": null,
+      "dateRangeIsContinuous": false,
+      "status": "Annoncé",
+      "lat": null,
+      "startDate": "2027-10-08",
+      "region": null,
+      "lineup": [],
+      "source": "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/",
+      "slug": "mauges-pit-fest-2027",
+      "venue": null,
+      "name": "Mauges Pit Fest 2027",
+      "lastVerified": "2026-11-24",
+      "notes": "Dates de l'édition revérifiées sur une fiche touristique historique signée. Aucun artiste, tarif, lieu exact ni coordonnée de l'édition passée n'est hérité.",
+      "price": null,
+      "bands": 0,
+      "department": null,
+      "endDate": "2027-10-09",
+      "sourceConfidence": "Office de tourisme historiquement signé + relecture Publisher",
+      "showOnMap": false,
+      "officialSite": "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/",
+      "lon": null,
+      "verificationStatus": "Édition touristique revérifiée indépendamment"
     }
   ]
 }
