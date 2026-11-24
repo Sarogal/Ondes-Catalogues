@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T19:51:17+01:00",
+  "updated_at": "2026-11-24T19:56:14+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18003,6 +18003,26 @@
       "geo_precision": "venue",
       "lat": 48.860118,
       "lng": 2.368214
+    },
+    {
+      "id": "openagenda-18000248-2026-11-25",
+      "title": "Mon Doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-11-25",
+      "date_end": "2026-11-25",
+      "time": "09:30",
+      "city": "Péronne",
+      "department": "Somme",
+      "region": "Hauts-de-France",
+      "venue": "MDSI Péronne",
+      "source_url": "https://openagenda.com/rncap/events/18000248_mon-doudou-248898",
+      "source_label": "Bulles de Théâtre — Licence Ouverte 2.0 — données mises à jour le 18/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 49.935872,
+      "lng": 2.930697
     }
   ]
 }
