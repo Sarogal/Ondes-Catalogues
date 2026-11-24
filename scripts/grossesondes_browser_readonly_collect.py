@@ -47,7 +47,8 @@ def _rotate(items, slot, count):
     return [items[(start + i) % len(items)] for i in range(min(count, len(items)))]
 
 
-def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
+def signed_targets(published, history, today, slot, limit=MAX_ENTRIES, *,
+                   quotas=(4, 3, 1)):
     """Prioritize unlocated current editions, then rotate archived origins."""
     if (not isinstance(published, dict) or published.get("schema") != 1
             or not isinstance(published.get("festivals"), list)
@@ -99,7 +100,6 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
             archived.append((row["slug"], url))
     # Every two daily cycles rotate all three cohorts. Never starve
     # already-located editions of lineup/price/cancellation rechecks.
-    quotas = (4, 3, 1)
     groups = (unlocated, located, archived)
     result = []
     seen = set()
@@ -152,9 +152,12 @@ def prioritize_unavailable(published, history, today, slot, *,
         [(url, url) for url in failures], slot, MAX_FAILURE_SLOTS)]
     if not selected:
         return baseline, len(candidates), len(failures)
-    # Reverse baseline order first to retain the archival and located
-    # cohorts that normally follow the unlocated cohort in signed_targets.
-    for url in reversed(baseline):
+    # Reserve one rotating root from each cohort before filling spare
+    # capacity. In particular, a full unlocated cohort must not displace
+    # the archive root merely because baseline was completed with fallbacks.
+    reserved = signed_targets(published, history, today, slot, limit=3,
+                              quotas=(1, 1, 1))
+    for url in reserved + baseline:
         if len(selected) >= MAX_ENTRIES:
             break
         if url not in selected:
