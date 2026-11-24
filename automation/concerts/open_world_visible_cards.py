@@ -122,12 +122,13 @@ def extract(html, room, city, today):
 
 
 def verified_detail(html, room, city, when):
-    """Read a primary HTML event only AFTER caller authenticates venue origin.
+    """Verify a single first-party HTML event after INDEPENDENT source ownership.
 
-    A unique H1 must name the entire bill and its first visible date must
-    agree. Recommendations and cancellation notices cannot provide proof.
-    Geography comes from the separately verified published venue, not this
-    parser. No genre is attributed to individual artists.
+    Both artist-H1 pages and venue-branded H1 pages with an explicit
+    presenter heading are common. Venue-branded PROGRAMME LISTINGS alone do
+    not prove a concert: require one full date + named bill + compact event
+    genre + matching venue card before any recommendation section. Never
+    infer genres from descriptive paragraphs or from nearby events.
     """
     try:
         day = dt.date.fromisoformat(when)
@@ -148,32 +149,62 @@ def verified_detail(html, room, city, when):
     if len(headings) != 1:
         return None
     start, title = headings[0]
-    names = _artists(title)
-    if not names or re.search(r"\b(?:festival|fest)\b", words(title)):
+    if re.search(r"\\b(?:festival|fest)\\b", words(title)):
+        return None
+    brand_heading = _room_key(title) == _room_key(room)
+    names = None if brand_heading else _artists(title)
+    if not brand_heading and not names:
         return None
     section = blocks[start + 1:]
+    # Recommendations may be introduced by ordinary paragraphs, not just
+    # semantic H2/H3 headings. Their cards cannot attest this primary event.
+    end_labels = visible.END_SECTION | {
+        "vous devriez aimer", "recommandations", "related concerts"
+    }
     cutoff = next((i for i, (tag, t) in enumerate(section)
-                   if tag in {"h2", "h3"} and words(t) in visible.END_SECTION),
-                  len(section))
+                   if tag in {"p", "h2", "h3", "h4"}
+                   and words(t) in end_labels), len(section))
     section = section[:min(cutoff, 160)]
     if CANCELLED.search(words(" ".join(t for _, t in section))):
         return None
-    dates = [_date(t) for tag, t in section[:16]
-             if tag in {"p", "time", "strong", "text"} and _date(t)]
-    if not dates or dates[0] != when:
-        return None
+    if brand_heading:
+        # A venue's calendar list is NOT an individual event detail. Only a
+        # presenter's dedicated show page can supply this second HTML shape.
+        first_date_idx = next((i for i, (tag, t) in enumerate(section)
+                               if tag in {"p", "time", "strong", "text"}
+                               and _date(t)), len(section))
+        preceding = section[:first_date_idx]
+        if not any(tag in {"h2", "h3"}
+                   and re.search(r"\\b(?:presente|presentent|presents|presented by)\\b",
+                                 words(t))
+                   for tag, t in preceding):
+            return None
+        # The page must not contain several distinct announced show dates
+        # inside its primary event section. Repeated SAME date is fine.
+        observed = {_date(t) for tag, t in section if tag in {
+            "p", "time", "strong", "text"} and _date(t)}
+        if observed != {when}:
+            return None
+    else:
+        dates = [_date(t) for tag, t in section[:16]
+                 if tag in {"p", "time", "strong", "text"} and _date(t)]
+        if not dates or dates[0] != when:
+            return None
     paras = [t for tag, t in section if tag == "p"]
-    matches = []
-    for i in range(min(12, max(0, len(paras) - 3))):
+    matches = {}
+    for i in range(max(0, len(paras) - 3)):
         if _date(paras[i]) != when:
             continue
         bill = _artists(paras[i + 1])
         genre = CONCERT_GENRE.fullmatch(paras[i + 2])
         place = VENUE_ARROW.fullmatch(paras[i + 3])
-        if (not bill or [words(n) for n in bill] != [words(n) for n in names]
+        if (not bill or (names and [words(n) for n in bill] !=
+                         [words(n) for n in names])
                 or not genre or not place):
             continue
         label = visible._explicit_label(genre[1])
-        if label and _room_key(TRAILING_KIND.sub("", place[1]).strip()) == _room_key(room):
-            matches.append((bill, [label]))
-    return matches[0] if len(matches) == 1 else None
+        if not label or _room_key(TRAILING_KIND.sub("", place[1]).strip()) != _room_key(room):
+            continue
+        key = (tuple(words(n) for n in bill), words(label))
+        matches[key] = (bill, [label])
+    return next(iter(matches.values())) if len(matches) == 1 else None
