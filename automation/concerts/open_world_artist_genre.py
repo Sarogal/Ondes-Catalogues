@@ -17,6 +17,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import artist_genre_knowledge as knowledge
+import artist_official_bio as bio
 import open_world_frontier as frontier
 import open_world_site_research as sites
 import source_evidence_probe as probe
@@ -132,8 +133,10 @@ def _memory(prior):
         raise ValueError("Untrusted previous artist research memory")
     return {k: dict(v) for k, v in prior["facts"].items()
             if (isinstance(k, str) and isinstance(v, dict)
-                and v.get("evidenceKind") ==
-                    "unverified-origin-artist-structured-profile"
+                and v.get("evidenceKind") in {
+                    "unverified-origin-artist-structured-profile",
+                    "unverified-origin-artist-visible-linked-bio",
+                }
                 and v.get("officialDomainVerified") is False
                 and v.get("publicationAllowed") is False)}
 
@@ -158,8 +161,33 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
             # safe_fetch independently re-resolves every hostname, pins TLS,
             # validates ALL public DNS IPs, obeys robots and rejects redirects.
             html = fetch(url, cache)
-            genres = profile_genres(html, source["name"])
             identity_key = source["identityKey"]
+            try:
+                genres = profile_genres(html, source["name"])
+                evidence_kind = "unverified-origin-artist-structured-profile"
+                genre_url = url
+            except (ValueError, TypeError, RecursionError):
+                # Follow ONLY an explicit same-host Bio/About link. Even a
+                # convincing first-person biography is untrusted research
+                # until domain ownership is independently authenticated.
+                link = bio.linked_official_biography(html, url, url)
+                if not link or sites.safe_page(link) != link:
+                    raise ValueError("No safe singular linked biography")
+                page = fetch(link, cache)
+                synthetic_source = {
+                    "artistId": identity_key, "sourceRole": "artist_official",
+                    "enabled": True, "url": url,
+                }
+                synthetic_names = {
+                    "artists": [{"id": identity_key, "name": source["name"],
+                                 "aliases": []}]
+                }
+                fact = bio.verify_official_biography(
+                    synthetic_source, synthetic_names, page,
+                    link, link, today)
+                genres = fact["genres"]
+                genre_url = link
+                evidence_kind = "unverified-origin-artist-visible-linked-bio"
             fact_key = hashlib.sha256(
                 (identity_key + "|" + url).encode("utf-8")).hexdigest()[:24]
             previous = facts.get(fact_key, {})
@@ -167,18 +195,20 @@ def build(registry, today, *, prior=None, slot=0, limit=18,
                 "identityKey": identity_key,
                 "artistName": source["name"],
                 "sourceUrl": url,
+                "genreEvidenceUrl": genre_url,
                 "genres": genres,
                 "firstVerifiedAt": previous.get("firstVerifiedAt",
                                                  today.isoformat()),
                 "lastVerifiedAt": today.isoformat(),
-                "evidenceKind": "unverified-origin-artist-structured-profile",
+                "evidenceKind": evidence_kind,
                 "officialDomainVerified": False,
                 "eventDateLocationAndLineupProved": False,
                 "publicationAllowed": False,
             }
             counters["selfDeclaredProfileRead"] += 1
             refreshed += 1
-        except (ValueError, TypeError, KeyError, OSError, TimeoutError):
+        except (ValueError, TypeError, KeyError, OSError, TimeoutError,
+                RecursionError):
             counters["profileHeld"] += 1
     return {
         "schema": SCHEMA,
