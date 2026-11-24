@@ -155,6 +155,51 @@ def signed_programmer_current_city(html, row):
     return re.search(municipal, visible) is not None
 
 
+def current_official_ticket_city(html, row):
+    """Exact summer-edition locality printed on a CURRENT first-party ticket page.
+
+    Generic evidence: title must identify the signed festival and season/year,
+    and visible content must bind the SAME signed date interval to one city.
+    Never derive a town from a generic footer, a former venue or winter dates.
+    Only call for a same-host ticket/news link discovered in the signed home.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return None
+    try:
+        begin = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+        if (begin.year != end.year or begin.month != end.month
+                or end < begin or (end - begin).days > 7):
+            return None
+        title_parser = _EditionTitle()
+        title_parser.feed(html)
+        title_parser.close()
+        title = fold(" ".join(title_parser.parts))
+        identity = fold(re.sub(r"\\b20[2-4]\\d\\b", "", row["name"])).strip()
+        if (not identity or key(identity) not in key(title)
+                or "billetterie" not in title
+                or f"ete {begin.year}" not in title):
+            return None
+        visible = VisibleText()
+        visible.feed(html)
+        visible.close()
+        body = " ".join(visible.parts)
+        months = ("janvier", "février", "mars", "avril", "mai", "juin",
+                  "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+        month = months[begin.month - 1]
+        pattern = (
+            rf"\\b(?:été|ete)\\s+{begin.year}\\s*[·:|–—-]?\\s*"
+            rf"{begin.day}\\s*[-–—]\\s*{end.day}\\s+{month}\\s+à\\s+"
+            r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\\-]*"
+            r"(?:\\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\\-]*){0,2})"
+            r"\\s*\\(([^()]{2,35})\\)"
+        )
+        cities = {match.group(1) for match in re.finditer(pattern, body, re.I)}
+        return next(iter(cities)) if len({key(x) for x in cities}) == 1 else None
+    except (KeyError, TypeError, ValueError, UnicodeError):
+        return None
+
+
 def verified_artist_alias_cleanup(lineup, official_names):
     """Collapse a billed soloist and its explicit performance description.
 
@@ -993,9 +1038,15 @@ def apply_independently_verified_updates(
                 # same-host linked official ticket/news page. Reject any
                 # disagreement between independently parsed current-year
                 # claims; do not borrow last year's venue or winter dates.
-                claims_city = [
-                    exact_edition_city(html, old) for _, html in html_pages]
-                claims_city = [c for c in claims_city if c is not None]
+                claims_city = []
+                for linked_url, html in html_pages:
+                    claim = exact_edition_city(html, old)
+                    if claim is None and linked_url != site:
+                        city = current_official_ticket_city(html, old)
+                        if city:
+                            claim = {"slug": slug, "city": city, "source": site}
+                    if claim is not None:
+                        claims_city.append(claim)
                 distinct_cities = {
                     normal_city(c["city"]) for c in claims_city}
                 claim = (claims_city[0] if len(distinct_cities) == 1
