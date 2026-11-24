@@ -22,9 +22,11 @@ if _AUTOMATION_DIR not in sys.path:
 from dns_pinned_https import safe_public_url
 from grossesondes_archived_html_intake import organizer_homepage
 from grossesondes_official_browser_probe import rendered_html
+from grossesondes_existing_official_updates import linked_pages, page
 
 SCHEMA = "grossesondes.browser-official-evidence.v1"
 MAX_ENTRIES = 8
+MAX_LINKS_PER_SITE = 2
 MAX_BYTES = 1_400_000
 
 
@@ -81,17 +83,35 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
 
 
 def collect(urls, renderer=rendered_html):
-    """Fail closed on each network attempt; never record error bodies."""
-    result = []
+    """Visit signed roots, then at most two safely discovered official links."""
+    result, seen = [], set()
     for url in urls:
         if not _eligible_url({"officialSite": url}):
             raise ValueError("Unsafe signed browser target")
         try:
             html = renderer(url)
-            if not isinstance(html, str) or not 0 < len(html.encode("utf-8")) <= MAX_BYTES:
+            if (not isinstance(html, str)
+                    or not 0 < len(html.encode("utf-8")) <= MAX_BYTES):
                 continue
             result.append({"officialSite": url, "sha256": sha256(
                 html.encode("utf-8")).hexdigest(), "html": html})
+            seen.add(url)
+            # A link is only a bounded research target discovered in CURRENT
+            # same-host rendered HTML; it cannot grant publication authority.
+            links = linked_pages(url, page(html))[:MAX_LINKS_PER_SITE]
+            for link in links:
+                if link in seen or safe_public_url(link) is None:
+                    continue
+                seen.add(link)
+                try:
+                    linked = renderer(link)
+                    if (not isinstance(linked, str)
+                            or not 0 < len(linked.encode("utf-8")) <= MAX_BYTES):
+                        continue
+                    result.append({"officialSite": link, "sha256": sha256(
+                        linked.encode("utf-8")).hexdigest(), "html": linked})
+                except Exception:
+                    continue
         except Exception:
             # Deliberately omit URL, exception message and page body from logs.
             continue
