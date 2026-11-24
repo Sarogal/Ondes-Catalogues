@@ -191,6 +191,54 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         invalid["geoSource"] = "https://geo.api.gouv.fr/"
         self.assertFalse(_verified_official_update_delta(row, invalid))
 
+    def test_first_names_section_bound_to_exact_season_and_dates(self):
+        from grossesondes_existing_official_updates import season_scoped_first_names
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-foudre-libre-2027", site,
+                       dates=("2027-08-19", "2027-08-21"))
+        row.update(name="Festival Foudre Libre 2027", department="39")
+        # Adapted semantic structure of a real first-party homepage:
+        # separate seasonal labels, figcaption roster, history and ticket list.
+        html = (
+            '<html><head><title>Festival Foudre Libre – Été 2027 · '
+            '19, 20 et 21 août à Légna (39)</title></head><body>'
+            '<nav><p>Été 2027</p><h3>Les premiers noms.</h3>'
+            '<ul><li>Navigation</li></ul></nav>'
+            '<main><h2>Festival Foudre Libre 2027</h2>'
+            '<p>19, 20 &amp; 21 AOÛT 2027</p><p>Légna (39) · Jura</p>'
+            '<figure><figcaption><p>Été 2027</p>'
+            '<h3>Les premiers noms.</h3><ul>'
+            '<li><a>Foudre Noire ↗</a></li><li>Brume Rouge</li>'
+            '<li>Ombre Vive</li></ul></figcaption></figure>'
+            '<h2>Billetterie</h2><ul><li>Camping</li></ul>'
+            '<p>Hiver 2027</p><h3>Les premiers noms.</h3>'
+            '<ul><li>Artiste Hivernal</li></ul>'
+            '<p>Été 2026</p><h3>Les premiers noms.</h3>'
+            '<ul><li>Ancien Artiste</li></ul></main></body></html>')
+        expected = ["Foudre Noire", "Brume Rouge", "Ombre Vive"]
+        self.assertEqual(season_scoped_first_names(page(html), html, row, DAY),
+                         expected)
+        for bad in (
+            html.replace("19, 20 et 21", "19, 20 et 22"),
+            html.replace("<figcaption><p>Été 2027</p>",
+                         "<figcaption><p>Hiver 2027</p>"),
+            html.replace("<figcaption><p>Été 2027</p>",
+                         "<figcaption><p>Été 2026</p>"),
+        ):
+            self.assertEqual(season_scoped_first_names(page(bad), bad, row, DAY),
+                             [])
+        original = doc(row)
+        out, report = apply_independently_verified_updates(
+            original, original, DAY,
+            fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
+            browser_fetch=lambda _: html, commune_resolver=lambda *_: None,
+            limit=1, tick=0)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["lineup"], expected)
+        self.assertEqual(updated["bands"], 3)
+        self.assertEqual(report["accepted"], [row["slug"]])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
         browser_calls = []
