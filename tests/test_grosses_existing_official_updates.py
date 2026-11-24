@@ -116,6 +116,23 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
                          ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
         self.assertNotIn("SECRET_TOKEN_MUST_NOT_LEAK", str(report))
 
+    def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
+        signed = doc(festival("mozhell-open-air", MOZHELL))
+        browser_calls = []
+        def blocked(_):
+            raise OSError("HTTP 403")
+        def browser(url):
+            browser_calls.append(url)
+            return {MOZHELL: HOME, ARTICLE: NEWS}[url]
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=blocked, browser_fetch=browser,
+            limit=1, tick=0)
+        self.assertEqual(browser_calls, [MOZHELL, ARTICLE])
+        self.assertEqual(out["festivals"][0]["lineup"],
+                         ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["unavailable"], 0)
+
     def test_isolated_browser_wrong_edition_cannot_modify_signed_row(self):
         row = festival("mozhell-open-air", MOZHELL)
         signed = doc(row)
