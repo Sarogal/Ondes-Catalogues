@@ -467,6 +467,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/concerts-open-world"
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
           # Candidate site links are untrusted hints, NEVER authority grants.
           # DNS-pinned HTTPS + robots + no redirect, three hosts per cycle.
           # This quarantined archive feeds tomorrow's open-world frontier.
