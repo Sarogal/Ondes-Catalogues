@@ -55,13 +55,15 @@ def _unique_site(catalogue, row):
     return matches[0]
 
 
-def _individual_event(html, url, when, venue, *, accept_generic=False):
+def _individual_event(html, url, when, venue, *, accept_generic=False,
+                      fetch=None, cache=None):
     """Extract exactly one official concert, not genres from unrelated cards.
 
     Generic Event and HTML microdata are accepted only when a separate
     caller has authenticated the first-party source against named OSM.
-    Every alternative still needs named performers and a relevant genre
-    on its own individual record. Bad JSON-LD cannot be hidden by microdata.
+    Every alternative needs named performers and a relevant genre on its
+    own record or a freshly checked, explicitly linked performer profile.
+    Bad JSON-LD cannot be hidden by microdata.
     """
     matches = []
     nodes = dynamic.individual_event_nodes(html, accept_generic=accept_generic)
@@ -108,7 +110,8 @@ def _individual_event(html, url, when, venue, *, accept_generic=False):
         if not bill:
             continue
         names, unnamed = bill
-        genres, scope = bridge.event_genres_from_own_bill(node)
+        genres, scope = dynamic.event_genres(
+            node, url, fetch=fetch if accept_generic else None, cache=cache)
         # Venue-wide genre tags do NOT qualify. Only Event or own performers.
         if not dynamic.triage.genre_evidence({
                 "classification": genres,
