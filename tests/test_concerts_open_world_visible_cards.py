@@ -82,6 +82,67 @@ class OpenWorldVisibleCardTests(unittest.TestCase):
         ):
             self.assertIsNone(cards.verified_detail(variant, "Trabendo", "Paris", "2027-04-22"))
 
+    def test_official_presented_event_detail_with_venue_brand_h1(self):
+        # The primary H1 can be the site's brand, not the artist.
+        # The event is explicitly PRESENTED in an individual concert detail.
+        text = (
+            '<html><body><h1>Trabendo</h1>'
+            '<nav>Programmation Metal Concerts</nav>'
+            '<h2>Le Trabendo et un organisateur présentent :</h2>'
+            '<p>Witch Club Satan est un groupe de black metal</p>'
+            '<p>28 ― avril 2027</p><p>Witch club satan</p>'
+            '<p>concert ― Metal</p><p>→ Trabendo - Salle de concert</p>'
+            '<p>28 ― avril 2027</p><p>Witch club satan</p>'
+            '<p>Ouverture des portes 19:00</p>'
+            '<section><p>Vous devriez aimer</p>'
+            '<p>22 ― avril 2027</p><p>Klone</p>'
+            '<p>concert ― Metal</p><p>→ Trabendo - Salle de concert</p>'
+            '</section><section>75019 Paris</section></body></html>'
+        )
+        self.assertEqual(cards.verified_detail(
+            text, "Le Trabendo", "Paris", "2027-04-28"),
+            (["Witch club satan"], ["Metal"]))
+        # Exactly the same format must work for entirely unrelated venues,
+        # artists, cities and hard-rock/metal/punk subgenres.
+        different = (text.replace("Trabendo", "Nouvelle Salle")
+                     .replace("Paris", "Nantes")
+                     .replace("Witch club satan", "Nouveau Groupe")
+                     .replace("Witch Club Satan", "Nouveau Groupe")
+                     .replace("Metal", "Death Metal"))
+        self.assertEqual(cards.verified_detail(
+            different, "La Nouvelle Salle", "Nantes", "2027-04-28"),
+            (["Nouveau Groupe"], ["Death Metal"]))
+        self.assertIsNone(cards.verified_detail(
+            text, "Trabendo", "Paris", "2027-04-22"))
+        # Presentations do not override cancellation or event contradictions.
+        for bad in (
+            text.replace("concert ― Metal", "concert ― Pop", 1),
+            text.replace("28 ― avril 2027", "29 ― avril 2027", 1),
+            text.replace("<p>Witch club satan</p>", "<p>Other Group</p>", 1)
+                .replace("concert ― Metal", "concert ― Pop", 1),
+            text.replace("<p>Ouverture des portes", "<p>Concert annulé</p><p>Ouverture des portes"),
+            text.replace("<p>Vous devriez aimer</p>",
+                         "<p>22 ― avril 2027</p><p>Vous devriez aimer</p>"),
+        ):
+            self.assertIsNone(cards.verified_detail(
+                bad, "Trabendo", "Paris", "2027-04-28"))
+
+    def test_venue_brand_listing_without_presenter_remains_unverified(self):
+        listing = page("Klone", "Metal", "22 ― avril 2027")
+        self.assertIsNone(cards.verified_detail(
+            listing, "Trabendo", "Paris", "2027-04-22"))
+        # Even a valid card with a presenter becomes ambiguous when there
+        # are two distinct current concert cards on the same primary page.
+        details = listing.replace("<h2>Concerts de la saison</h2>",
+                                  "<h2>La salle présente :</h2>")
+        double = details.replace("<p>Ouverture des portes 19:00</p>",
+            "<p>Ouverture des portes 19:00</p>"
+            "<p>23 ― avril 2027</p><p>Autre Artiste</p>"
+            "<p>concert ― Metal</p>"
+            "<p>→ Trabendo - Salle de concert</p>")
+        self.assertIsNone(cards.verified_detail(
+            double, "Trabendo", "Paris", "2027-04-22"))
+
     def test_strict_input_bounds(self):
         html = page("Klone", "Metal", "22 ― avril 2027")
         self.assertEqual(cards.extract(html, "Trabendo", "Paris",
