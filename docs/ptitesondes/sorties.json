@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T02:42:30+01:00",
+  "updated_at": "2026-11-24T05:01:53+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -17823,6 +17823,66 @@
       "geo_precision": "venue",
       "lat": 48.146651,
       "lng": -1.773151
+    },
+    {
+      "id": "openagenda-24285475-2026-11-27",
+      "title": "Éveil musical",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-11-27",
+      "date_end": "2026-11-27",
+      "time": "10:00",
+      "city": "Marseille",
+      "department": "Bouches-du-Rhône",
+      "region": "Provence-Alpes-Côte d'Azur",
+      "venue": "Bibliothèque des Cinq-Avenues",
+      "source_url": "https://openagenda.com/bibliotheques-de-marseille/events/24285475_eveil-musical-8687467",
+      "source_label": "Bibliothèques de territoire - Ville de Marseille — Licence Ouverte 2.0 — données mises à jour le 28/08/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 43.302404,
+      "lng": 5.396082
+    },
+    {
+      "id": "openagenda-59150953-2026-11-28",
+      "title": "Fjord | Conte musical",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2026-11-28",
+      "date_end": "2026-11-28",
+      "time": "16:00",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Médiathèque Floresca Guépin",
+      "source_url": "https://openagenda.com/conservatoire-de-nantes/events/59150953_fjord-or-conte-musical",
+      "source_label": "Conservatoire de Nantes — Licence Ouverte 2.0 — données mises à jour le 16/07/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 47.240831,
+      "lng": -1.512801
+    },
+    {
+      "id": "openagenda-48566766-2026-12-20",
+      "title": "Ciné-concert pour enfant / Séance spéciale Noël !",
+      "category": "cine-concert",
+      "category_label": "Ciné-concert",
+      "date_start": "2026-12-20",
+      "date_end": "2026-12-20",
+      "time": "15:00",
+      "city": "Paris",
+      "department": "Paris",
+      "region": "Île-de-France",
+      "venue": "JASS CLUB",
+      "source_url": "https://openagenda.com/jassclub-paris/events/48566766_cine-concert-pour-enfant-cartoonest-pas-si-mal-2483360",
+      "source_label": "JASS CLUB PARIS — Licence Ouverte 2.0 — données mises à jour le 23/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 48.826061,
+      "lng": 2.359178
     }
   ]
 }
