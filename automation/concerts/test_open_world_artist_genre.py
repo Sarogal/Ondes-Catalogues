@@ -1,0 +1,125 @@
+"""No-network tests: unknown performers remain research, never publisher proof."""
+import copy
+import datetime as dt
+import json
+import unittest
+
+import open_world_artist_genre as research
+
+DAY = dt.date(2026, 11, 24)
+URL = "https://newact.example.org/music"
+NAME = "New Act"
+PROFILE = ('<script type="application/ld+json">'
+           + json.dumps({"@type": "MusicGroup", "name": NAME,
+                         "genre": ["Death Metal", "Hardcore Techno"]})
+           + '</script>')
+
+
+def registry(hints=None, *, source="open_world_visible_card_research"):
+    candidate = {
+        "candidateId": "PRIVATE-LEAD", "date": "2027-02-10",
+        "source": source, "sourceUrl": "https://official-venue.example.org/event",
+        "officialArtistNames": [NAME],
+        "leadArtist": NAME,
+        "artistWebsiteHints": hints if hints is not None
+                              else [{"name": NAME, "url": URL}],
+        "publicationAllowed": False, "reviewRequired": True,
+    }
+    return {"schema": "grossesondes.concert.intake.v1",
+            "items": {"key": {"status": "pending_review",
+                              "candidate": candidate}}}
+
+
+class OpenWorldArtistGenreTests(unittest.TestCase):
+    def test_unknown_artist_self_declared_musicgroup_is_retained_without_trust(self):
+        seen = []
+        original = registry()
+        saved = copy.deepcopy(original)
+        def fetch(url, cache):
+            seen.append(url)
+            return PROFILE
+        result = research.build(original, DAY, fetch=fetch)
+        self.assertEqual(seen, [URL])
+        self.assertEqual(result["profilesRefreshed"], 1)
+        self.assertEqual(result["memoryFactCount"], 1)
+        item = next(iter(result["facts"].values()))
+        self.assertEqual(item["artistName"], NAME)
+        self.assertEqual(item["genres"], ["Death Metal"])
+        self.assertFalse(item["officialDomainVerified"])
+        self.assertFalse(item["eventDateLocationAndLineupProved"])
+        self.assertFalse(result["publicationAllowed"])
+        self.assertEqual(result["approvalsProposed"], 0)
+        self.assertEqual(result["officialDomainsAuthenticated"], 0)
+        self.assertEqual(original, saved)
+
+    def test_never_inherit_other_artist_or_concert_genre(self):
+        for html in (
+            '<h1>New Act</h1><p>Death Metal concert</p>',
+            PROFILE.replace('"name": "New Act"', '"name": "Other Act"'),
+            PROFILE.replace('"Death Metal"', '"Jazz"'),
+            PROFILE + PROFILE.replace('"Death Metal"', '"Thrash Metal"'),
+        ):
+            out = research.build(registry(), DAY, fetch=lambda u, cache: html)
+            self.assertEqual(out["memoryFactCount"], 0)
+            self.assertEqual(out["reasonCounts"], {"profileHeld": 1})
+
+    def test_unsafe_and_unattached_performer_urls_never_fetched(self):
+        for hints in (
+            [{"name": NAME, "url": "https://127.0.0.1/admin"}],
+            [{"name": "Different Performer", "url": URL}],
+            [{"name": NAME, "url": "http://newact.example.org/music"}],
+        ):
+            out = research.build(registry(hints), DAY,
+                                 fetch=lambda *a: self.fail("network"))
+            self.assertEqual(out["candidateArtistSources"], 0)
+        # Two unrelated sites claiming the same artist are not coalesced.
+        both = registry([{"name": NAME, "url": URL},
+                         {"name": NAME, "url": "https://clone.example.org/"}])
+        out = research.build(both, DAY,
+                             fetch=lambda *a: self.fail("ambiguous"))
+        self.assertEqual(out["ambiguousArtistSourcesHeld"], 1)
+
+    def test_memory_survives_missing_next_day_without_converting_to_authority(self):
+        first = research.build(registry(), DAY,
+                               fetch=lambda u, cache: PROFILE)
+        empty = {"schema": "grossesondes.concert.intake.v1", "items": {}}
+        second = research.build(empty, DAY + dt.timedelta(days=1),
+                                prior=first, fetch=lambda *a: self.fail("network"))
+        self.assertEqual(second["sourcesChecked"], 0)
+        self.assertEqual(second["facts"], first["facts"])
+        self.assertEqual(second["memoryFactCount"], 1)
+        self.assertFalse(second["publicationAllowed"])
+        bad = copy.deepcopy(first)
+        bad["publicationAllowed"] = True
+        with self.assertRaises(ValueError):
+            research.build(empty, DAY, prior=bad)
+
+    def test_artist_official_tour_is_hint_not_verified_source(self):
+        row = registry([], source="artist_official_tour")
+        row["items"]["key"]["candidate"]["sourceUrl"] = URL
+        out = research.build(row, DAY, fetch=lambda u, cache: PROFILE)
+        self.assertEqual(out["profilesRefreshed"], 1)
+        self.assertFalse(next(iter(out["facts"].values()))["officialDomainVerified"])
+
+    def test_rotation_and_bounded_budget(self):
+        rows = {}
+        for i in range(25):
+            lead = registry([{"name": NAME, "url": f"https://artist{i}.example.org/"}])
+            lead["items"]["key"]["candidate"]["leadArtist"] = "Act " + str(i)
+            lead["items"]["key"]["candidate"]["officialArtistNames"] = ["Act " + str(i)]
+            lead["items"]["key"]["candidate"]["artistWebsiteHints"][0]["name"] = "Act " + str(i)
+            rows[str(i)] = lead["items"]["key"]
+        batch = {"schema": "grossesondes.concert.intake.v1", "items": rows}
+        a = research.build(batch, DAY, limit=10, slot=0,
+                           fetch=lambda u, cache: PROFILE)
+        b = research.build(batch, DAY, limit=10, slot=1,
+                           fetch=lambda u, cache: PROFILE)
+        self.assertEqual(a["sourcesChecked"], 10)
+        self.assertEqual(b["sourcesChecked"], 10)
+        self.assertEqual(a["profilesRefreshed"], 0)  # Names do not match profile
+        self.assertEqual(b["profilesRefreshed"], 0)
+        with self.assertRaises(ValueError):
+            research.build(batch, DAY, limit=25)
+
+if __name__ == "__main__":
+    unittest.main()
