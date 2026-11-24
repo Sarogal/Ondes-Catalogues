@@ -149,7 +149,7 @@ def verified_detail(html, room, city, when):
     if len(headings) != 1:
         return None
     start, title = headings[0]
-    if re.search(r"\\b(?:festival|fest)\\b", words(title)):
+    if re.search(r"\b(?:festival|fest)\b", words(title)):
         return None
     brand_heading = _room_key(title) == _room_key(room)
     names = None if brand_heading else _artists(title)
@@ -175,7 +175,7 @@ def verified_detail(html, room, city, when):
                                and _date(t)), len(section))
         preceding = section[:first_date_idx]
         if not any(tag in {"h2", "h3"}
-                   and re.search(r"\\b(?:presente|presentent|presents|presented by)\\b",
+                   and re.search(r"\b(?:presente|presentent|presents|presented by)\b",
                                  words(t))
                    for tag, t in preceding):
             return None
