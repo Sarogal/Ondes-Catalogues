@@ -400,6 +400,56 @@ class ArchivedHtmlIntakeTests(unittest.TestCase):
         self.assertNotIn("Private browser network failure", data)
         self.assertNotIn("festival666.com", data)
 
+    def test_publisher_browser_403_is_independent_from_raw_http(self):
+        proof = {"officialSite": SIX["officialSite"], "year": 2027}
+        proposed = engine.candidate(SIX, proof, SIXSIXSIX, self.day1)
+        self.assertIsNotNone(proposed)
+        proposed["proofMode"] = engine.ARCHIVED_BROWSER_PROOF_MODE
+        attempted = []
+        def blocked(url, **kwargs):
+            attempted.append(("raw", url))
+            raise OSError("HTTP 403 PRIVATE_SECRET")
+        def rendered(url):
+            attempted.append(("browser", url))
+            return SIXSIXSIX
+        found = collect_registered_edition_sources(
+            {"additions": [proposed]}, {}, archived={SIX["slug"]: SIX},
+            fetcher=blocked, browser_fetcher=rendered)
+        self.assertEqual(attempted,
+                         [("raw", SIX["officialSite"]),
+                          ("browser", SIX["officialSite"])])
+        self.assertEqual(found["registered-edition:" + proposed["slug"]],
+                         SIXSIXSIX)
+        self.assertTrue(found["registered-edition-browser-verified:"
+                              + proposed["slug"]])
+        self.assertNotIn("PRIVATE_SECRET", str(found))
+
+    def test_publisher_browser_cannot_override_accessible_contradictory_raw(self):
+        proposed = engine.candidate(
+            SIX, {"officialSite": SIX["officialSite"], "year": 2027},
+            SIXSIXSIX, self.day1)
+        proposed["proofMode"] = engine.ARCHIVED_BROWSER_PROOF_MODE
+        found = collect_registered_edition_sources(
+            {"additions": [proposed]}, {}, archived={SIX["slug"]: SIX},
+            fetcher=lambda *a, **k: (
+                SIXSIXSIX + "<p>Festival 666, 20 - 22 août 2027</p>"),
+            browser_fetcher=lambda url: SIXSIXSIX)
+        self.assertEqual(found["registered-edition:" + proposed["slug"]], "")
+        self.assertNotIn("registered-edition-browser-verified:" + proposed["slug"],
+                         found)
+
+    def test_publisher_never_launches_chromium_inside_privileged_job(self):
+        proposed = engine.candidate(
+            SIX, {"officialSite": SIX["officialSite"], "year": 2027},
+            SIXSIXSIX, self.day1)
+        proposed["proofMode"] = engine.ARCHIVED_BROWSER_PROOF_MODE
+        found = collect_registered_edition_sources(
+            {"additions": [proposed]}, {}, archived={SIX["slug"]: SIX},
+            fetcher=lambda *a, **k: SIXSIXSIX)
+        self.assertEqual(found["registered-edition:" + proposed["slug"]], "")
+        self.assertFalse(found.get("registered-edition-browser-verified:"
+                                   + proposed["slug"], False))
+
     def test_a_gap_in_daily_observation_resets_continuity(self):
         engine.run(self.folder, self.calendar, self.history,
                    self.day1, self.fetch)
