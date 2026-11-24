@@ -165,7 +165,7 @@ jobs:
     # Publisher. Missing evidence means raw-only validation, not no run.
     if: >-
       ${{
-        always() &&
+        !cancelled() &&
         github.event_name != 'pull_request' &&
         github.ref == 'refs/heads/main' &&
         ((github.event_name != 'schedule' && github.event_name != 'workflow_run') ||
