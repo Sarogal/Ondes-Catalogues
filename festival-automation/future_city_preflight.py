@@ -446,7 +446,7 @@ class _EditionTitle(HTMLParser):
             self.parts.append(data)
 
 
-def _city_from_dated_title(html, row):
+def _city_from_dated_title(html, row, *, description=None):
     """Exact signed edition + dates + commune in one first-party page title.
 
     Example (not a named-site rule):
@@ -463,6 +463,8 @@ def _city_from_dated_title(html, row):
     except (TypeError, ValueError, UnicodeError):
         return None
     title = " ".join(" ".join(parsed.parts).split())
+    if description is not None:
+        title += " – " + description
     if not 10 <= len(title) <= 250:
         return None
     normalized = fold(title)
@@ -542,6 +544,89 @@ def _city_from_dated_title(html, row):
         return None
     return city
 
+
+
+
+class _OfficialEditionDescription(HTMLParser):
+    """Only head metadata; never read arbitrary scripts or body meta tags."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.in_head = False
+        self.descriptions = set()
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "head":
+            self.in_head = True
+        elif tag == "body":
+            self.in_head = False
+        elif tag == "meta" and self.in_head:
+            values = dict(attrs)
+            if (values.get("property", "").lower() == "og:description"
+                    or values.get("name", "").lower() == "description"):
+                content = values.get("content")
+                if isinstance(content, str) and 10 <= len(content) <= 200:
+                    self.descriptions.add(" ".join(content.split()))
+
+    def handle_endtag(self, tag):
+        if tag == "head":
+            self.in_head = False
+
+
+def current_edition_description(html, row):
+    """Split branded title + dated SEO description + matching visible locality.
+
+    Metadata is never sufficient on its own. Require the actual HTML title to
+    identify the signed festival, a unique season/year description and exact
+    dates/locality repeated in ONE visible paragraph, including department.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return None
+    start, end = iso_day(row.get("startDate")), iso_day(row.get("endDate"))
+    if not start or not end or start.year != end.year or start.month != end.month:
+        return None
+    words = re.findall(r"[a-z0-9]+", re.sub(
+        r"\b20[2-4]\d\b", "", fold(row.get("name", ""))))
+    if len("".join(words)) < 8:
+        return None
+    identity = re.compile(r"(?<![a-z0-9])" + r"[\W_]+".join(
+        map(re.escape, words)) + r"(?![a-z0-9])")
+    if not _title_identifies_official_festival(html, identity):
+        return None
+    meta = _OfficialEditionDescription()
+    body = VisibleParagraphs()
+    try:
+        meta.feed(html)
+        meta.close()
+        body.feed(html)
+        body.close()
+    except (ValueError, TypeError, UnicodeError, AttributeError):
+        return None
+    if len(meta.descriptions) != 1:
+        return None
+    desc = next(iter(meta.descriptions))
+    season = re.match(rf"^(ete|hiver|printemps|automne)\s+{start.year}\b", fold(desc))
+    department = re.search(r"\((\d{2,3}|2[AB])\)\s*$", desc)
+    if season is None or department is None:
+        return None
+    city = _city_from_dated_title(html, row, description=desc)
+    if city is None:
+        return None
+    # Independently repeat the COMPLETE date span and printed department in
+    # a single visible paragraph. A footer with an unrelated town is no proof.
+    locality = re.compile(
+        rf"(?<!\d){start.year}(?!\d)\s*(?:[·•:–—-]\s*)?(?:a\s+)?"
+        + r"\s+".join(map(re.escape, fold(city).split()))
+        + rf"\s*\({department.group(1).lower()}\)(?!\w)")
+    for raw in " ".join(body.parts).split(VisibleParagraphs.SEP):
+        if not 0 < len(raw) <= 1100:
+            continue
+        block = " ".join(fold(raw).split())
+        if CANCEL.search(block) or not locality.search(block):
+            continue
+        ranges = {(a, b) for _, _, a, b in explicit_ranges(block, start.year)}
+        if dominant_visible_range(ranges) == (start, end):
+            return {"city": city, "season": season.group(1), "year": start.year}
+    return None
 
 
 def _current_edition_evergreen_commune(html, row):
@@ -859,12 +944,14 @@ def exact_edition_city(html, row):
     title_place = _city_from_official_title_plus_named_current_dates(html, row)
     image_alt_place = _city_from_current_edition_image_alt(html, row)
     tourism_place = _signed_tourism_current_postal_city(html, row)
+    description = current_edition_description(html, row)
+    description_city = description['city'] if description else None
     evidence = [c for c in (structured, visible, title, evergreen, title_place,
-                            image_alt_place, tourism_place) if c is not None]
+                            image_alt_place, tourism_place, description_city) if c is not None]
     if len({_normal(c) for c in evidence}) > 1:
         return None
     city = (structured or visible or title or evergreen or title_place
-            or image_alt_place or tourism_place)
+            or image_alt_place or tourism_place or description_city)
     if not city or (row.get("city") and _normal(city) != _normal(row["city"])):
         return None
     return {"slug": row["slug"], "city": city, "source": row["officialSite"]}

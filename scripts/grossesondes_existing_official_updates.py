@@ -17,7 +17,10 @@ from urllib.parse import urljoin, urlsplit
 
 from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
-from future_city_preflight import exact_edition_city, _normal as normal_city, _EditionTitle
+from future_city_preflight import (
+    exact_edition_city, _normal as normal_city, _EditionTitle,
+    current_edition_description,
+)
 from official_admin_communes import verified_commune
 from grossesondes_institutional_edition import VisibleInstitutionHeadings
 from grossesondes_archived_html_intake import (
@@ -570,6 +573,9 @@ def season_scoped_first_names(doc, html, row, today):
             fold(" ".join(title.parts))))
     except (KeyError, ValueError, TypeError):
         return []
+    description = current_edition_description(html, row)
+    if description is not None:
+        seasons.add(description['season'])
     if len(seasons) != 1:
         return []
     label = next(iter(seasons)) + " " + str(start.year)
