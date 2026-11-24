@@ -8,6 +8,8 @@ Never choose targets from a private patch, from HTML links, or from CLI URLs.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
+import os
 from datetime import datetime, date
 from hashlib import sha256
 import json
@@ -19,15 +21,17 @@ _AUTOMATION_DIR = str(Path(__file__).resolve().parents[1] / "festival-automation
 if _AUTOMATION_DIR not in sys.path:
     sys.path.insert(0, _AUTOMATION_DIR)
 
-from dns_pinned_https import safe_public_url
+from dns_pinned_https import safe_public_url, fetch_public_html
 from grossesondes_archived_html_intake import organizer_homepage
 from grossesondes_official_browser_probe import rendered_html
-from grossesondes_existing_official_updates import linked_pages, page
+from grossesondes_existing_official_updates import linked_pages, page, signed_rotation
 
 SCHEMA = "grossesondes.browser-official-evidence.v1"
 MAX_ENTRIES = 8
 MAX_LINKS_PER_SITE = 2
 MAX_BYTES = 1_400_000
+MAX_RAW_PROBES = 48
+MAX_FAILURE_SLOTS = 5
 
 
 def _eligible_url(row):
@@ -118,6 +122,46 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
     return result
 
 
+def prioritize_unavailable(published, history, today, slot, *,
+                           event_name="", fetch=fetch_public_html):
+    """Use ordinary HTTPS probes of the Publisher's own signed batch.
+
+    All probes run in the secretless job. Failures only prioritize ordinary
+    browser navigation; they cannot authorize an unsigned URL or publication.
+    Leave at least three slots for the rotating cohorts, including archives.
+    """
+    baseline = signed_targets(published, history, today, slot)
+    budget = MAX_RAW_PROBES if event_name == "push" else 24
+    candidates = [
+        url for url, _ in signed_rotation(
+            published, today.isoformat(), limit=budget, tick=slot)
+        if _eligible_url({"officialSite": url}) == url
+    ]
+    def unavailable(url):
+        try:
+            page(fetch(url))
+            return False
+        except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
+            return True
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        failures = [url for url, failed in
+                    zip(candidates, pool.map(unavailable, candidates)) if failed]
+    # Stable daily rotation through unavailable sites; do not repeatedly
+    # select the first five when more than five require browser recovery.
+    selected = [url for _, url in _rotate(
+        [(url, url) for url in failures], slot, MAX_FAILURE_SLOTS)]
+    if not selected:
+        return baseline, len(candidates), len(failures)
+    # Reverse baseline order first to retain the archival and located
+    # cohorts that normally follow the unlocated cohort in signed_targets.
+    for url in reversed(baseline):
+        if len(selected) >= MAX_ENTRIES:
+            break
+        if url not in selected:
+            selected.append(url)
+    return selected, len(candidates), len(failures)
+
+
 def collect(urls, renderer=rendered_html):
     """Visit signed roots, then at most two safely discovered official links."""
     result, seen = [], set()
@@ -166,7 +210,11 @@ def main():
     published = json.loads(args.published.read_text(encoding="utf-8"))
     history = json.loads(args.history.read_text(encoding="utf-8"))
     slot = now.date().toordinal() * 2 + (now.hour >= 15)
-    targets = signed_targets(published, history, now.date(), slot)
+    targets, raw_probed, raw_unavailable = prioritize_unavailable(
+        published, history, now.date(), slot,
+        event_name=os.environ.get("GITHUB_EVENT_NAME", ""))
+    print("SIGNED_BROWSER_RAW_PROBES:", raw_probed)
+    print("SIGNED_BROWSER_RAW_UNAVAILABLE:", raw_unavailable)
     report = collect(targets)
     report["date"] = now.date().isoformat()
     args.output.parent.mkdir(parents=True, exist_ok=True)
