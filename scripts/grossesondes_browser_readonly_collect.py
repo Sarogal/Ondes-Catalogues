@@ -61,11 +61,21 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
         url = _eligible_url(row)
         start = row.get("startDate")
         edition = row["slug"].rsplit("-", 1)[-1]
-        year = (int(start[:4]) if isinstance(start, str)
-                and len(start) >= 4 and start[:4].isdigit()
-                else int(edition) if edition.isdigit() and len(edition) == 4
-                else None)
-        if not url or year is None or year < today.year:
+        if not url:
+            continue
+        if isinstance(start, str):
+            try:
+                # The signed catalogue is authoritative, but a finished
+                # edition cannot consume scarce future-browser slots.
+                if date.fromisoformat(start) < today:
+                    continue
+            except ValueError:
+                continue
+        elif start is None:
+            if not (edition.isdigit() and len(edition) == 4
+                    and int(edition) >= today.year):
+                continue
+        else:
             continue
         if (row.get("lat") is None or row.get("lon") is None
                 or row.get("showOnMap") is not True):
