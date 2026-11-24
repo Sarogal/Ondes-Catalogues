@@ -482,7 +482,52 @@ def _city_from_dated_title(html, row):
         + month + r"\s+" + str(start.year) + r"\b",
         normalized)
     if match is None:
-        return None
+        # A current edition title may put its year BEFORE the dates,
+        # e.g. Festival X – Été 2027 · 19, 20 et 21 août à Commune (39).
+        # Bind the exact identity/year, the complete date expression and
+        # a named locality with a department code in ONE first-party title.
+        # Require a second explicit locality statement in the visible body
+        # of the SAME page, not an archive or an unrelated footer address.
+        sequence = re.search(
+            rf"\b{start.year}\b\s*[-–—|·:]\s*"
+            r"(\d{1,2}(?:\s*(?:,|·|&|et|au|[-–—])\s*\d{1,2}){0,7})"
+            r"\s+([A-Za-zÀ-ÿ]+)\s+à\s+"
+            r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\- ]{1,80}?)"
+            r"\s*\((\d{2,3}|2[AB])\)\s*$", title, re.I)
+        if sequence is None or fold(sequence.group(2)) != month:
+            return None
+        days = [int(n) for n in re.findall(r"\d{1,2}", sequence.group(1))]
+        expected = list(range(start.day, end.day + 1))
+        if (days != expected and not (
+                len(days) == 2 and days == [start.day, end.day]
+                and re.fullmatch(r"\d{1,2}\s*(?:au|[-–—])\s*\d{1,2}",
+                                 sequence.group(1), re.I))):
+            return None
+        city = _name(sequence.group(3).strip())
+        if not city:
+            return None
+        visible = VisibleText()
+        visible.feed(html)
+        visible.close()
+        words = " ".join(fold(" ".join(visible.parts)).split())
+        # Visible dated locality: accept year before the range, or a
+        # complete range followed by the edition year then the city.
+        # Never join a city from an unrelated paragraph or another edition.
+        city_words = r"\s+".join(map(re.escape, fold(city).split()))
+        start_day, end_day = str(start.day), str(end.day)
+        explicit_days = (rf"(?:{start_day}\s+(?:au\s+)?{end_day}|"
+                         + r"\s+(?:et\s+)?".join(map(str, expected)) + r")")
+        # Normalized visible text may retain punctuation from fold().
+        words = " ".join(re.findall(r"[a-z0-9]+", words))
+        if not (re.search(
+                rf"\b{start.year}\s+{explicit_days}\s+{month}\s+a\s+{city_words}\b",
+                words) or re.search(
+                rf"\b{explicit_days}\s+{month}\s+{start.year}\s+(?:a\s+)?{city_words}\b",
+                words)):
+            return None
+        if row.get("department") and str(row["department"]).upper() != sequence.group(4).upper():
+            return None
+        return city
     days = [int(n) for n in re.findall(r"\b\d{1,2}\b", match.group(1))]
     if not days or days[0] != start.day or days[-1] != end.day:
         return None

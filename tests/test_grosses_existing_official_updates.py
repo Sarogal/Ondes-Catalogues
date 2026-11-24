@@ -153,6 +153,44 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(out["festivals"][0]["showOnMap"])
         self.assertIn("les-gueules-de-bois-2027", report["accepted"])
 
+    def test_year_before_dates_title_and_visible_current_locality_map(self):
+        from future_city_preflight import exact_edition_city
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-foudre-libre-2027", site,
+                       dates=("2027-08-19", "2027-08-21"))
+        row.update(name="Festival Foudre Libre 2027", department=None)
+        html = ('<html><head><title>Festival Foudre Libre – Été 2027 · '
+                '19, 20 et 21 août à Légna (39)</title></head>'
+                '<body><main><h2>Été 2027</h2>'
+                '<p>19, 20 &amp; 21 AOÛT 2027</p><p>Légna (39) · Jura</p>'
+                '<h2>Hiver 2027</h2><p>13 février à Autreville</p>'
+                '</main><footer>Été 2027 · 19–21 août à Légna (Jura)</footer>'
+                '</body></html>')
+        self.assertEqual(exact_edition_city(html, row)["city"], "Légna")
+        for bad in (
+            html.replace("19, 20 et 21", "19 et 21"),
+            html.replace("19, 20 et 21", "19, 20 et 22"),
+            html.replace("Légna", "Autreville", 1),
+            html.replace("2027", "2026"),
+        ):
+            self.assertIsNone(exact_edition_city(bad, row))
+        original = doc(row)
+        def admin(city, department):
+            self.assertEqual((city, department), ("Légna", None))
+            return {"city": city, "lat": 46.47, "lon": 5.64,
+                    "codeInsee": "39000", "geoSource": "https://geo.api.gouv.fr/communes?nom=L%C3%A9gna"}
+        out, report = apply_independently_verified_updates(
+            original, original, DAY,
+            fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
+            browser_fetch=lambda _: html, commune_resolver=admin, limit=1, tick=0)
+        self.assertEqual(out["festivals"][0]["city"], "Légna")
+        self.assertTrue(out["festivals"][0]["showOnMap"])
+        self.assertIn(row["slug"], report["accepted"])
+        self.assertTrue(_verified_official_update_delta(row, out["festivals"][0]))
+        invalid = deepcopy(out["festivals"][0])
+        invalid["geoSource"] = "https://geo.api.gouv.fr/"
+        self.assertFalse(_verified_official_update_delta(row, invalid))
+
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
         browser_calls = []
