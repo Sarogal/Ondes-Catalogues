@@ -633,7 +633,12 @@ class _SeasonTicketCards(VisibleText):
         if tag == "li":
             self.cards.append((len(self.stack), section, [], []))
         if tag == "img" and self.cards and self.cards[-1][1] is section:
-            alt = dict(attrs).get("alt")
+            attributes = dict(attrs)
+            if ("hidden" in attributes or attributes.get("aria-hidden") == "true"
+                    or re.search(r"display\s*:\s*none|visibility\s*:\s*hidden",
+                                 attributes.get("style") or "", re.I)):
+                return
+            alt = attributes.get("alt")
             # Unlike OCR, this is a literal organizer-authored accessible label.
             if isinstance(alt, str) and 0 < len(alt) <= 180:
                 self.cards[-1][3].append(alt)
