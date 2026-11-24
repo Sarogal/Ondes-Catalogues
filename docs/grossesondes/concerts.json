@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "v0.6+cloud — vérifications officielles",
   "mode": "preview-public-unlisted",
-  "updatedAt": "2026-11-23",
+  "updatedAt": "2026-11-24",
   "source": "Catalogue v0.5 intégral + nouvelles dates sourcées des agendas officiels des salles, Ticketmaster en couche discovery future",
   "artists": [
     {
@@ -2465,6 +2465,21 @@
     {
       "id": "tribal-gaze",
       "name": "TRIBAL GAZE",
+      "aliases": []
+    },
+    {
+      "id": "witch-club-satan",
+      "name": "WITCH CLUB SATAN",
+      "aliases": []
+    },
+    {
+      "id": "otay-onii",
+      "name": "OTAY:ONII",
+      "aliases": []
+    },
+    {
+      "id": "kryer",
+      "name": "KRØYER",
       "aliases": []
     }
   ],
@@ -15568,6 +15583,37 @@
       "history": [
         {
           "date": "2026-11-23",
+          "change": "Ajout après revue des preuves officielles"
+        }
+      ]
+    },
+    {
+      "id": "go-c-20270427-strasbourg-witch-club-satan",
+      "title": "WITCH CLUB SATAN + OTAY:ONII + KRØYER",
+      "date": "2027-04-27",
+      "artistIds": [
+        "witch-club-satan",
+        "otay-onii",
+        "kryer"
+      ],
+      "venueId": "la-laiterie-strasbourg",
+      "genres": [
+        "Black Metal"
+      ],
+      "status": "confirmed",
+      "officialUrl": "https://www.artefact.org/la-laiterie/evenements/witch-club-satan-otayonii-kroyer/",
+      "sourceType": "salle",
+      "time": null,
+      "timeMeaning": "non confirmé",
+      "organizer": "La Laiterie",
+      "ticketUrl": null,
+      "lastVerified": "2026-11-24",
+      "confidence": "Annonce officielle contrôlée; référence vérifiée avant publication",
+      "sourceLabel": "Programmation officielle (salle / organisateur)",
+      "locationPrecision": "Position connue du catalogue, précision à confirmer",
+      "history": [
+        {
+          "date": "2026-11-24",
           "change": "Ajout après revue des preuves officielles"
         }
       ]
