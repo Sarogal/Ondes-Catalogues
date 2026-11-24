@@ -98,7 +98,9 @@ def rendered_html(official_site):
                 route.continue_() if request_allowed(route.request.url, official_site)
                 else route.abort()))
             page = context.new_page()
-            page.goto(official_site, wait_until="domcontentloaded", timeout=20000)
+            response = page.goto(official_site, wait_until="domcontentloaded", timeout=20000)
+            if response is None or response.status != 200:
+                raise ValueError("Browser navigation not successful")
             page.wait_for_timeout(1600)
             if not request_allowed(page.url, official_site):
                 raise ValueError("Unsafe destination")
@@ -110,6 +112,33 @@ def rendered_html(official_site):
             browser.close()
 
 
+def probe_sources(parent, year, today, raw_fetch=official_text,
+                  browser_fetch=rendered_html):
+    """Attempt both transports independently, even after HTTP failure."""
+    raw, rendered = "", ""
+    raw_available, browser_available = False, False
+    try:
+        raw = raw_fetch(parent["officialSite"], registered=True, raw=True)
+        raw_available = isinstance(raw, str) and bool(raw.strip())
+    except Exception:
+        pass
+    try:
+        rendered = browser_fetch(parent["officialSite"])
+        browser_available = isinstance(rendered, str) and bool(rendered.strip())
+    except Exception:
+        pass
+    result = compare_proof(parent, year, today,
+                           raw if raw_available else "",
+                           rendered if browser_available else "")
+    result.update(raw_available=raw_available,
+                  browser_available=browser_available)
+    if not raw_available and not browser_available:
+        result["verdict"] = "BROWSER_OR_HTTP_UNAVAILABLE"
+    elif result["raw_candidate"] and not browser_available:
+        result["verdict"] = "RAW_CANDIDATE_BROWSER_UNAVAILABLE"
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--archive", type=Path, required=True)
@@ -119,18 +148,7 @@ def main():
     history = json.loads(args.archive.read_text(encoding="utf-8"))
     parent, year = trusted_parent(history, args.slug)
     today = datetime.now(ZoneInfo("Europe/Paris")).date()
-    # Never persist response bodies or log exceptions from network sources.
-    try:
-        raw = official_text(parent["officialSite"], registered=True, raw=True)
-        html = rendered_html(parent["officialSite"])
-        result = compare_proof(parent, year, today, raw, html)
-    except (Exception):
-        result = {
-            "schema": SCHEMA, "review_only": True, "safe_to_publish": False,
-            "publication_authorized": False, "publisher_independent_recheck": False,
-            "raw_candidate": False, "rendered_candidate": False,
-            "verdict": "BROWSER_OR_HTTP_UNAVAILABLE",
-        }
+    result = probe_sources(parent, year, today)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, sort_keys=True) + "\n",
                            encoding="utf-8")
