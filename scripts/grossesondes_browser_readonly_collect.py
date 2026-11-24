@@ -52,19 +52,27 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
             or type(slot) is not int or slot < 0
             or type(limit) is not int or not 1 <= limit <= MAX_ENTRIES):
         raise ValueError("Invalid signed festival inputs")
-    current, archived = [], []
+    unlocated, located, archived = [], [], []
     published_slugs = set()
     for row in published["festivals"]:
         if not isinstance(row, dict) or not isinstance(row.get("slug"), str):
             continue
         published_slugs.add(row["slug"])
         url = _eligible_url(row)
-        if (url and (row.get("lat") is None or row.get("lon") is None)
-                and row.get("showOnMap") is not True
-                and isinstance(row.get("startDate"), str)
-                and row["startDate"][:4].isdigit()
-                and int(row["startDate"][:4]) >= today.year):
-            current.append((row["slug"], url))
+        start = row.get("startDate")
+        edition = row["slug"].rsplit("-", 1)[-1]
+        year = (int(start[:4]) if isinstance(start, str)
+                and len(start) >= 4 and start[:4].isdigit()
+                else int(edition) if edition.isdigit() and len(edition) == 4
+                else None)
+        if not url or year is None or year < today.year:
+            continue
+        if (row.get("lat") is None or row.get("lon") is None
+                or row.get("showOnMap") is not True):
+            unlocated.append((row["slug"], url))
+        else:
+            # Geolocated festivals still announce lineup, prices, cancellations.
+            located.append((row["slug"], url))
     for row in history["knownFestivals"]:
         url = _eligible_url(row)
         if not url or not isinstance(row.get("slug"), str):
@@ -75,11 +83,29 @@ def signed_targets(published, history, today, slot, limit=MAX_ENTRIES):
         next_year = max(today.year + 1, old_year + 1)
         if row["slug"] + "-" + str(next_year) not in published_slugs:
             archived.append((row["slug"], url))
-    current_budget = min(limit, 5)
-    result = _rotate(current, slot, current_budget)
-    result += _rotate(archived, slot, limit - len(result))
-    # Different historic and current entries can share one official host.
-    return list(dict.fromkeys(url for _, url in result))[:limit]
+    # Every two daily cycles rotate all three cohorts. Never starve
+    # already-located editions of lineup/price/cancellation rechecks.
+    quotas = (4, 3, 1)
+    groups = (unlocated, located, archived)
+    result = []
+    seen = set()
+    for group, quota in zip(groups, quotas):
+        for _slug, url in _rotate(group, slot, min(limit - len(result), quota)):
+            if url not in seen:
+                result.append(url)
+                seen.add(url)
+    # If a cohort is empty or duplicates another official origin, spend
+    # spare capacity on the other cohorts rather than wasting a browser slot.
+    for group in groups:
+        if len(result) >= limit:
+            break
+        for _slug, url in _rotate(group, slot + 1, len(group)):
+            if url not in seen:
+                result.append(url)
+                seen.add(url)
+                if len(result) >= limit:
+                    break
+    return result
 
 
 def collect(urls, renderer=rendered_html):
