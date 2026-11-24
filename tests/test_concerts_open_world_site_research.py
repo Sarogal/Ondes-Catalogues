@@ -45,18 +45,22 @@ def lead(source="agenda_officiel_structuré",
     }
 
 
-def music_event(url, room="New Room", artist="New Act", city="Lyon"):
+def music_event(url, room="New Room", artist="New Act", city="Lyon",
+                venue_url=None):
+    location = {
+        "@type": "Place", "name": room,
+        "address": {"@type": "PostalAddress",
+                    "addressLocality": city, "addressCountry": "FR",
+                    "postalCode": "69001"},
+    }
+    if venue_url is not None:
+        location["url"] = venue_url
     return json.dumps({
         "@context": "https://schema.org", "@type": "MusicEvent",
         "url": url, "name": artist + " live", "startDate": "2027-03-12",
         "genre": ["Thrash Metal"],
         "performer": [{"@type": "MusicGroup", "name": artist}],
-        "location": {
-            "@type": "Place", "name": room,
-            "address": {"@type": "PostalAddress",
-                        "addressLocality": city, "addressCountry": "FR",
-                        "postalCode": "69001"},
-        },
+        "location": location,
     })
 
 
@@ -151,6 +155,65 @@ class OpenWorldSiteResearchTests(unittest.TestCase):
         self.assertEqual(row["officialArtistNames"], ["New Act"])
         self.assertFalse(row["sourceAuthorityVerified"])
         self.assertFalse(row["publicationAllowed"])
+
+    def test_second_cycle_follows_artist_tour_into_unknown_room_and_programme(self):
+        artist_url = "https://newact.example.org/tour"
+        venue_url = "https://freshhall.example.org/programme"
+        tour = '<script type="application/ld+json">' + music_event(
+            artist_url, room="Fresh Hall", city="Nantes",
+            venue_url=venue_url) + '</script>'
+
+        # Cycle 1: unlisted artist's tour reveals an unknown venue and website
+        # hint; neither identity nor domain gains trust from the tour page.
+        first = research.scan(
+            catalogue(), registry([lead("artist_official_tour", artist_url)]),
+            queue(venue=False, artist=True), DAY, max_details=1,
+            fetch=lambda u, c: tour)
+        self.assertEqual(len(first["candidates"]), 1)
+        tour_lead = first["candidates"][0]
+        self.assertEqual(tour_lead["venueWebsiteHint"], venue_url)
+        self.assertFalse(tour_lead["sourceAuthorityVerified"])
+
+        # Cycle 2: the generic frontier adds the previously unknown room,
+        # then its separate site is scanned without an adapter or whitelist.
+        private = registry([tour_lead])
+        second_frontier = frontier.build(catalogue(), private, DAY)
+        self.assertIn("Fresh Hall",
+            [x["name"] for x in second_frontier["venueResearch"]])
+        programme = '<script type="application/ld+json">' + music_event(
+            venue_url, room="Fresh Hall", city="Nantes") + '</script>'
+        fetched = []
+        def fetch(url, cache):
+            fetched.append(url)
+            self.assertEqual(url, venue_url)
+            return programme
+        second = research.scan(
+            catalogue(), private, second_frontier, DAY,
+            max_details=1, fetch=fetch)
+        self.assertEqual(fetched, [venue_url])
+        self.assertEqual(len(second["candidates"]), 1)
+        show = second["candidates"][0]
+        self.assertEqual(show["venue"], "Fresh Hall")
+        self.assertEqual(show["city"], "Nantes")
+        self.assertIsNone(show["venueCatalogueId"])
+        self.assertFalse(show["sourceAuthorityVerified"])
+        self.assertFalse(show["publicationAllowed"])
+
+    def test_artist_tour_never_promotes_unsafe_venue_website(self):
+        artist_url = "https://newact.example.org/tour"
+        tour = '<script type="application/ld+json">' + music_event(
+            artist_url, room="Unknown Hall", city="Lyon",
+            venue_url="http://169.254.169.254/admin") + '</script>'
+        first = research.scan(
+            catalogue(), registry([lead("artist_official_tour", artist_url)]),
+            queue(venue=False, artist=True), DAY, max_details=1,
+            fetch=lambda u, c: tour)
+        row = first["candidates"][0]
+        self.assertNotIn("venueWebsiteHint", row)
+        nxt = frontier.build(catalogue(), registry([row]), DAY)
+        self.assertEqual(
+            research.select_sources(nxt, registry([row]), DAY), [])
+        self.assertFalse(row["sourceAuthorityVerified"])
 
     def test_invalid_or_fake_frontier_cannot_approve_a_source(self):
         q = queue()

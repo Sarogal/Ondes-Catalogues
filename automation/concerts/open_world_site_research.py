@@ -99,6 +99,22 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3):
         source = lead.get("source")
         if not isinstance(source, str):
             continue
+        # An artist's first-party MusicEvent may name a previously unseen
+        # room and supply its own URL. This is ONLY an unverified website hint.
+        # The NEXT cycle must visit the room separately, not infer ownership
+        # from the artist's tour page or whitelist.
+        if source == "open_world_artist_tour_research":
+            hint = safe_page(lead.get("venueWebsiteHint"))
+            room = venues.get((frontier.normalized(lead.get("venue")),
+                               frontier.normalized(lead.get("city"))))
+            if hint and room:
+                hint_host = urlsplit(hint).hostname
+                key = ("venue", room["key"], hint_host)
+                seeds.setdefault(key, {
+                    "kind": "venue", "identity": room, "url": hint,
+                    "host": hint_host, "claimedOfficial": False,
+                })
+            continue
         url = safe_page(lead.get("sourcePage")) or safe_page(lead.get("sourceUrl"))
         if not url:
             continue
@@ -190,6 +206,18 @@ def artist_leads(body, url, seed, catalogue, today):
         row = tours.event_candidate(raw, source, artist["name"], catalogue, today)
         if row is None:
             continue
+        # The Place.url field is a next-cycle NAVIGATION HINT, not evidence
+        # of venue domain ownership. Require a named French place already
+        # validated by event_candidate; exclude shared ticketing domains and
+        # the artist's own tour domain. Follow-up fetches remain TLS pinned.
+        place = raw.get("location")
+        if isinstance(place, list):
+            place = next((v for v in place if isinstance(v, dict)), None)
+        if isinstance(place, dict):
+            room_hint = safe_page(place.get("url"))
+            if (room_hint and urlsplit(room_hint).hostname
+                    != urlsplit(url).hostname):
+                row["venueWebsiteHint"] = room_hint
         # A registry lead is NEVER allowed to authenticate an artist domain.
         row.update({
             "source": "open_world_artist_tour_research",
