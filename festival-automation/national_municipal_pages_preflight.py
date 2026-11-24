@@ -160,7 +160,8 @@ def _visible_named_festival(html, name):
                      r"(?![a-z0-9])", text) is not None
 
 
-def _candidate_links(html, base, root, festival_name, year, today):
+def _candidate_links(html, base, root, festival_name, year, today, *,
+                     ranked=False):
     if not isinstance(html, str) or len(html) > MAX_PAGE_HTML:
         return []
     parser = Anchors()
@@ -171,6 +172,9 @@ def _candidate_links(html, base, root, festival_name, year, today):
         return []
     title = normalized(festival_name)
     year_text = str(year)
+    # Municipal cards often omit the year from their visible event title.
+    # The target year remains a separate filter, never inferred from the URL.
+    title_without_year = re.sub(r"\s+" + re.escape(year_text) + r"$", "", title)
     choices = {}
     for href, label, _context in parser.anchors[:MAX_ANCHORS_PER_PAGE]:
         url = safe_same_host_article(href, base, root)
@@ -181,8 +185,8 @@ def _candidate_links(html, base, root, festival_name, year, today):
         years = set(re.findall(r"(?<![0-9])20[2-4][0-9](?![0-9])", words))
         if years and year_text not in years:
             continue
-        exact = len(title.split()) >= 2 and re.search(
-            r"(?<![a-z0-9])" + re.escape(title) +
+        exact = len(title_without_year.split()) >= 2 and re.search(
+            r"(?<![a-z0-9])" + re.escape(title_without_year) +
             r"(?![a-z0-9])", words) is not None
         has_role = AGENDA_ROLE.search(words) is not None
         if not exact and not has_role:
@@ -217,7 +221,8 @@ def _candidate_links(html, base, root, festival_name, year, today):
             offset = date.fromisoformat(today).toordinal() % len(group)
             group = group[offset:] + group[:offset]
             other.extend(group)
-    return (best + other)[:MAX_DISCOVERED_URLS]
+    selected = (best + other)[:MAX_DISCOVERED_URLS]
+    return [(choices[url], url) for url in selected] if ranked else selected
 
 
 
@@ -492,11 +497,11 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                 continue
             result["site_rederived"] = True
             result["municipal_website"] = site
-            pending = [site]
+            pending = [(0, site)]
             seen = set()
             year = dossier["edition_year_hint"]
             while pending and len(seen) < MAX_PAGES_PER_WEBSITE:
-                url = pending.pop(0)
+                _, url = pending.pop(0)
                 if url in seen:
                     continue
                 seen.add(url)
@@ -558,11 +563,21 @@ def scan(queue, municipal, today, *, fetch=fetch_public_html,
                                 r"(?<![0-9])20[2-4][0-9](?![0-9])", content),
                     })
                 if len(seen) < MAX_PAGES_PER_WEBSITE:
-                    for link in _candidate_links(
-                            html, url, site, dossier["name_hint"], year, today):
-                        if (link not in seen and link not in pending
-                                and len(pending) < MAX_DISCOVERED_URLS):
-                            pending.append(link)
+                    # Best-first across ALL visited pages, not merely
+                    # within the latest HTML. A freshly found exact event
+                    # link must displace already queued generic menu items.
+                    # Stable sorting preserves daily rotation on equal ranks.
+                    for priority, link in _candidate_links(
+                            html, url, site, dossier["name_hint"], year, today,
+                            ranked=True):
+                        if link in seen:
+                            continue
+                        previous = next((p for p, u in pending if u == link), None)
+                        if previous is None or priority < previous:
+                            pending = [(p, u) for p, u in pending if u != link]
+                            pending.append((priority, link))
+                    pending.sort(key=lambda item: item[0])
+                    pending = pending[:MAX_DISCOVERED_URLS]
             if result["named_visible_pages"]:
                 result["status"] = "NAMED_MUNICIPAL_MENTION_RESEARCH_ONLY"
             elif result["access_challenge_pages"]:

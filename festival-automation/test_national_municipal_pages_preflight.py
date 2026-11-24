@@ -175,6 +175,42 @@ class NationalMunicipalPagesTests(unittest.TestCase):
         self.assertEqual(refused["rederived_official_municipal_sites"], 0)
         self.assertEqual(refused["named_municipal_mention_count"], 0)
 
+    def test_new_exact_child_displaces_pending_generic_navigation(self):
+        root = ("<main><a href='/agenda'>Agenda</a>"
+                "<a href='/culture'>Culture</a>"
+                "<a href='/concerts'>Concerts</a>"
+                "<a href='/spectacles'>Spectacles</a></main>")
+        agenda = ("<main><a href='/evenement/foudre-libre'>"
+                  "Festival Foudre Libre</a>"
+                  "<a href='/evenement/foudre-libre-2026'>"
+                  "Festival Foudre Libre 2026</a>"
+                  "<a href='/actualites/administration-2027'>Actualités 2027</a>"
+                  "</main>")
+        article_url = SITE + "evenement/foudre-libre"
+        article = ("<main><h1>Festival Foudre Libre 2027</h1>"
+                   "<p>Concerts punk et metal les 12 et 13 juin 2027.</p></main>")
+        pages = {SITE: root, SITE + "agenda": agenda, article_url: article}
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            return pages.get(url, "<main>Navigation générale</main>")
+        result = scan(queue(), municipality(), TODAY, fetch=fetch,
+                      commune_lookup=geo, directory_fetch=dila)
+        self.assertEqual(visited[:3], [SITE, SITE + "agenda", article_url])
+        self.assertLessEqual(len(visited), MAX_PAGES_PER_WEBSITE)
+        self.assertNotIn(SITE + "evenement/foudre-libre-2026", visited)
+        self.assertIn(article_url, [
+            x["url"] for x in result["rows"][0]["named_visible_pages"]])
+        self.assertFalse(result["publication_authorized"])
+
+    def test_exact_links_without_year_keep_priority_but_wrong_year_does_not(self):
+        html = ("<a href='/evenement/foudre-libre'>Festival Foudre Libre</a>"
+                "<a href='/evenement/foudre-libre-2026'>Festival Foudre Libre 2026</a>"
+                "<a href='/agenda'>Agenda</a>")
+        links = _candidate_links(html, SITE, SITE, TITLE, 2027, TODAY, ranked=True)
+        self.assertEqual(links, [(0, SITE + "evenement/foudre-libre"),
+                                 (2, SITE + "agenda")])
+
     def test_hidden_script_only_and_unrelated_festival_never_qualifies(self):
         self.assertFalse(_visible_named_festival(
             "<script>Festival Foudre Libre 2027</script>"
