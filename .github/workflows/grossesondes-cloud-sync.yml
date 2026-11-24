@@ -128,7 +128,12 @@ jobs:
   browser_readonly:
     # Absolutely no private intake token, Git credentials or write permission
     # in the runner that executes untrusted festival JavaScript.
-    if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+    # A same-repository PR smoke test exercises Chromium before merge.
+    if: >-
+      ${{ github.repository == 'Sarogal/Ondes-Catalogues' &&
+          ((github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository) ||
+           (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
@@ -136,7 +141,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -145,6 +150,21 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check 'playwright==1.56.0'
           python -m playwright install --with-deps chromium
+      - name: Vérifier localement le sandbox Chromium avant toute page externe
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, chromium_sandbox=True)
+              try:
+                  context = browser.new_context(
+                      accept_downloads=False, service_workers='block')
+                  page = context.new_page()
+                  page.set_content('<main>Grosses Ondes browser smoke</main>')
+                  assert 'Grosses Ondes browser smoke' in page.content()
+              finally:
+                  browser.close()
+          PY
       - name: Récupérer uniquement les origines HTTPS du catalogue public signé
         run: |
           python scripts/grossesondes_browser_readonly_collect.py \
