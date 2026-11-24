@@ -44,8 +44,9 @@ KNOWN_GENRES = tuple(words(tag) for tag in POSITIVE_GENRES)
 
 class VisibleBlocks(HTMLParser):
     """Minimal text structure, ignoring navigation/marketing/script content."""
-    def __init__(self):
+    def __init__(self, *, leaf_divs=False):
         super().__init__(convert_charrefs=True)
+        self.leaf_divs = leaf_divs
         self.blocks = []
         self.frames = []
         self.ignored = 0
@@ -57,6 +58,17 @@ class VisibleBlocks(HTMLParser):
             return
         if tag in IGNORE:
             self.ignored = 1
+            return
+        # Optional generic text fields: keep a leaf div's complete inline
+        # text, but never flatten a wrapper containing other block fields.
+        if self.leaf_divs and tag in ({"div", "section", "article", "main",
+                                      "header", "ul", "ol", "table", "br"}
+                                     | (BLOCKS - {"span", "strong", "time"})):
+            for frame in self.frames:
+                if frame[0] == "div":
+                    frame[2] = True
+        if self.leaf_divs and tag == "div":
+            self.frames.append([tag, [], False])
             return
         if tag in BLOCKS:
             # A machine-readable *event* date can be explicit even when the
@@ -84,13 +96,13 @@ class VisibleBlocks(HTMLParser):
             if tag not in VOID:
                 self.ignored -= 1
             return
-        if tag not in BLOCKS:
+        if tag not in BLOCKS and not (self.leaf_divs and tag == "div"):
             return
         for i in range(len(self.frames) - 1, -1, -1):
             if self.frames[i][0] == tag:
                 frame = self.frames.pop(i)
                 value = " ".join(" ".join(frame[1]).split())
-                if value:
+                if value and (tag != "div" or (not frame[2] and len(value) <= 600)):
                     self.blocks.append((tag, value[:1000]))
                 return
 
