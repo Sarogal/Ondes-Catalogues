@@ -175,7 +175,7 @@ def current_official_ticket_city(html, row):
         title_parser.feed(html)
         title_parser.close()
         title = fold(" ".join(title_parser.parts))
-        identity = fold(re.sub(r"\\b20[2-4]\\d\\b", "", row["name"])).strip()
+        identity = fold(re.sub(r"\b20[2-4]\d\b", "", row["name"])).strip()
         if (not identity or key(identity) not in key(title)
                 or "billetterie" not in title
                 or f"ete {begin.year}" not in title):
@@ -188,11 +188,11 @@ def current_official_ticket_city(html, row):
                   "juillet", "août", "septembre", "octobre", "novembre", "décembre")
         month = months[begin.month - 1]
         pattern = (
-            rf"\\b(?:été|ete)\\s+{begin.year}\\s*[·:|–—-]?\\s*"
-            rf"{begin.day}\\s*[-–—]\\s*{end.day}\\s+{month}\\s+à\\s+"
-            r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\\-]*"
-            r"(?:\\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\\-]*){0,2})"
-            r"\\s*\\(([^()]{2,35})\\)"
+            rf"\b(?:été|ete)\s+{begin.year}\s*[·:|–—-]?\s*"
+            rf"{begin.day}\s*[-–—]\s*{end.day}\s+{month}\s+à\s+"
+            r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]*"
+            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]*){0,2})"
+            r"\s*\(([^()]{2,35})\)"
         )
         cities = {match.group(1) for match in re.finditer(pattern, body, re.I)}
         return next(iter(cities)) if len({key(x) for x in cities}) == 1 else None
