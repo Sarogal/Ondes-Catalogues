@@ -658,7 +658,8 @@ def home_matches_edition(doc, row, today):
                 matches_edition(main_only, row, today, root_ok=False))
 
 
-def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
+def signed_rotation(published, today, limit=MAX_HOSTS, tick=None,
+                    browser_sites=()):
     if (not isinstance(published, dict) or published.get("schema") != 1 or
             type(limit) is not int or not 0 <= limit <= 60):
         raise ValueError("Invalid signed source rotation")
@@ -696,6 +697,13 @@ def signed_rotation(published, today, limit=MAX_HOSTS, tick=None):
     # morning/evening scheduled rotation.
     if limit >= 48 and len(urls) > limit and len(selected) < limit:
         selected += urls[:limit - len(selected)]
+    # Chromium and HTTPS use different rotations. Process the successfully
+    # rendered signed roots in THIS cycle, even when outside the raw batch.
+    # The regular raw rotation is untouched; browser-only links and unknown
+    # domains cannot create extra targets. At most eight roots are added.
+    browser_extra = [url for url in urls
+                     if url in browser_sites and url not in selected][:8]
+    selected += browser_extra[:max(0, 60 - len(selected))]
     return [(url, grouped[url]) for url in selected]
 
 
@@ -872,7 +880,8 @@ def weekday_labelled_official_dates(html, row, year):
 
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
-        tick=None, commune_resolver=verified_commune, browser_fetch=None):
+        tick=None, commune_resolver=verified_commune, browser_fetch=None,
+        browser_sites=()):
     """Recheck signed artists/prices and exact first-party city proof.
 
     A commune marker is only an indicative administrative centre: no precise
@@ -885,7 +894,11 @@ def apply_independently_verified_updates(
               "checked_official_sources": [], "unavailable_official_sources": [],
               "official_edition_diagnostics": [], "browser_recoveries": 0,
               "private_proposal_is_authority": False}
-    for site, rows in signed_rotation(published, today, limit, tick):
+    report["browser_roots_checked"] = 0
+    for site, rows in signed_rotation(
+            published, today, limit, tick, browser_sites=browser_sites):
+        if site in browser_sites:
+            report["browser_roots_checked"] += 1
         report["checked_official_hosts"] += 1
         # These URLs are from the previously signed catalogue, never private
         # suggestions. A bounded diagnostics list makes real omissions auditable.

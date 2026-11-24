@@ -504,7 +504,8 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                     geo_review=None, geo_fetcher=None, city_review=None,
                     city_fetcher=None, city_admin_reader=None,
                     official_update_fetcher=None, official_update_tick=None,
-                    official_update_limit=8, official_update_browser_fetcher=None):
+                    official_update_limit=8, official_update_browser_fetcher=None,
+                    official_update_browser_sites=()):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -595,7 +596,8 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         target, first_party_report = apply_independently_verified_updates(
             target, published["festivals.json"], today,
             fetch=official_update_fetcher, limit=official_update_limit,
-            tick=official_update_tick, browser_fetch=official_update_browser_fetcher)
+            tick=official_update_tick, browser_fetch=official_update_browser_fetcher,
+            browser_sites=official_update_browser_sites)
         report["accepted_updates"].extend(
             {"slug": record["slug"], "fields": record["fields"]}
             for record in first_party_report["accepted_changes"])
@@ -1387,6 +1389,7 @@ def main():
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
         official_update_browser_fetcher=isolated_browser_fetch,
+        official_update_browser_sites=tuple(isolated_pages),
         official_update_tick=rotation_tick,
         official_update_limit=official_update_scan_limit(
             os.environ.get("GITHUB_EVENT_NAME", "")))
