@@ -239,6 +239,56 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(report["accepted"], [row["slug"]])
         self.assertTrue(_verified_official_update_delta(row, updated))
 
+    def test_split_title_description_visible_city_and_roster(self):
+        from future_city_preflight import current_edition_description, exact_edition_city
+        from grossesondes_existing_official_updates import season_scoped_first_names
+        site = "https://festival-exemple.fr/"
+        row = festival("festival-foudre-libre-2027", site,
+                       dates=("2027-08-19", "2027-08-21"))
+        row.update(name="Festival Foudre Libre 2027", department=None)
+        html = (
+            '<html><head><title>Festival Foudre Libre</title>'
+            '<meta property="og:description" content="Été 2027 · '
+            '19, 20 et 21 août à Légna (39)"></head><body>'
+            '<main><section><p>7e édition</p><h2>Et cet été</h2>'
+            '<p>19, 20 &amp; 21 AOÛT 2027<br/>Légna (39) · Jura</p>'
+            '<figure><figcaption><p>Été 2027</p>'
+            '<h3>Les premiers noms.</h3><ul><li>Brume Noire</li>'
+            '<li>Foudre Rouge</li></ul></figcaption></figure></section>'
+            '<section><p>Hiver 2027</p><h3>Les premiers noms.</h3>'
+            '<ul><li>Autre Artiste</li></ul></section></main></body></html>')
+        self.assertEqual(current_edition_description(html, row),
+                         {"city": "Légna", "season": "ete", "year": 2027})
+        self.assertEqual(exact_edition_city(html, row)["city"], "Légna")
+        self.assertEqual(season_scoped_first_names(page(html), html, row, DAY),
+                         ["Brume Noire", "Foudre Rouge"])
+        for bad in (
+            html.replace("21 AOÛT 2027", "22 AOÛT 2027"),
+            html.replace("<br/>Légna (39)", "</p><p>Légna (39)"),
+            html.replace("<br/>Légna (39)", "<br/>Légna (01)"),
+            html.replace("<title>Festival Foudre Libre", "<title>Autre Festival"),
+            html.replace("</head>", '<meta name="description" content="Hiver 2027 · '
+                         '13 février à Légna (39)"></head>'),
+        ):
+            self.assertIsNone(current_edition_description(bad, row))
+            self.assertEqual(season_scoped_first_names(page(bad), bad, row, DAY), [])
+        original = doc(row)
+        def admin(city, department):
+            return {"city": city, "lat": 46.47, "lon": 5.64,
+                    "codeInsee": "39000",
+                    "geoSource": "https://geo.api.gouv.fr/communes?nom=L%C3%A9gna"}
+        out, report = apply_independently_verified_updates(
+            original, original, DAY,
+            fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
+            browser_fetch=lambda _: html, commune_resolver=admin,
+            limit=1, tick=0)
+        updated = out["festivals"][0]
+        self.assertEqual(updated["city"], "Légna")
+        self.assertTrue(updated["showOnMap"])
+        self.assertEqual(updated["lineup"], ["Brume Noire", "Foudre Rouge"])
+        self.assertTrue(_verified_official_update_delta(row, updated))
+        self.assertEqual(report["accepted"], [row["slug"]])
+
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
         browser_calls = []
