@@ -31,6 +31,7 @@ on:
       - 'automation/concerts/registry_funnel.py'
       - 'automation/concerts/artist_genre_knowledge.py'
       - 'automation/concerts/artist_genre_preflight.py'
+      - 'automation/concerts/open_world_artist_genre.py'
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/festival_tour_handoff.py'
@@ -569,6 +570,25 @@ jobs:
             echo "::warning::Sources artistes indisponibles : aucune connaissance individuelle nouvelle."
           else
             echo "Genres officiels des artistes relus indépendamment, preuve privée sans approbation."
+          fi
+
+      - name: Explorer les genres des artistes inconnus avec mémoire privée (aucune preuve d'autorité)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Nom et URL sont des PISTES. DNS/TLS pinned, robots, no redirects.
+          # La mémoire reste privée et ne peut PAS signer une approbation.
+          UTC_HOUR="$(date -u +%H)"
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          if ! python public/automation/concerts/open_world_artist_genre.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --out confidential/automation/concerts/intake/artist-genre-open-world.json \
+              --scan-slot "$SCAN_SLOT" --max-sources 18 \
+              > "$RUNNER_TEMP/concerts-private-logs/open-world-artist-genre.log" 2>&1; then
+            echo "::warning::Recherche musicale ouverte indisponible ; aucune admission."
+          else
+            echo "Mémoire musicale ouverte privée mise à jour sans confiance ni approbation."
           fi
 
       - name: Croiser les annonces officielles de domaines différents (privé seul)
@@ -1119,6 +1139,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/artist-genre-evidence.json ]; then
             git add --sparse -- automation/concerts/intake/artist-genre-evidence.json
+          fi
+          if [ -f automation/concerts/intake/artist-genre-open-world.json ]; then
+            git add --sparse -- automation/concerts/intake/artist-genre-open-world.json
           fi
           if [ -f automation/concerts/intake/venue-admission-audit.json ]; then
             git add --sparse -- automation/concerts/intake/venue-admission-audit.json
