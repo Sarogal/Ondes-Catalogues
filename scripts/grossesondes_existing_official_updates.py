@@ -19,6 +19,7 @@ from dns_pinned_https import fetch_public_html, safe_public_url
 from source_qualification import classify
 from future_city_preflight import exact_edition_city, _normal as normal_city, _EditionTitle
 from official_admin_communes import verified_commune
+from grossesondes_institutional_edition import VisibleInstitutionHeadings
 from grossesondes_archived_html_intake import (
     official_date, official_structured_date, matching_official_jsonld_present,
 )
@@ -70,6 +71,88 @@ def fold(s):
 
 def key(s):
     return fold(s).replace(" ", "")
+
+
+
+
+def signed_programmer_city_url(row):
+    """Only a previously SIGNED official co-organizer/programmer source.
+
+    Never take a new URL from a private intake patch, website link, or
+    candidate. The signed public row must already identify the professional
+    programming role and include this exact source in its audited URLs.
+    """
+    if not isinstance(row, dict):
+        return None
+    source, audit = row.get("source"), row.get("auditSources")
+    trust = fold(row.get("sourceConfidence", ""))
+    if (not isinstance(source, str)
+            or source == row.get("officialSite")
+            or not isinstance(audit, list) or source not in audit
+            or not trust.startswith("organisateur programmateur officiel")
+            or safe_public_url(source) is None):
+        return None
+    return source
+
+
+def signed_programmer_current_city(html, row):
+    """Current future-year city of exactly ONE festival on an official index.
+
+    The festival heading, dated next edition, and named municipal production
+    must all belong to the SAME visible h1/h2 section. A generic page footer,
+    an adjacent festival's city/date or an archive never authorizes a marker.
+    Only verifies the pre-existing signed town; returns no GPS or venue.
+    """
+    if (signed_programmer_city_url(row) is None
+            or not isinstance(html, str) or not 0 < len(html) <= 650_000
+            or not isinstance(row.get("city"), str)
+            or not isinstance(row.get("department"), str)
+            or not isinstance(row.get("name"), str)):
+        return False
+    try:
+        start = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    match = re.fullmatch(r"(.{8,160})\s+(20[2-4]\d)", row["name"].strip())
+    if (match is None or int(match.group(2)) != start.year
+            or end.year != start.year or end < start
+            or (end - start).days > 7):
+        return False
+    expected = key(match.group(1))
+    parser = VisibleInstitutionHeadings()
+    try:
+        parser.feed(html)
+        parser.close()
+    except (ValueError, TypeError, UnicodeError):
+        return False
+    headings = [i for i, label in enumerate(parser.headings)
+                if key(label) == expected]
+    if len(headings) != 1:
+        return False
+    index = headings[0]
+    begin = parser.heading_starts[index]
+    finish = (parser.heading_starts[index + 1]
+              if index + 1 < len(parser.headings) else len(parser.parts))
+    section = " ".join(" ".join(parser.parts[begin:finish]).split())
+    if not 15 <= len(section) <= 1800:
+        return False
+    visible = fold(section)
+    years = set(re.findall(r"(?<!\d)20[2-4]\d(?!\d)", visible))
+    if years != {str(start.year)} or OFFICIAL_CANCELLATION.search(visible):
+        return False
+    dates = {(a, b) for _, _, a, b
+             in current_visible_ranges(visible, start.year)}
+    if dates != {(start, end)} or "prochaine edition" not in visible:
+        return False
+    city_words = fold(row["city"]).split()
+    if not 1 <= len(city_words) <= 6:
+        return False
+    city = r"\s+".join(re.escape(word) for word in city_words)
+    municipal = (r"\b(?:production|organisation)\s+"
+                 r"(?:mairie|ville|commune)\s+(?:de|du|d)\s+"
+                 + city + r"\b")
+    return re.search(municipal, visible) is not None
 
 
 def verified_artist_alias_cleanup(lineup, official_names):
@@ -921,7 +1004,38 @@ def apply_independently_verified_updates(
             # centre can become an APPROXIMATE marker (never copied venue GPS).
             # This is a *city* fallback only; don't infer the town from an
             # archive, a private discovery hint or unlabelled other-event text.
-            if (root_ok
+            # An organizer may still display its previous edition while a
+            # named official programming partner has announced the next one.
+            # Recheck ONLY the already signed, role-qualified producer URL;
+            # an event card must prove the exact city + dates in ONE section.
+            programmer_proven, programmer_url = False, None
+            if (not root_ok and old.get("lat") is None
+                    and old.get("lon") is None
+                    and isinstance(old.get("city"), str)
+                    and isinstance(old.get("department"), str)
+                    and old.get("startDate") and old.get("endDate")):
+                programmer_url = signed_programmer_city_url(old)
+                if programmer_url:
+                    try:
+                        # A contradictory current-year organizer announcement
+                        # is a veto, even if the partner page looks correct.
+                        visible_home = VisibleText()
+                        visible_home.feed(root_html)
+                        visible_home.close()
+                        first = date.fromisoformat(old["startDate"])
+                        second = date.fromisoformat(old["endDate"])
+                        current_home_intervals = {
+                            (a, b) for _, _, a, b in current_visible_ranges(
+                                fold(" ".join(visible_home.parts)), first.year)}
+                        if not current_home_intervals or current_home_intervals == {
+                                (first, second)}:
+                            html = fetch(programmer_url)
+                            report["rechecked_pages"] += 1
+                            programmer_proven = signed_programmer_current_city(
+                                html, old)
+                    except (OSError, TimeoutError, ValueError, UnicodeError):
+                        programmer_proven = False
+            if ((root_ok or programmer_proven)
                     and isinstance(old.get("city"), str) and old["city"].strip()
                     and isinstance(old.get("department"), str)
                     and re.fullmatch(r"(?:\d{2,3}|2[AB])",
@@ -985,7 +1099,7 @@ def apply_independently_verified_updates(
                             },
                         })
                         fields.extend(sorted(COMMUNE_FIELDS))
-                        sources.append(site)
+                        sources.append(programmer_url if programmer_proven else site)
             # An already signed future edition without dates is rechecked
             # directly on the registered first-party homepage. Do not infer
             # a multi-day festival from an isolated opening date.
