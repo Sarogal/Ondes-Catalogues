@@ -55,6 +55,17 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         sources = signed_targets(pub, hist, date(2026, 11, 24), slot=2)
         self.assertIn(HOME, sources)
 
+    def test_expired_2026_editions_never_exhaust_browser_slots(self):
+        pub, hist = fixtures()
+        pub["festivals"].append({
+            "slug": "expired-festival-2026",
+            "officialSite": "https://expired-festival.example/",
+            "startDate": "2026-10-04", "lat": None, "lon": None,
+            "showOnMap": False})
+        targets = signed_targets(pub, hist, date(2026, 11, 24), slot=0)
+        self.assertNotIn("https://expired-festival.example/", targets)
+        self.assertIn(HOME, targets)
+
     def test_failed_network_does_not_serialize_exception_or_html(self):
         urls = [HOME, OTHER]
         def render(url):
