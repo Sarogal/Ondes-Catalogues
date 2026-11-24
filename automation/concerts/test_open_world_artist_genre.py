@@ -67,7 +67,7 @@ class OpenWorldArtistGenreTests(unittest.TestCase):
         tour = ('<html><title>New Act tour</title>'
                 '<a href="/bio">Bio</a></html>')
         biog = ('<html><title>Bio New Act</title><main><p>'
-                'New Act are a heavy rock group from France.'
+                'New Act are a band with their heavy rock sound.'
                 '</p></main></html>')
         calls = []
         def fetch(url, cache):
