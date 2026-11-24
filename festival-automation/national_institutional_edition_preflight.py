@@ -3,8 +3,9 @@
 Never trust a discovered URL as an independent publisher destination.
 Only candidate details that the existing national queue proved to be linked
 from a code-reviewed regional index are revisited. The live index must link
-the exact titled edition again. An observation is stable only after two
-consecutive calendar days; none of these hints is an authorized public row.
+the exact titled edition again. A current positive observation may enter
+private intake immediately; two-day stability remains a diagnostic.
+None of these hints is an authorized public row.
 """
 from __future__ import annotations
 
@@ -61,7 +62,7 @@ def _exact_edition(html, source, today):
 
 
 def stable_private_proposals(state, queue, result, today):
-    """Resolve stable private observations to approved queue sources, not URLs
+    """Resolve fresh private observations to approved queue sources, not URLs
     carried in the report. These proposals are NOT publication approvals.
     """
     if (not isinstance(result, dict) or result.get("schema") != SCHEMA
@@ -77,8 +78,14 @@ def stable_private_proposals(state, queue, result, today):
     seen = set()
     for row in result["rows"]:
         if (not isinstance(row, dict)
-                or row.get("status") != "TWO_DAY_INSTITUTIONAL_DATE_RECHECKED_PRIVATE"
-                or row.get("two_day_observation") is not True):
+                or row.get("status") not in (
+                    "FIRST_DAY_INSTITUTIONAL_DATE_REVIEW_ONLY",
+                    "TWO_DAY_INSTITUTIONAL_DATE_RECHECKED_PRIVATE")
+                or row.get("two_day_observation") is not (
+                    row.get("status") == "TWO_DAY_INSTITUTIONAL_DATE_RECHECKED_PRIVATE")
+                or row.get("publication_authorized") is not False
+                or row.get("review_only") is not True
+                or row.get("safe_to_publish") is not False):
             continue
         dates = row.get("start_date_hint"), row.get("end_date_hint")
         matches = []
@@ -95,10 +102,15 @@ def stable_private_proposals(state, queue, result, today):
                 "dates": dates,
             }, sort_keys=True).encode("utf-8")).hexdigest()
             if (record.get("digest") != fingerprint
-                    or record.get("lastSeen") != today):
+                    or record.get("lastSeen") != today
+                    or record.get("lastChecked") != today):
                 continue
             try:
-                if not date.fromisoformat(record["firstSeen"]) < date.fromisoformat(today):
+                first_seen = date.fromisoformat(record["firstSeen"])
+                current_day = date.fromisoformat(today)
+                if (first_seen > current_day
+                        or (row["two_day_observation"] and first_seen >= current_day)
+                        or (not row["two_day_observation"] and first_seen != current_day)):
                     continue
             except (ValueError, KeyError, TypeError):
                 continue

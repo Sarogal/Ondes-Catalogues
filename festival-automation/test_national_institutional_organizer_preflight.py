@@ -49,16 +49,24 @@ def later(prior, today, html=None):
 
 
 class GenericOrganizerPreflightTests(unittest.TestCase):
-    def test_private_two_day_link_requires_prior_two_day_edition(self):
+    def test_immediate_date_proof_rechecks_only_trusted_index_and_detail(self):
         state, queue = fixture(DAY1)
         dates = date_run(state, queue, DAY1,
                          fetch=lambda url: INDEX_HTML if url == INDEX else detail_with_event())
         visited = []
         first = reprove_organizer_links(
-            state, queue, dates, DAY1, fetch=lambda url: visited.append(url))
-        self.assertEqual(visited, [])
-        self.assertEqual(first["rows"], [])
-        self.assertFalse(first["official_site_authorized"])
+            state, queue, dates, DAY1, fetch=lambda url: (
+                visited.append(url) or
+                (INDEX_HTML if url == INDEX else detail_with_event())))
+        self.assertEqual(visited, [INDEX, DETAIL])
+        self.assertEqual(first["two_day_link_count"], 0)
+        self.assertEqual(first["rows"][0]["candidate_urls"], [WEBSITE])
+        self.assertEqual(first["rows"][0]["status"],
+                         "FIRST_DAY_INSTITUTIONAL_ORGANIZER_LINK_PRIVATE")
+        self.assertFalse(first["rows"][0]["ownership_proven"])
+        self.assertFalse(first["rows"][0]["official_site_authorized"])
+        self.assertFalse(first["rows"][0]["publication_authorized"])
+        self.assertNotIn("officialSite", json.dumps(first))
         state2, q2, dates2 = later(state, DAY2)
         visited.clear()
         second = reprove_organizer_links(
@@ -66,23 +74,12 @@ class GenericOrganizerPreflightTests(unittest.TestCase):
                 visited.append(url) or
                 (INDEX_HTML if url == INDEX else detail_with_event())))
         self.assertEqual(visited, [INDEX, DETAIL])
-        self.assertEqual(second["two_day_link_count"], 0)
+        self.assertEqual(second["two_day_link_count"], 1)
         self.assertEqual(second["rows"][0]["candidate_urls"], [WEBSITE])
         self.assertEqual(second["rows"][0]["status"],
-                         "FIRST_DAY_INSTITUTIONAL_ORGANIZER_LINK_PRIVATE")
-        self.assertFalse(second["rows"][0]["ownership_proven"])
-        self.assertFalse(second["rows"][0]["official_site_authorized"])
-        self.assertFalse(second["rows"][0]["publication_authorized"])
-        self.assertNotIn("officialSite", json.dumps(second))
-        state3, q3, dates3 = later(state2, DAY3)
-        third = reprove_organizer_links(
-            state3, q3, dates3, DAY3,
-            fetch=lambda url: INDEX_HTML if url == INDEX else detail_with_event())
-        self.assertEqual(third["two_day_link_count"], 1)
-        self.assertEqual(third["rows"][0]["candidate_urls"], [WEBSITE])
-        self.assertEqual(third["rows"][0]["status"],
                          "TWO_DAY_INSTITUTIONAL_ORGANIZER_LINK_PRIVATE")
-        self.assertEqual(third["publications"], 0)
+        self.assertFalse(second["official_site_authorized"])
+        self.assertEqual(second["publications"], 0)
 
     def test_changed_link_is_a_new_first_day_never_old_stable_proof(self):
         prior = observed_day1()

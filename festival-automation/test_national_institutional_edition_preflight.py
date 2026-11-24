@@ -111,10 +111,20 @@ class InstitutionalPreflightTests(unittest.TestCase):
         self.assertNotIn("lat", json.dumps(result))
         self.assertNotIn("lineup", json.dumps(result))
 
-    def test_stable_index_dates_become_private_patch_only_and_are_idempotent(self):
+    def test_fresh_index_dates_become_private_patch_only_and_are_idempotent(self):
         state, queue = fixture(DAY1)
         first = run(state, queue, DAY1, fetch=good_fetch)
-        self.assertEqual(stable_private_proposals(state,queue,first,DAY1),[])
+        immediate = stable_private_proposals(state,queue,first,DAY1)
+        self.assertEqual(len(immediate),1)
+        self.assertEqual(immediate[0]["startDate"],"2027-06-04")
+        self.assertFalse(immediate[0]["showOnMap"])
+        forged = deepcopy(first)
+        forged["rows"][0]["start_date_hint"] = "2027-01-01"
+        self.assertEqual(stable_private_proposals(state,queue,forged,DAY1),[])
+        stale = deepcopy(state)
+        stale["national_institutional_dates_private"][next(iter(
+            stale["national_institutional_dates_private"]))]["lastChecked"] = "2026-01-01"
+        self.assertEqual(stable_private_proposals(stale,queue,first,DAY1),[])
         newer, q2 = fixture(DAY2)
         newer["national_institutional_dates_private"] = deepcopy(
             state["national_institutional_dates_private"])
