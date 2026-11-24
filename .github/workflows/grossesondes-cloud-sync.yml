@@ -150,6 +150,17 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check 'playwright==1.56.0'
           python -m playwright install --with-deps chromium
+      - name: Autoriser uniquement le binaire Chromium à utiliser son sandbox AppArmor
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Never disable AppArmor globally. Apply one exact executable profile
+          # before running any untrusted website scripts.
+          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -path '*/chromium_headless_shell-*/chrome-linux/headless_shell' -print -quit)"
+          test -n "$CHROME_BIN" && test -x "$CHROME_BIN"
+          printf 'abi <abi/4.0>,\ninclude <tunables/global>\nprofile grossesondes-chromium %s flags=(unconfined) {\n  userns,\n}\n' "$CHROME_BIN" > "$RUNNER_TEMP/grossesondes-chromium.apparmor"
+          sudo install -m 0644 "$RUNNER_TEMP/grossesondes-chromium.apparmor" /etc/apparmor.d/grossesondes-chromium
+          sudo apparmor_parser -r /etc/apparmor.d/grossesondes-chromium
       - name: Vérifier localement le sandbox Chromium avant toute page externe
         run: |
           python - <<'PY'
