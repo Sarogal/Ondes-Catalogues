@@ -1,6 +1,7 @@
 """No-network tests for directory research and downstream tour navigation."""
 import datetime as dt
 import unittest
+from urllib.error import HTTPError, URLError
 
 import open_world_musicbrainz as mb
 import open_world_site_research as sites
@@ -70,6 +71,47 @@ class MusicBrainzResearchTests(unittest.TestCase):
                          prior=result, request=unavailable)
         self.assertEqual(later["entries"], result["entries"])
         self.assertEqual(later["reasonCounts"], {"serviceHeld": 1})
+
+    def test_service_failure_rotates_without_losing_unresolved_name(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = [
+            "Act A", "Act B", "Act C"]
+        attempted = []
+        def unavailable(path, params):
+            attempted.append(params["query"])
+            raise HTTPError("https://example.org/private", 503,
+                            "unavailable", {}, None)
+        first = mb.build(reg, DAY, request=unavailable)
+        self.assertEqual(first["namesChecked"], 1)
+        self.assertEqual(first["entries"], {})
+        self.assertEqual(first["serviceFailureKind"], "http_503")
+        self.assertEqual(first["serviceRetryAfterKey"], "act a")
+        second = mb.build(reg, DAY, prior=first, request=unavailable)
+        self.assertEqual(second["serviceRetryAfterKey"], "act b")
+        third = mb.build(reg, DAY, prior=second, request=unavailable)
+        fourth = mb.build(reg, DAY, prior=third, request=unavailable)
+        self.assertEqual(attempted, ['artist:"Act A"', 'artist:"Act B"',
+                                     'artist:"Act C"', 'artist:"Act A"'])
+        self.assertEqual(fourth["dueNames"], 3)
+        self.assertEqual(fourth["entries"], {})
+        self.assertNotIn("example.org", str(fourth))
+
+    def test_recovery_after_failure_keeps_budget_and_reviews_all(self):
+        reg = registry()
+        reg["items"]["lead"]["candidate"]["officialArtistNames"] = [
+            "Act A", "Act B", "Act C"]
+        def unavailable(*args):
+            raise URLError(TimeoutError())
+        first = mb.build(reg, DAY, request=unavailable)
+        self.assertEqual(first["serviceFailureKind"], "timeout")
+        result = mb.build(reg, DAY, prior=first, limit=2,
+                          request=lambda *a: {"count": 0, "artists": []})
+        self.assertEqual(set(result["entries"]), {"act b", "act c"})
+        self.assertIsNone(result["serviceFailureKind"])
+        self.assertIsNone(result["serviceRetryAfterKey"])
+        final = mb.build(reg, DAY, prior=result,
+                         request=lambda *a: {"count": 0, "artists": []})
+        self.assertEqual(set(final["entries"]), {"act a", "act b", "act c"})
 
     def test_no_event_data_sent_and_query_escaped(self):
         name = 'Act "OR" \\ Other'
