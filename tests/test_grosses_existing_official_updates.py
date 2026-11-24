@@ -178,7 +178,7 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         def admin(city, department):
             self.assertEqual((city, department), ("Légna", None))
             return {"city": city, "lat": 46.47, "lon": 5.64,
-                    "codeInsee": "39000", "geoSource": "https://geo.api.gouv.fr/"}
+                    "codeInsee": "39000", "geoSource": "https://geo.api.gouv.fr/communes?nom=L%C3%A9gna"}
         out, report = apply_independently_verified_updates(
             original, original, DAY,
             fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
@@ -187,6 +187,9 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertTrue(out["festivals"][0]["showOnMap"])
         self.assertIn(row["slug"], report["accepted"])
         self.assertTrue(_verified_official_update_delta(row, out["festivals"][0]))
+        invalid = deepcopy(out["festivals"][0])
+        invalid["geoSource"] = "https://geo.api.gouv.fr/"
+        self.assertFalse(_verified_official_update_delta(row, invalid))
 
     def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
         signed = doc(festival("mozhell-open-air", MOZHELL))
