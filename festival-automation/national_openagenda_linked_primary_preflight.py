@@ -1,9 +1,11 @@
-"""Two-day OpenAgenda event -> first-party festival website preflight.
+"""OpenAgenda event -> first-party festival website preflight.
 
 Only a public OpenAgenda link re-derived from the independently scanned
 OpenData national queue can nominate a festival website. The private feed,
 dates and website remain untrusted; the separate cloud Publisher must repeat
 both HTTP checks before an append-only edition is accepted.
+A current verified first-party observation can be proposed immediately;
+two-day stability remains a diagnostic, not publication authority.
 """
 from __future__ import annotations
 
@@ -219,8 +221,11 @@ def stable_private_proposals(state, queue, catalogue, report, today):
     accepted, slugs = [], set()
     for row in report["rows"]:
         if (not isinstance(row, dict)
-                or row.get("status") != "TWO_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE"
-                or row.get("two_day_observation") is not True
+                or row.get("status") not in (
+                    "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE",
+                    "TWO_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE")
+                or row.get("two_day_observation") is not (
+                    row.get("status") == "TWO_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE")
                 or row.get("publication_authorized") is not False):
             continue
         key = row.get("dossier_id"), row.get("event_ref_review_only")
@@ -231,13 +236,18 @@ def stable_private_proposals(state, queue, catalogue, report, today):
         dates = row.get("start_date_hint"), row.get("end_date_hint")
         site = row.get("site_review_only")
         if (not isinstance(record, dict)
-                or record.get("stable") is not True
+                or record.get("stable") is not row["two_day_observation"]
                 or record.get("lastSeen") != today
+                or record.get("lastChecked") != today
                 or record.get("site") != site
                 or record.get("digest") != digest(source, site, dates)):
             continue
         try:
-            if not date.fromisoformat(record["firstSeen"]) < date.fromisoformat(today):
+            first_seen = date.fromisoformat(record["firstSeen"])
+            current_day = date.fromisoformat(today)
+            if (first_seen > current_day
+                    or (row["two_day_observation"] and first_seen >= current_day)
+                    or (not row["two_day_observation"] and first_seen != current_day)):
                 continue
         except (TypeError, ValueError, KeyError):
             continue
