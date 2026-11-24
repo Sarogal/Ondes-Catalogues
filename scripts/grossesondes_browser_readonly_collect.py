@@ -86,6 +86,8 @@ def collect(urls, renderer=rendered_html):
     """Visit signed roots, then at most two safely discovered official links."""
     result, seen = [], set()
     for url in urls:
+        if url in seen:
+            continue
         if not _eligible_url({"officialSite": url}):
             raise ValueError("Unsafe signed browser target")
         try:
