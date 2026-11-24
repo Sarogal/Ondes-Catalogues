@@ -141,6 +141,12 @@ def venue_leads(body, url, seed, catalogue, today):
     structured = osm.event_leads(body, url, dict(source), catalogue, today)
     if structured:
         for lead in structured:
+            # Source room names can repeat in multiple cities. Never reuse a
+            # legacy room-name-only candidate ID for an unlisted site.
+            fingerprint = "|".join((room["key"], str(lead.get("date")),
+                                    str(lead.get("name")), url))
+            lead["candidateId"] = "open-world-structured:" + hashlib.sha256(
+                fingerprint.encode("utf-8")).hexdigest()[:24]
             lead["venueCatalogueId"] = None
             lead["sourceAuthorityVerified"] = False
             lead["openWorldSourceUnverified"] = True
