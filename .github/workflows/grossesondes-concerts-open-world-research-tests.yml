@@ -1,0 +1,35 @@
+name: Grosses Ondes — tests ciblés découverte ouverte
+
+on:
+  pull_request:
+    paths:
+      - 'automation/concerts/open_world_frontier.py'
+      - 'automation/concerts/open_world_site_research.py'
+      - 'tests/test_concerts_open_world_frontier.py'
+      - 'tests/test_concerts_open_world_site_research.py'
+      - '.github/workflows/grossesondes-concerts-open-world-research-tests.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'automation/concerts/open_world_frontier.py'
+      - 'automation/concerts/open_world_site_research.py'
+      - 'tests/test_concerts_open_world_frontier.py'
+      - 'tests/test_concerts_open_world_site_research.py'
+      - '.github/workflows/grossesondes-concerts-open-world-research-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  open-world:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate new sites, tours, research isolation and safety
+        run: python -m unittest discover -s tests -p 'test_concerts_open_world*.py' -v
