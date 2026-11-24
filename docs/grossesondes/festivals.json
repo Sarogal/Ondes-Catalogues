@@ -5721,14 +5721,14 @@
       "social": null,
       "status": "Confirmé",
       "source": "https://mediatone.net/festivals/",
-      "lastVerified": "2026-10-25",
+      "lastVerified": "2026-11-24",
       "notes": "Nouvelle édition 2027 annoncée officiellement par Mediatone pour les 2 et 3 juillet. La commune de Colombier-Saugnieu est connue mais le site exact de l'édition 2027 n'est pas explicitement confirmé : ne pas transposer le Champ de Foire 2026 sans annonce dédiée. Groupes, tarifs et billetterie 2027 non annoncés. L'historique 2026 est déjà répertorié séparément dans festival-history.json.",
-      "lat": null,
-      "lon": null,
-      "geoPrecision": null,
+      "lat": 45.7174,
+      "lon": 5.1084,
+      "geoPrecision": "commune",
       "venue": null,
       "futureVenueConfirmed": false,
-      "showOnMap": false,
+      "showOnMap": true,
       "lineup": [],
       "sourceConfidence": "Organisateur/programmateur officiel : Mediatone ; site exact 2027 à confirmer",
       "verificationStatus": "Dates 2027 officiellement confirmées ; site précis, programmation et tarifs à venir",
@@ -5739,7 +5739,17 @@
       "sessionDates": [
         "2027-07-02",
         "2027-07-03"
-      ]
+      ],
+      "geoCity": "Colombier-Saugnieu",
+      "geoInsee": "69299",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Colombier-Saugnieu&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "signed-city-current-edition-centre.v1",
+        "firstObserved": "2026-11-24",
+        "verifiedAt": "2026-11-24",
+        "officialSite": "https://planerfest.com/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
     },
     {
       "slug": "vent-d-hell-fest-2027",
