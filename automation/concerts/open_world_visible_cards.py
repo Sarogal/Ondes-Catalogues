@@ -142,6 +142,8 @@ def verified_detail(html, room, city, when):
     except (ValueError, TypeError, RecursionError):
         return None
     blocks = parsed.blocks
+    if not visible._contains(" ".join(t for _, t in blocks), city):
+        return None
     headings = [(i, t) for i, (tag, t) in enumerate(blocks) if tag == "h1"]
     if len(headings) != 1:
         return None
