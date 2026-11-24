@@ -504,7 +504,7 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
                     geo_review=None, geo_fetcher=None, city_review=None,
                     city_fetcher=None, city_admin_reader=None,
                     official_update_fetcher=None, official_update_tick=None,
-                    official_update_limit=8):
+                    official_update_limit=8, official_update_browser_fetcher=None):
     proven,report=stage(
         snapshot["festivals.json"],snapshot["festival-history.json"],
         patch,official_sources,today,
@@ -595,7 +595,7 @@ def build_candidate(snapshot, published, patch, official_sources, today, trusted
         target, first_party_report = apply_independently_verified_updates(
             target, published["festivals.json"], today,
             fetch=official_update_fetcher, limit=official_update_limit,
-            tick=official_update_tick)
+            tick=official_update_tick, browser_fetch=official_update_browser_fetcher)
         report["accepted_updates"].extend(
             {"slug": record["slug"], "fields": record["fields"]}
             for record in first_party_report["accepted_changes"])
@@ -748,17 +748,27 @@ def collect_registered_edition_sources(patch, original, fetcher=official_text,
                 try:
                     # The browser re-fetches the IMMUTABLE archived origin in
                     # a fresh public runner, with same-host request isolation.
+                    # Never run untrusted JavaScript with the private token
+                    # or repository write credentials. Browser HTML is handed
+                    # off by the secretless read-only job of this SAME run.
                     if browser_fetcher is None:
-                        from grossesondes_official_browser_probe import rendered_html
-                        browser_renderer = rendered_html
-                    else:
-                        browser_renderer = browser_fetcher
-                    raw = fetcher(url, registered=True, raw=True)
-                    rendered = browser_renderer(url)
+                        raise ValueError("Isolated browser evidence unavailable")
+                    raw = None
+                    try:
+                        raw = fetcher(url, registered=True, raw=True)
+                    except (OSError, TimeoutError, ValueError, UnicodeError):
+                        # HTTP unavailable != HTTP contradictory. Rendered
+                        # official DOM may still independently prove the date.
+                        pass
+                    rendered = browser_fetcher(url)
+                    if (not isinstance(rendered, str)
+                            or not 0 < len(rendered.encode("utf-8")) <= 1_400_000):
+                        raise ValueError("Invalid isolated browser HTML")
                     year = int(str(proposed.get("startDate", ""))[:4])
                     actual = official_date(rendered, parent, year)
-                    raw_dates = official_date(raw, parent, year)
+                    raw_dates = official_date(raw, parent, year) if raw is not None else None
                     conflicting_raw = (
+                        raw is not None and
                         private_date_rejection_reason(raw, parent, year)
                         == "official_html_conflicting_future_ranges")
                     if (actual is None or conflicting_raw
@@ -1164,6 +1174,58 @@ def collect_noel_independent_sources(patch, fetcher=official_text, sleeper=sleep
     return result
 
 
+def load_isolated_browser_evidence(path, published, archive, today):
+    """Read only same-run public-job DOM, validated against signed origin URLs.
+
+    The browser job has no private secrets or write permissions. Artifact
+    transport NEVER makes HTML a trusted claim: the existing independent
+    publisher parsers still check identity, year, conflicting ranges and fields.
+    """
+    p = Path(path)
+    if not p.is_file() or p.stat().st_size > 36_000_000:
+        return {}
+    data = json.loads(p.read_text(encoding="utf-8"))
+    if (not isinstance(data, dict)
+            or data.get("schema") != "grossesondes.browser-official-evidence.v1"
+            or data.get("date") != today
+            or not isinstance(data.get("entries"), list)
+            or len(data["entries"]) > 24):
+        raise ValueError("Invalid isolated browser report")
+    allowed = {
+        row["officialSite"] for batch in
+        (published.get("festivals", []), archive.get("knownFestivals", []))
+        for row in batch
+        if isinstance(row, dict) and isinstance(row.get("officialSite"), str)
+    }
+    from grossesondes_archived_html_intake import organizer_homepage
+    from grossesondes_existing_official_updates import linked_pages, page
+    from dns_pinned_https import safe_public_url
+    result = {}
+    for item in data["entries"]:
+        if not isinstance(item, dict) or set(item) != {"officialSite", "sha256", "html"}:
+            raise ValueError("Invalid browser entry")
+        url, html = item["officialSite"], item["html"]
+        if (not isinstance(url, str) or safe_public_url(url) is None
+                or not organizer_homepage(url) or url in result
+                or not isinstance(html, str)
+                or not 0 < len(html.encode("utf-8")) <= 1_400_000
+                or sha256(html.encode("utf-8")).hexdigest() != item["sha256"]):
+            raise ValueError("Unverified browser entry")
+        result[url] = html
+    # Sources that are not themselves signed roots must be directly linked
+    # in the SAME artifact's signed home DOM and pass the signed code's
+    # strict same-host link filter. No private patch may supply a URL.
+    admissible_links = set()
+    for home in allowed.intersection(result):
+        try:
+            admissible_links.update(linked_pages(home, page(result[home]))[:2])
+        except (ValueError, TypeError, UnicodeError):
+            continue
+    if any(url not in allowed and url not in admissible_links for url in result):
+        raise ValueError("Unsigned browser link not anchored to official DOM")
+    return result
+
+
 def browser_needed_for_pending_patch(patch, published_slugs):
     """Match the publisher's ten-item queue, excluding already released rows.
 
@@ -1254,9 +1316,25 @@ def main():
         row["slug"] for row in published["festivals.json"]["festivals"]
         if isinstance(row, dict) and isinstance(row.get("slug"), str)
     }
+    # The isolated job supplies no private inputs, and has no write tokens.
+    # GitHub Actions downloads this run's artifact to this fixed path only.
+    try:
+        isolated_pages = load_isolated_browser_evidence(
+            "/tmp/grossesondes_browser/evidence.json",
+            published["festivals.json"], published["festival-history.json"],
+            today.isoformat())
+    except (OSError, ValueError, TypeError, KeyError, UnicodeError):
+        isolated_pages = {}
+        print("Isolated browser evidence rejected; raw HTTPS only")
+    def isolated_browser_fetch(url):
+        if url not in isolated_pages:
+            raise OSError("No signed same-run browser proof")
+        return isolated_pages[url]
+
     sources.update(collect_registered_edition_sources(
         patch, original, archived=registered_archives,
-        published_slugs=signed_published_slugs))
+        published_slugs=signed_published_slugs,
+        browser_fetcher=isolated_browser_fetch))
     # Current editions on previously signed tourism pages are independently
     # rechecked by this publisher, even if the organizer still shows last
     # year's edition. These are not private discoveries or arbitrary URLs.
@@ -1308,6 +1386,7 @@ def main():
         trusted_published=True, geo_review=geo_review,
         city_review=city_review,
         official_update_fetcher=fetch_public_html,
+        official_update_browser_fetcher=isolated_browser_fetch,
         official_update_tick=rotation_tick,
         official_update_limit=official_update_scan_limit(
             os.environ.get("GITHUB_EVENT_NAME", "")))

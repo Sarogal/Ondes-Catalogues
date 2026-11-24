@@ -23,6 +23,8 @@ on:
       - 'scripts/grossesondes_archived_html_intake.py'
       - 'scripts/grossesondes_undated_edition.py'
       - 'scripts/grossesondes_official_browser_probe.py'
+      - 'scripts/grossesondes_browser_readonly_collect.py'
+      - 'tests/test_grosses_browser_readonly_collect.py'
       - 'tests/test_grosses_archived_html_intake.py'
       - 'tests/test_grosses_undated_edition.py'
       - 'tests/test_grosses_visible_html_edition.py'
@@ -55,6 +57,8 @@ on:
       - 'scripts/grossesondes_archived_html_intake.py'
       - 'scripts/grossesondes_undated_edition.py'
       - 'scripts/grossesondes_official_browser_probe.py'
+      - 'scripts/grossesondes_browser_readonly_collect.py'
+      - 'tests/test_grosses_browser_readonly_collect.py'
       - 'tests/test_grosses_archived_html_intake.py'
       - 'tests/test_grosses_undated_edition.py'
       - 'tests/test_grosses_visible_html_edition.py'
@@ -121,10 +125,79 @@ jobs:
       - name: Vérifier tous les contrats sans accès aux secrets ni publication
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
 
+  browser_readonly:
+    # Absolutely no private intake token, Git credentials or write permission
+    # in the runner that executes untrusted festival JavaScript.
+    # A same-repository PR smoke test exercises Chromium before merge.
+    if: >-
+      ${{ github.repository == 'Sarogal/Ondes-Catalogues' &&
+          ((github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name == github.repository) ||
+           (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || 'main' }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Installer Chromium isolé sans secrets
+        run: |
+          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
+          python -m playwright install --with-deps chromium
+      - name: Autoriser uniquement le binaire Chromium à utiliser son sandbox AppArmor
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Never disable AppArmor globally. Apply one exact executable profile
+          # before running any untrusted website scripts.
+          CHROME_BIN="$(find "$HOME/.cache/ms-playwright" -type f -path '*/chromium_headless_shell-*/chrome-linux/headless_shell' -print -quit)"
+          test -n "$CHROME_BIN" && test -x "$CHROME_BIN"
+          printf 'abi <abi/4.0>,\ninclude <tunables/global>\nprofile grossesondes-chromium %s flags=(unconfined) {\n  userns,\n}\n' "$CHROME_BIN" > "$RUNNER_TEMP/grossesondes-chromium.apparmor"
+          sudo install -m 0644 "$RUNNER_TEMP/grossesondes-chromium.apparmor" /etc/apparmor.d/grossesondes-chromium
+          sudo apparmor_parser -r /etc/apparmor.d/grossesondes-chromium
+      - name: Vérifier localement le sandbox Chromium avant toute page externe
+        run: |
+          python - <<'PY'
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch(headless=True, chromium_sandbox=True)
+              try:
+                  context = browser.new_context(
+                      accept_downloads=False, service_workers='block')
+                  page = context.new_page()
+                  page.set_content('<main>Grosses Ondes browser smoke</main>')
+                  assert 'Grosses Ondes browser smoke' in page.content()
+              finally:
+                  browser.close()
+          PY
+      - name: Récupérer uniquement les origines HTTPS du catalogue public signé
+        run: |
+          python scripts/grossesondes_browser_readonly_collect.py \
+            --published docs/grossesondes/festivals.json \
+            --history docs/grossesondes/festival-history.json \
+            --output "${RUNNER_TEMP}/festivals-browser/evidence.json"
+      - name: Transmettre la contre-preuve au Publisher, jamais ses secrets
+        uses: actions/upload-artifact@v7
+        with:
+          name: grossesondes-browser-evidence
+          path: ${{ runner.temp }}/festivals-browser/evidence.json
+          if-no-files-found: error
+          retention-days: 1
+
   prepare:
+    needs: [browser_readonly]
+    # A failed optional browser job must NEVER block the normal HTTPS
+    # Publisher. Missing evidence means raw-only validation, not no run.
     if: >-
       ${{
         github.event_name != 'pull_request' &&
+        !cancelled() &&
         github.ref == 'refs/heads/main' &&
         ((github.event_name != 'schedule' && github.event_name != 'workflow_run') ||
           vars.GROSSES_ONDES_CLOUD_SYNC == 'enabled') &&
@@ -158,18 +231,12 @@ jobs:
         run: python scripts/grossesondes_festival_intake_trust.py --check-event
       - name: Vérifier les tests de conservation et de contrôle documentaire
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
-      - name: Vérifier anonymement si le patch privé exige une contre-preuve navigateur
-        id: browser_need
-        env:
-          GROSSES_ONDES_INTAKE_READ_TOKEN: ${{ secrets.GROSSES_ONDES_INTAKE_READ_TOKEN }}
-        shell: bash
-        run: python scripts/grossesondes_cloud_sync.py --browser-needed-only >> "$GITHUB_OUTPUT"
-      - name: Installer Chromium uniquement si le patch requiert une nouvelle édition JS
-        if: steps.browser_need.outputs.browser_required == 'true'
-        shell: bash
-        run: |
-          python -m pip install --disable-pip-version-check 'playwright==1.56.0'
-          python -m playwright install --with-deps chromium
+      - name: Télécharger la preuve du job navigateur sans secrets
+        if: needs.browser_readonly.result == 'success'
+        uses: actions/download-artifact@v7
+        with:
+          name: grossesondes-browser-evidence
+          path: /tmp/grossesondes_browser/
 
       - name: Préparer le candidat ou la modification contrôlée
         id: sync

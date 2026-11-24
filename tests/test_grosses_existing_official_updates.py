@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "festival-automatio
 from grossesondes_existing_official_updates import (
     apply_independently_verified_updates, linked_pages, page,
     signed_rotation, listed_artists, advertised_passes,
+    current_official_ticket_city,
 )
 from grossesondes_cloud_sync import _verified_official_update_delta
 
@@ -91,6 +92,96 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertFalse(report["private_proposal_is_authority"])
         self.assertEqual(updated["showOnMap"], False)
         self.assertIsNone(updated["lat"])
+
+    def test_isolated_browser_recovers_http_403_then_rechecks_real_official_news(self):
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            if url == MOZHELL:
+                raise OSError("HTTP 403 SECRET_TOKEN_MUST_NOT_LEAK")
+            return {ARTICLE: NEWS}[url]
+        browser_urls = []
+        def browser_fetch(url):
+            browser_urls.append(url)
+            return HOME
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=fetch, browser_fetch=browser_fetch,
+            limit=1, tick=0)
+        self.assertEqual(browser_urls, [MOZHELL])
+        self.assertEqual(visited, [MOZHELL, ARTICLE])
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["unavailable"], 0)
+        self.assertEqual(out["festivals"][0]["lineup"],
+                         ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
+        self.assertNotIn("SECRET_TOKEN_MUST_NOT_LEAK", str(report))
+
+    def test_official_summer_ticket_city_proves_current_edition_not_winter(self):
+        site = "https://festivalgueulesdebois.com/"
+        link = site + "billet/"
+        row = festival("les-gueules-de-bois-2027", site,
+                       dates=("2027-08-19", "2027-08-21"))
+        row.update(name="Les Gueules de Bois 2027", department="39")
+        winter = ('<main><h1>Winter 2027 - 13 février 2027 à Légna</h1>'
+                  '<a href="/billet/">Billetterie officielle</a></main>')
+        summer = ('<html><head><title>Billetterie – Festival Les Gueules '
+                  'de Bois – Été 2027</title></head><body><main>'
+                  '<h1>Ton billet pour l’été</h1>'
+                  '<p>Été 2027 · 19–21 août à Légna (Jura)</p>'
+                  '</main></body></html>')
+        self.assertEqual(current_official_ticket_city(summer, row), "Légna")
+        self.assertIsNone(current_official_ticket_city(
+            summer.replace("19–21 août", "13 février"), row))
+        self.assertIsNone(current_official_ticket_city(winter, row))
+        pages = {site: winter, link: summer}
+        calls = []
+        def browser(url):
+            calls.append(url)
+            return pages[url]
+        def admin(city, department):
+            self.assertEqual((city, department), ("Légna", "39"))
+            return {"city": "Légna", "lat": 46.47, "lon": 5.64,
+                    "codeInsee": "39000", "geoSource": "https://geo.api.gouv.fr/"}
+        original = doc(row)
+        out, report = apply_independently_verified_updates(
+            original, original, DAY,
+            fetch=lambda _: (_ for _ in ()).throw(OSError("HTTP 403")),
+            browser_fetch=browser, commune_resolver=admin, limit=1, tick=0)
+        self.assertEqual(calls, [site, link])
+        self.assertEqual(out["festivals"][0]["city"], "Légna")
+        self.assertTrue(out["festivals"][0]["showOnMap"])
+        self.assertIn("les-gueules-de-bois-2027", report["accepted"])
+
+    def test_linked_official_news_can_recover_when_both_raw_requests_fail(self):
+        signed = doc(festival("mozhell-open-air", MOZHELL))
+        browser_calls = []
+        def blocked(_):
+            raise OSError("HTTP 403")
+        def browser(url):
+            browser_calls.append(url)
+            return {MOZHELL: HOME, ARTICLE: NEWS}[url]
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=blocked, browser_fetch=browser,
+            limit=1, tick=0)
+        self.assertEqual(browser_calls, [MOZHELL, ARTICLE])
+        self.assertEqual(out["festivals"][0]["lineup"],
+                         ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["unavailable"], 0)
+
+    def test_isolated_browser_wrong_edition_cannot_modify_signed_row(self):
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        def fail(_):
+            raise OSError("HTTP 403")
+        fake = HOME.replace("2027", "2026").replace("25 juillet", "25 mars")
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=fail, browser_fetch=lambda _: fake,
+            limit=1, tick=0)
+        self.assertEqual(out, signed)
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["accepted"], [])
 
     def test_prevalidated_ticket_status_and_new_prices_are_composable(self):
         # Reproduces the actual Motocultor Publisher order: a separately

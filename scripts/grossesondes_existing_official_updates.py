@@ -155,6 +155,51 @@ def signed_programmer_current_city(html, row):
     return re.search(municipal, visible) is not None
 
 
+def current_official_ticket_city(html, row):
+    """Exact summer-edition locality printed on a CURRENT first-party ticket page.
+
+    Generic evidence: title must identify the signed festival and season/year,
+    and visible content must bind the SAME signed date interval to one city.
+    Never derive a town from a generic footer, a former venue or winter dates.
+    Only call for a same-host ticket/news link discovered in the signed home.
+    """
+    if not isinstance(html, str) or not 0 < len(html) <= 650_000:
+        return None
+    try:
+        begin = date.fromisoformat(row["startDate"])
+        end = date.fromisoformat(row["endDate"])
+        if (begin.year != end.year or begin.month != end.month
+                or end < begin or (end - begin).days > 7):
+            return None
+        title_parser = _EditionTitle()
+        title_parser.feed(html)
+        title_parser.close()
+        title = fold(" ".join(title_parser.parts))
+        identity = fold(re.sub(r"\b20[2-4]\d\b", "", row["name"])).strip()
+        if (not identity or key(identity) not in key(title)
+                or "billetterie" not in title
+                or f"ete {begin.year}" not in title):
+            return None
+        visible = VisibleText()
+        visible.feed(html)
+        visible.close()
+        body = " ".join(visible.parts)
+        months = ("janvier", "février", "mars", "avril", "mai", "juin",
+                  "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+        month = months[begin.month - 1]
+        pattern = (
+            rf"\b(?:été|ete)\s+{begin.year}\s*[·:|–—-]?\s*"
+            rf"{begin.day}\s*[-–—]\s*{end.day}\s+{month}\s+à\s+"
+            r"([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]*"
+            r"(?:\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ'’\-]*){0,2})"
+            r"\s*\(([^()]{2,35})\)"
+        )
+        cities = {match.group(1) for match in re.finditer(pattern, body, re.I)}
+        return next(iter(cities)) if len({key(x) for x in cities}) == 1 else None
+    except (KeyError, TypeError, ValueError, UnicodeError):
+        return None
+
+
 def verified_artist_alias_cleanup(lineup, official_names):
     """Collapse a billed soloist and its explicit performance description.
 
@@ -827,7 +872,7 @@ def weekday_labelled_official_dates(html, row, year):
 
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
-        tick=None, commune_resolver=verified_commune):
+        tick=None, commune_resolver=verified_commune, browser_fetch=None):
     """Recheck signed artists/prices and exact first-party city proof.
 
     A commune marker is only an indicative administrative centre: no precise
@@ -838,7 +883,7 @@ def apply_independently_verified_updates(
     report = {"checked_official_hosts": 0, "rechecked_pages": 0,
               "accepted": [], "accepted_changes": [], "unavailable": 0,
               "checked_official_sources": [], "unavailable_official_sources": [],
-              "official_edition_diagnostics": [],
+              "official_edition_diagnostics": [], "browser_recoveries": 0,
               "private_proposal_is_authority": False}
     for site, rows in signed_rotation(published, today, limit, tick):
         report["checked_official_hosts"] += 1
@@ -850,11 +895,27 @@ def apply_independently_verified_updates(
             root = page(root_html)
             report["rechecked_pages"] += 1
         except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
-            report["unavailable"] += 1
-            # Do not log untrusted exception text, response HTML, or secrets.
-            report["unavailable_official_sources"].append({
-                "url": site, "error_type": type(exc).__name__})
-            continue
+            # This callback comes ONLY from a separate no-secret job that
+            # rendered a signed public officialSite. Never launch Chromium
+            # inside the privileged Publisher itself. The HTML remains
+            # untrusted and must still pass every edition/field validator.
+            try:
+                if browser_fetch is None:
+                    raise ValueError("No isolated browser proof")
+                root_html = browser_fetch(site)
+                if (not isinstance(root_html, str)
+                        or not 0 < len(root_html.encode("utf-8")) <= 1_400_000):
+                    raise ValueError("Invalid browser HTML")
+                root = page(root_html)
+                report["rechecked_pages"] += 1
+                report["browser_recoveries"] += 1
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError,
+                    KeyError):
+                report["unavailable"] += 1
+                # Do not log untrusted exception text, response HTML, or secrets.
+                report["unavailable_official_sources"].append({
+                    "url": site, "error_type": type(exc).__name__})
+                continue
         pages = [(site, root)]
         # Store only independently fetched, safely linked first-party HTML;
         # a future date may appear in official news rather than on the home.
@@ -879,11 +940,19 @@ def apply_independently_verified_updates(
             pages.append((site, current_home))
         for link in linked_pages(site, root):
             try:
-                linked_html = fetch(link)
-                pages.append((link, page(linked_html)))
+                try:
+                    linked_html = fetch(link)
+                except (OSError, TimeoutError, ValueError, UnicodeError):
+                    if browser_fetch is None:
+                        raise
+                    # Only same-origin links proven by the parsed home DOM;
+                    # the loader separately checks their exact provenance.
+                    linked_html = browser_fetch(link)
+                linked_doc = page(linked_html)
+                pages.append((link, linked_doc))
                 html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
-            except (OSError, TimeoutError, ValueError, UnicodeError):
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
                 continue
         for old in rows:
             slug = old["slug"]
@@ -965,7 +1034,23 @@ def apply_independently_verified_updates(
                 # A title with signed brand, EXACT dates and one town is its
                 # own first-party edition proof. The site's news teaser may
                 # omit the year, so root_ok cannot be an additional gate.
-                claim = exact_edition_city(root_html, old)
+                # A current edition's town may be proved only by a
+                # same-host linked official ticket/news page. Reject any
+                # disagreement between independently parsed current-year
+                # claims; do not borrow last year's venue or winter dates.
+                claims_city = []
+                for linked_url, html in html_pages:
+                    claim = exact_edition_city(html, old)
+                    if claim is None and linked_url != site:
+                        city = current_official_ticket_city(html, old)
+                        if city:
+                            claim = {"slug": slug, "city": city, "source": site}
+                    if claim is not None:
+                        claims_city.append(claim)
+                distinct_cities = {
+                    normal_city(c["city"]) for c in claims_city}
+                claim = (claims_city[0] if len(distinct_cities) == 1
+                         else None)
                 if (claim and claim.get("source") == site
                         and claim.get("slug") == slug
                         and (not old.get("city")
