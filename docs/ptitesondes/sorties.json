@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T08:51:37+01:00",
+  "updated_at": "2026-11-24T15:51:38+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -17903,6 +17903,66 @@
       "geo_precision": "venue",
       "lat": 50.51843,
       "lng": 2.9594
+    },
+    {
+      "id": "openagenda-95449602-2026-11-26",
+      "title": "Mon Doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-11-26",
+      "date_end": "2026-11-26",
+      "time": "09:30",
+      "city": "Montdidier",
+      "department": "Somme",
+      "region": "Hauts-de-France",
+      "venue": "MDSI Montdidier",
+      "source_url": "https://openagenda.com/rncap/events/95449602_mon-doudou-4373502",
+      "source_label": "Bulles de Théâtre — Licence Ouverte 2.0 — données mises à jour le 18/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 49.646561,
+      "lng": 2.574662
+    },
+    {
+      "id": "openagenda-79650377-2026-12-22",
+      "title": "Mon Doudou",
+      "category": "eveil-musical",
+      "category_label": "Éveil musical",
+      "date_start": "2026-12-22",
+      "date_end": "2026-12-22",
+      "time": "09:30",
+      "city": "Montdidier",
+      "department": "Somme",
+      "region": "Hauts-de-France",
+      "venue": "MDSI Montdidier",
+      "source_url": "https://openagenda.com/rncap/events/79650377_mon-doudou-3520633",
+      "source_label": "Bulles de Théâtre — Licence Ouverte 2.0 — données mises à jour le 18/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 49.646561,
+      "lng": 2.574662
+    },
+    {
+      "id": "openagenda-95234873-2027-01-23",
+      "title": "La fausse note : atelier musical",
+      "category": "atelier-musical",
+      "category_label": "Atelier musical",
+      "date_start": "2027-01-23",
+      "date_end": "2027-01-23",
+      "time": "15:00",
+      "city": "Villeurbanne",
+      "department": "Rhône",
+      "region": "Auvergne-Rhône-Alpes",
+      "venue": "Médiathèque du Rize",
+      "source_url": "https://openagenda.com/villeurbanne-mediatheques/events/95234873_atelier-musical-la-fausse-note-3614449",
+      "source_label": "Villeurbanne Médiathèques — Licence Ouverte 2.0 — données mises à jour le 24/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 45.759667,
+      "lng": 4.883353
     }
   ]
 }
