@@ -92,6 +92,43 @@ class ExistingOfficialFestivalTests(unittest.TestCase):
         self.assertEqual(updated["showOnMap"], False)
         self.assertIsNone(updated["lat"])
 
+    def test_isolated_browser_recovers_http_403_then_rechecks_real_official_news(self):
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        visited = []
+        def fetch(url):
+            visited.append(url)
+            if url == MOZHELL:
+                raise OSError("HTTP 403 SECRET_TOKEN_MUST_NOT_LEAK")
+            return {ARTICLE: NEWS}[url]
+        browser_urls = []
+        def browser_fetch(url):
+            browser_urls.append(url)
+            return HOME
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=fetch, browser_fetch=browser_fetch,
+            limit=1, tick=0)
+        self.assertEqual(browser_urls, [MOZHELL])
+        self.assertEqual(visited, [MOZHELL, ARTICLE])
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["unavailable"], 0)
+        self.assertEqual(out["festivals"][0]["lineup"],
+                         ["Ultra Vomit", "THE ARRS", "LocoMuerte"])
+        self.assertNotIn("SECRET_TOKEN_MUST_NOT_LEAK", str(report))
+
+    def test_isolated_browser_wrong_edition_cannot_modify_signed_row(self):
+        row = festival("mozhell-open-air", MOZHELL)
+        signed = doc(row)
+        def fail(_):
+            raise OSError("HTTP 403")
+        fake = HOME.replace("2027", "2026").replace("25 juillet", "25 mars")
+        out, report = apply_independently_verified_updates(
+            signed, signed, DAY, fetch=fail, browser_fetch=lambda _: fake,
+            limit=1, tick=0)
+        self.assertEqual(out, signed)
+        self.assertEqual(report["browser_recoveries"], 1)
+        self.assertEqual(report["accepted"], [])
+
     def test_prevalidated_ticket_status_and_new_prices_are_composable(self):
         # Reproduces the actual Motocultor Publisher order: a separately
         # validated ticket-availability update precedes the current official
