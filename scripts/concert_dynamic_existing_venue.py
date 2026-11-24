@@ -525,7 +525,8 @@ def validate(approval, venues, artists, today, *, fetch=None):
     if not events and (is_single_osm or is_address or is_official):
         from automation.concerts import open_world_visible_cards
         detail = open_world_visible_cards.verified_detail(
-            html, venue['name'], venue['city'], event['date'])
+            html, venue['name'], venue['city'], event['date'],
+            address=venue.get('address'), postal=venue.get('postalCode'))
         if detail is not None:
             names, genres = detail
             require(normal(' + '.join(names)) == normal(event.get('title'))
