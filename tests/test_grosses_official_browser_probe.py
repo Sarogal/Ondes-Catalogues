@@ -7,7 +7,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from grossesondes_official_browser_probe import (
-    compare_proof, request_allowed, trusted_parent,
+    compare_proof, request_allowed, trusted_parent, probe_sources,
 )
 
 PARENT = {
@@ -70,6 +70,35 @@ class BrowserPreflightTests(unittest.TestCase):
             "NO_BROWSER_VISIBLE_PROOF")
         self.assertNotIn("festival666.com", json.dumps(only_render))
         self.assertNotIn("2027-08-13", json.dumps(only_render))
+
+    def test_http_failure_does_not_skip_browser(self):
+        def failed(*args, **kwargs):
+            raise OSError("HTTP 403")
+        result = probe_sources(PARENT, 2027, date(2026, 11, 19),
+                               raw_fetch=failed, browser_fetch=lambda url: VISIBLE)
+        self.assertEqual(result["verdict"], "RENDERED_DOM_CANDIDATE_ONLY")
+        self.assertFalse(result["raw_available"])
+        self.assertTrue(result["browser_available"])
+        self.assertFalse(result["publication_authorized"])
+
+    def test_browser_failure_preserves_raw_diagnostic(self):
+        def failed(*args, **kwargs):
+            raise OSError("browser unavailable")
+        result = probe_sources(PARENT, 2027, date(2026, 11, 19),
+                               raw_fetch=lambda *a, **k: VISIBLE, browser_fetch=failed)
+        self.assertEqual(result["verdict"], "RAW_CANDIDATE_BROWSER_UNAVAILABLE")
+        self.assertTrue(result["raw_candidate"])
+        self.assertFalse(result["browser_available"])
+        self.assertFalse(result["safe_to_publish"])
+
+    def test_both_fail_closed(self):
+        def failed(*args, **kwargs):
+            raise OSError("unavailable")
+        result = probe_sources(PARENT, 2027, date(2026, 11, 19),
+                               raw_fetch=failed, browser_fetch=failed)
+        self.assertEqual(result["verdict"], "BROWSER_OR_HTTP_UNAVAILABLE")
+        self.assertFalse(result["rendered_candidate"])
+        self.assertFalse(result["publication_authorized"])
 
     def test_jsonld_alone_cannot_be_mistaken_for_visible_rendered_dates(self):
         structured_only = (
