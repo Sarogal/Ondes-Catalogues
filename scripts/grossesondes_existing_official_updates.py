@@ -547,6 +547,58 @@ def listed_artists(blocks):
     return result
 
 
+
+def season_scoped_first_names(doc, html, row, today):
+    """Read a locally labelled first-names list, not another seasonal edition.
+
+    The official title must independently prove the signed exact dates/city.
+    A separate visible season/year label immediately before the roster heading
+    binds the list to that edition. Stop at the next non-list block; navigation,
+    historical cards and another season's names never authorize this route.
+    """
+    if not exact_edition_city(html, row):
+        return []
+    try:
+        start = date.fromisoformat(row["startDate"])
+        if start < date.fromisoformat(today):
+            return []
+        title = _EditionTitle()
+        title.feed(html)
+        title.close()
+        seasons = set(re.findall(
+            rf"\b(ete|hiver|printemps|automne)\s+{start.year}\b",
+            fold(" ".join(title.parts))))
+    except (KeyError, ValueError, TypeError):
+        return []
+    if len(seasons) != 1:
+        return []
+    label = next(iter(seasons)) + " " + str(start.year)
+    names = []
+    blocks = doc.blocks
+    for i, heading in enumerate(blocks):
+        if (i == 0 or heading["tag"] not in ("h2", "h3")
+                or heading["scope"] not in ("main", "article")
+                or fold(heading["text"]) not in (
+                    "les premiers noms", "premiers noms",
+                    "les premiers artistes", "premiers artistes",
+                    "les premiers groupes", "premiers groupes")):
+            continue
+        previous = blocks[i - 1]
+        if (previous["tag"] != "p" or previous["scope"] != heading["scope"]
+                or fold(previous["text"]) != label):
+            continue
+        for item in blocks[i + 1:]:
+            if item["tag"] != "li" or item["scope"] != heading["scope"]:
+                break
+            if SENSITIVE.search(fold(item["text"])):
+                continue
+            name = good_artist(re.sub(r"\s*[↗→]\s*$", "",
+                                      item["lead"] or item["text"]))
+            if name:
+                names.append(name)
+    return names
+
+
 def advertised_passes(blocks):
     found = {}
     # Explicit, visible ticket-card offers take precedence over generic
@@ -997,6 +1049,15 @@ def apply_independently_verified_updates(
                 if names or offers:
                     claims += names
                     prices.update(offers)
+                    sources.append(url)
+            # A page can explicitly separate winter and summer rosters.
+            # This additional route independently binds the list to the
+            # exact signed edition rather than accepting brand/year alone.
+            for url, html in html_pages:
+                seasonal_names = season_scoped_first_names(
+                    page(html), html, old, today)
+                if seasonal_names:
+                    claims.extend(seasonal_names)
                     sources.append(url)
             current_lineup = old.get("lineup")
             current_lineup = current_lineup if isinstance(current_lineup, list) else []
