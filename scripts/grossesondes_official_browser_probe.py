@@ -12,6 +12,11 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo
 from datetime import datetime
+import sys
+
+_AUTOMATION_DIR = str(Path(__file__).resolve().parents[1] / "festival-automation")
+if _AUTOMATION_DIR not in sys.path:
+    sys.path.insert(0, _AUTOMATION_DIR)
 
 from grossesondes_archived_html_intake import organizer_homepage, candidate, official_date
 from grossesondes_stage import official_text
