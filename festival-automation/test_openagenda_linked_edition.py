@@ -175,7 +175,7 @@ class OpenAgendaLinkedPublisherTests(TestCase):
             original, D2, event_fetch=lambda _: OA,
             organizer_fetch=lambda _: crossover))
 
-    def test_first_day_does_not_publish_second_day_can_be_prepared(self):
+    def test_first_day_can_prepare_but_never_authorize_publication(self):
         cal, _, _ = fixtures()
         state = {"schema": "grossesondes.source-watch.v1"}
         touched, oa, primary = self.readers()
@@ -186,8 +186,17 @@ class OpenAgendaLinkedPublisherTests(TestCase):
         self.assertFalse(first["publication_authorized"])
         self.assertEqual(first["rows"][0]["status"],
                          "FIRST_DAY_OPENAGENDA_FIRST_PARTY_PRIVATE")
-        self.assertEqual(stable_private_proposals(
-            state, queue(D1), cal, first, D1), [])
+        first_proposals = stable_private_proposals(
+            state, queue(D1), cal, first, D1)
+        self.assertEqual(len(first_proposals), 1)
+        self.assertEqual(first_proposals[0]["name"], TITLE)
+        self.assertFalse(first_proposals[0]["showOnMap"])
+        self.assertIsNotNone(independently_verify(
+            first_proposals[0], D1, event_fetch=oa,
+            organizer_fetch=primary))
+        self.assertIsNone(independently_verify(
+            first_proposals[0], D1, event_fetch=oa,
+            organizer_fetch=lambda _: "<main>Programme non confirmé</main>"))
         second = examine(
             state, queue(D2), cal, D2,
             event_fetch=oa, organizer_fetch=primary)
@@ -217,6 +226,10 @@ class OpenAgendaLinkedPublisherTests(TestCase):
             event_fetch=lambda _: OA,
             organizer_fetch=lambda _: PRIMARY)
         self.assertEqual(changed["two_day_count"], 0)
+        self.assertEqual(len(stable_private_proposals(
+            state, queue(day3), cal, changed, day3)), 1)
+        # A forged report still cannot use a different first-party date.
+        changed["rows"][0]["start_date_hint"] = "2027-01-01"
         self.assertEqual(stable_private_proposals(
             state, queue(day3), cal, changed, day3), [])
 
