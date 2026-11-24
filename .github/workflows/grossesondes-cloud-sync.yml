@@ -161,8 +161,11 @@ jobs:
 
   prepare:
     needs: [browser_readonly]
+    # A failed optional browser job must NEVER block the normal HTTPS
+    # Publisher. Missing evidence means raw-only validation, not no run.
     if: >-
       ${{
+        always() &&
         github.event_name != 'pull_request' &&
         github.ref == 'refs/heads/main' &&
         ((github.event_name != 'schedule' && github.event_name != 'workflow_run') ||
@@ -198,6 +201,7 @@ jobs:
       - name: Vérifier les tests de conservation et de contrôle documentaire
         run: python -m unittest discover -s tests -p 'test_grosses_*.py' -v
       - name: Télécharger la preuve du job navigateur sans secrets
+        if: needs.browser_readonly.result == 'success'
         uses: actions/download-artifact@v7
         with:
           name: grossesondes-browser-evidence
