@@ -5,6 +5,7 @@ on:
     paths:
       - 'automation/concerts/open_world_frontier.py'
       - 'automation/concerts/open_world_site_research.py'
+      - 'automation/concerts/open_world_visible_cards.py'
       - 'tests/test_concerts_open_world_frontier.py'
       - 'tests/test_concerts_open_world_site_research.py'
       - '.github/workflows/grossesondes-concerts-open-world-research-tests.yml'
@@ -13,6 +14,7 @@ on:
     paths:
       - 'automation/concerts/open_world_frontier.py'
       - 'automation/concerts/open_world_site_research.py'
+      - 'automation/concerts/open_world_visible_cards.py'
       - 'tests/test_concerts_open_world_frontier.py'
       - 'tests/test_concerts_open_world_site_research.py'
       - '.github/workflows/grossesondes-concerts-open-world-research-tests.yml'
