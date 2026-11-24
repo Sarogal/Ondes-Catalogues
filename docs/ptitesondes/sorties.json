@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-24T05:01:53+01:00",
+  "updated_at": "2026-11-24T08:51:37+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -17883,6 +17883,26 @@
       "geo_precision": "venue",
       "lat": 48.826061,
       "lng": 2.359178
+    },
+    {
+      "id": "openagenda-89178836-2026-11-28",
+      "title": "Bébés lecteurs",
+      "category": "lecture-jeunesse",
+      "category_label": "Lecture jeunesse",
+      "date_start": "2026-11-28",
+      "date_end": "2026-11-28",
+      "time": "10:00",
+      "city": "Carnin",
+      "department": "Nord",
+      "region": "Hauts-de-France",
+      "venue": "Carnin - Médiathèque Saint Exupéry",
+      "source_url": "https://openagenda.com/mediatheques-de-la-haute-deule/events/89178836_bebes-lecteurs-779357",
+      "source_label": "Médiathèques de la Haute Deûle — Licence Ouverte 2.0 — données mises à jour le 04/11/2026",
+      "verified_at": "2026-11-24",
+      "geo_verified_at": "2026-11-24",
+      "geo_precision": "venue",
+      "lat": 50.51843,
+      "lng": 2.9594
     }
   ]
 }
