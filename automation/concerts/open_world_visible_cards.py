@@ -13,6 +13,7 @@ from __future__ import annotations
 import datetime as dt
 import re
 import sys
+from html.parser import HTMLParser
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -121,7 +122,48 @@ def extract(html, room, city, today):
     return matches
 
 
-def verified_detail(html, room, city, when):
+class _FooterAddress(HTMLParser):
+    """Only a real footer's address text; never event, artist or genre evidence."""
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.in_footer = False
+        self.ignored = 0
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "footer":
+            self.in_footer = True
+        if self.in_footer and tag in {"script", "style", "noscript", "svg", "form"}:
+            self.ignored += 1
+
+    def handle_endtag(self, tag):
+        if tag == "footer":
+            self.in_footer = False
+            self.ignored = 0
+        elif self.in_footer and self.ignored and tag in {
+                "script", "style", "noscript", "svg", "form"}:
+            self.ignored -= 1
+
+    def handle_data(self, text):
+        if self.in_footer and not self.ignored:
+            self.parts.append(text)
+
+
+def _footer_location(html, city, address, postal):
+    if not isinstance(address, str) or len(words(address)) < 5:
+        return False
+    if not isinstance(postal, str) or not re.fullmatch(r"\d{5}", postal):
+        return False
+    parser = _FooterAddress()
+    parser.feed(html)
+    parser.close()
+    content = " ".join(parser.parts)
+    return (visible._contains(content, address)
+            and visible._contains(content, postal + " " + city))
+
+
+def verified_detail(html, room, city, when, *, address=None, postal=None,
+                    diagnostics=None):
     """Verify a single first-party HTML event after INDEPENDENT source ownership.
 
     Both artist-H1 pages and venue-branded H1 pages with an explicit
@@ -130,31 +172,40 @@ def verified_detail(html, room, city, when):
     genre + matching venue card before any recommendation section. Never
     infer genres from descriptive paragraphs or from nearby events.
     """
+    def held(reason):
+        if diagnostics is not None:
+            diagnostics["visibleDetail"] = reason
+        return None
+
     try:
         day = dt.date.fromisoformat(when)
     except (TypeError, ValueError):
-        return None
+        return held("invalid_date")
     if not isinstance(html, str) or len(html) > MAX_HTML:
-        return None
+        return held("invalid_html")
     parsed = visible.VisibleBlocks()
     try:
         parsed.feed(html)
         parsed.close()
     except (ValueError, TypeError, RecursionError):
-        return None
+        return held("html_parse_error")
     blocks = parsed.blocks
+    # Footer text is intentionally excluded from the musical parser. A
+    # matching exact published address + postcode/city can nevertheless
+    # corroborate the already independently authenticated physical venue.
     if not visible._contains(" ".join(t for _, t in blocks), city):
-        return None
+        if not _footer_location(html, city, address, postal):
+            return held("city_or_exact_footer_address_missing")
     headings = [(i, t) for i, (tag, t) in enumerate(blocks) if tag == "h1"]
     if len(headings) != 1:
-        return None
+        return held("single_h1_missing")
     start, title = headings[0]
     if re.search(r"\b(?:festival|fest)\b", words(title)):
-        return None
+        return held("festival_heading")
     brand_heading = _room_key(title) == _room_key(room)
     names = None if brand_heading else _artists(title)
     if not brand_heading and not names:
-        return None
+        return held("invalid_artist_heading")
     section = blocks[start + 1:]
     # Recommendations may be introduced by ordinary paragraphs, not just
     # semantic H2/H3 headings. Their cards cannot attest this primary event.
@@ -166,7 +217,7 @@ def verified_detail(html, room, city, when):
                    and words(t) in end_labels), len(section))
     section = section[:min(cutoff, 160)]
     if CANCELLED.search(words(" ".join(t for _, t in section))):
-        return None
+        return held("cancellation_word_in_section")
     if brand_heading:
         # A venue's calendar list is NOT an individual event detail. Only a
         # presenter's dedicated show page can supply this second HTML shape.
@@ -178,18 +229,18 @@ def verified_detail(html, room, city, when):
                    and re.search(r"\b(?:presente|presentent|presents|presented by)\b",
                                  words(t))
                    for tag, t in preceding):
-            return None
+            return held("presenter_heading_missing")
         # The page must not contain several distinct announced show dates
         # inside its primary event section. Repeated SAME date is fine.
         observed = {_date(t) for tag, t in section if tag in {
             "p", "time", "strong", "text"} and _date(t)}
         if observed != {when}:
-            return None
+            return held("primary_date_missing_or_ambiguous")
     else:
         dates = [_date(t) for tag, t in section[:16]
                  if tag in {"p", "time", "strong", "text"} and _date(t)]
         if not dates or dates[0] != when:
-            return None
+            return held("artist_heading_date_mismatch")
     paras = [t for tag, t in section if tag == "p"]
     matches = {}
     for i in range(max(0, len(paras) - 3)):
@@ -207,4 +258,6 @@ def verified_detail(html, room, city, when):
             continue
         key = (tuple(words(n) for n in bill), words(label))
         matches[key] = (bill, [label])
-    return next(iter(matches.values())) if len(matches) == 1 else None
+    if len(matches) != 1:
+        return held("unique_date_bill_genre_room_card_missing")
+    return next(iter(matches.values()))

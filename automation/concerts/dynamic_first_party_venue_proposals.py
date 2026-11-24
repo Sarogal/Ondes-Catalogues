@@ -69,10 +69,14 @@ def _individual_event(html, url, when, venue, *, accept_generic=False,
     nodes = dynamic.individual_event_nodes(html, accept_generic=accept_generic)
     if accept_generic and not nodes:
         from automation.concerts import open_world_visible_cards
+        diagnostics = {}
         detail = open_world_visible_cards.verified_detail(
-            html, venue['name'], venue['city'], when)
+            html, venue['name'], venue['city'], when,
+            address=venue.get('address'), postal=venue.get('postalCode'),
+            diagnostics=diagnostics)
         if detail is not None:
             return detail
+        require(False, "visible detail: " + diagnostics.get("visibleDetail", "unknown"))
     for node in nodes:
         if not isinstance(node, dict):
             continue

@@ -154,6 +154,26 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": html, "osm": osm(website="https://autre.fr")}))
 
+    def test_footer_can_corroborate_only_exact_physical_address(self):
+        from automation.concerts import open_world_visible_cards as cards
+        page = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"
+                "<p>5 mars 2027</p><p>New Act</p><p>concert ― Metal</p>"
+                "<p>→ La Salle - Salle de concert</p>"
+                "<footer>12 rue des Fleurs<br>75019 Paris</footer>")
+        opts = {"address": "12 rue des Fleurs", "postal": "75019"}
+        self.assertEqual(cards.verified_detail(page, "La Salle", "Paris",
+                         "2027-03-05", **opts), (["New Act"], ["Metal"]))
+        for bad in (page.replace("12 rue", "13 rue"),
+                    page.replace("75019", "75020"),
+                    page.replace("concert ― Metal", "concert ― Jazz"),
+                    page.replace("présente", "programme")):
+            diag = {}
+            self.assertIsNone(cards.verified_detail(bad, "La Salle", "Paris",
+                              "2027-03-05", diagnostics=diag, **opts))
+            self.assertIn("visibleDetail", diag)
+        self.assertIsNone(cards.verified_detail(page, "La Salle", "Paris",
+                          "2027-03-05"))
+
     def test_venue_linked_artist_profile_genre_reaches_real_publisher(self):
         from automation.concerts import dynamic_first_party_venue_proposals as proposals
         signed = signed_approval()
