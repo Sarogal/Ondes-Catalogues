@@ -15,6 +15,7 @@ import unicodedata
 import uuid
 from collections import Counter
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import (build_opener, HTTPRedirectHandler, ProxyHandler,
                             Request)
@@ -145,6 +146,21 @@ def research(name, request):
             "homepageHints": sorted(links), "artistType": detail["type"]}
 
 
+def service_failure_kind(exc):
+    """Bounded diagnostics; never persist exception text, URLs or credentials."""
+    if isinstance(exc, HTTPError):
+        return "http_" + str(exc.code)
+    if isinstance(exc, URLError):
+        if isinstance(exc.reason, TimeoutError):
+            return "timeout"
+        return "url_error"
+    if isinstance(exc, TimeoutError):
+        return "timeout"
+    if isinstance(exc, OSError):
+        return "network_error"
+    return "invalid_response"
+
+
 def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
     if type(limit) is not int or not 1 <= limit <= MAX_NAMES:
         raise ValueError("Invalid MusicBrainz budget")
@@ -168,13 +184,26 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
     counters = Counter()
     request = request if request is not None else Client()
     checked = 0
-    for _, key, name in sorted(eligible)[:limit]:
+    ordered = sorted(eligible)
+    # A failed request must not pin every future cycle to the same artist.
+    # Rotate the next cycle after that name without declaring it researched.
+    cursor = prior.get("serviceRetryAfterKey")
+    if isinstance(cursor, str):
+        for i, (_, key, _) in enumerate(ordered):
+            if key == cursor:
+                ordered = ordered[i + 1:] + ordered[:i + 1]
+                break
+    failure = None
+    retry_after_key = None
+    for _, key, name in ordered[:limit]:
         checked += 1
         try:
             result = research(name, request)
-        except (ValueError, TypeError, OSError, TimeoutError, KeyError):
+        except (ValueError, TypeError, OSError, TimeoutError, KeyError) as exc:
             # Stop on service failure or rate limiting; keep prior memory.
             counters["serviceHeld"] += 1
+            failure = service_failure_kind(exc)
+            retry_after_key = key
             break
         entries[key] = dict(result, artistName=name, checkedAt=today.isoformat(),
                             identityVerified=False, publicationAllowed=False)
@@ -183,7 +212,9 @@ def build(registry, today, *, prior=None, limit=MAX_NAMES, request=None):
             "publicationAllowed": False, "approvalsProposed": 0,
             "eligibleNames": len(names), "dueNames": len(eligible),
             "namesChecked": checked, "reasonCounts": dict(counters),
-            "entries": entries}
+            "entries": entries,
+            "serviceFailureKind": failure,
+            "serviceRetryAfterKey": retry_after_key}
 
 
 def main():
