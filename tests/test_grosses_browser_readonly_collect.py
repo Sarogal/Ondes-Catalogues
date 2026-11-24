@@ -53,6 +53,17 @@ class IsolatedBrowserCollectionTests(unittest.TestCase):
         self.assertEqual(report["entries"][0]["sha256"],
                          sha256(HTML.encode()).hexdigest())
 
+    def test_follows_bounded_same_host_official_ticket_link(self):
+        linked = "https://www.mozhell.fr/fr/billetterie"
+        home = '<main><a href="/fr/billetterie">Billetterie officielle</a></main>'
+        called = []
+        def render(url):
+            called.append(url)
+            return home if url == HOME else HTML
+        proof = collect([HOME], renderer=render)
+        self.assertEqual(called, [HOME, linked])
+        self.assertEqual(len(proof["entries"]), 2)
+
     def test_reject_unsafe_unsigned_url(self):
         with self.assertRaises(ValueError):
             collect(["http://localhost/"], renderer=lambda _: HTML)
@@ -87,6 +98,21 @@ class IsolatedBrowserArtifactTests(unittest.TestCase):
 
     def test_cross_day_artifact_cannot_enter_publisher(self):
         self.payload["date"] = "2026-11-23"
+        with self.assertRaises(ValueError):
+            self.read()
+
+    def test_signed_home_link_may_enter_only_if_actually_discovered(self):
+        link = "https://www.mozhell.fr/fr/billetterie"
+        homepage = '<main><a href="/fr/billetterie">Billetterie</a></main>'
+        self.payload["entries"][0]["html"] = homepage
+        self.payload["entries"][0]["sha256"] = sha256(homepage.encode()).hexdigest()
+        self.payload["entries"].append({
+            "officialSite": link, "html": HTML,
+            "sha256": sha256(HTML.encode()).hexdigest()})
+        self.assertEqual(self.read()[link], HTML)
+        self.payload["entries"][0]["html"] = "<main>aucun lien</main>"
+        self.payload["entries"][0]["sha256"] = sha256(
+            self.payload["entries"][0]["html"].encode()).hexdigest()
         with self.assertRaises(ValueError):
             self.read()
 
