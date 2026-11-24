@@ -827,7 +827,7 @@ def weekday_labelled_official_dates(html, row, year):
 
 def apply_independently_verified_updates(
         target, published, today, fetch=fetch_public_html, limit=MAX_HOSTS,
-        tick=None, commune_resolver=verified_commune):
+        tick=None, commune_resolver=verified_commune, browser_fetch=None):
     """Recheck signed artists/prices and exact first-party city proof.
 
     A commune marker is only an indicative administrative centre: no precise
@@ -838,7 +838,7 @@ def apply_independently_verified_updates(
     report = {"checked_official_hosts": 0, "rechecked_pages": 0,
               "accepted": [], "accepted_changes": [], "unavailable": 0,
               "checked_official_sources": [], "unavailable_official_sources": [],
-              "official_edition_diagnostics": [],
+              "official_edition_diagnostics": [], "browser_recoveries": 0,
               "private_proposal_is_authority": False}
     for site, rows in signed_rotation(published, today, limit, tick):
         report["checked_official_hosts"] += 1
@@ -850,11 +850,27 @@ def apply_independently_verified_updates(
             root = page(root_html)
             report["rechecked_pages"] += 1
         except (OSError, TimeoutError, ValueError, UnicodeError) as exc:
-            report["unavailable"] += 1
-            # Do not log untrusted exception text, response HTML, or secrets.
-            report["unavailable_official_sources"].append({
-                "url": site, "error_type": type(exc).__name__})
-            continue
+            # This callback comes ONLY from a separate no-secret job that
+            # rendered a signed public officialSite. Never launch Chromium
+            # inside the privileged Publisher itself. The HTML remains
+            # untrusted and must still pass every edition/field validator.
+            try:
+                if browser_fetch is None:
+                    raise ValueError("No isolated browser proof")
+                root_html = browser_fetch(site)
+                if (not isinstance(root_html, str)
+                        or not 0 < len(root_html.encode("utf-8")) <= 1_400_000):
+                    raise ValueError("Invalid browser HTML")
+                root = page(root_html)
+                report["rechecked_pages"] += 1
+                report["browser_recoveries"] += 1
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError,
+                    KeyError):
+                report["unavailable"] += 1
+                # Do not log untrusted exception text, response HTML, or secrets.
+                report["unavailable_official_sources"].append({
+                    "url": site, "error_type": type(exc).__name__})
+                continue
         pages = [(site, root)]
         # Store only independently fetched, safely linked first-party HTML;
         # a future date may appear in official news rather than on the home.
