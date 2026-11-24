@@ -59,7 +59,7 @@ def reprove_organizer_links(state, queue, dates_report, today, fetch=None):
     """Return a bounded private research trail, with no unknown-domain requests.
 
     The state itself is not allowed to authorize a URL. Date proposals first
-    have to pass the existing trusted-index, two-day and digest gates; a fresh
+    have to pass the existing trusted-index, current-date and digest gates; a fresh
     independent institutional index -> detail chain is then verified again.
     """
     current = date.fromisoformat(today)
