@@ -28,6 +28,7 @@ import discover
 import generic_visible_bill
 import official_rss_jsonld_bridge as bridge
 import open_world_frontier as frontier
+import open_world_musicbrainz as mb
 import open_world_visible_cards as cards
 import source_admission_intake as intake
 import source_evidence_probe as probe
@@ -56,7 +57,8 @@ def safe_page(value):
     return value
 
 
-def select_sources(frontier_report, registry, day, *, slot=0, limit=3):
+def select_sources(frontier_report, registry, day, *, slot=0, limit=3,
+                   musicbrainz=None):
     """Choose claims overlapping the rotating open-world frontier; no trust."""
     if (not isinstance(frontier_report, dict)
             or frontier_report.get("schema") != frontier.SCHEMA
@@ -156,6 +158,29 @@ def select_sources(frontier_report, registry, day, *, slot=0, limit=3):
                     seeds.setdefault(key, {
                         "kind": "artist", "identity": row, "url": url,
                         "host": host, "claimedOfficial": False,
+                    })
+    # Independent directory suggestions are only navigation hints. Exact
+    # name matching does not authenticate either artist or site ownership.
+    if (isinstance(musicbrainz, dict) and musicbrainz.get('schema') == mb.SCHEMA
+            and musicbrainz.get('publicationAllowed') is False
+            and musicbrainz.get('approvalsProposed') == 0
+            and isinstance(musicbrainz.get('entries'), dict)):
+        for row in artists.values():
+            entry = musicbrainz['entries'].get(mb.exact(row.get('name')))
+            if (not isinstance(entry, dict) or entry.get('status') != 'hypothesis'
+                    or entry.get('identityVerified') is not False
+                    or entry.get('publicationAllowed') is not False
+                    or mb.exact(entry.get('artistName')) != mb.exact(row.get('name'))
+                    or not mb.valid_id(entry.get('mbid'))
+                    or not isinstance(entry.get('homepageHints'), list)):
+                continue
+            for url in entry['homepageHints']:
+                target = safe_page(url)
+                if target:
+                    host = urlsplit(target).hostname
+                    seeds.setdefault(('artist', row['key'], host), {
+                        'kind': 'artist', 'identity': row, 'url': target,
+                        'host': host, 'claimedOfficial': False,
                     })
     ordered = sorted(seeds.values(),
                      key=lambda x: (x["kind"], x["identity"]["key"], x["host"]))
@@ -309,7 +334,7 @@ def artist_leads(body, url, seed, catalogue, today):
 
 
 def scan(catalogue, registry, frontier_report, day, *, slot=0,
-         max_sites=3, max_details=3, fetch=probe.safe_fetch):
+         max_sites=3, max_details=3, fetch=probe.safe_fetch, musicbrainz=None):
     if (not isinstance(catalogue, dict)
             or catalogue.get("schemaVersion") != 1
             or not all(isinstance(catalogue.get(k), list)
@@ -318,7 +343,7 @@ def scan(catalogue, registry, frontier_report, day, *, slot=0,
             or not 1 <= max_details <= MAX_DETAILS):
         raise ValueError("Invalid catalogue or detail budget")
     seeds = select_sources(frontier_report, registry, day,
-                           slot=slot, limit=max_sites)
+                           slot=slot, limit=max_sites, musicbrainz=musicbrainz)
     candidates = {}
     counters = Counter()
     for seed in seeds:
@@ -372,6 +397,7 @@ def main():
     p.add_argument("--catalogue", required=True, type=Path)
     p.add_argument("--registry", required=True, type=Path)
     p.add_argument("--frontier", required=True, type=Path)
+    p.add_argument("--musicbrainz", type=Path)
     p.add_argument("--output", required=True, type=Path)
     p.add_argument("--day", default=None)
     p.add_argument("--scan-slot", type=int, choices=(0, 1, 2), default=0)
@@ -385,7 +411,9 @@ def main():
         json.loads(args.registry.read_text("utf-8")),
         json.loads(args.frontier.read_text("utf-8")),
         today, slot=args.scan_slot, max_sites=args.max_sites,
-        max_details=args.max_details)
+        max_details=args.max_details,
+        musicbrainz=json.loads(args.musicbrainz.read_text('utf-8'))
+        if args.musicbrainz and args.musicbrainz.exists() else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n", "utf-8")

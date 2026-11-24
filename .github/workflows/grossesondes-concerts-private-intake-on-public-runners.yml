@@ -33,6 +33,7 @@ on:
       - 'automation/concerts/artist_genre_knowledge.py'
       - 'automation/concerts/artist_genre_preflight.py'
       - 'automation/concerts/open_world_artist_genre.py'
+      - 'automation/concerts/open_world_musicbrainz.py'
       - 'automation/concerts/intake_archive.py'
       - 'automation/concerts/official_recheck.py'
       - 'automation/concerts/festival_tour_handoff.py'
@@ -463,6 +464,18 @@ jobs:
             echo "Nouvelle file artistes et salles générée en privé ; aucune approbation automatique."
           fi
 
+      - name: Rechercher les artistes inconnus dans MusicBrainz (pistes privées)
+        if: steps.access.outputs.ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! python public/automation/concerts/open_world_musicbrainz.py \
+              --registry confidential/automation/concerts/intake/registry.json \
+              --out confidential/automation/concerts/intake/musicbrainz-research.json \
+              > "$RUNNER_TEMP/concerts-private-logs/musicbrainz-research.log" 2>&1; then
+            echo "::warning::Recherche MusicBrainz indisponible ; aucune confiance accordée."
+          fi
+
       - name: Explorer les sites de salles inconnues et les tournées par lecteur générique
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -478,6 +491,7 @@ jobs:
               --catalogue public/docs/grossesondes/concerts.json \
               --registry confidential/automation/concerts/intake/registry.json \
               --frontier confidential/automation/concerts/intake/open-world-frontier.json \
+              --musicbrainz confidential/automation/concerts/intake/musicbrainz-research.json \
               --day "$(TZ=Europe/Paris date +%F)" \
               --scan-slot "$SCAN_SLOT" --max-sites 3 --max-details 3 \
               --output "$RUNNER_TEMP/concerts-open-world/candidates.json" \
@@ -1140,6 +1154,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/artist-genre-evidence.json ]; then
             git add --sparse -- automation/concerts/intake/artist-genre-evidence.json
+          fi
+          if [ -f automation/concerts/intake/musicbrainz-research.json ]; then
+            git add --sparse -- automation/concerts/intake/musicbrainz-research.json
           fi
           if [ -f automation/concerts/intake/artist-genre-open-world.json ]; then
             git add --sparse -- automation/concerts/intake/artist-genre-open-world.json
