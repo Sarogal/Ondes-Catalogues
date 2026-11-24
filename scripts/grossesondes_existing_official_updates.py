@@ -1065,7 +1065,8 @@ def apply_independently_verified_updates(
                     exact_current_weekend = (
                         begin >= date.fromisoformat(today)
                         and begin.year == end.year
-                        and intervals == {(begin, end)}
+                        and (intervals == {(begin, end)}
+                             or (programmer_proven and not intervals))
                         and not OFFICIAL_CANCELLATION.search(current_words))
                 except (TypeError, ValueError, UnicodeError, KeyError):
                     exact_current_weekend = False
