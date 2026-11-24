@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-11-23",
+  "generatedAt": "2026-11-24",
   "festivals": [
     {
       "slug": "ex-tenebris-lux-2026",
@@ -5173,7 +5173,7 @@
       "sourceConfidence": "Billetterie de l’édition 2027 liée depuis le site officiel du festival ; organisateur dans ses mentions légales",
       "ticketAvailability": {
         "source": "https://www.motocultor-festival.com/",
-        "verifiedAt": "2026-11-23",
+        "verifiedAt": "2026-11-24",
         "scope": "per_category_only",
         "categories": [
           {
@@ -6253,9 +6253,9 @@
     },
     {
       "lineup": [],
-      "city": null,
+      "city": "Sainte-Hélène",
       "sourceConfidence": "Site officiel (annonce future revérifiée sans dates)",
-      "showOnMap": false,
+      "showOnMap": true,
       "officialSite": "https://esquiriot.fr/",
       "dateRangeIsContinuous": false,
       "startDate": null,
@@ -6263,7 +6263,7 @@
       "status": "Dates à venir",
       "verificationStatus": "Édition future confirmée sur le site officiel ; dates à confirmer",
       "endDate": null,
-      "lon": null,
+      "lon": -0.9071,
       "lastVerified": "2026-11-23",
       "region": null,
       "source": "https://esquiriot.fr/",
@@ -6273,7 +6273,56 @@
       "name": "Esqui'Riot 2027",
       "notes": "Édition future annoncée et revérifiée directement sur le site officiel. Dates à confirmer ; lieu précis, artistes et coordonnées non établis.",
       "department": null,
-      "lat": null
+      "lat": 44.9653,
+      "geoCity": "Sainte-Hélène",
+      "geoPrecision": "commune",
+      "geoInsee": "33417",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Sainte-H%C3%A9l%C3%A8ne&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-two-day.v1",
+        "firstObserved": "2026-11-23",
+        "verifiedAt": "2026-11-24",
+        "officialSite": "https://esquiriot.fr/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      }
+    },
+    {
+      "city": "Sèvremoine",
+      "dateRangeIsContinuous": false,
+      "status": "Annoncé",
+      "lat": 47.0878,
+      "startDate": "2027-10-08",
+      "region": null,
+      "lineup": [],
+      "source": "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/",
+      "slug": "mauges-pit-fest-2027",
+      "venue": null,
+      "name": "Mauges Pit Fest 2027",
+      "lastVerified": "2026-11-24",
+      "notes": "Dates de l'édition revérifiées sur une fiche touristique historique signée. Aucun artiste, tarif, lieu exact ni coordonnée de l'édition passée n'est hérité.",
+      "price": null,
+      "bands": 0,
+      "department": null,
+      "endDate": "2027-10-09",
+      "sourceConfidence": "Office de tourisme historiquement signé + relecture Publisher",
+      "showOnMap": true,
+      "officialSite": "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/",
+      "lon": -1.0968,
+      "verificationStatus": "Édition touristique revérifiée indépendamment",
+      "geoCity": "Sèvremoine",
+      "geoPrecision": "commune",
+      "geoInsee": "49301",
+      "geoSource": "https://geo.api.gouv.fr/communes?nom=Sevremoine&fields=nom%2Ccode%2CcodeDepartement%2Cdepartement%2Ccentre&format=geojson&geometry=centre&zone=metro%2Cdrom%2Ccom",
+      "geoVerification": {
+        "proofMode": "current-edition-commune-direct-official.v1",
+        "firstObserved": "2026-11-24",
+        "verifiedAt": "2026-11-24",
+        "officialSite": "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/",
+        "markerMeaning": "centre_indicatif_de_commune"
+      },
+      "auditSources": [
+        "https://www.osezmauges.fr/agenda/mauges-pit-fest/occ/1/"
+      ]
     }
   ]
 }
