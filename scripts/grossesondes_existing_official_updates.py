@@ -895,11 +895,19 @@ def apply_independently_verified_updates(
             pages.append((site, current_home))
         for link in linked_pages(site, root):
             try:
-                linked_html = fetch(link)
-                pages.append((link, page(linked_html)))
+                try:
+                    linked_html = fetch(link)
+                except (OSError, TimeoutError, ValueError, UnicodeError):
+                    if browser_fetch is None:
+                        raise
+                    # Only same-origin links proven by the parsed home DOM;
+                    # the loader separately checks their exact provenance.
+                    linked_html = browser_fetch(link)
+                linked_doc = page(linked_html)
+                pages.append((link, linked_doc))
                 html_pages.append((link, linked_html))
                 report["rechecked_pages"] += 1
-            except (OSError, TimeoutError, ValueError, UnicodeError):
+            except (OSError, TimeoutError, ValueError, UnicodeError, TypeError):
                 continue
         for old in rows:
             slug = old["slug"]
@@ -981,7 +989,17 @@ def apply_independently_verified_updates(
                 # A title with signed brand, EXACT dates and one town is its
                 # own first-party edition proof. The site's news teaser may
                 # omit the year, so root_ok cannot be an additional gate.
-                claim = exact_edition_city(root_html, old)
+                # A current edition's town may be proved only by a
+                # same-host linked official ticket/news page. Reject any
+                # disagreement between independently parsed current-year
+                # claims; do not borrow last year's venue or winter dates.
+                claims_city = [
+                    exact_edition_city(html, old) for _, html in html_pages]
+                claims_city = [c for c in claims_city if c is not None]
+                distinct_cities = {
+                    normal_city(c["city"]) for c in claims_city}
+                claim = (claims_city[0] if len(distinct_cities) == 1
+                         else None)
                 if (claim and claim.get("source") == site
                         and claim.get("slug") == slug
                         and (not old.get("city")
