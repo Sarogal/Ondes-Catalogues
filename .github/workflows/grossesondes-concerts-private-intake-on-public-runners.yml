@@ -46,6 +46,9 @@ on:
       - 'automation/concerts/venue_osm_self_discovery.py'
       - 'automation/concerts/venue_address_osm_source.py'
       - 'automation/concerts/independent_named_site_geo.py'
+      - 'automation/concerts/existing_venue_geo_evidence.py'
+      - 'automation/concerts/existing_venue_geo_preflight.py'
+      - 'scripts/concert_existing_venue_geo_contract.py'
       - 'automation/concerts/osm_read_only_fallback.py'
       - 'automation/concerts/intake_metrics.py'
       - 'automation/concerts/dynamic_first_party_venue_proposals.py'
@@ -1024,6 +1027,26 @@ jobs:
             echo "::warning::Prévalidation des identités indisponible ; collecte de concerts poursuivie."
           fi
 
+      - name: Prévalider en observation privée les corrections géographiques génériques
+        if: steps.access.outputs.ready == 'true' && steps.publisher_preflight.outputs.outcome == 'passed'
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT=confidential/automation/concerts/intake/existing-venue-geo-preflight.json
+          rm -f "$REPORT"
+          UTC_HOUR=$(date -u +%H)
+          SCAN_SLOT=$((10#$UTC_HOUR / 8))
+          # Read-only shadow: no signed ledger mutation until renewal is safe.
+          # Hard time bound, no raw evidence in the public log or artifacts.
+          if ! timeout 150s python public/automation/concerts/existing_venue_geo_preflight.py \
+              --before confidential/automation/concerts/approved.json \
+              --reference public/docs/grossesondes/concerts-reference.json \
+              --catalogue public/docs/grossesondes/concerts.json \
+              --report "$REPORT" --slot "$SCAN_SLOT" \
+              > "$RUNNER_TEMP/concerts-private-logs/existing-venue-geo-preflight.log" 2>&1; then
+            echo "::warning::Observation géographique indisponible ; collecte poursuivie."
+          fi
+
       - name: Conserver les rapports sensibles uniquement dans le dépôt privé
         if: steps.access.outputs.ready == 'true'
         shell: bash
@@ -1180,6 +1203,9 @@ jobs:
           fi
           if [ -f automation/concerts/intake/published-lineup-audit.json ]; then
             git add --sparse -- automation/concerts/intake/published-lineup-audit.json
+          fi
+          if [ -f automation/concerts/intake/existing-venue-geo-preflight.json ]; then
+            git add --sparse -- automation/concerts/intake/existing-venue-geo-preflight.json
           fi
           if [ -f automation/concerts/intake/promotional-correction-preflight.json ]; then
             git add --sparse -- automation/concerts/intake/promotional-correction-preflight.json
