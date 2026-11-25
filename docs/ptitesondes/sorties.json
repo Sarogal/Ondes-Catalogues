@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "updated_at": "2026-11-25T01:37:05+01:00",
+  "updated_at": "2026-11-25T03:31:21+01:00",
   "events": [
     {
       "id": "toulouse-gouter-concert-4-2026-10-07",
@@ -18063,6 +18063,26 @@
       "geo_precision": "venue",
       "lat": 48.860118,
       "lng": 2.368214
+    },
+    {
+      "id": "openagenda-66525298-2027-02-06",
+      "title": "\"Guillaume,l'apprenti sorcier\" | Conte musical",
+      "category": "conte-musical",
+      "category_label": "Conte musical",
+      "date_start": "2027-02-06",
+      "date_end": "2027-02-06",
+      "time": "11:00",
+      "city": "Nantes",
+      "department": "Loire-Atlantique",
+      "region": "Pays de la Loire",
+      "venue": "Conservatoire de Nantes",
+      "source_url": "https://openagenda.com/conservatoire-de-nantes/events/66525298_guillaumelapprenti-sorcier-or-conte-musical-2158906",
+      "source_label": "Conservatoire de Nantes — Licence Ouverte 2.0 — données mises à jour le 15/09/2026",
+      "verified_at": "2026-11-25",
+      "geo_verified_at": "2026-11-25",
+      "geo_precision": "venue",
+      "lat": 47.207848,
+      "lng": -1.532593
     }
   ]
 }
