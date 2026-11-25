@@ -233,6 +233,53 @@ class UnlistedExistingVenueTests(unittest.TestCase):
             dynamic.validate(signed, venues, artists, TODAY,
                 fetch=fake_fetch({"primary": html, "osm": osm(website="https://autre.fr")}))
 
+    def test_sparse_schema_uses_complete_visible_card_without_masking_conflicts(self):
+        from automation.concerts import dynamic_first_party_venue_proposals as proposals
+        signed = signed_approval()
+        proof = signed["officialEvidence"][0]
+        proof["proofType"] = dynamic.OSM_SINGLE_PROFILE
+        proof.pop("corroboratingEventUrl")
+        title = " + ".join(NAMES)
+        card = ("<h1>" + title + "</h1><p>5 mars 2027</p><p>" + title
+                + "</p><p>concert ― Black Metal</p>"
+                + "<p>→ Le Bikini - Salle de concert</p>"
+                + "<p>Ramonville-Saint-Agne</p>")
+        node = {"@type": "MusicEvent", "name": title, "url": EVENT,
+                "location": {"@type": "Place",
+                             "country": {"@type": "Country", "name": "FR"}}}
+        venue = next(v for v in BASE["venues"] if v["id"] == VENUE_ID)
+        venues = {v["id"]: v for v in BASE["venues"]}
+        artists = {a["id"]: a for a in BASE["artists"]}
+
+        def schema(value):
+            return "<script type='application/ld+json'>" + json.dumps(value) + "</script>"
+
+        html = schema(node) + card
+        self.assertEqual(proposals._individual_event(
+            html, EVENT, "2027-03-05", venue, accept_generic=True),
+            (NAMES, ["Black Metal"]))
+        self.assertTrue(dynamic.validate(signed, venues, artists, TODAY,
+            fetch=fake_fetch({"primary": html})))
+        for patch in (
+            {"startDate": "2027-03-06"}, {"url": WITNESS},
+            {"name": "Different event"}, {"eventStatus": "EventCancelled"},
+            {"genre": "Jazz"}, {"performer": [{"@type": "MusicGroup", "name": "Other Band"}]},
+            {"location": {"@type": "Place", "name": "Wrong Room"}},
+            {"location": {"@type": "Place", "country": "BE"}},
+            {"location": {"@type": "Place", "address": {"postalCode": "75001"}}},
+        ):
+            wrong = schema({**node, **patch}) + card
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": wrong}))
+        for wrong in (schema(node) + card.replace("5 mars", "6 mars"),
+                      schema(node) + card.replace("Black Metal", "Jazz"),
+                      schema(node) + card + schema(node),
+                      schema(node) + card.replace("→ Le Bikini", "→ Other Room")):
+            with self.assertRaises(ValueError):
+                dynamic.validate(signed, venues, artists, TODAY,
+                    fetch=fake_fetch({"primary": wrong}))
+
     def test_generic_leaf_divs_join_inline_date_and_isolate_recommendations(self):
         from automation.concerts import open_world_visible_cards as cards
         page = ("<h1>La Salle</h1><h2>La Salle présente :</h2>"
