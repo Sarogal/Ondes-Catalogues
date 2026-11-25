@@ -85,6 +85,21 @@ def explicit_child_age_text(value):
     return False
 
 
+# A generic concert bio ("l'enfant du rock") or convivial restaurant copy
+# ("un moment entre amis ou en famille") is not evidence of a youth programme.
+# Accept targeted child/family wording or explicit ages, regardless of genre,
+# artist, venue, source or whether accompanying adults may attend.
+CONCERT_AUDIENCE = re.compile(
+    r"\b(?:jeune public|tout petits?|bebes?|petits et grands|"
+    r"(?:pour|destine(?:e|s|es)? (?:a|aux)|adapte(?:e|s|es)? (?:a|aux)) "
+    r"(?:les |des |l |la |toute la |toutes les )?"
+    r"(?:enfants?|familles?|adolescents?|ados?|plus jeunes)|"
+    r"concert(?:s)? (?:familial|familiaux|en famille|jeunesse|enfants?)|"
+    r"concert(?:s)? (?:pour|avec) (?:les |des )?enfants?|"
+    r"parents enfants|enfants? (?:accompagnes?|bienvenus?))\b"
+)
+
+
 def explicit_programme_category(title, description):
     """Recognise a first-party advertised format, after audience validation.
 
@@ -259,6 +274,10 @@ def admit_live_openagenda(lead, day_text, agenda, event, baseline, published,
         category = explicit_programme_category(title, description)
     if category is None:
         return fail("oa_direct_out_of_editorial_scope")
+    if (category[0] == "concert" and not child_age
+            and not explicit_child_age_text(source_text)
+            and not CONCERT_AUDIENCE.search(audience)):
+        return fail("oa_direct_child_audience_missing")
     rights = review_event_rights(event, today)
     if not rights["licensed_factual_reuse_confirmed"]:
         return fail("oa_direct_reuse_rights_missing")
