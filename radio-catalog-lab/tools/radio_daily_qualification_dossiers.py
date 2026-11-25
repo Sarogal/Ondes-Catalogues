@@ -51,7 +51,7 @@ def reported_host(raw):
         return None
 
 
-def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None, editorial=None):
+def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha, previous=None, editorial=None, continuity=None):
     if not isinstance(baseline_sha, str) or not SHA256_RE.fullmatch(baseline_sha):
         raise ValueError("Missing pinned catalogue digest")
     day = parse_day(discovery.get("scanDate"))
@@ -90,6 +90,16 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
         if any(x.get("editorialApproved") is not False or x.get("publicationAllowed") is not False
                for x in editorial_rows.values()):
             raise ValueError("Unexpected editorial approval")
+    continuity_rows = {}
+    if continuity is not None:
+        if (continuity.get("schemaVersion") != 1 or continuity.get("scanDate") != day
+                or continuity.get("publicationAllowed") is not False
+                or continuity.get("technicallyQualifiedCount") != 0):
+            raise ValueError("Untrusted continuity preview")
+        continuity_rows = index(continuity, "records")
+        if any(x.get("technicalQualified") is not False or x.get("publicationAllowed") is not False
+               for x in continuity_rows.values()):
+            raise ValueError("Unexpected continuity approval")
     prior = {}
     if previous is not None:
         if (previous.get("schemaVersion") != 1 or previous.get("publicationAllowed") is not False
@@ -131,6 +141,9 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
         l = artwork.get(uid)
         e = editorial_rows.get(uid)
         fingerprint = observation.get("streamSha256") if observation else None
+        c = continuity_rows.get(uid)
+        if c and c.get("streamSha256") != fingerprint:
+            c = None
         matching_audio = bool(fingerprint and a and a.get("streamSha256") == fingerprint)
         positive = matching_audio and a.get("lastVerdict") == "audio_sample_ok"
         reasons = []
@@ -174,6 +187,10 @@ def build_dossiers(discovery, reconciliation, ledger, stream, logo, baseline_sha
                 "streamSha256", "audioEvidenceDates", "liveFrameEvidenceDates", "lastObservedDate",
                 "lastVerdict")} if a else None,
             "streamEvidenceMatchesCurrentSource": matching_audio,
+            "continuityEvidence": {k: c.get(k) for k in (
+                "streamSha256", "observedDate", "verdict", "windowCount", "sampleBytes",
+                "elapsedMs", "coherentWindowCount", "distinctWindowCount", "frameCodec",
+                "finiteResponse", "icyHeaderPresent", "earlyEnd")} if c else None,
             "logoEvidence": {k: l.get(k) for k in (
                 "sourceClass", "sourceSha256", "retrieval", "imageSha256", "mime",
                 "width", "height", "byteLength", "observedDate")} if l else None,
@@ -192,6 +209,7 @@ def main():
         p.add_argument("--" + name, required=True, type=Path)
     p.add_argument("--previous", type=Path)
     p.add_argument("--editorial", type=Path)
+    p.add_argument("--continuity", type=Path)
     p.add_argument("--baseline-sha256", required=True)
     a = p.parse_args()
     def load(path):
@@ -201,7 +219,8 @@ def main():
     report = build_dossiers(*(load(getattr(a, k)) for k in
                               ("discovery", "reconciliation", "ledger", "stream", "logo")),
                             a.baseline_sha256, load(a.previous) if a.previous else None,
-                            load(a.editorial) if a.editorial else None)
+                            load(a.editorial) if a.editorial else None,
+                            load(a.continuity) if a.continuity else None)
     encoded = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if len(encoded.encode("utf-8")) > MAX_BYTES:
         raise ValueError("Dossier register capacity exceeded")
