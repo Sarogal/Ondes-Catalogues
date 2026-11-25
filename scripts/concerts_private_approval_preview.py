@@ -236,7 +236,7 @@ def audit_backlog(previous, proposed, reference, published, today,
             require(not expected_artists or
                     added_artists[-len(expected_artists):] == expected_artists,
                     "Artistes nouveaux différents des signatures")
-            sync.protect_reference(reference, current)
+            sync.protect_reference(reference, current, approvals=proposed, today=today)
             sync.validate_catalogue(current)
             return len(fresh_ids) + len(added_status) + len(added_lineup)
         require(updated["events"] != published["events"] or corrected,
@@ -311,7 +311,7 @@ def audit(previous, proposed, reference, published, today):
             "Identités artistiques différentes des signatures")
     require(merged["venues"] == published["venues"],
             "Géolocalisation ou salle modifiée")
-    sync.protect_reference(reference, merged)
+    sync.protect_reference(reference, merged, approvals=proposed, today=today)
     sync.validate_catalogue(merged)
     return len(fresh_ids) + len(added_status) + len(added_lineup)
 
