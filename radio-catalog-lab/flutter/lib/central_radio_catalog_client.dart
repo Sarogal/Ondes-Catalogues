@@ -230,13 +230,19 @@ class CentralRadioCatalogClient {
 
   /// Never called at startup by existing CatalogController. Explicit opt-in
   /// test invocation only until full product/Android Auto authorization.
-  Future<CentralCatalogSyncResult> sync() async {
+  Future<CentralCatalogSyncResult> sync({
+    void Function(List<ValidatedCentralCatalog>)? onVerifiedHistory,
+  }) async {
     if (_synchronizing) {
       throw const CentralCatalogException('Concurrent catalog sync');
     }
     _synchronizing = true;
     try {
-      final previous = await loadOffline();
+      // Read the verified history once. The selector can reuse this exact
+      // immutable list even if the network subsequently fails.
+      final history = await disk.loadVerifiedHistory(verifier);
+      onVerifiedHistory?.call(history);
+      final previous = history.isEmpty ? null : history.first;
       final pointerBytes = await _fetch(
           baseUri.resolve('current.json'),
           CentralCatalogPointer.maximumPointerBytes);
