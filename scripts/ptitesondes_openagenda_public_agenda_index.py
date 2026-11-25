@@ -69,12 +69,16 @@ def _validated_page(payload, size, old_cursor):
 
 
 def read_index_page(public_read_key, after=None, *,
-                    size=PAGE_SIZE, opener=None, sort=None):
+                    size=PAGE_SIZE, opener=None, sort=None, search=None):
     """Public API reader with pinned origin, no redirects, bounded JSON."""
     if (not _valid_public_read_key(public_read_key)
             or type(size) is not int or not 1 <= size <= PAGE_SIZE
             or after is not None and not valid_cursor(after)
-            or sort not in (None, "recentlyAddedEvents.desc")):
+            or sort not in (None, "recentlyAddedEvents.desc")
+            or (search is not None and (
+                type(search) is not str or not search.strip()
+                or len(search) > 100 or any(ord(c) < 32 for c in search)
+                or after is not None or sort is not None))):
         raise ValueError("invalid_oa_index_request")
     # The API documents a field projection. We only consume identities;
     # schemas, images and descriptions must not inflate the bounded response.
@@ -84,6 +88,8 @@ def read_index_page(public_read_key, after=None, *,
               ("includeFields[]", "title")]
     if sort is not None:
         params.append(("sort", sort))
+    if search is not None:
+        params.append(("search", search))
     if after is not None:
         params.extend([("after[]", str(n)) for n in after])
     url = API + "?" + urlencode(params)
@@ -107,6 +113,11 @@ def read_index_page(public_read_key, after=None, *,
     except (ValueError, UnicodeDecodeError):
         raise ValueError("oa_index_invalid_json") from None
     # No licence or organiser assertions are imported from this metadata.
+    # Geographic searches intentionally sample the first relevance-ranked
+    # page only. Its provider-specific relevance cursor is not persisted or
+    # reused in either exhaustive index lane.
+    if search is not None and isinstance(payload, dict):
+        payload = dict(payload, after=None)
     rows, cursor = _validated_page(payload, size, after)
     return {"agendas": rows, "after": cursor}
 
