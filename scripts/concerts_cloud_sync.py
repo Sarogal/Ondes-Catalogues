@@ -1776,7 +1776,10 @@ def validate_catalogue(data):
         )
 
 
-def protect_reference(reference, current):
+def protect_reference(reference, current, *, approvals=None, today=None):
+    if approvals is not None and approvals.get("existingVenueGeoCorrections"):
+        from scripts import concert_existing_venue_geo_contract as geo_contract
+        current, _ = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
     validate_catalogue(reference)
     validate_catalogue(current)
     for kind in ("events", "venues", "artists"):
@@ -7888,10 +7891,14 @@ def apply_gwendoline_signed_correction(result, approval):
 
 
 def merge(reference, current, approvals, today):
-    protect_reference(reference, current)
     require(approvals.get("schema") == SCHEMA and
             isinstance(approvals.get("approvals"), list),
             "Approbations privées non conformes")
+    from scripts import concert_existing_venue_geo_contract as geo_contract
+    # Restore only exact signed old/new states before the original historical
+    # guards, including the original approval for post-reference venues.
+    current, geo_plans = geo_contract.prepare(current, approvals, today, defer_unavailable=True)
+    protect_reference(reference, current)
     # Signed approval IDs must be unique even after the historical queue
     # exceeds 400 records. Duplicating a signature cannot mask a conflict.
     ledger_ids = [
@@ -8127,6 +8134,12 @@ def merge(reference, current, approvals, today):
         except (ValueError, KeyError, TypeError) as ex:
             counts["held"].append({"candidateId": entry.get("venue", {}).get("id"),
                                    "reason": str(ex)})
+    # Original historic and appended venues have now passed their existing
+    # guards. Apply only signed geography fields before evaluating new gigs.
+    counts["correctedVenues"] += geo_contract.apply(result, geo_plans)
+    if any(p.get("deferred") for p in geo_plans.values()):
+        counts["deferredGeoCorrections"] = sum(bool(p.get("deferred")) for p in geo_plans.values())
+    venues = {v["id"]: v for v in result["venues"]}
     # Approved records are cumulative, not a single deployment batch.
     for entry in approvals["approvals"]:
         try:
@@ -8222,7 +8235,7 @@ def merge(reference, current, approvals, today):
     if (counts["newEvents"] or counts["newVenues"] or counts["correctedEvents"] or counts["correctedVenues"]):
         result["updatedAt"] = today.isoformat()
         result["edition"] = "v0.6+cloud — vérifications officielles"
-    protect_reference(reference, result)
+    protect_reference(reference, geo_contract.restore_originals(result, geo_plans))
     validate_catalogue(result)
     return result, counts
 
