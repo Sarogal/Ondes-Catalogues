@@ -1,6 +1,6 @@
 """Existing ODS/official OA backlog may request first-party UID verification."""
 from copy import deepcopy
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import sys
@@ -80,6 +80,91 @@ class BacklogFirstPartyTests(unittest.TestCase):
                 self.assertEqual(dossier["date_start"], DAY.isoformat())
                 self.assertEqual(dossier["official_event_url"],
                                  "https://openagenda.com/agenda-nouveau-organisateur/events/999401")
+
+    def test_editorial_refusal_is_reversible_and_never_an_approval(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        row = dict(clue(), title="Concert de musique")
+        event = dict(oa_event(), title={"fr": row["title"]},
+                     description={"fr": "Concert de musique classique"}, age=None)
+        original = deepcopy(row)
+        result, counts = self.build([row], refusal_memory=memory,
+                                    as_of_utc=now, event_reader=lambda *_: event)
+        self.assertEqual(counts["editorial_new_live_refusals"], 1)
+        self.assertEqual(result["open_world_research"], [])
+        self.assertEqual(row, original)
+        self.assertEqual(result["additions"], [])
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(len(memory["entries"]), 1)
+        result, counts = self.build([row], refusal_memory=memory,
+                                    as_of_utc=now + timedelta(hours=1),
+                                    event_reader=lambda *_: self.fail("Cached refusal"))
+        self.assertEqual(counts["editorial_cached_backlog_deferred"], 1)
+        updated = dict(event, age={"min": 3, "max": 12},
+                       description={"fr": "Concert de musique pour enfants"})
+        result, counts = self.build([row], refusal_memory=memory,
+                                    as_of_utc=now + timedelta(hours=12),
+                                    event_reader=lambda *_: updated)
+        self.assertEqual(counts["new_dossiers"], 1)
+        self.assertEqual(result["additions"], [])
+        self.assertFalse(result["safe_to_publish"])
+        self.assertEqual(memory["entries"], {})
+
+    def test_changed_collector_hint_invalidates_deferral_without_expiry(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        row = dict(clue(), title="Concert de musique")
+        event = dict(oa_event(), title={"fr": row["title"]},
+                     description={"fr": "Concert de musique classique"}, age=None)
+        self.build([row], refusal_memory=memory, as_of_utc=now,
+                   event_reader=lambda *_: event)
+        self.assertEqual(len(memory["entries"]), 1)
+        changed = dict(row, reason="Programme mis à jour")
+        result, counts = self.build([changed], refusal_memory=memory,
+            as_of_utc=now + timedelta(hours=1), event_reader=lambda *_:
+            dict(event, age={"min": 3, "max": 12},
+                 description={"fr": "Concert de musique pour enfants"}))
+        self.assertEqual(counts["new_dossiers"], 1)
+        self.assertEqual(counts["editorial_cached_backlog_deferred"], 0)
+
+    def test_transient_or_unverified_source_is_not_cached(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        def failed(*_):
+            raise TimeoutError("network")
+        _, counts = self.build([clue()], refusal_memory=memory,
+                               as_of_utc=now, event_reader=failed)
+        self.assertEqual(counts["held_for_publisher_or_network"], 1)
+        self.assertEqual(memory["entries"], {})
+        _, counts = self.build([clue()], refusal_memory=memory,
+                               as_of_utc=now, event_reader=lambda *_: dict(oa_event(), uid=22))
+        self.assertEqual(counts["held_for_publisher_or_network"], 1)
+        self.assertEqual(memory["entries"], {})
+
+    def test_existing_refusal_frees_queue_slot_only_when_history_retains_clue(self):
+        from ptitesondes_editorial_refusal_memory import empty_memory
+        now = datetime(2026, 11, 21, 10, tzinfo=timezone.utc)
+        memory = empty_memory()
+        row = dict(clue(), title="Concert de musique")
+        event = dict(oa_event(), title={"fr": row["title"]},
+                     description={"fr": "Concert de musique classique"}, age=None)
+        first, _ = self.build([row], event_reader=lambda *_: event)
+        self.assertEqual(len(first["open_world_research"]), 1)
+        result, counts = build_backlog_dossiers(
+            [row], first, self.catalogue, TODAY, self.key,
+            agenda_reader=lambda *_: AGENDA, event_reader=lambda *_: event,
+            refusal_memory=memory, as_of_utc=now)
+        self.assertEqual(counts["editorial_live_queue_deferred"], 1)
+        self.assertEqual(result["open_world_research"], [])
+        preserved, _ = build_backlog_dossiers(
+            [], first, self.catalogue, TODAY, self.key,
+            agenda_reader=lambda *_: self.fail("No history"),
+            event_reader=lambda *_: self.fail("No history"),
+            refusal_memory=memory, as_of_utc=now)
+        self.assertEqual(preserved["open_world_research"], first["open_world_research"])
 
     def test_no_second_source_needed_for_real_publisher_merge(self):
         patch, counts = self.build([clue()])
